@@ -10,7 +10,7 @@
   sendmail inside the chroot).
 - Composer packages: Slim 4.15 (routing, middleware, PSR-7 through slim/psr7 1.8), PHP-DI 7
   (container, autowiring), league/plates 3.6 (templates of the public pages), slim/csrf 1.5
-  (form tokens), PHPMailer 7 (SMTP). PHPUnit 13 for tests.
+  (form tokens), PHPMailer 7 (SMTP). PHPUnit 12 for tests.
 
 ## Frontend
 
@@ -31,10 +31,9 @@
 
 ## Build and deployment
 
-- GitHub Actions runs `composer validate`, PHP syntax checks and PHPUnit, and the
-  frontend's type check, tests and build on every push.
-- On `main`, the workflow assembles the deployable application (PHP sources, `vendor/`
-  without dev packages, the built frontend) and pushes it to the `deploy` branch. The
-  server checks out `deploy` and updates with `git pull`; nothing is built on the server.
+- `make check` runs `composer validate`, PHP syntax checks, PHPUnit, and the frontend's
+  type check, tests and build; GitHub Actions runs it on every push.
+- The server deploys with `git pull` and `make build`: Composer dependencies without
+  development packages, `npm ci` and the Vite build into `public/build`.
 - The database, the file store and the local configuration live outside the checkout.
-- Node.js LTS and Composer 2 for development and CI.
+- Node.js 22 with npm 10 and Composer 2 on the server and for development.

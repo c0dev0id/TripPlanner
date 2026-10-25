@@ -63,13 +63,20 @@ entries at the end of their section.
   WFS, ArcGIS and PMTiles layers is Layer Slayer's purpose, not a trip planner's. The route
   model, edits, legs, routing pump, undo history, markers and GPX code are ported with
   their tests; the layer store, the service readers and the composed style are not.
-- **CI builds, the server pulls.** The server deploys with `git pull` and should not need
-  Node.js or Composer. GitHub Actions therefore pushes the built application (sources,
-  `vendor/` without dev packages, the built frontend) to a `deploy` branch, and the server
-  checks that branch out. `main` never holds `vendor/` or built assets.
+- **The server builds; CI only checks.** The server has Node.js and Composer and deploys
+  with `git pull` followed by `make build`, which installs the PHP dependencies without
+  development packages and builds the frontend into `public/build`. A first draft had
+  GitHub Actions push a built tree to a `deploy` branch; the user preferred one branch and
+  a build on the box. GitHub Actions runs the checks (`make check`) on every push and
+  deploys nothing. `vendor/`, `node_modules/` and `public/build/` are never committed. The
+  build goes to `public/build`, not `public/app`: the planner page is the route `/app`, and
+  a directory of the same name under the web root is served as files before the front
+  controller sees the request. Static paths and page routes never share a name. The
+  Makefile is written for OpenBSD's make as well as GNU make: no conditionals, no shell
+  functions.
 - **Data outside the checkout.** The SQLite file, uploaded files and the local
-  configuration are not under the deployed tree, so that a pull or a reset of the `deploy`
-  branch cannot touch them. Their paths come from `config/local.php`, which is not in git.
+  configuration are not under the deployed tree, so that a pull or a reset cannot touch
+  them. Their paths come from `config/local.php`, which is not in git.
 - **Mail over SMTP to 127.0.0.1:25.** php-fpm is chrooted on OpenBSD, where `mail()` finds
   no sendmail. PHPMailer speaks SMTP to the local smtpd by IP, which needs no resolver in
   the chroot either.

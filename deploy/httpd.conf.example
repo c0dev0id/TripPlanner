@@ -1,0 +1,28 @@
+# OpenBSD httpd server block for the planner. Paths are inside httpd's chroot (/var/www):
+# the checkout is /var/www/planner, the data directory /var/www/planner-data.
+#
+# Static files (the built frontend under /build, site.css) are served as they are; every
+# other path is rewritten to the front controller. To be verified on the box: that
+# REQUEST_URI reaches PHP unchanged after the rewrite, which the router relies on.
+
+server "planner.codevoid.de" {
+	listen on * tls port 443
+	tls {
+		certificate "/etc/ssl/planner.codevoid.de.fullchain.pem"
+		key "/etc/ssl/private/planner.codevoid.de.key"
+	}
+	root "/planner/public"
+	directory index index.php
+
+	location not found "/*" {
+		request rewrite "/index.php"
+	}
+	location "*.php" {
+		fastcgi socket "/run/php-fpm.sock"
+	}
+}
+
+server "planner.codevoid.de" {
+	listen on * port 80
+	block return 301 "https://$SERVER_NAME$REQUEST_URI"
+}
