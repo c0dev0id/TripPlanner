@@ -76,7 +76,9 @@ entries at the end of their section.
   functions.
 - **Data outside the checkout.** The SQLite file, uploaded files and the local
   configuration are not under the deployed tree, so that a pull or a reset cannot touch
-  them. Their paths come from `config/local.php`, which is not in git.
+  them. Their paths come from `config/local.php`, which is not in git, and are given
+  relative to the checkout: php-fpm runs chrooted to `/var/www` while `bin/planner` runs
+  outside, and a relative path resolves to the same directory on both sides.
 - **Mail over SMTP to 127.0.0.1:25.** php-fpm is chrooted on OpenBSD, where `mail()` finds
   no sendmail. PHPMailer speaks SMTP to the local smtpd by IP, which needs no resolver in
   the chroot either.

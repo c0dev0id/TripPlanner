@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-// Copy to config/local.php and adjust. Paths are as PHP sees them: inside the php-fpm
-// chroot on OpenBSD, /var/www/planner-data is /planner-data.
+// Copy to config/local.php and adjust. php-fpm runs chrooted on OpenBSD while bin/planner
+// runs outside it, so the data directory is given relative to the checkout: this resolves
+// to /var/www/planner-data on the host and /planner-data inside the chroot.
 return [
     'base_url' => 'https://planner.codevoid.de',
-    'data_dir' => '/planner-data',
+    'data_dir' => dirname(__DIR__, 2) . '/planner-data',
     'mail' => [
         'transport' => 'smtp',
         'from' => 'planner@codevoid.de',
