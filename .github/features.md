@@ -2,12 +2,12 @@
 
 ## Available
 
-Nothing yet; phase 0 is in progress.
+- Accounts: a waiting list on the landing page, invitations by mail from an admin page or
+  the command line, sign-in, sign-out, password reset by mail.
+- The planner page with a map and an empty trip list.
 
 ## Planned
 
-- Accounts: waiting list, invitation by mail, sign-in, password reset. An admin page for
-  the waiting list.
 - Trips as a sequence of days; a day as a sequence of stops at places, with one or more
   routes between consecutive stops.
 - Places kept once per trip: hotels, restaurants, fuel stops, sights, with address,
