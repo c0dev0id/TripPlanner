@@ -1,0 +1,43 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Planner\Account\Users;
+use Planner\Database;
+use Planner\Kernel;
+use Planner\Signup\Inviter;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$root = dirname(__DIR__);
+$container = Kernel::container($root);
+$command = $argv[1] ?? '';
+$argument = $argv[2] ?? null;
+
+switch ($command) {
+    case 'db:init':
+        Database::applySchema($container->get(PDO::class), $root . '/db/schema.sql');
+        echo "Schema applied.\n";
+        break;
+    case 'invite':
+        $container->get(Inviter::class)->invite(require_argument($argument), null, new DateTimeImmutable());
+        echo "Invitation sent to $argument.\n";
+        break;
+    case 'admin:grant':
+        $granted = $container->get(Users::class)->grantAdmin(require_argument($argument));
+        echo $granted ? "$argument is an admin now.\n" : "No account for $argument.\n";
+        exit($granted ? 0 : 1);
+    default:
+        fwrite(STDERR, "Usage: bin/planner db:init | invite <email> | admin:grant <email>\n");
+        exit(1);
+}
+
+function require_argument(?string $argument): string
+{
+    if ($argument === null || $argument === '') {
+        fwrite(STDERR, "An e-mail address is needed.\n");
+        exit(1);
+    }
+    return $argument;
+}

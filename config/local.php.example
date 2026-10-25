@@ -1,0 +1,14 @@
+<?php
+
+declare(strict_types=1);
+
+// Copy to config/local.php and adjust. Paths are as PHP sees them: inside the php-fpm
+// chroot on OpenBSD, /var/www/planner-data is /planner-data.
+return [
+    'base_url' => 'https://planner.codevoid.de',
+    'data_dir' => '/planner-data',
+    'mail' => [
+        'transport' => 'smtp',
+        'from' => 'planner@codevoid.de',
+    ],
+];

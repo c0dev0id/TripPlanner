@@ -1,0 +1,36 @@
+{
+    "name": "c0dev0id/tripplanner",
+    "description": "Plans whole motorcycle trips: days of stops with times, hotels, alternative routes and GPX export.",
+    "type": "project",
+    "require": {
+        "php": "^8.3",
+        "ext-pdo_sqlite": "*",
+        "ext-zip": "*",
+        "league/plates": "^3.6",
+        "php-di/php-di": "^7.1",
+        "phpmailer/phpmailer": "^7.1",
+        "slim/csrf": "^1.5",
+        "slim/psr7": "^1.8",
+        "slim/slim": "^4.15"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Planner\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Planner\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": "find src public bin tests -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
