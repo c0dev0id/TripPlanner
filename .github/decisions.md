@@ -79,6 +79,10 @@ entries at the end of their section.
   them. Their paths come from `config/local.php`, which is not in git, and are given
   relative to the checkout: php-fpm runs chrooted to `/var/www` while `bin/planner` runs
   outside, and a relative path resolves to the same directory on both sides.
+- **Vite stays on the 7.x line.** The server builds the frontend, and Vite 8 bundles with
+  Rolldown, whose native binding is published for Linux, macOS, Windows and FreeBSD but
+  not OpenBSD. Vite 7 bundles with esbuild, which ships an OpenBSD build. The pin lifts
+  when Rolldown does.
 - **Mail over SMTP to 127.0.0.1:25.** php-fpm is chrooted on OpenBSD, where `mail()` finds
   no sendmail. PHPMailer speaks SMTP to the local smtpd by IP, which needs no resolver in
   the chroot either.
