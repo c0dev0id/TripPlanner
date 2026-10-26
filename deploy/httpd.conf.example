@@ -1,28 +1,32 @@
-# OpenBSD httpd server block for the planner. Paths are inside httpd's chroot (/var/www):
-# the checkout is /var/www/planner, the data directory /var/www/planner-data.
+# OpenBSD httpd server block for the planner, behind TLS termination. Paths are inside
+# httpd's chroot (/var/www): the checkout is /var/www/planner.
 #
-# Static files (the built frontend under /build, site.css) are served as they are; every
-# other path is rewritten to the front controller. To be verified on the box: that
-# REQUEST_URI reaches PHP unchanged after the rewrite, which the router relies on.
+# httpd uses the first matching location, so the static files come before the catch-all
+# that hands every other path to the front controller. With SCRIPT_FILENAME fixed there
+# is no rewrite, and REQUEST_URI reaches PHP unchanged, which the router relies on.
 
 server "planner.codevoid.de" {
-	listen on * tls port 443
-	tls {
-		certificate "/etc/ssl/planner.codevoid.de.fullchain.pem"
-		key "/etc/ssl/private/planner.codevoid.de.key"
-	}
+	listen on 127.0.0.1 port 80
+	listen on ::1 port 80
 	root "/planner/public"
-	directory index index.php
 
-	location not found "/*" {
-		request rewrite "/index.php"
+	location "/.well-known/acme-challenge/*" {
+		root "/acme"
+		request strip 2
+		directory auto index
 	}
-	location "*.php" {
+
+	# Static files: the built frontend and the stylesheet of the public pages.
+	location "/build/*" {
+		root "/planner/public"
+	}
+	location "/site.css" {
+		root "/planner/public"
+	}
+
+	# Everything else is the PHP application.
+	location "/*" {
 		fastcgi socket "/run/php-fpm.sock"
+		fastcgi param SCRIPT_FILENAME "/planner/public/index.php"
 	}
-}
-
-server "planner.codevoid.de" {
-	listen on * port 80
-	block return 301 "https://$SERVER_NAME$REQUEST_URI"
 }
