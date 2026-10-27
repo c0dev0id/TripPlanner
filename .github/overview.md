@@ -29,7 +29,7 @@ routing is done in the browser by the FOSSGIS OSRM servers.
 
 ## Phases
 
-Phases 0 to 3 are built; testing phase 1 changed the model (see decisions.md), which
+Phases 0 to 4 are built; testing phase 1 changed the model (see decisions.md), which
 phase 2 brought in. Later phases describe intent and change as the work progresses.
 
 | Phase | Content | Done when |
@@ -38,6 +38,6 @@ phase 2 brought in. Later phases describe intent and change as the work progress
 | 1 Plan on a map | Trips, days, stops and routes. The route editor from Layer Slayer: points, routed and straight legs, undo and redo, recalculation. Autosave. Export as one GPX per trip or per day with tracks and stop waypoints. | Done; its stop-sequence model is replaced in phase 2. |
 | 2 Routes and stops | Routes as geometry with stops bound to route points or free beside the route; several routes per day, each with its profile; editing as a mode of one route; the panel listing routes and stops in riding order with distances, panning the map; neighbouring days dimmed. Folders for trips and a search across them. | Built; a weekend planned on it and the GPX working on the device confirm it. |
 | 3 Time | Dates on days. Arrival times and pauses on stops, the computed day timeline from the first timed stop, with waiting and late arrivals. Day summary: distance, riding time, departure and arrival, pauses, late stops. | Built; a day planned with a fixed lunch confirms it. |
-| 4 Library and export | GPX import into a route: routes, tracks, Garmin route points. Copy, move, duplicate and reorder for days, stops, routes and trips. The export dialog with all options (scope, packaging, tracks or routes, optional parts, proximity) and saved presets. |  |
+| 4 Library and export | GPX import into a day: routes, tracks, Garmin's calculated way, waypoints as stops. Move, duplicate and copy for days, routes, stops and trips. The export dialog with scope, packaging, tracks or routes, optional parts, reach of free stops, and saved presets. | Built; an export that works on the device and an import of a file from it confirm it. |
 | 5 After the trip | Attachments and comments on everything. Photos placed on the day and the map by their EXIF time and position. Trip state planned or done. A read-only trip page for printing and sharing. |  |
 | Later | Sharing between users. Valhalla routing with its motorcycle costing. Elevation and surface colouring of routes. Further export formats. |  |

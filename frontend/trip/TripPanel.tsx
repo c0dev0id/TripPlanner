@@ -1,4 +1,5 @@
-import { createMemo, For, Show } from 'solid-js';
+import { createMemo, createSignal, For, Show } from 'solid-js';
+import { errorMessage } from '../api';
 import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
 import { PROFILES, type Day, type Route } from '../model/trip';
 import { routeDistance } from '../routing/legs';
@@ -14,6 +15,7 @@ import {
   duplicateRoute,
   editingRouteId,
   editRoute,
+  importGpx,
   moveDay,
   moveRoute,
   moveRouteToDay,
@@ -132,6 +134,18 @@ function DayItem(props: { day: Day; index: number }) {
 /** The selected day's date and times, its routes, and its stops (and route points on request) in riding order. */
 function DayDetails(props: { day: Day }) {
   const listed = createMemo(() => new Map(selectedSequence().filter((e) => e.stop || showRoutePoints()).map((e) => [e.id, e])));
+  const [importNote, setImportNote] = createSignal<{ text: string; error: boolean }>();
+  let fileInput!: HTMLInputElement;
+  const importFile = async (file: File | undefined) => {
+    fileInput.value = '';
+    if (!file) return;
+    try {
+      const { routes, stops } = await importGpx(file);
+      setImportNote({ text: `${file.name}: ${routes} ${routes === 1 ? 'route' : 'routes'}, ${stops} ${stops === 1 ? 'stop' : 'stops'} added.`, error: false });
+    } catch (fault) {
+      setImportNote({ text: `${file.name}: ${errorMessage(fault)}`, error: true });
+    }
+  };
   return (
     <div class="day-details">
       <div class="row">
@@ -147,13 +161,16 @@ function DayDetails(props: { day: Day }) {
       <div class="row heading">
         <h4 class="grow">Routes</h4>
         <button onClick={addRoute}>Add route</button>
+        <button onClick={() => fileInput.click()}>Import GPX…</button>
+        <input ref={fileInput} type="file" accept=".gpx,application/gpx+xml" hidden onChange={(e) => void importFile(e.currentTarget.files?.[0])} />
       </div>
       <ul class="routes">
         <For each={props.day.routes}>{(route) => <RouteItem route={route} day={props.day} />}</For>
       </ul>
       <Show when={props.day.routes.length === 0}>
-        <p class="muted hint">Add a route, then tap the map to draw it.</p>
+        <p class="muted hint">Add a route, then tap the map to draw it, or import a GPX file.</p>
       </Show>
+      <Show when={importNote()}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
       <div class="row heading">
         <h4 class="grow">Stops</h4>
         <label class="toggle">
@@ -187,7 +204,7 @@ function DaySummary(props: { timeline: DayTimeline }) {
 function RouteItem(props: { route: Route; day: Day }) {
   const editing = () => editingRouteId() === props.route.id;
   const label = () => routeLabel(props.route, props.day);
-  const profile = () => PROFILES.find((p) => p.value === props.route.profile)?.label ?? props.route.profile;
+  const profile = () => (props.route.kind === 'track' ? 'Track' : (PROFILES.find((p) => p.value === props.route.profile)?.label ?? props.route.profile));
   const remove = async () => {
     if (props.route.points.length > 0 && !(await askConfirmation(`Remove ${label()} with its ${props.route.points.length} points?`, 'Remove'))) return;
     removeRoute(props.route.id);

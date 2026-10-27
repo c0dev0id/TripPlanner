@@ -60,6 +60,12 @@ export function addRoute(trip: Trip, dayId: string, id: string): Trip {
   }));
 }
 
+/** Adds routes and stops, as read from a file, to the day. */
+export function addParts(trip: Trip, dayId: string, parts: { routes: Route[]; stops: Stop[] }): Trip {
+  if (parts.routes.length === 0 && parts.stops.length === 0) return trip;
+  return updateDay(trip, dayId, (day) => ({ ...day, routes: [...day.routes, ...parts.routes], stops: [...day.stops, ...parts.stops] }));
+}
+
 /** Removes a route; the stops bound to its points stay, free. */
 export function removeRoute(trip: Trip, dayId: string, routeId: string): Trip {
   return updateDay(trip, dayId, (day) => (day.routes.some((r) => r.id === routeId) ? alignStops({ ...day, routes: day.routes.filter((r) => r.id !== routeId) }) : day));

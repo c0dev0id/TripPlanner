@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, RoutedLeg, Trip } from '../model/trip';
-import { addDay, addFreeStop, addRoute, alignStops, connectStop, convertPoint, copyStopToDay, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, removeRoute, removeStop, setDayDate, setRouteProfile, updateRoute, updateStop } from './dayEdit';
+import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copyStopToDay, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, removeRoute, removeStop, setDayDate, setRouteProfile, updateRoute, updateStop } from './dayEdit';
 import { routeLegs } from './legs';
 import * as routeEdit from './routeEdit';
 
@@ -189,5 +189,17 @@ describe('reordering and copying', () => {
   it('copies a stop to another day as a free stop', () => {
     const trip = copyStopToDay(twoDays(), 's1', 'e', 'c');
     expect(trip.days[1]!.stops).toEqual([{ ...day(trip).stops[0]!, id: 'c', pointId: null }]);
+  });
+});
+
+describe('addParts', () => {
+  it('appends routes and stops to the day and leaves an empty import alone', () => {
+    const trip = fixture();
+    expect(addParts(trip, 'd', { routes: [], stops: [] })).toBe(trip);
+    const route = { ...day(trip).routes[0]!, id: 'imported', points: [] };
+    const stop = { ...day(trip).stops[1]!, id: 'w' };
+    const added = addParts(trip, 'd', { routes: [route], stops: [stop] });
+    expect(day(added).routes.map((r) => r.id)).toEqual(['r', 'imported']);
+    expect(day(added).stops.map((s) => s.id)).toEqual(['s1', 's2', 'w']);
   });
 });

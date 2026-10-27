@@ -17,7 +17,7 @@
 - SolidJS 1.9 (UI and state), Vite 7 (build; see decisions.md for why not 8), TypeScript 7
   (type checking), Vitest 5 with jsdom for unit tests of the pure modules.
 - MapLibre GL JS 6 (map rendering, Web Mercator).
-- Route tool, GPX reading and polyline handling ported from Layer Slayer.
+- Route tool, GPX reading, line simplification and polyline handling ported from Layer Slayer.
 - Routing by the FOSSGIS OSRM servers (routing.openstreetmap.de): at most one request per
   second, attribution shown. Motorcycles ride the car profile.
 - Base map from a vector style without an API key (OpenFreeMap), with the raster and

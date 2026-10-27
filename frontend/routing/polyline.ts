@@ -29,6 +29,28 @@ export function decodePolyline(encoded: string, precision = 6): LngLat[] {
   return points;
 }
 
+/** Encodes [lng, lat] pairs as a polyline of the given precision, as OSRM's polyline6. */
+export function encodePolyline(points: readonly LngLat[], precision = 6): string {
+  const factor = 10 ** precision;
+  let [lastLat, lastLng] = [0, 0];
+  let encoded = '';
+  const add = (delta: number) => {
+    let value = delta < 0 ? ~(delta << 1) : delta << 1;
+    while (value >= 0x20) {
+      encoded += String.fromCharCode((0x20 | (value & 0x1f)) + 63);
+      value >>= 5;
+    }
+    encoded += String.fromCharCode(value + 63);
+  };
+  for (const [lng, lat] of points) {
+    const [y, x] = [Math.round(lat * factor), Math.round(lng * factor)];
+    add(y - lastLat);
+    add(x - lastLng);
+    [lastLat, lastLng] = [y, x];
+  }
+  return encoded;
+}
+
 /** Decoded geometries by their polyline, which is immutable and so its own key; emptied when it grows large. */
 let decoded = new Map<string, LngLat[]>();
 

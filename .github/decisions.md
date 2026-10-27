@@ -128,6 +128,16 @@ entries at the end of their section.
 
 ## Export
 
+- **An imported file becomes ordinary routes and stops.** A GPX route keeps its points and
+  is routed between them; where the file carries the way a Garmin or BaseCamp calculated
+  (`gpxx:rpt`), that way is the leg's geometry, measured along it and timed at the
+  assumed pace, since it is what the rider saw and planned; *Reroute* trades it for the
+  routing's own way and durations. A track is a route of kind `track` with straight legs
+  between its points, simplified to 500 at most, so that it keeps its shape and stays
+  editable like any route; the kind is shown instead of a profile. Waypoints become stops,
+  bound where they stand on a route point, so that this planner's own export comes back
+  as it went out. The alternative, a separate immutable track object, would have needed
+  its own drawing, editing and export paths for little gain.
 - **One track or route per route, one waypoint per stop.** A GPX file holds the stops in
   scope as waypoints, bound ones at their route point and free ones at their own position
   when within the chosen reach of a route, with the stop's kind as the waypoint type, and

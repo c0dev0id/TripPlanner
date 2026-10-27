@@ -64,8 +64,8 @@ export function routeDistance(route: RoutePath & Pick<Route, 'legs'>): number {
   return routeLegs(route).reduce((sum, leg) => sum + legDistance(route, leg), 0);
 }
 
-/** The pace assumed for a leg the routing has not timed: a straight one, or one not routed yet. */
-const ASSUMED_SPEED_MPS = 50 / 3.6;
+/** The pace assumed for a leg the routing has not timed: a straight one, one not routed yet, or one imported with its way. */
+export const ASSUMED_SPEED_MPS = 50 / 3.6;
 
 /** The riding time of a leg in seconds: as routed, or at the assumed pace as the crow flies. */
 export function legDuration(route: Pick<Route, 'legs'>, leg: Leg): number {
@@ -92,6 +92,16 @@ export function nextMissingLeg(routes: readonly Route[], failed: ReadonlySet<str
     if (leg) return { ...leg, routeId: route.id, profile: route.profile };
   }
   return undefined;
+}
+
+/** The positions without consecutive repeats, which would make legs of no length. */
+export function withoutRepeats(points: readonly LngLat[]): LngLat[] {
+  const result: LngLat[] = [];
+  for (const p of points) {
+    const last = result.at(-1);
+    if (!last || last[0] !== p[0] || last[1] !== p[1]) result.push([p[0], p[1]]);
+  }
+  return result;
 }
 
 /** Rounds a coordinate to 6 decimals (about 0.1 m) so keys, URLs and exports agree. */

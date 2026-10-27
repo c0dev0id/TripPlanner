@@ -40,6 +40,11 @@
   system's job.
 - Every change saved to the server a moment later, as one document with a version; a
   save over a newer version is refused and the trip offered for reloading.
+- GPX import into a day: a file's routes become routes with every point, their legs
+  routed, except those the file carries the way a Garmin calculated for, which keep that
+  way; its tracks become routes of kind track, simplified to at most 500 points joined by
+  straight legs; its waypoints become stops, bound to a route point they stand on, free
+  otherwise, with their type as the kind where it is one of ours.
 - Routes and stops can be marked optional (a route in its menu, a stop in its dialog)
   and are shown so.
 - GPX export from a dialog: the whole trip or the selected day; one file or one file per
@@ -51,7 +56,6 @@
 
 ## Planned
 
-- GPX import into a route: routes, tracks, Garmin's calculated route points.
 - Photos, receipts and documents attached to the trip, a day, a stop or a route; photos
   placed by their EXIF time and position; comments for notes before and after the trip.
 - A read-only trip page for printing and sharing.

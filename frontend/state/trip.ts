@@ -1,5 +1,7 @@
 import { batch, createMemo, createRoot, createSignal } from 'solid-js';
 import { createStore, reconcile, unwrap } from 'solid-js/store';
+import { parseGpx } from '../gpx/gpx';
+import { gpxToDayParts } from '../gpx/import';
 import { newId, type Day, type LngLat, type Profile, type Route, type RoutedLeg, type Stop, type Trip } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { roundLngLat } from '../routing/legs';
@@ -164,6 +166,19 @@ export function addRoute(): void {
   const id = newId();
   editDay((trip, dayId) => dayEdit.addRoute(trip, dayId, id), 'Add route');
   if (routeById(id)) setEditingRouteId(id);
+}
+
+/**
+ * Adds the routes and stops of a GPX file to the selected day, as one step; throws with
+ * a message for the user where the file cannot be read. Returns what was added.
+ */
+export async function importGpx(file: File): Promise<{ routes: number; stops: number }> {
+  const day = selectedDay();
+  if (!day) return { routes: 0, stops: 0 };
+  const profile = day.routes.at(-1)?.profile ?? 'car';
+  const parts = gpxToDayParts(parseGpx(await file.text()), { fileName: file.name.replace(/\.gpx$/i, ''), profile, newId });
+  editDay((trip, dayId) => dayEdit.addParts(trip, dayId, parts), 'Import GPX');
+  return { routes: parts.routes.length, stops: parts.stops.length };
 }
 
 export function removeRoute(routeId: string): void {
