@@ -9,6 +9,7 @@
 <meta name="csrf-name" content="<?= $this->e($csrf['name']) ?>">
 <meta name="csrf-value-key" content="<?= $this->e($csrf['valueKey']) ?>">
 <meta name="csrf-value" content="<?= $this->e($csrf['value']) ?>">
+<?php $this->insert('theme') ?>
 </head>
 <body>
 <div id="root"></div>

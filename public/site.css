@@ -10,6 +10,15 @@
   --notice: light-dark(#0f6e56, #4fbf9f);
 }
 
+/* The theme chosen by hand overrides the browser's; without it, the colours follow the browser. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 * { box-sizing: border-box; }
 
 body {

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= $this->e($title) ?> · Trip Planner</title>
 <link rel="stylesheet" href="/site.css">
+<?php $this->insert('theme') ?>
 </head>
 <body>
 <header class="site">

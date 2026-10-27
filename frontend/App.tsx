@@ -1,4 +1,4 @@
-import { createResource, createSignal, Show } from 'solid-js';
+import { createResource, createSignal, For, Show } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout } from './api';
 import { Library } from './library/Library';
 import { ContextMenu } from './map/ContextMenu';
@@ -13,6 +13,7 @@ import { ShareDialog } from './trip/ShareDialog';
 import { StopDialog } from './trip/StopDialog';
 import { TripPanel } from './trip/TripPanel';
 import { ConfirmDialog } from './ui/ConfirmDialog';
+import { chooseTheme, theme, THEMES, type Theme } from './ui/theme';
 
 export function App() {
   const [me] = createResource(fetchMe);
@@ -43,6 +44,9 @@ export function App() {
         <header class="panel-header">
           <h1>Trip Planner</h1>
           <Show when={me()}>{(user) => <span class="user">{user().email}</span>}</Show>
+          <select class="theme" aria-label="Theme" title="Light or dark, or as the browser says" value={theme()} onChange={(e) => chooseTheme(e.currentTarget.value as Theme)}>
+            <For each={THEMES}>{(t) => <option value={t.value}>{t.label}</option>}</For>
+          </select>
           <button type="button" class="link" onClick={logout}>
             Sign out
           </button>
