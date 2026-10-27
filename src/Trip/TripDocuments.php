@@ -10,8 +10,8 @@ use Planner\Http\Json;
 use Planner\Timestamp;
 
 /**
- * A trip's content as one document: its places and its days with their stops and
- * routes, in the shape the client works with (see TripDocumentValidator).
+ * A trip's content as one document: its days with their routes and stops, in the shape
+ * the client works with (see TripDocumentValidator).
  */
 final class TripDocuments
 {
@@ -30,22 +30,9 @@ final class TripDocuments
         }
         $days = [];
         foreach ($this->rows('SELECT id, name, date, notes FROM days WHERE trip_id = ? ORDER BY position', $tripId) as $day) {
-            $days[$day['id']] = ['id' => $day['id'], 'name' => $day['name'], 'date' => $day['date'], 'notes' => $day['notes'], 'stops' => [], 'routes' => []];
+            $days[$day['id']] = ['id' => $day['id'], 'name' => $day['name'], 'date' => $day['date'], 'notes' => $day['notes'], 'routes' => [], 'stops' => []];
         }
-        $stops = 'SELECT id, day_id, place_id, role, arrive_at, pause_minutes, optional, notes FROM stops WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
-        foreach ($this->rows($stops, $tripId) as $stop) {
-            $days[$stop['day_id']]['stops'][] = [
-                'id' => $stop['id'],
-                'placeId' => $stop['place_id'],
-                'role' => $stop['role'],
-                'arriveAt' => $stop['arrive_at'],
-                'pauseMinutes' => $stop['pause_minutes'] === null ? null : (int) $stop['pause_minutes'],
-                'optional' => (bool) $stop['optional'],
-                'notes' => $stop['notes'],
-            ];
-        }
-        $routes = 'SELECT r.id, r.day_id, r.name, r.kind, r.profile, r.optional, r.points, r.legs FROM routes r
-                   JOIN stops s ON s.id = r.from_stop_id WHERE r.day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY s.position';
+        $routes = 'SELECT id, day_id, name, kind, profile, optional, points, legs FROM routes WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
         foreach ($this->rows($routes, $tripId) as $route) {
             $days[$route['day_id']]['routes'][] = [
                 'id' => $route['id'],
@@ -57,17 +44,22 @@ final class TripDocuments
                 'legs' => (object) json_decode($route['legs'], true, flags: JSON_THROW_ON_ERROR),
             ];
         }
-        $places = [];
-        foreach ($this->rows('SELECT id, name, kind, lng, lat, address, contact, booking_reference, notes FROM places WHERE trip_id = ? ORDER BY name, id', $tripId) as $place) {
-            $places[] = [
-                'id' => $place['id'],
-                'name' => $place['name'],
-                'kind' => $place['kind'],
-                'lngLat' => [(float) $place['lng'], (float) $place['lat']],
-                'address' => $place['address'],
-                'contact' => $place['contact'],
-                'bookingReference' => $place['booking_reference'],
-                'notes' => $place['notes'],
+        $stops = 'SELECT id, day_id, name, kind, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional
+                  FROM stops WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY rowid';
+        foreach ($this->rows($stops, $tripId) as $stop) {
+            $days[$stop['day_id']]['stops'][] = [
+                'id' => $stop['id'],
+                'name' => $stop['name'],
+                'kind' => $stop['kind'],
+                'lngLat' => [(float) $stop['lng'], (float) $stop['lat']],
+                'pointId' => $stop['point_id'],
+                'address' => $stop['address'],
+                'contact' => $stop['contact'],
+                'bookingReference' => $stop['booking_reference'],
+                'notes' => $stop['notes'],
+                'arriveAt' => $stop['arrive_at'],
+                'pauseMinutes' => $stop['pause_minutes'] === null ? null : (int) $stop['pause_minutes'],
+                'optional' => (bool) $stop['optional'],
             ];
         }
         return [
@@ -76,7 +68,6 @@ final class TripDocuments
             'description' => $trip['description'],
             'startsOn' => $trip['starts_on'],
             'version' => (int) $trip['version'],
-            'places' => $places,
             'days' => array_values($days),
         ];
     }
@@ -100,11 +91,8 @@ final class TripDocuments
             if ((int) $current !== $version) {
                 throw new VersionConflict((int) $current);
             }
-            $this->assertIdsNotElsewhere($tripId, $document);
-            $this->savePlaces($tripId, $document['places']);
+            $this->assertIdsNotElsewhere($tripId, $document['days']);
             $this->saveDays($tripId, $document['days']);
-            // After the stops, which reference them.
-            $this->deleteMissing('places', 'trip_id = ?', $tripId, array_column($document['places'], 'id'));
             $this->db->prepare('UPDATE trips SET name = ?, description = ?, starts_on = ?, version = ?, updated_at = ? WHERE id = ?')
                 ->execute([$document['name'], $document['description'], $document['startsOn'], $version + 1, Timestamp::of($now), $tripId]);
             $this->db->commit();
@@ -118,13 +106,12 @@ final class TripDocuments
     }
 
     /** Ids are the client's choice, but a row belongs to its trip: a document may not name another trip's parts. */
-    private function assertIdsNotElsewhere(int $tripId, array $document): void
+    private function assertIdsNotElsewhere(int $tripId, array $days): void
     {
-        [$stopIds, $routeIds] = self::childIds($document['days']);
-        $elsewhere = $this->countElsewhere('places', 'trip_id != ?', $tripId, array_column($document['places'], 'id'))
-            + $this->countElsewhere('days', 'trip_id != ?', $tripId, array_column($document['days'], 'id'))
-            + $this->countElsewhere('stops', 'day_id NOT IN (SELECT id FROM days WHERE trip_id = ?)', $tripId, $stopIds)
-            + $this->countElsewhere('routes', 'day_id NOT IN (SELECT id FROM days WHERE trip_id = ?)', $tripId, $routeIds);
+        [$routeIds, $stopIds] = self::childIds($days);
+        $elsewhere = $this->countElsewhere('days', 'trip_id != ?', $tripId, array_column($days, 'id'))
+            + $this->countElsewhere('routes', 'day_id NOT IN (SELECT id FROM days WHERE trip_id = ?)', $tripId, $routeIds)
+            + $this->countElsewhere('stops', 'day_id NOT IN (SELECT id FROM days WHERE trip_id = ?)', $tripId, $stopIds);
         if ($elsewhere > 0) {
             throw new InvalidDocument('The document names parts of another trip.');
         }
@@ -140,28 +127,16 @@ final class TripDocuments
         return (int) $statement->fetchColumn();
     }
 
-    /** @return array{0: string[], 1: string[]} the ids of all stops and of all routes of the days */
+    /** @return array{0: string[], 1: string[]} the ids of all routes and of all stops of the days */
     private static function childIds(array $days): array
     {
-        $stopIds = [];
         $routeIds = [];
+        $stopIds = [];
         foreach ($days as $day) {
-            array_push($stopIds, ...array_column($day['stops'], 'id'));
             array_push($routeIds, ...array_column($day['routes'], 'id'));
+            array_push($stopIds, ...array_column($day['stops'], 'id'));
         }
-        return [$stopIds, $routeIds];
-    }
-
-    private function savePlaces(int $tripId, array $places): void
-    {
-        $upsert = $this->db->prepare(
-            'INSERT INTO places (id, trip_id, name, kind, lng, lat, address, contact, booking_reference, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-             ON CONFLICT(id) DO UPDATE SET name = excluded.name, kind = excluded.kind, lng = excluded.lng, lat = excluded.lat,
-                 address = excluded.address, contact = excluded.contact, booking_reference = excluded.booking_reference, notes = excluded.notes',
-        );
-        foreach ($places as $place) {
-            $upsert->execute([$place['id'], $tripId, $place['name'], $place['kind'], $place['lngLat'][0], $place['lngLat'][1], $place['address'], $place['contact'], $place['bookingReference'], $place['notes']]);
-        }
+        return [$routeIds, $stopIds];
     }
 
     private function saveDays(int $tripId, array $days): void
@@ -170,29 +145,33 @@ final class TripDocuments
             'INSERT INTO days (id, trip_id, position, name, date, notes) VALUES (?, ?, ?, ?, ?, ?)
              ON CONFLICT(id) DO UPDATE SET position = excluded.position, name = excluded.name, date = excluded.date, notes = excluded.notes',
         );
-        $upsertStop = $this->db->prepare(
-            'INSERT INTO stops (id, day_id, position, place_id, role, arrive_at, pause_minutes, optional, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-             ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, position = excluded.position, place_id = excluded.place_id, role = excluded.role,
-                 arrive_at = excluded.arrive_at, pause_minutes = excluded.pause_minutes, optional = excluded.optional, notes = excluded.notes',
-        );
         $upsertRoute = $this->db->prepare(
-            'INSERT INTO routes (id, day_id, from_stop_id, name, kind, profile, optional, points, legs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-             ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, from_stop_id = excluded.from_stop_id, name = excluded.name, kind = excluded.kind,
+            'INSERT INTO routes (id, day_id, position, name, kind, profile, optional, points, legs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, position = excluded.position, name = excluded.name, kind = excluded.kind,
                  profile = excluded.profile, optional = excluded.optional, points = excluded.points, legs = excluded.legs',
         );
-        // Stops and routes the document no longer holds go first, routes before the stops
-        // they reference.
-        [$stopIds, $routeIds] = self::childIds($days);
+        $upsertStop = $this->db->prepare(
+            'INSERT INTO stops (id, day_id, name, kind, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, name = excluded.name, kind = excluded.kind, lng = excluded.lng, lat = excluded.lat,
+                 point_id = excluded.point_id, address = excluded.address, contact = excluded.contact, booking_reference = excluded.booking_reference,
+                 notes = excluded.notes, arrive_at = excluded.arrive_at, pause_minutes = excluded.pause_minutes, optional = excluded.optional',
+        );
+        // Routes and stops the document no longer holds go first.
+        [$routeIds, $stopIds] = self::childIds($days);
         $this->deleteMissing('routes', 'day_id IN (SELECT id FROM days WHERE trip_id = ?)', $tripId, $routeIds);
         $this->deleteMissing('stops', 'day_id IN (SELECT id FROM days WHERE trip_id = ?)', $tripId, $stopIds);
         $this->deleteMissing('days', 'trip_id = ?', $tripId, array_column($days, 'id'));
         foreach ($days as $position => $day) {
             $upsertDay->execute([$day['id'], $tripId, $position, $day['name'], $day['date'], $day['notes']]);
-            foreach ($day['stops'] as $index => $stop) {
-                $upsertStop->execute([$stop['id'], $day['id'], $index, $stop['placeId'], $stop['role'], $stop['arriveAt'], $stop['pauseMinutes'], (int) $stop['optional'], $stop['notes']]);
-            }
             foreach ($day['routes'] as $index => $route) {
-                $upsertRoute->execute([$route['id'], $day['id'], $day['stops'][$index]['id'], $route['name'], $route['kind'], $route['profile'], (int) $route['optional'], Json::encode($route['points']), Json::encode((object) $route['legs'])]);
+                $upsertRoute->execute([$route['id'], $day['id'], $index, $route['name'], $route['kind'], $route['profile'], (int) $route['optional'], Json::encode($route['points']), Json::encode((object) $route['legs'])]);
+            }
+            foreach ($day['stops'] as $stop) {
+                $upsertStop->execute([
+                    $stop['id'], $day['id'], $stop['name'], $stop['kind'], $stop['lngLat'][0], $stop['lngLat'][1], $stop['pointId'],
+                    $stop['address'], $stop['contact'], $stop['bookingReference'], $stop['notes'], $stop['arriveAt'], $stop['pauseMinutes'], (int) $stop['optional'],
+                ]);
             }
         }
     }

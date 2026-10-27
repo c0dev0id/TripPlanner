@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Planner\Tests\Trip;
 
-/** A small valid trip document: two places, one day with two stops and the route between them. */
+/**
+ * A small valid trip document: one day with a route of three points, a stop bound to its
+ * first and last point, and a free stop beside it.
+ */
 final class TripFixture
 {
     public static function document(): array
@@ -13,34 +16,43 @@ final class TripFixture
             'name' => 'Alps',
             'description' => 'A weekend.',
             'startsOn' => '2027-06-12',
-            'places' => [
-                self::place('home', 'Home', [11.5, 48.1]),
-                self::place('hotel', 'Hotel Post', [11.4, 47.3], 'hotel'),
-            ],
             'days' => [
                 [
                     'id' => 'day1',
                     'name' => 'South',
                     'date' => null,
                     'notes' => '',
-                    'stops' => [self::stop('s1', 'home'), self::stop('s2', 'hotel', 'overnight')],
-                    'routes' => [self::route('r1', [11.5, 48.1], [11.4, 47.3])],
+                    'routes' => [self::route('r1', [[11.5, 48.1], [11.45, 47.8], [11.4, 47.3]])],
+                    'stops' => [
+                        self::stop('s1', 'Home', [11.5, 48.1], 'r1-0'),
+                        self::stop('s2', 'Hotel Post', [11.4, 47.3], 'r1-2', 'hotel'),
+                        self::stop('s3', 'Café & Bar', [11.46, 47.81], null, 'cafe'),
+                    ],
                 ],
             ],
         ];
     }
 
-    public static function place(string $id, string $name, array $lngLat, string $kind = 'other'): array
+    public static function stop(string $id, string $name, array $lngLat, ?string $pointId, string $kind = 'other'): array
     {
-        return ['id' => $id, 'name' => $name, 'kind' => $kind, 'lngLat' => $lngLat, 'address' => '', 'contact' => '', 'bookingReference' => '', 'notes' => ''];
+        return [
+            'id' => $id,
+            'name' => $name,
+            'kind' => $kind,
+            'lngLat' => $lngLat,
+            'pointId' => $pointId,
+            'address' => '',
+            'contact' => '',
+            'bookingReference' => '',
+            'notes' => '',
+            'arriveAt' => null,
+            'pauseMinutes' => null,
+            'optional' => false,
+        ];
     }
 
-    public static function stop(string $id, string $placeId, string $role = 'visit'): array
-    {
-        return ['id' => $id, 'placeId' => $placeId, 'role' => $role, 'arriveAt' => null, 'pauseMinutes' => null, 'optional' => false, 'notes' => ''];
-    }
-
-    public static function route(string $id, array $from, array $to, array $legs = []): array
+    /** A route whose points are named `<id>-<index>`. */
+    public static function route(string $id, array $positions, array $legs = []): array
     {
         return [
             'id' => $id,
@@ -48,8 +60,13 @@ final class TripFixture
             'kind' => 'routed',
             'profile' => 'car',
             'optional' => false,
-            'points' => [['id' => "$id-a", 'lngLat' => $from], ['id' => "$id-b", 'lngLat' => $to]],
+            'points' => array_map(fn (int $i, array $lngLat) => ['id' => "$id-$i", 'lngLat' => $lngLat], array_keys($positions), $positions),
             'legs' => $legs,
         ];
+    }
+
+    public static function day(string $id, array $routes = [], array $stops = []): array
+    {
+        return ['id' => $id, 'name' => '', 'date' => null, 'notes' => '', 'routes' => $routes, 'stops' => $stops];
     }
 }

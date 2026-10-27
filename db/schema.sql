@@ -48,20 +48,6 @@ CREATE TABLE IF NOT EXISTS trips (
     updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS places (
-    id TEXT PRIMARY KEY,
-    trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    kind TEXT NOT NULL,
-    lng REAL NOT NULL,
-    lat REAL NOT NULL,
-    address TEXT NOT NULL DEFAULT '',
-    contact TEXT NOT NULL DEFAULT '',
-    booking_reference TEXT NOT NULL DEFAULT '',
-    notes TEXT NOT NULL DEFAULT ''
-);
-CREATE INDEX IF NOT EXISTS places_trip ON places(trip_id);
-
 CREATE TABLE IF NOT EXISTS days (
     id TEXT PRIMARY KEY,
     trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
@@ -72,25 +58,11 @@ CREATE TABLE IF NOT EXISTS days (
 );
 CREATE INDEX IF NOT EXISTS days_trip ON days(trip_id, position);
 
-CREATE TABLE IF NOT EXISTS stops (
-    id TEXT PRIMARY KEY,
-    day_id TEXT NOT NULL REFERENCES days(id) ON DELETE CASCADE,
-    position INTEGER NOT NULL,
-    place_id TEXT NOT NULL REFERENCES places(id),
-    role TEXT NOT NULL,
-    arrive_at TEXT,
-    pause_minutes INTEGER,
-    optional INTEGER NOT NULL DEFAULT 0,
-    notes TEXT NOT NULL DEFAULT ''
-);
-CREATE INDEX IF NOT EXISTS stops_day ON stops(day_id, position);
-
--- A route runs from the stop it names to the next stop of the day. Its points include
--- both stops' positions as first and last point.
+-- A route is geometry: its points in order, and the routed legs between them.
 CREATE TABLE IF NOT EXISTS routes (
     id TEXT PRIMARY KEY,
     day_id TEXT NOT NULL REFERENCES days(id) ON DELETE CASCADE,
-    from_stop_id TEXT NOT NULL REFERENCES stops(id) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
     name TEXT NOT NULL DEFAULT '',
     kind TEXT NOT NULL,
     profile TEXT NOT NULL,
@@ -98,4 +70,24 @@ CREATE TABLE IF NOT EXISTS routes (
     points TEXT NOT NULL,
     legs TEXT NOT NULL
 );
-CREATE INDEX IF NOT EXISTS routes_day ON routes(day_id);
+CREATE INDEX IF NOT EXISTS routes_day ON routes(day_id, position);
+
+-- A stop is bound to a point of one of its day's routes (point_id, same position) or
+-- free beside the route.
+CREATE TABLE IF NOT EXISTS stops (
+    id TEXT PRIMARY KEY,
+    day_id TEXT NOT NULL REFERENCES days(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    lng REAL NOT NULL,
+    lat REAL NOT NULL,
+    point_id TEXT,
+    address TEXT NOT NULL DEFAULT '',
+    contact TEXT NOT NULL DEFAULT '',
+    booking_reference TEXT NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT '',
+    arrive_at TEXT,
+    pause_minutes INTEGER,
+    optional INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS stops_day ON stops(day_id);

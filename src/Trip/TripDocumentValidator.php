@@ -10,8 +10,7 @@ namespace Planner\Trip;
  */
 final class TripDocumentValidator
 {
-    public const PLACE_KINDS = ['hotel', 'restaurant', 'fuel', 'sight', 'other'];
-    public const STOP_ROLES = ['overnight', 'lunch', 'break', 'fuel', 'visit', 'photo'];
+    public const STOP_KINDS = ['hotel', 'restaurant', 'cafe', 'fuel', 'sight', 'photo', 'break', 'other'];
     public const ROUTE_KINDS = ['routed', 'track'];
     public const PROFILES = ['car', 'bike', 'foot'];
     private const MAX_TEXT = 20000;
@@ -21,22 +20,15 @@ final class TripDocumentValidator
         if (!is_array($body)) {
             throw new InvalidDocument('The document must be a JSON object.');
         }
-        $places = [];
-        foreach (self::list($body, 'places') as $i => $place) {
-            $places[] = self::place($place, "places[$i]");
-        }
-        self::unique(array_column($places, 'id'), 'places');
-        $positions = array_column($places, 'lngLat', 'id');
         $days = [];
         foreach (self::list($body, 'days') as $i => $day) {
-            $days[] = self::day($day, $positions, "days[$i]");
+            $days[] = self::day($day, "days[$i]");
         }
         self::unique(array_column($days, 'id'), 'days');
         return [
             'name' => self::tripName($body['name'] ?? null) ?? throw new InvalidDocument('document.name must be text of up to 200 characters, not empty.'),
             'description' => self::text($body, 'description', 'document'),
             'startsOn' => self::date($body, 'startsOn', 'document'),
-            'places' => $places,
             'days' => $days,
         ];
     }
@@ -51,63 +43,51 @@ final class TripDocumentValidator
         return $name === '' || strlen($name) > 200 ? null : $name;
     }
 
-    private static function place(mixed $place, string $at): array
-    {
-        if (!is_array($place)) {
-            throw new InvalidDocument("$at must be an object.");
-        }
-        return [
-            'id' => self::id($place, $at),
-            'name' => self::text($place, 'name', $at, 200),
-            'kind' => self::oneOf($place, 'kind', self::PLACE_KINDS, $at),
-            'lngLat' => self::lngLat($place['lngLat'] ?? null, "$at.lngLat"),
-            'address' => self::text($place, 'address', $at),
-            'contact' => self::text($place, 'contact', $at),
-            'bookingReference' => self::text($place, 'bookingReference', $at),
-            'notes' => self::text($place, 'notes', $at),
-        ];
-    }
-
-    /** @param array<string, array{0: float, 1: float}> $positions the places' positions by id */
-    private static function day(mixed $day, array $positions, string $at): array
+    private static function day(mixed $day, string $at): array
     {
         if (!is_array($day)) {
             throw new InvalidDocument("$at must be an object.");
         }
+        $routes = [];
+        $positions = [];
+        foreach (self::list($day, 'routes') as $i => $route) {
+            $routes[] = $checked = self::route($route, "$at.routes[$i]");
+            foreach ($checked['points'] as $point) {
+                $positions[$point['id']] = $point['lngLat'];
+            }
+        }
+        self::unique(array_column($routes, 'id'), "$at.routes");
+        self::unique(array_keys($positions), "$at.routes' points");
         $stops = [];
         foreach (self::list($day, 'stops') as $i => $stop) {
             $stops[] = self::stop($stop, $positions, "$at.stops[$i]");
         }
         self::unique(array_column($stops, 'id'), "$at.stops");
-        $routes = self::list($day, 'routes');
-        if (count($routes) !== max(0, count($stops) - 1)) {
-            throw new InvalidDocument("$at.routes must hold one route per pair of consecutive stops.");
-        }
-        $checked = [];
-        foreach ($routes as $i => $route) {
-            $from = $positions[$stops[$i]['placeId']];
-            $to = $positions[$stops[$i + 1]['placeId']];
-            $checked[] = self::route($route, $from, $to, "$at.routes[$i]");
-        }
-        self::unique(array_column($checked, 'id'), "$at.routes");
         return [
             'id' => self::id($day, $at),
             'name' => self::text($day, 'name', $at, 200),
             'date' => self::date($day, 'date', $at),
             'notes' => self::text($day, 'notes', $at),
+            'routes' => $routes,
             'stops' => $stops,
-            'routes' => $checked,
         ];
     }
 
+    /** @param array<string, array{0: float, 1: float}> $positions the day's route points by id */
     private static function stop(mixed $stop, array $positions, string $at): array
     {
         if (!is_array($stop)) {
             throw new InvalidDocument("$at must be an object.");
         }
-        $placeId = self::id($stop, $at, 'placeId');
-        if (!isset($positions[$placeId])) {
-            throw new InvalidDocument("$at.placeId names no place of the trip.");
+        $lngLat = self::lngLat($stop['lngLat'] ?? null, "$at.lngLat");
+        $pointId = $stop['pointId'] ?? null;
+        if ($pointId !== null) {
+            if (!is_string($pointId) || !isset($positions[$pointId])) {
+                throw new InvalidDocument("$at.pointId names no route point of the day.");
+            }
+            if ($positions[$pointId] !== $lngLat) {
+                throw new InvalidDocument("$at must stand at its route point.");
+            }
         }
         $arriveAt = $stop['arriveAt'] ?? null;
         if ($arriveAt !== null && !(is_string($arriveAt) && preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $arriveAt))) {
@@ -119,16 +99,21 @@ final class TripDocumentValidator
         }
         return [
             'id' => self::id($stop, $at),
-            'placeId' => $placeId,
-            'role' => self::oneOf($stop, 'role', self::STOP_ROLES, $at),
+            'name' => self::text($stop, 'name', $at, 200),
+            'kind' => self::oneOf($stop, 'kind', self::STOP_KINDS, $at),
+            'lngLat' => $lngLat,
+            'pointId' => $pointId,
+            'address' => self::text($stop, 'address', $at),
+            'contact' => self::text($stop, 'contact', $at),
+            'bookingReference' => self::text($stop, 'bookingReference', $at),
+            'notes' => self::text($stop, 'notes', $at),
             'arriveAt' => $arriveAt,
             'pauseMinutes' => $pause,
             'optional' => self::bool($stop, 'optional', $at),
-            'notes' => self::text($stop, 'notes', $at),
         ];
     }
 
-    private static function route(mixed $route, array $from, array $to, string $at): array
+    private static function route(mixed $route, string $at): array
     {
         if (!is_array($route)) {
             throw new InvalidDocument("$at must be an object.");
@@ -143,12 +128,6 @@ final class TripDocumentValidator
                 throw new InvalidDocument("$at.points[$i].straight must be a boolean.");
             }
             $points[] = ['id' => self::id($point, "$at.points[$i]"), 'lngLat' => self::lngLat($point['lngLat'] ?? null, "$at.points[$i].lngLat")] + ($straight ? ['straight' => true] : []);
-        }
-        if (count($points) < 2) {
-            throw new InvalidDocument("$at.points must hold at least the two stops' positions.");
-        }
-        if ($points[0]['lngLat'] !== $from || $points[count($points) - 1]['lngLat'] !== $to) {
-            throw new InvalidDocument("$at.points must start and end at the positions of its stops.");
         }
         $legs = $route['legs'] ?? null;
         if (!is_array($legs) || array_is_list($legs) && $legs !== []) {
