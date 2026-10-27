@@ -29,6 +29,67 @@ entries at the end of their section.
 - **The schedule check is the feature.** OSRM returns a duration with every leg. The
   departure plus route durations plus pauses, compared with the fixed arrival times, tells
   before the trip where a day does not work. This is what the times on stops are for.
+- **A route's points include its two stops' positions.** The first and last point of a
+  route are the positions of the stops it joins; one pass after every edit
+  (`alignRouteEnds`) keeps them equal to the places, dropping the legs that touched a
+  moved stop. The alternative, points between the stops only, would have needed every
+  leg function to take the stops' positions from outside and a flag of the route's own
+  for a straight last leg. With the ends inside, Layer Slayer's legs and edits port
+  unchanged, a route is complete geometry on its own for the export, and the server
+  checks the invariant when it validates a document.
+- **Legs carry distance and duration, not geometry alone.** OSRM answers all three at
+  once; the day's distance shows now, and the timeline of phase 2 needs the durations
+  without routing everything again.
+- **A tap on a route adds a stop there; elsewhere at the end of the day.** One tool for
+  stops, with the line hit-tested within the tap's reach, rather than separate append
+  and insert tools as in Layer Slayer: planning a day is mostly "and a stop in between".
+  A stop on the line splits the route at the leg hit, the points before staying with the
+  first half and the points after going to the second. Removing a middle stop joins the
+  two routes without the removed stop's position: whoever removes the stop does not want
+  to go there.
+- **The editor acts on the selected day only.** Its stops are numbered, named and
+  draggable, its routes drawn in colour; the other days' stops are small grey dots and
+  their routes grey lines that let taps through. The routing pump serves the selected
+  day's legs first. Everything a day needs sits in the panel beside it.
+
+## Saving
+
+- **The trip is saved as one document.** The client holds the whole trip, edits it with
+  pure functions and an undo history exactly as Layer Slayer's route store does, and
+  saves it as one `PUT` 1.5 s after the last change. Fine-grained requests per stop or
+  point would have turned undo into a problem of reversing requests. The document carries
+  the version it was loaded at; the server refuses a save over a newer version (409) and
+  the app offers to reload, which is enough while a trip has one editor.
+- **Parts carry client-generated ids and are upserted.** The server upserts each place,
+  day, stop and route by id and deletes the rows the document no longer holds, rather
+  than deleting and reinserting: attachments of phase 4 will reference stops and routes
+  by id and must survive a save. Trips themselves are created by the server with integer
+  ids; a trip is the root the library works with, its content is the document.
+- **Leaving the page.** The autosave flushes with a keep-alive request when the page is
+  hidden, and `beforeunload` warns while a change is unsaved. A keep-alive request may
+  carry at most 64 KB, so a large trip left in the last second before closing the tab
+  relies on the warning.
+
+## Export
+
+- **One track per route, waypoints once per place.** A GPX file holds the places of the
+  stops in scope as waypoints, each once however many stops use it, with the place's kind
+  as the waypoint type, and each route as a track named "Day N name: from – to", so that
+  a device lists the day's legs in order. A leg not routed yet is written as the straight
+  line between its ends.
+- **API paths carry no file extension.** The per-day zip is `gpx?per=day`, not `gpx.zip`:
+  PHP's built-in server answers a path with an extension as a static file and never
+  reaches the front controller, and nothing is gained by the extension.
+
+## Testing
+
+- **The HTTP layer is checked by a scripted browser run, not in CI.** PHPUnit covers the
+  repositories, the validator and the export; Vitest the pure modules and the store. The
+  pages and the editor are exercised with Playwright against `php -S` by hand: sign-up
+  from the mailed link, a trip with stops added by tapping, routing, the line tools, undo
+  and redo, the save, a reload and the downloads. Routing in that run answers from a mock
+  where OSRM cannot be reached. Keeping it in CI would mean a browser and a PHP server in
+  the workflow for a few minutes per push; not worth it yet.
 
 ## Server and stack
 

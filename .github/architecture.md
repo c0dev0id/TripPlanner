@@ -20,7 +20,7 @@ flowchart LR
   end
   subgraph remote["Remote services"]
     osrm["OSRM<br/>routing.openstreetmap.de"]
-    tiles["Base map tiles"]
+    tiles["OpenFreeMap<br/>base map tiles"]
   end
   pages --> httpd
   app -->|JSON API| httpd
@@ -38,9 +38,9 @@ flowchart LR
 flowchart TB
   subgraph frontend["Planner app (frontend/)"]
     direction TB
-    ui["Presentation<br/>panel, dialogs, map, route editor"]
-    state["Application state<br/>the open trip, undo and redo, routing pump"]
-    fdomain["Domain<br/>route edits, legs, GPX reading"]
+    ui["Presentation<br/>library, trip panel, map, toolbar, markers"]
+    state["Application state<br/>the open trip, undo and redo, routing pump, autosave"]
+    fdomain["Domain<br/>route and day edits, legs, polyline"]
     client["API client"]
     ui --> state --> fdomain
     state --> client
@@ -48,7 +48,7 @@ flowchart TB
   subgraph backend["PHP application (src/)"]
     direction TB
     http["HTTP<br/>routes, middleware, templates, JSON"]
-    domain["Domain<br/>accounts, invitations, trips, export"]
+    domain["Domain<br/>accounts, invitations, trip documents, export"]
     storage["Storage<br/>SQLite repositories, file store, mail"]
     http --> domain --> storage
   end
@@ -57,18 +57,30 @@ flowchart TB
 
 | Layer | Contents |
 |---|---|
-| Presentation (frontend) | The trip panel, the timeline, dialogs, the map view and the route editor's markers. |
-| Application state (frontend) | The trip being edited, its undo and redo history, the pull-based routing pump, autosave. |
-| Domain (frontend) | Pure route edits, leg keys and geometry, GPX reading; ported from Layer Slayer with their tests. |
-| API client (frontend) | Requests to the JSON API; the one place that knows its URLs. |
-| HTTP (backend) | Slim routes and middleware (sessions, CSRF, authentication), Plates templates for the public pages, JSON encoding of API answers. |
-| Domain (backend) | Accounts, waiting list and invitations, trips with their parts, the timeline, GPX writing and export packaging. |
-| Storage (backend) | PDO repositories over SQLite, the file store on disk, mail over SMTP. |
+| Presentation (frontend) | The library (`library/`), the trip panel (`trip/`), the map with its route lines, stop and point markers, interactions, toolbar, hint bar and context menu (`map/`), dialogs and small controls (`ui/`). |
+| Application state (frontend) | The open trip with undo and redo and the actions that edit it (`state/trip.ts`), the pull-based routing pump (`state/routing.ts`), the autosave (`state/autosave.ts`), the tool and the open menu (`state/drawing.ts`). |
+| Domain (frontend) | Pure edits of a route and of a day's stops and routes, leg keys and geometry, the polyline codec, the OSRM client (`routing/`); distances and nearest-line search (`geo/`); the document types (`model/`). |
+| API client (frontend) | `api.ts`: requests to the JSON API, the one place that knows its URLs. |
+| HTTP (backend) | Slim routes and middleware (sessions, CSRF, body parsing, authentication), Plates templates for the public pages, JSON encoding of API answers (`Http/`, `Pages/`, `Api/`). |
+| Domain (backend) | Accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), trips and trip documents with their validator (`Trip/`), GPX writing (`Export/`). |
+| Storage (backend) | PDO repositories over SQLite, the file store on disk, mail over SMTP (`Mail/`). |
+
+## API
+
+All under `/api`, for a signed-in user; answers are JSON unless a download.
+
+| Method and path | Does |
+|---|---|
+| `GET /me` | The user's e-mail address and admin flag. |
+| `GET /trips` | The user's trips, last changed first, with their day count. |
+| `POST /trips` | Creates a trip from `{name}`. |
+| `GET /trips/{id}` | The trip document: name, description, start date, version, places, days with stops and routes. |
+| `PUT /trips/{id}` | Replaces the trip's content with the document sent, which carries the version it was loaded at; 409 when that is no longer the current version, 422 when the document is malformed. |
+| `PATCH /trips/{id}` | Renames the trip. |
+| `DELETE /trips/{id}` | Deletes the trip with everything in it. |
+| `GET /trips/{id}/gpx` | The trip as GPX; `?day=<id>` one day; `?per=day` a zip with one file per day. |
 
 ## Database
-
-The target model. Phase 0 implements the account tables; the trip tables follow in
-phases 1 to 4.
 
 ```mermaid
 erDiagram
@@ -114,17 +126,18 @@ erDiagram
     string name
     string description
     date starts_on
-    string state "planned, done"
+    int version
+    datetime updated_at
   }
   DAY {
-    int id PK
+    string id PK
     int position
-    date date
     string name
+    date date
     string notes
   }
   PLACE {
-    int id PK
+    string id PK
     string name
     string kind "hotel, restaurant, fuel, sight, other"
     float lng
@@ -135,7 +148,7 @@ erDiagram
     string notes
   }
   STOP {
-    int id PK
+    string id PK
     int position
     string role "overnight, lunch, break, fuel, visit, photo"
     time arrive_at
@@ -144,15 +157,13 @@ erDiagram
     string notes
   }
   ROUTE {
-    int id PK
+    string id PK
     string name
     string kind "routed, track"
-    string profile
+    string profile "car, bike, foot"
     bool optional
-    json points "route points, in order"
-    json legs "geometry per leg, keyed by profile and ends"
-    int distance_m
-    int duration_s
+    json points "in order, the stops' positions first and last"
+    json legs "by profile and ends: geometry, distance, duration"
   }
   ATTACHMENT {
     int id PK
@@ -168,6 +179,10 @@ erDiagram
   }
 ```
 
-A route's points and legs are stored as JSON in the route's row, in the shape the route
-editor works with. Attachments and comments carry one nullable foreign key per possible
-target with a check that exactly one is set, so that deleting a target deletes them.
+Attachments and comments are planned (phase 4). A trip's parts carry ids the client
+generates, so that the trip's content is saved as one document: rows are upserted by id
+and the ones the document no longer holds are deleted. A route's points and legs are
+stored as JSON in the route's row, in the shape the editor works with; each routed leg
+holds its polyline6 geometry, length and riding time as OSRM answered. Attachments and
+comments will carry one nullable foreign key per possible target with a check that
+exactly one is set, so that deleting a target deletes them.

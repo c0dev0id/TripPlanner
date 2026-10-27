@@ -27,7 +27,8 @@ routing is done in the browser by the FOSSGIS OSRM servers.
 
 ## Phases
 
-Phase 0 is in progress. Later phases describe intent and change as the work progresses.
+Phase 0 is done and phase 1 implemented, waiting for its first real trip. Later phases
+describe intent and change as the work progresses.
 
 | Phase | Content | Done when |
 |---|---|---|
