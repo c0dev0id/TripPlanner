@@ -79,6 +79,27 @@ entries at the end of their section.
   name; the results are capped at twenty. A server search would add an endpoint for
   data the client already holds.
 
+## Map and appearance
+
+- **Base maps from public servers, chosen per browser.** OpenFreeMap's vector styles
+  (Liberty as the default, Bright, Positron, Dark) need no key; OpenTopoMap for relief
+  and contours, OpenStreetMap's standard tiles and CyclOSM as raster, for the looks
+  riders know from other tools. Each server's attribution rides with its source. The
+  choice is a preference of the browser, in localStorage, as the theme is: a matter of
+  the device, not of the trip, and it costs no table. The list is fixed in code; adding
+  a service of one's own is Layer Slayer's business, not this planner's.
+- **The route overlay is appended by a style transform.** MapLibre's `setStyle` replaces
+  every source and layer. A transform given when the map is made is applied to every
+  style it loads afterwards, so the overlay's source and layers are added in one place
+  and survive a change of base map, and the source keeps its data, since the transform
+  is handed the style being left. Adding them again on every `style.load` would have
+  raced the first `setData`.
+- **Light or dark by hand is a colour-scheme override.** The stylesheets' colours are
+  `light-dark()` pairs that follow the browser; a `data-theme` attribute on the document
+  sets the colour scheme instead, which turns every pair at once. The pages set the
+  attribute from the preference in one line of inline script before the first paint, so
+  a dark choice never flashes light.
+
 ## Saving
 
 - **The trip is saved as one document.** The client holds the whole trip, edits it with

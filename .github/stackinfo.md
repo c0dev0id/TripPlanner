@@ -27,8 +27,9 @@
 - Route tool, GPX reading, line simplification and polyline handling ported from Layer Slayer.
 - Routing by the FOSSGIS OSRM servers (routing.openstreetmap.de): at most one request per
   second, attribution shown. Motorcycles ride the car profile.
-- Base map from a vector style without an API key (OpenFreeMap), with the raster and
-  topographic alternatives decided in phase 1.
+- Base maps: OpenFreeMap's vector styles (Liberty, Bright, Positron, Dark) without an
+  API key, and raster tiles from OpenTopoMap, OpenStreetMap and CyclOSM, each with its
+  attribution; the choice is kept in the browser.
 
 ## Targets
 

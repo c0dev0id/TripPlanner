@@ -67,7 +67,7 @@
   addresses, bookings and notes. The page is the owner's, or shared under a link that
   needs no sign-in and can be withdrawn.
 
-## Planned
-
-- A base map switcher; a light and dark interface switchable by hand (it follows the
-  browser now).
+- A base map to choose on the map: OpenFreeMap's Liberty, Bright, Positron and Dark
+  styles, or the OpenTopoMap, OpenStreetMap and CyclOSM raster tiles; the route lines
+  and markers stay. The interface light or dark by hand, or as the browser says. Both
+  choices are kept in the browser.
