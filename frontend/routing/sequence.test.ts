@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, LngLat, Route, RoutedLeg, Stop } from '../model/trip';
 import { newStop } from './dayEdit';
-import { daySequence } from './sequence';
+import { daySequence, withStopsInRidingOrder } from './sequence';
 
 const decode = (geometry: string): LngLat[] => JSON.parse(geometry);
 const leg = (geometry: LngLat[], distanceM: number): RoutedLeg => ({ geometry: JSON.stringify(geometry), distanceM, durationS: 1 });
@@ -95,5 +95,20 @@ describe('daySequence', () => {
     expect(entries.map((e) => e.point!.id)).toEqual(['a', 'b', 'c', 'h1', 'h2']);
     expect(entries[3]).toMatchObject({ routeIndex: 1, distanceM: 22_000 });
     expect(entries[4]!.distanceM).toBeGreaterThan(22_000);
+  });
+
+  it('lists every stop bound to one point, and no plain point for it', () => {
+    const entries = daySequence(day([stop('fuel', [11, 47.1], 'b'), stop('cafe', [11, 47.1], 'b')]), decode);
+    expect(entries.map((e) => e.id)).toEqual(['a', 'fuel', 'cafe', 'c']);
+    expect(entries[1]!.distanceM).toBe(11_000);
+  });
+});
+
+describe('withStopsInRidingOrder', () => {
+  it('orders each day\'s stops as the sequence lists them, keeping every stop', () => {
+    const stops = [stop('end', [11, 47.2], 'c'), stop('cafe', [11.01, 47.05], null), stop('start', [11, 47], 'a'), stop('fuel', [11, 47.1], 'b')];
+    const trip = withStopsInRidingOrder({ id: 1, name: 'T', description: '', state: 'planned', version: 1, days: [day(stops), day([stop('lost', [12, 48], null)], [])] });
+    expect(trip.days[0]!.stops.map((s) => s.id)).toEqual(['start', 'cafe', 'fuel', 'end']);
+    expect(trip.days[1]!.stops.map((s) => s.id)).toEqual(['lost']);
   });
 });

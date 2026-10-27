@@ -1,6 +1,6 @@
 import { batch, createMemo, createRoot, createSignal } from 'solid-js';
 import { createStore, reconcile, unwrap } from 'solid-js/store';
-import { newId, type Day, type LngLat, type Profile, type Route, type RoutedLeg, type Stop, type Trip } from '../model/trip';
+import { newId, type Day, type LngLat, type Profile, type Route, type RoutedLeg, type Stop, type Trip, type TripState } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { roundLngLat } from '../routing/legs';
 import * as routeEdit from '../routing/routeEdit';
@@ -319,4 +319,8 @@ export function setDayDate(dayId: string, date: string | null): void {
 
 export function renameTrip(name: string): void {
   edit((trip) => (trip.name === name ? trip : { ...trip, name }), 'Rename trip');
+}
+
+export function setTripState(state: TripState): void {
+  edit((trip) => (trip.state === state ? trip : { ...trip, state }), state === 'done' ? 'Mark trip done' : 'Mark trip planned');
 }

@@ -1,6 +1,6 @@
 import { distanceBetween, planeAt } from '../geo/measure';
 import { nearestLine, type XY } from '../geo/nearest';
-import type { Day, LngLat, RoutePoint, Stop } from '../model/trip';
+import type { Day, LngLat, RoutePoint, Stop, Trip } from '../model/trip';
 import { legCoordinates, legDistance, legDuration, routeLegs } from './legs';
 import { decodeCached } from './polyline';
 
@@ -81,11 +81,15 @@ function freeStopEntry(stop: Stop, legs: readonly LegLine[], origin: XY, fallbac
 
 /**
  * The day's stops and route points in riding order. Bound stops stand in for their
- * points; free stops are placed where the routes pass closest, after a stop or point
- * at the same distance. Free stops of a day without a leg come last, in their order.
+ * points (each of several on one point); free stops are placed where the routes pass
+ * closest, after a stop or point at the same distance. Free stops of a day without a leg
+ * come last, in their order.
  */
 export function daySequence(day: Day, decode = decodeCached): SequenceEntry[] {
-  const bound = new Map(day.stops.filter((s) => s.pointId !== null).map((s) => [s.pointId!, s]));
+  const bound = new Map<string, Stop[]>();
+  for (const stop of day.stops) {
+    if (stop.pointId !== null) bound.set(stop.pointId, [...(bound.get(stop.pointId) ?? []), stop]);
+  }
   const entries: SequenceEntry[] = [];
   let metres = 0;
   let seconds = 0;
@@ -96,8 +100,10 @@ export function daySequence(day: Day, decode = decodeCached): SequenceEntry[] {
         metres += legDistance(route, legs[i - 1]!);
         seconds += legDuration(route, legs[i - 1]!);
       }
-      const stop = bound.get(point.id);
-      entries.push({ id: stop?.id ?? point.id, routeIndex, distanceM: metres, timeS: seconds, lngLat: point.lngLat, point, ...(stop && { stop }) });
+      const at = { routeIndex, distanceM: metres, timeS: seconds, lngLat: point.lngLat, point };
+      const stops = bound.get(point.id);
+      if (stops) for (const stop of stops) entries.push({ id: stop.id, ...at, stop });
+      else entries.push({ id: point.id, ...at });
     });
   });
   const free = day.stops.filter((s) => s.pointId === null);
@@ -109,4 +115,9 @@ export function daySequence(day: Day, decode = decodeCached): SequenceEntry[] {
   }
   // A stable sort keeps points before the free stops placed at the same distance.
   return entries.sort((a, b) => a.routeIndex - b.routeIndex || a.distanceM - b.distanceM);
+}
+
+/** The trip with each day's stops in riding order: how the document is stored, so that the server and the read-only page need no routing. */
+export function withStopsInRidingOrder(trip: Trip): Trip {
+  return { ...trip, days: trip.days.map((day) => ({ ...day, stops: daySequence(day).flatMap((e) => (e.stop ? [e.stop] : [])) })) };
 }

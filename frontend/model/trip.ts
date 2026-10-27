@@ -85,10 +85,14 @@ export interface Day {
   stops: Stop[];
 }
 
+/** Planned, or ridden: done. */
+export type TripState = 'planned' | 'done';
+
 export interface Trip {
   id: number;
   name: string;
   description: string;
+  state: TripState;
   /** Counts the saves; a save must name the version it started from. */
   version: number;
   days: Day[];
@@ -99,6 +103,7 @@ export interface TripSummary {
   id: number;
   name: string;
   folderId: number | null;
+  state: TripState;
   startsOn: string | null;
   dayCount: number;
   updatedAt: string;

@@ -1,21 +1,15 @@
-import { GeoJSONSource, LngLatBounds, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl } from 'maplibre-gl';
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+import { GeoJSONSource, LngLatBounds, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
 import type { Day } from '../model/trip';
-import { ROUTING_ATTRIBUTION } from '../routing/osrm';
 import { panTarget, showNeighbours } from '../state/drawing';
 import { failedLegs } from '../state/routing';
 import { editingRouteId, neighbourDays, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
+import { newBaseMap } from './baseMap';
 import { Interactions } from './Interactions';
+import { PhotoMarkers } from './PhotoMarkers';
 import { PointMarkers } from './PointMarkers';
-import { ROUTE_LAYERS, ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
+import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { StopMarkers } from './StopMarkers';
-
-/** OpenFreeMap serves this vector style without a key. */
-const BASE_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
-
-// The worker is built as a file of its own; MapLibre's own lookup does not find it in a bundle.
-setWorkerUrl(workerUrl);
 
 /** The map with the trip's routes and stops drawn over the base map, and the editing on it. */
 export function MapView() {
@@ -23,14 +17,7 @@ export function MapView() {
   const [map, setMap] = createSignal<MapLibreMap>();
 
   onMount(() => {
-    const m = new MapLibreMap({ container, style: BASE_STYLE, center: [10.5, 47.5], zoom: 5, attributionControl: { compact: true } });
-    m.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
-    m.addControl(new ScaleControl(), 'bottom-left');
-    m.once('load', () => {
-      m.addSource(ROUTES_SOURCE, { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, attribution: ROUTING_ATTRIBUTION });
-      for (const layer of ROUTE_LAYERS) m.addLayer(layer);
-      setMap(m);
-    });
+    const m = newBaseMap(container, {}, setMap);
     onCleanup(() => m.remove());
   });
 
@@ -42,6 +29,7 @@ export function MapView() {
           <>
             <RouteLines map={m()} />
             <StopMarkers map={m()} />
+            <PhotoMarkers map={m()} />
             <PointMarkers map={m()} />
             <Interactions map={m()} />
           </>

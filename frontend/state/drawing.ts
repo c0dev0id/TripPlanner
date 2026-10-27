@@ -28,6 +28,9 @@ export const [stopDialogId, setStopDialogId] = createSignal<string>();
 /** Whether the export dialog is open. */
 export const [exportOpen, setExportOpen] = createSignal(false);
 
+/** Whether the print-and-share dialog is open. */
+export const [shareOpen, setShareOpen] = createSignal(false);
+
 /** Where the map should go next; every request is a new object, so the same spot twice counts twice. */
 export const [panTarget, setPanTarget] = createSignal<{ lngLat: LngLat }>();
 

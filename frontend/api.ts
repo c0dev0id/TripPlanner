@@ -1,3 +1,4 @@
+import type { Entry, EntryTarget } from './model/journal';
 import type { Folder, Trip, TripSummary } from './model/trip';
 
 /** Requests to the JSON API, and the one form the app posts: sign out. */
@@ -17,11 +18,13 @@ export class ApiError extends Error {
   }
 }
 
+/** A JSON body, or a form with a file in it, which the browser encodes itself. */
 async function request<T>(method: string, url: string, body?: unknown, keepalive = false): Promise<T> {
+  const form = body instanceof FormData;
   const response = await fetch(url, {
     method,
-    headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
+    headers: body === undefined || form ? {} : { 'Content-Type': 'application/json' },
+    body: body === undefined || form ? body : JSON.stringify(body),
     keepalive,
   });
   if (!response.ok) {
@@ -55,7 +58,44 @@ export const renameFolder = (id: number, name: string): Promise<void> => request
 /** Deletes a folder; its trips stay, in no folder. */
 export const deleteFolder = (id: number): Promise<void> => request('DELETE', `/api/folders/${id}`);
 
-export const fetchTrip = (id: number): Promise<Trip> => request('GET', `/api/trips/${id}`);
+export const tripApi = (id: number): string => `/api/trips/${id}`;
+
+export const fetchTrip = (id: number): Promise<Trip> => fetchTripAt(tripApi(id));
+
+/**
+ * The read-only page reads a trip and its journal from the owner's trip API or from the
+ * shared one, whichever `base` the page names.
+ */
+export const fetchTripAt = (base: string): Promise<Trip> => request('GET', base);
+
+export const listEntriesAt = (base: string): Promise<Entry[]> => request('GET', `${base}/entries`);
+
+export const entryFileUrl = (base: string, entryId: number): string => `${base}/entries/${entryId}/file`;
+
+export const entryPreviewUrl = (base: string, entryId: number): string => `${base}/entries/${entryId}/preview`;
+
+/** Adds a journal entry on the trip or on the part the target names, with a file where given. */
+export function addEntry(tripId: number, target: EntryTarget, text: string, file: File | undefined): Promise<Entry> {
+  const form = new FormData();
+  form.set('text', text);
+  for (const [key, value] of Object.entries(target)) form.set(key, value);
+  if (file) form.set('file', file);
+  return request('POST', `${tripApi(tripId)}/entries`, form);
+}
+
+export const updateEntry = (tripId: number, entryId: number, text: string): Promise<void> => request('PATCH', `${tripApi(tripId)}/entries/${entryId}`, { text });
+
+export const deleteEntry = (tripId: number, entryId: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/entries/${entryId}`);
+
+/** The token the trip's read-only page is public under, or null. */
+export const shareToken = (tripId: number): Promise<{ token: string | null }> => request('GET', `${tripApi(tripId)}/share`);
+
+export const shareTrip = (tripId: number): Promise<{ token: string }> => request('POST', `${tripApi(tripId)}/share`);
+
+export const unshareTrip = (tripId: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/share`);
+
+/** The read-only page of a trip shared under a token. */
+export const sharedPageUrl = (token: string): string => `${location.origin}/t/${token}`;
 
 /** Saves the whole trip; the answer is its new version. */
 export async function saveTrip(trip: Trip, keepalive = false): Promise<number> {

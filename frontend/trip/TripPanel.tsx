@@ -9,7 +9,9 @@ import { routeDistance } from '../routing/legs';
 import type { SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { saveState } from '../state/autosave';
-import { panTo, setExportOpen, setShowNeighbours, setShowRoutePoints, setStopDialogId, showNeighbours, showRoutePoints, type MenuItem } from '../state/drawing';
+import { panTo, setExportOpen, setShareOpen, setShowNeighbours, setShowRoutePoints, setStopDialogId, showNeighbours, showRoutePoints, type MenuItem } from '../state/drawing';
+import type { EntryTarget } from '../model/journal';
+import { entriesOn, setJournalTarget } from '../state/journal';
 import {
   addDay,
   addParts,
@@ -35,15 +37,22 @@ import {
   selectedTimeline,
   setDayDate,
   setRouteOptional,
+  setTripState,
   updateStop,
 } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
 import { EditableName } from '../ui/EditableName';
 import { distanceText, durationText, timeText } from '../ui/format';
-import { BackIcon, DownloadIcon, PencilIcon } from '../ui/icons';
+import { BackIcon, DownloadIcon, NotebookIcon, PencilIcon, ShareIcon } from '../ui/icons';
 import { MoreMenu } from '../ui/MoreMenu';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, routeLabel } from './labels';
+
+/** How many journal entries a part has, for its row: "2 in the journal", or nothing for none. */
+function journalCount(target: EntryTarget): string {
+  const count = entriesOn(target).length;
+  return count === 0 ? '' : `${count} in the journal`;
+}
 
 /** One item per other day of the trip, for moving or copying something there. */
 function otherDayItems(dayId: string, action: string, run: (dayId: string) => void): MenuItem[] {
@@ -67,11 +76,20 @@ export function TripPanel(props: { onLeave: () => void; onReload: () => void }) 
         </EditableName>
       </div>
       <SaveStatus onReload={props.onReload} />
-      <div class="row export">
+      <div class="row trip-actions">
         <button class="link" onClick={() => setExportOpen(true)}>
           <DownloadIcon /> Export GPX…
         </button>
+        <button class="link" onClick={() => setJournalTarget({})}>
+          <NotebookIcon /> Journal…
+        </button>
+        <button class="link" onClick={() => setShareOpen(true)}>
+          <ShareIcon /> Print, share…
+        </button>
       </div>
+      <label class="toggle">
+        <input type="checkbox" checked={trip().state === 'done'} onChange={(e) => setTripState(e.currentTarget.checked ? 'done' : 'planned')} /> done: the trip has been ridden
+      </label>
       <div class="row heading">
         <h3 class="grow">Days</h3>
         <label class="toggle">
@@ -104,6 +122,7 @@ function DayItem(props: { day: Day; index: number }) {
   const selected = () => selectedDayId() === props.day.id;
   const label = () => dayLabel(props.day, props.index);
   const distance = createMemo(() => props.day.routes.reduce((sum, route) => sum + routeDistance(route), 0));
+  const note = () => [distance() > 0 ? distanceText(distance()) : '', journalCount({ dayId: props.day.id })].filter(Boolean).join(' · ');
   const remove = async () => {
     const parts = props.day.routes.length + props.day.stops.length;
     if (parts > 0 && !(await askConfirmation(`Remove ${label()} with its routes and stops?`, 'Remove'))) return;
@@ -113,6 +132,7 @@ function DayItem(props: { day: Day; index: number }) {
     { label: 'Move up', run: () => moveDay(props.day.id, -1), disabled: props.index === 0 },
     { label: 'Move down', run: () => moveDay(props.day.id, 1), disabled: props.index === openTrip()!.days.length - 1 },
     { label: 'Duplicate', run: () => duplicateDay(props.day.id) },
+    { label: 'Journal…', run: () => setJournalTarget({ dayId: props.day.id }) },
     { label: 'Remove', run: () => void remove() },
   ];
   return (
@@ -120,7 +140,7 @@ function DayItem(props: { day: Day; index: number }) {
       <div class="row">
         <button class="text grow" onClick={() => selectDay(props.day.id)} aria-pressed={selected()}>
           <span class="name">{label()}</span>
-          <span class="muted">{distance() > 0 ? distanceText(distance()) : ''}</span>
+          <span class="muted">{note()}</span>
         </button>
         <EditableName value={props.day.name} label="day" onRename={(name) => renameDay(props.day.id, name)}>
           <span />
@@ -210,6 +230,7 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
   const editing = () => editingRouteId() === props.route.id;
   const label = () => routeLabel(props.route, props.day);
   const profile = () => (props.route.kind === 'track' ? 'Track' : (PROFILES.find((p) => p.value === props.route.profile)?.label ?? props.route.profile));
+  const journal = () => journalCount({ routeId: props.route.id });
   const remove = async () => {
     if (props.route.points.length > 0 && !(await askConfirmation(`Remove ${label()} with its ${props.route.points.length} points?`, 'Remove'))) return;
     removeRoute(props.route.id);
@@ -220,6 +241,7 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
     { label: props.route.optional ? 'Mark as needed' : 'Mark as optional', run: () => setRouteOptional(props.route.id, !props.route.optional) },
     { label: 'Duplicate', run: () => duplicateRoute(props.route.id) },
     ...otherDayItems(props.day.id, 'Move to', (dayId) => moveRouteToDay(props.route.id, dayId)),
+    { label: 'Journal…', run: () => setJournalTarget({ routeId: props.route.id }) },
     { label: 'Remove', run: () => void remove() },
   ];
   return (
@@ -229,6 +251,7 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
         {profile()}
         {props.route.points.length > 1 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
         {props.route.optional ? ' · optional' : ''}
+        {journal() ? ` · ${journal()}` : ''}
       </span>
       <button classList={{ primary: editing() }} onClick={() => editRoute(editing() ? undefined : props.route.id)}>
         {editing() ? 'Done' : 'Edit'}
@@ -268,6 +291,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
               <span class="short"> · {durationText(-slack() * 60)} short</span>
             </Show>
             <Show when={stop()?.optional}> · optional</Show>
+            <Show when={stop() && journalCount({ stopId: stop()!.id })}>{(journal) => <> · {journal()}</>}</Show>
           </span>
         </span>
       </button>
@@ -280,7 +304,14 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
             <button class="icon" title="Stop details" aria-label={`Details of ${s().name}`} onClick={() => setStopDialogId(s().id)}>
               <PencilIcon />
             </button>
-            <MoreMenu label={`More for ${s().name}`} items={() => [...otherDayItems(selectedDayId()!, 'Copy to', (dayId) => copyStopToDay(s().id, dayId)), { label: 'Remove', run: () => removeStop(s().id) }]} />
+            <MoreMenu
+              label={`More for ${s().name}`}
+              items={() => [
+                ...otherDayItems(selectedDayId()!, 'Copy to', (dayId) => copyStopToDay(s().id, dayId)),
+                { label: 'Journal…', run: () => setJournalTarget({ stopId: s().id }) },
+                { label: 'Remove', run: () => removeStop(s().id) },
+              ]}
+            />
           </>
         )}
       </Show>

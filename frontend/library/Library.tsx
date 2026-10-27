@@ -135,7 +135,7 @@ function TripButton(props: { trip: TripSummary; onOpen: (id: number) => void; di
     <button class="text grow" onClick={() => props.onOpen(props.trip.id)} disabled={props.disabled}>
       <span class="name">{props.trip.name}</span>
       <span class="muted">
-        {props.note ?? `${props.trip.dayCount} ${props.trip.dayCount === 1 ? 'day' : 'days'}${props.trip.startsOn ? ` · from ${dateText(props.trip.startsOn)}` : ''}`}
+        {props.note ?? `${props.trip.dayCount} ${props.trip.dayCount === 1 ? 'day' : 'days'}${props.trip.startsOn ? ` · from ${dateText(props.trip.startsOn)}` : ''}${props.trip.state === 'done' ? ' · done' : ''}`}
       </span>
     </button>
   );

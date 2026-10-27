@@ -6,7 +6,7 @@ import * as routeEdit from './routeEdit';
 
 const routed = (geometry: string): RoutedLeg => ({ geometry, distanceM: 1000, durationS: 60 });
 
-const empty = (): Trip => ({ id: 1, name: 'T', description: '', version: 1, days: [{ id: 'd', name: '', date: null, notes: '', routes: [], stops: [] }] });
+const empty = (): Trip => ({ id: 1, name: 'T', description: '', state: 'planned', version: 1, days: [{ id: 'd', name: '', date: null, notes: '', routes: [], stops: [] }] });
 
 const day = (trip: Trip): Day => trip.days[0]!;
 
