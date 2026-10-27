@@ -34,6 +34,16 @@ CREATE TABLE IF NOT EXISTS password_resets (
     used_at TEXT
 );
 
+-- A user's named sets of export options, as JSON.
+CREATE TABLE IF NOT EXISTS export_presets (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    options TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    UNIQUE (user_id, name)
+);
+
 -- Folders sort the library one level deep; a trip is in one folder or in none.
 CREATE TABLE IF NOT EXISTS folders (
     id INTEGER PRIMARY KEY,

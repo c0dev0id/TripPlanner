@@ -4,7 +4,7 @@ import { setStopDialogId, stopDialogId } from '../state/drawing';
 import { selectedDay, updateStop } from '../state/trip';
 import { showModalWhile } from '../ui/modal';
 
-/** The details of a stop, in a modal dialog: name, kind, arrival time and pause, address, contact, booking, notes. */
+/** The details of a stop, in a modal dialog: name, kind, arrival time and pause, address, contact, booking, notes, whether it is optional. */
 export function StopDialog() {
   let dialog!: HTMLDialogElement;
   const stop = createMemo((): Stop | undefined => selectedDay()?.stops.find((s) => s.id === stopDialogId()));
@@ -20,6 +20,7 @@ export function StopDialog() {
       kind: text('kind') as StopKind,
       arriveAt: text('arriveAt') || null,
       pauseMinutes: text('pauseMinutes') === '' ? null : Number(text('pauseMinutes')),
+      optional: form.get('optional') === 'on',
       address: text('address'),
       contact: text('contact'),
       bookingReference: text('bookingReference'),
@@ -71,6 +72,9 @@ export function StopDialog() {
               <textarea name="notes" rows={3}>
                 {s.notes}
               </textarea>
+            </label>
+            <label class="toggle">
+              <input type="checkbox" name="optional" checked={s.optional} /> Optional: a stop to decide on the day, left out of an export on request
             </label>
             <div class="row end">
               <button type="button" onClick={() => setStopDialogId(undefined)}>

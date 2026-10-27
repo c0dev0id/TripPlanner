@@ -175,6 +175,10 @@ export function renameRoute(routeId: string, name: string): void {
   edit((trip) => dayEdit.renameRoute(trip, routeId, name), 'Rename route');
 }
 
+export function setRouteOptional(routeId: string, optional: boolean): void {
+  changeRoute(routeId, (r) => (r.optional === optional ? r : { ...r, optional }), optional ? 'Mark route optional' : 'Mark route needed');
+}
+
 export function setRouteProfile(routeId: string, profile: Profile): void {
   edit((trip) => dayEdit.setRouteProfile(trip, routeId, profile), 'Change profile');
 }

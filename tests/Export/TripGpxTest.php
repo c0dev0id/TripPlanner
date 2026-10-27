@@ -6,6 +6,7 @@ namespace Planner\Tests\Export;
 
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
+use Planner\Export\ExportOptions;
 use Planner\Export\Proximity;
 use Planner\Export\TripGpx;
 use Planner\Tests\Trip\TripFixture;
@@ -54,6 +55,44 @@ final class TripGpxTest extends TestCase
         self::assertSame('Alps – Day 2', (string) $xml->xpath('/g:gpx/g:metadata/g:name')[0]);
         self::assertSame(['Hotel Post'], array_map(fn ($w) => (string) $w->name, $xml->xpath('/g:gpx/g:wpt')));
         self::assertCount(2, $xml->xpath('/g:gpx/g:trk'));
+        // With a wider reach the far stop is in.
+        $wide = $this->parse(TripGpx::day($this->document(), 1, new DateTimeImmutable(), new ExportOptions(reachM: 100_000)));
+        self::assertSame(['Hotel Post', 'Far away'], array_map(fn ($w) => (string) $w->name, $wide->xpath('/g:gpx/g:wpt')));
+    }
+
+    public function testWritesRoutesAsRoutePointsOnRequest(): void
+    {
+        $xml = $this->parse(TripGpx::trip($this->document(), new DateTimeImmutable(), new ExportOptions(form: 'routes')));
+        self::assertCount(0, $xml->xpath('/g:gpx/g:trk'));
+        $routes = $xml->xpath('/g:gpx/g:rte');
+        self::assertSame(['Day 1 South', 'Day 2 – Route 1', 'Day 2 – Hike'], array_map(fn ($r) => (string) $r->name, $routes));
+        self::assertCount(3, $routes[0]->rtept);
+        self::assertSame('48.100000', (string) $routes[0]->rtept[0]['lat']);
+        self::assertCount(4, $xml->xpath('/g:gpx/g:wpt'));
+    }
+
+    public function testLeavesOutOptionalPartsOnRequest(): void
+    {
+        $document = $this->document();
+        $document['days'][1]['routes'][0]['optional'] = true;
+        $document['days'][0]['stops'][2]['optional'] = true;
+        $xml = $this->parse(TripGpx::trip($document, new DateTimeImmutable(), new ExportOptions(optional: false)));
+        self::assertSame(['Day 1 South', 'Day 2'], array_map(fn ($t) => (string) $t->name, $xml->xpath('/g:gpx/g:trk')));
+        // The café is optional; day 2's hotel stood on the optional route's point and is now a free stop beside the hike.
+        self::assertSame(['Home', 'Hotel Post', 'Hotel Post'], array_map(fn ($w) => (string) $w->name, $xml->xpath('/g:gpx/g:wpt')));
+        $all = $this->parse(TripGpx::trip($document, new DateTimeImmutable()));
+        self::assertCount(3, $all->xpath('/g:gpx/g:trk'));
+        self::assertCount(4, $all->xpath('/g:gpx/g:wpt'));
+    }
+
+    public function testReadsOptionsFromTheQuery(): void
+    {
+        self::assertEquals(new ExportOptions(), ExportOptions::fromQuery([]));
+        self::assertEquals(new ExportOptions('routes', false, 500), ExportOptions::fromQuery(['form' => 'routes', 'optional' => '0', 'reach' => '500']));
+        self::assertNull(ExportOptions::fromQuery(['form' => 'lines']));
+        self::assertNull(ExportOptions::fromQuery(['optional' => 'yes']));
+        self::assertNull(ExportOptions::fromQuery(['reach' => '-1']));
+        self::assertNull(ExportOptions::fromQuery(['reach' => '1000000']));
     }
 
     public function testMeasuresTheDistanceToALine(): void

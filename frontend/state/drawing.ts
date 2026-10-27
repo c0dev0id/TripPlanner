@@ -25,6 +25,9 @@ export const [showNeighbours, setShowNeighbours] = createSignal(true);
 /** The stop whose details dialog is open. */
 export const [stopDialogId, setStopDialogId] = createSignal<string>();
 
+/** Whether the export dialog is open. */
+export const [exportOpen, setExportOpen] = createSignal(false);
+
 /** Where the map should go next; every request is a new object, so the same spot twice counts twice. */
 export const [panTarget, setPanTarget] = createSignal<{ lngLat: LngLat }>();
 

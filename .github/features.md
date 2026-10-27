@@ -40,16 +40,18 @@
   system's job.
 - Every change saved to the server a moment later, as one document with a version; a
   save over a newer version is refused and the trip offered for reloading.
-- GPX export by scope: the whole trip in one file, one day, or one file per day in a
-  zip. Stops become waypoints with their kind as type, free ones when within two
-  kilometres of a route of their day; each route a track named after its day and its
-  own name.
+- Routes and stops can be marked optional (a route in its menu, a stop in its dialog)
+  and are shown so.
+- GPX export from a dialog: the whole trip or the selected day; one file or one file per
+  day in a zip; routes as tracks with their full line, or as routes of their points for
+  the device to route between; with or without the optional routes and stops; free stops
+  within a chosen distance of a route. Stops become waypoints with their kind as type;
+  each route is named after its day and its own name. Named presets of these options are
+  kept with the account.
 
 ## Planned
 
 - GPX import into a route: routes, tracks, Garmin's calculated route points.
-- The export dialog with all options (scope, packaging, tracks or routes, optional parts,
-  proximity) and saved presets.
 - Photos, receipts and documents attached to the trip, a day, a stop or a route; photos
   placed by their EXIF time and position; comments for notes before and after the trip.
 - A read-only trip page for printing and sharing.

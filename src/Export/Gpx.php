@@ -8,14 +8,15 @@ use DateTimeImmutable;
 use Planner\Timestamp;
 use XMLWriter;
 
-/** Writes GPX 1.1: the waypoints first, then one track with one segment per line. */
+/** Writes GPX 1.1: the waypoints first, then the routes (points for a device to route between), then one track with one segment per line. */
 final class Gpx
 {
     /**
      * @param list<array{name: string, lngLat: array{0: float, 1: float}, type?: string}> $waypoints
+     * @param list<array{name: string, points: list<array{0: float, 1: float}>}> $routes
      * @param list<array{name: string, points: list<array{0: float, 1: float}>}> $tracks
      */
-    public static function document(string $name, array $waypoints, array $tracks, DateTimeImmutable $time): string
+    public static function document(string $name, array $waypoints, array $routes, array $tracks, DateTimeImmutable $time): string
     {
         $xml = new XMLWriter();
         $xml->openMemory();
@@ -38,6 +39,16 @@ final class Gpx
             $xml->writeElement('name', $waypoint['name']);
             if (isset($waypoint['type'])) {
                 $xml->writeElement('type', $waypoint['type']);
+            }
+            $xml->endElement();
+        }
+        foreach ($routes as $route) {
+            $xml->startElement('rte');
+            $xml->writeElement('name', $route['name']);
+            foreach ($route['points'] as $point) {
+                $xml->startElement('rtept');
+                self::position($xml, $point);
+                $xml->endElement();
             }
             $xml->endElement();
         }

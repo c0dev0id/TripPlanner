@@ -62,7 +62,7 @@ flowchart TB
 | Domain (frontend) | Pure edits of a route and of a day's stops and routes, the riding sequence of a day with distances and riding times, the day's timeline, leg keys and geometry, the polyline codec, the OSRM client (`routing/`); distances and nearest-line search (`geo/`); the document types (`model/`). |
 | API client (frontend) | `api.ts`: requests to the JSON API, the one place that knows its URLs. |
 | HTTP (backend) | Slim routes and middleware (sessions, CSRF, body parsing, authentication), Plates templates for the public pages, JSON encoding of API answers (`Http/`, `Pages/`, `Api/`). |
-| Domain (backend) | Accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders, trip documents with their validator (`Trip/`), GPX writing with the proximity of free stops (`Export/`). |
+| Domain (backend) | Accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders, trip documents with their validator and copies (`Trip/`), GPX writing with its options, the proximity of free stops and the export presets (`Export/`). |
 | Storage (backend) | PDO repositories over SQLite, the file store on disk, mail over SMTP (`Mail/`). |
 
 ## API
@@ -79,7 +79,10 @@ All under `/api`, for a signed-in user; answers are JSON unless a download.
 | `POST /trips/{id}/copies` | A copy of the trip with all its days under new ids, named after it, in its folder. |
 | `PATCH /trips/{id}` | Puts the trip into the folder of `{folderId}`, or into none for null. |
 | `DELETE /trips/{id}` | Deletes the trip with everything in it. |
-| `GET /trips/{id}/gpx` | The trip as GPX; `?day=<id>` one day; `?per=day` a zip with one file per day. |
+| `GET /trips/{id}/gpx` | The trip as GPX; `?day=<id>` one day; `?per=day` a zip with one file per day; `form=tracks|routes`, `optional=0|1`, `reach=<metres>` as the options. |
+| `GET /export-presets` | The user's export presets by name. |
+| `POST /export-presets` | Keeps `{name, options}` as a preset, replacing one of that name. |
+| `DELETE /export-presets/{id}` | Deletes the preset. |
 | `GET /folders` | The user's folders by name. |
 | `POST /folders` | Creates a folder from `{name}`. |
 | `PATCH /folders/{id}` | Renames the folder from `{name}`. |
@@ -96,6 +99,7 @@ erDiagram
   USER ||--o{ FOLDER : owns
   USER ||--o{ INVITATION : sends
   USER ||--o{ PASSWORD_RESET : requests
+  USER ||--o{ EXPORT_PRESET : keeps
   WAITLIST_ENTRY |o--o| INVITATION : "invited by"
   FOLDER |o--o{ TRIP : holds
   TRIP ||--o{ DAY : "days, in order"
@@ -133,6 +137,11 @@ erDiagram
   FOLDER {
     int id PK
     string name
+  }
+  EXPORT_PRESET {
+    int id PK
+    string name
+    json options
   }
   TRIP {
     int id PK

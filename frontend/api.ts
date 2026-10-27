@@ -65,11 +65,41 @@ export async function saveTrip(trip: Trip, keepalive = false): Promise<number> {
 
 export const deleteTrip = (id: number): Promise<void> => request('DELETE', `/api/trips/${id}`);
 
-/** The GPX download of a trip, or of one of its days. */
-export const gpxUrl = (tripId: number, dayId?: string): string => `/api/trips/${tripId}/gpx${dayId ? `?day=${encodeURIComponent(dayId)}` : ''}`;
+/** How a trip is written as GPX; the server's ExportOptions, with the packaging. */
+export interface ExportOptions {
+  /** One file for the whole scope, or one file per day in a zip. */
+  per: 'trip' | 'day';
+  /** Routes as tracks with their full line, or as routes of their points for the device to route between. */
+  form: 'tracks' | 'routes';
+  /** Whether optional routes and stops are written. */
+  optional: boolean;
+  /** How far from a route a free stop may stand to be written, in metres. */
+  reachM: number;
+}
 
-/** The zip with one GPX file per day. */
-export const gpxZipUrl = (tripId: number): string => `/api/trips/${tripId}/gpx?per=day`;
+export const DEFAULT_EXPORT: ExportOptions = { per: 'trip', form: 'tracks', optional: true, reachM: 2000 };
+
+/** The GPX download of a trip, or of one of its days, as the options say. */
+export function gpxUrl(tripId: number, options: ExportOptions, dayId?: string): string {
+  const query = new URLSearchParams({ form: options.form, optional: options.optional ? '1' : '0', reach: String(options.reachM) });
+  if (dayId) query.set('day', dayId);
+  else if (options.per === 'day') query.set('per', 'day');
+  return `/api/trips/${tripId}/gpx?${query}`;
+}
+
+/** A named set of export options kept with the account. */
+export interface ExportPreset {
+  id: number;
+  name: string;
+  options: ExportOptions;
+}
+
+export const listExportPresets = (): Promise<ExportPreset[]> => request('GET', '/api/export-presets');
+
+/** Keeps the options under the name, replacing a preset of that name. */
+export const saveExportPreset = (name: string, options: ExportOptions): Promise<ExportPreset> => request('POST', '/api/export-presets', { name, options });
+
+export const deleteExportPreset = (id: number): Promise<void> => request('DELETE', `/api/export-presets/${id}`);
 
 /** What an error says, for the user. */
 export function errorMessage(error: unknown): string {

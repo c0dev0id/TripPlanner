@@ -1,12 +1,11 @@
 import { createMemo, For, Show } from 'solid-js';
-import { gpxUrl, gpxZipUrl } from '../api';
 import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
 import { PROFILES, type Day, type Route } from '../model/trip';
 import { routeDistance } from '../routing/legs';
 import type { SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { saveState } from '../state/autosave';
-import { panTo, setShowNeighbours, setShowRoutePoints, setStopDialogId, showNeighbours, showRoutePoints } from '../state/drawing';
+import { panTo, setExportOpen, setShowNeighbours, setShowRoutePoints, setStopDialogId, showNeighbours, showRoutePoints } from '../state/drawing';
 import {
   addDay,
   addRoute,
@@ -30,6 +29,7 @@ import {
   selectedSequence,
   selectedTimeline,
   setDayDate,
+  setRouteOptional,
   updateStop,
 } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
@@ -63,20 +63,9 @@ export function TripPanel(props: { onLeave: () => void; onReload: () => void }) 
       </div>
       <SaveStatus onReload={props.onReload} />
       <div class="row export">
-        <DownloadIcon />
-        <a href={gpxUrl(trip().id)} download="">
-          GPX of the trip
-        </a>
-        <a href={gpxZipUrl(trip().id)} download="">
-          one file per day
-        </a>
-        <Show when={selectedDayId()}>
-          {(dayId) => (
-            <a href={gpxUrl(trip().id, dayId())} download="">
-              this day
-            </a>
-          )}
-        </Show>
+        <button class="link" onClick={() => setExportOpen(true)}>
+          <DownloadIcon /> Export GPX…
+        </button>
       </div>
       <div class="row heading">
         <h3 class="grow">Days</h3>
@@ -208,6 +197,7 @@ function RouteItem(props: { route: Route; day: Day }) {
     return [
       { label: 'Move up', run: () => moveRoute(props.route.id, -1), disabled: index === 0 },
       { label: 'Move down', run: () => moveRoute(props.route.id, 1), disabled: index === props.day.routes.length - 1 },
+      { label: props.route.optional ? 'Mark as needed' : 'Mark as optional', run: () => setRouteOptional(props.route.id, !props.route.optional) },
       { label: 'Duplicate', run: () => duplicateRoute(props.route.id) },
       ...otherDayItems(props.day.id, 'Move to', (dayId) => moveRouteToDay(props.route.id, dayId)),
       { label: 'Remove', run: () => void remove() },
@@ -219,6 +209,7 @@ function RouteItem(props: { route: Route; day: Day }) {
       <span class="muted">
         {profile()}
         {props.route.points.length > 1 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
+        {props.route.optional ? ' · optional' : ''}
       </span>
       <button classList={{ primary: editing() }} onClick={() => editRoute(editing() ? undefined : props.route.id)}>
         {editing() ? 'Done' : 'Edit'}
@@ -257,6 +248,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
             <Show when={slack() < 0}>
               <span class="short"> · {durationText(-slack() * 60)} short</span>
             </Show>
+            <Show when={stop()?.optional}> · optional</Show>
           </span>
         </span>
       </button>

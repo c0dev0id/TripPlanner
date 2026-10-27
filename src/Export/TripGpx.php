@@ -7,24 +7,23 @@ namespace Planner\Export;
 use DateTimeImmutable;
 
 /**
- * A trip document as GPX: the stops as waypoints and every route as a track named after
- * its day. A free stop is included where a route of its day passes within reach.
+ * A trip document as GPX: the stops as waypoints and every route as a track, or as a
+ * route of its points, named after its day. A free stop is included where a route of its
+ * day passes within reach; optional routes and stops are included or left out as the
+ * options say.
  */
 final class TripGpx
 {
-    /** How far from a route a free stop may stand to be exported, in metres. */
-    public const FREE_STOP_REACH_M = 2000;
-
     /** The whole trip in one file. */
-    public static function trip(array $document, DateTimeImmutable $time): string
+    public static function trip(array $document, DateTimeImmutable $time, ExportOptions $options = new ExportOptions()): string
     {
-        return self::file($document, array_keys($document['days']), $document['name'], $time);
+        return self::file($document, array_keys($document['days']), $document['name'], $time, $options);
     }
 
     /** One day of the trip; `$index` is the day's position, counted from 0. */
-    public static function day(array $document, int $index, DateTimeImmutable $time): string
+    public static function day(array $document, int $index, DateTimeImmutable $time, ExportOptions $options = new ExportOptions()): string
     {
-        return self::file($document, [$index], self::dayName($document, $index), $time);
+        return self::file($document, [$index], self::dayName($document, $index), $time, $options);
     }
 
     /** The name of a day's file, without the extension. */
@@ -45,32 +44,36 @@ final class TripGpx
         return $document['name'] . ' – ' . self::dayLabel($document['days'][$index], $index);
     }
 
-    private static function file(array $document, array $indices, string $name, DateTimeImmutable $time): string
+    private static function file(array $document, array $indices, string $name, DateTimeImmutable $time, ExportOptions $options): string
     {
+        $included = fn (array $part): bool => $options->optional || !$part['optional'];
         $waypoints = [];
-        $tracks = [];
+        $lines = [];
         foreach ($indices as $index) {
             $day = $document['days'][$index];
-            $lines = array_map(RouteGeometry::line(...), $day['routes']);
+            $routes = array_values(array_filter($day['routes'], $included));
+            $dayLines = array_map(RouteGeometry::line(...), $routes);
             $dayLabel = self::dayLabel($day, $index);
-            $several = count($day['routes']) > 1;
-            foreach ($day['routes'] as $i => $route) {
+            $several = count($routes) > 1;
+            foreach ($routes as $i => $route) {
                 $label = $several ? $dayLabel . ' – ' . ($route['name'] === '' ? 'Route ' . ($i + 1) : $route['name']) : $dayLabel;
-                $tracks[] = ['name' => $label, 'points' => $lines[$i]];
+                $lines[] = ['name' => $label, 'points' => $options->form === 'routes' ? array_column($route['points'], 'lngLat') : $dayLines[$i]];
             }
+            $pointIds = array_merge([], ...array_map(fn (array $route) => array_column($route['points'], 'id'), $routes));
             foreach ($day['stops'] as $stop) {
-                if ($stop['pointId'] !== null || self::nearARoute($stop['lngLat'], $lines)) {
+                $bound = $stop['pointId'] !== null && in_array($stop['pointId'], $pointIds, true);
+                if ($included($stop) && ($bound || self::nearALine($stop['lngLat'], $dayLines, $options->reachM))) {
                     $waypoints[] = ['name' => $stop['name'], 'lngLat' => $stop['lngLat'], 'type' => $stop['kind']];
                 }
             }
         }
-        return Gpx::document($name, $waypoints, $tracks, $time);
+        return $options->form === 'routes' ? Gpx::document($name, $waypoints, $lines, [], $time) : Gpx::document($name, $waypoints, [], $lines, $time);
     }
 
-    private static function nearARoute(array $position, array $lines): bool
+    private static function nearALine(array $position, array $lines, int $reachM): bool
     {
         foreach ($lines as $line) {
-            if (Proximity::toLine($position, $line) <= self::FREE_STOP_REACH_M) {
+            if (Proximity::toLine($position, $line) <= $reachM) {
                 return true;
             }
         }

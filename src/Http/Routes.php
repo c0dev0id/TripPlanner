@@ -7,6 +7,7 @@ namespace Planner\Http;
 use Planner\Account\LoginController;
 use Planner\Account\PasswordResetController;
 use Planner\Api\MeController;
+use Planner\Export\ExportPresetController;
 use Planner\Export\GpxExportController;
 use Planner\Pages\AppController;
 use Planner\Trip\FolderController;
@@ -51,6 +52,9 @@ final class Routes
             $api->patch('/trips/{id:[0-9]+}', [TripController::class, 'move']);
             $api->delete('/trips/{id:[0-9]+}', [TripController::class, 'delete']);
             $api->get('/trips/{id:[0-9]+}/gpx', [GpxExportController::class, 'gpx']);
+            $api->get('/export-presets', [ExportPresetController::class, 'index']);
+            $api->post('/export-presets', [ExportPresetController::class, 'save']);
+            $api->delete('/export-presets/{id:[0-9]+}', [ExportPresetController::class, 'delete']);
             $api->get('/folders', [FolderController::class, 'index']);
             $api->post('/folders', [FolderController::class, 'create']);
             $api->patch('/folders/{id:[0-9]+}', [FolderController::class, 'rename']);

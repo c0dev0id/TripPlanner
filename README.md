@@ -30,8 +30,9 @@ the way.
 - **Rearranged as plans change** — days and routes move up and down or get duplicated,
   a route moves to another day, a stop is copied to one, a whole trip is duplicated.
 - **A library with folders** — trips sorted into folders, and a search across them.
-- **GPX export** — the whole trip in one file, one day, or one file per day in a zip:
-  stops as waypoints, routes as tracks.
+- **GPX export the way the device wants it** — the trip or a day, one file or one per
+  day, routes as tracks or as points for the device to route, with or without the
+  optional parts; the settings kept as named presets.
 
 ## Getting started
 
@@ -42,7 +43,7 @@ the way.
    *Done* ends editing.
 4. Open a stop's details for its arrival time and pause; the first stop's time starts
    the day's timeline.
-5. Download *GPX of the trip*, *one file per day* or *this day* from the trip's panel.
+5. *Export GPX…* in the trip's panel: pick the scope and the form, download.
 
 | Key or gesture | Does |
 |---|---|

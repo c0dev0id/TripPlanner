@@ -146,10 +146,15 @@ a {
 }
 
 .panel button.primary,
-.dialog button.primary {
-  border-color: var(--accent);
+.dialog button.primary,
+.dialog a.button {
+  display: inline-block;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
   background: var(--accent);
   color: #fff;
+  text-decoration: none;
 }
 
 .panel button.icon,
@@ -404,9 +409,44 @@ a {
 }
 
 .export {
-  flex-wrap: wrap;
   margin: 4px 0;
   font-size: 13px;
+}
+
+.export button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* The export dialog: a row of choices per option. */
+.export-dialog fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.export-dialog legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 2px;
+  padding: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.export-dialog fieldset label {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  color: var(--fg);
+}
+
+.export-dialog .reach input {
+  width: 6em;
 }
 
 /* The map */
@@ -654,7 +694,8 @@ a {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
-.dialog form {
+.dialog form,
+.dialog-body {
   display: flex;
   flex-direction: column;
   gap: 10px;

@@ -128,11 +128,19 @@ entries at the end of their section.
 
 ## Export
 
-- **One track per route, one waypoint per stop.** A GPX file holds the stops in scope as
-  waypoints, bound ones at their route point and free ones at their own position when
-  within the proximity setting of a route, with the stop's kind as the waypoint type, and
-  each route as a track named after its day and its own name. A leg not routed yet is
-  written as the straight line between its ends.
+- **One track or route per route, one waypoint per stop.** A GPX file holds the stops in
+  scope as waypoints, bound ones at their route point and free ones at their own position
+  when within the chosen reach of a route, with the stop's kind as the waypoint type, and
+  each route named after its day and its own name: as a track with its full line, or as
+  a GPX route of its points for a device that routes itself (a Garmin takes `rte` and
+  calculates the way; a track is driven as drawn). A leg not routed yet is written as the
+  straight line between its ends. Optional routes and stops are written or left out as
+  the export says; a stop bound to a route left out counts as a free stop.
+- **Export options live in the query; presets on the server.** The download is a URL
+  with its options, so a device's import can be bookmarked and the server needs no
+  state per download. A preset is a named set of options kept with the account, since
+  the same device is used from every browser; the options are checked on the server
+  like the query.
 - **API paths carry no file extension.** The per-day zip is `gpx?per=day`, not `gpx.zip`:
   PHP's built-in server answers a path with an extension as a static file and never
   reaches the front controller, and nothing is gained by the extension.
