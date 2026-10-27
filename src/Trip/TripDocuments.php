@@ -29,8 +29,8 @@ final class TripDocuments
             return null;
         }
         $days = [];
-        foreach ($this->rows('SELECT id, name, date, notes FROM days WHERE trip_id = ? ORDER BY position', $tripId) as $day) {
-            $days[$day['id']] = ['id' => $day['id'], 'name' => $day['name'], 'date' => $day['date'], 'notes' => $day['notes'], 'routes' => [], 'stops' => []];
+        foreach ($this->rows('SELECT id, name, depart_at, notes FROM days WHERE trip_id = ? ORDER BY position', $tripId) as $day) {
+            $days[$day['id']] = ['id' => $day['id'], 'name' => $day['name'], 'departAt' => $day['depart_at'], 'notes' => $day['notes'], 'routes' => [], 'stops' => []];
         }
         $routes = 'SELECT id, day_id, name, kind, profile, optional, points, legs FROM routes WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
         foreach ($this->rows($routes, $tripId) as $route) {
@@ -142,8 +142,8 @@ final class TripDocuments
     private function saveDays(int $tripId, array $days): void
     {
         $upsertDay = $this->db->prepare(
-            'INSERT INTO days (id, trip_id, position, name, date, notes) VALUES (?, ?, ?, ?, ?, ?)
-             ON CONFLICT(id) DO UPDATE SET position = excluded.position, name = excluded.name, date = excluded.date, notes = excluded.notes',
+            'INSERT INTO days (id, trip_id, position, name, depart_at, notes) VALUES (?, ?, ?, ?, ?, ?)
+             ON CONFLICT(id) DO UPDATE SET position = excluded.position, name = excluded.name, depart_at = excluded.depart_at, notes = excluded.notes',
         );
         $upsertRoute = $this->db->prepare(
             'INSERT INTO routes (id, day_id, position, name, kind, profile, optional, points, legs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -163,7 +163,7 @@ final class TripDocuments
         $this->deleteMissing('stops', 'day_id IN (SELECT id FROM days WHERE trip_id = ?)', $tripId, $stopIds);
         $this->deleteMissing('days', 'trip_id = ?', $tripId, array_column($days, 'id'));
         foreach ($days as $position => $day) {
-            $upsertDay->execute([$day['id'], $tripId, $position, $day['name'], $day['date'], $day['notes']]);
+            $upsertDay->execute([$day['id'], $tripId, $position, $day['name'], $day['departAt'], $day['notes']]);
             foreach ($day['routes'] as $index => $route) {
                 $upsertRoute->execute([$route['id'], $day['id'], $index, $route['name'], $route['kind'], $route['profile'], (int) $route['optional'], Json::encode($route['points']), Json::encode((object) $route['legs'])]);
             }

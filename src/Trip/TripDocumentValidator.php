@@ -61,7 +61,7 @@ final class TripDocumentValidator
         return [
             'id' => self::id($day, $at),
             'name' => self::text($day, 'name', $at, 200),
-            'date' => self::date($day, 'date', $at),
+            'departAt' => self::time($day, 'departAt', $at),
             'notes' => self::text($day, 'notes', $at),
             'routes' => $routes,
             'stops' => $stops,
@@ -84,10 +84,7 @@ final class TripDocumentValidator
                 throw new InvalidDocument("$at must stand at its route point.");
             }
         }
-        $arriveAt = $stop['arriveAt'] ?? null;
-        if ($arriveAt !== null && !(is_string($arriveAt) && preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $arriveAt))) {
-            throw new InvalidDocument("$at.arriveAt must be a time as HH:MM or null.");
-        }
+        $arriveAt = self::time($stop, 'arriveAt', $at);
         $pause = $stop['pauseMinutes'] ?? null;
         if ($pause !== null && !(is_int($pause) && $pause >= 0 && $pause <= 24 * 60)) {
             throw new InvalidDocument("$at.pauseMinutes must be a number of minutes or null.");
@@ -186,6 +183,15 @@ final class TripDocumentValidator
         $value = $parent[$key] ?? false;
         if (!is_bool($value)) {
             throw new InvalidDocument("$at.$key must be a boolean.");
+        }
+        return $value;
+    }
+
+    private static function time(array $parent, string $key, string $at): ?string
+    {
+        $value = $parent[$key] ?? null;
+        if ($value !== null && !(is_string($value) && preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', $value))) {
+            throw new InvalidDocument("$at.$key must be a time as HH:MM or null.");
         }
         return $value;
     }

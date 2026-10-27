@@ -54,12 +54,14 @@ final class TripDocumentsTest extends TestCase
         $document['days'][0]['routes'][0]['legs'] = ['car/11.5,48.1;11.45,47.8' => ['geometry' => 'abc', 'distanceM' => 100, 'durationS' => 60]];
         $document['days'][0]['stops'][1]['arriveAt'] = '18:30';
         $document['days'][0]['stops'][1]['pauseMinutes'] = 0;
+        $document['days'][0]['departAt'] = '09:00';
         self::assertSame(2, $this->save($document, 1));
         $loaded = $this->documents->load($this->userId, $this->tripId);
         self::assertSame(2, $loaded['version']);
         self::assertSame('A weekend.', $loaded['description']);
         self::assertSame('2027-06-12', $loaded['startsOn']);
         $day = $loaded['days'][0];
+        self::assertSame('09:00', $day['departAt']);
         self::assertSame($document['days'][0]['stops'], $day['stops']);
         self::assertEquals($document['days'][0]['routes'][0]['points'], $day['routes'][0]['points']);
         self::assertEquals((object) $document['days'][0]['routes'][0]['legs'], $day['routes'][0]['legs']);

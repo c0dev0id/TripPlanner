@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS days (
     trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
     position INTEGER NOT NULL,
     name TEXT NOT NULL,
-    date TEXT,
+    depart_at TEXT,
     notes TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS days_trip ON days(trip_id, position);
