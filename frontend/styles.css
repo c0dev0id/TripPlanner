@@ -12,6 +12,15 @@
   --panel-width: 340px;
 }
 
+/* The theme chosen by hand overrides the browser's; without it, the colours follow the browser. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -220,7 +229,8 @@ a {
 }
 
 /* The folder a trip is in, chosen in its row. */
-.library select {
+.library select,
+.panel-header .theme {
   max-width: 96px;
   padding: 3px 4px;
   border: 1px solid var(--line);

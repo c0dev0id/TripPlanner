@@ -114,6 +114,14 @@ export const ShareIcon = () => (
   </Icon>
 );
 
+export const LayersIcon = () => (
+  <Icon>
+    <path d="M12 4l-8 4l8 4l8 -4l-8 -4" />
+    <path d="M4 12l8 4l8 -4" />
+    <path d="M4 16l8 4l8 -4" />
+  </Icon>
+);
+
 export const PencilIcon = () => (
   <Icon>
     <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />

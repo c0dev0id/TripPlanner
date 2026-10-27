@@ -1,0 +1,49 @@
+/* The base map control: a button among the map's controls, its list opening beside it. */
+
+.base-maps {
+  position: relative;
+}
+
+.base-maps > button {
+  display: grid;
+  place-items: center;
+}
+
+.base-maps ul {
+  position: absolute;
+  top: 0;
+  right: calc(100% + 6px);
+  min-width: 160px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel, var(--bg));
+  color: var(--fg);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  font: 14px/1.4 system-ui, sans-serif;
+}
+
+.base-maps ul button {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 6px 12px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.base-maps ul button:hover,
+.base-maps ul button[aria-checked='true'] {
+  background: var(--hover, var(--line));
+}
+
+.base-maps ul button[aria-checked='true'] {
+  font-weight: 600;
+}
