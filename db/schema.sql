@@ -49,7 +49,8 @@ CREATE TABLE IF NOT EXISTS entries (
     taken_at TEXT,
     lng REAL,
     lat REAL,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    CHECK ((day_id IS NOT NULL) + (stop_id IS NOT NULL) + (route_id IS NOT NULL) <= 1)
 );
 CREATE INDEX IF NOT EXISTS entries_trip ON entries(trip_id, id);
 

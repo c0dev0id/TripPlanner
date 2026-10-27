@@ -13,6 +13,9 @@ final class Entries
 {
     public const MAX_TEXT = 20000;
 
+    /** The target keys an entry may name, and the tables their ids are in. */
+    public const PARTS = ['dayId' => 'days', 'stopId' => 'stops', 'routeId' => 'routes'];
+
     private const SELECT = 'SELECT e.* FROM entries e JOIN trips t ON t.id = e.trip_id WHERE ';
 
     public function __construct(private readonly PDO $db)
@@ -44,57 +47,47 @@ final class Entries
     }
 
     /**
-     * Adds an entry to the trip, on the part named in `$target` (`dayId`, `stopId` or
-     * `routeId`, each of the trip) or on the trip itself. Null when the user has no such
-     * trip or part.
+     * Adds an entry to the trip, on the part `$target` names (one of PARTS' keys, an id of
+     * the trip's) or on the trip itself; a photo with a time and no part goes to the day of
+     * that date. Null when the user has no such trip or part.
      *
-     * @param array{dayId?: ?string, stopId?: ?string, routeId?: ?string} $target
-     * @param ?array{name: string, mediaType: string, size: int} $file
+     * @param array{dayId?: string, stopId?: string, routeId?: string} $target
+     * @param ?array{name: string, mediaType: string, size: int, takenAt: ?string, lngLat: ?array{0: float, 1: float}} $file
      */
     public function add(int $userId, int $tripId, array $target, string $text, ?array $file, DateTimeImmutable $now): ?Entry
     {
         if (!$this->owns($userId, $tripId)) {
             return null;
         }
+        foreach (self::PARTS as $key => $table) {
+            if (isset($target[$key]) && !$this->partOf($tripId, $table, $target[$key])) {
+                return null;
+            }
+        }
         $dayId = $target['dayId'] ?? null;
-        $stopId = $target['stopId'] ?? null;
-        $routeId = $target['routeId'] ?? null;
-        if (($dayId !== null && !$this->partOf($tripId, 'days', $dayId)) || ($stopId !== null && !$this->partOf($tripId, 'stops', $stopId)) || ($routeId !== null && !$this->partOf($tripId, 'routes', $routeId))) {
-            return null;
+        if ($target === [] && isset($file['takenAt'])) {
+            $dayId = $this->dayOnDate($tripId, substr($file['takenAt'], 0, 10));
         }
         $statement = $this->db->prepare(
-            'INSERT INTO entries (trip_id, day_id, stop_id, route_id, text, file_name, media_type, size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO entries (trip_id, day_id, stop_id, route_id, text, file_name, media_type, size, taken_at, lng, lat, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         );
-        $statement->execute([$tripId, $dayId, $stopId, $routeId, $text, $file['name'] ?? null, $file['mediaType'] ?? null, $file['size'] ?? null, Timestamp::of($now)]);
-        return $this->find($userId, $tripId, (int) $this->db->lastInsertId());
-    }
-
-    /**
-     * Notes when and where a photo was taken, and puts an entry without a part on the day
-     * of that date. Null when the user has no such entry.
-     *
-     * @param ?array{0: float, 1: float} $lngLat
-     */
-    public function place(int $userId, int $tripId, int $entryId, ?string $takenAt, ?array $lngLat): ?Entry
-    {
-        $entry = $this->find($userId, $tripId, $entryId);
-        if ($entry === null) {
-            return null;
-        }
-        $dayId = $entry->dayId;
-        if ($dayId === null && $entry->stopId === null && $entry->routeId === null && $takenAt !== null) {
-            $dayId = $this->dayOnDate($tripId, substr($takenAt, 0, 10));
-        }
-        $this->db->prepare('UPDATE entries SET taken_at = ?, lng = ?, lat = ?, day_id = ? WHERE id = ?')->execute([$takenAt, $lngLat[0] ?? null, $lngLat[1] ?? null, $dayId, $entryId]);
-        return $this->find($userId, $tripId, $entryId);
+        $statement->execute([
+            $tripId, $dayId, $target['stopId'] ?? null, $target['routeId'] ?? null, $text,
+            $file['name'] ?? null, $file['mediaType'] ?? null, $file['size'] ?? null, $file['takenAt'] ?? null, $file['lngLat'][0] ?? null, $file['lngLat'][1] ?? null,
+            Timestamp::of($now),
+        ]);
+        return $this->one('e.id = ?', [(int) $this->db->lastInsertId()]);
     }
 
     /** False when the user has no such entry. */
     public function updateText(int $userId, int $tripId, int $entryId, string $text): bool
     {
-        $statement = $this->db->prepare('UPDATE entries SET text = ? WHERE id = ? AND trip_id = ? AND trip_id IN (SELECT id FROM trips WHERE user_id = ?)');
-        $statement->execute([$text, $entryId, $tripId, $userId]);
-        return $statement->rowCount() === 1;
+        if ($this->find($userId, $tripId, $entryId) === null) {
+            return false;
+        }
+        $this->db->prepare('UPDATE entries SET text = ? WHERE id = ?')->execute([$text, $entryId]);
+        return true;
     }
 
     /** Deletes the entry and returns it, for its file to go too; null when the user has no such entry. */

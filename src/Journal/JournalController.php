@@ -28,7 +28,7 @@ final class JournalController
         return $entries === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $entries);
     }
 
-    /** Adds an entry from a multipart form: `text`, one of `dayId`, `stopId`, `routeId`, and a `file`. */
+    /** Adds an entry from a multipart form: `text`, at most one of `dayId`, `stopId`, `routeId`, and a `file`. */
     public function add(Request $request, Response $response, array $args): Response
     {
         $body = (array) $request->getParsedBody();
@@ -46,20 +46,17 @@ final class JournalController
         if ($upload === null && $text === '') {
             return Json::error($response, 422, 'An entry needs a text or a file.');
         }
-        $target = array_intersect_key($body, array_flip(['dayId', 'stopId', 'routeId']));
-        $file = $upload === null ? null : ['name' => mb_substr(basename($upload->getClientFilename() ?? 'file'), 0, 200), 'mediaType' => self::mediaType($upload), 'size' => (int) $upload->getSize()];
-        $userId = $this->currentUser->get()->id;
+        $target = array_filter(array_intersect_key($body, Entries::PARTS), is_string(...));
+        if (count($target) > 1) {
+            return Json::error($response, 422, 'An entry is on one part at most.');
+        }
         $tripId = (int) $args['id'];
-        $entry = $this->entries->add($userId, $tripId, $target, $text, $file, new DateTimeImmutable());
+        $entry = $this->entries->add($this->currentUser->get()->id, $tripId, $target, $text, $upload === null ? null : self::fileOf($upload), new DateTimeImmutable());
         if ($entry === null) {
             return Json::error($response, 404, 'No such trip or part of it.');
         }
         if ($upload !== null) {
             $this->files->store($upload, $tripId, $entry->id);
-            $exif = Exif::read($this->files->path($tripId, $entry->id), $file['mediaType']);
-            if ($exif['takenAt'] !== null || $exif['lngLat'] !== null) {
-                $entry = $this->entries->place($userId, $tripId, $entry->id, $exif['takenAt'], $exif['lngLat']);
-            }
         }
         return Json::of($response->withStatus(201), $entry);
     }
@@ -94,12 +91,22 @@ final class JournalController
         return $this->responses->preview($response, $this->entries->find($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry']));
     }
 
-    /** The file's type as its content says, not as the browser claims. */
-    private static function mediaType(UploadedFileInterface $upload): string
+    /**
+     * What the entry keeps about the upload: its name, its type as its content says (not as
+     * the browser claims), its size, and a photo's EXIF time and position, read from the
+     * upload where it still lies.
+     */
+    private static function fileOf(UploadedFileInterface $upload): array
     {
         $stream = $upload->getStream();
         $type = (new \finfo(FILEINFO_MIME_TYPE))->buffer((string) $stream->read(8192));
         $stream->rewind();
-        return $type === false ? 'application/octet-stream' : $type;
+        $mediaType = $type === false ? 'application/octet-stream' : $type;
+        return [
+            'name' => mb_substr(basename($upload->getClientFilename() ?? 'file'), 0, 200),
+            'mediaType' => $mediaType,
+            'size' => (int) $upload->getSize(),
+            ...Exif::read((string) $stream->getMetadata('uri'), $mediaType),
+        ];
     }
 }

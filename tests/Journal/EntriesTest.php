@@ -26,7 +26,7 @@ final class EntriesTest extends TestCase
     private int $tripId;
     private DateTimeImmutable $now;
 
-    private const PHOTO = ['name' => 'IMG_1.jpg', 'mediaType' => 'image/jpeg', 'size' => 1234];
+    private const PHOTO = ['name' => 'IMG_1.jpg', 'mediaType' => 'image/jpeg', 'size' => 1234, 'takenAt' => null, 'lngLat' => null];
 
     protected function setUp(): void
     {
@@ -57,14 +57,19 @@ final class EntriesTest extends TestCase
 
     public function testPlacesAPhotoOnTheDayOfItsDate(): void
     {
-        $photo = $this->entries->add($this->userId, $this->tripId, [], '', self::PHOTO, $this->now);
-        $placed = $this->entries->place($this->userId, $this->tripId, $photo->id, '2027-06-12T14:30:00', [11.45, 47.8]);
+        $taken = ['takenAt' => '2027-06-12T14:30:00', 'lngLat' => [11.45, 47.8]] + self::PHOTO;
+        $placed = $this->entries->add($this->userId, $this->tripId, [], '', $taken, $this->now);
         self::assertSame(['day1', '2027-06-12T14:30:00', [11.45, 47.8]], [$placed->dayId, $placed->takenAt, $placed->lngLat]);
-        $other = $this->entries->add($this->userId, $this->tripId, [], '', self::PHOTO, $this->now);
-        self::assertNull($this->entries->place($this->userId, $this->tripId, $other->id, '2027-06-20T09:00:00', null)->dayId);
-        $onStop = $this->entries->add($this->userId, $this->tripId, ['stopId' => 's1'], '', self::PHOTO, $this->now);
-        $placedOnStop = $this->entries->place($this->userId, $this->tripId, $onStop->id, '2027-06-12T09:00:00', null);
-        self::assertSame(['s1', null], [$placedOnStop->stopId, $placedOnStop->dayId]);
+        $otherDay = ['takenAt' => '2027-06-20T09:00:00'] + self::PHOTO;
+        self::assertNull($this->entries->add($this->userId, $this->tripId, [], '', $otherDay, $this->now)->dayId);
+        $onStop = $this->entries->add($this->userId, $this->tripId, ['stopId' => 's1'], '', $taken, $this->now);
+        self::assertSame(['s1', null], [$onStop->stopId, $onStop->dayId]);
+    }
+
+    public function testRefusesAnEntryOnTwoParts(): void
+    {
+        $this->expectException(\PDOException::class);
+        $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1', 'stopId' => 's1'], 'Both', null, $this->now);
     }
 
     public function testEditsAndDeletesOnlyOwnEntries(): void

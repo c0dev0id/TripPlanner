@@ -31,7 +31,7 @@ final class FileStore
 
     public function delete(int $tripId, int $entryId): void
     {
-        foreach ([$this->path($tripId, $entryId), $this->path($tripId, $entryId) . '.preview.jpg'] as $file) {
+        foreach ([$this->path($tripId, $entryId), $this->previewPath($tripId, $entryId)] as $file) {
             if (is_file($file)) {
                 unlink($file);
             }
@@ -56,28 +56,11 @@ final class FileStore
     /** The preview of an image entry, made on first use; null where the image cannot be read. */
     public function preview(int $tripId, int $entryId, string $mediaType): ?string
     {
-        $preview = $this->path($tripId, $entryId) . '.preview.jpg';
+        $preview = $this->previewPath($tripId, $entryId);
         if (is_file($preview)) {
             return $preview;
         }
-        $image = self::readImage($this->path($tripId, $entryId), $mediaType);
-        if ($image === null) {
-            return null;
-        }
-        $scale = min(1, self::PREVIEW_PX / max(imagesx($image), imagesy($image)));
-        $small = imagescale($image, (int) round(imagesx($image) * $scale), (int) round(imagesy($image) * $scale));
-        imagedestroy($image);
-        if ($small === false) {
-            return null;
-        }
-        imagejpeg($small, $preview, 80);
-        imagedestroy($small);
-        return $preview;
-    }
-
-    /** The image turned the way its EXIF orientation says it is to be seen. */
-    private static function readImage(string $path, string $mediaType): ?\GdImage
-    {
+        $path = $this->path($tripId, $entryId);
         $image = match ($mediaType) {
             'image/jpeg' => @imagecreatefromjpeg($path),
             'image/png' => @imagecreatefrompng($path),
@@ -87,7 +70,31 @@ final class FileStore
         if ($image === false) {
             return null;
         }
-        $orientation = $mediaType === 'image/jpeg' && function_exists('exif_read_data') ? (@exif_read_data($path)['Orientation'] ?? 1) : 1;
+        // Scaled first, then turned: turning the small image costs nothing, the full one a second copy of it.
+        $scale = min(1, self::PREVIEW_PX / max(imagesx($image), imagesy($image)));
+        $small = imagescale($image, (int) round(imagesx($image) * $scale), (int) round(imagesy($image) * $scale));
+        imagedestroy($image);
+        if ($small === false) {
+            return null;
+        }
+        imagejpeg(self::turned($small, $mediaType === 'image/jpeg' ? self::orientation($path) : 1), $preview, 80);
+        return $preview;
+    }
+
+    private function previewPath(int $tripId, int $entryId): string
+    {
+        return $this->path($tripId, $entryId) . '.preview.jpg';
+    }
+
+    /** The EXIF orientation of a JPEG: 1 where there is none or exif is missing. */
+    private static function orientation(string $path): int
+    {
+        return function_exists('exif_read_data') ? (int) (@exif_read_data($path)['Orientation'] ?? 1) : 1;
+    }
+
+    /** The image turned the way its EXIF orientation says it is to be seen. */
+    private static function turned(\GdImage $image, int $orientation): \GdImage
+    {
         $turned = match ($orientation) {
             3 => imagerotate($image, 180, 0),
             6 => imagerotate($image, -90, 0),
