@@ -31,4 +31,4 @@ check:
 	$(NPM) test
 	$(NPM) run build
 
-.PHONY: build install check
+.PHONY: build install init invite admin check
