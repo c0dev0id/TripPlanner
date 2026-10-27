@@ -4,13 +4,24 @@
   --fg: light-dark(#1f2328, #e6e6e3);
   --muted: light-dark(#5b6168, #9aa0a6);
   --line: light-dark(#d9d7d2, #30343a);
+  --panel: light-dark(#ffffff, #1e2126);
+  --hover: light-dark(#eeece7, #2a2e34);
+  --active: light-dark(#f8e3d6, #3a2a22);
   --accent: light-dark(#b4440f, #ef8354);
-  --panel-width: 320px;
+  --error: light-dark(#b42318, #f97066);
+  --panel-width: 340px;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html, body, #root { height: 100%; margin: 0; }
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
 
 body {
   font: 14px/1.4 system-ui, sans-serif;
@@ -18,42 +29,497 @@ body {
   color: var(--fg);
 }
 
-#root { display: grid; grid-template-columns: var(--panel-width) 1fr; }
+#root {
+  display: grid;
+  grid-template-columns: var(--panel-width) 1fr;
+}
+
+a {
+  color: var(--accent);
+}
+
+/* The panel */
 
 .panel {
   overflow: auto;
   border-right: 1px solid var(--line);
-  padding: 0 1rem 1rem;
+  padding: 0 12px 12px;
+  background: var(--panel);
 }
 
 .panel-header {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.5rem 1rem;
-  padding: 0.75rem 0;
+  gap: 4px 12px;
+  padding: 10px 0;
   border-bottom: 1px solid var(--line);
 }
 
-.panel-header h1 { font-size: 1.1rem; margin: 0; flex: 1 1 auto; }
-.panel h2 { font-size: 0.95rem; margin: 1rem 0 0.5rem; }
-.user { color: var(--muted); }
-.muted { color: var(--muted); }
+.panel-header h1 {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 1.1rem;
+}
 
-button.link {
+.panel h2 {
+  margin: 12px 0 8px;
+  font-size: 1rem;
+}
+
+.panel h3 {
+  margin: 14px 0 6px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.panel h2.name {
+  margin: 0;
+}
+
+.user,
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--error);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.row.end {
+  justify-content: flex-end;
+}
+
+.grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panel input,
+.name-input {
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+}
+
+.panel button,
+.dialog button,
+.hint-bar button {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.panel button:hover:not(:disabled),
+.dialog button:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.panel button:disabled,
+.dialog button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.panel button.primary,
+.dialog button.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.panel button.icon,
+.hint-bar button.icon {
+  display: inline-grid;
+  place-items: center;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+.panel button.link {
   border: 0;
   background: none;
   padding: 0;
   color: var(--accent);
-  font: inherit;
-  cursor: pointer;
   text-decoration: underline;
 }
 
-.map { height: 100%; }
+/* A button that reads as text: a trip's or a day's name. */
+.panel button.text {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.trips,
+.days,
+.stops {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.trips li,
+.day {
+  border-bottom: 1px solid var(--line);
+}
+
+.trips .name {
+  display: block;
+}
+
+.day.selected > .row {
+  background: var(--active);
+  box-shadow: inset 3px 0 0 var(--accent);
+  border-radius: 4px;
+}
+
+.day .stops {
+  padding: 4px 0 8px 10px;
+}
+
+.stop-row {
+  padding: 2px 0;
+}
+
+.stop-index {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.hint {
+  margin: 4px 0 8px 10px;
+  font-size: 13px;
+}
+
+.save-status {
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+.save-status.failed {
+  color: var(--error);
+}
+
+.export {
+  flex-wrap: wrap;
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+/* The map */
+
+.map-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.map {
+  position: absolute;
+  inset: 0;
+}
+
+.map[data-tool] .maplibregl-canvas-container.maplibregl-interactive {
+  cursor: crosshair;
+}
+
+/* Stops and route points as markers. */
+
+.stop-marker,
+.point-marker {
+  cursor: grab;
+}
+
+.map[data-tool='delete'] :is(.stop-marker, .point-marker) {
+  cursor: pointer;
+}
+
+.stop {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.stop-number {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #d9480f;
+  color: #fff;
+  font: bold 11px/1 system-ui, sans-serif;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.stop-name {
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #1f2328;
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* The other days' stops: small grey dots, with the name on hover, letting taps through. */
+.stop.other .stop-number {
+  width: 12px;
+  height: 12px;
+  margin: 6px;
+  background: #868e96;
+  font-size: 0;
+}
+
+.stop.other .stop-name {
+  display: none;
+}
+
+.point {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #d9480f;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.point.straight {
+  border-radius: 2px;
+}
+
+/* The toolbar floats over the map, above the scale bar and the attribution. */
+
+.toolbar {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: max-content;
+  max-width: calc(100% - 16px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.toolbar-group {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 96%, transparent);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  pointer-events: auto;
+}
+
+.tool {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 48px;
+  padding: 5px 6px 4px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.tool svg {
+  width: 22px;
+  height: 22px;
+}
+
+.tool-label {
+  font-size: 10px;
+  line-height: 12px;
+  white-space: nowrap;
+}
+
+.tool:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.tool.active,
+.tool.active:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.tool:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* The profile choice: radio buttons drawn as one segmented control. */
+
+.segmented {
+  align-items: center;
+}
+
+.segmented label {
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.segmented label.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hint-bar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(720px, calc(100% - 120px));
+  transform: translateX(-50%);
+  padding: 6px 10px 6px 12px;
+  border-radius: 6px;
+  background: rgba(33, 37, 41, 0.85);
+  color: #fff;
+  font-size: 13px;
+}
+
+.hint-bar .routing {
+  white-space: nowrap;
+}
+
+.hint-bar .failed {
+  color: #ffa8a8;
+}
+
+.hint-bar button {
+  padding: 2px 8px;
+  border-color: rgba(255, 255, 255, 0.5);
+  background: none;
+  color: #fff;
+}
+
+.context-menu {
+  position: absolute;
+  z-index: 10;
+  width: 210px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.context-menu button {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.context-menu button:hover {
+  background: var(--active);
+}
+
+.dialog {
+  width: min(360px, calc(100vw - 32px));
+  padding: 12px 16px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--fg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.dialog form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.25);
+}
 
 @media (max-width: 720px) {
-  #root { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
-  .map { grid-row: 1; }
-  .panel { grid-row: 2; max-height: 40vh; border-right: 0; border-top: 1px solid var(--line); }
+  #root {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  .map-wrap {
+    grid-row: 1;
+  }
+
+  .panel {
+    grid-row: 2;
+    max-height: 45vh;
+    border-right: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .hint-bar {
+    max-width: calc(100% - 16px);
+  }
 }

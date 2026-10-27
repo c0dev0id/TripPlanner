@@ -49,7 +49,6 @@ final class Routes
             $api->patch('/trips/{id:[0-9]+}', [TripController::class, 'rename']);
             $api->delete('/trips/{id:[0-9]+}', [TripController::class, 'delete']);
             $api->get('/trips/{id:[0-9]+}/gpx', [GpxExportController::class, 'gpx']);
-            $api->get('/trips/{id:[0-9]+}/gpx.zip', [GpxExportController::class, 'zip']);
         })->add(RequireUser::class);
     }
 }

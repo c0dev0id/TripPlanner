@@ -120,11 +120,18 @@ export function renamePlace(trip: Trip, placeId: string, name: string): Trip {
   return { ...trip, places: trip.places.map((p) => (p.id === placeId ? { ...p, name } : p)) };
 }
 
-/** Applies a route edit to a route of the day. */
-export function updateRoute(trip: Trip, dayId: string, routeId: string, change: (route: Route) => Route): Trip {
-  return updateDay(trip, dayId, (day) => {
-    const routes = day.routes.map((r) => (r.id === routeId ? change(r) : r));
-    return routes.every((r, i) => r === day.routes[i]) ? day : { ...day, routes };
+/** The day a route belongs to. */
+export function dayOfRoute(trip: Trip, routeId: string): Day | undefined {
+  return trip.days.find((day) => day.routes.some((r) => r.id === routeId));
+}
+
+/** Applies a route edit to the route, wherever in the trip it is. */
+export function updateRoute(trip: Trip, routeId: string, change: (route: Route) => Route): Trip {
+  const day = dayOfRoute(trip, routeId);
+  if (!day) return trip;
+  return updateDay(trip, day.id, (d) => {
+    const routes = d.routes.map((r) => (r.id === routeId ? change(r) : r));
+    return routes.every((r, i) => r === d.routes[i]) ? d : { ...d, routes };
   });
 }
 

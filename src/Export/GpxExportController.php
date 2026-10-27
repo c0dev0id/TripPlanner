@@ -19,14 +19,18 @@ final class GpxExportController
     {
     }
 
-    /** The trip as one file; with `?day=<id>` that day alone. */
+    /** The trip as one file; with `?day=<id>` that day alone; with `?per=day` a zip of one file per day. */
     public function gpx(Request $request, Response $response, array $args): Response
     {
         $document = $this->documents->load($this->currentUser->get()->id, (int) $args['id']);
         if ($document === null) {
             return Json::of($response->withStatus(404), ['error' => 'No such trip.']);
         }
-        $dayId = $request->getQueryParams()['day'] ?? null;
+        $query = $request->getQueryParams();
+        if (($query['per'] ?? null) === 'day') {
+            return self::zip($response, $document);
+        }
+        $dayId = $query['day'] ?? null;
         if ($dayId === null) {
             return self::download($response, TripGpx::fileName($document['name']) . '.gpx', 'application/gpx+xml', TripGpx::trip($document, new DateTimeImmutable()));
         }
@@ -37,13 +41,8 @@ final class GpxExportController
         return self::download($response, TripGpx::dayFileName($document, $index) . '.gpx', 'application/gpx+xml', TripGpx::day($document, $index, new DateTimeImmutable()));
     }
 
-    /** A zip with one GPX file per day. */
-    public function zip(Request $request, Response $response, array $args): Response
+    private static function zip(Response $response, array $document): Response
     {
-        $document = $this->documents->load($this->currentUser->get()->id, (int) $args['id']);
-        if ($document === null) {
-            return Json::of($response->withStatus(404), ['error' => 'No such trip.']);
-        }
         $file = tempnam(sys_get_temp_dir(), 'gpx');
         $zip = new ZipArchive();
         $zip->open($file, ZipArchive::OVERWRITE);

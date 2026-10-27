@@ -49,6 +49,7 @@ final class Kernel
     {
         $app = AppFactory::createFromContainer($container);
         Routes::register($app);
+        $app->addBodyParsingMiddleware();
         $app->addRoutingMiddleware();
         $app->add(SessionMiddleware::class);
         $app->addErrorMiddleware($container->get(Config::class)->debug, true, true);
