@@ -1,4 +1,4 @@
-import { distanceBetween } from '../geo/measure';
+import { distanceBetween, planeAt } from '../geo/measure';
 import { nearestLine, type XY } from '../geo/nearest';
 import type { Day, LngLat, RoutePoint, Stop } from '../model/trip';
 import { legCoordinates, legDistance, legDuration, routeLegs } from './legs';
@@ -21,15 +21,6 @@ export interface SequenceEntry {
   point?: RoutePoint;
   /** For a free stop: the leg (from point `legIndex` of the route) and the spot on it nearest to the stop, and how far away that is. */
   near?: { routeId: string; legIndex: number; lngLat: LngLat; distanceM: number };
-}
-
-/** Metres per degree of latitude; longitudes are scaled by the cosine of the latitude. */
-const METRES_PER_DEGREE = 111_195;
-
-/** A flat map in metres around a position; a day's extent keeps the scale within a percent. */
-function planeAt([lng0, lat0]: LngLat): (p: LngLat) => XY {
-  const scale = Math.cos((lat0 * Math.PI) / 180);
-  return ([lng, lat]) => [(lng - lng0) * scale * METRES_PER_DEGREE, (lat - lat0) * METRES_PER_DEGREE];
 }
 
 /** A leg of the day with its line, the line on the plane, its length and riding time, and where it starts along the day. */

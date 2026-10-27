@@ -1,21 +1,24 @@
 import { createMemo, createSignal, For, Show } from 'solid-js';
 import { errorMessage } from '../api';
+import { parseGpx } from '../gpx/gpx';
+import { gpxToDayParts } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
-import { PROFILES, type Day, type Route } from '../model/trip';
+import { newId, PROFILES, type Day, type Route } from '../model/trip';
+import { defaultProfile } from '../routing/dayEdit';
 import { routeDistance } from '../routing/legs';
 import type { SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { saveState } from '../state/autosave';
-import { panTo, setExportOpen, setShowNeighbours, setShowRoutePoints, setStopDialogId, showNeighbours, showRoutePoints } from '../state/drawing';
+import { panTo, setExportOpen, setShowNeighbours, setShowRoutePoints, setStopDialogId, showNeighbours, showRoutePoints, type MenuItem } from '../state/drawing';
 import {
   addDay,
+  addParts,
   addRoute,
   copyStopToDay,
   duplicateDay,
   duplicateRoute,
   editingRouteId,
   editRoute,
-  importGpx,
   moveDay,
   moveRoute,
   moveRouteToDay,
@@ -38,12 +41,12 @@ import { askConfirmation } from '../ui/confirm';
 import { EditableName } from '../ui/EditableName';
 import { distanceText, durationText, timeText } from '../ui/format';
 import { BackIcon, DownloadIcon, PencilIcon } from '../ui/icons';
-import { MoreMenu, type MoreItem } from '../ui/MoreMenu';
+import { MoreMenu } from '../ui/MoreMenu';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, routeLabel } from './labels';
 
 /** One item per other day of the trip, for moving or copying something there. */
-function otherDayItems(dayId: string, action: string, run: (dayId: string) => void): MoreItem[] {
+function otherDayItems(dayId: string, action: string, run: (dayId: string) => void): MenuItem[] {
   return openTrip()!
     .days.flatMap((day, index) => (day.id === dayId ? [] : [{ label: `${action} ${dayLabel(day, index)}`, run: () => run(day.id) }]));
 }
@@ -106,7 +109,7 @@ function DayItem(props: { day: Day; index: number }) {
     if (parts > 0 && !(await askConfirmation(`Remove ${label()} with its routes and stops?`, 'Remove'))) return;
     removeDay(props.day.id);
   };
-  const more = (): MoreItem[] => [
+  const more = (): MenuItem[] => [
     { label: 'Move up', run: () => moveDay(props.day.id, -1), disabled: props.index === 0 },
     { label: 'Move down', run: () => moveDay(props.day.id, 1), disabled: props.index === openTrip()!.days.length - 1 },
     { label: 'Duplicate', run: () => duplicateDay(props.day.id) },
@@ -122,7 +125,7 @@ function DayItem(props: { day: Day; index: number }) {
         <EditableName value={props.day.name} label="day" onRename={(name) => renameDay(props.day.id, name)}>
           <span />
         </EditableName>
-        <MoreMenu label={`More for ${label()}`} items={more()} />
+        <MoreMenu label={`More for ${label()}`} items={more} />
       </div>
       <Show when={selected()}>
         <DayDetails day={props.day} />
@@ -140,7 +143,9 @@ function DayDetails(props: { day: Day }) {
     fileInput.value = '';
     if (!file) return;
     try {
-      const { routes, stops } = await importGpx(file);
+      const parts = gpxToDayParts(parseGpx(await file.text()), { fileName: file.name.replace(/\.gpx$/i, ''), profile: defaultProfile(props.day), newId });
+      addParts(parts);
+      const { routes, stops } = { routes: parts.routes.length, stops: parts.stops.length };
       setImportNote({ text: `${file.name}: ${routes} ${routes === 1 ? 'route' : 'routes'}, ${stops} ${stops === 1 ? 'stop' : 'stops'} added.`, error: false });
     } catch (fault) {
       setImportNote({ text: `${file.name}: ${errorMessage(fault)}`, error: true });
@@ -165,7 +170,7 @@ function DayDetails(props: { day: Day }) {
         <input ref={fileInput} type="file" accept=".gpx,application/gpx+xml" hidden onChange={(e) => void importFile(e.currentTarget.files?.[0])} />
       </div>
       <ul class="routes">
-        <For each={props.day.routes}>{(route) => <RouteItem route={route} day={props.day} />}</For>
+        <For each={props.day.routes}>{(route, index) => <RouteItem route={route} index={index()} day={props.day} />}</For>
       </ul>
       <Show when={props.day.routes.length === 0}>
         <p class="muted hint">Add a route, then tap the map to draw it, or import a GPX file.</p>
@@ -201,7 +206,7 @@ function DaySummary(props: { timeline: DayTimeline }) {
   );
 }
 
-function RouteItem(props: { route: Route; day: Day }) {
+function RouteItem(props: { route: Route; index: number; day: Day }) {
   const editing = () => editingRouteId() === props.route.id;
   const label = () => routeLabel(props.route, props.day);
   const profile = () => (props.route.kind === 'track' ? 'Track' : (PROFILES.find((p) => p.value === props.route.profile)?.label ?? props.route.profile));
@@ -209,17 +214,14 @@ function RouteItem(props: { route: Route; day: Day }) {
     if (props.route.points.length > 0 && !(await askConfirmation(`Remove ${label()} with its ${props.route.points.length} points?`, 'Remove'))) return;
     removeRoute(props.route.id);
   };
-  const more = (): MoreItem[] => {
-    const index = props.day.routes.indexOf(props.route);
-    return [
-      { label: 'Move up', run: () => moveRoute(props.route.id, -1), disabled: index === 0 },
-      { label: 'Move down', run: () => moveRoute(props.route.id, 1), disabled: index === props.day.routes.length - 1 },
-      { label: props.route.optional ? 'Mark as needed' : 'Mark as optional', run: () => setRouteOptional(props.route.id, !props.route.optional) },
-      { label: 'Duplicate', run: () => duplicateRoute(props.route.id) },
-      ...otherDayItems(props.day.id, 'Move to', (dayId) => moveRouteToDay(props.route.id, dayId)),
-      { label: 'Remove', run: () => void remove() },
-    ];
-  };
+  const more = (): MenuItem[] => [
+    { label: 'Move up', run: () => moveRoute(props.route.id, -1), disabled: props.index === 0 },
+    { label: 'Move down', run: () => moveRoute(props.route.id, 1), disabled: props.index === props.day.routes.length - 1 },
+    { label: props.route.optional ? 'Mark as needed' : 'Mark as optional', run: () => setRouteOptional(props.route.id, !props.route.optional) },
+    { label: 'Duplicate', run: () => duplicateRoute(props.route.id) },
+    ...otherDayItems(props.day.id, 'Move to', (dayId) => moveRouteToDay(props.route.id, dayId)),
+    { label: 'Remove', run: () => void remove() },
+  ];
   return (
     <li class="row route" classList={{ editing: editing() }}>
       <EditableName value={label()} label="route" onRename={(name) => renameRoute(props.route.id, name)} />
@@ -231,7 +233,7 @@ function RouteItem(props: { route: Route; day: Day }) {
       <button classList={{ primary: editing() }} onClick={() => editRoute(editing() ? undefined : props.route.id)}>
         {editing() ? 'Done' : 'Edit'}
       </button>
-      <MoreMenu label={`More for ${label()}`} items={more()} />
+      <MoreMenu label={`More for ${label()}`} items={more} />
     </li>
   );
 }
@@ -278,7 +280,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
             <button class="icon" title="Stop details" aria-label={`Details of ${s().name}`} onClick={() => setStopDialogId(s().id)}>
               <PencilIcon />
             </button>
-            <MoreMenu label={`More for ${s().name}`} items={[...otherDayItems(selectedDayId()!, 'Copy to', (dayId) => copyStopToDay(s().id, dayId)), { label: 'Remove', run: () => removeStop(s().id) }]} />
+            <MoreMenu label={`More for ${s().name}`} items={() => [...otherDayItems(selectedDayId()!, 'Copy to', (dayId) => copyStopToDay(s().id, dayId)), { label: 'Remove', run: () => removeStop(s().id) }]} />
           </>
         )}
       </Show>

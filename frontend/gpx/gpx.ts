@@ -1,5 +1,5 @@
 import type { LngLat } from '../model/trip';
-import { child, children, parseXml, text } from './xml';
+import { children, parseXml, text } from './xml';
 
 /** What a GPX 1.0 or 1.1 file holds: waypoints, routes (`rte`) and tracks (`trk`) with their segments. */
 export interface GpxContent {
@@ -22,8 +22,7 @@ const positions = (elements: Element[]) => elements.map(position).filter((p): p 
 
 /** The points Garmin's extension gives a route point for the way on to the next (`gpxx:RoutePointExtension`, `gpxx:rpt`). */
 function garminWay(rtept: Element): Element[] {
-  const extension = child(rtept, 'extensions', 'RoutePointExtension');
-  return extension ? children(extension, 'rpt') : [];
+  return children(rtept, 'extensions').flatMap((e) => children(e, 'RoutePointExtension')).flatMap((e) => children(e, 'rpt'));
 }
 
 function route(rte: Element): GpxContent['routes'][number] {
@@ -33,7 +32,8 @@ function route(rte: Element): GpxContent['routes'][number] {
 
 /** Reads a GPX document; throws for anything else. */
 export function parseGpx(xml: string): GpxContent {
-  const root = parseXml(xml, 'gpx', 'This is not a GPX file.');
+  const root = parseXml(xml);
+  if (root?.localName !== 'gpx') throw new Error('This is not a GPX file.');
   return {
     waypoints: children(root, 'wpt').flatMap((w) => {
       const lngLat = position(w);

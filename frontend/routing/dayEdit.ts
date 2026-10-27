@@ -52,11 +52,15 @@ export function updateRoute(trip: Trip, routeId: string, change: (route: Route) 
   });
 }
 
-/** Adds a route to the day, with the profile of the day's last route or the road profile. */
+/** The profile a new route of the day gets: that of the day's last route, or the road profile. */
+export function defaultProfile(day: Day): Profile {
+  return day.routes.at(-1)?.profile ?? 'car';
+}
+
 export function addRoute(trip: Trip, dayId: string, id: string): Trip {
   return updateDay(trip, dayId, (day) => ({
     ...day,
-    routes: [...day.routes, { id, name: '', kind: 'routed', profile: day.routes.at(-1)?.profile ?? 'car', optional: false, points: [], legs: {} }],
+    routes: [...day.routes, { id, name: '', kind: 'routed', profile: defaultProfile(day), optional: false, points: [], legs: {} }],
   }));
 }
 
@@ -173,15 +177,15 @@ export function moveDay(trip: Trip, dayId: string, by: -1 | 1): Trip {
   return days === trip.days ? trip : { ...trip, days };
 }
 
-/** A copy of the day with new ids, right after it, without a date. */
-export function duplicateDay(trip: Trip, dayId: string, newId: () => string): Trip {
+/** A copy of the day as `id`, right after it, without a date; its parts under new ids, bound stops following their points. */
+export function duplicateDay(trip: Trip, dayId: string, id: string, newId: () => string): Trip {
   const index = trip.days.findIndex((d) => d.id === dayId);
   if (index < 0) return trip;
   const day = trip.days[index]!;
-  const pointIds = new Map<string, string>();
-  const routes = day.routes.map((route) => copyRoute(route, newId, pointIds));
+  const routes = day.routes.map((route) => copyRoute(route, newId));
+  const pointIds = new Map(day.routes.flatMap((route, r) => route.points.map((p, i) => [p.id, routes[r]!.points[i]!.id])));
   const stops = day.stops.map((stop) => ({ ...stop, id: newId(), pointId: stop.pointId === null ? null : pointIds.get(stop.pointId)! }));
-  const copy: Day = { ...day, id: newId(), date: null, routes, stops };
+  const copy: Day = { ...day, id, date: null, routes, stops };
   return { ...trip, days: trip.days.toSpliced(index + 1, 0, copy) };
 }
 
@@ -203,7 +207,7 @@ export function duplicateRoute(trip: Trip, routeId: string, newId: () => string)
   return updateDay(trip, day.id, (d) => {
     const index = d.routes.findIndex((r) => r.id === routeId);
     const route = d.routes[index]!;
-    const copy = { ...copyRoute(route, newId, new Map()), name: route.name === '' ? '' : `${route.name} copy` };
+    const copy = { ...copyRoute(route, newId), name: route.name === '' ? '' : `${route.name} copy` };
     return { ...d, routes: d.routes.toSpliced(index + 1, 0, copy) };
   });
 }
@@ -214,10 +218,10 @@ export function moveRouteToDay(trip: Trip, routeId: string, dayId: string): Trip
   if (!from || from.id === dayId || !trip.days.some((d) => d.id === dayId)) return trip;
   const route = from.routes.find((r) => r.id === routeId)!;
   const pointIds = new Set(route.points.map((p) => p.id));
-  const bound = from.stops.filter((s) => s.pointId !== null && pointIds.has(s.pointId));
+  const bound = (stop: Stop) => stop.pointId !== null && pointIds.has(stop.pointId);
   const days = trip.days.map((d) => {
-    if (d.id === from.id) return { ...d, routes: d.routes.filter((r) => r.id !== routeId), stops: d.stops.filter((s) => !bound.includes(s)) };
-    if (d.id === dayId) return { ...d, routes: [...d.routes, route], stops: [...d.stops, ...bound] };
+    if (d.id === from.id) return { ...d, routes: d.routes.filter((r) => r.id !== routeId), stops: d.stops.filter((s) => !bound(s)) };
+    if (d.id === dayId) return { ...d, routes: [...d.routes, route], stops: [...d.stops, ...from.stops.filter(bound)] };
     return d;
   });
   return { ...trip, days };
@@ -243,14 +247,9 @@ function swapped<T extends { id: string }>(items: readonly T[], id: string, by: 
   return list;
 }
 
-/** The route with new ids for itself and its points, the point ids noted in `pointIds`; the legs stay, as they are keyed by position. */
-function copyRoute(route: Route, newId: () => string, pointIds: Map<string, string>): Route {
-  const points = route.points.map((p) => {
-    const id = newId();
-    pointIds.set(p.id, id);
-    return { ...p, id };
-  });
-  return { ...route, id: newId(), points };
+/** The route with new ids for itself and its points; the legs stay, as they are keyed by position. */
+function copyRoute(route: Route, newId: () => string): Route {
+  return { ...route, id: newId(), points: route.points.map((p) => ({ ...p, id: newId() })) };
 }
 
 export function renameDay(trip: Trip, dayId: string, name: string): Trip {

@@ -1,62 +1,49 @@
-import { createMemo, createResource, createSignal, For, Show } from 'solid-js';
+import { createResource, createSignal, For, Show } from 'solid-js';
 import { DEFAULT_EXPORT, deleteExportPreset, errorMessage, gpxUrl, listExportPresets, saveExportPreset, type ExportOptions } from '../api';
 import { exportOpen, setExportOpen } from '../state/drawing';
-import { openTrip, selectedDayId } from '../state/trip';
+import { openTrip, selectedDay } from '../state/trip';
 import { showModalWhile } from '../ui/modal';
+import { NameForm } from '../ui/NameForm';
 import { dayLabel } from './labels';
 
-/** What the dialog takes besides the options: the whole trip or the selected day. */
-type Scope = 'trip' | 'day';
+const sameOptions = (a: ExportOptions, b: ExportOptions) => a.per === b.per && a.form === b.form && a.optional === b.optional && a.reachM === b.reachM;
 
-/** The GPX export: its scope, the options, presets kept with the account, and the download. */
+/** The GPX export: the whole trip or the selected day, the options, presets kept with the account, and the download. */
 export function ExportDialog() {
   let dialog!: HTMLDialogElement;
   showModalWhile(() => dialog, exportOpen);
-  const [presets, { refetch }] = createResource(exportOpen, (open) => (open ? listExportPresets() : []));
-  const [scope, setScope] = createSignal<Scope>('trip');
+  const [presets, { mutate }] = createResource(exportOpen, (open) => (open ? listExportPresets() : []));
+  const [scope, setScope] = createSignal<'trip' | 'day'>('trip');
   const [options, setOptions] = createSignal<ExportOptions>(DEFAULT_EXPORT);
-  const [presetId, setPresetId] = createSignal<number>();
-  const [presetName, setPresetName] = createSignal<string>();
+  const [naming, setNaming] = createSignal(false);
   const [error, setError] = createSignal<string>();
-  const set = <K extends keyof ExportOptions>(key: K, value: ExportOptions[K]) => {
-    setOptions((o) => ({ ...o, [key]: value }));
-    setPresetId(undefined);
+  const set = <K extends keyof ExportOptions>(key: K, value: ExportOptions[K]) => setOptions((o) => ({ ...o, [key]: value }));
+  /** The preset whose options are the current ones, if any. */
+  const presetId = () => presets()?.find((p) => sameOptions(p.options, options()))?.id;
+  const day = () => {
+    const d = selectedDay();
+    return d && { id: d.id, label: dayLabel(d, openTrip()!.days.indexOf(d)) };
   };
-  const day = createMemo(() => {
-    const trip = openTrip();
-    const index = trip?.days.findIndex((d) => d.id === selectedDayId()) ?? -1;
-    return trip && index >= 0 ? { id: trip.days[index]!.id, label: dayLabel(trip.days[index]!, index) } : undefined;
-  });
   const url = () => gpxUrl(openTrip()!.id, options(), scope() === 'day' ? day()?.id : undefined);
-  const choosePreset = (id: number | undefined) => {
-    const preset = presets()?.find((p) => p.id === id);
-    setPresetId(preset?.id);
-    if (preset) setOptions(preset.options);
-  };
-  const savePreset = async (e: SubmitEvent) => {
-    e.preventDefault();
-    const name = presetName()?.trim();
-    if (!name) return;
+  const run = async (work: () => Promise<void>) => {
+    setError(undefined);
     try {
+      await work();
+    } catch (fault) {
+      setError(errorMessage(fault));
+    }
+  };
+  const savePreset = (name: string) =>
+    run(async () => {
       const preset = await saveExportPreset(name, options());
-      setPresetName(undefined);
-      await refetch();
-      setPresetId(preset.id);
-    } catch (fault) {
-      setError(errorMessage(fault));
-    }
-  };
-  const removePreset = async () => {
-    const id = presetId();
-    if (id === undefined) return;
-    try {
+      mutate((list = []) => [...list.filter((p) => p.name !== preset.name), preset].sort((a, b) => a.name.localeCompare(b.name)));
+      setNaming(false);
+    });
+  const removePreset = (id: number) =>
+    run(async () => {
       await deleteExportPreset(id);
-      setPresetId(undefined);
-      await refetch();
-    } catch (fault) {
-      setError(errorMessage(fault));
-    }
-  };
+      mutate((list) => list?.filter((p) => p.id !== id));
+    });
   return (
     <dialog ref={dialog} class="dialog export-dialog" aria-label="Export GPX" onClose={() => setExportOpen(false)}>
       <Show when={exportOpen() && openTrip()}>
@@ -101,28 +88,20 @@ export function ExportDialog() {
           <div class="row">
             <label class="field grow">
               Preset
-              <select class="grow" value={presetId() ?? ''} onChange={(e) => choosePreset(e.currentTarget.value === '' ? undefined : Number(e.currentTarget.value))}>
+              <select class="grow" value={presetId() ?? ''} onChange={(e) => setOptions(presets()?.find((p) => p.id === Number(e.currentTarget.value))?.options ?? options())}>
                 <option value="">none</option>
                 <For each={presets() ?? []}>{(preset) => <option value={preset.id}>{preset.name}</option>}</For>
               </select>
             </label>
-            <button type="button" onClick={() => setPresetName('')} disabled={presetName() !== undefined}>
+            <button type="button" onClick={() => setNaming(true)} disabled={naming()}>
               Save as…
             </button>
-            <button type="button" onClick={() => void removePreset()} disabled={presetId() === undefined}>
+            <button type="button" onClick={() => void removePreset(presetId()!)} disabled={presetId() === undefined}>
               Delete
             </button>
           </div>
-          <Show when={presetName() !== undefined}>
-            <form class="row" onSubmit={(e) => void savePreset(e)}>
-              <input class="grow" placeholder="Name of the preset" aria-label="Name of the preset" value={presetName()} onInput={(e) => setPresetName(e.currentTarget.value)} maxlength={200} />
-              <button type="submit" disabled={!presetName()?.trim()}>
-                Save
-              </button>
-              <button type="button" onClick={() => setPresetName(undefined)}>
-                Cancel
-              </button>
-            </form>
+          <Show when={naming()}>
+            <NameForm placeholder="Name of the preset" button="Save" onSubmit={savePreset} onCancel={() => setNaming(false)} />
           </Show>
           <Show when={error()}>{(message) => <p class="error">{message()}</p>}</Show>
           <div class="row end">

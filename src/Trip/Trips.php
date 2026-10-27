@@ -53,15 +53,6 @@ final class Trips
         return $statement->rowCount() === 1;
     }
 
-    /** The folder a trip is in, or null for none. */
-    public function folderOf(int $tripId): ?int
-    {
-        $statement = $this->db->prepare('SELECT folder_id FROM trips WHERE id = ?');
-        $statement->execute([$tripId]);
-        $folderId = $statement->fetchColumn();
-        return $folderId === null || $folderId === false ? null : (int) $folderId;
-    }
-
     /** Deletes the user's trip with everything in it; false when there is none. */
     public function delete(int $userId, int $tripId): bool
     {

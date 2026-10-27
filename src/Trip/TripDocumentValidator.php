@@ -125,10 +125,11 @@ final class TripDocumentValidator
             throw new InvalidDocument("$at.legs must be an object.");
         }
         foreach ($legs as $key => $leg) {
-            if (!is_string($key) || !is_array($leg) || !is_string($leg['geometry'] ?? null) || !is_numeric($leg['distanceM'] ?? null) || !is_numeric($leg['durationS'] ?? null)) {
-                throw new InvalidDocument("$at.legs must map leg keys to geometry, distanceM and durationS.");
+            $duration = $leg['durationS'] ?? null;
+            if (!is_string($key) || !is_array($leg) || !is_string($leg['geometry'] ?? null) || !is_numeric($leg['distanceM'] ?? null) || !($duration === null || is_numeric($duration))) {
+                throw new InvalidDocument("$at.legs must map leg keys to geometry, distanceM and durationS (a number or null).");
             }
-            $legs[$key] = ['geometry' => $leg['geometry'], 'distanceM' => (int) round($leg['distanceM']), 'durationS' => (int) round($leg['durationS'])];
+            $legs[$key] = ['geometry' => $leg['geometry'], 'distanceM' => (int) round($leg['distanceM']), 'durationS' => $duration === null ? null : (int) round($duration)];
         }
         return [
             'id' => self::id($route, $at),

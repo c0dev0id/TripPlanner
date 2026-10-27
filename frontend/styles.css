@@ -312,60 +312,6 @@ a {
   color: var(--error);
 }
 
-/* A row's further actions: a dots button that opens a list below itself. */
-.more {
-  position: relative;
-  flex: none;
-}
-
-.more summary {
-  display: inline-grid;
-  place-items: center;
-  padding: 2px 4px;
-  border-radius: 4px;
-  list-style: none;
-  cursor: pointer;
-}
-
-.more summary::-webkit-details-marker {
-  display: none;
-}
-
-.more summary:hover,
-.more[open] summary {
-  background: var(--hover);
-}
-
-.more ul {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  z-index: 10;
-  min-width: 160px;
-  margin: 2px 0 0;
-  padding: 4px 0;
-  list-style: none;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--panel);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-}
-
-.panel .more ul button {
-  display: block;
-  width: 100%;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 0;
-  background: none;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.panel .more ul button:hover:not(:disabled) {
-  background: var(--active);
-}
-
 /* A short labelled input in a row: the day's date. */
 .field {
   display: flex;
@@ -654,9 +600,9 @@ a {
 }
 
 .context-menu {
-  position: absolute;
+  position: fixed;
   z-index: 10;
-  width: 210px;
+  min-width: 160px;
   margin: 0;
   padding: 4px 0;
   list-style: none;
@@ -680,8 +626,13 @@ a {
   cursor: pointer;
 }
 
-.context-menu button:hover {
+.context-menu button:hover:not(:disabled) {
   background: var(--active);
+}
+
+.context-menu button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .dialog {

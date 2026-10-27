@@ -1,7 +1,5 @@
 import { batch, createMemo, createRoot, createSignal } from 'solid-js';
 import { createStore, reconcile, unwrap } from 'solid-js/store';
-import { parseGpx } from '../gpx/gpx';
-import { gpxToDayParts } from '../gpx/import';
 import { newId, type Day, type LngLat, type Profile, type Route, type RoutedLeg, type Stop, type Trip } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { roundLngLat } from '../routing/legs';
@@ -168,17 +166,9 @@ export function addRoute(): void {
   if (routeById(id)) setEditingRouteId(id);
 }
 
-/**
- * Adds the routes and stops of a GPX file to the selected day, as one step; throws with
- * a message for the user where the file cannot be read. Returns what was added.
- */
-export async function importGpx(file: File): Promise<{ routes: number; stops: number }> {
-  const day = selectedDay();
-  if (!day) return { routes: 0, stops: 0 };
-  const profile = day.routes.at(-1)?.profile ?? 'car';
-  const parts = gpxToDayParts(parseGpx(await file.text()), { fileName: file.name.replace(/\.gpx$/i, ''), profile, newId });
+/** Adds routes and stops read from a file to the selected day, as one step. */
+export function addParts(parts: { routes: Route[]; stops: Stop[] }): void {
   editDay((trip, dayId) => dayEdit.addParts(trip, dayId, parts), 'Import GPX');
-  return { routes: parts.routes.length, stops: parts.stops.length };
 }
 
 export function removeRoute(routeId: string): void {
@@ -285,10 +275,9 @@ export function moveDay(dayId: string, by: -1 | 1): void {
 
 /** Copies the day right after itself and selects the copy. */
 export function duplicateDay(dayId: string): void {
-  const ids: string[] = [];
-  edit((trip) => dayEdit.duplicateDay(trip, dayId, () => ids[ids.push(newId()) - 1]!), 'Duplicate day');
-  // The day's own id is the last one drawn.
-  if (ids.length > 0) selectDay(ids.at(-1));
+  const id = newId();
+  edit((trip) => dayEdit.duplicateDay(trip, dayId, id, newId), 'Duplicate day');
+  if (state.trip?.days.some((d) => d.id === id)) selectDay(id);
 }
 
 export function moveRoute(routeId: string, by: -1 | 1): void {

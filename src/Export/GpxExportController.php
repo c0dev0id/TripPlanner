@@ -20,8 +20,8 @@ final class GpxExportController
     }
 
     /**
-     * The trip as one file; with `?day=<id>` that day alone; with `?per=day` a zip of one
-     * file per day. `form`, `optional` and `reach` are the options (see ExportOptions).
+     * The trip as GPX: with `?day=<id>` that day alone, else as the options in the query
+     * say (see ExportOptions): one file, or with `per=day` a zip of one file per day.
      */
     public function gpx(Request $request, Response $response, array $args): Response
     {
@@ -30,14 +30,14 @@ final class GpxExportController
             return Json::error($response, 404, 'No such trip.');
         }
         $query = $request->getQueryParams();
-        $options = ExportOptions::fromQuery($query);
+        $options = ExportOptions::from($query);
         if ($options === null) {
             return Json::error($response, 422, 'The export options are malformed.');
         }
-        if (($query['per'] ?? null) === 'day') {
+        $dayId = $query['day'] ?? null;
+        if ($dayId === null && $options->per === 'day') {
             return self::zip($response, $document, $options);
         }
-        $dayId = $query['day'] ?? null;
         if ($dayId === null) {
             return self::download($response, TripGpx::fileName($document['name']) . '.gpx', 'application/gpx+xml', TripGpx::trip($document, new DateTimeImmutable(), $options));
         }

@@ -7,6 +7,7 @@ namespace Planner\Tests\Export;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
+use Planner\Export\ExportOptions;
 use Planner\Export\ExportPresets;
 use Planner\Tests\TestDatabase;
 
@@ -27,36 +28,29 @@ final class ExportPresetsTest extends TestCase
         $this->presets = new ExportPresets($db);
     }
 
-    private const GARMIN = ['per' => 'day', 'form' => 'routes', 'optional' => false, 'reachM' => 500];
+    private function garmin(int $reachM = 500): ExportOptions
+    {
+        return new ExportOptions('day', 'routes', false, $reachM);
+    }
 
     public function testKeepsAPresetByNameAndReplacesItsOptions(): void
     {
-        $first = $this->presets->save($this->userId, 'Garmin', self::GARMIN, $this->now);
-        $this->presets->save($this->otherUserId, 'Garmin', self::GARMIN, $this->now);
-        $again = $this->presets->save($this->userId, 'Garmin', array_replace(self::GARMIN, ['reachM' => 1000]), $this->now);
+        $first = $this->presets->save($this->userId, 'Garmin', $this->garmin(), $this->now);
+        $this->presets->save($this->otherUserId, 'Garmin', $this->garmin(), $this->now);
+        $again = $this->presets->save($this->userId, 'Garmin', $this->garmin(1000), $this->now);
         self::assertSame($first->id, $again->id);
-        self::assertSame(1000, $again->options['reachM']);
+        self::assertSame(1000, $again->options->reachM);
         $listed = $this->presets->listFor($this->userId);
         self::assertCount(1, $listed);
-        self::assertSame(['per' => 'day', 'form' => 'routes', 'optional' => false, 'reachM' => 1000], $listed[0]->options);
+        self::assertEquals($this->garmin(1000), $listed[0]->options);
         self::assertSame('{"id":' . $first->id . ',"name":"Garmin","options":{"per":"day","form":"routes","optional":false,"reachM":1000}}', json_encode($listed[0]));
     }
 
     public function testDeletesOnlyOwnPresets(): void
     {
-        $preset = $this->presets->save($this->userId, 'Garmin', self::GARMIN, $this->now);
+        $preset = $this->presets->save($this->userId, 'Garmin', $this->garmin(), $this->now);
         self::assertFalse($this->presets->delete($this->otherUserId, $preset->id));
         self::assertTrue($this->presets->delete($this->userId, $preset->id));
         self::assertSame([], $this->presets->listFor($this->userId));
-    }
-
-    public function testChecksTheOptionsSent(): void
-    {
-        self::assertSame(self::GARMIN, ExportPresets::options(self::GARMIN));
-        self::assertSame(self::GARMIN, ExportPresets::options(['extra' => 1] + self::GARMIN));
-        self::assertNull(ExportPresets::options(['per' => 'week'] + self::GARMIN));
-        self::assertNull(ExportPresets::options(['optional' => 'no'] + self::GARMIN));
-        self::assertNull(ExportPresets::options(['reachM' => 200_000] + self::GARMIN));
-        self::assertNull(ExportPresets::options('garmin'));
     }
 }

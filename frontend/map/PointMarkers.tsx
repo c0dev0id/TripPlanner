@@ -30,7 +30,7 @@ function PointMarker(props: { map: MapLibreMap; routeId: string; pointId: string
     if (tapAction() === 'delete') removePoint(routeId, pointId);
     else if (tapAction() === 'stop') convertPoint(pointId);
   });
-  const stopMenu = onMarkerMenu(handle, map, () => {
+  const stopMenu = onMarkerMenu(handle, () => {
     const p = point();
     return (
       p && [

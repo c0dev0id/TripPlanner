@@ -2,7 +2,7 @@ import { distanceBetween } from '../geo/measure';
 import { simplifyToCount } from '../geo/simplify';
 import { STOP_KINDS, type LngLat, type Profile, type Route, type Stop, type StopKind } from '../model/trip';
 import { newStop } from '../routing/dayEdit';
-import { ASSUMED_SPEED_MPS, legKey, roundLngLat, withoutRepeats } from '../routing/legs';
+import { legKey, roundLngLat } from '../routing/legs';
 import { encodePolyline } from '../routing/polyline';
 import type { GpxContent } from './gpx';
 
@@ -13,16 +13,19 @@ export interface DayParts {
 }
 
 /** A track is simplified to at most this many points, each a marker while the route is edited. */
-export const MAX_TRACK_POINTS = 500;
+const MAX_TRACK_POINTS = 500;
 
 /** Rounded positions without consecutive repeats, which would make legs of no length. */
-const cleanPoints = (points: readonly LngLat[]) => withoutRepeats(points.map(roundLngLat));
+function cleanPoints(points: readonly LngLat[]): LngLat[] {
+  const rounded = points.map(roundLngLat);
+  return rounded.filter((p, i) => i === 0 || p[0] !== rounded[i - 1]![0] || p[1] !== rounded[i - 1]![1]);
+}
 
-/** A leg along the given way, measured along it and timed at the assumed pace; the routing would route it over again only on request. */
+/** A leg along the given way, measured along it; its riding time is left to the assumed pace until the routing is asked. */
 function legAlong(way: readonly LngLat[]): Route['legs'][string] {
   let distanceM = 0;
   for (let i = 1; i < way.length; i++) distanceM += distanceBetween(way[i - 1]!, way[i]!);
-  return { geometry: encodePolyline(way), distanceM, durationS: distanceM / ASSUMED_SPEED_MPS };
+  return { geometry: encodePolyline(way), distanceM, durationS: null };
 }
 
 /**
@@ -32,15 +35,17 @@ function legAlong(way: readonly LngLat[]): Route['legs'][string] {
  */
 function calculatedLegs(points: readonly LngLat[], ways: readonly LngLat[][], profile: Profile): Route['legs'] {
   const legs: Route['legs'] = {};
+  const rounded = points.map(roundLngLat);
   let way: LngLat[] = [];
-  points.map(roundLngLat).forEach((to, i, rounded) => {
+  for (let i = 0; i < rounded.length; i++) {
     const from = rounded[i - 1];
+    const to = rounded[i]!;
     if (from && (from[0] !== to[0] || from[1] !== to[1])) {
       if (way.length > 0) legs[legKey(profile, from, to)] = legAlong(cleanPoints([from, ...way, to]));
       way = [];
     }
     way = way.concat(ways[i]!);
-  });
+  }
   return legs;
 }
 
@@ -54,8 +59,8 @@ function calculatedLegs(points: readonly LngLat[], ways: readonly LngLat[][], pr
  */
 export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string }): DayParts {
   const lines = [
-    ...gpx.routes.map((r) => ({ name: r.name, kind: 'routed' as const, points: r.points, legs: calculatedLegs(r.points, r.ways, options.profile), straight: false })),
-    ...gpx.tracks.map((t) => ({ name: t.name, kind: 'track' as const, points: simplifyToCount(cleanPoints(t.segments.flat()), MAX_TRACK_POINTS), legs: {}, straight: true })),
+    ...gpx.routes.map((r) => ({ name: r.name, kind: 'routed' as const, points: r.points, legs: calculatedLegs(r.points, r.ways, options.profile) })),
+    ...gpx.tracks.map((t) => ({ name: t.name, kind: 'track' as const, points: simplifyToCount(t.segments.flat(), MAX_TRACK_POINTS), legs: {} })),
   ].filter((l) => l.points.length > 0);
   const routes: Route[] = lines.map((line, i) => ({
     id: options.newId(),
@@ -63,15 +68,14 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
     kind: line.kind,
     profile: options.profile,
     optional: false,
-    points: cleanPoints(line.points).map((lngLat, j) => ({ id: options.newId(), lngLat, ...(line.straight && j > 0 && { straight: true }) })),
+    points: cleanPoints(line.points).map((lngLat, j) => (line.kind === 'track' && j > 0 ? { id: options.newId(), lngLat, straight: true } : { id: options.newId(), lngLat })),
     legs: line.legs,
   }));
   const pointAt = new Map(routes.flatMap((r) => r.points.map((p) => [p.lngLat.join(','), p.id] as const)));
-  const kinds = new Set<string>(STOP_KINDS.map((k) => k.value));
   const stops = gpx.waypoints.map((w, i) => {
     const lngLat = roundLngLat(w.lngLat);
     const stop = newStop(options.newId(), w.name ?? `Waypoint ${i + 1}`, lngLat, pointAt.get(lngLat.join(',')) ?? null);
-    return { ...stop, kind: w.type && kinds.has(w.type) ? (w.type as StopKind) : 'other', notes: w.description ?? '' };
+    return { ...stop, kind: STOP_KINDS.some((k) => k.value === w.type) ? (w.type as StopKind) : 'other', notes: w.description ?? '' };
   });
   return { routes, stops };
 }

@@ -56,8 +56,8 @@ export function Interactions(props: { map: MapLibreMap }) {
     if (!touch && rightDown && Math.hypot(clientX - rightDown.x, clientY - rightDown.y) > 5) return;
     const spot = toLngLat(e.lngLat);
     setMenu({
-      x: e.point.x,
-      y: e.point.y,
+      x: clientX,
+      y: clientY,
       touch,
       items: [
         { label: 'Add a point here', run: () => appendPoint(route.id, spot) },
@@ -104,9 +104,8 @@ export function Interactions(props: { map: MapLibreMap }) {
       return;
     }
     if (e.key !== 'Escape') return;
-    // Esc closes the menu, then goes back to the point tool, then ends editing.
-    if (menu()) setMenu(undefined);
-    else if (tool() !== 'point') setTool('point');
+    // Esc goes back to the point tool, then ends editing; an open menu takes it first.
+    if (tool() !== 'point') setTool('point');
     else editRoute(undefined);
   };
 

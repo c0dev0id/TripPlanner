@@ -85,14 +85,18 @@ final class TripGpxTest extends TestCase
         self::assertCount(4, $all->xpath('/g:gpx/g:wpt'));
     }
 
-    public function testReadsOptionsFromTheQuery(): void
+    public function testReadsOptionsFromAQueryOrJson(): void
     {
-        self::assertEquals(new ExportOptions(), ExportOptions::fromQuery([]));
-        self::assertEquals(new ExportOptions('routes', false, 500), ExportOptions::fromQuery(['form' => 'routes', 'optional' => '0', 'reach' => '500']));
-        self::assertNull(ExportOptions::fromQuery(['form' => 'lines']));
-        self::assertNull(ExportOptions::fromQuery(['optional' => 'yes']));
-        self::assertNull(ExportOptions::fromQuery(['reach' => '-1']));
-        self::assertNull(ExportOptions::fromQuery(['reach' => '1000000']));
+        self::assertEquals(new ExportOptions(), ExportOptions::from([]));
+        self::assertEquals(new ExportOptions('day', 'routes', false, 500), ExportOptions::from(['per' => 'day', 'form' => 'routes', 'optional' => '0', 'reachM' => '500']));
+        self::assertEquals(new ExportOptions('day', 'routes', false, 500), ExportOptions::from(['per' => 'day', 'form' => 'routes', 'optional' => false, 'reachM' => 500]));
+        self::assertNull(ExportOptions::from(['per' => 'week']));
+        self::assertNull(ExportOptions::from(['form' => 'lines']));
+        self::assertNull(ExportOptions::from(['optional' => 'yes']));
+        self::assertNull(ExportOptions::from(['reachM' => '-1']));
+        self::assertNull(ExportOptions::from(['reachM' => 1_000_000]));
+        self::assertNull(ExportOptions::from('tracks'));
+        self::assertSame('{"per":"trip","form":"tracks","optional":true,"reachM":2000}', json_encode(new ExportOptions()));
     }
 
     public function testMeasuresTheDistanceToALine(): void

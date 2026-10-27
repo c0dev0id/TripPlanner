@@ -40,8 +40,8 @@ export const listTrips = (): Promise<TripSummary[]> => request('GET', '/api/trip
 
 export const createTrip = (name: string, folderId: number | null): Promise<TripSummary> => request('POST', '/api/trips', { name, folderId });
 
-/** A copy of the trip with all its days, next to it in the library. */
-export const duplicateTrip = (id: number): Promise<TripSummary> => request('POST', `/api/trips/${id}/copies`);
+/** A copy of the trip with all its days, next to it in the library; the answer is the copy's id. */
+export const duplicateTrip = (id: number): Promise<{ id: number }> => request('POST', `/api/trips/${id}/copies`);
 
 /** Puts a trip into a folder, or into none. */
 export const moveTrip = (id: number, folderId: number | null): Promise<void> => request('PATCH', `/api/trips/${id}`, { folderId });
@@ -79,11 +79,10 @@ export interface ExportOptions {
 
 export const DEFAULT_EXPORT: ExportOptions = { per: 'trip', form: 'tracks', optional: true, reachM: 2000 };
 
-/** The GPX download of a trip, or of one of its days, as the options say. */
+/** The GPX download of a trip as the options say, or of one of its days. */
 export function gpxUrl(tripId: number, options: ExportOptions, dayId?: string): string {
-  const query = new URLSearchParams({ form: options.form, optional: options.optional ? '1' : '0', reach: String(options.reachM) });
+  const query = new URLSearchParams({ per: options.per, form: options.form, optional: options.optional ? '1' : '0', reachM: String(options.reachM) });
   if (dayId) query.set('day', dayId);
-  else if (options.per === 'day') query.set('per', 'day');
   return `/api/trips/${tripId}/gpx?${query}`;
 }
 

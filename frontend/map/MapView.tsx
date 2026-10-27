@@ -6,7 +6,6 @@ import { ROUTING_ATTRIBUTION } from '../routing/osrm';
 import { panTarget, showNeighbours } from '../state/drawing';
 import { failedLegs } from '../state/routing';
 import { editingRouteId, neighbourDays, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
-import { ContextMenu } from './ContextMenu';
 import { Interactions } from './Interactions';
 import { PointMarkers } from './PointMarkers';
 import { ROUTE_LAYERS, ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
@@ -45,7 +44,6 @@ export function MapView() {
             <StopMarkers map={m()} />
             <PointMarkers map={m()} />
             <Interactions map={m()} />
-            <ContextMenu map={m()} />
           </>
         )}
       </Show>

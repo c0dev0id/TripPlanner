@@ -32,7 +32,7 @@ final class ExportPresetController
         if ($name === null) {
             return Json::error($response, 422, 'A preset needs a name of up to 200 characters.');
         }
-        $options = ExportPresets::options(Json::field($request, 'options'));
+        $options = ExportOptions::from(Json::field($request, 'options'));
         if ($options === null) {
             return Json::error($response, 422, 'The preset\'s options are malformed.');
         }

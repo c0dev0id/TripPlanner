@@ -38,11 +38,13 @@ export function panTo(lngLat: LngLat): void {
 export interface MenuItem {
   label: string;
   run: () => void;
+  disabled?: boolean;
 }
 
 /**
- * The open context menu, positioned in CSS pixels relative to the map container. A menu
- * opened by a long press (`touch`) ignores the lifting finger until it is tapped again.
+ * The open menu, at a spot in viewport pixels: a context menu on the map or a marker, or
+ * the further actions of a row in the panel. A menu opened by a long press (`touch`)
+ * ignores the lifting finger until it is tapped again.
  */
 export const [menu, setMenu] = createSignal<{ x: number; y: number; touch: boolean; items: MenuItem[] }>();
 

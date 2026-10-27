@@ -143,6 +143,23 @@ final class TripDocumentsTest extends TestCase
         self::assertSame([], $this->documents->load($this->userId, $other)['days']);
     }
 
+    public function testCopiesATripWithItsDaysUnderNewIds(): void
+    {
+        $this->save(TripFixture::document(), 1);
+        self::assertNull($this->documents->copy($this->userId + 1, $this->tripId, $this->now));
+        $copyId = $this->documents->copy($this->userId, $this->tripId, $this->now->modify('+1 hour'));
+        self::assertNotNull($copyId);
+        $copy = $this->documents->load($this->userId, $copyId);
+        self::assertSame('Alps copy', $copy['name']);
+        self::assertSame('A weekend.', $copy['description']);
+        self::assertCount(1, $copy['days']);
+        self::assertNotSame('day1', $copy['days'][0]['id']);
+        self::assertSame(['Home', 'Hotel Post', 'Café & Bar'], array_column($copy['days'][0]['stops'], 'name'));
+        self::assertSame($copy['days'][0]['routes'][0]['points'][0]['id'], $copy['days'][0]['stops'][0]['pointId']);
+        self::assertSame(['Alps copy', 'Alps'], array_map(fn ($t) => $t->name, $this->trips->listFor($this->userId)));
+        self::assertSame(1, $this->trips->listFor($this->userId)[0]->dayCount);
+    }
+
     public function testListsTripsWithTheirDayCountAndDeletesThemWithTheirContent(): void
     {
         $this->save(TripFixture::document(), 1);

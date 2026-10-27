@@ -76,10 +76,10 @@ All under `/api`, for a signed-in user; answers are JSON unless a download.
 | `POST /trips` | Creates a trip from `{name, folderId}`; the folder may be null. |
 | `GET /trips/{id}` | The trip document: name, description, version, days (each with its date) with routes and stops. |
 | `PUT /trips/{id}` | Replaces the trip's content with the document sent, which carries the version it was loaded at; 409 when that is no longer the current version, 422 when the document is malformed or names parts of another trip. |
-| `POST /trips/{id}/copies` | A copy of the trip with all its days under new ids, named after it, in its folder. |
+| `POST /trips/{id}/copies` | A copy of the trip with all its days under new ids, named after it, in its folder; answers the copy's id. |
 | `PATCH /trips/{id}` | Puts the trip into the folder of `{folderId}`, or into none for null. |
 | `DELETE /trips/{id}` | Deletes the trip with everything in it. |
-| `GET /trips/{id}/gpx` | The trip as GPX; `?day=<id>` one day; `?per=day` a zip with one file per day; `form=tracks|routes`, `optional=0|1`, `reach=<metres>` as the options. |
+| `GET /trips/{id}/gpx` | The trip as GPX with the options `per=trip|day` (one file, or a zip with one per day), `form=tracks|routes`, `optional=0|1`, `reachM=<metres>`; `?day=<id>` one day alone. |
 | `GET /export-presets` | The user's export presets by name. |
 | `POST /export-presets` | Keeps `{name, options}` as a preset, replacing one of that name. |
 | `DELETE /export-presets/{id}` | Deletes the preset. |

@@ -55,11 +55,11 @@ export interface RoutePoint {
   straight?: boolean;
 }
 
-/** What the routing answered for a leg: its course as polyline6, its length and its riding time. */
+/** A leg's way as polyline6 and its length; its riding time as the routing answered it, or none for a way read from a file. */
 export interface RoutedLeg {
   geometry: string;
   distanceM: number;
-  durationS: number;
+  durationS: number | null;
 }
 
 /** A road to drive: points in order, the legs between consecutive points routed, or straight where the point they lead to says so. */

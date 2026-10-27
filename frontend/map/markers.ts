@@ -74,13 +74,11 @@ export class MarkerHandle {
  * pens. No items, no menu. Dragging the marker closes an open menu. Returns a function
  * that removes the listeners.
  */
-export function onMarkerMenu(handle: MarkerHandle, map: MapLibreMap, items: () => MenuItem[] | undefined): () => void {
+export function onMarkerMenu(handle: MarkerHandle, items: () => MenuItem[] | undefined): () => void {
   const root = handle.root;
-  const open = (clientX: number, clientY: number, touch: boolean) => {
+  const open = (x: number, y: number, touch: boolean) => {
     const list = items();
-    if (!list) return;
-    const rect = map.getContainer().getBoundingClientRect();
-    setMenu({ x: clientX - rect.left, y: clientY - rect.top, touch, items: list });
+    if (list) setMenu({ x, y, touch, items: list });
   };
   let pointerType = 'mouse';
   const onPointerDown = (e: PointerEvent) => {

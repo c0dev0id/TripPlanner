@@ -42,7 +42,7 @@ function StopMarker(props: { map: MapLibreMap; stop: Stop }) {
     if (tapAction() === 'delete') removeStop(stop.id);
     else if (tapAction() !== undefined) setStopDialogId(stop.id);
   });
-  const stopMenu = onMarkerMenu(handle, map, () => {
+  const stopMenu = onMarkerMenu(handle, () => {
     const day = selectedDay()!;
     const items: MenuItem[] = [{ label: 'Edit stop…', run: () => setStopDialogId(stop.id) }];
     if (stop.pointId !== null) {

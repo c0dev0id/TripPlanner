@@ -1,6 +1,7 @@
 import { createResource, createSignal, Show } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout } from './api';
 import { Library } from './library/Library';
+import { ContextMenu } from './map/ContextMenu';
 import { HintBar } from './map/HintBar';
 import { MapView } from './map/MapView';
 import { Toolbar } from './map/Toolbar';
@@ -53,6 +54,7 @@ export function App() {
         <HintBar />
         <Toolbar />
       </div>
+      <ContextMenu />
       <ConfirmDialog />
       <StopDialog />
       <ExportDialog />

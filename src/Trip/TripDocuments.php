@@ -104,6 +104,32 @@ final class TripDocuments
         return $version + 1;
     }
 
+    /**
+     * A copy of the user's trip, named after it, in its folder, every part under a new id,
+     * as one transaction. Returns the copy's id, or null when the user has no such trip.
+     */
+    public function copy(int $userId, int $tripId, DateTimeImmutable $now): ?int
+    {
+        $document = $this->load($userId, $tripId);
+        if ($document === null) {
+            return null;
+        }
+        $this->db->beginTransaction();
+        try {
+            $this->db->prepare(
+                "INSERT INTO trips (user_id, folder_id, name, description, created_at, updated_at)
+                 SELECT user_id, folder_id, substr(name, 1, 195) || ' copy', description, ?, ? FROM trips WHERE id = ?",
+            )->execute([Timestamp::of($now), Timestamp::of($now), $tripId]);
+            $copyId = (int) $this->db->lastInsertId();
+            $this->saveDays($copyId, TripCopy::withNewIds($document)['days']);
+            $this->db->commit();
+        } catch (\Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
+        }
+        return $copyId;
+    }
+
     /** Ids are the client's choice, but a row belongs to its trip: a document may not name another trip's parts. */
     private function assertIdsNotElsewhere(int $tripId, array $days): void
     {

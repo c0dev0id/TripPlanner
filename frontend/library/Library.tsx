@@ -6,6 +6,7 @@ import { EditableName } from '../ui/EditableName';
 import { dateText } from '../ui/format';
 import { BackIcon, DeleteIcon, FolderIcon } from '../ui/icons';
 import { MoreMenu } from '../ui/MoreMenu';
+import { NameForm } from '../ui/NameForm';
 
 /** At most this many search results are listed. */
 const SEARCH_LIMIT = 20;
@@ -109,7 +110,7 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
                         </select>
                         <MoreMenu
                           label={`More for ${trip.name}`}
-                          items={[
+                          items={() => [
                             { label: 'Duplicate', run: () => void run(() => duplicateTrip(trip.id), refetchTrips) },
                             { label: 'Delete', run: () => void removeTrip(trip) },
                           ]}
@@ -126,26 +127,6 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
         </Show>
       </Show>
     </section>
-  );
-}
-
-/** A name and a button that submits it; the field is cleared when `onSubmit` has run. */
-function NameForm(props: { placeholder: string; button: string; primary?: boolean; disabled?: boolean; onSubmit: (name: string) => Promise<void> }) {
-  const [name, setName] = createSignal('');
-  const submit = async (e: SubmitEvent) => {
-    e.preventDefault();
-    const trimmed = name().trim();
-    if (!trimmed) return;
-    await props.onSubmit(trimmed);
-    setName('');
-  };
-  return (
-    <form class="row" onSubmit={(e) => void submit(e)}>
-      <input class="grow" placeholder={props.placeholder} value={name()} onInput={(e) => setName(e.currentTarget.value)} aria-label={props.placeholder} maxlength={200} />
-      <button type="submit" classList={{ primary: props.primary }} disabled={!name().trim() || props.disabled}>
-        {props.button}
-      </button>
-    </form>
   );
 }
 

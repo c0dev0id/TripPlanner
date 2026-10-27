@@ -63,7 +63,9 @@ entries at the end of their section.
 - **Rearranging is a menu per row, not drag and drop.** Each day, route, stop and trip
   has a dots menu with move up, move down, duplicate, move or copy to another day,
   remove. Drag and drop needs a library or a few hundred lines, fights the map's own
-  dragging on touch screens, and the lists are short. A duplicated day gets no date,
+  dragging on touch screens, and the lists are short. The row menus and the map's
+  context menus are one mechanism: one open menu at a time, at a viewport position,
+  closed by a click elsewhere or Esc. A duplicated day gets no date,
   since the day's date would clash with the original's; a duplicated route keeps its
   points but not the stops, which belong to the day; a route moved to another day takes
   the stops bound to its points along, a stop copied to another day arrives free. A trip
@@ -149,8 +151,11 @@ entries at the end of their section.
 - **Export options live in the query; presets on the server.** The download is a URL
   with its options, so a device's import can be bookmarked and the server needs no
   state per download. A preset is a named set of options kept with the account, since
-  the same device is used from every browser; the options are checked on the server
-  like the query.
+  the same device is used from every browser; a preset's JSON and a download's query
+  are read by the one parser, so an option exists in one place.
+- **An imported way has no riding time of its own.** A leg read from a file carries its
+  geometry and length but `durationS` null; the pace assumption for such legs lives in
+  one place, the leg's riding time, instead of being frozen into saved documents.
 - **API paths carry no file extension.** The per-day zip is `gpx?per=day`, not `gpx.zip`:
   PHP's built-in server answers a path with an extension as a static file and never
   reaches the front controller, and nothing is gained by the extension.

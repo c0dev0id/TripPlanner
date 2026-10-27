@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LngLat } from '../model/trip';
 import { parseGpx, type GpxContent } from './gpx';
-import { gpxToDayParts, MAX_TRACK_POINTS } from './import';
+import { gpxToDayParts } from './import';
 
 const GPX_11 = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="test" xmlns="http://www.topografix.com/GPX/1/1">
@@ -70,7 +70,7 @@ describe('gpxToDayParts', () => {
     ]);
   });
 
-  it("keeps a Garmin route's points, each leg along the way Garmin calculated, timed at the assumed pace", () => {
+  it("keeps a Garmin route's points, each leg along the way Garmin calculated, its time left to the pace", () => {
     const [garmin, plain] = gpxToDayParts(parseGpx(GARMIN), options).routes;
     expect(garmin!.name).toBe('Pass road');
     expect(garmin!.points.map((p) => p.lngLat)).toEqual([
@@ -82,7 +82,7 @@ describe('gpxToDayParts', () => {
     // Three segments of 13, 11 and 13 km along the way, not the 36 km straight from end to end.
     expect(leg.distanceM).toBeGreaterThan(37_000);
     expect(leg.distanceM).toBeLessThan(38_500);
-    expect(leg.durationS).toBeCloseTo(leg.distanceM / (50 / 3.6), 3);
+    expect(leg.durationS).toBeNull();
     expect(plain!.legs).toEqual({});
   });
 
@@ -101,7 +101,7 @@ describe('gpxToDayParts', () => {
     const parts = gpxToDayParts({ waypoints: [], routes: [], tracks: [{ segments: [[[1, 1], [1.0000001, 1]], [[2, 2]]] }] }, options);
     expect(parts.routes.map((r) => [r.name, r.points.map((p) => p.lngLat)])).toEqual([['tour', [[1, 1], [2, 2]]]]);
     const long = gpxToDayParts({ waypoints: [], routes: [], tracks: [{ segments: [zigzag(3000)] }] }, options);
-    expect(long.routes[0]!.points.length).toBeLessThanOrEqual(MAX_TRACK_POINTS);
+    expect(long.routes[0]!.points.length).toBeLessThanOrEqual(500);
     expect(gpxToDayParts({ waypoints: [], routes: [], tracks: [] }, options)).toEqual({ routes: [], stops: [] });
   });
 });
