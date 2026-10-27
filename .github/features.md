@@ -28,10 +28,11 @@
 - A date per day; a new day after a dated one is dated the day after, and the library
   shows a trip as starting on its first dated day. A stop can have a fixed arrival time
   and a pause. From the first timed stop and the routed legs' durations the panel
-  computes the day's timeline: arrival and departure at each stop, waiting where the
-  rider is early for a fixed time, a late mark where not, and the day's summary of
-  departure, arrival at the end, riding time, pauses and late stops. Straight legs and
-  legs not routed yet count at 50 km/h.
+  computes the day's planned timeline: arrival and departure at each stop, waiting where
+  the ride is early for a fixed time, a mark where the plan misses one, and the day's
+  summary of departure, arrival at the end, riding time, pauses and missed fixed times.
+  Straight legs and legs not routed yet count at 50 km/h. Nothing is compared with the
+  clock; that is a navigation system's job.
 - Every change saved to the server a moment later, as one document with a version; a
   save over a newer version is refused and the trip offered for reloading.
 - GPX export by scope: the whole trip in one file, one day, or one file per day in a

@@ -302,7 +302,7 @@ a {
   gap: 8px;
 }
 
-.late {
+.missed {
   color: var(--error);
 }
 

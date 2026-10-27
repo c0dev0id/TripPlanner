@@ -165,15 +165,15 @@ function DayDetails(props: { day: Day }) {
   );
 }
 
-/** Departure from the first timed stop to the arrival at the end, the riding time, the pauses, and how many stops are reached late. */
+/** Departure from the first timed stop to the arrival at the end, the riding time, the pauses, and how many fixed times the plan misses. */
 function DaySummary(props: { timeline: DayTimeline }) {
   return (
     <p class="day-summary">
       {timeText(props.timeline.departMin)} → {timeText(props.timeline.endMin)} · {durationText(props.timeline.ridingS)} riding
       <Show when={props.timeline.pauseMin > 0}> · {durationText(props.timeline.pauseMin * 60)} of pauses</Show>
-      <Show when={props.timeline.late > 0}>
+      <Show when={props.timeline.missed > 0}>
         {' · '}
-        <span class="late">{props.timeline.late === 1 ? '1 stop late' : `${props.timeline.late} stops late`}</span>
+        <span class="missed">{props.timeline.missed === 1 ? '1 fixed time missed' : `${props.timeline.missed} fixed times missed`}</span>
       </Show>
     </p>
   );
@@ -209,11 +209,11 @@ function stopTimesText(time: StopTime): string {
   return time.departureMin > time.arrivalMin ? `${arrival} – ${timeText(time.departureMin)}` : arrival;
 }
 
-/** How early or late the stop is reached against its fixed arrival time; nothing when on time or without one. */
-function slackText(time: StopTime): { text: string; late: boolean } | undefined {
+/** What the plan does about the stop's fixed arrival time: waits for it, or misses it; nothing when it fits or there is none. */
+function slackText(time: StopTime): { text: string; missed: boolean } | undefined {
   const slack = Math.round(time.slackMin ?? 0);
   if (slack === 0) return undefined;
-  return slack > 0 ? { text: `${durationText(slack * 60)} early`, late: false } : { text: `${durationText(-slack * 60)} late`, late: true };
+  return slack > 0 ? { text: `waits ${durationText(slack * 60)}`, missed: false } : { text: `misses ${time.stop.arriveAt} by ${durationText(-slack * 60)}`, missed: true };
 }
 
 /** A stop with its times and distance from the day's start, or a plain route point; a click pans the map there. */
@@ -234,7 +234,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: StopTime | undefined 
           <span class="muted detail">
             <Show when={props.time}>{(time) => <>{stopTimesText(time())} · </>}</Show>
             {distanceText(props.entry.distanceM)}
-            <Show when={props.time && slackText(props.time)}>{(slack) => <span classList={{ late: slack().late }}> · {slack().text}</span>}</Show>
+            <Show when={props.time && slackText(props.time)}>{(slack) => <span classList={{ missed: slack().missed }}> · {slack().text}</span>}</Show>
           </span>
         </span>
       </button>

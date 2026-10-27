@@ -2,9 +2,10 @@ import type { Stop } from '../model/trip';
 import type { SequenceEntry } from './sequence';
 
 /**
- * A day's times, from the first stop that has a time on: the riding times of the legs,
- * the pauses, and the stops' fixed arrival times, which the rider waits for when early
- * and misses when late.
+ * A day's planned times, from the first stop that has a time on: the riding times of the
+ * legs, the pauses, and the stops' fixed arrival times, which the plan waits for when
+ * the ride gets there early and misses when it gets there late. Nothing here is the
+ * clock; matching the plan against the ride is a navigation system's job.
  */
 
 export interface StopTime {
@@ -26,8 +27,8 @@ export interface DayTimeline {
   /** Of the whole day. */
   ridingS: number;
   pauseMin: number;
-  /** How many stops are reached after their fixed arrival time. */
-  late: number;
+  /** How many stops' fixed arrival times the plan misses. */
+  missed: number;
 }
 
 /** Minutes since midnight of a time of day written as HH:MM. */
@@ -44,7 +45,7 @@ export function dayTimeline(sequence: readonly SequenceEntry[]): DayTimeline | u
   let clockMin = minutesOfDay(first.stop!.arriveAt!);
   let riddenS = first.timeS;
   let pauseMin = 0;
-  let late = 0;
+  let missed = 0;
   for (const entry of sequence.slice(sequence.indexOf(first))) {
     if (!entry.stop) continue;
     const etaMin = clockMin + (entry.timeS - riddenS) / 60;
@@ -53,12 +54,12 @@ export function dayTimeline(sequence: readonly SequenceEntry[]): DayTimeline | u
     const arrivalMin = fixedMin === undefined ? etaMin : Math.max(etaMin, fixedMin);
     const pause = entry.stop.pauseMinutes ?? 0;
     stops.push({ stop: entry.stop, arrivalMin, departureMin: arrivalMin + pause, ...(slackMin !== undefined && { slackMin }) });
-    if (slackMin !== undefined && slackMin < -0.5) late++;
+    if (slackMin !== undefined && slackMin < -0.5) missed++;
     pauseMin += pause;
     clockMin = arrivalMin + pause;
     riddenS = entry.timeS;
   }
   const ridingS = sequence.at(-1)?.timeS ?? 0;
   const endMin = ridingS > riddenS ? clockMin + (ridingS - riddenS) / 60 : stops.at(-1)!.arrivalMin;
-  return { departMin: stops[0]!.departureMin, stops, endMin, ridingS, pauseMin, late };
+  return { departMin: stops[0]!.departureMin, stops, endMin, ridingS, pauseMin, missed };
 }

@@ -33,10 +33,10 @@ describe('dayTimeline', () => {
       ['home', 510, 540, undefined],
       ['lunch', 630, 690, undefined],
     ]);
-    expect(timeline).toMatchObject({ departMin: 540, endMin: 750, ridingS: 9000, pauseMin: 90, late: 0 });
+    expect(timeline).toMatchObject({ departMin: 540, endMin: 750, ridingS: 9000, pauseMin: 90, missed: 0 });
   });
 
-  it('waits for a fixed arrival time and counts a missed one as late', () => {
+  it('waits for a fixed arrival time and counts one the plan misses', () => {
     const home = stop('home', '09:00');
     const coffee = stop('coffee', '10:00', 15);
     const hotel = stop('hotel', '12:00');
@@ -45,7 +45,7 @@ describe('dayTimeline', () => {
     expect(timeline.stops[1]).toMatchObject({ arrivalMin: 600, departureMin: 615, slackMin: 30 });
     // Two more hours of riding: 12:15, a quarter of an hour late; the hotel ends the day.
     expect(timeline.stops[2]).toMatchObject({ arrivalMin: 735, departureMin: 735, slackMin: -15 });
-    expect(timeline).toMatchObject({ departMin: 540, endMin: 735, late: 1, pauseMin: 15 });
+    expect(timeline).toMatchObject({ departMin: 540, endMin: 735, missed: 1, pauseMin: 15 });
   });
 
   it('leaves the stops before the first timed one without times', () => {
