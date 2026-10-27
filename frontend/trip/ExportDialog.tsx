@@ -1,9 +1,10 @@
 import { createResource, createSignal, For, Show } from 'solid-js';
-import { DEFAULT_EXPORT, deleteExportPreset, errorMessage, gpxUrl, listExportPresets, saveExportPreset, type ExportOptions } from '../api';
+import { DEFAULT_EXPORT, deleteExportPreset, gpxUrl, listExportPresets, saveExportPreset, type ExportOptions } from '../api';
 import { exportOpen, setExportOpen } from '../state/drawing';
 import { openTrip, selectedDay } from '../state/trip';
 import { showModalWhile } from '../ui/modal';
 import { NameForm } from '../ui/NameForm';
+import { createRequest } from '../ui/request';
 import { dayLabel } from './labels';
 
 const sameOptions = (a: ExportOptions, b: ExportOptions) => a.per === b.per && a.form === b.form && a.optional === b.optional && a.reachM === b.reachM;
@@ -16,7 +17,7 @@ export function ExportDialog() {
   const [scope, setScope] = createSignal<'trip' | 'day'>('trip');
   const [options, setOptions] = createSignal<ExportOptions>(DEFAULT_EXPORT);
   const [naming, setNaming] = createSignal(false);
-  const [error, setError] = createSignal<string>();
+  const { error, run } = createRequest();
   const set = <K extends keyof ExportOptions>(key: K, value: ExportOptions[K]) => setOptions((o) => ({ ...o, [key]: value }));
   /** The preset whose options are the current ones, if any. */
   const presetId = () => presets()?.find((p) => sameOptions(p.options, options()))?.id;
@@ -25,14 +26,6 @@ export function ExportDialog() {
     return d && { id: d.id, label: dayLabel(d, openTrip()!.days.indexOf(d)) };
   };
   const url = () => gpxUrl(openTrip()!.id, options(), scope() === 'day' ? day()?.id : undefined);
-  const run = async (work: () => Promise<void>) => {
-    setError(undefined);
-    try {
-      await work();
-    } catch (fault) {
-      setError(errorMessage(fault));
-    }
-  };
   const savePreset = (name: string) =>
     run(async () => {
       const preset = await saveExportPreset(name, options());

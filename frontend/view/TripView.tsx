@@ -1,12 +1,13 @@
 import { createEffect, createMemo, createResource, For, Match, Show, Switch } from 'solid-js';
-import { entryFileUrl, entryPreviewUrl, errorMessage, fetchTripAt, listEntriesAt } from '../api';
-import { onTarget, sizeText, type Entry, type EntryTarget } from '../model/journal';
-import { PROFILES, STOP_KINDS, type Day, type Route, type Trip } from '../model/trip';
+import { errorMessage, fetchTripAt, listEntriesAt } from '../api';
+import { entriesOn, type Entry, type EntryTarget } from '../model/journal';
+import { STOP_KINDS, type Day, type Route, type Trip } from '../model/trip';
 import { routeDistance } from '../routing/legs';
 import { daySequence, type SequenceEntry } from '../routing/sequence';
 import { dayTimeline, type EntryTime } from '../routing/timeline';
-import { dayLabel, routeLabel } from '../trip/labels';
-import { dateText, distanceText, durationText, takenAtText, timeText } from '../ui/format';
+import { EntryFile } from '../trip/EntryFile';
+import { dayLabel, routeKindLabel, routeLabel, timelineText, timesText } from '../trip/labels';
+import { dateText, distanceText, durationText, takenAtText } from '../ui/format';
 import { StopShape } from '../ui/StopShape';
 import { ViewMap } from './ViewMap';
 
@@ -16,26 +17,29 @@ import { ViewMap } from './ViewMap';
  * the owner's, or the shared one.
  */
 export function TripView(props: { api: string }) {
-  const [trip] = createResource(() => fetchTripAt(props.api));
-  const [entries] = createResource(() => listEntriesAt(props.api));
-  createEffect(() => {
-    if (trip()) document.title = `${trip()!.name} · Trip Planner`;
+  const [page] = createResource(async () => {
+    const [trip, entries] = await Promise.all([fetchTripAt(props.api), listEntriesAt(props.api)]);
+    return { trip, entries };
   });
-  const all = () => entries() ?? [];
-  const on = (target: EntryTarget) => all().filter((e) => onTarget(e, target));
+  createEffect(() => {
+    if (page.state === 'ready') document.title = `${page().trip.name} · Trip Planner`;
+  });
   // Reading a resource that failed throws; its error is shown instead.
   return (
     <Switch fallback={<p class="notice">Loading…</p>}>
-      <Match when={trip.error}>{(error) => <p class="notice">{errorMessage(error())}</p>}</Match>
-      <Match when={trip()}>
-        {(t) => (
-          <article class="trip-view">
-            <Header trip={t()} />
-            <ViewMap trip={t()} entries={all()} api={props.api} />
-            <EntryList entries={on({})} api={props.api} />
-            <For each={t().days}>{(day, index) => <DaySection day={day} index={index()} entriesOn={on} api={props.api} />}</For>
-          </article>
-        )}
+      <Match when={page.error}>{(error) => <p class="notice">{errorMessage(error())}</p>}</Match>
+      <Match when={page()}>
+        {(p) => {
+          const on = (target: EntryTarget) => entriesOn(p().entries, target);
+          return (
+            <article class="trip-view">
+              <Header trip={p().trip} />
+              <ViewMap trip={p().trip} entries={p().entries} api={props.api} />
+              <EntryList entries={on({})} api={props.api} />
+              <For each={p().trip.days}>{(day, index) => <DaySection day={day} index={index()} entriesOn={on} api={props.api} />}</For>
+            </article>
+          );
+        }}
       </Match>
     </Switch>
   );
@@ -73,14 +77,7 @@ function DaySection(props: { day: Day; index: number; entriesOn: (target: EntryT
   const distance = () => props.day.routes.reduce((sum, r) => sum + routeDistance(r), 0);
   const summary = () => {
     const t = timeline();
-    return [
-      distance() > 0 && distanceText(distance()),
-      t && `${timeText(t.departMin)} → ${timeText(t.endMin)}`,
-      t && `${durationText(t.ridingS)} riding`,
-      t && t.pauseMin > 0 && `${durationText(t.pauseMin * 60)} of pauses`,
-    ]
-      .filter(Boolean)
-      .join(' · ');
+    return [distance() > 0 && distanceText(distance()), t && timelineText(t)].filter(Boolean).join(' · ');
   };
   return (
     <section class="day">
@@ -107,11 +104,10 @@ function DaySection(props: { day: Day; index: number; entriesOn: (target: EntryT
 }
 
 function RouteItem(props: { route: Route; day: Day; entries: Entry[]; api: string }) {
-  const kind = () => (props.route.kind === 'track' ? 'track' : (PROFILES.find((p) => p.value === props.route.profile)?.label.toLowerCase() ?? props.route.profile));
   return (
     <li>
       <span>{routeLabel(props.route, props.day)}</span>
-      <span class="muted"> · {[kind(), props.route.points.length > 1 && distanceText(routeDistance(props.route)), props.route.optional && 'optional'].filter(Boolean).join(' · ')}</span>
+      <span class="muted"> · {[routeKindLabel(props.route), props.route.points.length > 1 && distanceText(routeDistance(props.route)), props.route.optional && 'optional'].filter(Boolean).join(' · ')}</span>
       <EntryList entries={props.entries} api={props.api} />
     </li>
   );
@@ -124,9 +120,7 @@ function StopItem(props: { entry: SequenceEntry; time: EntryTime | undefined; en
   const times = () => {
     const t = props.time;
     if (!t) return '';
-    const arrival = timeText(t.arrivalMin);
-    const span = t.departureMin > t.arrivalMin ? `${arrival} – ${timeText(t.departureMin)}` : arrival;
-    return t.slackMin < 0 ? `${span} (${durationText(-t.slackMin * 60)} short)` : span;
+    return t.slackMin < 0 ? `${timesText(t)} (${durationText(-t.slackMin * 60)} short)` : timesText(t);
   };
   const detail = () => [times(), distanceText(props.entry.distanceM), stop().kind !== 'other' && kind(), stop().optional && 'optional'].filter(Boolean).join(' · ');
   return (
@@ -161,15 +155,7 @@ function EntryList(props: { entries: Entry[]; api: string }) {
         <For each={props.entries}>
           {(entry) => (
             <li class="entry">
-              <Show when={entry.file}>
-                {(file) => (
-                  <a class="file" href={entryFileUrl(props.api, entry.id)} target="_blank" rel="noopener" title={`${file().name}, ${sizeText(file().size)}`}>
-                    <Show when={file().image} fallback={<span class="file-name">{file().name}</span>}>
-                      <img src={entryPreviewUrl(props.api, entry.id)} alt={file().name} loading="lazy" />
-                    </Show>
-                  </a>
-                )}
-              </Show>
+              <EntryFile entry={entry} base={props.api} />
               <div class="lines">
                 <Show when={entry.takenAt}>{(taken) => <span class="muted">{takenAtText(taken())}</span>}</Show>
                 <Show when={entry.text}>

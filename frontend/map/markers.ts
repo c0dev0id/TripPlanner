@@ -2,6 +2,7 @@ import { Map as MapLibreMap, Marker, type LngLat as MapLibreLngLat } from 'mapli
 import type { LngLat } from '../model/trip';
 import { setMenu, type MenuItem } from '../state/drawing';
 import { onLongPress } from './longPress';
+import { markerElement } from './markerContent';
 
 /** A position as the map gives it, wrapped into the world, as the model's pair. */
 export function toLngLat(position: MapLibreLngLat): LngLat {
@@ -30,9 +31,7 @@ export class MarkerHandle {
     className: string,
     anchor: 'center' | 'bottom' = 'center',
   ) {
-    this.root = document.createElement('div');
-    this.root.className = className;
-    this.root.append(content);
+    this.root = markerElement(className, content);
     this.marker = new Marker({ element: this.root, draggable: true, anchor });
     // MapLibre starts a marker drag with any button. A right-click opens a menu under the
     // pointer that receives the release, which MapLibre never sees: the marker would then

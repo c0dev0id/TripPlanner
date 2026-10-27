@@ -34,6 +34,8 @@ export function onTarget(entry: Entry, target: EntryTarget): boolean {
   return entry.dayId === (t.dayId ?? null) && entry.stopId === (t.stopId ?? null) && entry.routeId === (t.routeId ?? null);
 }
 
+export const entriesOn = (entries: readonly Entry[], target: EntryTarget): Entry[] => entries.filter((e) => onTarget(e, target));
+
 /** The entries that belong to the day: its own and those on its stops and routes. */
 export function entriesOfDay(entries: readonly Entry[], day: Day): Entry[] {
   const stops = new Set(day.stops.map((s) => s.id));

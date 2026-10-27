@@ -117,7 +117,15 @@ export function daySequence(day: Day, decode = decodeCached): SequenceEntry[] {
   return entries.sort((a, b) => a.routeIndex - b.routeIndex || a.distanceM - b.distanceM);
 }
 
-/** The trip with each day's stops in riding order: how the document is stored, so that the server and the read-only page need no routing. */
+/**
+ * The trip with each day's stops sorted into riding order: how the document is stored, so
+ * that the server and the read-only page need no routing. A sort of the day's own list,
+ * so that no stop can go missing whatever the sequence lists.
+ */
 export function withStopsInRidingOrder(trip: Trip): Trip {
-  return { ...trip, days: trip.days.map((day) => ({ ...day, stops: daySequence(day).flatMap((e) => (e.stop ? [e.stop] : [])) })) };
+  const days = trip.days.map((day) => {
+    const rank = new Map(daySequence(day).map((e, i) => [e.id, i]));
+    return { ...day, stops: [...day.stops].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity)) };
+  });
+  return { ...trip, days };
 }

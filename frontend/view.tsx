@@ -1,6 +1,7 @@
 import { render } from 'solid-js/web';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './map/markers.css';
+import './trip/journal.css';
 import './view/view.css';
 import { TripView } from './view/TripView';
 

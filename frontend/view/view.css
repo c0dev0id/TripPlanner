@@ -86,8 +86,7 @@ p {
 }
 
 .routes,
-.stops,
-.entries {
+.stops {
   margin: 6px 0;
   padding: 0;
   list-style: none;
@@ -122,19 +121,9 @@ p {
   font-weight: 600;
 }
 
-.entry {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-  padding: 4px 0;
-}
-
 .entry .file img {
-  display: block;
   width: 160px;
   max-height: 160px;
-  object-fit: cover;
-  border-radius: 4px;
 }
 
 @media print {

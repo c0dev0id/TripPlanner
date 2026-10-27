@@ -4,9 +4,8 @@ import type { Stop } from '../model/trip';
 import { pointOfDay } from '../routing/dayEdit';
 import { setStopDialogId, showNeighbours, straightLegItem, tapAction, type MenuItem } from '../state/drawing';
 import { connectStop, disconnectStop, editingRouteId, moveStop, neighbourDays, removeStop, selectedDay } from '../state/trip';
-import { StopShape } from '../ui/StopShape';
+import { stopContent } from './markerContent';
 import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
-import { BOUND_COLOR, FREE_COLOR } from './routeOverlay';
 
 /**
  * The stops of the selected day, drawn by their kind and named, draggable while a route
@@ -25,16 +24,9 @@ export function StopMarkers(props: { map: MapLibreMap }) {
 
 function StopMarker(props: { map: MapLibreMap; stop: Stop }) {
   const { map, stop } = props;
-  const bound = () => stop.pointId !== null;
   const editing = () => editingRouteId() !== undefined;
 
-  const content = (
-    <div class="stop" classList={{ free: !bound() }}>
-      <StopShape kind={stop.kind} color={bound() ? BOUND_COLOR : FREE_COLOR} foot />
-      <span class="stop-name">{stop.name}</span>
-    </div>
-  ) as HTMLElement;
-  const handle = new MarkerHandle(map, content, 'stop-marker', 'bottom');
+  const handle = new MarkerHandle(map, stopContent(stop), 'stop-marker', 'bottom');
   createEffect(() => handle.setPosition(stop.lngLat));
   createEffect(() => handle.setInteractive(editing()));
   handle.marker.on('dragend', () => moveStop(stop.id, toLngLat(handle.marker.getLngLat())));

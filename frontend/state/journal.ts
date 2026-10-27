@@ -1,6 +1,6 @@
 import { createResource, createRoot, createSignal } from 'solid-js';
 import { addEntry as postEntry, deleteEntry, listEntriesAt, tripApi, updateEntry } from '../api';
-import { onTarget, type Entry, type EntryTarget } from '../model/journal';
+import { entriesOn as entriesOf, type Entry, type EntryTarget } from '../model/journal';
 import { openTrip } from './trip';
 
 /** The open trip's journal, loaded with the trip; changes go to the server at once, there is no undo. */
@@ -13,7 +13,7 @@ export function allEntries(): Entry[] {
   return (entries() ?? []).filter((e) => e.tripId === tripId);
 }
 
-export const entriesOn = (target: EntryTarget): Entry[] => allEntries().filter((e) => onTarget(e, target));
+export const entriesOn = (target: EntryTarget): Entry[] => entriesOf(allEntries(), target);
 
 /** The part whose journal dialog is open, or the trip's for an empty target; none while the dialog is closed. */
 export const [journalTarget, setJournalTarget] = createSignal<EntryTarget>();

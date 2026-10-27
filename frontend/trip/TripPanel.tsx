@@ -3,7 +3,7 @@ import { errorMessage } from '../api';
 import { parseGpx } from '../gpx/gpx';
 import { gpxToDayParts } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
-import { newId, PROFILES, type Day, type Route } from '../model/trip';
+import { newId, type Day, type Route } from '../model/trip';
 import { defaultProfile } from '../routing/dayEdit';
 import { routeDistance } from '../routing/legs';
 import type { SequenceEntry } from '../routing/sequence';
@@ -42,11 +42,11 @@ import {
 } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
 import { EditableName } from '../ui/EditableName';
-import { distanceText, durationText, timeText } from '../ui/format';
+import { distanceText, durationText } from '../ui/format';
 import { BackIcon, DownloadIcon, NotebookIcon, PencilIcon, ShareIcon } from '../ui/icons';
 import { MoreMenu } from '../ui/MoreMenu';
 import { StopShape } from '../ui/StopShape';
-import { dayLabel, routeLabel } from './labels';
+import { dayLabel, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 
 /** How many journal entries a part has, for its row: "2 in the journal", or nothing for none. */
 function journalCount(target: EntryTarget): string {
@@ -212,12 +212,11 @@ function DayDetails(props: { day: Day }) {
   );
 }
 
-/** Departure from the first timed stop to the arrival at the end, the riding time, the pauses, and where the ride falls short of a fixed time. */
+/** The day's timeline in one line, and where the ride falls short of a fixed time. */
 function DaySummary(props: { timeline: DayTimeline }) {
   return (
     <p class="day-summary">
-      {timeText(props.timeline.departMin)} → {timeText(props.timeline.endMin)} · {durationText(props.timeline.ridingS)} riding
-      <Show when={props.timeline.pauseMin > 0}> · {durationText(props.timeline.pauseMin * 60)} of pauses</Show>
+      {timelineText(props.timeline)}
       <Show when={props.timeline.short > 0}>
         {' · '}
         <span class="short">{props.timeline.short === 1 ? 'short at 1 stop' : `short at ${props.timeline.short} stops`}</span>
@@ -229,7 +228,6 @@ function DaySummary(props: { timeline: DayTimeline }) {
 function RouteItem(props: { route: Route; index: number; day: Day }) {
   const editing = () => editingRouteId() === props.route.id;
   const label = () => routeLabel(props.route, props.day);
-  const profile = () => (props.route.kind === 'track' ? 'Track' : (PROFILES.find((p) => p.value === props.route.profile)?.label ?? props.route.profile));
   const journal = () => journalCount({ routeId: props.route.id });
   const remove = async () => {
     if (props.route.points.length > 0 && !(await askConfirmation(`Remove ${label()} with its ${props.route.points.length} points?`, 'Remove'))) return;
@@ -248,7 +246,7 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
     <li class="row route" classList={{ editing: editing() }}>
       <EditableName value={label()} label="route" onRename={(name) => renameRoute(props.route.id, name)} />
       <span class="muted">
-        {profile()}
+        {routeKindLabel(props.route)}
         {props.route.points.length > 1 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
         {props.route.optional ? ' · optional' : ''}
         {journal() ? ` · ${journal()}` : ''}
@@ -259,12 +257,6 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
       <MoreMenu label={`More for ${label()}`} items={more} />
     </li>
   );
-}
-
-/** The planned arrival, and the departure where a pause separates them. */
-function timesText(time: EntryTime): string {
-  const arrival = timeText(time.arrivalMin);
-  return time.departureMin > time.arrivalMin ? `${arrival} – ${timeText(time.departureMin)}` : arrival;
 }
 
 /** A stop or a plain route point with its times and distance from the day's start; a click pans the map there. */

@@ -3,6 +3,7 @@ import { errorMessage, sharedPageUrl, shareToken, shareTrip, unshareTrip } from 
 import { setShareOpen, shareOpen } from '../state/drawing';
 import { openTrip } from '../state/trip';
 import { showModalWhile } from '../ui/modal';
+import { createRequest } from '../ui/request';
 
 /** The trip's read-only page: a link to print it, and sharing it under a public link. */
 export function ShareDialog() {
@@ -10,16 +11,8 @@ export function ShareDialog() {
   showModalWhile(() => dialog, shareOpen);
   const tripId = () => (shareOpen() ? openTrip()?.id : undefined);
   const [token, { mutate }] = createResource(tripId, async (id) => (await shareToken(id)).token);
-  const [error, setError] = createSignal<string>();
+  const { error, run } = createRequest();
   const [copied, setCopied] = createSignal(false);
-  const run = async (work: () => Promise<void>) => {
-    setError(undefined);
-    try {
-      await work();
-    } catch (fault) {
-      setError(errorMessage(fault));
-    }
-  };
   const share = () =>
     run(async () => {
       mutate((await shareTrip(tripId()!)).token);

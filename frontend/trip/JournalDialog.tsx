@@ -1,12 +1,14 @@
 import { createSignal, For, Show } from 'solid-js';
-import { entryFileUrl, entryPreviewUrl, errorMessage, tripApi } from '../api';
-import { onTarget, sizeText, type Entry, type EntryTarget } from '../model/journal';
+import { tripApi } from '../api';
+import { onTarget, type Entry, type EntryTarget } from '../model/journal';
 import { addEntry, editEntry, entriesOn, journalTarget, removeEntry, setJournalTarget } from '../state/journal';
-import { openTrip, routeById } from '../state/trip';
+import { openTrip } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
 import { takenAtText } from '../ui/format';
 import { DeleteIcon, PencilIcon } from '../ui/icons';
 import { showModalWhile } from '../ui/modal';
+import { createRequest } from '../ui/request';
+import { EntryFile } from './EntryFile';
 import { dayLabel, routeLabel } from './labels';
 
 /** What the open journal is about: the trip, or the part by its label. */
@@ -18,8 +20,11 @@ function targetLabel(target: EntryTarget): string {
   }
   if ('stopId' in target) return trip.days.flatMap((d) => d.stops).find((s) => s.id === target.stopId)?.name ?? 'a removed stop';
   if ('routeId' in target) {
-    const route = routeById(target.routeId);
-    return route ? routeLabel(route, trip.days.find((d) => d.routes.includes(route))!) : 'a removed route';
+    for (const day of trip.days) {
+      const route = day.routes.find((r) => r.id === target.routeId);
+      if (route) return routeLabel(route, day);
+    }
+    return 'a removed route';
   }
   return trip.name;
 }
@@ -29,22 +34,9 @@ export function JournalDialog() {
   let dialog!: HTMLDialogElement;
   let form!: HTMLFormElement;
   showModalWhile(() => dialog, () => journalTarget() !== undefined);
-  const [error, setError] = createSignal<string>();
-  /** Where the last entry went when the server placed it elsewhere: a photo on the day of its date. */
+  const { error, busy, run } = createRequest();
+  /** Where the last photo went when the server placed it on the day of its date. */
   const [placed, setPlaced] = createSignal<string>();
-  const [busy, setBusy] = createSignal(false);
-  const run = async (work: () => Promise<void>) => {
-    setError(undefined);
-    setPlaced(undefined);
-    setBusy(true);
-    try {
-      await work();
-    } catch (fault) {
-      setError(errorMessage(fault));
-    } finally {
-      setBusy(false);
-    }
-  };
   const add = (e: SubmitEvent) => {
     e.preventDefault();
     const data = new FormData(form);
@@ -52,11 +44,12 @@ export function JournalDialog() {
     const file = data.get('file');
     const chosen = file instanceof File && file.size > 0 ? file : undefined;
     if (!text && !chosen) return;
+    setPlaced(undefined);
     void run(async () => {
       const target = journalTarget()!;
       const entry = await addEntry(target, text, chosen);
       form.reset();
-      if (!onTarget(entry, target) && entry.dayId) setPlaced(`${entry.file?.name ?? 'The note'} was placed on ${targetLabel({ dayId: entry.dayId })} by the time it was taken.`);
+      if (!onTarget(entry, target) && entry.dayId) setPlaced(`${entry.file!.name} was placed on ${targetLabel({ dayId: entry.dayId })} by the time it was taken.`);
     });
   };
   const close = () => {
@@ -66,17 +59,20 @@ export function JournalDialog() {
   return (
     <dialog ref={dialog} class="dialog journal-dialog" aria-label="Journal" onClose={close}>
       <Show when={journalTarget()}>
-        {(target) => (
-          <div class="dialog-body">
-            <h3 class="name" title={targetLabel(target())}>
-              Journal · {targetLabel(target())}
-            </h3>
-            <ul class="entries">
-              <For each={entriesOn(target())}>{(entry) => <EntryItem entry={entry} onError={setError} />}</For>
-            </ul>
-            <Show when={entriesOn(target()).length === 0}>
-              <p class="muted">Nothing noted yet.</p>
-            </Show>
+        {(target) => {
+          const label = () => targetLabel(target());
+          const list = () => entriesOn(target());
+          return (
+            <div class="dialog-body">
+              <h3 class="name" title={label()}>
+                Journal · {label()}
+              </h3>
+              <ul class="entries">
+                <For each={list()}>{(entry) => <EntryItem entry={entry} run={run} />}</For>
+              </ul>
+              <Show when={list().length === 0}>
+                <p class="muted">Nothing noted yet.</p>
+              </Show>
             <form ref={form} onSubmit={add}>
               <label>
                 Note
@@ -97,37 +93,29 @@ export function JournalDialog() {
                 </button>
               </div>
             </form>
-          </div>
-        )}
+            </div>
+          );
+        }}
       </Show>
     </dialog>
   );
 }
 
-/** An entry: its file as a preview or a link, when and where a photo was taken, its text, editable, and its deletion. */
-function EntryItem(props: { entry: Entry; onError: (message: string) => void }) {
+/** An entry: its file, when a photo was taken, its text, editable, and its deletion; its requests run through the dialog's runner. */
+function EntryItem(props: { entry: Entry; run: (work: () => Promise<void>) => Promise<void> }) {
   const [editing, setEditing] = createSignal(false);
-  const base = () => tripApi(props.entry.tripId);
   const remove = async () => {
     if (!(await askConfirmation('Delete this journal entry?', 'Delete'))) return;
-    removeEntry(props.entry).catch((fault) => props.onError(errorMessage(fault)));
+    void props.run(() => removeEntry(props.entry));
   };
   const save = (text: string) => {
     setEditing(false);
-    if (text !== props.entry.text) editEntry(props.entry, text).catch((fault) => props.onError(errorMessage(fault)));
+    if (text !== props.entry.text) void props.run(() => editEntry(props.entry, text));
   };
   return (
     <li class="entry">
-      <Show when={props.entry.file}>
-        {(file) => (
-          <a class="file" href={entryFileUrl(base(), props.entry.id)} target="_blank" rel="noopener" title={`${file().name}, ${sizeText(file().size)}`}>
-            <Show when={file().image} fallback={<span class="file-name">{file().name}</span>}>
-              <img src={entryPreviewUrl(base(), props.entry.id)} alt={file().name} loading="lazy" />
-            </Show>
-          </a>
-        )}
-      </Show>
-      <div class="grow lines">
+      <EntryFile entry={props.entry} base={tripApi(props.entry.tripId)} />
+      <div class="lines">
         <Show when={props.entry.takenAt}>{(taken) => <span class="muted detail">{takenAtText(taken())}</span>}</Show>
         <Show when={editing()} fallback={<p class="text">{props.entry.text}</p>}>
           <textarea rows={3} maxlength={20000} ref={(el) => setTimeout(() => el.focus())} onBlur={(e) => save(e.currentTarget.value.trim())} onKeyDown={(e) => e.key === 'Escape' && setEditing(false)}>
