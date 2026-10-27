@@ -1,13 +1,16 @@
 import { GeoJSONSource, LngLatBounds, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
+import type { Day } from '../model/trip';
 import { ROUTING_ATTRIBUTION } from '../routing/osrm';
+import { daySequence } from '../routing/sequence';
+import { panTarget, showNeighbours } from '../state/drawing';
 import { failedLegs } from '../state/routing';
-import { openTrip, selectedDay, selectedDayId } from '../state/trip';
+import { editingRouteId, openTrip, selectedDay, selectedDayId } from '../state/trip';
 import { ContextMenu } from './ContextMenu';
 import { Interactions } from './Interactions';
 import { PointMarkers } from './PointMarkers';
-import { ROUTE_LAYERS, ROUTES_SOURCE, routeFeatures } from './routeOverlay';
+import { decodeCached, ROUTE_LAYERS, ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { StopMarkers } from './StopMarkers';
 
 /** OpenFreeMap serves this vector style without a key. */
@@ -51,18 +54,39 @@ export function MapView() {
   );
 }
 
-/** Keeps the route lines on the map, and shows the selected day when it changes. */
+/** The days drawn: the selected one, and with `showNeighbours` the ones before and after. */
+function shownDays(): { day: Day; role: RouteRole }[] {
+  const days = openTrip()?.days ?? [];
+  const index = days.findIndex((d) => d.id === selectedDayId());
+  if (index < 0) return [];
+  const shown: { day: Day; role: RouteRole }[] = [{ day: days[index]!, role: 'selected' }];
+  if (showNeighbours()) {
+    for (const neighbour of [days[index - 1], days[index + 1]]) if (neighbour) shown.unshift({ day: neighbour, role: 'neighbour' });
+  }
+  return shown;
+}
+
+/** Keeps the route lines on the map, shows the selected day when it changes, and goes where the panel points. */
 function RouteLines(props: { map: MapLibreMap }) {
-  const features = createMemo(() => routeFeatures(openTrip(), selectedDayId(), failedLegs()));
+  const marks = createMemo(() => {
+    const day = selectedDay();
+    return day ? daySequence(day, decodeCached).filter((e) => e.near) : [];
+  });
+  const features = createMemo(() => routeFeatures(shownDays(), editingRouteId(), failedLegs(), marks()));
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
     on(selectedDayId, () => {
-      const trip = openTrip();
       const day = selectedDay();
-      if (!trip) return;
-      const positions = (day?.stops.length ? day.stops : trip.days.flatMap((d) => d.stops)).map((s) => trip.places.find((p) => p.id === s.placeId)?.lngLat);
-      const bounds = positions.reduce((b, p) => (p ? b.extend(p) : b), new LngLatBounds());
+      if (!day) return;
+      const bounds = new LngLatBounds();
+      for (const route of day.routes) for (const point of route.points) bounds.extend(point.lngLat);
+      for (const stop of day.stops) bounds.extend(stop.lngLat);
       if (!bounds.isEmpty()) props.map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 600 });
+    }),
+  );
+  createEffect(
+    on(panTarget, (target) => {
+      if (target) props.map.flyTo({ center: target.lngLat, zoom: Math.max(props.map.getZoom(), 12), duration: 500 });
     }),
   );
   return null;

@@ -54,7 +54,7 @@ export function legCoordinates(route: Pick<Route, 'legs'>, leg: Leg, decode = de
 }
 
 /** The length of a leg in metres: as routed, or as the crow flies for a straight leg or one not routed yet. */
-function legDistance(route: Pick<Route, 'legs'>, leg: Leg): number {
+export function legDistance(route: Pick<Route, 'legs'>, leg: Leg): number {
   const routed = leg.straight ? undefined : route.legs[leg.key];
   return routed ? routed.distanceM : distanceBetween(leg.from, leg.to);
 }

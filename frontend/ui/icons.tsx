@@ -19,6 +19,12 @@ export const BackIcon = () => (
   </Icon>
 );
 
+export const CheckIcon = () => (
+  <Icon>
+    <path d="M5 12l5 5l10 -10" />
+  </Icon>
+);
+
 export const DownloadIcon = () => (
   <Icon>
     <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />

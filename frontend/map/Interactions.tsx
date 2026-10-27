@@ -1,14 +1,14 @@
 import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
 import { createEffect, onCleanup } from 'solid-js';
 import { menu, setMenu, setTool, tapAction, tool } from '../state/drawing';
-import { addStop, insertPoint, insertStop, redo, selectedDay, undo } from '../state/trip';
+import { addFreeStop, appendPoint, editingRoute, editRoute, insertPoint, insertStop, redo, undo } from '../state/trip';
 import { fromMarker, toLngLat } from './markers';
 import { hitRouteLine } from './routeTools';
 import { TapFilter, tapReach, type PointerSample } from './tapFilter';
 
 /**
- * Taps on the map and keys while a day is edited: the tool's work on the selected day,
- * undo and redo, and the menu of a spot on the map (right-click or long press).
+ * Taps on the map and keys while a route is edited: the tool's work on that route, undo
+ * and redo, and the menu of a spot on the map (right-click or long press).
  */
 export function Interactions(props: { map: MapLibreMap }) {
   const map = props.map;
@@ -49,12 +49,21 @@ export function Interactions(props: { map: MapLibreMap }) {
     const touch = pointerType !== 'mouse';
     if (touch) swallowClick = true;
     // Stops and route points open their own menus.
-    if (fromMarker(e.originalEvent) || !selectedDay()) return;
+    const route = editingRoute();
+    if (fromMarker(e.originalEvent) || !route) return;
     // Windows sends the contextmenu event when the button comes up, also after turning the map.
     const { clientX, clientY } = e.originalEvent;
     if (!touch && rightDown && Math.hypot(clientX - rightDown.x, clientY - rightDown.y) > 5) return;
     const spot = toLngLat(e.lngLat);
-    setMenu({ x: e.point.x, y: e.point.y, touch, items: [{ label: 'Add stop here', run: () => addStop(spot) }] });
+    setMenu({
+      x: e.point.x,
+      y: e.point.y,
+      touch,
+      items: [
+        { label: 'Add a point here', run: () => appendPoint(route.id, spot) },
+        { label: 'Add a stop here, beside the route', run: () => addFreeStop(spot) },
+      ],
+    });
   };
   const onClick = (e: MapMouseEvent) => {
     if (swallowClick) {
@@ -66,15 +75,16 @@ export function Interactions(props: { map: MapLibreMap }) {
   /** A click that proved to be a tap: it does what the next tap does. */
   const onTap = (e: MapMouseEvent) => {
     const action = tapAction();
-    const day = selectedDay();
-    if (!action || !day || fromMarker(e.originalEvent)) return;
+    const route = editingRoute();
+    if (!action || !route || fromMarker(e.originalEvent)) return;
     setMenu(undefined);
-    const hit = hitRouteLine(map, day, [e.point.x, e.point.y], tapReach(pointerType !== 'mouse'));
-    if (action === 'stop') {
-      if (hit) insertStop(hit.routeIndex, hit.legIndex, hit.lngLat);
-      else addStop(toLngLat(e.lngLat));
-    } else if (action === 'point' && hit) {
-      insertPoint(day.routes[hit.routeIndex]!.id, hit.legIndex + 1, hit.lngLat);
+    const hit = hitRouteLine(map, route, [e.point.x, e.point.y], tapReach(pointerType !== 'mouse'));
+    if (action === 'point') {
+      if (hit) insertPoint(route.id, hit.legIndex + 1, hit.lngLat);
+      else appendPoint(route.id, toLngLat(e.lngLat));
+    } else if (action === 'stop') {
+      if (hit) insertStop(route.id, hit.legIndex + 1, hit.lngLat);
+      else addFreeStop(toLngLat(e.lngLat));
     }
   };
   const onMoveStart = () => setMenu(undefined);
@@ -83,7 +93,7 @@ export function Interactions(props: { map: MapLibreMap }) {
   const onKeyDown = (e: KeyboardEvent) => {
     // Text fields keep their own undo and Escape handling, and an open modal dialog has
     // the keyboard to itself.
-    if (e.defaultPrevented || isTextField(e.target) || document.querySelector('dialog:modal') || !selectedDay()) return;
+    if (e.defaultPrevented || isTextField(e.target) || document.querySelector('dialog:modal') || !editingRoute()) return;
     const key = e.key.toLowerCase();
     if ((e.ctrlKey || e.metaKey) && !e.altKey && (key === 'z' || key === 'y')) {
       e.preventDefault();
@@ -94,8 +104,10 @@ export function Interactions(props: { map: MapLibreMap }) {
       return;
     }
     if (e.key !== 'Escape') return;
+    // Esc closes the menu, then goes back to the point tool, then ends editing.
     if (menu()) setMenu(undefined);
-    else if (tool() !== 'stop') setTool('stop');
+    else if (tool() !== 'point') setTool('point');
+    else editRoute(undefined);
   };
 
   // On the window, so it runs before the menu closes itself on the same press.
@@ -126,5 +138,5 @@ const NON_TEXT_INPUTS = new Set(['checkbox', 'radio', 'range', 'file', 'button',
 
 function isTextField(target: EventTarget | null): boolean {
   if (target instanceof HTMLInputElement) return !NON_TEXT_INPUTS.has(target.type);
-  return target instanceof HTMLTextAreaElement || (target instanceof HTMLElement && target.isContentEditable);
+  return target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || (target instanceof HTMLElement && target.isContentEditable);
 }

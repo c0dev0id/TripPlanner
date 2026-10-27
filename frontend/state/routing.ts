@@ -5,9 +5,9 @@ import { errorMessage } from '../api';
 import { legState, nextMissingLeg, routedLegs, routeLegs, type LegJob } from '../routing/legs';
 import { fetchLeg, ROUTING_MIN_INTERVAL_MS } from '../routing/osrm';
 import { createPump } from './pump';
-import { clearDayLegs, openTrip, selectedDay, setRouteLeg } from './trip';
+import { clearLegs, editingRouteId, openTrip, routeById, selectedDay, setRouteLeg } from './trip';
 
-/** Routes every missing leg of the open trip, one request per 1.1 s, the selected day's first. */
+/** Routes every missing leg of the open trip, one request per 1.1 s, the edited route's first, then the selected day's. */
 
 const [failedLegs, setFailedLegs] = createSignal<ReadonlySet<string>>(new Set());
 const [lastError, setLastError] = createSignal<string>();
@@ -23,14 +23,14 @@ export function retryFailedLegs(): void {
 
 const allRoutes = (): Route[] => (openTrip()?.days ?? []).flatMap((day) => day.routes);
 
-/** Routes every leg of the selected day again, failed ones included. */
-export function recalculateDay(): void {
-  const day = selectedDay();
-  if (!day) return;
-  const keys = new Set(day.routes.flatMap((route) => routedLegs(unwrap(route)).map((leg) => leg.key)));
+/** Routes every leg of a route again, failed ones included. */
+export function recalculateRoute(routeId: string): void {
+  const route = routeById(routeId);
+  if (!route) return;
+  const keys = new Set(routedLegs(unwrap(route)).map((leg) => leg.key));
   batch(() => {
     setFailedLegs((failed) => new Set([...failed].filter((key) => !keys.has(key))));
-    clearDayLegs();
+    clearLegs(routeId);
   });
 }
 
@@ -38,7 +38,8 @@ const pump = createPump<LegJob, RoutedLeg>({
   next: () => {
     const trip = unwrap(openTrip());
     if (!trip) return undefined;
-    const preferred = new Set(selectedDay()?.routes.map((r) => r.id));
+    const edited = editingRouteId();
+    const preferred = new Set(edited ? [edited] : selectedDay()?.routes.map((r) => r.id));
     return nextMissingLeg(
       trip.days.flatMap((day) => day.routes),
       failedLegs(),

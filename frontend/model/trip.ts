@@ -12,32 +12,39 @@ export const PROFILES: readonly { value: Profile; label: string }[] = [
   { value: 'foot', label: 'Foot' },
 ];
 
-export type PlaceKind = 'hotel' | 'restaurant' | 'fuel' | 'sight' | 'other';
+/** What a stop is, which decides its icon. */
+export type StopKind = 'hotel' | 'restaurant' | 'cafe' | 'fuel' | 'sight' | 'photo' | 'break' | 'other';
 
-export type StopRole = 'overnight' | 'lunch' | 'break' | 'fuel' | 'visit' | 'photo';
+export const STOP_KINDS: readonly { value: StopKind; label: string }[] = [
+  { value: 'other', label: 'Stop' },
+  { value: 'hotel', label: 'Hotel' },
+  { value: 'restaurant', label: 'Restaurant' },
+  { value: 'cafe', label: 'Café' },
+  { value: 'fuel', label: 'Fuel' },
+  { value: 'sight', label: 'Sight' },
+  { value: 'photo', label: 'Photo spot' },
+  { value: 'break', label: 'Break' },
+];
 
-/** A place kept once per trip and referenced by the stops at it. */
-export interface Place {
+/**
+ * A point to stop at. Bound to a route point of its day (`pointId`), it stands at that
+ * point and moves with it; free, it stands where it is and is ordered by where the route
+ * passes closest.
+ */
+export interface Stop {
   id: string;
   name: string;
-  kind: PlaceKind;
+  kind: StopKind;
   lngLat: LngLat;
+  pointId: string | null;
   address: string;
   contact: string;
   bookingReference: string;
   notes: string;
-}
-
-/** A stop of a day, at a place. */
-export interface Stop {
-  id: string;
-  placeId: string;
-  role: StopRole;
   /** Time of day as HH:MM, where the arrival is fixed. */
   arriveAt: string | null;
   pauseMinutes: number | null;
   optional: boolean;
-  notes: string;
 }
 
 /** A point a route runs through. */
@@ -55,11 +62,7 @@ export interface RoutedLeg {
   durationS: number;
 }
 
-/**
- * The way from a stop to the next stop of the day. The points include both stops'
- * positions as first and last point; the legs between consecutive points are routed, or
- * straight where the point they lead to says so.
- */
+/** A road to drive: points in order, the legs between consecutive points routed, or straight where the point they lead to says so. */
 export interface Route {
   id: string;
   name: string;
@@ -76,9 +79,9 @@ export interface Day {
   name: string;
   date: string | null;
   notes: string;
-  stops: Stop[];
-  /** One route per pair of consecutive stops: routes[i] runs from stops[i] to stops[i + 1]. */
+  /** In riding order. */
   routes: Route[];
+  stops: Stop[];
 }
 
 export interface Trip {
@@ -88,7 +91,6 @@ export interface Trip {
   startsOn: string | null;
   /** Counts the saves; a save must name the version it started from. */
   version: number;
-  places: Place[];
   days: Day[];
 }
 

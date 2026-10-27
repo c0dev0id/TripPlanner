@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Route, RoutedLeg } from '../model/trip';
-import { addLeg, changeProfile, insertPoint, movePoint, removePoint, setStraight } from './routeEdit';
+import { addLeg, appendPoint, changeProfile, insertPoint, movePoint, removePoint, setStraight } from './routeEdit';
 
 const routed = (geometry: string): RoutedLeg => ({ geometry, distanceM: 1, durationS: 1 });
 
@@ -19,6 +19,12 @@ const base: Route = {
 };
 
 describe('route edits', () => {
+  it('appends a point and keeps every leg', () => {
+    const r = appendPoint(base, { id: 'd', lngLat: [4, 4] });
+    expect(r.points.map((p) => p.id)).toEqual(['a', 'b', 'c', 'd']);
+    expect(r.legs).toEqual(base.legs);
+  });
+
   it('inserts a point and keeps only the legs it does not split', () => {
     const r = insertPoint(base, 1, { id: 'x', lngLat: [1.5, 1.5] });
     expect(r.points.map((p) => p.id)).toEqual(['a', 'x', 'b', 'c']);

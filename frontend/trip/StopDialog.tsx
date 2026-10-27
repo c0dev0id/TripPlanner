@@ -1,0 +1,79 @@
+import { createEffect, createMemo, For, Show } from 'solid-js';
+import { STOP_KINDS, type Stop, type StopKind } from '../model/trip';
+import { setStopDialogId, stopDialogId } from '../state/drawing';
+import { selectedDay, updateStop } from '../state/trip';
+
+/** The details of a stop, in a modal dialog: name, kind, address, contact, booking, notes. */
+export function StopDialog() {
+  let dialog!: HTMLDialogElement;
+  const stop = createMemo((): Stop | undefined => selectedDay()?.stops.find((s) => s.id === stopDialogId()));
+  createEffect(() => {
+    const open = stop() !== undefined;
+    if (open && !dialog.open) dialog.showModal();
+    else if (!open && dialog.open) dialog.close();
+  });
+  const save = (e: SubmitEvent) => {
+    e.preventDefault();
+    const s = stop();
+    if (!s) return;
+    const form = new FormData(e.currentTarget as HTMLFormElement);
+    const text = (name: string) => String(form.get(name) ?? '').trim();
+    updateStop(s.id, {
+      name: text('name') || s.name,
+      kind: text('kind') as StopKind,
+      address: text('address'),
+      contact: text('contact'),
+      bookingReference: text('bookingReference'),
+      notes: text('notes'),
+    });
+    setStopDialogId(undefined);
+  };
+  return (
+    <dialog ref={dialog} class="dialog stop-dialog" aria-label="Stop" onClose={() => setStopDialogId(undefined)}>
+      <Show when={stop()} keyed>
+        {(s) => (
+          <form onSubmit={save}>
+            <label>
+              Name
+              <input name="name" value={s.name} maxlength={200} required />
+            </label>
+            <label>
+              Kind
+              <select name="kind" value={s.kind}>
+                <For each={STOP_KINDS}>{(kind) => <option value={kind.value}>{kind.label}</option>}</For>
+              </select>
+            </label>
+            <label>
+              Address
+              <textarea name="address" rows={2}>
+                {s.address}
+              </textarea>
+            </label>
+            <label>
+              Contact
+              <input name="contact" value={s.contact} />
+            </label>
+            <label>
+              Booking reference
+              <input name="bookingReference" value={s.bookingReference} />
+            </label>
+            <label>
+              Notes
+              <textarea name="notes" rows={3}>
+                {s.notes}
+              </textarea>
+            </label>
+            <div class="row end">
+              <button type="button" onClick={() => setStopDialogId(undefined)}>
+                Cancel
+              </button>
+              <button type="submit" class="primary">
+                Save
+              </button>
+            </div>
+          </form>
+        )}
+      </Show>
+    </dialog>
+  );
+}

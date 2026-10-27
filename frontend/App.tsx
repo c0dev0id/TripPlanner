@@ -6,6 +6,7 @@ import { MapView } from './map/MapView';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState } from './state/autosave';
 import { closeTrip, loadTrip, openTrip } from './state/trip';
+import { StopDialog } from './trip/StopDialog';
 import { TripPanel } from './trip/TripPanel';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 
@@ -52,6 +53,7 @@ export function App() {
         <Toolbar />
       </div>
       <ConfirmDialog />
+      <StopDialog />
     </>
   );
 }

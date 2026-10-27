@@ -1,14 +1,14 @@
 import type { LngLat, Profile, Route, RoutedLeg, RoutePoint } from '../model/trip';
 import { pruneLegs, routedLegs } from './legs';
 
-/**
- * Pure edits of one route. Each result keeps exactly the routed legs it still needs. The
- * first and last point are the route's stops: they are moved by moving the place, and
- * never inserted before or removed (see dayEdit).
- */
+/** Pure edits of one route. Each result keeps exactly the routed legs it still needs. */
 
 export function withPrunedLegs(route: Route): Route {
   return { ...route, legs: pruneLegs(route) };
+}
+
+export function appendPoint(route: Route, point: RoutePoint): Route {
+  return { ...route, points: [...route.points, point] };
 }
 
 /** Inserts a point before the one at `index`, splitting the leg that led there; both halves keep its kind. */

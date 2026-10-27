@@ -1,18 +1,19 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, For, onCleanup, Show } from 'solid-js';
 import { straightLegItem, tapAction } from '../state/drawing';
-import { movePoint, removePoint, routeById, selectedDay } from '../state/trip';
+import { convertPoint, editingRoute, movePoint, removePoint, routeById, selectedDay } from '../state/trip';
 import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
 
-/** Draggable markers for the points between the stops of the selected day's routes. */
+/** Draggable markers for the points of the route being edited, except those a stop stands on. */
 export function PointMarkers(props: { map: MapLibreMap }) {
+  const plain = createMemo(() => {
+    const route = editingRoute();
+    const taken = new Set(selectedDay()?.stops.map((s) => s.pointId));
+    return route ? route.points.filter((p) => !taken.has(p.id)).map((p) => p.id) : [];
+  });
   return (
-    <Show when={selectedDay()} keyed>
-      {(day) => (
-        <For each={day.routes}>
-          {(route) => <For each={route.points.slice(1, -1).map((p) => p.id)}>{(pointId) => <PointMarker map={props.map} routeId={route.id} pointId={pointId} />}</For>}
-        </For>
-      )}
+    <Show when={editingRoute()?.id} keyed>
+      {(routeId) => <For each={plain()}>{(pointId) => <PointMarker map={props.map} routeId={routeId} pointId={pointId} />}</For>}
     </Show>
   );
 }
@@ -27,10 +28,17 @@ function PointMarker(props: { map: MapLibreMap; routeId: string; pointId: string
   handle.marker.on('dragend', () => movePoint(routeId, pointId, toLngLat(handle.marker.getLngLat())));
   handle.root.addEventListener('click', () => {
     if (tapAction() === 'delete') removePoint(routeId, pointId);
+    else if (tapAction() === 'stop') convertPoint(pointId);
   });
   const stopMenu = onMarkerMenu(handle, map, () => {
     const p = point();
-    return p && [straightLegItem(routeId, p), { label: 'Remove point', run: () => removePoint(routeId, pointId) }];
+    return (
+      p && [
+        { label: 'Make a stop here', run: () => convertPoint(pointId) },
+        straightLegItem(routeId, p),
+        { label: 'Remove point', run: () => removePoint(routeId, pointId) },
+      ]
+    );
   });
   onCleanup(() => {
     stopMenu();

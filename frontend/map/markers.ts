@@ -16,7 +16,8 @@ export function fromMarker(event: Event | undefined): boolean {
 
 /**
  * A draggable marker whose root element is owned by MapLibre (it sets transform, opacity
- * and pointer-events); the given content is placed inside it, centred on the position.
+ * and pointer-events); the given content is placed inside it, centred on the position or
+ * standing on it with its bottom edge.
  */
 export class MarkerHandle {
   readonly marker: Marker;
@@ -27,11 +28,12 @@ export class MarkerHandle {
     private readonly map: MapLibreMap,
     content: Node,
     className: string,
+    anchor: 'center' | 'bottom' = 'center',
   ) {
     this.root = document.createElement('div');
     this.root.className = className;
     this.root.append(content);
-    this.marker = new Marker({ element: this.root, draggable: true, anchor: 'center' });
+    this.marker = new Marker({ element: this.root, draggable: true, anchor });
     // MapLibre starts a marker drag with any button. A right-click opens a menu under the
     // pointer that receives the release, which MapLibre never sees: the marker would then
     // follow the mouse. Only the primary button may drag.
