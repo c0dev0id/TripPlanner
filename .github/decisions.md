@@ -54,6 +54,19 @@ entries at the end of their section.
   order with their distance from the start, with the plain route points shown on request,
   and pans the map to what is clicked.
 
+- **Esc steps back one level at a time.** While a route is edited, Esc closes an open menu,
+  else returns to the point tool, else ends editing. One key for "get me out of this",
+  without ever doing more than the next step back.
+
+## Library
+
+- **Folders are one level deep.** A trip is in one folder or in none. Trips sort by year
+  or region in practice; nesting would add paths and moves for a handful of trips.
+- **The search runs in the browser.** The library loads all trip summaries and folders of
+  the user (a few hundred small rows at most for a personal planner) and filters them by
+  name; the results are capped at twenty. A server search would add an endpoint for
+  data the client already holds.
+
 ## Saving
 
 - **The trip is saved as one document.** The client holds the whole trip, edits it with
@@ -93,7 +106,9 @@ entries at the end of their section.
 
 - **The HTTP layer is checked by a scripted browser run, not in CI.** PHPUnit covers the
   repositories, the validator and the export; Vitest the pure modules and the store. The
-  pages and the editor are exercised with Playwright against `php -S` by hand: sign-up
+  pages and the editor are exercised with Playwright against `php -S` by hand: sign-up,
+  a route with the point, stop and delete tools, free stops connected and disconnected,
+  the stop dialog, neighbouring days, folders and the search, and then
   from the mailed link, a trip with stops added by tapping, routing, the line tools, undo
   and redo, the save, a reload and the downloads. Routing in that run answers from a mock
   where OSRM cannot be reached. Keeping it in CI would mean a browser and a PHP server in

@@ -58,11 +58,11 @@ flowchart TB
 | Layer | Contents |
 |---|---|
 | Presentation (frontend) | The library (`library/`), the trip panel (`trip/`), the map with its route lines, stop and point markers, interactions, toolbar, hint bar and context menu (`map/`), dialogs and small controls (`ui/`). |
-| Application state (frontend) | The open trip with undo and redo and the actions that edit it (`state/trip.ts`), the pull-based routing pump (`state/routing.ts`), the autosave (`state/autosave.ts`), the tool and the open menu (`state/drawing.ts`). |
-| Domain (frontend) | Pure edits of a route and of a day's stops and routes, leg keys and geometry, the polyline codec, the OSRM client (`routing/`); distances and nearest-line search (`geo/`); the document types (`model/`). |
+| Application state (frontend) | The open trip, the selected day and the route being edited, undo and redo and the actions that edit the trip (`state/trip.ts`), the pull-based routing pump (`state/routing.ts`), the autosave (`state/autosave.ts`), the tool, the toggles, the open menu and dialog (`state/drawing.ts`). |
+| Domain (frontend) | Pure edits of a route and of a day's stops and routes, the riding sequence of a day with distances, leg keys and geometry, the polyline codec, the OSRM client (`routing/`); distances and nearest-line search (`geo/`); the document types (`model/`). |
 | API client (frontend) | `api.ts`: requests to the JSON API, the one place that knows its URLs. |
 | HTTP (backend) | Slim routes and middleware (sessions, CSRF, body parsing, authentication), Plates templates for the public pages, JSON encoding of API answers (`Http/`, `Pages/`, `Api/`). |
-| Domain (backend) | Accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), trips and trip documents with their validator (`Trip/`), GPX writing (`Export/`). |
+| Domain (backend) | Accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders, trip documents with their validator (`Trip/`), GPX writing with the proximity of free stops (`Export/`). |
 | Storage (backend) | PDO repositories over SQLite, the file store on disk, mail over SMTP (`Mail/`). |
 
 ## API
@@ -72,17 +72,22 @@ All under `/api`, for a signed-in user; answers are JSON unless a download.
 | Method and path | Does |
 |---|---|
 | `GET /me` | The user's e-mail address and admin flag. |
-| `GET /trips` | The user's trips, last changed first, with their day count. |
-| `POST /trips` | Creates a trip from `{name}`. |
-| `GET /trips/{id}` | The trip document: name, description, start date, version, places, days with stops and routes. |
+| `GET /trips` | The user's trips, last changed first, with their folder and day count. |
+| `POST /trips` | Creates a trip from `{name, folderId}`; the folder may be null. |
+| `GET /trips/{id}` | The trip document: name, description, start date, version, days with routes and stops. |
 | `PUT /trips/{id}` | Replaces the trip's content with the document sent, which carries the version it was loaded at; 409 when that is no longer the current version, 422 when the document is malformed or names parts of another trip. |
+| `PATCH /trips/{id}` | Puts the trip into the folder of `{folderId}`, or into none for null. |
 | `DELETE /trips/{id}` | Deletes the trip with everything in it. |
 | `GET /trips/{id}/gpx` | The trip as GPX; `?day=<id>` one day; `?per=day` a zip with one file per day. |
+| `GET /folders` | The user's folders by name. |
+| `POST /folders` | Creates a folder from `{name}`. |
+| `PATCH /folders/{id}` | Renames the folder from `{name}`. |
+| `DELETE /folders/{id}` | Deletes the folder; its trips stay, in no folder. |
 
 ## Database
 
-The model as phase 2 builds it; the phase 1 schema in `db/schema.sql` still has stops in
-a sequence with a route per gap and places apart from stops.
+The schema is `db/schema.sql`. Attachments and comments are planned, not in the schema
+yet.
 
 ```mermaid
 erDiagram

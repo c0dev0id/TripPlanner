@@ -1,37 +1,44 @@
 ![Trip Planner](docs/banner.png)
 
-Plans whole motorcycle trips, not single routes: days of stops, hotels kept once and used
-every night, routes drawn along the roads, exported as GPX in the shape a device needs.
+Plans whole motorcycle trips, not single routes: days of routes drawn along the roads,
+stops on them or beside them, exported as GPX in the shape a device needs.
 
 Runs at <https://planner.codevoid.de>, by invitation. In development: planning a trip on
-the map and exporting it works; times, alternative routes, GPX import, photos and receipts
-are on the way.
+the map and exporting it works; times, GPX import, photos and receipts are on the way.
 
 ![A day planned on the map](docs/screenshot.png)
 
 ## Features
 
-- **Trips of days** — a trip is a sequence of days, a day a sequence of stops, with a
-  route between consecutive stops.
-- **Drawn on the map** — tap to add a stop at the end of the day or on a route, insert
-  points to shape a route, drag stops and points, delete them; straight legs where the
-  routing knows no way.
-- **Routed along the roads** — by OSRM, with a road, bike or foot profile per day, undo
-  and redo, and a reroute of the whole day.
+- **Trips of days** — a trip is a sequence of days; a day has one or more routes and the
+  stops of the day.
+- **Routes drawn on the map** — tap to add points, tap the route to insert one, drag
+  points and stops, delete them; straight legs where the routing knows no way. Routed
+  along the roads by OSRM with a road, bike or foot profile per route; undo and redo.
+- **Stops bound or free** — a route point becomes a stop with one tap; a stop beside the
+  route is placed freely, listed where the rider passes closest, connected to the route
+  when wanted. Hotel, restaurant, café, fuel, sight, photo spot or break, each drawn as
+  what it is, with address, contact, booking reference and notes.
+- **The day at a glance** — the panel lists a day's routes and its stops in riding order
+  with the distance from the start; a click shows the stop on the map. The days before
+  and after are drawn dimmed for orientation.
 - **Saved as you go** — every change is saved to your account moments later.
+- **A library with folders** — trips sorted into folders, and a search across them.
 - **GPX export** — the whole trip in one file, one day, or one file per day in a zip:
   stops as waypoints, routes as tracks.
-- **Places kept once** — a hotel is one place however many stops use it; rename it once.
 
 ## Getting started
 
 1. Join the waiting list on the landing page; the invitation comes by mail.
-2. Sign in, name a new trip, add a day.
-3. Tap the map for the first stop, then for the next; the road between them is routed.
+2. Sign in, name a new trip, add a day, add a route.
+3. Tap the map for the route's points; the road between them is routed. Pick the *Stop*
+   tool and tap a point to make it a stop, or tap beside the route for a free stop.
+   *Done* ends editing.
 4. Download *GPX of the trip*, *one file per day* or *this day* from the trip's panel.
 
-| Key | Does |
+| Key or gesture | Does |
 |---|---|
 | Ctrl+Z, Ctrl+Shift+Z | Undo, redo |
-| Esc | Back to the Stop tool; closes a menu |
-| Right-click or long press on a stop or point | Straight leg to here, remove |
+| Esc | Closes a menu; back to the Point tool; ends editing |
+| Right-click or long press on a stop or point | Make a stop, connect, disconnect, straight leg, remove |
+| Right-click or long press on the map | Add a point or a free stop here |
