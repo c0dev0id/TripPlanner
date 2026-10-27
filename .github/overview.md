@@ -8,17 +8,19 @@ routes for bad weather, hotel bookings and receipts, and afterwards photos and n
 about the roads as they turned out to be.
 
 Trip Planner is a web application at <https://planner.codevoid.de> that plans the whole
-trip. A trip is a sequence of days. A day is a sequence of stops, each at a place, with
-an arrival time and a pause where they matter, and between consecutive stops one or more
-routes: drawn on a map and routed along roads, or imported as a track. Hotels and other
-places are kept once per trip and referenced by the stops that use them. Photos,
-receipts, documents and comments attach to the trip, a day, a stop, a route or a place.
+trip. A trip is a sequence of days. A day has one or more routes, drawn on a map and
+routed along roads or imported as tracks, and stops along them: a hotel, a lunch, a
+pass, a fuel stop, each with a kind, an arrival time and a pause where they matter.
+A stop is bound to a point of a route, so that it is a waypoint and a route point at
+once, or stands free beside the route and is ordered by where the route passes closest.
+Photos, receipts, documents and comments attach to the trip, a day, a stop or a route.
 
 From the stop times and the routing durations the planner computes each day's timeline
-and shows where a fixed arrival cannot be met. A library view lists a user's trips and
-lets days, stops, routes and places be copied, moved, reordered and duplicated. Export
-produces GPX in the shapes devices and other applications need: one file or one per day,
-tracks or routes, with or without optional parts, as a single file or a zip.
+and shows where a fixed arrival cannot be met. A library view organises a user's trips in
+folders with a search across them, and lets days, stops and routes be copied, moved,
+reordered and duplicated. Export produces GPX in the shapes devices and other
+applications need: one file or one per day, tracks or routes, with or without optional
+parts, as a single file or a zip.
 
 Users have accounts. Sign-up is by invitation: visitors join a waiting list and an admin
 sends invitations. All data lives on the server in a SQLite database and a file store.
@@ -27,14 +29,15 @@ routing is done in the browser by the FOSSGIS OSRM servers.
 
 ## Phases
 
-Phase 0 is done and phase 1 implemented, waiting for its first real trip. Later phases
-describe intent and change as the work progresses.
+Phases 0 and 1 are done; testing phase 1 changed the model (see decisions.md), which
+phase 2 builds. Later phases describe intent and change as the work progresses.
 
 | Phase | Content | Done when |
 |---|---|---|
 | 0 Foundation | PHP application, SQLite schema, accounts with waiting list and invitations, sign-in, password reset, landing page, frontend skeleton with an empty map, CI and deployment, these documents. | A user signs in at planner.codevoid.de and sees an empty trip list. |
-| 1 Plan on a map | Trips, days, places, stops, one route per gap. The route editor from Layer Slayer: points, routed and straight legs, undo and redo, recalculation. Day switcher, autosave. Export as one GPX per trip or per day with tracks and stop waypoints. | A weekend is planned on it and the GPX works on the device. |
-| 2 Time | Stop roles, arrival times, pauses. The computed day timeline with slack and conflicts. Day summary: distance, riding time, departure and arrivals. |  |
-| 3 Library and export | Several routes per gap with the optional flag. GPX import into a gap: routes, tracks, Garmin route points. Copy, move, duplicate and reorder for days, stops, routes, places and trips. The export dialog with all options and saved presets. |  |
-| 4 After the trip | Attachments and comments on everything. Photos placed on the day and the map by their EXIF time and position. Trip state planned or done. A read-only trip page for printing and sharing. |  |
+| 1 Plan on a map | Trips, days, stops and routes. The route editor from Layer Slayer: points, routed and straight legs, undo and redo, recalculation. Autosave. Export as one GPX per trip or per day with tracks and stop waypoints. | Done; its stop-sequence model is replaced in phase 2. |
+| 2 Routes and stops | Routes as geometry with stops bound to route points or free beside the route; several routes per day, each with its profile; editing as a mode of one route; the panel listing routes and stops in riding order with distances, panning the map; neighbouring days dimmed. Folders for trips and a search across them. | A weekend is planned on it and the GPX works on the device. |
+| 3 Time | Arrival times, pauses, the computed day timeline with slack and conflicts. Day summary: distance, riding time, departure and arrivals. |  |
+| 4 Library and export | GPX import into a route: routes, tracks, Garmin route points. Copy, move, duplicate and reorder for days, stops, routes and trips. The export dialog with all options (scope, packaging, tracks or routes, optional parts, proximity) and saved presets. |  |
+| 5 After the trip | Attachments and comments on everything. Photos placed on the day and the map by their EXIF time and position. Trip state planned or done. A read-only trip page for printing and sharing. |  |
 | Later | Sharing between users. Valhalla routing with its motorcycle costing. Elevation and surface colouring of routes. Further export formats. |  |

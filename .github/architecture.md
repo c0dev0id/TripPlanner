@@ -81,19 +81,23 @@ All under `/api`, for a signed-in user; answers are JSON unless a download.
 
 ## Database
 
+The model as phase 2 builds it; the phase 1 schema in `db/schema.sql` still has stops in
+a sequence with a route per gap and places apart from stops.
+
 ```mermaid
 erDiagram
   USER ||--o{ TRIP : owns
+  USER ||--o{ FOLDER : owns
   USER ||--o{ INVITATION : sends
   USER ||--o{ PASSWORD_RESET : requests
   WAITLIST_ENTRY |o--o| INVITATION : "invited by"
+  FOLDER |o--o{ TRIP : holds
   TRIP ||--o{ DAY : "days, in order"
-  TRIP ||--o{ PLACE : keeps
-  DAY ||--o{ STOP : "stops, in order"
-  STOP }o--|| PLACE : at
-  STOP ||--o{ ROUTE : "to the next stop"
-  TRIP ||--o{ ATTACHMENT : "on the trip, a day, a stop, a route or a place"
-  TRIP ||--o{ COMMENT : "on the trip, a day, a stop, a route or a place"
+  DAY ||--o{ ROUTE : "routes, in order"
+  DAY ||--o{ STOP : "stops"
+  STOP }o--o| ROUTE : "bound to a point of"
+  TRIP ||--o{ ATTACHMENT : "on the trip, a day, a stop or a route"
+  TRIP ||--o{ COMMENT : "on the trip, a day, a stop or a route"
 
   USER {
     int id PK
@@ -120,6 +124,10 @@ erDiagram
     string token_hash
     datetime expires_at
   }
+  FOLDER {
+    int id PK
+    string name
+  }
   TRIP {
     int id PK
     string name
@@ -135,34 +143,30 @@ erDiagram
     date date
     string notes
   }
-  PLACE {
-    string id PK
-    string name
-    string kind "hotel, restaurant, fuel, sight, other"
-    float lng
-    float lat
-    string address
-    string contact
-    string booking_reference
-    string notes
-  }
-  STOP {
-    string id PK
-    int position
-    string role "overnight, lunch, break, fuel, visit, photo"
-    time arrive_at
-    int pause_minutes
-    bool optional
-    string notes
-  }
   ROUTE {
     string id PK
+    int position
     string name
     string kind "routed, track"
     string profile "car, bike, foot"
     bool optional
-    json points "in order, the stops' positions first and last"
+    json points "in order: id, position, straight"
     json legs "by profile and ends: geometry, distance, duration"
+  }
+  STOP {
+    string id PK
+    string name
+    string kind "the icon: hotel, restaurant, fuel, sight, photo, break, other"
+    float lng
+    float lat
+    string point_id "a route point of the day, or null for a free stop"
+    string address
+    string contact
+    string booking_reference
+    string notes
+    time arrive_at
+    int pause_minutes
+    bool optional
   }
   ATTACHMENT {
     int id PK
@@ -178,10 +182,11 @@ erDiagram
   }
 ```
 
-Attachments and comments are planned (phase 4). A trip's parts carry ids the client
+Attachments and comments are planned (phase 5). A trip's parts carry ids the client
 generates, so that the trip's content is saved as one document: rows are upserted by id
 and the ones the document no longer holds are deleted. A route's points and legs are
 stored as JSON in the route's row, in the shape the editor works with; each routed leg
-holds its polyline6 geometry, length and riding time as OSRM answered. Attachments and
-comments will carry one nullable foreign key per possible target with a check that
-exactly one is set, so that deleting a target deletes them.
+holds its polyline6 geometry, length and riding time as OSRM answered. A bound stop's
+position equals its route point's, which the validator checks. Attachments and comments
+will carry one nullable foreign key per possible target with a check that exactly one is
+set, so that deleting a target deletes them.

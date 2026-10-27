@@ -23,12 +23,20 @@
 
 ## Planned
 
-- Stops with a role, an arrival time, a pause and an optional flag, and a computed
-  timeline per day: departure, arrival at each stop, slack or conflict against fixed
-  arrival times, riding time.
-- Several routes between the same stops, with the optional flag.
-- GPX import into a gap: routes, tracks, Garmin's calculated route points.
-- Copy, move, duplicate and reorder for days, stops, routes, places and trips.
+- Routes as geometry alone, with stops bound to a route point (a waypoint and a route
+  point at once, dragged together) or free beside the route, ordered by where the route
+  passes closest. A route point converted into a stop, a free stop connected to the
+  route, a bound stop disconnected. Several routes per day, each with its own profile and
+  optional flag; editing as a mode of one route, with the route points shown only then.
+- The panel listing a day's routes and its stops in riding order with their distance
+  from the start, the plain route points shown on request, the map panning to a clicked
+  entry; the days before and after shown dimmed on the map, switchable.
+- Folders for trips in the library and a search across all folders on trip and folder
+  names.
+- Stops with an arrival time and a pause, and a computed timeline per day: departure,
+  arrival at each stop, slack or conflict against fixed arrival times, riding time.
+- GPX import into a route: routes, tracks, Garmin's calculated route points.
+- Copy, move, duplicate and reorder for days, stops, routes and trips.
 - The export dialog with all options and saved presets.
 - Photos, receipts and documents attached to the trip, a day, a stop, a route or a place;
   photos placed by their EXIF time and position; comments for notes before and after the

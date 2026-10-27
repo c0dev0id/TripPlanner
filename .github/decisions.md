@@ -5,52 +5,54 @@ entries at the end of their section.
 
 ## Model
 
-- **A trip is days of stops with routes between them.** A route planner's model, one line
-  with waypoints, cannot hold what a multi-day trip is made of: timed breaks, a lunch at a
-  fixed time, loops from one hotel, alternatives, bookings. The spine is therefore a
-  calendar: a trip has days, a day has stops in order, and between consecutive stops there
-  are routes. Everything else (times, attachments, comments) hangs on one of these.
-- **Roads to drive and points to stop; nothing is mandatory or optional by model.** A first
-  draft made stops mandatory and put optionality into alternative routes and a separate
-  POI entity, so that skipping a stop would still leave a defined route. That models a
-  graph of what might happen instead of a plan. A stop has an arrival time and a pause
+- **A trip is days; a day is routes with stops along them.** A route planner's model, one
+  line with waypoints, cannot hold what a multi-day trip is made of: timed breaks, a lunch
+  at a fixed time, loops, alternatives, bookings. The spine is a calendar: a trip has
+  days, a day has one or more routes (the roads to drive: a ride, a hike after lunch, an
+  option decided on the day) and stops (the points to stop). The first version put stops
+  in a sequence with one route between each pair, so that a route began and ended at a
+  stop; testing showed that what a tap places while shaping a route is a route point, not
+  a stop, and that the route is the primary thing a stop hangs on. The route is now
+  geometry alone, as in Layer Slayer, and stops attach to it.
+- **A stop is bound to a route point or free.** A bound stop names a route point of one of
+  its day's routes and has the same position: dragging either moves both, and it is a
+  waypoint and a route point at once. A free stop has a position of its own; its place in
+  the day's sequence and its distance from the start are those of the nearest point of
+  the route, and the export includes it when it lies within a proximity setting of a
+  route. A route point is converted into a stop, a free stop is connected to the route
+  (a route point is inserted into the nearest leg at its position) and a bound stop is
+  disconnected (the route point goes, the stop stays free). On the map a free stop stands
+  at its own position, in a second colour, with a mark on the route where it is nearest.
+- **A stop carries everything about the place; there is no shared place.** A first draft
+  kept places apart from stops so that one hotel could serve several nights. That made
+  dragging a stop on one day move route points on other days, and it fixed one hotel per
+  night when day one may still have two options. A stop holds name, kind, position,
+  address, contact, booking reference and notes itself; the same hotel on the next day is
+  another stop, copied once the library offers that. Orientation across days comes from
+  showing the neighbouring days dimmed on the map instead.
+- **Nothing is mandatory or optional by model.** A stop has an arrival time and a pause
   where they matter and an `optional` flag that means whatever the user wants it to mean;
-  a route has the same flag. Several routes between the same two stops are alternatives;
-  the timeline follows the first that is not optional.
-- **Places are kept apart from stops.** A base-camp trip references one hotel from the end
-  of one day and the start of the next for several days. Its name, address, phone, booking
-  reference and receipt belong to the place once; the arrival time belongs to the evening.
-  A stop therefore points to a place.
+  a route has the same flag.
 - **A route's points and legs are one JSON value.** The editor works on a route as a unit,
   as Layer Slayer's does: a list of points and a map from leg key (profile and both ends)
   to geometry. Nothing queries single points, so rows per point would add joins and
-  ordering for no gain. The row carries distance and duration beside the JSON for the
-  timeline and the library view.
+  ordering for no gain.
+- **Legs carry distance and duration, not geometry alone.** OSRM answers all three at
+  once; a route's distance and a stop's distance from the start show now, and the
+  timeline needs the durations without routing everything again.
+- **The profile belongs to the route.** A day with a ride, a hike and a ride is three
+  routes with three profiles; the toolbar sets the profile of the route being edited.
 - **The schedule check is the feature.** OSRM returns a duration with every leg. The
   departure plus route durations plus pauses, compared with the fixed arrival times, tells
   before the trip where a day does not work. This is what the times on stops are for.
-- **A route's points include its two stops' positions.** The first and last point of a
-  route are the positions of the stops it joins; one pass after every edit
-  (`alignRouteEnds`) keeps them equal to the places, dropping the legs that touched a
-  moved stop. The alternative, points between the stops only, would have needed every
-  leg function to take the stops' positions from outside and a flag of the route's own
-  for a straight last leg. With the ends inside, Layer Slayer's legs and edits port
-  unchanged, a route is complete geometry on its own for the export, and the server
-  checks the invariant when it validates a document.
-- **Legs carry distance and duration, not geometry alone.** OSRM answers all three at
-  once; the day's distance shows now, and the timeline of phase 2 needs the durations
-  without routing everything again.
-- **A tap on a route adds a stop there; elsewhere at the end of the day.** One tool for
-  stops, with the line hit-tested within the tap's reach, rather than separate append
-  and insert tools as in Layer Slayer: planning a day is mostly "and a stop in between".
-  A stop on the line splits the route at the leg hit, the points before staying with the
-  first half and the points after going to the second. Removing a middle stop joins the
-  two routes without the removed stop's position: whoever removes the stop does not want
-  to go there.
-- **The editor acts on the selected day only.** Its stops are numbered, named and
-  draggable, its routes drawn in colour; the other days' stops are small grey dots and
-  their routes grey lines that let taps through. The routing pump serves the selected
-  day's legs first. Everything a day needs sits in the panel beside it.
+- **Editing is a mode of one route.** Selecting a day shows it: its routes in colour, its
+  stops as pins, the days before and after dimmed for orientation (switchable). Editing a
+  route shows its route points as draggable dots and the tools: a tap appends a point or
+  inserts one on the line, a tap with the stop tool makes a stop (bound where it hits a
+  point or the line, free elsewhere), the delete tool removes. The routing pump serves
+  the edited route's legs first. The panel lists the day's routes and its stops in riding
+  order with their distance from the start, with the plain route points shown on request,
+  and pans the map to what is clicked.
 
 ## Saving
 
@@ -60,8 +62,8 @@ entries at the end of their section.
   point would have turned undo into a problem of reversing requests. The document carries
   the version it was loaded at; the server refuses a save over a newer version (409) and
   the app offers to reload, which is enough while a trip has one editor.
-- **Parts carry client-generated ids and are upserted.** The server upserts each place,
-  day, stop and route by id and deletes the rows the document no longer holds, rather
+- **Parts carry client-generated ids and are upserted.** The server upserts each day, stop
+  and route by id and deletes the rows the document no longer holds, rather
   than deleting and reinserting: attachments of phase 4 will reference stops and routes
   by id and must survive a save. Since the ids are the client's choice, a save first
   checks that none of them belongs to another trip, in one place, rather than guarding
@@ -78,11 +80,11 @@ entries at the end of their section.
 
 ## Export
 
-- **One track per route, waypoints once per place.** A GPX file holds the places of the
-  stops in scope as waypoints, each once however many stops use it, with the place's kind
-  as the waypoint type, and each route as a track named "Day N name: from – to", so that
-  a device lists the day's legs in order. A leg not routed yet is written as the straight
-  line between its ends.
+- **One track per route, one waypoint per stop.** A GPX file holds the stops in scope as
+  waypoints, bound ones at their route point and free ones at their own position when
+  within the proximity setting of a route, with the stop's kind as the waypoint type, and
+  each route as a track named after its day and its own name. A leg not routed yet is
+  written as the straight line between its ends.
 - **API paths carry no file extension.** The per-day zip is `gpx?per=day`, not `gpx.zip`:
   PHP's built-in server answers a path with an extension as a static file and never
   reaches the front controller, and nothing is gained by the extension.
