@@ -34,6 +34,25 @@ CREATE TABLE IF NOT EXISTS password_resets (
     used_at TEXT
 );
 
+-- The journal: notes and files on the trip, a day, a stop or a route; one whose part goes
+-- stays with the trip. A photo's time and position come from its EXIF data.
+CREATE TABLE IF NOT EXISTS entries (
+    id INTEGER PRIMARY KEY,
+    trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    day_id TEXT REFERENCES days(id) ON DELETE SET NULL,
+    stop_id TEXT REFERENCES stops(id) ON DELETE SET NULL,
+    route_id TEXT REFERENCES routes(id) ON DELETE SET NULL,
+    text TEXT NOT NULL DEFAULT '',
+    file_name TEXT,
+    media_type TEXT,
+    size INTEGER,
+    taken_at TEXT,
+    lng REAL,
+    lat REAL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS entries_trip ON entries(trip_id, id);
+
 -- A user's named sets of export options, as JSON.
 CREATE TABLE IF NOT EXISTS export_presets (
     id INTEGER PRIMARY KEY,

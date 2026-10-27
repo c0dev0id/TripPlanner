@@ -11,6 +11,7 @@ use Planner\Account\CurrentUser;
 use Planner\Account\PasswordResets;
 use Planner\Http\Routes;
 use Planner\Http\SessionMiddleware;
+use Planner\Journal\FileStore;
 use Planner\Mail\LogMailer;
 use Planner\Mail\Mailer;
 use Planner\Mail\SmtpMailer;
@@ -32,6 +33,7 @@ final class Kernel
         $builder->addDefinitions([
             Config::class => fn () => Config::load($root . '/config'),
             PDO::class => fn (Config $config) => Database::open($config->dataDir . '/planner.sqlite'),
+            FileStore::class => fn (Config $config) => new FileStore($config->dataDir . '/files'),
             ResponseFactoryInterface::class => fn () => new ResponseFactory(),
             Guard::class => fn (ResponseFactoryInterface $factory) => new Guard($factory),
             Mailer::class => fn (Config $config) => $config->mailTransport === 'smtp'
