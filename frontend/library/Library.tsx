@@ -1,10 +1,11 @@
 import { createMemo, createResource, createSignal, For, Show } from 'solid-js';
-import { createFolder, createTrip, deleteFolder, deleteTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder } from '../api';
+import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder } from '../api';
 import type { Folder, TripSummary } from '../model/trip';
 import { askConfirmation } from '../ui/confirm';
 import { EditableName } from '../ui/EditableName';
 import { dateText } from '../ui/format';
 import { BackIcon, DeleteIcon, FolderIcon } from '../ui/icons';
+import { MoreMenu } from '../ui/MoreMenu';
 
 /** At most this many search results are listed. */
 const SEARCH_LIMIT = 20;
@@ -106,9 +107,13 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
                           <option value="">No folder</option>
                           <For each={folders()}>{(f) => <option value={f.id}>{f.name}</option>}</For>
                         </select>
-                        <button class="icon" title="Delete trip" aria-label={`Delete ${trip.name}`} onClick={() => void removeTrip(trip)}>
-                          <DeleteIcon />
-                        </button>
+                        <MoreMenu
+                          label={`More for ${trip.name}`}
+                          items={[
+                            { label: 'Duplicate', run: () => void run(() => duplicateTrip(trip.id), refetchTrips) },
+                            { label: 'Delete', run: () => void removeTrip(trip) },
+                          ]}
+                        />
                       </li>
                     )}
                   </For>

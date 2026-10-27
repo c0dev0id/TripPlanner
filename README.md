@@ -27,6 +27,8 @@ the way.
   pause: the plan shows when it gets where, where it waits, and where the ride falls
   short of a fixed time.
 - **Saved as you go** — every change is saved to your account moments later.
+- **Rearranged as plans change** — days and routes move up and down or get duplicated,
+  a route moves to another day, a stop is copied to one, a whole trip is duplicated.
 - **A library with folders** — trips sorted into folders, and a search across them.
 - **GPX export** — the whole trip in one file, one day, or one file per day in a zip:
   stops as waypoints, routes as tracks.

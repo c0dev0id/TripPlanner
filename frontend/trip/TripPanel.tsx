@@ -10,8 +10,14 @@ import { panTo, setShowNeighbours, setShowRoutePoints, setStopDialogId, showNeig
 import {
   addDay,
   addRoute,
+  copyStopToDay,
+  duplicateDay,
+  duplicateRoute,
   editingRouteId,
   editRoute,
+  moveDay,
+  moveRoute,
+  moveRouteToDay,
   openTrip,
   removeDay,
   removeRoute,
@@ -29,9 +35,16 @@ import {
 import { askConfirmation } from '../ui/confirm';
 import { EditableName } from '../ui/EditableName';
 import { distanceText, durationText, timeText } from '../ui/format';
-import { BackIcon, DeleteIcon, DownloadIcon, PencilIcon } from '../ui/icons';
+import { BackIcon, DownloadIcon, PencilIcon } from '../ui/icons';
+import { MoreMenu, type MoreItem } from '../ui/MoreMenu';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, routeLabel } from './labels';
+
+/** One item per other day of the trip, for moving or copying something there. */
+function otherDayItems(dayId: string, action: string, run: (dayId: string) => void): MoreItem[] {
+  return openTrip()!
+    .days.flatMap((day, index) => (day.id === dayId ? [] : [{ label: `${action} ${dayLabel(day, index)}`, run: () => run(day.id) }]));
+}
 
 /** The open trip: its name, its days with their routes and stops, the export links and the saving state. */
 export function TripPanel(props: { onLeave: () => void; onReload: () => void }) {
@@ -102,6 +115,12 @@ function DayItem(props: { day: Day; index: number }) {
     if (parts > 0 && !(await askConfirmation(`Remove ${label()} with its routes and stops?`, 'Remove'))) return;
     removeDay(props.day.id);
   };
+  const more = (): MoreItem[] => [
+    { label: 'Move up', run: () => moveDay(props.day.id, -1), disabled: props.index === 0 },
+    { label: 'Move down', run: () => moveDay(props.day.id, 1), disabled: props.index === openTrip()!.days.length - 1 },
+    { label: 'Duplicate', run: () => duplicateDay(props.day.id) },
+    { label: 'Remove', run: () => void remove() },
+  ];
   return (
     <li class="day" classList={{ selected: selected() }}>
       <div class="row">
@@ -112,9 +131,7 @@ function DayItem(props: { day: Day; index: number }) {
         <EditableName value={props.day.name} label="day" onRename={(name) => renameDay(props.day.id, name)}>
           <span />
         </EditableName>
-        <button class="icon" title="Remove day" aria-label={`Remove ${label()}`} onClick={() => void remove()}>
-          <DeleteIcon />
-        </button>
+        <MoreMenu label={`More for ${label()}`} items={more()} />
       </div>
       <Show when={selected()}>
         <DayDetails day={props.day} />
@@ -180,14 +197,25 @@ function DaySummary(props: { timeline: DayTimeline }) {
 
 function RouteItem(props: { route: Route; day: Day }) {
   const editing = () => editingRouteId() === props.route.id;
+  const label = () => routeLabel(props.route, props.day);
   const profile = () => PROFILES.find((p) => p.value === props.route.profile)?.label ?? props.route.profile;
   const remove = async () => {
-    if (props.route.points.length > 0 && !(await askConfirmation(`Remove ${routeLabel(props.route, props.day)} with its ${props.route.points.length} points?`, 'Remove'))) return;
+    if (props.route.points.length > 0 && !(await askConfirmation(`Remove ${label()} with its ${props.route.points.length} points?`, 'Remove'))) return;
     removeRoute(props.route.id);
+  };
+  const more = (): MoreItem[] => {
+    const index = props.day.routes.indexOf(props.route);
+    return [
+      { label: 'Move up', run: () => moveRoute(props.route.id, -1), disabled: index === 0 },
+      { label: 'Move down', run: () => moveRoute(props.route.id, 1), disabled: index === props.day.routes.length - 1 },
+      { label: 'Duplicate', run: () => duplicateRoute(props.route.id) },
+      ...otherDayItems(props.day.id, 'Move to', (dayId) => moveRouteToDay(props.route.id, dayId)),
+      { label: 'Remove', run: () => void remove() },
+    ];
   };
   return (
     <li class="row route" classList={{ editing: editing() }}>
-      <EditableName value={routeLabel(props.route, props.day)} label="route" onRename={(name) => renameRoute(props.route.id, name)} />
+      <EditableName value={label()} label="route" onRename={(name) => renameRoute(props.route.id, name)} />
       <span class="muted">
         {profile()}
         {props.route.points.length > 1 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
@@ -195,9 +223,7 @@ function RouteItem(props: { route: Route; day: Day }) {
       <button classList={{ primary: editing() }} onClick={() => editRoute(editing() ? undefined : props.route.id)}>
         {editing() ? 'Done' : 'Edit'}
       </button>
-      <button class="icon" title="Remove route" aria-label={`Remove ${routeLabel(props.route, props.day)}`} onClick={() => void remove()}>
-        <DeleteIcon />
-      </button>
+      <MoreMenu label={`More for ${label()}`} items={more()} />
     </li>
   );
 }
@@ -243,9 +269,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
             <button class="icon" title="Stop details" aria-label={`Details of ${s().name}`} onClick={() => setStopDialogId(s().id)}>
               <PencilIcon />
             </button>
-            <button class="icon" title="Remove stop" aria-label={`Remove ${s().name}`} onClick={() => removeStop(s().id)}>
-              <DeleteIcon />
-            </button>
+            <MoreMenu label={`More for ${s().name}`} items={[...otherDayItems(selectedDayId()!, 'Copy to', (dayId) => copyStopToDay(s().id, dayId)), { label: 'Remove', run: () => removeStop(s().id) }]} />
           </>
         )}
       </Show>

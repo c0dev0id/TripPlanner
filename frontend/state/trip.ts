@@ -260,6 +260,37 @@ export function addDay(): void {
   selectDay(id);
 }
 
+export function moveDay(dayId: string, by: -1 | 1): void {
+  edit((trip) => dayEdit.moveDay(trip, dayId, by), by < 0 ? 'Move day up' : 'Move day down');
+}
+
+/** Copies the day right after itself and selects the copy. */
+export function duplicateDay(dayId: string): void {
+  const ids: string[] = [];
+  edit((trip) => dayEdit.duplicateDay(trip, dayId, () => ids[ids.push(newId()) - 1]!), 'Duplicate day');
+  // The day's own id is the last one drawn.
+  if (ids.length > 0) selectDay(ids.at(-1));
+}
+
+export function moveRoute(routeId: string, by: -1 | 1): void {
+  edit((trip) => dayEdit.moveRoute(trip, routeId, by), by < 0 ? 'Move route up' : 'Move route down');
+}
+
+export function duplicateRoute(routeId: string): void {
+  edit((trip) => dayEdit.duplicateRoute(trip, routeId, newId), 'Duplicate route');
+}
+
+/** Moves the route and the stops bound to it to another day. */
+export function moveRouteToDay(routeId: string, dayId: string): void {
+  edit((trip) => dayEdit.moveRouteToDay(trip, routeId, dayId), 'Move route');
+  if (editingRouteId() === routeId) setEditingRouteId(undefined);
+}
+
+/** Copies a stop of the selected day to another day, free where it stands. */
+export function copyStopToDay(stopId: string, dayId: string): void {
+  edit((trip) => dayEdit.copyStopToDay(trip, stopId, dayId, newId()), 'Copy stop');
+}
+
 /** Removes a day; the day before it, or the first, is selected instead. */
 export function removeDay(dayId: string): void {
   const days = state.trip?.days ?? [];

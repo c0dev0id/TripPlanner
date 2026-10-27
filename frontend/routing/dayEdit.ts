@@ -44,7 +44,7 @@ export function pointOfDay(day: Day, pointId: string): { route: Route; point: Ro
  * gone stays where it was, free.
  */
 export function updateRoute(trip: Trip, routeId: string, change: (route: Route) => Route): Trip {
-  const day = trip.days.find((d) => d.routes.some((r) => r.id === routeId));
+  const day = dayOfRoute(trip, routeId);
   if (!day) return trip;
   return updateDay(trip, day.id, (d) => {
     const routes = d.routes.map((r) => (r.id === routeId ? change(r) : r));
@@ -159,6 +159,92 @@ function dayAfter(date: string): string {
 
 export function removeDay(trip: Trip, dayId: string): Trip {
   return { ...trip, days: trip.days.filter((d) => d.id !== dayId) };
+}
+
+/** Swaps the day with the one before (`by` -1) or after (`by` 1); nothing at the ends. */
+export function moveDay(trip: Trip, dayId: string, by: -1 | 1): Trip {
+  const days = swapped(trip.days, dayId, by);
+  return days === trip.days ? trip : { ...trip, days };
+}
+
+/** A copy of the day with new ids, right after it, without a date. */
+export function duplicateDay(trip: Trip, dayId: string, newId: () => string): Trip {
+  const index = trip.days.findIndex((d) => d.id === dayId);
+  if (index < 0) return trip;
+  const day = trip.days[index]!;
+  const pointIds = new Map<string, string>();
+  const routes = day.routes.map((route) => copyRoute(route, newId, pointIds));
+  const stops = day.stops.map((stop) => ({ ...stop, id: newId(), pointId: stop.pointId === null ? null : pointIds.get(stop.pointId)! }));
+  const copy: Day = { ...day, id: newId(), date: null, routes, stops };
+  return { ...trip, days: trip.days.toSpliced(index + 1, 0, copy) };
+}
+
+/** Swaps the route with the one before (`by` -1) or after (`by` 1) in its day; nothing at the ends. */
+export function moveRoute(trip: Trip, routeId: string, by: -1 | 1): Trip {
+  const day = dayOfRoute(trip, routeId);
+  return day
+    ? updateDay(trip, day.id, (d) => {
+        const routes = swapped(d.routes, routeId, by);
+        return routes === d.routes ? d : { ...d, routes };
+      })
+    : trip;
+}
+
+/** A copy of the route with new ids, right after it, named after it; the stops stay with the original. */
+export function duplicateRoute(trip: Trip, routeId: string, newId: () => string): Trip {
+  const day = dayOfRoute(trip, routeId);
+  if (!day) return trip;
+  return updateDay(trip, day.id, (d) => {
+    const index = d.routes.findIndex((r) => r.id === routeId);
+    const route = d.routes[index]!;
+    const copy = { ...copyRoute(route, newId, new Map()), name: route.name === '' ? '' : `${route.name} copy` };
+    return { ...d, routes: d.routes.toSpliced(index + 1, 0, copy) };
+  });
+}
+
+/** Moves the route to the end of another day, with the stops bound to its points. */
+export function moveRouteToDay(trip: Trip, routeId: string, dayId: string): Trip {
+  const from = dayOfRoute(trip, routeId);
+  if (!from || from.id === dayId || !trip.days.some((d) => d.id === dayId)) return trip;
+  const route = from.routes.find((r) => r.id === routeId)!;
+  const pointIds = new Set(route.points.map((p) => p.id));
+  const bound = from.stops.filter((s) => s.pointId !== null && pointIds.has(s.pointId));
+  const days = trip.days.map((d) => {
+    if (d.id === from.id) return { ...d, routes: d.routes.filter((r) => r.id !== routeId), stops: d.stops.filter((s) => !bound.includes(s)) };
+    if (d.id === dayId) return { ...d, routes: [...d.routes, route], stops: [...d.stops, ...bound] };
+    return d;
+  });
+  return { ...trip, days };
+}
+
+/** A copy of the stop in another day, free where it stands. */
+export function copyStopToDay(trip: Trip, stopId: string, dayId: string, newId: string): Trip {
+  const stop = trip.days.flatMap((d) => d.stops).find((s) => s.id === stopId);
+  return stop ? updateDay(trip, dayId, (day) => ({ ...day, stops: [...day.stops, { ...stop, id: newId, pointId: null }] })) : trip;
+}
+
+function dayOfRoute(trip: Trip, routeId: string): Day | undefined {
+  return trip.days.find((d) => d.routes.some((r) => r.id === routeId));
+}
+
+/** The list with the item swapped with its neighbour; the same list where that is not possible. */
+function swapped<T extends { id: string }>(items: readonly T[], id: string, by: -1 | 1): T[] {
+  const index = items.findIndex((item) => item.id === id);
+  const other = index + by;
+  if (index < 0 || other < 0 || other >= items.length) return items as T[];
+  const list = [...items];
+  [list[index], list[other]] = [list[other]!, list[index]!];
+  return list;
+}
+
+/** The route with new ids for itself and its points, the point ids noted in `pointIds`; the legs stay, as they are keyed by position. */
+function copyRoute(route: Route, newId: () => string, pointIds: Map<string, string>): Route {
+  const points = route.points.map((p) => {
+    const id = newId();
+    pointIds.set(p.id, id);
+    return { ...p, id };
+  });
+  return { ...route, id: newId(), points };
 }
 
 export function renameDay(trip: Trip, dayId: string, name: string): Trip {

@@ -47,6 +47,7 @@ final class Routes
             $api->post('/trips', [TripController::class, 'create']);
             $api->get('/trips/{id:[0-9]+}', [TripController::class, 'show']);
             $api->put('/trips/{id:[0-9]+}', [TripController::class, 'update']);
+            $api->post('/trips/{id:[0-9]+}/copies', [TripController::class, 'duplicate']);
             $api->patch('/trips/{id:[0-9]+}', [TripController::class, 'move']);
             $api->delete('/trips/{id:[0-9]+}', [TripController::class, 'delete']);
             $api->get('/trips/{id:[0-9]+}/gpx', [GpxExportController::class, 'gpx']);

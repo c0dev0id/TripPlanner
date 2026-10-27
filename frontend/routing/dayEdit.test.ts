@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, RoutedLeg, Trip } from '../model/trip';
-import { addDay, addFreeStop, addRoute, alignStops, connectStop, convertPoint, disconnectStop, insertStop, moveStop, removeRoute, removeStop, setDayDate, setRouteProfile, updateRoute, updateStop } from './dayEdit';
+import { addDay, addFreeStop, addRoute, alignStops, connectStop, convertPoint, copyStopToDay, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, removeRoute, removeStop, setDayDate, setRouteProfile, updateRoute, updateStop } from './dayEdit';
 import { routeLegs } from './legs';
 import * as routeEdit from './routeEdit';
 
@@ -132,5 +132,62 @@ describe('days', () => {
     const dated = setDayDate(empty(), 'd', '2027-12-31');
     expect(addDay(dated, 'e').days[1]!.date).toBe('2028-01-01');
     expect(setDayDate(dated, 'd', '2027-12-31')).toBe(dated);
+  });
+});
+
+describe('reordering and copying', () => {
+  const ids = (prefix: string) => {
+    let n = 0;
+    return () => `${prefix}${++n}`;
+  };
+  const twoDays = (): Trip => addDay(setDayDate(fixture(), 'd', '2027-06-12'), 'e');
+
+  it('swaps a day with its neighbour and stays at the ends', () => {
+    const trip = twoDays();
+    expect(moveDay(trip, 'e', -1).days.map((d) => d.id)).toEqual(['e', 'd']);
+    expect(moveDay(trip, 'e', 1)).toBe(trip);
+    expect(moveDay(trip, 'd', -1)).toBe(trip);
+  });
+
+  it('duplicates a day with new ids, the bound stop following its point', () => {
+    const trip = duplicateDay(twoDays(), 'd', ids('n'));
+    expect(trip.days.map((d) => d.id)).toEqual(['d', 'n7', 'e']);
+    const copy = trip.days[1]!;
+    expect(copy.date).toBeNull();
+    expect(copy.routes[0]!.id).not.toBe('r');
+    expect(copy.routes[0]!.points.map((p) => p.id)).toEqual(['n1', 'n2', 'n3']);
+    expect(copy.routes[0]!.legs).toEqual(day(trip).routes[0]!.legs);
+    expect(copy.stops.map((s) => [s.id, s.pointId])).toEqual([
+      ['n5', 'n2'],
+      ['n6', null],
+    ]);
+  });
+
+  it('moves and duplicates a route within its day', () => {
+    const two = addRoute(fixture(), 'd', 'r2');
+    expect(day(moveRoute(two, 'r2', -1)).routes.map((r) => r.id)).toEqual(['r2', 'r']);
+    expect(moveRoute(two, 'r2', 1)).toBe(two);
+    const copied = duplicateRoute({ ...two, days: [{ ...day(two), routes: [{ ...day(two).routes[0]!, name: 'Loop' }, day(two).routes[1]!] }] }, 'r', ids('c'));
+    expect(day(copied).routes.map((r) => [r.id, r.name, r.points.length])).toEqual([
+      ['r', 'Loop', 3],
+      ['c4', 'Loop copy', 3],
+      ['r2', '', 0],
+    ]);
+    expect(day(copied).stops[0]!.pointId).toBe('b');
+  });
+
+  it('moves a route to another day with its bound stops', () => {
+    const trip = moveRouteToDay(twoDays(), 'r', 'e');
+    expect(day(trip).routes).toEqual([]);
+    expect(day(trip).stops.map((s) => s.id)).toEqual(['s2']);
+    expect(trip.days[1]!.routes.map((r) => r.id)).toEqual(['r']);
+    expect(trip.days[1]!.stops.map((s) => [s.id, s.pointId])).toEqual([['s1', 'b']]);
+    const same = twoDays();
+    expect(moveRouteToDay(same, 'r', 'd')).toBe(same);
+  });
+
+  it('copies a stop to another day as a free stop', () => {
+    const trip = copyStopToDay(twoDays(), 's1', 'e', 'c');
+    expect(trip.days[1]!.stops).toEqual([{ ...day(trip).stops[0]!, id: 'c', pointId: null }]);
   });
 });

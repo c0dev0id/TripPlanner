@@ -4,11 +4,15 @@
 
 - Accounts: a waiting list on the landing page, invitations by mail from an admin page or
   the command line, sign-in, sign-out, password reset by mail.
-- A library of the user's trips in folders, one level deep: create, open, rename and
-  delete trips and folders, move a trip between folders, create a trip in the open
-  folder. A search by name across trips and folders, listing at most twenty results.
+- A library of the user's trips in folders, one level deep: create, open, rename,
+  duplicate and delete trips, create, rename and delete folders, move a trip between
+  folders, create a trip in the open folder. A search by name across trips and folders,
+  listing at most twenty results.
 - Trips as a sequence of days; a day as one or more routes and its stops. Days and routes
-  are added, renamed and removed in the panel.
+  are added, renamed and removed in the panel. A day is moved up or down and duplicated
+  (with new ids, undated); a route is moved up or down within its day, duplicated, or
+  moved to another day with the stops bound to it; a stop is copied to another day as a
+  free stop.
 - Routes as geometry: points in order with routed legs between them, one profile (road,
   bike, foot) per route. A route is edited on its own: a tap adds a point at its end or,
   on the line, inserts one there; points are dragged and deleted; the leg to any point
@@ -44,7 +48,6 @@
 ## Planned
 
 - GPX import into a route: routes, tracks, Garmin's calculated route points.
-- Copy, move, duplicate and reorder for days, stops, routes and trips.
 - The export dialog with all options (scope, packaging, tracks or routes, optional parts,
   proximity) and saved presets.
 - Photos, receipts and documents attached to the trip, a day, a stop or a route; photos

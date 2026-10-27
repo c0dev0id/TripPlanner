@@ -44,6 +44,21 @@ final class TripController
         return Json::of($response->withStatus(201), $trip);
     }
 
+    /** A copy of the trip with all its days, named after it, in its folder. */
+    public function duplicate(Request $request, Response $response, array $args): Response
+    {
+        $userId = $this->currentUser->get()->id;
+        $document = $this->documents->load($userId, (int) $args['id']);
+        if ($document === null) {
+            return Json::error($response, 404, 'No such trip.');
+        }
+        $now = new DateTimeImmutable();
+        $name = mb_substr($document['name'], 0, 195) . ' copy';
+        $copy = $this->trips->create($userId, $name, $now, $this->trips->folderOf((int) $args['id']));
+        $this->documents->save($userId, $copy->id, TripCopy::withNewIds(['name' => $name] + $document), 1, $now);
+        return Json::of($response->withStatus(201), $copy);
+    }
+
     /** Puts the trip into the folder the body names, or into none for null. */
     public function move(Request $request, Response $response, array $args): Response
     {

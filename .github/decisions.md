@@ -60,6 +60,16 @@ entries at the end of their section.
 
 ## Library
 
+- **Rearranging is a menu per row, not drag and drop.** Each day, route, stop and trip
+  has a dots menu with move up, move down, duplicate, move or copy to another day,
+  remove. Drag and drop needs a library or a few hundred lines, fights the map's own
+  dragging on touch screens, and the lists are short. A duplicated day gets no date,
+  since the day's date would clash with the original's; a duplicated route keeps its
+  points but not the stops, which belong to the day; a route moved to another day takes
+  the stops bound to its points along, a stop copied to another day arrives free. A trip
+  is copied on the server with new ids for every part, so the copy's parts never name the
+  original's.
+
 - **Folders are one level deep.** A trip is in one folder or in none. Trips sort by year
   or region in practice; nesting would add paths and moves for a handful of trips.
 - **The search runs in the browser.** The library loads all trip summaries and folders of

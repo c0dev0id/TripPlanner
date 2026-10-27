@@ -40,6 +40,9 @@ export const listTrips = (): Promise<TripSummary[]> => request('GET', '/api/trip
 
 export const createTrip = (name: string, folderId: number | null): Promise<TripSummary> => request('POST', '/api/trips', { name, folderId });
 
+/** A copy of the trip with all its days, next to it in the library. */
+export const duplicateTrip = (id: number): Promise<TripSummary> => request('POST', `/api/trips/${id}/copies`);
+
 /** Puts a trip into a folder, or into none. */
 export const moveTrip = (id: number, folderId: number | null): Promise<void> => request('PATCH', `/api/trips/${id}`, { folderId });
 
