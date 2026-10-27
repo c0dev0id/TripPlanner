@@ -7,7 +7,9 @@ namespace Planner\Http;
 use Planner\Account\LoginController;
 use Planner\Account\PasswordResetController;
 use Planner\Api\MeController;
+use Planner\Export\GpxExportController;
 use Planner\Pages\AppController;
+use Planner\Trip\TripController;
 use Planner\Signup\InvitationController;
 use Planner\Signup\LandingController;
 use Planner\Signup\SignupController;
@@ -40,6 +42,14 @@ final class Routes
 
         $app->group('/api', function (RouteCollectorProxy $api): void {
             $api->get('/me', [MeController::class, 'show']);
+            $api->get('/trips', [TripController::class, 'index']);
+            $api->post('/trips', [TripController::class, 'create']);
+            $api->get('/trips/{id:[0-9]+}', [TripController::class, 'show']);
+            $api->put('/trips/{id:[0-9]+}', [TripController::class, 'update']);
+            $api->patch('/trips/{id:[0-9]+}', [TripController::class, 'rename']);
+            $api->delete('/trips/{id:[0-9]+}', [TripController::class, 'delete']);
+            $api->get('/trips/{id:[0-9]+}/gpx', [GpxExportController::class, 'gpx']);
+            $api->get('/trips/{id:[0-9]+}/gpx.zip', [GpxExportController::class, 'zip']);
         })->add(RequireUser::class);
     }
 }
