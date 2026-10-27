@@ -7,6 +7,7 @@ namespace Planner\Trip;
 use DateTimeImmutable;
 use Planner\Account\CurrentUser;
 use Planner\Http\Json;
+use Planner\Journal\FileStore;
 use Planner\Name;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -17,6 +18,7 @@ final class TripController
     public function __construct(
         private readonly Trips $trips,
         private readonly TripDocuments $documents,
+        private readonly FileStore $files,
         private readonly CurrentUser $currentUser,
     ) {
     }
@@ -110,9 +112,14 @@ final class TripController
         return $saved === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, ['version' => $saved]);
     }
 
+    /** Deletes the trip with everything in it, its journal's files included. */
     public function delete(Request $request, Response $response, array $args): Response
     {
         $deleted = $this->trips->delete($this->currentUser->get()->id, (int) $args['id']);
-        return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'No such trip.');
+        if (!$deleted) {
+            return Json::error($response, 404, 'No such trip.');
+        }
+        $this->files->deleteAll((int) $args['id']);
+        return $response->withStatus(204);
     }
 }

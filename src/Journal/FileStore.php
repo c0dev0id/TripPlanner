@@ -38,6 +38,21 @@ final class FileStore
         }
     }
 
+    /** Removes everything of a trip, for a trip being deleted. */
+    public function deleteAll(int $tripId): void
+    {
+        $dir = "$this->dir/$tripId";
+        if (!is_dir($dir)) {
+            return;
+        }
+        foreach (scandir($dir) as $name) {
+            if ($name !== '.' && $name !== '..') {
+                unlink("$dir/$name");
+            }
+        }
+        rmdir($dir);
+    }
+
     /** The preview of an image entry, made on first use; null where the image cannot be read. */
     public function preview(int $tripId, int $entryId, string $mediaType): ?string
     {
