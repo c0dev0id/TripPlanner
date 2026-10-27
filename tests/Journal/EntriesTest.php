@@ -51,29 +51,31 @@ final class EntriesTest extends TestCase
         self::assertNull($this->entries->listFor($this->otherUserId, $this->tripId));
         self::assertNull($this->entries->add($this->otherUserId, $this->tripId, [], 'Mine', null, $this->now));
         self::assertNull($this->entries->add($this->userId, $this->tripId, ['dayId' => 'nope'], 'Nowhere', null, $this->now));
+        self::assertNull($this->entries->find($this->userId, $this->tripId + 1, $note->id));
         self::assertSame('{"id":' . $note->id . ',"tripId":' . $this->tripId . ',"dayId":null,"stopId":null,"routeId":null,"text":"Packed the bags.","file":null,"takenAt":null,"lngLat":null,"createdAt":"2026-10-27T10:00:00Z"}', json_encode($note));
     }
 
     public function testPlacesAPhotoOnTheDayOfItsDate(): void
     {
         $photo = $this->entries->add($this->userId, $this->tripId, [], '', self::PHOTO, $this->now);
-        $placed = $this->entries->place($this->userId, $photo->id, '2027-06-12T14:30:00', [11.45, 47.8]);
+        $placed = $this->entries->place($this->userId, $this->tripId, $photo->id, '2027-06-12T14:30:00', [11.45, 47.8]);
         self::assertSame(['day1', '2027-06-12T14:30:00', [11.45, 47.8]], [$placed->dayId, $placed->takenAt, $placed->lngLat]);
         $other = $this->entries->add($this->userId, $this->tripId, [], '', self::PHOTO, $this->now);
-        self::assertNull($this->entries->place($this->userId, $other->id, '2027-06-20T09:00:00', null)->dayId);
+        self::assertNull($this->entries->place($this->userId, $this->tripId, $other->id, '2027-06-20T09:00:00', null)->dayId);
         $onStop = $this->entries->add($this->userId, $this->tripId, ['stopId' => 's1'], '', self::PHOTO, $this->now);
-        self::assertSame(['s1', null], [$this->entries->place($this->userId, $onStop->id, '2027-06-12T09:00:00', null)->stopId, $this->entries->place($this->userId, $onStop->id, '2027-06-12T09:00:00', null)->dayId]);
+        $placedOnStop = $this->entries->place($this->userId, $this->tripId, $onStop->id, '2027-06-12T09:00:00', null);
+        self::assertSame(['s1', null], [$placedOnStop->stopId, $placedOnStop->dayId]);
     }
 
     public function testEditsAndDeletesOnlyOwnEntries(): void
     {
         $note = $this->entries->add($this->userId, $this->tripId, [], 'Draft', null, $this->now);
-        self::assertFalse($this->entries->updateText($this->otherUserId, $note->id, 'Theirs'));
-        self::assertTrue($this->entries->updateText($this->userId, $note->id, 'Final'));
-        self::assertSame('Final', $this->entries->find($this->userId, $note->id)->text);
-        self::assertNull($this->entries->delete($this->otherUserId, $note->id));
-        self::assertSame($note->id, $this->entries->delete($this->userId, $note->id)->id);
-        self::assertNull($this->entries->find($this->userId, $note->id));
+        self::assertFalse($this->entries->updateText($this->otherUserId, $this->tripId, $note->id, 'Theirs'));
+        self::assertTrue($this->entries->updateText($this->userId, $this->tripId, $note->id, 'Final'));
+        self::assertSame('Final', $this->entries->find($this->userId, $this->tripId, $note->id)->text);
+        self::assertNull($this->entries->delete($this->otherUserId, $this->tripId, $note->id));
+        self::assertSame($note->id, $this->entries->delete($this->userId, $this->tripId, $note->id)->id);
+        self::assertNull($this->entries->find($this->userId, $this->tripId, $note->id));
     }
 
     public function testStaysWithTheTripWhenItsPartGoes(): void
@@ -82,8 +84,21 @@ final class EntriesTest extends TestCase
         $document = TripFixture::document();
         array_pop($document['days'][0]['stops']);
         $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated($document), 2, $this->now);
-        self::assertNull($this->entries->find($this->userId, $onStop->id)->stopId);
-        self::assertSame('Great cake', $this->entries->find($this->userId, $onStop->id)->text);
+        self::assertNull($this->entries->find($this->userId, $this->tripId, $onStop->id)->stopId);
+        self::assertSame('Great cake', $this->entries->find($this->userId, $this->tripId, $onStop->id)->text);
+    }
+
+    public function testListsTheEntriesOfASharedTrip(): void
+    {
+        $note = $this->entries->add($this->userId, $this->tripId, [], 'Packed the bags.', null, $this->now);
+        $trips = new Trips($this->db);
+        self::assertNull($this->entries->listShared(str_repeat('0', 32)));
+        $token = $trips->share($this->userId, $this->tripId);
+        self::assertSame([$note->id], array_map(fn ($e) => $e->id, $this->entries->listShared($token)));
+        self::assertSame($note->id, $this->entries->findShared($token, $note->id)->id);
+        self::assertNull($this->entries->findShared($token, $note->id + 1));
+        $trips->unshare($this->userId, $this->tripId);
+        self::assertNull($this->entries->listShared($token));
     }
 
     public function testReadsTimeAndPositionFromExifData(): void

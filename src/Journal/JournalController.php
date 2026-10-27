@@ -11,15 +11,13 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\UploadedFileInterface;
 
-/** The journal API: a trip's entries, adding one with a file, its text, its deletion, its file and preview. */
+/** The journal API of a trip: its entries, adding one with a file, an entry's text, its deletion, its file and preview. */
 final class JournalController
 {
-    /** Files of these types are shown in the browser; everything else is offered for download. */
-    private const INLINE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
-
     public function __construct(
         private readonly Entries $entries,
         private readonly FileStore $files,
+        private readonly EntryFiles $responses,
         private readonly CurrentUser $currentUser,
     ) {
     }
@@ -60,7 +58,7 @@ final class JournalController
             $this->files->store($upload, $tripId, $entry->id);
             $exif = Exif::read($this->files->path($tripId, $entry->id), $file['mediaType']);
             if ($exif['takenAt'] !== null || $exif['lngLat'] !== null) {
-                $entry = $this->entries->place($userId, $entry->id, $exif['takenAt'], $exif['lngLat']);
+                $entry = $this->entries->place($userId, $tripId, $entry->id, $exif['takenAt'], $exif['lngLat']);
             }
         }
         return Json::of($response->withStatus(201), $entry);
@@ -72,13 +70,13 @@ final class JournalController
         if (!is_string($text) || mb_strlen($text) > Entries::MAX_TEXT) {
             return Json::error($response, 422, 'The text must be a string of up to 20000 characters.');
         }
-        $updated = $this->entries->updateText($this->currentUser->get()->id, (int) $args['id'], trim($text));
+        $updated = $this->entries->updateText($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry'], trim($text));
         return $updated ? $response->withStatus(204) : Json::error($response, 404, 'No such entry.');
     }
 
     public function delete(Request $request, Response $response, array $args): Response
     {
-        $entry = $this->entries->delete($this->currentUser->get()->id, (int) $args['id']);
+        $entry = $this->entries->delete($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry']);
         if ($entry === null) {
             return Json::error($response, 404, 'No such entry.');
         }
@@ -86,37 +84,14 @@ final class JournalController
         return $response->withStatus(204);
     }
 
-    /** The entry's file as it was uploaded: shown in the browser where it can be, offered for download otherwise. */
     public function file(Request $request, Response $response, array $args): Response
     {
-        $entry = $this->entries->find($this->currentUser->get()->id, (int) $args['id']);
-        if ($entry === null || $entry->file === null) {
-            return Json::error($response, 404, 'No such file.');
-        }
-        $path = $this->files->path($entry->tripId, $entry->id);
-        if (!is_file($path)) {
-            return Json::error($response, 404, 'The file is gone.');
-        }
-        $disposition = in_array($entry->file['mediaType'], self::INLINE_TYPES, true) ? 'inline' : 'attachment';
-        $response->getBody()->write(file_get_contents($path));
-        return $response
-            ->withHeader('Content-Type', $entry->file['mediaType'])
-            ->withHeader('Content-Disposition', "$disposition; filename*=UTF-8''" . rawurlencode($entry->file['name']));
+        return $this->responses->file($response, $this->entries->find($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry']));
     }
 
-    /** A small JPEG of an image entry. */
     public function preview(Request $request, Response $response, array $args): Response
     {
-        $entry = $this->entries->find($this->currentUser->get()->id, (int) $args['id']);
-        if ($entry === null || $entry->file === null || !$entry->file['image']) {
-            return Json::error($response, 404, 'No such image.');
-        }
-        $preview = $this->files->preview($entry->tripId, $entry->id, $entry->file['mediaType']);
-        if ($preview === null) {
-            return Json::error($response, 404, 'The image cannot be read.');
-        }
-        $response->getBody()->write(file_get_contents($preview));
-        return $response->withHeader('Content-Type', 'image/jpeg')->withHeader('Cache-Control', 'private, max-age=86400');
+        return $this->responses->preview($response, $this->entries->find($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry']));
     }
 
     /** The file's type as its content says, not as the browser claims. */

@@ -11,6 +11,8 @@ final readonly class TripSummary
         public int $id,
         public string $name,
         public ?int $folderId,
+        /** Planned, or ridden: done. */
+        public string $state,
         public ?string $startsOn,
         public int $dayCount,
         public string $updatedAt,

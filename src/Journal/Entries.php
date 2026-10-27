@@ -8,10 +8,12 @@ use DateTimeImmutable;
 use PDO;
 use Planner\Timestamp;
 
-/** The journal entries of a user's trips. Every method checks that the trip is the user's. */
+/** The journal entries of the trips: a user's own, or those of a trip shared under a token. */
 final class Entries
 {
     public const MAX_TEXT = 20000;
+
+    private const SELECT = 'SELECT e.* FROM entries e JOIN trips t ON t.id = e.trip_id WHERE ';
 
     public function __construct(private readonly PDO $db)
     {
@@ -20,20 +22,25 @@ final class Entries
     /** @return ?Entry[] the trip's entries, oldest first; null when the user has no such trip */
     public function listFor(int $userId, int $tripId): ?array
     {
-        if (!$this->owns($userId, $tripId)) {
-            return null;
-        }
-        $statement = $this->db->prepare('SELECT * FROM entries WHERE trip_id = ? ORDER BY id');
-        $statement->execute([$tripId]);
-        return array_map(Entry::fromRow(...), $statement->fetchAll());
+        return $this->owns($userId, $tripId) ? $this->list('e.trip_id = ?', [$tripId]) : null;
     }
 
-    public function find(int $userId, int $entryId): ?Entry
+    /** @return ?Entry[] the entries of the trip shared under the token; null when none is */
+    public function listShared(string $token): ?array
     {
-        $statement = $this->db->prepare('SELECT e.* FROM entries e JOIN trips t ON t.id = e.trip_id WHERE e.id = ? AND t.user_id = ?');
-        $statement->execute([$entryId, $userId]);
-        $row = $statement->fetch();
-        return $row === false ? null : Entry::fromRow($row);
+        $statement = $this->db->prepare('SELECT 1 FROM trips WHERE share_token = ?');
+        $statement->execute([$token]);
+        return $statement->fetchColumn() === false ? null : $this->list('t.share_token = ?', [$token]);
+    }
+
+    public function find(int $userId, int $tripId, int $entryId): ?Entry
+    {
+        return $this->one('e.id = ? AND e.trip_id = ? AND t.user_id = ?', [$entryId, $tripId, $userId]);
+    }
+
+    public function findShared(string $token, int $entryId): ?Entry
+    {
+        return $this->one('e.id = ? AND t.share_token = ?', [$entryId, $token]);
     }
 
     /**
@@ -59,7 +66,7 @@ final class Entries
             'INSERT INTO entries (trip_id, day_id, stop_id, route_id, text, file_name, media_type, size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         );
         $statement->execute([$tripId, $dayId, $stopId, $routeId, $text, $file['name'] ?? null, $file['mediaType'] ?? null, $file['size'] ?? null, Timestamp::of($now)]);
-        return $this->find($userId, (int) $this->db->lastInsertId());
+        return $this->find($userId, $tripId, (int) $this->db->lastInsertId());
     }
 
     /**
@@ -68,36 +75,52 @@ final class Entries
      *
      * @param ?array{0: float, 1: float} $lngLat
      */
-    public function place(int $userId, int $entryId, ?string $takenAt, ?array $lngLat): ?Entry
+    public function place(int $userId, int $tripId, int $entryId, ?string $takenAt, ?array $lngLat): ?Entry
     {
-        $entry = $this->find($userId, $entryId);
+        $entry = $this->find($userId, $tripId, $entryId);
         if ($entry === null) {
             return null;
         }
         $dayId = $entry->dayId;
         if ($dayId === null && $entry->stopId === null && $entry->routeId === null && $takenAt !== null) {
-            $dayId = $this->dayOnDate($entry->tripId, substr($takenAt, 0, 10));
+            $dayId = $this->dayOnDate($tripId, substr($takenAt, 0, 10));
         }
         $this->db->prepare('UPDATE entries SET taken_at = ?, lng = ?, lat = ?, day_id = ? WHERE id = ?')->execute([$takenAt, $lngLat[0] ?? null, $lngLat[1] ?? null, $dayId, $entryId]);
-        return $this->find($userId, $entryId);
+        return $this->find($userId, $tripId, $entryId);
     }
 
     /** False when the user has no such entry. */
-    public function updateText(int $userId, int $entryId, string $text): bool
+    public function updateText(int $userId, int $tripId, int $entryId, string $text): bool
     {
-        $statement = $this->db->prepare('UPDATE entries SET text = ? WHERE id = ? AND trip_id IN (SELECT id FROM trips WHERE user_id = ?)');
-        $statement->execute([$text, $entryId, $userId]);
+        $statement = $this->db->prepare('UPDATE entries SET text = ? WHERE id = ? AND trip_id = ? AND trip_id IN (SELECT id FROM trips WHERE user_id = ?)');
+        $statement->execute([$text, $entryId, $tripId, $userId]);
         return $statement->rowCount() === 1;
     }
 
     /** Deletes the entry and returns it, for its file to go too; null when the user has no such entry. */
-    public function delete(int $userId, int $entryId): ?Entry
+    public function delete(int $userId, int $tripId, int $entryId): ?Entry
     {
-        $entry = $this->find($userId, $entryId);
+        $entry = $this->find($userId, $tripId, $entryId);
         if ($entry !== null) {
             $this->db->prepare('DELETE FROM entries WHERE id = ?')->execute([$entryId]);
         }
         return $entry;
+    }
+
+    /** @return Entry[] */
+    private function list(string $where, array $params): array
+    {
+        $statement = $this->db->prepare(self::SELECT . "$where ORDER BY e.id");
+        $statement->execute($params);
+        return array_map(Entry::fromRow(...), $statement->fetchAll());
+    }
+
+    private function one(string $where, array $params): ?Entry
+    {
+        $statement = $this->db->prepare(self::SELECT . $where);
+        $statement->execute($params);
+        $row = $statement->fetch();
+        return $row === false ? null : Entry::fromRow($row);
     }
 
     private function owns(int $userId, int $tripId): bool

@@ -11,6 +11,8 @@ use Planner\Export\ExportPresetController;
 use Planner\Export\GpxExportController;
 use Planner\Journal\JournalController;
 use Planner\Pages\AppController;
+use Planner\Pages\TripViewController;
+use Planner\Share\SharedTripController;
 use Planner\Trip\FolderController;
 use Planner\Trip\TripController;
 use Planner\Signup\InvitationController;
@@ -37,6 +39,8 @@ final class Routes
             $pages->get('/signup/{token}', [SignupController::class, 'show']);
             $pages->post('/signup/{token}', [SignupController::class, 'signup']);
             $pages->get('/app', [AppController::class, 'show'])->add(RequireUser::class);
+            $pages->get('/trips/{id:[0-9]+}', [TripViewController::class, 'own'])->add(RequireUser::class);
+            $pages->get('/t/{token:[0-9a-f]{32}}', [TripViewController::class, 'shared']);
             $pages->group('/admin', function (RouteCollectorProxy $admin): void {
                 $admin->get('/waitlist', [InvitationController::class, 'waitlist']);
                 $admin->post('/invitations', [InvitationController::class, 'invite']);
@@ -53,12 +57,15 @@ final class Routes
             $api->patch('/trips/{id:[0-9]+}', [TripController::class, 'move']);
             $api->delete('/trips/{id:[0-9]+}', [TripController::class, 'delete']);
             $api->get('/trips/{id:[0-9]+}/gpx', [GpxExportController::class, 'gpx']);
+            $api->get('/trips/{id:[0-9]+}/share', [TripController::class, 'showShare']);
+            $api->post('/trips/{id:[0-9]+}/share', [TripController::class, 'share']);
+            $api->delete('/trips/{id:[0-9]+}/share', [TripController::class, 'unshare']);
             $api->get('/trips/{id:[0-9]+}/entries', [JournalController::class, 'index']);
             $api->post('/trips/{id:[0-9]+}/entries', [JournalController::class, 'add']);
-            $api->patch('/entries/{id:[0-9]+}', [JournalController::class, 'update']);
-            $api->delete('/entries/{id:[0-9]+}', [JournalController::class, 'delete']);
-            $api->get('/entries/{id:[0-9]+}/file', [JournalController::class, 'file']);
-            $api->get('/entries/{id:[0-9]+}/preview', [JournalController::class, 'preview']);
+            $api->patch('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}', [JournalController::class, 'update']);
+            $api->delete('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}', [JournalController::class, 'delete']);
+            $api->get('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}/file', [JournalController::class, 'file']);
+            $api->get('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}/preview', [JournalController::class, 'preview']);
             $api->get('/export-presets', [ExportPresetController::class, 'index']);
             $api->post('/export-presets', [ExportPresetController::class, 'save']);
             $api->delete('/export-presets/{id:[0-9]+}', [ExportPresetController::class, 'delete']);
@@ -67,5 +74,12 @@ final class Routes
             $api->patch('/folders/{id:[0-9]+}', [FolderController::class, 'rename']);
             $api->delete('/folders/{id:[0-9]+}', [FolderController::class, 'delete']);
         })->add(RequireUser::class);
+
+        $app->group('/api/shared/{token:[0-9a-f]{32}}', function (RouteCollectorProxy $shared): void {
+            $shared->get('', [SharedTripController::class, 'document']);
+            $shared->get('/entries', [SharedTripController::class, 'entries']);
+            $shared->get('/entries/{entry:[0-9]+}/file', [SharedTripController::class, 'file']);
+            $shared->get('/entries/{entry:[0-9]+}/preview', [SharedTripController::class, 'preview']);
+        });
     }
 }

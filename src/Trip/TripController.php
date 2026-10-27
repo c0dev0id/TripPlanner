@@ -66,6 +66,25 @@ final class TripController
         return $moved ? $response->withStatus(204) : Json::error($response, 404, 'No such trip.');
     }
 
+    /** The token the trip is shared under, or null. */
+    public function showShare(Request $request, Response $response, array $args): Response
+    {
+        return Json::of($response, ['token' => $this->trips->shareToken($this->currentUser->get()->id, (int) $args['id'])]);
+    }
+
+    /** Makes the trip's read-only page public; the answer is its token. */
+    public function share(Request $request, Response $response, array $args): Response
+    {
+        $token = $this->trips->share($this->currentUser->get()->id, (int) $args['id']);
+        return $token === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, ['token' => $token]);
+    }
+
+    public function unshare(Request $request, Response $response, array $args): Response
+    {
+        $unshared = $this->trips->unshare($this->currentUser->get()->id, (int) $args['id']);
+        return $unshared ? $response->withStatus(204) : Json::error($response, 404, 'No such trip.');
+    }
+
     public function show(Request $request, Response $response, array $args): Response
     {
         $document = $this->documents->load($this->currentUser->get()->id, (int) $args['id']);

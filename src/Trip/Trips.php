@@ -19,7 +19,7 @@ final class Trips
     public function listFor(int $userId): array
     {
         $statement = $this->db->prepare(
-            'SELECT t.id, t.name, t.folder_id, t.updated_at, MIN(d.date) AS starts_on, COUNT(d.id) AS day_count
+            'SELECT t.id, t.name, t.folder_id, t.state, t.updated_at, MIN(d.date) AS starts_on, COUNT(d.id) AS day_count
              FROM trips t LEFT JOIN days d ON d.trip_id = t.id
              WHERE t.user_id = ? GROUP BY t.id ORDER BY t.updated_at DESC, t.id DESC',
         );
@@ -37,7 +37,7 @@ final class Trips
         $this->assertFolder($userId, $folderId);
         $statement = $this->db->prepare('INSERT INTO trips (user_id, folder_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
         $statement->execute([$userId, $folderId, $name, Timestamp::of($now), Timestamp::of($now)]);
-        return new TripSummary((int) $this->db->lastInsertId(), $name, $folderId, null, 0, Timestamp::of($now));
+        return new TripSummary((int) $this->db->lastInsertId(), $name, $folderId, 'planned', null, 0, Timestamp::of($now));
     }
 
     /**
@@ -50,6 +50,32 @@ final class Trips
         $this->assertFolder($userId, $folderId);
         $statement = $this->db->prepare('UPDATE trips SET folder_id = ? WHERE id = ? AND user_id = ?');
         $statement->execute([$folderId, $tripId, $userId]);
+        return $statement->rowCount() === 1;
+    }
+
+    /** The token the user's trip is shared under; null while it is not shared. */
+    public function shareToken(int $userId, int $tripId): ?string
+    {
+        $statement = $this->db->prepare('SELECT share_token FROM trips WHERE id = ? AND user_id = ?');
+        $statement->execute([$tripId, $userId]);
+        $token = $statement->fetchColumn();
+        return $token === false ? null : $token;
+    }
+
+    /** Makes the user's trip public under a token, the one it has or a new one; null when there is no such trip. */
+    public function share(int $userId, int $tripId): ?string
+    {
+        $statement = $this->db->prepare('UPDATE trips SET share_token = COALESCE(share_token, ?) WHERE id = ? AND user_id = ? RETURNING share_token');
+        $statement->execute([bin2hex(random_bytes(16)), $tripId, $userId]);
+        $token = $statement->fetchColumn();
+        return $token === false ? null : $token;
+    }
+
+    /** Takes the user's trip off the public; false when there is no such trip. */
+    public function unshare(int $userId, int $tripId): bool
+    {
+        $statement = $this->db->prepare('UPDATE trips SET share_token = NULL WHERE id = ? AND user_id = ?');
+        $statement->execute([$tripId, $userId]);
         return $statement->rowCount() === 1;
     }
 
@@ -75,6 +101,6 @@ final class Trips
 
     private function summary(array $row): TripSummary
     {
-        return new TripSummary((int) $row['id'], $row['name'], $row['folder_id'] === null ? null : (int) $row['folder_id'], $row['starts_on'], (int) $row['day_count'], $row['updated_at']);
+        return new TripSummary((int) $row['id'], $row['name'], $row['folder_id'] === null ? null : (int) $row['folder_id'], $row['state'], $row['starts_on'], (int) $row['day_count'], $row['updated_at']);
     }
 }

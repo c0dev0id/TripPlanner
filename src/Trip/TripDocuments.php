@@ -22,12 +22,24 @@ final class TripDocuments
     /** The user's trip with everything in it, or null when there is no such trip. */
     public function load(int $userId, int $tripId): ?array
     {
-        $statement = $this->db->prepare('SELECT id, name, description, version FROM trips WHERE id = ? AND user_id = ?');
-        $statement->execute([$tripId, $userId]);
+        return $this->document('id = ? AND user_id = ?', [$tripId, $userId]);
+    }
+
+    /** The trip shared under the token, or null when none is. */
+    public function loadShared(string $token): ?array
+    {
+        return $this->document('share_token = ?', [$token]);
+    }
+
+    private function document(string $where, array $params): ?array
+    {
+        $statement = $this->db->prepare("SELECT id, name, description, state, version FROM trips WHERE $where");
+        $statement->execute($params);
         $trip = $statement->fetch();
         if ($trip === false) {
             return null;
         }
+        $tripId = (int) $trip['id'];
         $days = [];
         foreach ($this->rows('SELECT id, name, date, notes FROM days WHERE trip_id = ? ORDER BY position', $tripId) as $day) {
             $days[$day['id']] = ['id' => $day['id'], 'name' => $day['name'], 'date' => $day['date'], 'notes' => $day['notes'], 'routes' => [], 'stops' => []];
@@ -45,7 +57,7 @@ final class TripDocuments
             ];
         }
         $stops = 'SELECT id, day_id, name, kind, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional
-                  FROM stops WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY rowid';
+                  FROM stops WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
         foreach ($this->rows($stops, $tripId) as $stop) {
             $days[$stop['day_id']]['stops'][] = [
                 'id' => $stop['id'],
@@ -66,6 +78,7 @@ final class TripDocuments
             'id' => (int) $trip['id'],
             'name' => $trip['name'],
             'description' => $trip['description'],
+            'state' => $trip['state'],
             'version' => (int) $trip['version'],
             'days' => array_values($days),
         ];
@@ -92,8 +105,8 @@ final class TripDocuments
             }
             $this->assertIdsNotElsewhere($tripId, $document['days']);
             $this->saveDays($tripId, $document['days']);
-            $this->db->prepare('UPDATE trips SET name = ?, description = ?, version = ?, updated_at = ? WHERE id = ?')
-                ->execute([$document['name'], $document['description'], $version + 1, Timestamp::of($now), $tripId]);
+            $this->db->prepare('UPDATE trips SET name = ?, description = ?, state = ?, version = ?, updated_at = ? WHERE id = ?')
+                ->execute([$document['name'], $document['description'], $document['state'], $version + 1, Timestamp::of($now), $tripId]);
             $this->db->commit();
         } catch (\Throwable $error) {
             if ($this->db->inTransaction()) {
@@ -105,8 +118,9 @@ final class TripDocuments
     }
 
     /**
-     * A copy of the user's trip, named after it, in its folder, every part under a new id,
-     * as one transaction. Returns the copy's id, or null when the user has no such trip.
+     * A copy of the user's trip, named after it, in its folder, planned again, every part
+     * under a new id, as one transaction. Returns the copy's id, or null when the user has
+     * no such trip.
      */
     public function copy(int $userId, int $tripId, DateTimeImmutable $now): ?int
     {
@@ -176,9 +190,9 @@ final class TripDocuments
                  profile = excluded.profile, optional = excluded.optional, points = excluded.points, legs = excluded.legs',
         );
         $upsertStop = $this->db->prepare(
-            'INSERT INTO stops (id, day_id, name, kind, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-             ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, name = excluded.name, kind = excluded.kind, lng = excluded.lng, lat = excluded.lat,
+            'INSERT INTO stops (id, day_id, position, name, kind, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, position = excluded.position, name = excluded.name, kind = excluded.kind, lng = excluded.lng, lat = excluded.lat,
                  point_id = excluded.point_id, address = excluded.address, contact = excluded.contact, booking_reference = excluded.booking_reference,
                  notes = excluded.notes, arrive_at = excluded.arrive_at, pause_minutes = excluded.pause_minutes, optional = excluded.optional',
         );
@@ -192,9 +206,9 @@ final class TripDocuments
             foreach ($day['routes'] as $index => $route) {
                 $upsertRoute->execute([$route['id'], $day['id'], $index, $route['name'], $route['kind'], $route['profile'], (int) $route['optional'], Json::encode($route['points']), Json::encode((object) $route['legs'])]);
             }
-            foreach ($day['stops'] as $stop) {
+            foreach ($day['stops'] as $index => $stop) {
                 $upsertStop->execute([
-                    $stop['id'], $day['id'], $stop['name'], $stop['kind'], $stop['lngLat'][0], $stop['lngLat'][1], $stop['pointId'],
+                    $stop['id'], $day['id'], $index, $stop['name'], $stop['kind'], $stop['lngLat'][0], $stop['lngLat'][1], $stop['pointId'],
                     $stop['address'], $stop['contact'], $stop['bookingReference'], $stop['notes'], $stop['arriveAt'], $stop['pauseMinutes'], (int) $stop['optional'],
                 ]);
             }

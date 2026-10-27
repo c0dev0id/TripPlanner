@@ -42,7 +42,7 @@ final class TripDocumentsTest extends TestCase
     public function testLoadsANewTripAsAnEmptyDocument(): void
     {
         self::assertSame(
-            ['id' => $this->tripId, 'name' => 'Alps', 'description' => '', 'version' => 1, 'days' => []],
+            ['id' => $this->tripId, 'name' => 'Alps', 'description' => '', 'state' => 'planned', 'version' => 1, 'days' => []],
             $this->documents->load($this->userId, $this->tripId),
         );
         self::assertNull($this->documents->load($this->userId + 1, $this->tripId));
@@ -107,6 +107,36 @@ final class TripDocumentsTest extends TestCase
         self::assertSame(['s3'], array_column($loaded['days'][1]['stops'], 'id'));
     }
 
+    public function testKeepsTheStateAndTheOrderOfTheStops(): void
+    {
+        $document = TripFixture::document();
+        $this->save($document, 1);
+        $document['state'] = 'done';
+        $document['days'][0]['stops'] = [$document['days'][0]['stops'][2], $document['days'][0]['stops'][0], $document['days'][0]['stops'][1]];
+        $this->save($document, 2);
+        $loaded = $this->documents->load($this->userId, $this->tripId);
+        self::assertSame('done', $loaded['state']);
+        self::assertSame(['s3', 's1', 's2'], array_column($loaded['days'][0]['stops'], 'id'));
+        self::assertSame('done', $this->trips->listFor($this->userId)[0]->state);
+        self::assertSame('planned', $this->documents->load($this->userId, $this->documents->copy($this->userId, $this->tripId, $this->now))['state']);
+    }
+
+    public function testSharesATripUnderAToken(): void
+    {
+        $this->save(TripFixture::document(), 1);
+        self::assertNull($this->trips->shareToken($this->userId, $this->tripId));
+        self::assertNull($this->trips->share($this->userId + 1, $this->tripId));
+        $token = $this->trips->share($this->userId, $this->tripId);
+        self::assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $token);
+        self::assertSame($token, $this->trips->share($this->userId, $this->tripId));
+        self::assertSame($token, $this->trips->shareToken($this->userId, $this->tripId));
+        self::assertSame('Alps', $this->documents->loadShared($token)['name']);
+        self::assertNull($this->documents->loadShared(strrev($token)));
+        self::assertTrue($this->trips->unshare($this->userId, $this->tripId));
+        self::assertNull($this->documents->loadShared($token));
+        self::assertNull($this->trips->shareToken($this->userId, $this->tripId));
+    }
+
     public function testRefusesToSaveOverANewerVersion(): void
     {
         $this->save(TripFixture::document(), 1);
@@ -167,7 +197,7 @@ final class TripDocumentsTest extends TestCase
         $list = $this->trips->listFor($this->userId);
         self::assertSame(['Later', 'Alps'], array_map(fn ($t) => $t->name, $list));
         self::assertSame([0, 1], array_map(fn ($t) => $t->dayCount, $list));
-        self::assertSame('{"id":' . $this->tripId . ',"name":"Alps","folderId":null,"startsOn":"2027-06-12","dayCount":1,"updatedAt":"2026-10-27T10:00:00Z"}', json_encode($list[1]));
+        self::assertSame('{"id":' . $this->tripId . ',"name":"Alps","folderId":null,"state":"planned","startsOn":"2027-06-12","dayCount":1,"updatedAt":"2026-10-27T10:00:00Z"}', json_encode($list[1]));
         self::assertFalse($this->trips->delete($this->userId + 1, $this->tripId));
         self::assertTrue($this->trips->delete($this->userId, $this->tripId));
         self::assertSame(0, (int) $this->db->query('SELECT COUNT(*) FROM stops')->fetchColumn());

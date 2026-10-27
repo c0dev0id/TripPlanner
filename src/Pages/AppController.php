@@ -17,6 +17,6 @@ final class AppController
 
     public function show(Request $request, Response $response): Response
     {
-        return $this->view->render($response, 'app', ['assets' => $this->assets->tags()]);
+        return $this->view->render($response, 'app', ['assets' => $this->assets->tags(ViteAssets::APP)]);
     }
 }

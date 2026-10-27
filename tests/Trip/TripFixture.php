@@ -15,6 +15,7 @@ final class TripFixture
         return [
             'name' => 'Alps',
             'description' => 'A weekend.',
+            'state' => 'planned',
             'days' => [
                 [
                     'id' => 'day1',

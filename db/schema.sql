@@ -82,6 +82,10 @@ CREATE TABLE IF NOT EXISTS trips (
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     version INTEGER NOT NULL DEFAULT 1,
+    -- Planned, or ridden: done.
+    state TEXT NOT NULL DEFAULT 'planned' CHECK (state IN ('planned', 'done')),
+    -- Set while the trip's read-only page is public under /t/{token}.
+    share_token TEXT UNIQUE,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
@@ -115,6 +119,8 @@ CREATE INDEX IF NOT EXISTS routes_day ON routes(day_id, position);
 CREATE TABLE IF NOT EXISTS stops (
     id TEXT PRIMARY KEY,
     day_id TEXT NOT NULL REFERENCES days(id) ON DELETE CASCADE,
+    -- In riding order, as the client computes it from the routes.
+    position INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL,
     kind TEXT NOT NULL,
     lng REAL NOT NULL,

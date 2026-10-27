@@ -15,6 +15,7 @@ final class TripDocumentValidator
     public const STOP_KINDS = ['hotel', 'restaurant', 'cafe', 'fuel', 'sight', 'photo', 'break', 'other'];
     public const ROUTE_KINDS = ['routed', 'track'];
     public const PROFILES = ['car', 'bike', 'foot'];
+    public const STATES = ['planned', 'done'];
     private const MAX_TEXT = 20000;
 
     public static function validated(mixed $body): array
@@ -30,6 +31,7 @@ final class TripDocumentValidator
         return [
             'name' => Name::of($body['name'] ?? null) ?? throw new InvalidDocument('document.name must be text of up to 200 characters, not empty.'),
             'description' => self::text($body, 'description', 'document'),
+            'state' => self::oneOf($body, 'state', self::STATES, 'document'),
             'days' => $days,
         ];
     }
