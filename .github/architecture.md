@@ -224,6 +224,5 @@ the editor works with; each routed leg holds its polyline6 geometry, length and 
 time as OSRM answered. A bound stop's position equals its route point's, which the
 validator checks. A journal entry belongs to its trip and names at most one of a day, a
 stop or a route by a nullable foreign key, which the schema checks; when that part goes,
-the key is set to null
-and the entry stays with the trip. An entry's file lies in the file store under
-`files/{trip}/{entry}`, its preview beside it.
+the key is set to null and the entry stays with the trip. An entry's file lies in the
+file store under `files/{trip}/{entry}`, its preview beside it.
