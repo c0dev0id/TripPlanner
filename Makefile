@@ -15,6 +15,13 @@ install:
 	$(COMPOSER) install --no-interaction
 	$(NPM) ci
 
+init:
+	php-8.4 bin/planner db:init
+invite:
+	php-8.4 bin/planner $(EMAIL)
+admin:
+	php-8.4 bin/planner admin:grant $(EMAIL)
+
 # Runs what CI runs: syntax checks, PHP tests, type check, frontend tests and the build.
 check:
 	$(COMPOSER) validate
