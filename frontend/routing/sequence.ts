@@ -1,8 +1,8 @@
 import { distanceBetween } from '../geo/measure';
 import { nearestLine, type XY } from '../geo/nearest';
-import type { Day, LngLat, Route, RoutePoint, Stop } from '../model/trip';
+import type { Day, LngLat, RoutePoint, Stop } from '../model/trip';
 import { legCoordinates, legDistance, routeLegs } from './legs';
-import { decodePolyline } from './polyline';
+import { decodeCached } from './polyline';
 
 /**
  * A day's stops and route points in riding order, each with its distance from the day's
@@ -10,59 +10,48 @@ import { decodePolyline } from './polyline';
  */
 
 export interface SequenceEntry {
+  /** The stop's id, or the plain route point's. */
+  id: string;
   /** Which route of the day, in order, and the distance from the day's start in metres. */
   routeIndex: number;
   distanceM: number;
   lngLat: LngLat;
   stop?: Stop;
   point?: RoutePoint;
-  /** For a free stop: where on the route it is nearest, and how far from it. */
-  near?: { lngLat: LngLat; distanceM: number };
+  /** For a free stop: the leg (from point `legIndex` of the route) and the spot on it nearest to the stop, and how far away that is. */
+  near?: { routeId: string; legIndex: number; lngLat: LngLat; distanceM: number };
 }
 
 /** Metres per degree of latitude; longitudes are scaled by the cosine of the latitude. */
 const METRES_PER_DEGREE = 111_195;
 
-/** A flat map in metres around a position. */
+/** A flat map in metres around a position; a day's extent keeps the scale within a percent. */
 function planeAt([lng0, lat0]: LngLat): (p: LngLat) => XY {
   const scale = Math.cos((lat0 * Math.PI) / 180);
   return ([lng, lat]) => [(lng - lng0) * scale * METRES_PER_DEGREE, (lat - lat0) * METRES_PER_DEGREE];
 }
 
-/** Where a day's route passes closest to a position: the route, the leg, the spot on it and its distance from the day's start. */
-export interface NearestPlace {
+/** A leg of the day with its line, the line on the plane, and where it starts along the day. */
+interface LegLine {
   routeIndex: number;
   routeId: string;
-  /** The leg of the route, from its point `legIndex` to the next. */
   legIndex: number;
-  lngLat: LngLat;
-  /** From the day's start, along the routes. */
-  distanceM: number;
-  /** From the position to the spot. */
-  awayM: number;
+  line: LngLat[];
+  xy: XY[];
+  startM: number;
 }
 
-/** The place on the day's routes nearest to a position, or undefined where the day has no leg. */
-export function nearestOnRoutes(day: Day, position: LngLat, decode = decodePolyline): NearestPlace | undefined {
-  const toPlane = planeAt(position);
-  const origin = toPlane(position);
-  let best: NearestPlace | undefined;
-  let startOfRoute = 0;
+function legLines(day: Day, toPlane: (p: LngLat) => XY, decode: (geometry: string) => LngLat[]): LegLine[] {
+  const legs: LegLine[] = [];
+  let startM = 0;
   day.routes.forEach((route, routeIndex) => {
-    let startOfLeg = startOfRoute;
     routeLegs(route).forEach((leg, legIndex) => {
       const line = legCoordinates(route, leg, decode);
-      const hit = nearestLine([line.map(toPlane)], origin);
-      if (hit && (!best || hit.distance < best.awayM)) {
-        const [a, b] = [line[hit.segment]!, line[hit.segment + 1] ?? line[hit.segment]!];
-        const spot: LngLat = [a[0] + hit.t * (b[0] - a[0]), a[1] + hit.t * (b[1] - a[1])];
-        best = { routeIndex, routeId: route.id, legIndex, lngLat: spot, distanceM: startOfLeg + alongLine(line, hit.segment, spot), awayM: hit.distance };
-      }
-      startOfLeg += legDistance(route, leg);
+      legs.push({ routeIndex, routeId: route.id, legIndex, line, xy: line.map(toPlane), startM });
+      startM += legDistance(route, leg);
     });
-    startOfRoute = startOfLeg;
   });
-  return best;
+  return legs;
 }
 
 /** Metres along a line from its start to a spot on its segment `segment`. */
@@ -72,18 +61,21 @@ function alongLine(line: readonly LngLat[], segment: number, spot: LngLat): numb
   return metres + distanceBetween(line[segment]!, spot);
 }
 
-/** Each route point's distance from the day's start, by point id, in riding order. */
-function pointDistances(routes: readonly Route[]): Map<string, { routeIndex: number; distanceM: number }> {
-  const distances = new Map<string, { routeIndex: number; distanceM: number }>();
-  let metres = 0;
-  routes.forEach((route, routeIndex) => {
-    const legs = routeLegs(route);
-    route.points.forEach((point, i) => {
-      if (i > 0) metres += legDistance(route, legs[i - 1]!);
-      distances.set(point.id, { routeIndex, distanceM: metres });
-    });
-  });
-  return distances;
+/** The entry of a free stop, placed where the legs pass closest; after the day's end where there is no leg. */
+function freeStopEntry(stop: Stop, legs: readonly LegLine[], origin: XY, fallback: { routeIndex: number; distanceM: number }): SequenceEntry {
+  const hit = nearestLine(legs.map((l) => l.xy), origin);
+  if (!hit) return { id: stop.id, ...fallback, lngLat: stop.lngLat, stop };
+  const leg = legs[hit.index]!;
+  const [a, b] = [leg.line[hit.segment]!, leg.line[hit.segment + 1] ?? leg.line[hit.segment]!];
+  const spot: LngLat = [a[0] + hit.t * (b[0] - a[0]), a[1] + hit.t * (b[1] - a[1])];
+  return {
+    id: stop.id,
+    routeIndex: leg.routeIndex,
+    distanceM: leg.startM + alongLine(leg.line, hit.segment, spot),
+    lngLat: stop.lngLat,
+    stop,
+    near: { routeId: leg.routeId, legIndex: leg.legIndex, lngLat: spot, distanceM: hit.distance },
+  };
 }
 
 /**
@@ -91,27 +83,24 @@ function pointDistances(routes: readonly Route[]): Map<string, { routeIndex: num
  * points; free stops are placed where the routes pass closest, after a stop or point
  * at the same distance. Free stops of a day without a leg come last, in their order.
  */
-export function daySequence(day: Day, decode = decodePolyline): SequenceEntry[] {
-  const distances = pointDistances(day.routes);
+export function daySequence(day: Day, decode = decodeCached): SequenceEntry[] {
   const bound = new Map(day.stops.filter((s) => s.pointId !== null).map((s) => [s.pointId!, s]));
   const entries: SequenceEntry[] = [];
-  for (const route of day.routes) {
-    for (const point of route.points) {
-      const at = distances.get(point.id)!;
+  let metres = 0;
+  day.routes.forEach((route, routeIndex) => {
+    const legs = routeLegs(route);
+    route.points.forEach((point, i) => {
+      if (i > 0) metres += legDistance(route, legs[i - 1]!);
       const stop = bound.get(point.id);
-      entries.push(stop ? { ...at, lngLat: point.lngLat, stop, point } : { ...at, lngLat: point.lngLat, point });
-    }
-  }
-  const lastRoute = Math.max(0, day.routes.length - 1);
-  const end = entries.at(-1)?.distanceM ?? 0;
-  for (const stop of day.stops) {
-    if (stop.pointId !== null) continue;
-    const near = nearestOnRoutes(day, stop.lngLat, decode);
-    entries.push(
-      near
-        ? { routeIndex: near.routeIndex, distanceM: near.distanceM, lngLat: stop.lngLat, stop, near: { lngLat: near.lngLat, distanceM: near.awayM } }
-        : { routeIndex: lastRoute, distanceM: end, lngLat: stop.lngLat, stop },
-    );
+      entries.push({ id: stop?.id ?? point.id, routeIndex, distanceM: metres, lngLat: point.lngLat, point, ...(stop && { stop }) });
+    });
+  });
+  const free = day.stops.filter((s) => s.pointId === null);
+  if (free.length > 0) {
+    const toPlane = planeAt(day.routes[0]?.points[0]?.lngLat ?? free[0]!.lngLat);
+    const legs = legLines(day, toPlane, decode);
+    const end = { routeIndex: Math.max(0, day.routes.length - 1), distanceM: metres };
+    for (const stop of free) entries.push(freeStopEntry(stop, legs, toPlane(stop.lngLat), end));
   }
   // A stable sort keeps points before the free stops placed at the same distance.
   return entries.sort((a, b) => a.routeIndex - b.routeIndex || a.distanceM - b.distanceM);

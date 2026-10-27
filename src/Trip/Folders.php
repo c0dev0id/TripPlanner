@@ -45,11 +45,4 @@ final class Folders
         $statement->execute([$folderId, $userId]);
         return $statement->rowCount() === 1;
     }
-
-    public function has(int $userId, int $folderId): bool
-    {
-        $statement = $this->db->prepare('SELECT 1 FROM folders WHERE id = ? AND user_id = ?');
-        $statement->execute([$folderId, $userId]);
-        return $statement->fetchColumn() !== false;
-    }
 }

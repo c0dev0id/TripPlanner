@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Planner\Trip;
 
+use Planner\Name;
+
 /**
  * Checks a trip document sent by the client and returns it in the shape TripDocuments
  * stores: every field present, typed and within bounds. Throws InvalidDocument otherwise.
@@ -26,22 +28,13 @@ final class TripDocumentValidator
         }
         self::unique(array_column($days, 'id'), 'days');
         return [
-            'name' => self::name($body['name'] ?? null) ?? throw new InvalidDocument('document.name must be text of up to 200 characters, not empty.'),
+            'name' => Name::of($body['name'] ?? null) ?? throw new InvalidDocument('document.name must be text of up to 200 characters, not empty.'),
             'description' => self::text($body, 'description', 'document'),
             'startsOn' => self::date($body, 'startsOn', 'document'),
             'days' => $days,
         ];
     }
 
-    /** A trip's name as stored: trimmed, not empty, at most 200 characters; null for anything else. */
-    public static function name(mixed $value): ?string
-    {
-        if (!is_string($value)) {
-            return null;
-        }
-        $name = trim($value);
-        return $name === '' || strlen($name) > 200 ? null : $name;
-    }
 
     private static function day(mixed $day, string $at): array
     {
@@ -53,11 +46,13 @@ final class TripDocumentValidator
         foreach (self::list($day, 'routes') as $i => $route) {
             $routes[] = $checked = self::route($route, "$at.routes[$i]");
             foreach ($checked['points'] as $point) {
+                if (isset($positions[$point['id']])) {
+                    throw new InvalidDocument("$at.routes' points hold the same id twice.");
+                }
                 $positions[$point['id']] = $point['lngLat'];
             }
         }
         self::unique(array_column($routes, 'id'), "$at.routes");
-        self::unique(array_keys($positions), "$at.routes' points");
         $stops = [];
         foreach (self::list($day, 'stops') as $i => $stop) {
             $stops[] = self::stop($stop, $positions, "$at.stops[$i]");

@@ -2,8 +2,8 @@ import type { Map as MapLibreMap } from 'maplibre-gl';
 import { nearestLine, type XY } from '../geo/nearest';
 import type { LngLat, Route } from '../model/trip';
 import { legCoordinates, routeLegs } from '../routing/legs';
+import { decodeCached } from '../routing/polyline';
 import { toLngLat } from './markers';
-import { decodeCached } from './routeOverlay';
 
 /** Points as the map shows them on screen, in CSS pixels. */
 function onScreen(map: MapLibreMap, points: readonly LngLat[]): XY[] {

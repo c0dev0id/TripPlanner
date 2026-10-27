@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, LngLat, Route, RoutedLeg, Stop } from '../model/trip';
-import { daySequence, nearestOnRoutes } from './sequence';
+import { daySequence } from './sequence';
 
 const decode = (geometry: string): LngLat[] => JSON.parse(geometry);
 const leg = (geometry: LngLat[], distanceM: number): RoutedLeg => ({ geometry: JSON.stringify(geometry), distanceM, durationS: 1 });
@@ -40,38 +40,38 @@ const route: Route = {
 
 const day = (stops: Stop[], routes: Route[] = [route]): Day => ({ id: 'd', name: '', date: null, notes: '', routes, stops });
 
-describe('nearestOnRoutes', () => {
-  it('finds the leg and the spot where the route passes closest', () => {
-    const near = nearestOnRoutes(day([]), [11.01, 47.05], decode)!;
-    expect(near.routeId).toBe('r');
-    expect(near.legIndex).toBe(0);
-    expect(near.lngLat[0]).toBeCloseTo(11, 6);
-    expect(near.lngLat[1]).toBeCloseTo(47.05, 3);
+describe('daySequence', () => {
+  it('places a free stop at the leg and the spot where the route passes closest', () => {
+    const [entry] = daySequence(day([stop('cafe', [11.01, 47.05], null)]), decode).filter((e) => e.stop);
+    expect(entry!.near).toMatchObject({ routeId: 'r', legIndex: 0 });
+    expect(entry!.near!.lngLat[0]).toBeCloseTo(11, 6);
+    expect(entry!.near!.lngLat[1]).toBeCloseTo(47.05, 3);
     // About 760 m east of the line, 5.5 km along it.
-    expect(near.awayM).toBeCloseTo(760, -2);
-    expect(near.distanceM).toBeCloseTo(5560, -2);
+    expect(entry!.near!.distanceM).toBeCloseTo(760, -2);
+    expect(entry!.distanceM).toBeCloseTo(5560, -2);
   });
 
   it('measures the distance along the routed geometry', () => {
-    const near = nearestOnRoutes(day([]), [11.02, 47.15], decode)!;
-    expect(near.legIndex).toBe(1);
-    expect(near.awayM).toBeCloseTo(0, 0);
+    const [entry] = daySequence(day([stop('bend', [11.02, 47.15], null)]), decode).filter((e) => e.stop);
+    expect(entry!.near!.legIndex).toBe(1);
+    expect(entry!.near!.distanceM).toBeCloseTo(0, 0);
     // The first leg's 11 km plus the way to the bend.
-    expect(near.distanceM).toBeGreaterThan(11_000 + 5_000);
-    expect(near.distanceM).toBeLessThan(11_000 + 7_000);
+    expect(entry!.distanceM).toBeGreaterThan(11_000 + 5_000);
+    expect(entry!.distanceM).toBeLessThan(11_000 + 7_000);
   });
 
-  it('is undefined for a day without a leg', () => {
-    expect(nearestOnRoutes(day([], []), [11, 47], decode)).toBeUndefined();
-    expect(nearestOnRoutes(day([], [{ ...route, points: route.points.slice(0, 1), legs: {} }]), [11, 47], decode)).toBeUndefined();
+  it('gives a free stop no place on a day without a leg', () => {
+    const onePoint = { ...route, points: route.points.slice(0, 1), legs: {} };
+    expect(daySequence(day([stop('x', [11, 47], null)], [onePoint]), decode).map((e) => [e.id, e.near])).toEqual([
+      ['a', undefined],
+      ['x', undefined],
+    ]);
   });
-});
 
-describe('daySequence', () => {
   it('lists points and stops in riding order with their distance from the start', () => {
     const stops = [stop('hotel', [11, 47.2], 'c'), stop('cafe', [11.01, 47.05], null), stop('home', [11, 47], 'a')];
     const entries = daySequence(day(stops), decode);
-    expect(entries.map((e) => [e.stop?.id ?? e.point?.id, Math.round(e.distanceM / 100) * 100])).toEqual([
+    expect(entries.map((e) => [e.id, Math.round(e.distanceM / 100) * 100])).toEqual([
       ['home', 0],
       ['cafe', 5600],
       ['b', 11_000],

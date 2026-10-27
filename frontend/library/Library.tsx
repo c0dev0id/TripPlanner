@@ -20,7 +20,12 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
 
   const folder = () => folders()?.find((f) => f.id === folderId());
   const shownTrips = createMemo(() => (trips() ?? []).filter((t) => t.folderId === (folderId() ?? null)));
-  const tripCount = (id: number) => (trips() ?? []).filter((t) => t.folderId === id).length;
+  const tripCounts = createMemo(() => {
+    const counts = new Map<number | null, number>();
+    for (const trip of trips() ?? []) counts.set(trip.folderId, (counts.get(trip.folderId) ?? 0) + 1);
+    return counts;
+  });
+  const tripCount = (id: number) => tripCounts().get(id) ?? 0;
 
   /** Runs a request; its error is shown, and `then` runs after success. */
   const run = async (work: () => Promise<unknown>, then?: () => void) => {
@@ -72,20 +77,14 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
           when={query().trim()}
           fallback={
             <>
-              <NewTripForm folderId={folderId() ?? null} disabled={props.opening} onCreated={props.onOpen} onError={setBusy} />
+              <NameForm placeholder="Name of a new trip" button="New trip" primary disabled={props.opening} onSubmit={(name) => run(async () => props.onOpen((await createTrip(name, folderId() ?? null)).id))} />
               <Show when={!folder()}>
-                <NewFolderForm onCreated={() => void refetchFolders()} onError={setBusy} />
+                <NameForm placeholder="Name of a new folder" button="New folder" onSubmit={(name) => run(() => createFolder(name), () => void refetchFolders())} />
                 <ul class="folders">
                   <For each={folders()}>
                     {(f) => (
                       <li class="row">
-                        <button class="text grow" onClick={() => openFolder(f.id)}>
-                          <span class="row">
-                            <FolderIcon />
-                            <span class="name">{f.name}</span>
-                          </span>
-                          <span class="muted">{tripCount(f.id) === 1 ? '1 trip' : `${tripCount(f.id)} trips`}</span>
-                        </button>
+                        <FolderButton folder={f} note={tripCount(f.id) === 1 ? '1 trip' : `${tripCount(f.id)} trips`} onOpen={openFolder} />
                         <EditableName value={f.name} label="folder" onRename={(name) => void run(() => renameFolder(f.id, name), refetchFolders)}>
                           <span />
                         </EditableName>
@@ -125,49 +124,21 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
   );
 }
 
-function NewTripForm(props: { folderId: number | null; disabled: boolean; onCreated: (id: number) => void; onError: (message: string) => void }) {
+/** A name and a button that submits it; the field is cleared when `onSubmit` has run. */
+function NameForm(props: { placeholder: string; button: string; primary?: boolean; disabled?: boolean; onSubmit: (name: string) => Promise<void> }) {
   const [name, setName] = createSignal('');
-  const create = async (e: SubmitEvent) => {
+  const submit = async (e: SubmitEvent) => {
     e.preventDefault();
-    const tripName = name().trim();
-    if (!tripName) return;
-    try {
-      const trip = await createTrip(tripName, props.folderId);
-      setName('');
-      props.onCreated(trip.id);
-    } catch (error) {
-      props.onError(errorMessage(error));
-    }
+    const trimmed = name().trim();
+    if (!trimmed) return;
+    await props.onSubmit(trimmed);
+    setName('');
   };
   return (
-    <form class="row" onSubmit={(e) => void create(e)}>
-      <input class="grow" placeholder="Name of a new trip" value={name()} onInput={(e) => setName(e.currentTarget.value)} aria-label="Name of a new trip" maxlength={200} />
-      <button type="submit" class="primary" disabled={!name().trim() || props.disabled}>
-        New trip
-      </button>
-    </form>
-  );
-}
-
-function NewFolderForm(props: { onCreated: () => void; onError: (message: string) => void }) {
-  const [name, setName] = createSignal('');
-  const create = async (e: SubmitEvent) => {
-    e.preventDefault();
-    const folderName = name().trim();
-    if (!folderName) return;
-    try {
-      await createFolder(folderName);
-      setName('');
-      props.onCreated();
-    } catch (error) {
-      props.onError(errorMessage(error));
-    }
-  };
-  return (
-    <form class="row" onSubmit={(e) => void create(e)}>
-      <input class="grow" placeholder="Name of a new folder" value={name()} onInput={(e) => setName(e.currentTarget.value)} aria-label="Name of a new folder" maxlength={200} />
-      <button type="submit" disabled={!name().trim()}>
-        New folder
+    <form class="row" onSubmit={(e) => void submit(e)}>
+      <input class="grow" placeholder={props.placeholder} value={name()} onInput={(e) => setName(e.currentTarget.value)} aria-label={props.placeholder} maxlength={200} />
+      <button type="submit" classList={{ primary: props.primary }} disabled={!name().trim() || props.disabled}>
+        {props.button}
       </button>
     </form>
   );
@@ -180,6 +151,18 @@ function TripButton(props: { trip: TripSummary; onOpen: (id: number) => void; di
       <span class="muted">
         {props.note ?? `${props.trip.dayCount} ${props.trip.dayCount === 1 ? 'day' : 'days'}${props.trip.startsOn ? ` · from ${dateText(props.trip.startsOn)}` : ''}`}
       </span>
+    </button>
+  );
+}
+
+function FolderButton(props: { folder: Folder; note: string; onOpen: (id: number) => void }) {
+  return (
+    <button class="text grow" onClick={() => props.onOpen(props.folder.id)}>
+      <span class="row">
+        <FolderIcon />
+        <span class="name">{props.folder.name}</span>
+      </span>
+      <span class="muted">{props.note}</span>
     </button>
   );
 }
@@ -197,13 +180,7 @@ function SearchResults(props: { query: string; folders: Folder[]; trips: TripSum
         <For each={found().folders.slice(0, SEARCH_LIMIT)}>
           {(f) => (
             <li class="row">
-              <button class="text grow" onClick={() => props.onOpenFolder(f.id)}>
-                <span class="row">
-                  <FolderIcon />
-                  <span class="name">{f.name}</span>
-                </span>
-                <span class="muted">folder</span>
-              </button>
+              <FolderButton folder={f} note="folder" onOpen={props.onOpenFolder} />
             </li>
           )}
         </For>

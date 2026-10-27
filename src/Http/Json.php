@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Planner\Http;
 
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
 
 final class Json
 {
@@ -19,6 +20,13 @@ final class Json
     {
         $response->getBody()->write(self::encode($data));
         return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    /** A field of the request's JSON body; null where the body is no object or lacks the field. */
+    public static function field(Request $request, string $name): mixed
+    {
+        $body = $request->getParsedBody();
+        return is_array($body) ? $body[$name] ?? null : null;
     }
 
     /** An error answer: the status, and the message under `error`. */

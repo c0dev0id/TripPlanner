@@ -1,12 +1,12 @@
-import { createMemo, For, Index, Show } from 'solid-js';
+import { createMemo, For, Show } from 'solid-js';
 import { gpxUrl, gpxZipUrl } from '../api';
-import { BOUND_COLOR, decodeCached, FREE_COLOR } from '../map/routeOverlay';
+import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
 import { PROFILES, type Day, type Route } from '../model/trip';
 import { routeDistance } from '../routing/legs';
-import { daySequence, type SequenceEntry } from '../routing/sequence';
+import type { SequenceEntry } from '../routing/sequence';
 import { saveState } from '../state/autosave';
 import { panTo, setShowNeighbours, setShowRoutePoints, setStopDialogId, showNeighbours, showRoutePoints } from '../state/drawing';
-import { addDay, addRoute, editingRouteId, editRoute, openTrip, removeDay, removeRoute, removeStop, renameDay, renameRoute, renameTrip, selectDay, selectedDayId, updateStop } from '../state/trip';
+import { addDay, addRoute, editingRouteId, editRoute, openTrip, removeDay, removeRoute, removeStop, renameDay, renameRoute, renameTrip, selectDay, selectedDayId, selectedSequence, updateStop } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
 import { EditableName } from '../ui/EditableName';
 import { distanceText } from '../ui/format';
@@ -105,8 +105,7 @@ function DayItem(props: { day: Day; index: number }) {
 
 /** The selected day's routes, and its stops (and route points on request) in riding order. */
 function DayDetails(props: { day: Day }) {
-  const sequence = createMemo(() => daySequence(props.day, decodeCached));
-  const listed = createMemo(() => sequence().filter((e) => e.stop || showRoutePoints()));
+  const listed = createMemo(() => new Map(selectedSequence().filter((e) => e.stop || showRoutePoints()).map((e) => [e.id, e])));
   return (
     <div class="day-details">
       <div class="row heading">
@@ -126,10 +125,10 @@ function DayDetails(props: { day: Day }) {
         </label>
       </div>
       <ol class="stops">
-        <Index each={listed()}>{(entry) => <SequenceItem entry={entry()} />}</Index>
+        <For each={[...listed().keys()]}>{(id) => <SequenceItem entry={listed().get(id)!} />}</For>
       </ol>
-      <Show when={listed().length === 0}>
-        <p class="muted hint">{props.day.routes.length > 0 ? 'Make stops of route points, or tap beside the route with the stop tool.' : ''}</p>
+      <Show when={listed().size === 0 && props.day.routes.length > 0}>
+        <p class="muted hint">Make stops of route points, or tap beside the route with the stop tool.</p>
       </Show>
     </div>
   );
@@ -159,17 +158,13 @@ function RouteItem(props: { route: Route; day: Day }) {
   );
 }
 
-/**
- * A stop, or a plain route point, with its distance from the day's start; a click pans the
- * map there. Rows are kept by position (the sequence is computed anew on every change),
- * so that a name being edited survives a routing answer.
- */
+/** A stop, or a plain route point, with its distance from the day's start; a click pans the map there. */
 function SequenceItem(props: { entry: SequenceEntry }) {
   const stop = () => props.entry.stop;
   return (
-    <li class="row sequence-item" classList={{ point: !stop(), free: stop()?.pointId === null }}>
+    <li class="row sequence-item" classList={{ point: !stop() }}>
       <button class="text grow" onClick={() => panTo(props.entry.lngLat)} title={stop()?.pointId === null ? `Beside the route, ${distanceText(props.entry.near?.distanceM ?? 0)} from it; show on the map` : 'Show on the map'}>
-        <Show when={stop()} fallback={<span class="point-dot" />}>
+        <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
           {(s) => <StopShape kind={s().kind} color={s().pointId === null ? FREE_COLOR : BOUND_COLOR} height={22} />}
         </Show>
         <span class="name">

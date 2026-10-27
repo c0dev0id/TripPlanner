@@ -11,7 +11,7 @@ export function HintBar() {
       {(route) => (
         <div class="hint-bar">
           <span>
-            <strong>{routeLabel(route(), selectedDay())}</strong> · {TOOLS[tool()].label}: {TOOLS[tool()].hint}
+            <strong>{routeLabel(route(), selectedDay()!)}</strong> · {TOOLS[tool()].label}: {TOOLS[tool()].hint}
           </span>
           <Show when={pendingLegs() > 0}>
             <span class="routing">Routing {pendingLegs()} {pendingLegs() === 1 ? 'leg' : 'legs'}…</span>

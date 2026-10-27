@@ -52,11 +52,10 @@ final class TripGpx
         foreach ($indices as $index) {
             $day = $document['days'][$index];
             $lines = array_map(RouteGeometry::line(...), $day['routes']);
+            $dayLabel = self::dayLabel($day, $index);
+            $several = count($day['routes']) > 1;
             foreach ($day['routes'] as $i => $route) {
-                $label = self::dayLabel($day, $index);
-                if (count($day['routes']) > 1) {
-                    $label .= ' – ' . ($route['name'] === '' ? 'Route ' . ($i + 1) : $route['name']);
-                }
+                $label = $several ? $dayLabel . ' – ' . ($route['name'] === '' ? 'Route ' . ($i + 1) : $route['name']) : $dayLabel;
                 $tracks[] = ['name' => $label, 'points' => $lines[$i]];
             }
             foreach ($day['stops'] as $stop) {

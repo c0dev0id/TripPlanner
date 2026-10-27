@@ -1,23 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, RoutedLeg, Trip } from '../model/trip';
-import {
-  addFreeStop,
-  addRoute,
-  alignStops,
-  appendPoint,
-  connectStop,
-  convertPoint,
-  disconnectStop,
-  insertPoint,
-  movePoint,
-  moveStop,
-  removePoint,
-  removeRoute,
-  removeStop,
-  setRouteProfile,
-  updateStop,
-} from './dayEdit';
+import { addFreeStop, addRoute, alignStops, connectStop, convertPoint, disconnectStop, insertStop, moveStop, removeRoute, removeStop, setRouteProfile, updateRoute, updateStop } from './dayEdit';
 import { routeLegs } from './legs';
+import * as routeEdit from './routeEdit';
 
 const routed = (geometry: string): RoutedLeg => ({ geometry, distanceM: 1000, durationS: 60 });
 
@@ -28,9 +13,9 @@ const day = (trip: Trip): Day => trip.days[0]!;
 /** A day with one routed route of three points, a stop bound to the middle one, and a free stop. */
 function fixture(): Trip {
   let trip = addRoute(empty(), 'd', 'r');
-  trip = appendPoint(trip, 'r', [1, 1], 'a');
-  trip = appendPoint(trip, 'r', [2, 2], 'b');
-  trip = appendPoint(trip, 'r', [3, 3], 'c');
+  for (const [id, lngLat] of [['a', [1, 1]], ['b', [2, 2]], ['c', [3, 3]]] as const) {
+    trip = updateRoute(trip, 'r', (r) => routeEdit.appendPoint(r, { id, lngLat: [...lngLat] }));
+  }
   const route = day(trip).routes[0]!;
   const legs = Object.fromEntries(routeLegs(route).map((l) => [l.key, routed(l.key)]));
   trip = { ...trip, days: [{ ...day(trip), routes: [{ ...route, legs }] }] };
@@ -49,13 +34,13 @@ describe('routes and points', () => {
   });
 
   it('moves a bound stop with its point', () => {
-    const trip = movePoint(fixture(), 'r', 'b', [2.1, 2.1]);
+    const trip = updateRoute(fixture(), 'r', (r) => routeEdit.movePoint(r, 'b', [2.1, 2.1]));
     expect(day(trip).stops[0]!.lngLat).toEqual([2.1, 2.1]);
     expect(day(trip).routes[0]!.legs).toEqual({});
   });
 
   it('frees a stop whose point is removed, where it stood', () => {
-    const trip = removePoint(fixture(), 'r', 'b');
+    const trip = updateRoute(fixture(), 'r', (r) => routeEdit.removePoint(r, 'b'));
     expect(day(trip).routes[0]!.points.map((p) => p.id)).toEqual(['a', 'c']);
     expect(day(trip).stops[0]).toMatchObject({ pointId: null, lngLat: [2, 2] });
   });
@@ -67,13 +52,24 @@ describe('routes and points', () => {
   });
 
   it('inserts a point without touching the stops', () => {
-    const trip = insertPoint(fixture(), 'r', 1, [1.5, 1.5], 'x');
+    const trip = updateRoute(fixture(), 'r', (r) => routeEdit.insertPoint(r, 1, { id: 'x', lngLat: [1.5, 1.5] }));
     expect(day(trip).routes[0]!.points.map((p) => p.id)).toEqual(['a', 'x', 'b', 'c']);
     expect(day(trip).stops[0]!.pointId).toBe('b');
+  });
+
+  it('leaves a route of another trip part alone', () => {
+    const trip = fixture();
+    expect(updateRoute(trip, 'nope', (r) => routeEdit.removePoint(r, 'b'))).toBe(trip);
   });
 });
 
 describe('stops', () => {
+  it('inserts a stop on the line as a bound stop', () => {
+    const trip = insertStop(fixture(), 'd', 'r', 1, [1.5, 1.5], 'x', 's3');
+    expect(day(trip).routes[0]!.points.map((p) => p.id)).toEqual(['a', 'x', 'b', 'c']);
+    expect(day(trip).stops[2]).toMatchObject({ id: 's3', pointId: 'x', lngLat: [1.5, 1.5] });
+  });
+
   it('converts a point once', () => {
     const trip = fixture();
     expect(day(trip).stops[0]).toMatchObject({ id: 's1', name: 'Stop 1', kind: 'other', lngLat: [2, 2], pointId: 'b' });

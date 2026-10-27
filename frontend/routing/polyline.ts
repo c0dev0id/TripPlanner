@@ -28,3 +28,17 @@ export function decodePolyline(encoded: string, precision = 6): LngLat[] {
   }
   return points;
 }
+
+/** Decoded geometries by their polyline, which is immutable and so its own key; emptied when it grows large. */
+let decoded = new Map<string, LngLat[]>();
+
+/** Decodes a leg's geometry once; the map, the sequence and the tap tests share the result. */
+export function decodeCached(geometry: string): LngLat[] {
+  let coordinates = decoded.get(geometry);
+  if (!coordinates) {
+    if (decoded.size >= 4096) decoded = new Map();
+    coordinates = decodePolyline(geometry);
+    decoded.set(geometry, coordinates);
+  }
+  return coordinates;
+}

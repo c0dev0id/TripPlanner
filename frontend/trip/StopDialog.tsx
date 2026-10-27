@@ -1,17 +1,14 @@
-import { createEffect, createMemo, For, Show } from 'solid-js';
+import { createMemo, For, Show } from 'solid-js';
 import { STOP_KINDS, type Stop, type StopKind } from '../model/trip';
 import { setStopDialogId, stopDialogId } from '../state/drawing';
 import { selectedDay, updateStop } from '../state/trip';
+import { showModalWhile } from '../ui/modal';
 
 /** The details of a stop, in a modal dialog: name, kind, address, contact, booking, notes. */
 export function StopDialog() {
   let dialog!: HTMLDialogElement;
   const stop = createMemo((): Stop | undefined => selectedDay()?.stops.find((s) => s.id === stopDialogId()));
-  createEffect(() => {
-    const open = stop() !== undefined;
-    if (open && !dialog.open) dialog.showModal();
-    else if (!open && dialog.open) dialog.close();
-  });
+  showModalWhile(() => dialog, () => stop() !== undefined);
   const save = (e: SubmitEvent) => {
     e.preventDefault();
     const s = stop();
@@ -29,7 +26,7 @@ export function StopDialog() {
     setStopDialogId(undefined);
   };
   return (
-    <dialog ref={dialog} class="dialog stop-dialog" aria-label="Stop" onClose={() => setStopDialogId(undefined)}>
+    <dialog ref={dialog} class="dialog" aria-label="Stop" onClose={() => setStopDialogId(undefined)}>
       <Show when={stop()} keyed>
         {(s) => (
           <form onSubmit={save}>

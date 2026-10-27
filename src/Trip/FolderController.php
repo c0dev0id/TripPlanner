@@ -7,6 +7,7 @@ namespace Planner\Trip;
 use DateTimeImmutable;
 use Planner\Account\CurrentUser;
 use Planner\Http\Json;
+use Planner\Name;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -26,7 +27,7 @@ final class FolderController
 
     public function create(Request $request, Response $response): Response
     {
-        $name = self::name($request);
+        $name = Name::of(Json::field($request, 'name'));
         if ($name === null) {
             return Json::error($response, 422, 'A folder needs a name of up to 200 characters.');
         }
@@ -36,7 +37,7 @@ final class FolderController
 
     public function rename(Request $request, Response $response, array $args): Response
     {
-        $name = self::name($request);
+        $name = Name::of(Json::field($request, 'name'));
         if ($name === null) {
             return Json::error($response, 422, 'A folder needs a name of up to 200 characters.');
         }
@@ -48,11 +49,5 @@ final class FolderController
     {
         $deleted = $this->folders->delete($this->currentUser->get()->id, (int) $args['id']);
         return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'No such folder.');
-    }
-
-    private static function name(Request $request): ?string
-    {
-        $body = $request->getParsedBody();
-        return TripDocumentValidator::name(is_array($body) ? $body['name'] ?? null : null);
     }
 }

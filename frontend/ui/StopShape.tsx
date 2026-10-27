@@ -1,5 +1,5 @@
 // The little objects are from Layer Slayer's waypoint shapes; the bed and the pin are new.
-import { createUniqueId, type JSX } from 'solid-js';
+import { createUniqueId, Show, type JSX } from 'solid-js';
 import type { StopKind } from '../model/trip';
 
 /** Height of a stop's shape in CSS pixels. */
@@ -124,13 +124,14 @@ const DRAWINGS: Record<StopKind, (color: string) => JSX.Element> = {
 /**
  * A stop drawn as the little object its kind stands for, its foot in the middle of its
  * bottom edge; a plain stop is a pin in `color`. A white outline around the drawing sets
- * it off from any map.
+ * it off from any map. With `foot`, a dot in `color` marks the exact spot on the bottom
+ * edge, drawn over it.
  */
-export function StopShape(props: { kind: StopKind; color: string; height?: number }) {
+export function StopShape(props: { kind: StopKind; color: string; height?: number; foot?: boolean }) {
   const id = createUniqueId();
   const height = () => props.height ?? SHAPE_HEIGHT;
   return (
-    <svg viewBox="-2 -1 36 36.5" height={height()} width={(height() * 36) / 36.5} aria-hidden="true">
+    <svg viewBox="-2 -1 36 36.5" height={height()} width={(height() * 36) / 36.5} overflow="visible" aria-hidden="true">
       <filter id={`outline-${id}`} x="-10%" y="-10%" width="120%" height="120%">
         <feMorphology in="SourceAlpha" operator="dilate" radius="1" result="grown" />
         <feFlood flood-color="#fff" />
@@ -141,6 +142,9 @@ export function StopShape(props: { kind: StopKind; color: string; height?: numbe
         </feMerge>
       </filter>
       <g filter={`url(#outline-${id})`}>{DRAWINGS[props.kind](props.color)}</g>
+      <Show when={props.foot}>
+        <circle cx="16" cy="35.5" r="3" fill={props.color} stroke="#fff" stroke-width="1.4" />
+      </Show>
     </svg>
   );
 }

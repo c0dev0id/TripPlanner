@@ -10,6 +10,7 @@ use Planner\Account\Users;
 use Planner\Tests\TestDatabase;
 use Planner\Trip\Folders;
 use Planner\Trip\Trips;
+use Planner\Trip\UnknownFolder;
 
 final class FoldersTest extends TestCase
 {
@@ -44,7 +45,6 @@ final class FoldersTest extends TestCase
         self::assertFalse($this->folders->rename($this->otherUserId, $folder->id, 'Mine'));
         self::assertTrue($this->folders->rename($this->userId, $folder->id, 'Alps 2026'));
         self::assertSame('Alps 2026', $this->folders->listFor($this->userId)[0]->name);
-        self::assertFalse($this->folders->has($this->otherUserId, $folder->id));
         self::assertFalse($this->folders->delete($this->otherUserId, $folder->id));
         self::assertTrue($this->folders->delete($this->userId, $folder->id));
         self::assertSame([], $this->folders->listFor($this->userId));
@@ -70,5 +70,18 @@ final class FoldersTest extends TestCase
         self::assertTrue($this->trips->move($this->userId, $trip->id, null));
         self::assertNull($this->trips->listFor($this->userId)[0]->folderId);
         self::assertFalse($this->trips->move($this->otherUserId, $trip->id, null));
+    }
+
+    public function testRefusesAnotherUsersFolder(): void
+    {
+        $folder = $this->folders->create($this->otherUserId, 'Theirs', $this->now);
+        $trip = $this->trips->create($this->userId, 'Weekend', $this->now);
+        try {
+            $this->trips->move($this->userId, $trip->id, $folder->id);
+            self::fail('moved into a folder of another user');
+        } catch (UnknownFolder) {
+        }
+        $this->expectException(UnknownFolder::class);
+        $this->trips->create($this->userId, 'Another', $this->now, $folder->id);
     }
 }

@@ -226,11 +226,6 @@ a {
   font-size: 12px;
 }
 
-.folder-icon {
-  flex: none;
-  color: var(--muted);
-}
-
 .day.selected > .row {
   background: var(--active);
   box-shadow: inset 3px 0 0 var(--accent);
@@ -295,12 +290,12 @@ a {
   font-size: 12px;
 }
 
-/* A plain route point in the list: a dot on the route's line, in the stop shapes' column. */
+/* A plain route point in the list: a dot in the route's colour, in the stop shapes' column. */
 .point-dot {
   width: 8px;
   height: 8px;
   margin: 0 7px;
-  border: 2px solid #d9480f;
+  border: 2px solid;
   border-radius: 50%;
   background: var(--panel);
 }
@@ -362,17 +357,6 @@ a {
 .stop svg {
   display: block;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
-}
-
-.stop-foot {
-  position: absolute;
-  left: 50%;
-  bottom: -3px;
-  width: 7px;
-  height: 7px;
-  border: 1.5px solid #fff;
-  border-radius: 50%;
-  transform: translateX(-50%);
 }
 
 .stop-name {

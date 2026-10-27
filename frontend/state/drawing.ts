@@ -25,11 +25,11 @@ export const [showNeighbours, setShowNeighbours] = createSignal(true);
 /** The stop whose details dialog is open. */
 export const [stopDialogId, setStopDialogId] = createSignal<string>();
 
-/** Where the map should go next; a counter makes the same spot twice a new request. */
-export const [panTarget, setPanTarget] = createSignal<{ lngLat: LngLat; n: number }>();
+/** Where the map should go next; every request is a new object, so the same spot twice counts twice. */
+export const [panTarget, setPanTarget] = createSignal<{ lngLat: LngLat }>();
 
 export function panTo(lngLat: LngLat): void {
-  setPanTarget((last) => ({ lngLat, n: (last?.n ?? 0) + 1 }));
+  setPanTarget({ lngLat });
 }
 
 export interface MenuItem {

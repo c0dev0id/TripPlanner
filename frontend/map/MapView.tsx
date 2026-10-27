@@ -3,14 +3,13 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
 import type { Day } from '../model/trip';
 import { ROUTING_ATTRIBUTION } from '../routing/osrm';
-import { daySequence } from '../routing/sequence';
 import { panTarget, showNeighbours } from '../state/drawing';
 import { failedLegs } from '../state/routing';
-import { editingRouteId, openTrip, selectedDay, selectedDayId } from '../state/trip';
+import { editingRouteId, neighbourDays, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
 import { ContextMenu } from './ContextMenu';
 import { Interactions } from './Interactions';
 import { PointMarkers } from './PointMarkers';
-import { decodeCached, ROUTE_LAYERS, ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
+import { ROUTE_LAYERS, ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { StopMarkers } from './StopMarkers';
 
 /** OpenFreeMap serves this vector style without a key. */
@@ -56,22 +55,15 @@ export function MapView() {
 
 /** The days drawn: the selected one, and with `showNeighbours` the ones before and after. */
 function shownDays(): { day: Day; role: RouteRole }[] {
-  const days = openTrip()?.days ?? [];
-  const index = days.findIndex((d) => d.id === selectedDayId());
-  if (index < 0) return [];
-  const shown: { day: Day; role: RouteRole }[] = [{ day: days[index]!, role: 'selected' }];
-  if (showNeighbours()) {
-    for (const neighbour of [days[index - 1], days[index + 1]]) if (neighbour) shown.unshift({ day: neighbour, role: 'neighbour' });
-  }
-  return shown;
+  const day = selectedDay();
+  if (!day) return [];
+  const neighbours = showNeighbours() ? neighbourDays().map((d) => ({ day: d, role: 'neighbour' as const })) : [];
+  return [...neighbours, { day, role: 'selected' }];
 }
 
 /** Keeps the route lines on the map, shows the selected day when it changes, and goes where the panel points. */
 function RouteLines(props: { map: MapLibreMap }) {
-  const marks = createMemo(() => {
-    const day = selectedDay();
-    return day ? daySequence(day, decodeCached).filter((e) => e.near) : [];
-  });
+  const marks = () => selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : []));
   const features = createMemo(() => routeFeatures(shownDays(), editingRouteId(), failedLegs(), marks()));
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(

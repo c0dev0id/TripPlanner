@@ -18,23 +18,27 @@ final class Proximity
      */
     public static function toLine(array $position, array $line): float
     {
-        $scale = cos(deg2rad($position[1]));
-        $x = fn (array $p): float => ($p[0] - $position[0]) * $scale;
-        $y = fn (array $p): float => $p[1] - $position[1];
-        $best = INF;
-        for ($i = 0, $n = count($line); $i < $n; $i++) {
-            [$ax, $ay] = [$x($line[$i]), $y($line[$i])];
-            if ($i === 0) {
-                $best = min($best, hypot($ax, $ay));
-            }
-            if ($i + 1 < $n) {
-                [$bx, $by] = [$x($line[$i + 1]), $y($line[$i + 1])];
-                [$dx, $dy] = [$bx - $ax, $by - $ay];
-                $length2 = $dx * $dx + $dy * $dy;
-                $t = $length2 === 0.0 ? 0.0 : max(0.0, min(1.0, -($ax * $dx + $ay * $dy) / $length2));
-                $best = min($best, hypot($ax + $t * $dx, $ay + $t * $dy));
-            }
+        if ($line === []) {
+            return INF;
         }
-        return $best * self::METRES_PER_DEGREE;
+        $scale = cos(deg2rad($position[1]));
+        // The position is the origin; each vertex is projected once and carried to the next segment.
+        $ax = ($line[0][0] - $position[0]) * $scale;
+        $ay = $line[0][1] - $position[1];
+        $best = $ax * $ax + $ay * $ay;
+        for ($i = 1, $n = count($line); $i < $n; $i++) {
+            $bx = ($line[$i][0] - $position[0]) * $scale;
+            $by = $line[$i][1] - $position[1];
+            $dx = $bx - $ax;
+            $dy = $by - $ay;
+            $length2 = $dx * $dx + $dy * $dy;
+            $t = $length2 === 0.0 ? 0.0 : max(0.0, min(1.0, -($ax * $dx + $ay * $dy) / $length2));
+            $px = $ax + $t * $dx;
+            $py = $ay + $t * $dy;
+            $best = min($best, $px * $px + $py * $py);
+            $ax = $bx;
+            $ay = $by;
+        }
+        return sqrt($best) * self::METRES_PER_DEGREE;
     }
 }

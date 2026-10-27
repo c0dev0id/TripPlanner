@@ -63,7 +63,10 @@ final class TripDocumentValidatorTest extends TestCase
         yield 'unknown stop kind' => [fn (array &$d) => $d['days'][0]['stops'][0]['kind'] = 'castle', 'stops[0].kind'];
         yield 'position outside the world' => [fn (array &$d) => $d['days'][0]['stops'][2]['lngLat'] = [200, 0], 'stops[2].lngLat'];
         yield 'duplicate stop id' => [fn (array &$d) => $d['days'][0]['stops'][1]['id'] = 's1', 'stops holds the same id twice'];
-        yield 'duplicate point id across routes' => [fn (array &$d) => $d['days'][0]['routes'][] = TripFixture::route('r1', [[1, 1]]), 'holds the same id twice'];
+        yield 'duplicate point id across routes' => [function (array &$d): void {
+            $d['days'][0]['routes'][] = TripFixture::route('r2', [[1, 1]]);
+            $d['days'][0]['routes'][1]['points'][0]['id'] = 'r1-0';
+        }, "routes' points hold the same id twice"];
         yield 'stop bound to an unknown point' => [fn (array &$d) => $d['days'][0]['stops'][0]['pointId'] = 'nowhere', 'names no route point'];
         yield 'bound stop away from its point' => [fn (array &$d) => $d['days'][0]['stops'][0]['lngLat'] = [11.5, 48.11], 'must stand at its route point'];
         yield 'bad arrival time' => [fn (array &$d) => $d['days'][0]['stops'][0]['arriveAt'] = '25:00', 'arriveAt'];

@@ -2,8 +2,7 @@ import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { FilterSpecification, LayerSpecification, LineLayerSpecification } from 'maplibre-gl';
 import type { Day, LngLat } from '../model/trip';
 import { legCoordinates, legState, routeLegs } from '../routing/legs';
-import { decodePolyline } from '../routing/polyline';
-import type { SequenceEntry } from '../routing/sequence';
+import { decodeCached } from '../routing/polyline';
 
 /** The source and layers of the route lines and the free stops' marks, and their features. */
 
@@ -68,37 +67,22 @@ export const ROUTE_LAYERS: LayerSpecification[] = [
   },
 ];
 
-/** Decoded leg geometries of the last drawing; polyline strings are immutable, so they are their own cache key. */
-let decoded = new Map<string, LngLat[]>();
-
-/** Decodes a leg's geometry, from the cache where the map has drawn it. */
-export const decodeCached = (geometry: string): LngLat[] => decoded.get(geometry) ?? decodePolyline(geometry);
-
 /**
- * Every leg of the days shown as a line with its role and routing state, and a mark where
- * each free stop of the selected day is nearest to the route. The features hold no store
- * proxies: decoded geometries are plain, legCoordinates copies the ends, marks are copied.
+ * Every leg of the days shown as a line with its role and routing state, and a mark at
+ * each spot given (where a free stop is nearest to the route). The features hold no store
+ * proxies: decoded geometries are plain and legCoordinates copies the ends.
  */
-export function routeFeatures(days: readonly { day: Day; role: RouteRole }[], editingRouteId: string | undefined, failed: ReadonlySet<string>, marks: readonly SequenceEntry[]): FeatureCollection<Geometry> {
-  const decodedNow = new Map<string, LngLat[]>();
-  const decode = (geometry: string) => {
-    const coordinates = decodeCached(geometry);
-    decodedNow.set(geometry, coordinates);
-    return coordinates;
-  };
+export function routeFeatures(days: readonly { day: Day; role: RouteRole }[], editingRouteId: string | undefined, failed: ReadonlySet<string>, marks: readonly LngLat[]): FeatureCollection<Geometry> {
   const features: Feature<Geometry>[] = [];
   for (const { day, role } of days) {
     for (const route of day.routes) {
       const routeRole: RouteRole = route.id === editingRouteId ? 'edited' : role;
       for (const leg of routeLegs(route)) {
-        const coordinates = legCoordinates(route, leg, decode);
+        const coordinates = legCoordinates(route, leg, decodeCached);
         features.push({ type: 'Feature', properties: { state: legState(route, leg, failed), role: routeRole }, geometry: { type: 'LineString', coordinates } });
       }
     }
   }
-  for (const entry of marks) {
-    if (entry.near) features.push({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [entry.near.lngLat[0], entry.near.lngLat[1]] } });
-  }
-  decoded = decodedNow;
+  for (const lngLat of marks) features.push({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: lngLat } });
   return { type: 'FeatureCollection', features };
 }

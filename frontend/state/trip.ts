@@ -1,10 +1,10 @@
-import { batch, createSignal } from 'solid-js';
+import { batch, createMemo, createRoot, createSignal } from 'solid-js';
 import { createStore, reconcile, unwrap } from 'solid-js/store';
 import { newId, type Day, type LngLat, type Profile, type Route, type RoutedLeg, type Stop, type Trip } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { roundLngLat } from '../routing/legs';
 import * as routeEdit from '../routing/routeEdit';
-import { nearestOnRoutes } from '../routing/sequence';
+import { daySequence, type SequenceEntry } from '../routing/sequence';
 import { History } from './history';
 
 /**
@@ -34,6 +34,21 @@ export function selectDay(id: string | undefined): void {
 }
 
 export const selectedDay = (): Day | undefined => state.trip?.days.find((d) => d.id === selectedDayId());
+
+/** The days before and after the selected one. */
+export function neighbourDays(): Day[] {
+  const days = state.trip?.days ?? [];
+  const index = days.findIndex((d) => d.id === selectedDayId());
+  return index < 0 ? [] : [days[index - 1], days[index + 1]].filter((d): d is Day => d !== undefined);
+}
+
+/** The selected day's stops and route points in riding order; computed once for the map and the panel. */
+export const selectedSequence: () => SequenceEntry[] = createRoot(() =>
+  createMemo(() => {
+    const day = selectedDay();
+    return day ? daySequence(day) : [];
+  }),
+);
 
 /** Starts editing a route of the selected day, or ends editing for undefined. */
 export function editRoute(id: string | undefined): void {
@@ -160,31 +175,36 @@ export function setRouteProfile(routeId: string, profile: Profile): void {
   edit((trip) => dayEdit.setRouteProfile(trip, routeId, profile), 'Change profile');
 }
 
+/** Applies a route edit (see routeEdit) to a route; the day's bound stops follow their points. */
+function changeRoute(routeId: string, change: (route: Route) => Route, label?: string): void {
+  edit((trip) => dayEdit.updateRoute(trip, routeId, change), label);
+}
+
 export function appendPoint(routeId: string, lngLat: LngLat): void {
-  edit((trip) => dayEdit.appendPoint(trip, routeId, roundLngLat(lngLat), newId()), 'Add point');
+  changeRoute(routeId, (r) => routeEdit.appendPoint(r, { id: newId(), lngLat: roundLngLat(lngLat) }), 'Add point');
 }
 
 /** Inserts a point of a route before the one at `index`. */
 export function insertPoint(routeId: string, index: number, lngLat: LngLat): void {
-  edit((trip) => dayEdit.insertPoint(trip, routeId, index, roundLngLat(lngLat), newId()), 'Insert point');
+  changeRoute(routeId, (r) => routeEdit.insertPoint(r, index, { id: newId(), lngLat: roundLngLat(lngLat) }), 'Insert point');
 }
 
 export function movePoint(routeId: string, pointId: string, lngLat: LngLat): void {
-  edit((trip) => dayEdit.movePoint(trip, routeId, pointId, roundLngLat(lngLat)), 'Move point');
+  changeRoute(routeId, (r) => routeEdit.movePoint(r, pointId, roundLngLat(lngLat)), 'Move point');
 }
 
 export function removePoint(routeId: string, pointId: string): void {
-  edit((trip) => dayEdit.removePoint(trip, routeId, pointId), 'Remove point');
+  changeRoute(routeId, (r) => routeEdit.removePoint(r, pointId), 'Remove point');
 }
 
 /** Makes the leg that leads to the point straight, or routed again. */
 export function setStraight(routeId: string, pointId: string, straight: boolean): void {
-  edit((trip) => dayEdit.setStraight(trip, routeId, pointId, straight), straight ? 'Straight leg' : 'Routed leg');
+  changeRoute(routeId, (r) => routeEdit.setStraight(r, pointId, straight), straight ? 'Straight leg' : 'Routed leg');
 }
 
 /** Stores a routed leg; routing results are no undo steps. */
 export function setRouteLeg(routeId: string, key: string, leg: RoutedLeg): void {
-  edit((trip) => dayEdit.updateRoute(trip, routeId, (r) => routeEdit.addLeg(r, key, leg)));
+  changeRoute(routeId, (r) => routeEdit.addLeg(r, key, leg));
 }
 
 /** Drops a route's routed legs so that they are routed again; undoing it brings the old ones back. */
@@ -199,8 +219,7 @@ export function convertPoint(pointId: string): void {
 
 /** Inserts a point of a route before the one at `index` and makes a stop of it, as one step. */
 export function insertStop(routeId: string, index: number, lngLat: LngLat): void {
-  const pointId = newId();
-  editDay((trip, dayId) => dayEdit.convertPoint(dayEdit.insertPoint(trip, routeId, index, roundLngLat(lngLat), pointId), dayId, pointId, newId()), 'Add stop');
+  editDay((trip, dayId) => dayEdit.insertStop(trip, dayId, routeId, index, roundLngLat(lngLat), newId(), newId()), 'Add stop');
 }
 
 /** Adds a free stop to the selected day. */
@@ -210,12 +229,8 @@ export function addFreeStop(lngLat: LngLat): void {
 
 /** Binds a free stop of the selected day to its routes where they pass closest. */
 export function connectStop(stopId: string): void {
-  editDay((trip, dayId) => {
-    const day = trip.days.find((d) => d.id === dayId)!;
-    const stop = day.stops.find((s) => s.id === stopId);
-    const near = stop && nearestOnRoutes(day, stop.lngLat);
-    return near ? dayEdit.connectStop(trip, dayId, stopId, near.routeId, near.legIndex + 1, newId()) : trip;
-  }, 'Connect stop');
+  const near = selectedSequence().find((e) => e.stop?.id === stopId)?.near;
+  if (near) editDay((trip, dayId) => dayEdit.connectStop(trip, dayId, stopId, near.routeId, near.legIndex + 1, newId()), 'Connect stop');
 }
 
 export function disconnectStop(stopId: string): void {
