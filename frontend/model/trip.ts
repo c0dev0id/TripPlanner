@@ -98,9 +98,16 @@ export interface Trip {
 export interface TripSummary {
   id: number;
   name: string;
+  folderId: number | null;
   startsOn: string | null;
   dayCount: number;
   updatedAt: string;
+}
+
+/** A folder of the library, one level deep. */
+export interface Folder {
+  id: number;
+  name: string;
 }
 
 export const newId = (): string => crypto.randomUUID();

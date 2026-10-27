@@ -182,6 +182,8 @@ a {
 }
 
 .trips,
+.folders,
+.results,
 .days,
 .routes,
 .stops {
@@ -191,12 +193,42 @@ a {
 }
 
 .trips li,
+.folders li,
+.results li,
 .day {
   border-bottom: 1px solid var(--line);
 }
 
-.trips .name {
+.trips .name,
+.folders .name,
+.results .name {
   display: block;
+}
+
+.library form {
+  margin: 8px 0;
+}
+
+.library .search {
+  width: 100%;
+  margin: 8px 0;
+}
+
+/* The folder a trip is in, chosen in its row. */
+.library select {
+  max-width: 96px;
+  padding: 3px 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 12px;
+}
+
+.folder-icon {
+  flex: none;
+  color: var(--muted);
 }
 
 .day.selected > .row {

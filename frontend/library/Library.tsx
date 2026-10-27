@@ -1,73 +1,223 @@
-import { createResource, createSignal, For, Show } from 'solid-js';
-import { createTrip, deleteTrip, errorMessage, listTrips } from '../api';
+import { createMemo, createResource, createSignal, For, Show } from 'solid-js';
+import { createFolder, createTrip, deleteFolder, deleteTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder } from '../api';
+import type { Folder, TripSummary } from '../model/trip';
 import { askConfirmation } from '../ui/confirm';
+import { EditableName } from '../ui/EditableName';
 import { dateText } from '../ui/format';
-import { DeleteIcon } from '../ui/icons';
+import { BackIcon, DeleteIcon, FolderIcon } from '../ui/icons';
 
-/** The user's trips: open one, start a new one, delete one. */
+/** At most this many search results are listed. */
+const SEARCH_LIMIT = 20;
+
+/** The user's trips in their folders, one level deep: open one, start one, move, delete; a search across all folders. */
 export function Library(props: { onOpen: (id: number) => void; opening: boolean; error: string | undefined }) {
-  const [trips, { refetch }] = createResource(listTrips);
-  const [name, setName] = createSignal('');
+  const [trips, { refetch: refetchTrips }] = createResource(listTrips);
+  const [folders, { refetch: refetchFolders }] = createResource(listFolders);
+  /** The open folder; none at the top, where the folders and the trips in no folder are. */
+  const [folderId, setFolderId] = createSignal<number>();
+  const [query, setQuery] = createSignal('');
   const [busy, setBusy] = createSignal<string>();
 
-  const create = async (e: SubmitEvent) => {
-    e.preventDefault();
-    const tripName = name().trim();
-    if (!tripName) return;
+  const folder = () => folders()?.find((f) => f.id === folderId());
+  const shownTrips = createMemo(() => (trips() ?? []).filter((t) => t.folderId === (folderId() ?? null)));
+  const tripCount = (id: number) => (trips() ?? []).filter((t) => t.folderId === id).length;
+
+  /** Runs a request; its error is shown, and `then` runs after success. */
+  const run = async (work: () => Promise<unknown>, then?: () => void) => {
     setBusy(undefined);
     try {
-      const trip = await createTrip(tripName);
-      setName('');
-      props.onOpen(trip.id);
+      await work();
+      then?.();
     } catch (error) {
       setBusy(errorMessage(error));
     }
   };
-  const remove = async (id: number, tripName: string) => {
-    if (!(await askConfirmation(`Delete the trip “${tripName}” with all its days?`, 'Delete'))) return;
-    try {
-      await deleteTrip(id);
-      void refetch();
-    } catch (error) {
-      setBusy(errorMessage(error));
-    }
+  const removeTrip = async (trip: TripSummary) => {
+    if (!(await askConfirmation(`Delete the trip “${trip.name}” with all its days?`, 'Delete'))) return;
+    await run(() => deleteTrip(trip.id), refetchTrips);
+  };
+  const removeFolder = async (f: Folder) => {
+    const count = tripCount(f.id);
+    const trips = count === 0 ? '' : count === 1 ? ' Its trip stays, in no folder.' : ` Its ${count} trips stay, in no folder.`;
+    if (!(await askConfirmation(`Delete the folder “${f.name}”?${trips}`, 'Delete'))) return;
+    await run(() => deleteFolder(f.id), () => {
+      void refetchFolders();
+      void refetchTrips();
+    });
+  };
+  const openFolder = (id: number | undefined) => {
+    setFolderId(id);
+    setQuery('');
   };
 
   return (
     <section class="library">
-      <h2>Trips</h2>
-      <form class="row" onSubmit={create}>
-        <input class="grow" placeholder="Name of a new trip" value={name()} onInput={(e) => setName(e.currentTarget.value)} aria-label="Name of a new trip" maxlength={200} />
-        <button type="submit" class="primary" disabled={!name().trim() || props.opening}>
-          New trip
-        </button>
-      </form>
-      <Show when={busy() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
-      <Show when={trips.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Show>
-      <Show when={trips()} fallback={<p class="muted">Loading…</p>}>
-        {(list) => (
-          <Show when={list().length > 0} fallback={<p class="muted">No trips yet. Name one above to start planning.</p>}>
-            <ul class="trips">
-              <For each={list()}>
-                {(trip) => (
-                  <li class="row">
-                    <button class="text grow" onClick={() => props.onOpen(trip.id)} disabled={props.opening}>
-                      <span class="name">{trip.name}</span>
-                      <span class="muted">
-                        {trip.dayCount} {trip.dayCount === 1 ? 'day' : 'days'}
-                        {trip.startsOn ? ` · from ${dateText(trip.startsOn)}` : ''}
-                      </span>
-                    </button>
-                    <button class="icon" title="Delete trip" aria-label={`Delete ${trip.name}`} onClick={() => void remove(trip.id, trip.name)}>
-                      <DeleteIcon />
-                    </button>
-                  </li>
-                )}
-              </For>
-            </ul>
-          </Show>
+      <Show when={folder()} fallback={<h2>Trips</h2>}>
+        {(f) => (
+          <div class="row">
+            <button class="icon" title="Back to all trips" aria-label="Back to all trips" onClick={() => openFolder(undefined)}>
+              <BackIcon />
+            </button>
+            <h2 class="grow name" title={f().name}>
+              {f().name}
+            </h2>
+          </div>
         )}
       </Show>
+      <input class="search" type="search" placeholder="Search trips and folders" aria-label="Search trips and folders" value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
+      <Show when={busy() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
+      <Show when={trips.error ?? folders.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Show>
+      <Show when={trips() && folders()} fallback={<p class="muted">Loading…</p>}>
+        <Show
+          when={query().trim()}
+          fallback={
+            <>
+              <NewTripForm folderId={folderId() ?? null} disabled={props.opening} onCreated={props.onOpen} onError={setBusy} />
+              <Show when={!folder()}>
+                <NewFolderForm onCreated={() => void refetchFolders()} onError={setBusy} />
+                <ul class="folders">
+                  <For each={folders()}>
+                    {(f) => (
+                      <li class="row">
+                        <button class="text grow" onClick={() => openFolder(f.id)}>
+                          <span class="row">
+                            <FolderIcon />
+                            <span class="name">{f.name}</span>
+                          </span>
+                          <span class="muted">{tripCount(f.id) === 1 ? '1 trip' : `${tripCount(f.id)} trips`}</span>
+                        </button>
+                        <EditableName value={f.name} label="folder" onRename={(name) => void run(() => renameFolder(f.id, name), refetchFolders)}>
+                          <span />
+                        </EditableName>
+                        <button class="icon" title="Delete folder" aria-label={`Delete the folder ${f.name}`} onClick={() => void removeFolder(f)}>
+                          <DeleteIcon />
+                        </button>
+                      </li>
+                    )}
+                  </For>
+                </ul>
+              </Show>
+              <Show when={shownTrips().length > 0} fallback={<p class="muted">{folder() ? 'No trips in this folder yet.' : folders()!.length > 0 ? 'No trips outside the folders.' : 'No trips yet. Name one above to start planning.'}</p>}>
+                <ul class="trips">
+                  <For each={shownTrips()}>
+                    {(trip) => (
+                      <li class="row">
+                        <TripButton trip={trip} onOpen={props.onOpen} disabled={props.opening} />
+                        <select aria-label={`Folder of ${trip.name}`} value={trip.folderId ?? ''} onChange={(e) => void run(() => moveTrip(trip.id, e.currentTarget.value === '' ? null : Number(e.currentTarget.value)), refetchTrips)}>
+                          <option value="">No folder</option>
+                          <For each={folders()}>{(f) => <option value={f.id}>{f.name}</option>}</For>
+                        </select>
+                        <button class="icon" title="Delete trip" aria-label={`Delete ${trip.name}`} onClick={() => void removeTrip(trip)}>
+                          <DeleteIcon />
+                        </button>
+                      </li>
+                    )}
+                  </For>
+                </ul>
+              </Show>
+            </>
+          }
+        >
+          {(q) => <SearchResults query={q()} folders={folders()!} trips={trips()!} onOpenFolder={openFolder} onOpenTrip={props.onOpen} disabled={props.opening} />}
+        </Show>
+      </Show>
     </section>
+  );
+}
+
+function NewTripForm(props: { folderId: number | null; disabled: boolean; onCreated: (id: number) => void; onError: (message: string) => void }) {
+  const [name, setName] = createSignal('');
+  const create = async (e: SubmitEvent) => {
+    e.preventDefault();
+    const tripName = name().trim();
+    if (!tripName) return;
+    try {
+      const trip = await createTrip(tripName, props.folderId);
+      setName('');
+      props.onCreated(trip.id);
+    } catch (error) {
+      props.onError(errorMessage(error));
+    }
+  };
+  return (
+    <form class="row" onSubmit={(e) => void create(e)}>
+      <input class="grow" placeholder="Name of a new trip" value={name()} onInput={(e) => setName(e.currentTarget.value)} aria-label="Name of a new trip" maxlength={200} />
+      <button type="submit" class="primary" disabled={!name().trim() || props.disabled}>
+        New trip
+      </button>
+    </form>
+  );
+}
+
+function NewFolderForm(props: { onCreated: () => void; onError: (message: string) => void }) {
+  const [name, setName] = createSignal('');
+  const create = async (e: SubmitEvent) => {
+    e.preventDefault();
+    const folderName = name().trim();
+    if (!folderName) return;
+    try {
+      await createFolder(folderName);
+      setName('');
+      props.onCreated();
+    } catch (error) {
+      props.onError(errorMessage(error));
+    }
+  };
+  return (
+    <form class="row" onSubmit={(e) => void create(e)}>
+      <input class="grow" placeholder="Name of a new folder" value={name()} onInput={(e) => setName(e.currentTarget.value)} aria-label="Name of a new folder" maxlength={200} />
+      <button type="submit" disabled={!name().trim()}>
+        New folder
+      </button>
+    </form>
+  );
+}
+
+function TripButton(props: { trip: TripSummary; onOpen: (id: number) => void; disabled: boolean; note?: string }) {
+  return (
+    <button class="text grow" onClick={() => props.onOpen(props.trip.id)} disabled={props.disabled}>
+      <span class="name">{props.trip.name}</span>
+      <span class="muted">
+        {props.note ?? `${props.trip.dayCount} ${props.trip.dayCount === 1 ? 'day' : 'days'}${props.trip.startsOn ? ` · from ${dateText(props.trip.startsOn)}` : ''}`}
+      </span>
+    </button>
+  );
+}
+
+/** Folders and trips whose names contain the query, whatever folder they are in, up to a limit. */
+function SearchResults(props: { query: string; folders: Folder[]; trips: TripSummary[]; onOpenFolder: (id: number) => void; onOpenTrip: (id: number) => void; disabled: boolean }) {
+  const matches = (name: string) => name.toLowerCase().includes(props.query.toLowerCase());
+  const found = createMemo(() => ({ folders: props.folders.filter((f) => matches(f.name)), trips: props.trips.filter((t) => matches(t.name)) }));
+  const total = () => found().folders.length + found().trips.length;
+  const listedTrips = () => found().trips.slice(0, Math.max(0, SEARCH_LIMIT - found().folders.length));
+  const folderName = (id: number | null) => props.folders.find((f) => f.id === id)?.name;
+  return (
+    <Show when={total() > 0} fallback={<p class="muted">Nothing found.</p>}>
+      <ul class="results">
+        <For each={found().folders.slice(0, SEARCH_LIMIT)}>
+          {(f) => (
+            <li class="row">
+              <button class="text grow" onClick={() => props.onOpenFolder(f.id)}>
+                <span class="row">
+                  <FolderIcon />
+                  <span class="name">{f.name}</span>
+                </span>
+                <span class="muted">folder</span>
+              </button>
+            </li>
+          )}
+        </For>
+        <For each={listedTrips()}>
+          {(trip) => (
+            <li class="row">
+              <TripButton trip={trip} onOpen={props.onOpenTrip} disabled={props.disabled} note={folderName(trip.folderId) ?? 'no folder'} />
+            </li>
+          )}
+        </For>
+      </ul>
+      <Show when={total() > SEARCH_LIMIT}>
+        <p class="muted">{total() - SEARCH_LIMIT} more; narrow the search.</p>
+      </Show>
+    </Show>
   );
 }

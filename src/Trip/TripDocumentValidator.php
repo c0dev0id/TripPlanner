@@ -26,7 +26,7 @@ final class TripDocumentValidator
         }
         self::unique(array_column($days, 'id'), 'days');
         return [
-            'name' => self::tripName($body['name'] ?? null) ?? throw new InvalidDocument('document.name must be text of up to 200 characters, not empty.'),
+            'name' => self::name($body['name'] ?? null) ?? throw new InvalidDocument('document.name must be text of up to 200 characters, not empty.'),
             'description' => self::text($body, 'description', 'document'),
             'startsOn' => self::date($body, 'startsOn', 'document'),
             'days' => $days,
@@ -34,7 +34,7 @@ final class TripDocumentValidator
     }
 
     /** A trip's name as stored: trimmed, not empty, at most 200 characters; null for anything else. */
-    public static function tripName(mixed $value): ?string
+    public static function name(mixed $value): ?string
     {
         if (!is_string($value)) {
             return null;

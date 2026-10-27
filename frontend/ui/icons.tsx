@@ -82,6 +82,19 @@ export const DeleteIcon = () => (
   </Icon>
 );
 
+export const FolderIcon = () => (
+  <Icon>
+    <path d="M5 4h4l3 3h7a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2" />
+  </Icon>
+);
+
+export const SearchIcon = () => (
+  <Icon>
+    <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+    <path d="M21 21l-6 -6" />
+  </Icon>
+);
+
 export const PencilIcon = () => (
   <Icon>
     <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />

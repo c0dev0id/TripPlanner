@@ -150,7 +150,7 @@ final class TripDocumentsTest extends TestCase
         $list = $this->trips->listFor($this->userId);
         self::assertSame(['Later', 'Alps'], array_map(fn ($t) => $t->name, $list));
         self::assertSame([0, 1], array_map(fn ($t) => $t->dayCount, $list));
-        self::assertSame('{"id":' . $this->tripId . ',"name":"Alps","startsOn":"2027-06-12","dayCount":1,"updatedAt":"2026-10-27T10:00:00Z"}', json_encode($list[1]));
+        self::assertSame('{"id":' . $this->tripId . ',"name":"Alps","folderId":null,"startsOn":"2027-06-12","dayCount":1,"updatedAt":"2026-10-27T10:00:00Z"}', json_encode($list[1]));
         self::assertFalse($this->trips->delete($this->userId + 1, $this->tripId));
         self::assertTrue($this->trips->delete($this->userId, $this->tripId));
         self::assertSame(0, (int) $this->db->query('SELECT COUNT(*) FROM stops')->fetchColumn());

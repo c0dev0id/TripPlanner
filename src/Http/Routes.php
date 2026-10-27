@@ -9,6 +9,7 @@ use Planner\Account\PasswordResetController;
 use Planner\Api\MeController;
 use Planner\Export\GpxExportController;
 use Planner\Pages\AppController;
+use Planner\Trip\FolderController;
 use Planner\Trip\TripController;
 use Planner\Signup\InvitationController;
 use Planner\Signup\LandingController;
@@ -46,8 +47,13 @@ final class Routes
             $api->post('/trips', [TripController::class, 'create']);
             $api->get('/trips/{id:[0-9]+}', [TripController::class, 'show']);
             $api->put('/trips/{id:[0-9]+}', [TripController::class, 'update']);
+            $api->patch('/trips/{id:[0-9]+}', [TripController::class, 'move']);
             $api->delete('/trips/{id:[0-9]+}', [TripController::class, 'delete']);
             $api->get('/trips/{id:[0-9]+}/gpx', [GpxExportController::class, 'gpx']);
+            $api->get('/folders', [FolderController::class, 'index']);
+            $api->post('/folders', [FolderController::class, 'create']);
+            $api->patch('/folders/{id:[0-9]+}', [FolderController::class, 'rename']);
+            $api->delete('/folders/{id:[0-9]+}', [FolderController::class, 'delete']);
         })->add(RequireUser::class);
     }
 }

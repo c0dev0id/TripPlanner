@@ -34,12 +34,22 @@ CREATE TABLE IF NOT EXISTS password_resets (
     used_at TEXT
 );
 
+-- Folders sort the library one level deep; a trip is in one folder or in none.
+CREATE TABLE IF NOT EXISTS folders (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS folders_user ON folders(user_id);
+
 -- A trip's parts carry ids the client generates, so that the whole trip is saved as one
 -- document: rows are upserted by id and the ones no longer in the document are deleted.
 
 CREATE TABLE IF NOT EXISTS trips (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    folder_id INTEGER REFERENCES folders(id) ON DELETE SET NULL,
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     starts_on TEXT,
