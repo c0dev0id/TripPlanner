@@ -140,8 +140,9 @@ entries at the end of their section.
   draft cascaded the deletion; a stop moved in a reorganisation would have taken its
   photos with it.
 - **Photos are placed by their EXIF data on the server.** The server reads the time the
-  camera wrote (local, without a zone) and the GPS position when a file is stored, since
-  it has the file anyway and the browser would need a parser of its own. A photo added
+  camera wrote (local, without a zone) and the GPS position from the upload before the
+  entry is written, since it has the file anyway and the browser would need a parser of
+  its own; the entry is one insert, placed as it is stored. A photo added
   to the trip itself goes to the day of its date; one added to a day, a stop or a route
   stays where the user put it. The position places it on the map; nothing is matched
   against the route. Without the exif extension a photo is kept and shown, not placed.
