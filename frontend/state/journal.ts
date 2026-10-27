@@ -18,9 +18,11 @@ export const entriesOn = (target: EntryTarget): Entry[] => allEntries().filter((
 /** The part whose journal dialog is open, or the trip's for an empty target; none while the dialog is closed. */
 export const [journalTarget, setJournalTarget] = createSignal<EntryTarget>();
 
-export async function addEntry(target: EntryTarget, text: string, file: File | undefined): Promise<void> {
+/** Adds an entry and returns it as the server placed it: a photo with a time goes to the day of that date. */
+export async function addEntry(target: EntryTarget, text: string, file: File | undefined): Promise<Entry> {
   const entry = await postEntry(openTrip()!.id, target, text, file);
   mutate((list = []) => [...list, entry]);
+  return entry;
 }
 
 export async function editEntry(entry: Entry, text: string): Promise<void> {

@@ -26,9 +26,26 @@ final class ViteAssets
                 . "<script type=\"module\" src=\"$server/$entry\"></script>";
         }
         $manifest = json_decode(file_get_contents($this->manifestFile), true, flags: JSON_THROW_ON_ERROR);
-        $entry = $manifest[$entry];
-        $tags = array_map(fn (string $css) => "<link rel=\"stylesheet\" href=\"/build/$css\">", $entry['css'] ?? []);
-        $tags[] = "<script type=\"module\" src=\"/build/{$entry['file']}\"></script>";
+        $tags = array_map(fn (string $css) => "<link rel=\"stylesheet\" href=\"/build/$css\">", self::stylesheets($manifest, $entry));
+        $tags[] = "<script type=\"module\" src=\"/build/{$manifest[$entry]['file']}\"></script>";
         return implode("\n", $tags);
+    }
+
+    /**
+     * The stylesheets of the chunks a chunk imports, then its own: a style two entries share
+     * is emitted with their shared chunk, and an entry's own styles come last, as in its source.
+     */
+    private static function stylesheets(array $manifest, string $key, array &$seen = []): array
+    {
+        if (isset($seen[$key])) {
+            return [];
+        }
+        $seen[$key] = true;
+        $chunk = $manifest[$key];
+        $sheets = [];
+        foreach ($chunk['imports'] ?? [] as $import) {
+            array_push($sheets, ...self::stylesheets($manifest, $import, $seen));
+        }
+        return [...$sheets, ...$chunk['css'] ?? []];
     }
 }

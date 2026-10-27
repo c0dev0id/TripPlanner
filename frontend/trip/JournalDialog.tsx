@@ -1,6 +1,6 @@
 import { createSignal, For, Show } from 'solid-js';
 import { entryFileUrl, entryPreviewUrl, errorMessage, tripApi } from '../api';
-import { sizeText, type Entry, type EntryTarget } from '../model/journal';
+import { onTarget, sizeText, type Entry, type EntryTarget } from '../model/journal';
 import { addEntry, editEntry, entriesOn, journalTarget, removeEntry, setJournalTarget } from '../state/journal';
 import { openTrip, routeById } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
@@ -30,9 +30,12 @@ export function JournalDialog() {
   let form!: HTMLFormElement;
   showModalWhile(() => dialog, () => journalTarget() !== undefined);
   const [error, setError] = createSignal<string>();
+  /** Where the last entry went when the server placed it elsewhere: a photo on the day of its date. */
+  const [placed, setPlaced] = createSignal<string>();
   const [busy, setBusy] = createSignal(false);
   const run = async (work: () => Promise<void>) => {
     setError(undefined);
+    setPlaced(undefined);
     setBusy(true);
     try {
       await work();
@@ -50,12 +53,18 @@ export function JournalDialog() {
     const chosen = file instanceof File && file.size > 0 ? file : undefined;
     if (!text && !chosen) return;
     void run(async () => {
-      await addEntry(journalTarget()!, text, chosen);
+      const target = journalTarget()!;
+      const entry = await addEntry(target, text, chosen);
       form.reset();
+      if (!onTarget(entry, target) && entry.dayId) setPlaced(`${entry.file?.name ?? 'The note'} was placed on ${targetLabel({ dayId: entry.dayId })} by the time it was taken.`);
     });
   };
+  const close = () => {
+    setPlaced(undefined);
+    setJournalTarget(undefined);
+  };
   return (
-    <dialog ref={dialog} class="dialog journal-dialog" aria-label="Journal" onClose={() => setJournalTarget(undefined)}>
+    <dialog ref={dialog} class="dialog journal-dialog" aria-label="Journal" onClose={close}>
       <Show when={journalTarget()}>
         {(target) => (
           <div class="dialog-body">
@@ -78,8 +87,9 @@ export function JournalDialog() {
                 <input type="file" name="file" />
               </label>
               <Show when={error()}>{(message) => <p class="error">{message()}</p>}</Show>
+              <Show when={placed()}>{(note) => <p class="muted hint">{note()}</p>}</Show>
               <div class="row end">
-                <button type="button" onClick={() => setJournalTarget(undefined)}>
+                <button type="button" onClick={close}>
                   Close
                 </button>
                 <button type="submit" class="primary" disabled={busy()}>

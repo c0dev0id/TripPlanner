@@ -424,59 +424,6 @@ a {
   cursor: pointer;
 }
 
-/* A stop stands on its spot: the shape's foot is the marker's anchor, the name floats beside it. */
-.stop {
-  position: relative;
-  display: block;
-  user-select: none;
-}
-
-.stop svg {
-  display: block;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
-}
-
-.stop-name {
-  position: absolute;
-  left: 100%;
-  bottom: 4px;
-  margin-left: 2px;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.85);
-  color: #1f2328;
-  font-size: 12px;
-  white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.stop.free .stop-name {
-  color: #1864ab;
-}
-
-/* The neighbouring days' stops: small grey dots that let taps through. */
-.stop-dot {
-  width: 10px;
-  height: 10px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: #868e96;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.point {
-  width: 12px;
-  height: 12px;
-  border: 2px solid #d9480f;
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-
-.point.straight {
-  border-radius: 2px;
-}
-
 /* The toolbar floats over the map, above the scale bar and the attribution. */
 
 .toolbar {
@@ -742,17 +689,6 @@ a {
   margin: 0;
 }
 
-/* A photo where it was taken: a small round preview. */
-.photo-marker img {
-  display: block;
-  width: 36px;
-  height: 36px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  object-fit: cover;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  cursor: pointer;
-}
 
 @media (max-width: 720px) {
   #root {

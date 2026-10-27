@@ -1,0 +1,169 @@
+/* The read-only trip page: one column for reading, the same for printing. */
+
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#ffffff, #15171a);
+  --fg: light-dark(#1f2328, #e6e6e3);
+  --muted: light-dark(#5b6168, #9aa0a6);
+  --line: light-dark(#d9d7d2, #30343a);
+  --accent: light-dark(#b4440f, #ef8354);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font: 15px/1.45 system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+a {
+  color: var(--accent);
+}
+
+.trip-view {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 16px 20px 40px;
+}
+
+.notice {
+  margin: 40px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+h1 {
+  flex: 1 1 auto;
+  margin: 8px 0 4px;
+  font-size: 1.6rem;
+}
+
+h2 {
+  margin: 24px 0 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 1.15rem;
+}
+
+p {
+  margin: 4px 0;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.print {
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.map {
+  height: 420px;
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.routes,
+.stops,
+.entries {
+  margin: 6px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.routes li {
+  padding: 2px 0;
+}
+
+.stop-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+
+.stop-item svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.lines {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.lines .name {
+  font-weight: 600;
+}
+
+.entry {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 4px 0;
+}
+
+.entry .file img {
+  display: block;
+  width: 160px;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+@media print {
+  :root {
+    color-scheme: light;
+  }
+
+  .trip-view {
+    max-width: none;
+    padding: 0;
+  }
+
+  .print,
+  .maplibregl-ctrl {
+    display: none !important;
+  }
+
+  .map {
+    height: 130mm;
+    break-inside: avoid;
+  }
+
+  .stop-item,
+  .entry {
+    break-inside: avoid;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}

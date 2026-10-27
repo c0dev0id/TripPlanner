@@ -20,7 +20,7 @@ export const dateText = (iso: string): string => formatDate(iso, LONG_DATE);
 /** A date in the browser's language as weekday, day and month: "Sat, 13 Jun". */
 export const shortDateText = (iso: string): string => formatDate(iso, SHORT_DATE);
 
-const TAKEN_AT = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const TAKEN_AT = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 /** When a photo was taken, as the camera wrote it (YYYY-MM-DDTHH:MM:SS, no zone): "Sat, 13 Jun, 14:30". */
 export function takenAtText(local: string): string {
