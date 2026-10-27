@@ -5,6 +5,7 @@ import * as dayEdit from '../routing/dayEdit';
 import { roundLngLat } from '../routing/legs';
 import * as routeEdit from '../routing/routeEdit';
 import { daySequence, type SequenceEntry } from '../routing/sequence';
+import { dayTimeline, type DayTimeline } from '../routing/timeline';
 import { History } from './history';
 
 /**
@@ -47,6 +48,14 @@ export const selectedSequence: () => SequenceEntry[] = createRoot(() =>
   createMemo(() => {
     const day = selectedDay();
     return day ? daySequence(day) : [];
+  }),
+);
+
+/** The selected day's times, where it has a departure. */
+export const selectedTimeline: () => DayTimeline | undefined = createRoot(() =>
+  createMemo(() => {
+    const day = selectedDay();
+    return day ? dayTimeline(day, selectedSequence()) : undefined;
   }),
 );
 
@@ -269,6 +278,16 @@ export function renameDay(dayId: string, name: string): void {
   edit((trip) => dayEdit.renameDay(trip, dayId, name), 'Rename day');
 }
 
+/** Sets when the day's riding starts, as HH:MM, or takes the time away. */
+export function setDeparture(dayId: string, departAt: string | null): void {
+  edit((trip) => dayEdit.setDeparture(trip, dayId, departAt), 'Set departure');
+}
+
 export function renameTrip(name: string): void {
   edit((trip) => (trip.name === name ? trip : { ...trip, name }), 'Rename trip');
+}
+
+/** Sets the date of the first day, as YYYY-MM-DD, or takes it away. */
+export function setStartsOn(startsOn: string | null): void {
+  edit((trip) => (trip.startsOn === startsOn ? trip : { ...trip, startsOn }), 'Set start date');
 }

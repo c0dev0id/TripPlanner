@@ -146,7 +146,7 @@ export function updateStop(trip: Trip, dayId: string, stopId: string, change: Pa
 }
 
 export function addDay(trip: Trip, id: string): Trip {
-  return { ...trip, days: [...trip.days, { id, name: '', date: null, notes: '', routes: [], stops: [] }] };
+  return { ...trip, days: [...trip.days, { id, name: '', departAt: null, notes: '', routes: [], stops: [] }] };
 }
 
 export function removeDay(trip: Trip, dayId: string): Trip {
@@ -155,4 +155,9 @@ export function removeDay(trip: Trip, dayId: string): Trip {
 
 export function renameDay(trip: Trip, dayId: string, name: string): Trip {
   return updateDay(trip, dayId, (day) => (day.name === name ? day : { ...day, name }));
+}
+
+/** Sets when the day's riding starts, as HH:MM, or takes the time away. */
+export function setDeparture(trip: Trip, dayId: string, departAt: string | null): Trip {
+  return updateDay(trip, dayId, (day) => (day.departAt === departAt ? day : { ...day, departAt }));
 }

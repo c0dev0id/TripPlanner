@@ -4,7 +4,7 @@ import { setStopDialogId, stopDialogId } from '../state/drawing';
 import { selectedDay, updateStop } from '../state/trip';
 import { showModalWhile } from '../ui/modal';
 
-/** The details of a stop, in a modal dialog: name, kind, address, contact, booking, notes. */
+/** The details of a stop, in a modal dialog: name, kind, arrival time and pause, address, contact, booking, notes. */
 export function StopDialog() {
   let dialog!: HTMLDialogElement;
   const stop = createMemo((): Stop | undefined => selectedDay()?.stops.find((s) => s.id === stopDialogId()));
@@ -18,6 +18,8 @@ export function StopDialog() {
     updateStop(s.id, {
       name: text('name') || s.name,
       kind: text('kind') as StopKind,
+      arriveAt: text('arriveAt') || null,
+      pauseMinutes: text('pauseMinutes') === '' ? null : Number(text('pauseMinutes')),
       address: text('address'),
       contact: text('contact'),
       bookingReference: text('bookingReference'),
@@ -40,6 +42,16 @@ export function StopDialog() {
                 <For each={STOP_KINDS}>{(kind) => <option value={kind.value}>{kind.label}</option>}</For>
               </select>
             </label>
+            <div class="row">
+              <label class="grow">
+                Arrive at
+                <input type="time" name="arriveAt" value={s.arriveAt ?? ''} />
+              </label>
+              <label class="grow">
+                Pause (minutes)
+                <input type="number" name="pauseMinutes" min={0} max={1440} step={5} value={s.pauseMinutes ?? ''} />
+              </label>
+            </div>
             <label>
               Address
               <textarea name="address" rows={2}>

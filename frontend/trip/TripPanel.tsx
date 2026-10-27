@@ -4,17 +4,37 @@ import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
 import { PROFILES, type Day, type Route } from '../model/trip';
 import { routeDistance } from '../routing/legs';
 import type { SequenceEntry } from '../routing/sequence';
+import type { DayTimeline, StopTime } from '../routing/timeline';
 import { saveState } from '../state/autosave';
 import { panTo, setShowNeighbours, setShowRoutePoints, setStopDialogId, showNeighbours, showRoutePoints } from '../state/drawing';
-import { addDay, addRoute, editingRouteId, editRoute, openTrip, removeDay, removeRoute, removeStop, renameDay, renameRoute, renameTrip, selectDay, selectedDayId, selectedSequence, updateStop } from '../state/trip';
+import {
+  addDay,
+  addRoute,
+  editingRouteId,
+  editRoute,
+  openTrip,
+  removeDay,
+  removeRoute,
+  removeStop,
+  renameDay,
+  renameRoute,
+  renameTrip,
+  selectDay,
+  selectedDayId,
+  selectedSequence,
+  selectedTimeline,
+  setDeparture,
+  setStartsOn,
+  updateStop,
+} from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
 import { EditableName } from '../ui/EditableName';
-import { distanceText } from '../ui/format';
+import { distanceText, durationText, timeText } from '../ui/format';
 import { BackIcon, DeleteIcon, DownloadIcon, PencilIcon } from '../ui/icons';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, routeLabel } from './labels';
 
-/** The open trip: its name, its days with their routes and stops, the export links and the saving state. */
+/** The open trip: its name and start date, its days with their routes and stops, the export links and the saving state. */
 export function TripPanel(props: { onLeave: () => void; onReload: () => void }) {
   const trip = () => openTrip()!;
   return (
@@ -46,6 +66,11 @@ export function TripPanel(props: { onLeave: () => void; onReload: () => void }) 
           )}
         </Show>
       </div>
+      <div class="row">
+        <label class="field">
+          Starts on <input type="date" value={trip().startsOn ?? ''} onChange={(e) => setStartsOn(e.currentTarget.value || null)} />
+        </label>
+      </div>
       <div class="row heading">
         <h3 class="grow">Days</h3>
         <label class="toggle">
@@ -76,23 +101,24 @@ function SaveStatus(props: { onReload: () => void }) {
 
 function DayItem(props: { day: Day; index: number }) {
   const selected = () => selectedDayId() === props.day.id;
+  const label = () => dayLabel(props.day, props.index, openTrip()!.startsOn);
   const distance = createMemo(() => props.day.routes.reduce((sum, route) => sum + routeDistance(route), 0));
   const remove = async () => {
     const parts = props.day.routes.length + props.day.stops.length;
-    if (parts > 0 && !(await askConfirmation(`Remove ${dayLabel(props.day, props.index)} with its routes and stops?`, 'Remove'))) return;
+    if (parts > 0 && !(await askConfirmation(`Remove ${label()} with its routes and stops?`, 'Remove'))) return;
     removeDay(props.day.id);
   };
   return (
     <li class="day" classList={{ selected: selected() }}>
       <div class="row">
         <button class="text grow" onClick={() => selectDay(props.day.id)} aria-pressed={selected()}>
-          <span class="name">{dayLabel(props.day, props.index)}</span>
+          <span class="name">{label()}</span>
           <span class="muted">{distance() > 0 ? distanceText(distance()) : ''}</span>
         </button>
         <EditableName value={props.day.name} label="day" onRename={(name) => renameDay(props.day.id, name)}>
           <span />
         </EditableName>
-        <button class="icon" title="Remove day" aria-label={`Remove ${dayLabel(props.day, props.index)}`} onClick={() => void remove()}>
+        <button class="icon" title="Remove day" aria-label={`Remove ${label()}`} onClick={() => void remove()}>
           <DeleteIcon />
         </button>
       </div>
@@ -103,11 +129,22 @@ function DayItem(props: { day: Day; index: number }) {
   );
 }
 
-/** The selected day's routes, and its stops (and route points on request) in riding order. */
+/** The selected day's departure and times, its routes, and its stops (and route points on request) in riding order. */
 function DayDetails(props: { day: Day }) {
   const listed = createMemo(() => new Map(selectedSequence().filter((e) => e.stop || showRoutePoints()).map((e) => [e.id, e])));
+  const times = createMemo(() => new Map(selectedTimeline()?.stops.map((t) => [t.stop.id, t])));
   return (
     <div class="day-details">
+      <div class="row">
+        <label class="field">
+          Departure <input type="time" value={props.day.departAt ?? ''} onChange={(e) => setDeparture(props.day.id, e.currentTarget.value || null)} />
+        </label>
+      </div>
+      <Show when={props.day.routes.length > 0}>
+        <Show when={selectedTimeline()} fallback={<p class="day-summary muted">Set a departure for the day's times.</p>}>
+          {(timeline) => <DaySummary timeline={timeline()} />}
+        </Show>
+      </Show>
       <div class="row heading">
         <h4 class="grow">Routes</h4>
         <button onClick={addRoute}>Add route</button>
@@ -125,12 +162,26 @@ function DayDetails(props: { day: Day }) {
         </label>
       </div>
       <ol class="stops">
-        <For each={[...listed().keys()]}>{(id) => <SequenceItem entry={listed().get(id)!} />}</For>
+        <For each={[...listed().keys()]}>{(id) => <SequenceItem entry={listed().get(id)!} time={times().get(id)} />}</For>
       </ol>
       <Show when={listed().size === 0 && props.day.routes.length > 0}>
         <p class="muted hint">Make stops of route points, or tap beside the route with the stop tool.</p>
       </Show>
     </div>
+  );
+}
+
+/** Departure to arrival, the riding time, the pauses, and how many stops are reached late. */
+function DaySummary(props: { timeline: DayTimeline }) {
+  return (
+    <p class="day-summary">
+      {timeText(props.timeline.departMin)} → {timeText(props.timeline.endMin)} · {durationText(props.timeline.ridingS)} riding
+      <Show when={props.timeline.pauseMin > 0}> · {durationText(props.timeline.pauseMin * 60)} of pauses</Show>
+      <Show when={props.timeline.late > 0}>
+        {' · '}
+        <span class="late">{props.timeline.late === 1 ? '1 stop late' : `${props.timeline.late} stops late`}</span>
+      </Show>
+    </p>
   );
 }
 
@@ -158,8 +209,21 @@ function RouteItem(props: { route: Route; day: Day }) {
   );
 }
 
-/** A stop, or a plain route point, with its distance from the day's start; a click pans the map there. */
-function SequenceItem(props: { entry: SequenceEntry }) {
+/** A stop's planned arrival and departure, where the day has times. */
+function stopTimesText(time: StopTime): string {
+  const arrival = timeText(time.arrivalMin);
+  return time.departureMin > time.arrivalMin ? `${arrival} – ${timeText(time.departureMin)}` : arrival;
+}
+
+/** How early or late the stop is reached against its fixed arrival time; nothing when on time or without one. */
+function slackText(time: StopTime): { text: string; late: boolean } | undefined {
+  const slack = Math.round(time.slackMin ?? 0);
+  if (slack === 0) return undefined;
+  return slack > 0 ? { text: `${durationText(slack * 60)} early`, late: false } : { text: `${durationText(-slack * 60)} late`, late: true };
+}
+
+/** A stop with its times and distance from the day's start, or a plain route point; a click pans the map there. */
+function SequenceItem(props: { entry: SequenceEntry; time: StopTime | undefined }) {
   const stop = () => props.entry.stop;
   return (
     <li class="row sequence-item" classList={{ point: !stop() }}>
@@ -167,12 +231,18 @@ function SequenceItem(props: { entry: SequenceEntry }) {
         <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
           {(s) => <StopShape kind={s().kind} color={s().pointId === null ? FREE_COLOR : BOUND_COLOR} height={22} />}
         </Show>
-        <span class="name">
-          <Show when={stop()} fallback={<span class="muted">Route point</span>}>
-            {(s) => <>{s().name}</>}
-          </Show>
+        <span class="lines">
+          <span class="name">
+            <Show when={stop()} fallback={<span class="muted">Route point</span>}>
+              {(s) => <>{s().name}</>}
+            </Show>
+          </span>
+          <span class="muted detail">
+            <Show when={props.time}>{(time) => <>{stopTimesText(time())} · </>}</Show>
+            {distanceText(props.entry.distanceM)}
+            <Show when={props.time && slackText(props.time)}>{(slack) => <span classList={{ late: slack().late }}> · {slack().text}</span>}</Show>
+          </span>
         </span>
-        <span class="muted distance">{distanceText(props.entry.distanceM)}</span>
       </button>
       <Show when={stop()}>
         {(s) => (

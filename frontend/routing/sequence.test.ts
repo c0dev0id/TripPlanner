@@ -38,7 +38,7 @@ const route: Route = {
   },
 };
 
-const day = (stops: Stop[], routes: Route[] = [route]): Day => ({ id: 'd', name: '', date: null, notes: '', routes, stops });
+const day = (stops: Stop[], routes: Route[] = [route]): Day => ({ id: 'd', name: '', departAt: null, notes: '', routes, stops });
 
 describe('daySequence', () => {
   it('places a free stop at the leg and the spot where the route passes closest', () => {
@@ -80,6 +80,17 @@ describe('daySequence', () => {
     expect(entries[0]!.point?.id).toBe('a');
     expect(entries[1]!.near?.distanceM).toBeCloseTo(760, -2);
     expect(entries[1]!.near?.lngLat[1]).toBeCloseTo(47.05, 3);
+  });
+
+  it('carries the riding time, a free stop at its share of the leg', () => {
+    const entries = daySequence(day([stop('cafe', [11.01, 47.05], null)]), decode);
+    // Each leg is 11 km and takes a second in the fixture; the café is half way along the first.
+    expect(entries.map((e) => [e.id, Math.round(e.timeS * 100) / 100])).toEqual([
+      ['a', 0],
+      ['cafe', 0.51],
+      ['b', 1],
+      ['c', 2],
+    ]);
   });
 
   it('puts the free stops of a day without legs last, in their order', () => {

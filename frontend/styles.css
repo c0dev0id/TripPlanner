@@ -275,19 +275,53 @@ a {
   padding: 2px 4px;
 }
 
-.sequence-item .text .name {
+.sequence-item .lines {
+  display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
 }
 
-.sequence-item .distance {
-  flex: none;
+.sequence-item .detail {
+  overflow: hidden;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sequence-item.point .text {
   padding-top: 0;
   padding-bottom: 0;
   font-size: 12px;
+}
+
+.sequence-item.point .lines {
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.late {
+  color: var(--error);
+}
+
+/* A short labelled input in a row: the trip's start date, a day's departure. */
+.field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.field input {
+  font-size: 13px;
+}
+
+.day-summary {
+  margin: 4px 0 6px;
+  font-size: 13px;
 }
 
 /* A plain route point in the list: a dot in the route's colour, in the stop shapes' column. */

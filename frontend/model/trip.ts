@@ -77,7 +77,8 @@ export interface Route {
 export interface Day {
   id: string;
   name: string;
-  date: string | null;
+  /** Time of day as HH:MM at which the riding starts; without it the day has no timeline. */
+  departAt: string | null;
   notes: string;
   /** In riding order. */
   routes: Route[];
@@ -88,6 +89,7 @@ export interface Trip {
   id: number;
   name: string;
   description: string;
+  /** The date of the first day as YYYY-MM-DD; the days follow one another. */
   startsOn: string | null;
   /** Counts the saves; a save must name the version it started from. */
   version: number;

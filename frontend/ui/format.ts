@@ -10,3 +10,27 @@ export function dateText(iso: string): string {
   const date = new Date(`${iso}T00:00:00`);
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+/** A date as YYYY-MM-DD, some days later, as weekday, day and month: "Sat 13 Jun". */
+export function shortDateText(iso: string, daysLater = 0): string {
+  const date = new Date(`${iso}T00:00:00`);
+  date.setDate(date.getDate() + daysLater);
+  return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+/** Minutes since midnight as HH:MM; past midnight with the days after it, as "+1". */
+export function timeText(minutes: number): string {
+  const whole = Math.round(minutes);
+  const days = Math.floor(whole / 1440);
+  const inDay = whole - days * 1440;
+  const text = `${String(Math.floor(inDay / 60)).padStart(2, '0')}:${String(inDay % 60).padStart(2, '0')}`;
+  return days > 0 ? `${text} +${days}` : text;
+}
+
+/** A duration in seconds as hours and minutes: "3 h 40 min", "45 min". */
+export function durationText(seconds: number): string {
+  const minutes = Math.round(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  if (hours === 0) return `${minutes} min`;
+  return minutes % 60 === 0 ? `${hours} h` : `${hours} h ${minutes % 60} min`;
+}
