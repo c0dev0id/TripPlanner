@@ -1,6 +1,7 @@
 import { For, Show, type JSX } from 'solid-js';
 import { PROFILES } from '../model/trip';
-import { setTool, tool, type Tool } from '../state/drawing';
+import { dayProfile } from '../routing/dayEdit';
+import { setTool, tool, TOOLS, type Tool } from '../state/drawing';
 import { recalculateDay } from '../state/routing';
 import { redo, redoLabel, selectedDay, setDayProfile, undo, undoLabel } from '../state/trip';
 import { DeleteIcon, InsertIcon, RedoIcon, RefreshIcon, StopIcon, UndoIcon } from '../ui/icons';
@@ -24,8 +25,8 @@ function ToolButton(props: { label: string; title: string; active?: boolean; dis
 
 /** The tools of the selected day over the map: what a tap does, the routing profile, undo and redo, recalculation. */
 export function Toolbar() {
-  const button = (t: Tool, label: string, title: string, icon: JSX.Element) => (
-    <ToolButton label={label} title={title} active={tool() === t} onClick={() => setTool(t)}>
+  const button = (t: Tool, icon: JSX.Element) => (
+    <ToolButton label={TOOLS[t].label} title={`${TOOLS[t].hint[0]!.toUpperCase()}${TOOLS[t].hint.slice(1)}`} active={tool() === t} onClick={() => setTool(t)}>
       {icon}
     </ToolButton>
   );
@@ -34,21 +35,15 @@ export function Toolbar() {
       {(day) => (
         <div class="toolbar" role="toolbar" aria-label="Day tools">
           <div class="toolbar-group" role="group" aria-label="Tap">
-            {button('stop', 'Stop', 'Tap the map to add a stop at the end of the day, or tap a route to add a stop there', <StopIcon />)}
-            {button('point', 'Point', 'Tap a route to insert a point there, for shaping it', <InsertIcon />)}
-            {button('delete', 'Delete', 'Tap a stop or a point to delete it', <DeleteIcon />)}
+            {button('stop', <StopIcon />)}
+            {button('point', <InsertIcon />)}
+            {button('delete', <DeleteIcon />)}
           </div>
           <div class="toolbar-group segmented" role="radiogroup" aria-label="Routing profile">
             <For each={PROFILES}>
               {(profile) => (
-                <label classList={{ active: day().routes.length > 0 && day().routes.every((r) => r.profile === profile.value) }}>
-                  <input
-                    type="radio"
-                    name="profile"
-                    value={profile.value}
-                    checked={day().routes.length > 0 && day().routes.every((r) => r.profile === profile.value)}
-                    onChange={() => setDayProfile(profile.value)}
-                  />
+                <label>
+                  <input type="radio" name="profile" value={profile.value} checked={dayProfile(day()) === profile.value} onChange={() => setDayProfile(profile.value)} />
                   <span>{profile.label}</span>
                 </label>
               )}

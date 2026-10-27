@@ -25,20 +25,30 @@ final class TripDocumentValidator
         foreach (self::list($body, 'places') as $i => $place) {
             $places[] = self::place($place, "places[$i]");
         }
-        $placeIds = array_column($places, 'id');
-        self::unique($placeIds, 'places');
+        self::unique(array_column($places, 'id'), 'places');
+        $positions = array_column($places, 'lngLat', 'id');
         $days = [];
         foreach (self::list($body, 'days') as $i => $day) {
-            $days[] = self::day($day, $placeIds, $places, "days[$i]");
+            $days[] = self::day($day, $positions, "days[$i]");
         }
         self::unique(array_column($days, 'id'), 'days');
         return [
-            'name' => self::text($body, 'name', 'document', 200, required: true),
+            'name' => self::tripName($body['name'] ?? null) ?? throw new InvalidDocument('document.name must be text of up to 200 characters, not empty.'),
             'description' => self::text($body, 'description', 'document'),
             'startsOn' => self::date($body, 'startsOn', 'document'),
             'places' => $places,
             'days' => $days,
         ];
+    }
+
+    /** A trip's name as stored: trimmed, not empty, at most 200 characters; null for anything else. */
+    public static function tripName(mixed $value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+        $name = trim($value);
+        return $name === '' || strlen($name) > 200 ? null : $name;
     }
 
     private static function place(mixed $place, string $at): array
@@ -58,21 +68,21 @@ final class TripDocumentValidator
         ];
     }
 
-    private static function day(mixed $day, array $placeIds, array $places, string $at): array
+    /** @param array<string, array{0: float, 1: float}> $positions the places' positions by id */
+    private static function day(mixed $day, array $positions, string $at): array
     {
         if (!is_array($day)) {
             throw new InvalidDocument("$at must be an object.");
         }
         $stops = [];
         foreach (self::list($day, 'stops') as $i => $stop) {
-            $stops[] = self::stop($stop, $placeIds, "$at.stops[$i]");
+            $stops[] = self::stop($stop, $positions, "$at.stops[$i]");
         }
         self::unique(array_column($stops, 'id'), "$at.stops");
         $routes = self::list($day, 'routes');
         if (count($routes) !== max(0, count($stops) - 1)) {
             throw new InvalidDocument("$at.routes must hold one route per pair of consecutive stops.");
         }
-        $positions = array_column($places, 'lngLat', 'id');
         $checked = [];
         foreach ($routes as $i => $route) {
             $from = $positions[$stops[$i]['placeId']];
@@ -90,13 +100,13 @@ final class TripDocumentValidator
         ];
     }
 
-    private static function stop(mixed $stop, array $placeIds, string $at): array
+    private static function stop(mixed $stop, array $positions, string $at): array
     {
         if (!is_array($stop)) {
             throw new InvalidDocument("$at must be an object.");
         }
         $placeId = self::id($stop, $at, 'placeId');
-        if (!in_array($placeId, $placeIds, true)) {
+        if (!isset($positions[$placeId])) {
             throw new InvalidDocument("$at.placeId names no place of the trip.");
         }
         $arriveAt = $stop['arriveAt'] ?? null;
@@ -179,11 +189,11 @@ final class TripDocumentValidator
         return $value;
     }
 
-    private static function text(array $parent, string $key, string $at, int $max = self::MAX_TEXT, bool $required = false): string
+    private static function text(array $parent, string $key, string $at, int $max = self::MAX_TEXT): string
     {
         $value = $parent[$key] ?? '';
-        if (!is_string($value) || strlen($value) > $max || ($required && trim($value) === '')) {
-            throw new InvalidDocument("$at.$key must be text of up to $max characters" . ($required ? ', not empty.' : '.'));
+        if (!is_string($value) || strlen($value) > $max) {
+            throw new InvalidDocument("$at.$key must be text of up to $max characters.");
         }
         return $value;
     }

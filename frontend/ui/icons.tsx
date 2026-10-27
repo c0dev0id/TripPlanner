@@ -19,20 +19,6 @@ export const BackIcon = () => (
   </Icon>
 );
 
-export const PlusIcon = () => (
-  <Icon>
-    <path d="M12 5l0 14" />
-    <path d="M5 12l14 0" />
-  </Icon>
-);
-
-export const CloseIcon = () => (
-  <Icon>
-    <path d="M18 6l-12 12" />
-    <path d="M6 6l12 12" />
-  </Icon>
-);
-
 export const DownloadIcon = () => (
   <Icon>
     <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />

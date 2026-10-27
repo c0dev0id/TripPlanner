@@ -1,7 +1,9 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { nearestLine, type XY } from '../geo/nearest';
 import type { Day, LngLat } from '../model/trip';
-import { legCoordinates, roundLngLat, routeLegs } from '../routing/legs';
+import { legCoordinates, routeLegs } from '../routing/legs';
+import { toLngLat } from './markers';
+import { decodeCached } from './routeOverlay';
 
 /** Points as the map shows them on screen, in CSS pixels. */
 function onScreen(map: MapLibreMap, points: readonly LngLat[]): XY[] {
@@ -29,11 +31,10 @@ export function hitRouteLine(map: MapLibreMap, day: Day, tap: XY, tolerance: num
   day.routes.forEach((route, routeIndex) => {
     routeLegs(route).forEach((leg, legIndex) => {
       legs.push({ routeIndex, legIndex });
-      lines.push(onScreen(map, legCoordinates(route, leg)));
+      lines.push(onScreen(map, legCoordinates(route, leg, decodeCached)));
     });
   });
   const hit = nearestLine(lines, tap);
   if (!hit || hit.distance > tolerance) return undefined;
-  const { lng, lat } = map.unproject([hit.point[0], hit.point[1]]).wrap();
-  return { ...legs[hit.index]!, lngLat: roundLngLat([lng, lat]) };
+  return { ...legs[hit.index]!, lngLat: toLngLat(map.unproject([hit.point[0], hit.point[1]])) };
 }

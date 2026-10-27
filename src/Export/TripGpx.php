@@ -15,20 +15,19 @@ final class TripGpx
     /** The whole trip in one file. */
     public static function trip(array $document, DateTimeImmutable $time): string
     {
-        return self::file($document, $document['days'], $document['name'], $time);
+        return self::file($document, array_keys($document['days']), $document['name'], $time);
     }
 
     /** One day of the trip; `$index` is the day's position, counted from 0. */
     public static function day(array $document, int $index, DateTimeImmutable $time): string
     {
-        $day = $document['days'][$index];
-        return self::file($document, [$day], $document['name'] . ' – ' . self::dayLabel($day, $index), $time);
+        return self::file($document, [$index], self::dayName($document, $index), $time);
     }
 
     /** The name of a day's file, without the extension. */
     public static function dayFileName(array $document, int $index): string
     {
-        return self::fileName($document['name'] . ' ' . self::dayLabel($document['days'][$index], $index));
+        return self::fileName(self::dayName($document, $index));
     }
 
     /** A name as part of a file name. */
@@ -38,13 +37,18 @@ final class TripGpx
         return $slug === '' ? 'trip' : $slug;
     }
 
-    private static function file(array $document, array $days, string $name, DateTimeImmutable $time): string
+    private static function dayName(array $document, int $index): string
+    {
+        return $document['name'] . ' – ' . self::dayLabel($document['days'][$index], $index);
+    }
+
+    private static function file(array $document, array $indices, string $name, DateTimeImmutable $time): string
     {
         $places = array_column($document['places'], null, 'id');
         $waypoints = [];
         $tracks = [];
-        foreach ($days as $day) {
-            $index = array_search($day['id'], array_column($document['days'], 'id'), true);
+        foreach ($indices as $index) {
+            $day = $document['days'][$index];
             foreach ($day['stops'] as $stop) {
                 $place = $places[$stop['placeId']];
                 $waypoints[$place['id']] ??= ['name' => $place['name'], 'lngLat' => $place['lngLat'], 'type' => $place['kind']];

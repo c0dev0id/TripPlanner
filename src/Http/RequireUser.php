@@ -26,7 +26,7 @@ final class RequireUser implements MiddlewareInterface
             return $handler->handle($request);
         }
         if (str_starts_with($request->getUri()->getPath(), '/api/')) {
-            return Json::of($this->responseFactory->createResponse(401), ['error' => 'Sign in required.']);
+            return Json::error($this->responseFactory->createResponse(), 401, 'Sign in required.');
         }
         return Redirect::to($this->responseFactory->createResponse(), '/login');
     }

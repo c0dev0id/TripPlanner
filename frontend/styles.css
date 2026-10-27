@@ -408,7 +408,7 @@ a {
   cursor: pointer;
 }
 
-.segmented label.active {
+.segmented label:has(input:checked) {
   background: var(--accent);
   color: #fff;
 }

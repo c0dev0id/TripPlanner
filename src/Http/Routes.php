@@ -46,7 +46,6 @@ final class Routes
             $api->post('/trips', [TripController::class, 'create']);
             $api->get('/trips/{id:[0-9]+}', [TripController::class, 'show']);
             $api->put('/trips/{id:[0-9]+}', [TripController::class, 'update']);
-            $api->patch('/trips/{id:[0-9]+}', [TripController::class, 'rename']);
             $api->delete('/trips/{id:[0-9]+}', [TripController::class, 'delete']);
             $api->get('/trips/{id:[0-9]+}/gpx', [GpxExportController::class, 'gpx']);
         })->add(RequireUser::class);

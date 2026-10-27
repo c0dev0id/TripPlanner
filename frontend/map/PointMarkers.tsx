@@ -1,10 +1,8 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, For, onCleanup, Show } from 'solid-js';
-import type { Route } from '../model/trip';
-import { roundLngLat } from '../routing/legs';
-import { tapAction } from '../state/drawing';
-import { movePoint, removePoint, routeById, selectedDay, setStraight } from '../state/trip';
-import { MarkerHandle, onMarkerMenu } from './markers';
+import { straightLegItem, tapAction } from '../state/drawing';
+import { movePoint, removePoint, routeById, selectedDay } from '../state/trip';
+import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
 
 /** Draggable markers for the points between the stops of the selected day's routes. */
 export function PointMarkers(props: { map: MapLibreMap }) {
@@ -21,25 +19,18 @@ export function PointMarkers(props: { map: MapLibreMap }) {
 
 function PointMarker(props: { map: MapLibreMap; routeId: string; pointId: string }) {
   const { map, routeId, pointId } = props;
-  const route = createMemo((): Route | undefined => routeById(routeId));
-  const point = createMemo(() => route()?.points.find((p) => p.id === pointId));
+  const point = createMemo(() => routeById(routeId)?.points.find((p) => p.id === pointId));
 
   const content = (<div class="point" classList={{ straight: point()?.straight === true }} />) as HTMLElement;
-  const handle = new MarkerHandle(map, content, { className: 'point-marker' });
+  const handle = new MarkerHandle(map, content, 'point-marker');
   createEffect(() => handle.setPosition(point()?.lngLat));
-  handle.marker.on('dragend', () => {
-    const { lng, lat } = handle.marker.getLngLat().wrap();
-    movePoint(routeId, pointId, roundLngLat([lng, lat]));
-  });
+  handle.marker.on('dragend', () => movePoint(routeId, pointId, toLngLat(handle.marker.getLngLat())));
   handle.root.addEventListener('click', () => {
     if (tapAction() === 'delete') removePoint(routeId, pointId);
   });
   const stopMenu = onMarkerMenu(handle, map, () => {
-    const straight = point()?.straight === true;
-    return [
-      { label: straight ? 'Route the leg to here' : 'Straight leg to here', run: () => setStraight(routeId, pointId, !straight) },
-      { label: 'Remove point', run: () => removePoint(routeId, pointId) },
-    ];
+    const p = point();
+    return p && [straightLegItem(routeId, p), { label: 'Remove point', run: () => removePoint(routeId, pointId) }];
   });
   onCleanup(() => {
     stopMenu();

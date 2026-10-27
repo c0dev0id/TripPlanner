@@ -1,9 +1,8 @@
 import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
 import { createEffect, onCleanup } from 'solid-js';
-import { roundLngLat } from '../routing/legs';
 import { menu, setMenu, setTool, tapAction, tool } from '../state/drawing';
 import { addStop, insertPoint, insertStop, redo, selectedDay, undo } from '../state/trip';
-import { fromMarker } from './markers';
+import { fromMarker, toLngLat } from './markers';
 import { hitRouteLine } from './routeTools';
 import { TapFilter, tapReach, type PointerSample } from './tapFilter';
 
@@ -32,7 +31,6 @@ export function Interactions(props: { map: MapLibreMap }) {
   // Clicks that come with dragging the map are no taps (a mouse button that bounces, a
   // browser's click after a touch pan): every tap waits a moment first.
   const taps = new TapFilter();
-  const tapRadius = () => tapReach(pointerType !== 'mouse');
   const sample = (e: MouseEvent): PointerSample => ({ x: e.clientX, y: e.clientY, t: e.timeStamp, touch: pointerType !== 'mouse' });
   const onPointerDown = (e: PointerEvent) => {
     pointerType = e.pointerType;
@@ -55,13 +53,8 @@ export function Interactions(props: { map: MapLibreMap }) {
     // Windows sends the contextmenu event when the button comes up, also after turning the map.
     const { clientX, clientY } = e.originalEvent;
     if (!touch && rightDown && Math.hypot(clientX - rightDown.x, clientY - rightDown.y) > 5) return;
-    const { lng, lat } = e.lngLat.wrap();
-    setMenu({
-      x: e.point.x,
-      y: e.point.y,
-      touch,
-      items: [{ label: 'Add stop here', run: () => addStop(roundLngLat([lng, lat])) }],
-    });
+    const spot = toLngLat(e.lngLat);
+    setMenu({ x: e.point.x, y: e.point.y, touch, items: [{ label: 'Add stop here', run: () => addStop(spot) }] });
   };
   const onClick = (e: MapMouseEvent) => {
     if (swallowClick) {
@@ -76,11 +69,10 @@ export function Interactions(props: { map: MapLibreMap }) {
     const day = selectedDay();
     if (!action || !day || fromMarker(e.originalEvent)) return;
     setMenu(undefined);
-    const { lng, lat } = e.lngLat.wrap();
-    const hit = hitRouteLine(map, day, [e.point.x, e.point.y], tapRadius());
+    const hit = hitRouteLine(map, day, [e.point.x, e.point.y], tapReach(pointerType !== 'mouse'));
     if (action === 'stop') {
       if (hit) insertStop(hit.routeIndex, hit.legIndex, hit.lngLat);
-      else addStop(roundLngLat([lng, lat]));
+      else addStop(toLngLat(e.lngLat));
     } else if (action === 'point' && hit) {
       insertPoint(day.routes[hit.routeIndex]!.id, hit.legIndex + 1, hit.lngLat);
     }

@@ -63,8 +63,14 @@ entries at the end of their section.
 - **Parts carry client-generated ids and are upserted.** The server upserts each place,
   day, stop and route by id and deletes the rows the document no longer holds, rather
   than deleting and reinserting: attachments of phase 4 will reference stops and routes
-  by id and must survive a save. Trips themselves are created by the server with integer
-  ids; a trip is the root the library works with, its content is the document.
+  by id and must survive a save. Since the ids are the client's choice, a save first
+  checks that none of them belongs to another trip, in one place, rather than guarding
+  each upsert. Trips themselves are created by the server with integer ids; a trip is the
+  root the library works with, its content is the document.
+- **Positions are rounded in the store actions.** Leg keys are built from coordinates as
+  text, in the browser and in PHP, and agree only for coordinates of at most six
+  decimals. Rounding where coordinates enter the document, the store's actions, keeps
+  that an invariant of the model rather than something every map handler remembers.
 - **Leaving the page.** The autosave flushes with a keep-alive request when the page is
   hidden, and `beforeunload` warns while a change is unsaved. A keep-alive request may
   carry at most 64 KB, so a large trip left in the last second before closing the tab

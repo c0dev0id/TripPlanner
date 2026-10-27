@@ -36,23 +36,25 @@ export function routedLegs(route: RoutePath): Leg[] {
 /** Routed and straight legs are drawn as part of the route; pending and failed ones wait for routing. */
 export type LegState = 'routed' | 'straight' | 'pending' | 'failed';
 
-/** Whether a leg is drawn as part of its route: straight, or routed with its geometry. */
-export const isDrawn = (route: Pick<Route, 'legs'>, leg: Leg): boolean => leg.straight || leg.key in route.legs;
-
 export function legState(route: Pick<Route, 'legs'>, leg: Leg, failed: ReadonlySet<string>): LegState {
   if (leg.straight) return 'straight';
   if (leg.key in route.legs) return 'routed';
   return failed.has(leg.key) ? 'failed' : 'pending';
 }
 
-/** The line of a leg: its routed geometry once it has arrived, the straight line between its ends otherwise. */
+/** The line of a leg as plain pairs: its routed geometry once it has arrived, the straight line between its ends otherwise. */
 export function legCoordinates(route: Pick<Route, 'legs'>, leg: Leg, decode = decodePolyline): LngLat[] {
   const routed = leg.straight ? undefined : route.legs[leg.key];
-  return routed ? decode(routed.geometry) : [leg.from, leg.to];
+  return routed
+    ? decode(routed.geometry)
+    : [
+        [leg.from[0], leg.from[1]],
+        [leg.to[0], leg.to[1]],
+      ];
 }
 
 /** The length of a leg in metres: as routed, or as the crow flies for a straight leg or one not routed yet. */
-export function legDistance(route: Pick<Route, 'legs'>, leg: Leg): number {
+function legDistance(route: Pick<Route, 'legs'>, leg: Leg): number {
   const routed = leg.straight ? undefined : route.legs[leg.key];
   return routed ? routed.distanceM : distanceBetween(leg.from, leg.to);
 }
@@ -60,21 +62,6 @@ export function legDistance(route: Pick<Route, 'legs'>, leg: Leg): number {
 /** The length of a route in metres, legs not routed yet counted as the crow flies. */
 export function routeDistance(route: RoutePath & Pick<Route, 'legs'>): number {
   return routeLegs(route).reduce((sum, leg) => sum + legDistance(route, leg), 0);
-}
-
-/** The points as plain pairs, without a point that repeats the one before it. */
-export function withoutRepeats(points: readonly LngLat[]): LngLat[] {
-  const result: LngLat[] = [];
-  for (const p of points) {
-    const last = result.at(-1);
-    if (!last || last[0] !== p[0] || last[1] !== p[1]) result.push([p[0], p[1]]);
-  }
-  return result;
-}
-
-/** The points of a route as drawn on the map, with the shared point between consecutive legs only once. */
-export function routePoints(route: RoutePath & Pick<Route, 'legs'>, decode = decodePolyline): LngLat[] {
-  return withoutRepeats(routeLegs(route).flatMap((leg) => legCoordinates(route, leg, decode)));
 }
 
 /** The routed legs the route still needs; everything else, straight legs included, is dropped. */

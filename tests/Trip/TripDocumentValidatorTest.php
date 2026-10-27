@@ -14,6 +14,7 @@ final class TripDocumentValidatorTest extends TestCase
     public function testAcceptsTheFixtureAndFillsInDefaults(): void
     {
         $document = TripFixture::document();
+        $document['name'] = '  Alps ';
         unset($document['days'][0]['routes'][0]['optional'], $document['places'][0]['notes']);
         $valid = TripDocumentValidator::validated($document);
         self::assertSame('Alps', $valid['name']);
@@ -46,6 +47,7 @@ final class TripDocumentValidatorTest extends TestCase
     public static function invalidDocuments(): iterable
     {
         yield 'no name' => [fn (array &$d) => $d['name'] = '  ', 'document.name'];
+        yield 'name too long' => [fn (array &$d) => $d['name'] = str_repeat('x', 201), 'document.name'];
         yield 'bad date' => [fn (array &$d) => $d['startsOn'] = '2027-02-30', 'document.startsOn'];
         yield 'unknown place kind' => [fn (array &$d) => $d['places'][0]['kind'] = 'castle', 'places[0].kind'];
         yield 'position outside the world' => [fn (array &$d) => $d['places'][0]['lngLat'] = [200, 0], 'places[0].lngLat'];

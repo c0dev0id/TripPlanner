@@ -9,6 +9,7 @@ use PDO;
 use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
 use Planner\Tests\TestDatabase;
+use Planner\Trip\InvalidDocument;
 use Planner\Trip\TripDocuments;
 use Planner\Trip\TripDocumentValidator;
 use Planner\Trip\Trips;
@@ -122,17 +123,46 @@ final class TripDocumentsTest extends TestCase
         self::assertSame([], $this->documents->load($this->userId, $this->tripId)['days']);
     }
 
+    public function testRefusesADocumentNamingPartsOfAnotherTrip(): void
+    {
+        $valid = TripDocumentValidator::validated(TripFixture::document());
+        $this->documents->save($this->userId, $this->tripId, $valid, 1, $this->now);
+        $other = $this->trips->create($this->userId, 'Other', $this->now)->id;
+        foreach (['places', 'days'] as $part) {
+            $document = TripFixture::document();
+            $document[$part][0]['id'] = $part === 'places' ? 'home' : 'day1';
+            $this->expectException(InvalidDocument::class);
+            $this->documents->save($this->userId, $other, TripDocumentValidator::validated($document), 1, $this->now);
+        }
+    }
+
+    public function testRefusesAStopIdOfAnotherTrip(): void
+    {
+        $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated(TripFixture::document()), 1, $this->now);
+        $other = $this->trips->create($this->userId, 'Other', $this->now)->id;
+        $document = TripFixture::document();
+        $document['places'] = [TripFixture::place('p1', 'A', [1, 1]), TripFixture::place('p2', 'B', [2, 2])];
+        $document['days'][0] = ['id' => 'd2', 'name' => '', 'date' => null, 'notes' => '', 'stops' => [TripFixture::stop('s1', 'p1'), TripFixture::stop('x', 'p2')], 'routes' => [TripFixture::route('r9', [1, 1], [2, 2])]];
+        try {
+            $this->documents->save($this->userId, $other, TripDocumentValidator::validated($document), 1, $this->now);
+            self::fail('A stop of another trip was taken over.');
+        } catch (InvalidDocument) {
+        }
+        self::assertSame(['s1', 's2'], array_column($this->documents->load($this->userId, $this->tripId)['days'][0]['stops'], 'id'));
+        self::assertSame([], $this->documents->load($this->userId, $other)['days']);
+    }
+
     public function testListsTripsWithTheirDayCountAndDeletesThemWithTheirContent(): void
     {
         $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated(TripFixture::document()), 1, $this->now);
-        $other = $this->trips->create($this->userId, 'Later', $this->now->modify('+1 hour'));
+        $this->trips->create($this->userId, 'Later', $this->now->modify('+1 hour'));
         $list = $this->trips->listFor($this->userId);
         self::assertSame(['Later', 'Alps'], array_map(fn ($t) => $t->name, $list));
         self::assertSame([0, 1], array_map(fn ($t) => $t->dayCount, $list));
-        self::assertTrue($this->trips->rename($this->userId, $other->id, 'Sooner', $this->now));
+        self::assertSame('{"id":' . $this->tripId . ',"name":"Alps","startsOn":"2027-06-12","dayCount":1,"updatedAt":"2026-10-27T10:00:00Z"}', json_encode($list[1]));
         self::assertFalse($this->trips->delete($this->userId + 1, $this->tripId));
         self::assertTrue($this->trips->delete($this->userId, $this->tripId));
         self::assertSame(0, (int) $this->db->query('SELECT COUNT(*) FROM stops')->fetchColumn());
-        self::assertSame(['Sooner'], array_map(fn ($t) => $t->name, $this->trips->listFor($this->userId)));
+        self::assertSame(['Later'], array_map(fn ($t) => $t->name, $this->trips->listFor($this->userId)));
     }
 }

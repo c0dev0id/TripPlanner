@@ -1,5 +1,5 @@
 import type { Day, LngLat, Place, Profile, Route, Stop, Trip } from '../model/trip';
-import { withPrunedLegs } from './routeEdit';
+import { changeProfile, withPrunedLegs } from './routeEdit';
 
 /**
  * Pure edits of a trip's days: stops with their places, and the routes between
@@ -55,7 +55,7 @@ export function appendStop(trip: Trip, dayId: string, lngLat: LngLat, id: () => 
   const withPlace = { ...trip, places: [...trip.places, place] };
   return updateDay(withPlace, dayId, (day) => {
     const last = day.stops.at(-1);
-    const from = last && positions(withPlace.places).get(last.placeId)!;
+    const from = last && trip.places.find((p) => p.id === last.placeId)!.lngLat;
     return {
       ...day,
       stops: [...day.stops, stop],
@@ -112,22 +112,16 @@ export function removeStop(trip: Trip, dayId: string, stopId: string): Trip {
 /** Moves a place; the routes that start or end there follow, their legs to and from it dropped. */
 export function movePlace(trip: Trip, placeId: string, lngLat: LngLat): Trip {
   const places = trip.places.map((p) => (p.id === placeId ? { ...p, lngLat } : p));
-  const moved = { ...trip, places };
-  return { ...moved, days: moved.days.map((day) => alignRouteEnds(day, places)) };
+  return { ...trip, places, days: trip.days.map((day) => alignRouteEnds(day, places)) };
 }
 
 export function renamePlace(trip: Trip, placeId: string, name: string): Trip {
   return { ...trip, places: trip.places.map((p) => (p.id === placeId ? { ...p, name } : p)) };
 }
 
-/** The day a route belongs to. */
-export function dayOfRoute(trip: Trip, routeId: string): Day | undefined {
-  return trip.days.find((day) => day.routes.some((r) => r.id === routeId));
-}
-
 /** Applies a route edit to the route, wherever in the trip it is. */
 export function updateRoute(trip: Trip, routeId: string, change: (route: Route) => Route): Trip {
-  const day = dayOfRoute(trip, routeId);
+  const day = trip.days.find((d) => d.routes.some((r) => r.id === routeId));
   if (!day) return trip;
   return updateDay(trip, day.id, (d) => {
     const routes = d.routes.map((r) => (r.id === routeId ? change(r) : r));
@@ -137,7 +131,7 @@ export function updateRoute(trip: Trip, routeId: string, change: (route: Route) 
 
 export function setDayProfile(trip: Trip, dayId: string, profile: Profile): Trip {
   return updateDay(trip, dayId, (day) =>
-    day.routes.every((r) => r.profile === profile) ? day : { ...day, routes: day.routes.map((r) => (r.profile === profile ? r : withPrunedLegs({ ...r, profile }))) },
+    day.routes.every((r) => r.profile === profile) ? day : { ...day, routes: day.routes.map((r) => (r.profile === profile ? r : changeProfile(r, profile))) },
   );
 }
 

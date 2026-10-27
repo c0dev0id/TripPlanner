@@ -52,6 +52,7 @@ function NameField(props: { value: string; label: string; onDone: (name: string 
       class="grow name-input"
       aria-label={`${props.label[0]!.toUpperCase()}${props.label.slice(1)} name`}
       value={props.value}
+      maxlength={200}
       onKeyDown={(e) => {
         if (e.key === 'Enter') finish(e.currentTarget.value);
         else if (e.key === 'Escape') finish(undefined);

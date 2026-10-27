@@ -24,7 +24,7 @@ final class GpxExportController
     {
         $document = $this->documents->load($this->currentUser->get()->id, (int) $args['id']);
         if ($document === null) {
-            return Json::of($response->withStatus(404), ['error' => 'No such trip.']);
+            return Json::error($response, 404, 'No such trip.');
         }
         $query = $request->getQueryParams();
         if (($query['per'] ?? null) === 'day') {
@@ -36,7 +36,7 @@ final class GpxExportController
         }
         $index = array_search($dayId, array_column($document['days'], 'id'), true);
         if ($index === false) {
-            return Json::of($response->withStatus(404), ['error' => 'No such day.']);
+            return Json::error($response, 404, 'No such day.');
         }
         return self::download($response, TripGpx::dayFileName($document, $index) . '.gpx', 'application/gpx+xml', TripGpx::day($document, $index, new DateTimeImmutable()));
     }

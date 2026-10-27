@@ -1,7 +1,13 @@
-import { Map as MapLibreMap, Marker, type PositionAnchor } from 'maplibre-gl';
+import { Map as MapLibreMap, Marker, type LngLat as MapLibreLngLat } from 'maplibre-gl';
 import type { LngLat } from '../model/trip';
 import { setMenu, type MenuItem } from '../state/drawing';
 import { onLongPress } from './longPress';
+
+/** A position as the map gives it, wrapped into the world, as the model's pair. */
+export function toLngLat(position: MapLibreLngLat): LngLat {
+  const { lng, lat } = position.wrap();
+  return [lng, lat];
+}
 
 /** True if a DOM event originated from a marker (the map's click fires after the marker's). */
 export function fromMarker(event: Event | undefined): boolean {
@@ -10,7 +16,7 @@ export function fromMarker(event: Event | undefined): boolean {
 
 /**
  * A draggable marker whose root element is owned by MapLibre (it sets transform, opacity
- * and pointer-events); the given content is placed inside it.
+ * and pointer-events); the given content is placed inside it, centred on the position.
  */
 export class MarkerHandle {
   readonly marker: Marker;
@@ -20,12 +26,12 @@ export class MarkerHandle {
   constructor(
     private readonly map: MapLibreMap,
     content: Node,
-    options: { className: string; anchor?: PositionAnchor },
+    className: string,
   ) {
     this.root = document.createElement('div');
-    this.root.className = options.className;
+    this.root.className = className;
     this.root.append(content);
-    this.marker = new Marker({ element: this.root, draggable: true, anchor: options.anchor ?? 'center' });
+    this.marker = new Marker({ element: this.root, draggable: true, anchor: 'center' });
     // MapLibre starts a marker drag with any button. A right-click opens a menu under the
     // pointer that receives the release, which MapLibre never sees: the marker would then
     // follow the mouse. Only the primary button may drag.

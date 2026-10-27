@@ -75,8 +75,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download.
 | `GET /trips` | The user's trips, last changed first, with their day count. |
 | `POST /trips` | Creates a trip from `{name}`. |
 | `GET /trips/{id}` | The trip document: name, description, start date, version, places, days with stops and routes. |
-| `PUT /trips/{id}` | Replaces the trip's content with the document sent, which carries the version it was loaded at; 409 when that is no longer the current version, 422 when the document is malformed. |
-| `PATCH /trips/{id}` | Renames the trip. |
+| `PUT /trips/{id}` | Replaces the trip's content with the document sent, which carries the version it was loaded at; 409 when that is no longer the current version, 422 when the document is malformed or names parts of another trip. |
 | `DELETE /trips/{id}` | Deletes the trip with everything in it. |
 | `GET /trips/{id}/gpx` | The trip as GPX; `?day=<id>` one day; `?per=day` a zip with one file per day. |
 

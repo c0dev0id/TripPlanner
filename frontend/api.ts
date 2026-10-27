@@ -48,8 +48,6 @@ export async function saveTrip(trip: Trip, keepalive = false): Promise<number> {
   return version;
 }
 
-export const renameTrip = (id: number, name: string): Promise<{ name: string }> => request('PATCH', `/api/trips/${id}`, { name });
-
 export const deleteTrip = (id: number): Promise<void> => request('DELETE', `/api/trips/${id}`);
 
 /** The GPX download of a trip, or of one of its days. */

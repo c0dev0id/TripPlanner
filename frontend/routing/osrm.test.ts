@@ -3,8 +3,8 @@ import { fetchLeg, parseRouteResponse, routeUrl } from './osrm';
 
 describe('routeUrl', () => {
   it('asks for one leg as polyline6 with the profile in the path', () => {
-    expect(routeUrl('https://r.example', 'bike', [11.5, 48.1], [11.6, 48.2])).toBe(
-      'https://r.example/routed-bike/route/v1/driving/11.5,48.1;11.6,48.2?overview=full&geometries=polyline6',
+    expect(routeUrl('bike', [11.5, 48.1], [11.6, 48.2])).toBe(
+      'https://routing.openstreetmap.de/routed-bike/route/v1/driving/11.5,48.1;11.6,48.2?overview=full&geometries=polyline6',
     );
   });
 });

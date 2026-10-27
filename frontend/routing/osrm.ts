@@ -1,7 +1,7 @@
 import type { LngLat, Profile, RoutedLeg } from '../model/trip';
 
 /** FOSSGIS OSRM servers: one request per second at most, see routing.openstreetmap.de/about.html. */
-export const ROUTING_URL = 'https://routing.openstreetmap.de';
+const ROUTING_URL = 'https://routing.openstreetmap.de';
 export const ROUTING_ATTRIBUTION =
   'Routing: <a href="https://routing.openstreetmap.de/about.html" target="_blank" rel="noopener">FOSSGIS OSRM</a>';
 /** Milliseconds between routing requests: FOSSGIS allows at most one request per second. */
@@ -9,8 +9,8 @@ export const ROUTING_MIN_INTERVAL_MS = 1100;
 const ROUTING_TIMEOUT_MS = 15_000;
 
 /** OSRM route request for one leg on the FOSSGIS servers (profile selected by path). */
-export function routeUrl(base: string, profile: Profile, from: LngLat, to: LngLat): string {
-  return `${base}/routed-${profile}/route/v1/driving/${from[0]},${from[1]};${to[0]},${to[1]}?overview=full&geometries=polyline6`;
+export function routeUrl(profile: Profile, from: LngLat, to: LngLat): string {
+  return `${ROUTING_URL}/routed-${profile}/route/v1/driving/${from[0]},${from[1]};${to[0]},${to[1]}?overview=full&geometries=polyline6`;
 }
 
 /** The first route's polyline6 geometry, length and riding time, or throws with the server's message. */
@@ -32,7 +32,7 @@ export function parseRouteResponse(data: unknown): RoutedLeg {
 
 /** Routes one leg; rejects on network errors, timeouts and routing errors. */
 export async function fetchLeg(leg: { profile: Profile; from: LngLat; to: LngLat }, fetchFn: typeof fetch = fetch): Promise<RoutedLeg> {
-  const response = await fetchFn(routeUrl(ROUTING_URL, leg.profile, leg.from, leg.to), {
+  const response = await fetchFn(routeUrl(leg.profile, leg.from, leg.to), {
     signal: AbortSignal.timeout(ROUTING_TIMEOUT_MS),
   });
   let data: unknown;

@@ -2,13 +2,15 @@ import { batch, createSignal } from 'solid-js';
 import { createStore, reconcile, unwrap } from 'solid-js/store';
 import { newId, type Day, type LngLat, type Profile, type Route, type RoutedLeg, type Trip } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
+import { roundLngLat } from '../routing/legs';
 import * as routeEdit from '../routing/routeEdit';
 import { History } from './history';
 
 /**
  * The open trip. All writes go through the actions below: results of the pure edits are
  * applied with `reconcile` (a plain set would keep stale keys), edits with a label are
- * undo steps, and every content change counts for the autosave.
+ * undo steps, every content change counts for the autosave, and positions are rounded
+ * here, so that the document never holds a coordinate the leg keys cannot agree on.
  */
 
 const [state, setState] = createStore<{ trip?: Trip }>({});
@@ -59,11 +61,11 @@ export function redoLabel(): string | undefined {
 }
 
 export function undo(): void {
-  if (state.trip) restore(history.undo(snapshot()));
+  if (state.trip && history.undoLabel !== undefined) restore(history.undo(snapshot()));
 }
 
 export function redo(): void {
-  if (state.trip) restore(history.redo(snapshot()));
+  if (state.trip && history.redoLabel !== undefined) restore(history.redo(snapshot()));
 }
 
 /** Puts back a snapshot; the version stays the current one, since saves are no edits. */
@@ -120,12 +122,12 @@ function editDay(change: (trip: Trip, dayId: string) => Trip, label: string): vo
 }
 
 export function addStop(lngLat: LngLat): void {
-  editDay((trip, dayId) => dayEdit.appendStop(trip, dayId, lngLat, newId), 'Add stop');
+  editDay((trip, dayId) => dayEdit.appendStop(trip, dayId, roundLngLat(lngLat), newId), 'Add stop');
 }
 
 /** Adds a stop on the selected day's route `routeIndex`, splitting it at its leg `legIndex`. */
 export function insertStop(routeIndex: number, legIndex: number, lngLat: LngLat): void {
-  editDay((trip, dayId) => dayEdit.insertStop(trip, dayId, routeIndex, legIndex, lngLat, newId), 'Add stop');
+  editDay((trip, dayId) => dayEdit.insertStop(trip, dayId, routeIndex, legIndex, roundLngLat(lngLat), newId), 'Add stop');
 }
 
 export function removeStop(stopId: string): void {
@@ -133,7 +135,7 @@ export function removeStop(stopId: string): void {
 }
 
 export function movePlace(placeId: string, lngLat: LngLat): void {
-  edit((trip) => dayEdit.movePlace(trip, placeId, lngLat), 'Move stop');
+  edit((trip) => dayEdit.movePlace(trip, placeId, roundLngLat(lngLat)), 'Move stop');
 }
 
 export function renamePlace(placeId: string, name: string): void {
@@ -142,11 +144,11 @@ export function renamePlace(placeId: string, name: string): void {
 
 /** Inserts a point of a route before the one at `index`. */
 export function insertPoint(routeId: string, index: number, lngLat: LngLat): void {
-  edit((trip) => dayEdit.updateRoute(trip, routeId, (r) => routeEdit.insertPoint(r, index, { id: newId(), lngLat })), 'Insert point');
+  edit((trip) => dayEdit.updateRoute(trip, routeId, (r) => routeEdit.insertPoint(r, index, { id: newId(), lngLat: roundLngLat(lngLat) })), 'Insert point');
 }
 
 export function movePoint(routeId: string, pointId: string, lngLat: LngLat): void {
-  edit((trip) => dayEdit.updateRoute(trip, routeId, (r) => routeEdit.movePoint(r, pointId, lngLat)), 'Move point');
+  edit((trip) => dayEdit.updateRoute(trip, routeId, (r) => routeEdit.movePoint(r, pointId, roundLngLat(lngLat))), 'Move point');
 }
 
 export function removePoint(routeId: string, pointId: string): void {

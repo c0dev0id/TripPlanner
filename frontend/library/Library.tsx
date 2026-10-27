@@ -37,7 +37,7 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
     <section class="library">
       <h2>Trips</h2>
       <form class="row" onSubmit={create}>
-        <input class="grow" placeholder="Name of a new trip" value={name()} onInput={(e) => setName(e.currentTarget.value)} aria-label="Name of a new trip" />
+        <input class="grow" placeholder="Name of a new trip" value={name()} onInput={(e) => setName(e.currentTarget.value)} aria-label="Name of a new trip" maxlength={200} />
         <button type="submit" class="primary" disabled={!name().trim() || props.opening}>
           New trip
         </button>

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Planner\Trip;
 
-/** A trip as the library lists it. */
+/** A trip as the library lists it; its public properties are its JSON. */
 final readonly class TripSummary
 {
     public function __construct(
@@ -14,10 +14,5 @@ final readonly class TripSummary
         public int $dayCount,
         public string $updatedAt,
     ) {
-    }
-
-    public function toArray(): array
-    {
-        return ['id' => $this->id, 'name' => $this->name, 'startsOn' => $this->startsOn, 'dayCount' => $this->dayCount, 'updatedAt' => $this->updatedAt];
     }
 }

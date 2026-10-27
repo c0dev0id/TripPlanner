@@ -34,14 +34,6 @@ final class Trips
         return new TripSummary((int) $this->db->lastInsertId(), $name, null, 0, Timestamp::of($now));
     }
 
-    /** Renames the user's trip; false when there is none. */
-    public function rename(int $userId, int $tripId, string $name, DateTimeImmutable $now): bool
-    {
-        $statement = $this->db->prepare('UPDATE trips SET name = ?, updated_at = ? WHERE id = ? AND user_id = ?');
-        $statement->execute([$name, Timestamp::of($now), $tripId, $userId]);
-        return $statement->rowCount() === 1;
-    }
-
     /** Deletes the user's trip with everything in it; false when there is none. */
     public function delete(int $userId, int $tripId): bool
     {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Planner\Export;
 
 use DateTimeImmutable;
+use Planner\Timestamp;
 use XMLWriter;
 
 /** Writes GPX 1.1: the waypoints first, then one track with one segment per line. */
@@ -29,7 +30,7 @@ final class Gpx
         $xml->writeAttribute('xsi:schemaLocation', 'http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd');
         $xml->startElement('metadata');
         $xml->writeElement('name', $name);
-        $xml->writeElement('time', $time->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z'));
+        $xml->writeElement('time', Timestamp::of($time));
         $xml->endElement();
         foreach ($waypoints as $waypoint) {
             $xml->startElement('wpt');

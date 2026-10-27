@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { LngLat, Route, RoutedLeg } from '../model/trip';
-import { legKey, legState, nextMissingLeg, pruneLegs, roundLngLat, routeDistance, routeLegs, routePoints } from './legs';
+import { legCoordinates, legKey, legState, nextMissingLeg, pruneLegs, roundLngLat, routeDistance, routeLegs } from './legs';
 
 const routed = (geometry: string, distanceM = 1000): RoutedLeg => ({ geometry, distanceM, durationS: 60 });
 
@@ -104,22 +104,16 @@ const tour: Route = {
   legs: { 'car/1,1;2,2': routed('[[1,1],[1.5,1.2],[2,2]]'), 'car/2,2;3,3': routed('[[2,2],[2.5,2.8],[3,3]]') },
 };
 
-describe('routePoints', () => {
-  it('joins routed legs without repeating the shared point', () => {
-    expect(routePoints(tour, decode)).toEqual([
+describe('legCoordinates', () => {
+  it('draws a routed leg along its geometry and the others straight', () => {
+    const [first, second] = routeLegs(tour);
+    expect(legCoordinates(tour, first!, decode)).toEqual([
       [1, 1],
       [1.5, 1.2],
       [2, 2],
-      [2.5, 2.8],
-      [3, 3],
     ]);
-  });
-
-  it('uses straight lines for legs that are not routed', () => {
     const partial = { ...tour, legs: { 'car/1,1;2,2': routed('[[1,1],[1.5,1.2],[2,2]]') } };
-    expect(routePoints(partial, decode)).toEqual([
-      [1, 1],
-      [1.5, 1.2],
+    expect(legCoordinates(partial, second!, decode)).toEqual([
       [2, 2],
       [3, 3],
     ]);
@@ -127,11 +121,10 @@ describe('routePoints', () => {
 
   it('draws a straight leg as its two ends, whatever is cached for it', () => {
     const points = tour.points.map((p, i) => (i === 1 ? { ...p, straight: true } : p));
-    expect(routePoints({ ...tour, points }, decode)).toEqual([
+    const straight = { ...tour, points };
+    expect(legCoordinates(straight, routeLegs(straight)[0]!, decode)).toEqual([
       [1, 1],
       [2, 2],
-      [2.5, 2.8],
-      [3, 3],
     ]);
   });
 });
