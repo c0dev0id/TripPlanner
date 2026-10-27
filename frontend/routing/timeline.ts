@@ -2,17 +2,18 @@ import type { SequenceEntry } from './sequence';
 
 /**
  * A day's planned times, from the first stop that has a time on: the riding times of the
- * legs, the pauses, and the stops' fixed arrival times, which the plan waits for when
- * the ride gets there early and misses when it gets there late. Nothing here is the
- * clock; matching the plan against the ride is a navigation system's job.
+ * legs, the pauses, and the stops' fixed arrival times. A fixed time is kept as planned;
+ * the ride to it is reported as waiting when it gets there early and as short when it
+ * would get there late. Nothing is corrected, and nothing here is the clock; matching
+ * the plan against the ride is a navigation system's job.
  */
 
 export interface EntryTime {
-  /** With a fixed arrival time the plan waits for it, so the arrival may be later than the riding makes it. */
+  /** The stop's fixed arrival time where it has one, else as the riding makes it. */
   arrivalMin: number;
   /** After the pause; the arrival itself at a plain route point. */
   departureMin: number;
-  /** Whole minutes against a fixed arrival time: waiting when positive, missed when negative; 0 without one or when it fits. */
+  /** Whole minutes from the ride's arrival to the fixed time: waiting when positive, short when negative; 0 without one or when it fits. */
   slackMin: number;
 }
 
@@ -26,8 +27,8 @@ export interface DayTimeline {
   /** Of the whole day. */
   ridingS: number;
   pauseMin: number;
-  /** How many fixed arrival times the plan misses. */
-  missed: number;
+  /** At how many stops the ride falls short of the fixed time. */
+  short: number;
 }
 
 /** Minutes since midnight of a time of day written as HH:MM. */
@@ -47,21 +48,21 @@ export function dayTimeline(sequence: readonly SequenceEntry[]): DayTimeline | u
   let departMin: number | undefined;
   let endMin = 0;
   let pauseMin = 0;
-  let missed = 0;
+  let short = 0;
   for (const entry of sequence) {
     const fixedMin = entry.stop?.arriveAt == null ? undefined : minutesOfDay(entry.stop.arriveAt);
     const etaMin = clock ? clock.min + (entry.timeS - clock.riddenS) / 60 : fixedMin;
     if (etaMin === undefined) continue;
     const slackMin = fixedMin === undefined ? 0 : Math.round(fixedMin - etaMin);
-    const arrivalMin = Math.max(etaMin, fixedMin ?? etaMin);
+    const arrivalMin = fixedMin ?? etaMin;
     const pause = entry.stop?.pauseMinutes ?? 0;
     times.set(entry.id, { arrivalMin, departureMin: arrivalMin + pause, slackMin });
-    if (slackMin < 0) missed++;
+    if (slackMin < 0) short++;
     pauseMin += pause;
     departMin ??= arrivalMin + pause;
     clock = { min: arrivalMin + pause, riddenS: entry.timeS };
     endMin = arrivalMin;
   }
   if (departMin === undefined) return undefined;
-  return { times, departMin, endMin, ridingS: sequence.at(-1)!.timeS, pauseMin, missed };
+  return { times, departMin, endMin, ridingS: sequence.at(-1)!.timeS, pauseMin, short };
 }

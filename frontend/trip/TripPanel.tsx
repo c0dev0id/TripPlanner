@@ -164,15 +164,15 @@ function DayDetails(props: { day: Day }) {
   );
 }
 
-/** Departure from the first timed stop to the arrival at the end, the riding time, the pauses, and how many fixed times the plan misses. */
+/** Departure from the first timed stop to the arrival at the end, the riding time, the pauses, and where the ride falls short of a fixed time. */
 function DaySummary(props: { timeline: DayTimeline }) {
   return (
     <p class="day-summary">
       {timeText(props.timeline.departMin)} → {timeText(props.timeline.endMin)} · {durationText(props.timeline.ridingS)} riding
       <Show when={props.timeline.pauseMin > 0}> · {durationText(props.timeline.pauseMin * 60)} of pauses</Show>
-      <Show when={props.timeline.missed > 0}>
+      <Show when={props.timeline.short > 0}>
         {' · '}
-        <span class="missed">{props.timeline.missed === 1 ? '1 fixed time missed' : `${props.timeline.missed} fixed times missed`}</span>
+        <span class="short">{props.timeline.short === 1 ? 'short at 1 stop' : `short at ${props.timeline.short} stops`}</span>
       </Show>
     </p>
   );
@@ -229,9 +229,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
             {distanceText(props.entry.distanceM)}
             <Show when={slack() > 0}> · waits {durationText(slack() * 60)}</Show>
             <Show when={slack() < 0}>
-              <span class="missed">
-                {' · '}misses {stop()?.arriveAt} by {durationText(-slack() * 60)}
-              </span>
+              <span class="short"> · {durationText(-slack() * 60)} short</span>
             </Show>
           </span>
         </span>

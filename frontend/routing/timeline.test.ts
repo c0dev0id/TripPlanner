@@ -22,19 +22,21 @@ describe('dayTimeline', () => {
       ['lunch', 630, 690, 0],
       ['p9000', 750, 750, 0],
     ]);
-    expect(timeline).toMatchObject({ departMin: 540, endMin: 750, ridingS: 9000, pauseMin: 90, missed: 0 });
+    expect(timeline).toMatchObject({ departMin: 540, endMin: 750, ridingS: 9000, pauseMin: 90, short: 0 });
   });
 
-  it('waits for a fixed arrival time and counts one the plan misses', () => {
-    const timeline = dayTimeline([entry(0, stop('home', '09:00')), entry(1800, stop('coffee', '10:00', 15)), entry(9000, stop('hotel', '12:00'))]);
+  it('keeps a fixed arrival time, waiting for it when early and short of it when late', () => {
+    const timeline = dayTimeline([entry(0, stop('home', '09:00')), entry(1800, stop('coffee', '10:00', 15)), entry(9000, stop('hotel', '12:00', 30)), entry(9600)]);
     // Half an hour of riding, there at 09:30, waits until 10:00, leaves at 10:15; two more
-    // hours of riding reach the hotel at 12:15, a quarter of an hour after its time.
+    // hours of riding would reach the hotel at 12:15, a quarter of an hour short of its
+    // time, which the plan keeps; the day goes on from 12:30 as planned.
     expect(listed(timeline)).toEqual([
       ['home', 540, 540, 0],
       ['coffee', 600, 615, 30],
-      ['hotel', 735, 735, -15],
+      ['hotel', 720, 750, -15],
+      ['p9600', 760, 760, 0],
     ]);
-    expect(timeline).toMatchObject({ departMin: 540, endMin: 735, pauseMin: 15, missed: 1 });
+    expect(timeline).toMatchObject({ departMin: 540, endMin: 760, pauseMin: 45, short: 1 });
   });
 
   it('leaves the entries before the first timed stop without times', () => {

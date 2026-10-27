@@ -302,7 +302,8 @@ a {
   gap: 8px;
 }
 
-.missed {
+/* Where the ride falls short of a stop's fixed time. */
+.short {
   color: var(--error);
 }
 

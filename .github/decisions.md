@@ -98,12 +98,15 @@ entries at the end of their section.
   first draft gave the day a departure time of its own; a day may hold route options
   with different starts (a longer breakfast on one of them), so the day cannot know it,
   and two places for the same time disagree. A stop's time is a fixed arrival: a
-  reservation, an opening hour, a check-in. Where the ride gets there early the plan
-  waits; where it gets there late the plan misses the time, which is shown on the stop
-  and counted on the day. A pause counts from the arrival the plan uses. Stops before
-  the first timed one have no times, and a day without a timed stop has distances only.
-  All of this is planned time: nothing is compared with the clock, and matching the plan
-  against the ride as it happens is a navigation system's job, not this tool's.
+  reservation, an opening hour, a check-in. The plan keeps it: the day goes on from that
+  time plus the pause. Where the ride gets there early the stop shows the waiting; where
+  it would get there late the stop shows by how much the ride is short, and the day
+  counts such stops. Nothing is corrected: whether to leave earlier, shorten a pause,
+  move the stop or ignore a pessimistic calculation is the user's call, and a corrected
+  arrival would disagree with the time the stop says. Stops before the first timed one
+  have no times, and a day without a timed stop has distances only. All of this is
+  planned time: nothing is compared with the clock, and matching the plan against the
+  ride as it happens is a navigation system's job, not this tool's.
 - **Untimed legs ride at 50 km/h.** OSRM gives every routed leg its duration. A straight
   leg (by choice) or one not routed yet has none; its riding time counts at 50 km/h over
   its crow-flies length rather than being unknown, so that a day with one such leg still

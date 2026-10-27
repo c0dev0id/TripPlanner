@@ -24,7 +24,8 @@ the way.
   with the distance from the start; a click shows the stop on the map. The days before
   and after are drawn dimmed for orientation.
 - **Times that add up** — give the first stop a time, others a fixed arrival time or a
-  pause: the plan shows when it gets where, where it waits, and where it misses a time.
+  pause: the plan shows when it gets where, where it waits, and where the ride falls
+  short of a fixed time.
 - **Saved as you go** — every change is saved to your account moments later.
 - **A library with folders** — trips sorted into folders, and a search across them.
 - **GPX export** — the whole trip in one file, one day, or one file per day in a zip:
