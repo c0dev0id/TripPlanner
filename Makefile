@@ -16,11 +16,11 @@ install:
 	$(NPM) ci
 
 init:
-	php-8.4 bin/planner db:init
+	doas -u www php-8.4 bin/planner db:init
 invite:
-	php-8.4 bin/planner $(EMAIL)
+	doas -u www php-8.4 bin/planner invite $(EMAIL)
 admin:
-	php-8.4 bin/planner admin:grant $(EMAIL)
+	doas -u www php-8.4 bin/planner admin:grant $(EMAIL)
 
 # Runs what CI runs: syntax checks, PHP tests, type check, frontend tests and the build.
 check:
