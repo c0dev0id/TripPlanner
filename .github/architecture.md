@@ -59,7 +59,7 @@ flowchart TB
 |---|---|
 | Presentation (frontend) | The library (`library/`), the trip panel (`trip/`), the map with its route lines, stop and point markers, interactions, toolbar, hint bar and context menu (`map/`), dialogs and small controls (`ui/`). |
 | Application state (frontend) | The open trip, the selected day and the route being edited, undo and redo and the actions that edit the trip (`state/trip.ts`), the pull-based routing pump (`state/routing.ts`), the autosave (`state/autosave.ts`), the tool, the toggles, the open menu and dialog (`state/drawing.ts`). |
-| Domain (frontend) | Pure edits of a route and of a day's stops and routes, the riding sequence of a day with distances, leg keys and geometry, the polyline codec, the OSRM client (`routing/`); distances and nearest-line search (`geo/`); the document types (`model/`). |
+| Domain (frontend) | Pure edits of a route and of a day's stops and routes, the riding sequence of a day with distances and riding times, the day's timeline, leg keys and geometry, the polyline codec, the OSRM client (`routing/`); distances and nearest-line search (`geo/`); the document types (`model/`). |
 | API client (frontend) | `api.ts`: requests to the JSON API, the one place that knows its URLs. |
 | HTTP (backend) | Slim routes and middleware (sessions, CSRF, body parsing, authentication), Plates templates for the public pages, JSON encoding of API answers (`Http/`, `Pages/`, `Api/`). |
 | Domain (backend) | Accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders, trip documents with their validator (`Trip/`), GPX writing with the proximity of free stops (`Export/`). |
@@ -74,7 +74,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download.
 | `GET /me` | The user's e-mail address and admin flag. |
 | `GET /trips` | The user's trips, last changed first, with their folder and day count. |
 | `POST /trips` | Creates a trip from `{name, folderId}`; the folder may be null. |
-| `GET /trips/{id}` | The trip document: name, description, start date, version, days with routes and stops. |
+| `GET /trips/{id}` | The trip document: name, description, start date, version, days (with their departure time) with routes and stops. |
 | `PUT /trips/{id}` | Replaces the trip's content with the document sent, which carries the version it was loaded at; 409 when that is no longer the current version, 422 when the document is malformed or names parts of another trip. |
 | `PATCH /trips/{id}` | Puts the trip into the folder of `{folderId}`, or into none for null. |
 | `DELETE /trips/{id}` | Deletes the trip with everything in it. |
@@ -145,7 +145,7 @@ erDiagram
     string id PK
     int position
     string name
-    date date
+    time depart_at
     string notes
   }
   ROUTE {

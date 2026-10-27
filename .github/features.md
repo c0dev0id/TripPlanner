@@ -25,6 +25,12 @@
   the route passes closest. The plain route points are listed on request; a click pans
   the map to the entry. The days before and after the selected one are drawn dimmed on
   the map, switchable.
+- A start date for the trip; the days are dated from it. A departure time per day;
+  a stop can have a fixed arrival time and a pause. From the routed legs' durations the
+  panel computes the day's timeline: arrival and departure at each stop, waiting where
+  the rider is early for a fixed time, a late mark where not, and the day's summary of
+  departure, arrival at the end, riding time, pauses and late stops. Straight legs and
+  legs not routed yet count at 50 km/h.
 - Every change saved to the server a moment later, as one document with a version; a
   save over a newer version is refused and the trip offered for reloading.
 - GPX export by scope: the whole trip in one file, one day, or one file per day in a
@@ -34,8 +40,6 @@
 
 ## Planned
 
-- Stops with an arrival time and a pause, and a computed timeline per day: departure,
-  arrival at each stop, slack or conflict against fixed arrival times, riding time.
 - GPX import into a route: routes, tracks, Garmin's calculated route points.
 - Copy, move, duplicate and reorder for days, stops, routes and trips.
 - The export dialog with all options (scope, packaging, tracks or routes, optional parts,

@@ -91,6 +91,23 @@ entries at the end of their section.
   carry at most 64 KB, so a large trip left in the last second before closing the tab
   relies on the warning.
 
+## Time
+
+- **The departure belongs to the day; the arrival time to the stop.** A day's timeline
+  starts at its departure and runs through its stops in riding order. A stop's arrival
+  time is a fixed one: a reservation, an opening hour, a check-in. The rider who gets
+  there early waits for it; one who gets there late has a conflict, shown on the stop and
+  counted on the day. A pause counts from the arrival the plan uses. Without a departure
+  a day has no times, only distances.
+- **Untimed legs ride at 50 km/h.** OSRM gives every routed leg its duration. A straight
+  leg (by choice) or one not routed yet has none; the timeline counts it at 50 km/h over
+  its crow-flies length rather than stopping there, so that a day with one such leg
+  still has times. The pace is a guess and may become a setting.
+- **Days follow the trip's start date.** A trip has a start date and its days are
+  consecutive, so a day's date is its position after the start; a rest day is a day
+  without routes. The per-day date the first model carried could contradict that and
+  nothing set it.
+
 ## Export
 
 - **One track per route, one waypoint per stop.** A GPX file holds the stops in scope as
