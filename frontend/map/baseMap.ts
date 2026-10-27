@@ -1,4 +1,4 @@
-import { Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl, type MapOptions, type StyleSpecification } from 'maplibre-gl';
+import { GeolocateControl, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl, type MapOptions, type StyleSpecification } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { ROUTING_ATTRIBUTION } from '../routing/osrm';
 import { BaseMapControl } from './BaseMapControl';
@@ -19,12 +19,14 @@ function withRouteOverlay(previous: StyleSpecification | undefined, next: StyleS
 }
 
 /**
- * A map over Europe on the base map this browser chose, with the navigation, scale and
- * base map controls and the route overlay; `ready` gets the map once it has loaded.
+ * A map over Europe on the base map this browser chose, with the navigation, locate-me,
+ * base map and scale controls and the route overlay; `ready` gets the map once it has
+ * loaded.
  */
 export function newBaseMap(container: HTMLElement, options: Partial<MapOptions>, ready: (map: MapLibreMap) => void): MapLibreMap {
   const map = new MapLibreMap({ container, style: chosenBaseMap().style, transformStyle: withRouteOverlay, center: [10.5, 47.5], zoom: 5, attributionControl: { compact: true }, ...options });
   map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
+  map.addControl(new GeolocateControl({ positionOptions: { enableHighAccuracy: true }, fitBoundsOptions: { maxZoom: 13 } }), 'top-right');
   map.addControl(new BaseMapControl(), 'top-right');
   map.addControl(new ScaleControl(), 'bottom-left');
   map.once('load', () => ready(map));

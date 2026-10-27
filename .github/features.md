@@ -69,5 +69,5 @@
 
 - A base map to choose on the map: OpenFreeMap's Liberty, Bright, Positron and Dark
   styles, or the OpenTopoMap, OpenStreetMap and CyclOSM raster tiles; the route lines
-  and markers stay. The interface light or dark by hand, or as the browser says. Both
-  choices are kept in the browser.
+  and markers stay. A locate-me button shows where the browser is. The interface light
+  or dark by hand, or as the browser says. Both choices are kept in the browser.
