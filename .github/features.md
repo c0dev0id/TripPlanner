@@ -54,10 +54,20 @@
   each route is named after its day and its own name. Named presets of these options are
   kept with the account.
 
+- A journal on the trip, on a day, on a stop and on a route, opened from their rows and
+  menus: entries of a note, a file (a photo, a receipt, a document) or both, edited and
+  deleted in place; rows say how many entries a part has. A photo's time and position
+  are read from its EXIF data: it is shown with the time it was taken, stands on the
+  map where it was taken, and a photo added to the trip goes to the day of its date.
+  Images get a preview; other files open or download under their name. An entry stays
+  with the trip when its part is removed.
+- A trip is planned or done; the library marks done trips.
+- A read-only page of the trip for reading and printing: the map with every day, the
+  journal, each day with its routes and its stops in riding order with their times,
+  addresses, bookings and notes. The page is the owner's, or shared under a link that
+  needs no sign-in and can be withdrawn.
+
 ## Planned
 
-- Photos, receipts and documents attached to the trip, a day, a stop or a route; photos
-  placed by their EXIF time and position; comments for notes before and after the trip.
-- A read-only trip page for printing and sharing.
 - A base map switcher; a light and dark interface switchable by hand (it follows the
   browser now).

@@ -89,7 +89,7 @@ entries at the end of their section.
   the app offers to reload, which is enough while a trip has one editor.
 - **Parts carry client-generated ids and are upserted.** The server upserts each day, stop
   and route by id and deletes the rows the document no longer holds, rather
-  than deleting and reinserting: attachments of phase 4 will reference stops and routes
+  than deleting and reinserting: journal entries reference days, stops and routes
   by id and must survive a save. Since the ids are the client's choice, a save first
   checks that none of them belongs to another trip, in one place, rather than guarding
   each upsert. Trips themselves are created by the server with integer ids; a trip is the
@@ -127,6 +127,50 @@ entries at the end of their section.
   as starting on the earliest of them. A new day after a dated one is dated the day
   after, so a consecutive trip needs one date typed. A trip-level start date was tried
   and dropped: it was a second source for the same fact.
+
+## After the trip
+
+- **One kind of journal entry, not attachments and comments.** The plan had photos,
+  receipts and documents as attachments and notes as comments. In use they are one
+  thing: a note, a file, or a file with a note under it, in order of adding. One table,
+  one dialog, one list; a file's media type says what it is.
+- **An entry outlives its part.** A photo on a stop stays with the trip when the stop
+  is removed, with its day, stop or route reference set to null: the journal is the
+  record of the trip, and a removed stop is still where the photo was taken. The first
+  draft cascaded the deletion; a stop moved in a reorganisation would have taken its
+  photos with it.
+- **Photos are placed by their EXIF data on the server.** The server reads the time the
+  camera wrote (local, without a zone) and the GPS position when a file is stored, since
+  it has the file anyway and the browser would need a parser of its own. A photo added
+  to the trip itself goes to the day of its date; one added to a day, a stop or a route
+  stays where the user put it. The position places it on the map; nothing is matched
+  against the route. Without the exif extension a photo is kept and shown, not placed.
+- **Files are served through PHP, not by httpd.** A file is read by its owner or through
+  the trip's share token, so every read passes the application's check; the file store
+  lies outside the web root. Previews are small JPEGs made with GD on first request and
+  kept beside the file, so a page with many photos loads a few hundred kilobytes.
+- **The trip's state is part of the document.** Planned or done is saved with the trip
+  like its name, counts as an undo step and shows in the library. A separate endpoint
+  for one flag would have been a second way to change a trip.
+- **Stops are stored in riding order.** The client computes the order from the routes
+  (the sequence); the autosave sends each day's stops in it, and the server stores the
+  position. The read-only page and anything on the server can then list stops without
+  the routing geometry. Stops the client lists are still ordered by the sequence, so the
+  stored order is a copy that is always current.
+- **The read-only page is the frontend's second entry.** The timeline, the riding
+  sequence, the distances and the labels exist in TypeScript; porting them to PHP for a
+  server-rendered page would have been a second implementation to keep in step. The
+  page is a small SolidJS bundle without the editor that reads the trip and its journal
+  from the API the page names: the owner's trip API at `/trips/{id}`, or the read-only
+  API of a shared trip at `/t/{token}`, which needs no sign-in. Sharing is a random
+  token on the trip, made and withdrawn by the owner; anyone with the link reads the
+  trip, its journal and its photos. The page prints: the map keeps its drawing buffer,
+  the controls are hidden.
+- **The asset tags walk the manifest's imports.** With two entries, Vite puts the styles
+  both import (MapLibre's and the markers') into the chunk they share, listed under that
+  chunk in the manifest, not under the entries. The tags of a page are the stylesheets
+  of its imported chunks, then its own, in that order, so that an entry's own styles
+  come last as in its source.
 
 ## Export
 
@@ -166,7 +210,9 @@ entries at the end of their section.
   repositories, the validator and the export; Vitest the pure modules and the store. The
   pages and the editor are exercised with Playwright against `php -S` by hand: sign-up,
   a route with the point, stop and delete tools, free stops connected and disconnected,
-  the stop dialog, neighbouring days, folders and the search, and then
+  the stop dialog, neighbouring days, folders and the search, the GPX import and the
+  export dialog, the journal with a photo placed by its EXIF data, the trip's state,
+  sharing and the read-only page as a guest, and then
   from the mailed link, a trip with stops added by tapping, routing, the line tools, undo
   and redo, the save, a reload and the downloads. Routing in that run answers from a mock
   where OSRM cannot be reached. Keeping it in CI would mean a browser and a PHP server in

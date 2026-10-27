@@ -4,8 +4,8 @@ Plans whole motorcycle trips, not single routes: days of routes drawn along the 
 stops on them or beside them, exported as GPX in the shape a device needs.
 
 Runs at <https://planner.codevoid.de>, by invitation. In development: planning a trip on
-the map with its times and exporting it works; GPX import, photos and receipts are on
-the way.
+the map with its times, GPX in and out, a journal with photos, and a page to print or
+share work; sharing between users is on the way.
 
 ![A day planned on the map](docs/screenshot.png)
 
@@ -35,6 +35,12 @@ the way.
 - **GPX export the way the device wants it** — the trip or a day, one file or one per
   day, routes as tracks or as points for the device to route, with or without the
   optional parts; the settings kept as named presets.
+- **A journal on everything** — notes, photos, receipts and documents on the trip, a
+  day, a stop or a route. Photos stand on the map where they were taken and land on the
+  day they were taken.
+- **Planned, then ridden** — mark a trip done; the library shows it.
+- **Print it, share it** — a read-only page with the map, every day's stops and times
+  and the journal, for printing, or shared under a link that needs no account.
 
 ## Getting started
 
@@ -46,6 +52,8 @@ the way.
 4. Open a stop's details for its arrival time and pause; the first stop's time starts
    the day's timeline.
 5. *Export GPX…* in the trip's panel: pick the scope and the form, download.
+6. After the ride, *Journal…* on the trip, a day, a stop or a route takes the notes and
+   photos; *Print, share…* opens the trip's page or shares it under a link.
 
 | Key or gesture | Does |
 |---|---|
