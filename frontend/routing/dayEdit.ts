@@ -145,8 +145,15 @@ export function updateStop(trip: Trip, dayId: string, stopId: string, change: Pa
   });
 }
 
+/** Adds a day at the end, dated the day after the last one where that has a date. */
 export function addDay(trip: Trip, id: string): Trip {
-  return { ...trip, days: [...trip.days, { id, name: '', departAt: null, notes: '', routes: [], stops: [] }] };
+  const last = trip.days.at(-1)?.date ?? null;
+  return { ...trip, days: [...trip.days, { id, name: '', date: last === null ? null : dayAfter(last), notes: '', routes: [], stops: [] }] };
+}
+
+/** The date after a date given as YYYY-MM-DD, in the same form. */
+function dayAfter(date: string): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
 }
 
 export function removeDay(trip: Trip, dayId: string): Trip {
@@ -157,7 +164,7 @@ export function renameDay(trip: Trip, dayId: string, name: string): Trip {
   return updateDay(trip, dayId, (day) => (day.name === name ? day : { ...day, name }));
 }
 
-/** Sets when the day's riding starts, as HH:MM, or takes the time away. */
-export function setDeparture(trip: Trip, dayId: string, departAt: string | null): Trip {
-  return updateDay(trip, dayId, (day) => (day.departAt === departAt ? day : { ...day, departAt }));
+/** Dates the day, as YYYY-MM-DD, or takes the date away. */
+export function setDayDate(trip: Trip, dayId: string, date: string | null): Trip {
+  return updateDay(trip, dayId, (day) => (day.date === date ? day : { ...day, date }));
 }

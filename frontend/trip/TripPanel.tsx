@@ -23,8 +23,7 @@ import {
   selectedDayId,
   selectedSequence,
   selectedTimeline,
-  setDeparture,
-  setStartsOn,
+  setDayDate,
   updateStop,
 } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
@@ -34,7 +33,7 @@ import { BackIcon, DeleteIcon, DownloadIcon, PencilIcon } from '../ui/icons';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, routeLabel } from './labels';
 
-/** The open trip: its name and start date, its days with their routes and stops, the export links and the saving state. */
+/** The open trip: its name, its days with their routes and stops, the export links and the saving state. */
 export function TripPanel(props: { onLeave: () => void; onReload: () => void }) {
   const trip = () => openTrip()!;
   return (
@@ -66,11 +65,6 @@ export function TripPanel(props: { onLeave: () => void; onReload: () => void }) 
           )}
         </Show>
       </div>
-      <div class="row">
-        <label class="field">
-          Starts on <input type="date" value={trip().startsOn ?? ''} onChange={(e) => setStartsOn(e.currentTarget.value || null)} />
-        </label>
-      </div>
       <div class="row heading">
         <h3 class="grow">Days</h3>
         <label class="toggle">
@@ -101,7 +95,7 @@ function SaveStatus(props: { onReload: () => void }) {
 
 function DayItem(props: { day: Day; index: number }) {
   const selected = () => selectedDayId() === props.day.id;
-  const label = () => dayLabel(props.day, props.index, openTrip()!.startsOn);
+  const label = () => dayLabel(props.day, props.index);
   const distance = createMemo(() => props.day.routes.reduce((sum, route) => sum + routeDistance(route), 0));
   const remove = async () => {
     const parts = props.day.routes.length + props.day.stops.length;
@@ -129,7 +123,7 @@ function DayItem(props: { day: Day; index: number }) {
   );
 }
 
-/** The selected day's departure and times, its routes, and its stops (and route points on request) in riding order. */
+/** The selected day's date and times, its routes, and its stops (and route points on request) in riding order. */
 function DayDetails(props: { day: Day }) {
   const listed = createMemo(() => new Map(selectedSequence().filter((e) => e.stop || showRoutePoints()).map((e) => [e.id, e])));
   const times = createMemo(() => new Map(selectedTimeline()?.stops.map((t) => [t.stop.id, t])));
@@ -137,11 +131,11 @@ function DayDetails(props: { day: Day }) {
     <div class="day-details">
       <div class="row">
         <label class="field">
-          Departure <input type="time" value={props.day.departAt ?? ''} onChange={(e) => setDeparture(props.day.id, e.currentTarget.value || null)} />
+          Date <input type="date" value={props.day.date ?? ''} onChange={(e) => setDayDate(props.day.id, e.currentTarget.value || null)} />
         </label>
       </div>
-      <Show when={props.day.routes.length > 0}>
-        <Show when={selectedTimeline()} fallback={<p class="day-summary muted">Set a departure for the day's times.</p>}>
+      <Show when={props.day.stops.length > 0}>
+        <Show when={selectedTimeline()} fallback={<p class="day-summary muted">Give the first stop a time for the day's times.</p>}>
           {(timeline) => <DaySummary timeline={timeline()} />}
         </Show>
       </Show>
@@ -171,7 +165,7 @@ function DayDetails(props: { day: Day }) {
   );
 }
 
-/** Departure to arrival, the riding time, the pauses, and how many stops are reached late. */
+/** Departure from the first timed stop to the arrival at the end, the riding time, the pauses, and how many stops are reached late. */
 function DaySummary(props: { timeline: DayTimeline }) {
   return (
     <p class="day-summary">

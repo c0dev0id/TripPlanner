@@ -23,7 +23,7 @@ the way.
 - **The day at a glance** — the panel lists a day's routes and its stops in riding order
   with the distance from the start; a click shows the stop on the map. The days before
   and after are drawn dimmed for orientation.
-- **Times that add up** — give the day a departure and a stop a fixed arrival time or a
+- **Times that add up** — give the first stop a time, others a fixed arrival time or a
   pause: the panel tells when you get where, where you wait, and where you are late.
 - **Saved as you go** — every change is saved to your account moments later.
 - **A library with folders** — trips sorted into folders, and a search across them.
@@ -37,7 +37,8 @@ the way.
 3. Tap the map for the route's points; the road between them is routed. Pick the *Stop*
    tool and tap a point to make it a stop, or tap beside the route for a free stop.
    *Done* ends editing.
-4. Set the day's departure; open a stop's details for its arrival time and pause.
+4. Open a stop's details for its arrival time and pause; the first stop's time starts
+   the day's timeline.
 5. Download *GPX of the trip*, *one file per day* or *this day* from the trip's panel.
 
 | Key or gesture | Does |

@@ -11,10 +11,9 @@ export function dateText(iso: string): string {
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-/** A date as YYYY-MM-DD, some days later, as weekday, day and month: "Sat 13 Jun". */
-export function shortDateText(iso: string, daysLater = 0): string {
+/** A date as YYYY-MM-DD as weekday, day and month: "Sat 13 Jun". */
+export function shortDateText(iso: string): string {
   const date = new Date(`${iso}T00:00:00`);
-  date.setDate(date.getDate() + daysLater);
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 

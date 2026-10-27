@@ -72,9 +72,9 @@ All under `/api`, for a signed-in user; answers are JSON unless a download.
 | Method and path | Does |
 |---|---|
 | `GET /me` | The user's e-mail address and admin flag. |
-| `GET /trips` | The user's trips, last changed first, with their folder and day count. |
+| `GET /trips` | The user's trips, last changed first, with their folder, day count and first dated day. |
 | `POST /trips` | Creates a trip from `{name, folderId}`; the folder may be null. |
-| `GET /trips/{id}` | The trip document: name, description, start date, version, days (with their departure time) with routes and stops. |
+| `GET /trips/{id}` | The trip document: name, description, version, days (each with its date) with routes and stops. |
 | `PUT /trips/{id}` | Replaces the trip's content with the document sent, which carries the version it was loaded at; 409 when that is no longer the current version, 422 when the document is malformed or names parts of another trip. |
 | `PATCH /trips/{id}` | Puts the trip into the folder of `{folderId}`, or into none for null. |
 | `DELETE /trips/{id}` | Deletes the trip with everything in it. |
@@ -137,7 +137,6 @@ erDiagram
     int id PK
     string name
     string description
-    date starts_on
     int version
     datetime updated_at
   }
@@ -145,7 +144,7 @@ erDiagram
     string id PK
     int position
     string name
-    time depart_at
+    date date
     string notes
   }
   ROUTE {

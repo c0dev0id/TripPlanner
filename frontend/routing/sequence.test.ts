@@ -38,7 +38,7 @@ const route: Route = {
   },
 };
 
-const day = (stops: Stop[], routes: Route[] = [route]): Day => ({ id: 'd', name: '', departAt: null, notes: '', routes, stops });
+const day = (stops: Stop[], routes: Route[] = [route]): Day => ({ id: 'd', name: '', date: null, notes: '', routes, stops });
 
 describe('daySequence', () => {
   it('places a free stop at the leg and the spot where the route passes closest', () => {

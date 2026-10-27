@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Trip } from '../model/trip';
 import { addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRouteId, loadTrip, markSaved, openTrip, redo, selectDay, undo, undoLabel, updateStop } from './trip';
 
-const empty = (): Trip => ({ id: 1, name: 'T', description: '', startsOn: null, version: 1, days: [] });
+const empty = (): Trip => ({ id: 1, name: 'T', description: '', version: 1, days: [] });
 
 /** The open trip as the autosave sends it. */
 const sent = (): Trip => JSON.parse(JSON.stringify(unwrap(openTrip())));

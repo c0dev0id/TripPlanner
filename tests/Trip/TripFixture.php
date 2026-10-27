@@ -15,12 +15,11 @@ final class TripFixture
         return [
             'name' => 'Alps',
             'description' => 'A weekend.',
-            'startsOn' => '2027-06-12',
             'days' => [
                 [
                     'id' => 'day1',
                     'name' => 'South',
-                    'departAt' => null,
+                    'date' => '2027-06-12',
                     'notes' => '',
                     'routes' => [self::route('r1', [[11.5, 48.1], [11.45, 47.8], [11.4, 47.3]])],
                     'stops' => [
@@ -67,6 +66,6 @@ final class TripFixture
 
     public static function day(string $id, array $routes = [], array $stops = []): array
     {
-        return ['id' => $id, 'name' => '', 'departAt' => null, 'notes' => '', 'routes' => $routes, 'stops' => $stops];
+        return ['id' => $id, 'name' => '', 'date' => null, 'notes' => '', 'routes' => $routes, 'stops' => $stops];
     }
 }

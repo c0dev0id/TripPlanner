@@ -15,11 +15,12 @@ final class Trips
     {
     }
 
-    /** @return TripSummary[] the user's trips, last changed first */
+    /** @return TripSummary[] the user's trips, last changed first, each starting on its first dated day */
     public function listFor(int $userId): array
     {
         $statement = $this->db->prepare(
-            'SELECT t.id, t.name, t.folder_id, t.starts_on, t.updated_at,
+            'SELECT t.id, t.name, t.folder_id, t.updated_at,
+                    (SELECT MIN(d.date) FROM days d WHERE d.trip_id = t.id) AS starts_on,
                     (SELECT COUNT(*) FROM days d WHERE d.trip_id = t.id) AS day_count
              FROM trips t WHERE t.user_id = ? ORDER BY t.updated_at DESC, t.id DESC',
         );

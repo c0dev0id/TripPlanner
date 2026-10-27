@@ -6,7 +6,7 @@ export function routeLabel(route: Route, day: Day): string {
   return route.name || `Route ${day.routes.findIndex((r) => r.id === route.id) + 1}`;
 }
 
-/** A day's number, its date where the trip has a start date, and its name. */
-export function dayLabel(day: Day, index: number, startsOn: string | null): string {
-  return [`Day ${index + 1}`, startsOn && shortDateText(startsOn, index), day.name].filter(Boolean).join(' · ');
+/** A day's number, its date where it has one, and its name. */
+export function dayLabel(day: Day, index: number): string {
+  return [`Day ${index + 1}`, day.date && shortDateText(day.date), day.name].filter(Boolean).join(' · ');
 }

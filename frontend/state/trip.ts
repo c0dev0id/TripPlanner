@@ -51,13 +51,8 @@ export const selectedSequence: () => SequenceEntry[] = createRoot(() =>
   }),
 );
 
-/** The selected day's times, where it has a departure. */
-export const selectedTimeline: () => DayTimeline | undefined = createRoot(() =>
-  createMemo(() => {
-    const day = selectedDay();
-    return day ? dayTimeline(day, selectedSequence()) : undefined;
-  }),
-);
+/** The selected day's times, from its first stop with a time on. */
+export const selectedTimeline: () => DayTimeline | undefined = createRoot(() => createMemo(() => dayTimeline(selectedSequence())));
 
 /** Starts editing a route of the selected day, or ends editing for undefined. */
 export function editRoute(id: string | undefined): void {
@@ -278,16 +273,11 @@ export function renameDay(dayId: string, name: string): void {
   edit((trip) => dayEdit.renameDay(trip, dayId, name), 'Rename day');
 }
 
-/** Sets when the day's riding starts, as HH:MM, or takes the time away. */
-export function setDeparture(dayId: string, departAt: string | null): void {
-  edit((trip) => dayEdit.setDeparture(trip, dayId, departAt), 'Set departure');
+/** Dates the day, as YYYY-MM-DD, or takes the date away. */
+export function setDayDate(dayId: string, date: string | null): void {
+  edit((trip) => dayEdit.setDayDate(trip, dayId, date), 'Set date');
 }
 
 export function renameTrip(name: string): void {
   edit((trip) => (trip.name === name ? trip : { ...trip, name }), 'Rename trip');
-}
-
-/** Sets the date of the first day, as YYYY-MM-DD, or takes it away. */
-export function setStartsOn(startsOn: string | null): void {
-  edit((trip) => (trip.startsOn === startsOn ? trip : { ...trip, startsOn }), 'Set start date');
 }

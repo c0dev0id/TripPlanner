@@ -22,15 +22,15 @@ final class TripDocuments
     /** The user's trip with everything in it, or null when there is no such trip. */
     public function load(int $userId, int $tripId): ?array
     {
-        $statement = $this->db->prepare('SELECT id, name, description, starts_on, version FROM trips WHERE id = ? AND user_id = ?');
+        $statement = $this->db->prepare('SELECT id, name, description, version FROM trips WHERE id = ? AND user_id = ?');
         $statement->execute([$tripId, $userId]);
         $trip = $statement->fetch();
         if ($trip === false) {
             return null;
         }
         $days = [];
-        foreach ($this->rows('SELECT id, name, depart_at, notes FROM days WHERE trip_id = ? ORDER BY position', $tripId) as $day) {
-            $days[$day['id']] = ['id' => $day['id'], 'name' => $day['name'], 'departAt' => $day['depart_at'], 'notes' => $day['notes'], 'routes' => [], 'stops' => []];
+        foreach ($this->rows('SELECT id, name, date, notes FROM days WHERE trip_id = ? ORDER BY position', $tripId) as $day) {
+            $days[$day['id']] = ['id' => $day['id'], 'name' => $day['name'], 'date' => $day['date'], 'notes' => $day['notes'], 'routes' => [], 'stops' => []];
         }
         $routes = 'SELECT id, day_id, name, kind, profile, optional, points, legs FROM routes WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
         foreach ($this->rows($routes, $tripId) as $route) {
@@ -66,7 +66,6 @@ final class TripDocuments
             'id' => (int) $trip['id'],
             'name' => $trip['name'],
             'description' => $trip['description'],
-            'startsOn' => $trip['starts_on'],
             'version' => (int) $trip['version'],
             'days' => array_values($days),
         ];
@@ -93,8 +92,8 @@ final class TripDocuments
             }
             $this->assertIdsNotElsewhere($tripId, $document['days']);
             $this->saveDays($tripId, $document['days']);
-            $this->db->prepare('UPDATE trips SET name = ?, description = ?, starts_on = ?, version = ?, updated_at = ? WHERE id = ?')
-                ->execute([$document['name'], $document['description'], $document['startsOn'], $version + 1, Timestamp::of($now), $tripId]);
+            $this->db->prepare('UPDATE trips SET name = ?, description = ?, version = ?, updated_at = ? WHERE id = ?')
+                ->execute([$document['name'], $document['description'], $version + 1, Timestamp::of($now), $tripId]);
             $this->db->commit();
         } catch (\Throwable $error) {
             if ($this->db->inTransaction()) {
@@ -142,8 +141,8 @@ final class TripDocuments
     private function saveDays(int $tripId, array $days): void
     {
         $upsertDay = $this->db->prepare(
-            'INSERT INTO days (id, trip_id, position, name, depart_at, notes) VALUES (?, ?, ?, ?, ?, ?)
-             ON CONFLICT(id) DO UPDATE SET position = excluded.position, name = excluded.name, depart_at = excluded.depart_at, notes = excluded.notes',
+            'INSERT INTO days (id, trip_id, position, name, date, notes) VALUES (?, ?, ?, ?, ?, ?)
+             ON CONFLICT(id) DO UPDATE SET position = excluded.position, name = excluded.name, date = excluded.date, notes = excluded.notes',
         );
         $upsertRoute = $this->db->prepare(
             'INSERT INTO routes (id, day_id, position, name, kind, profile, optional, points, legs) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -163,7 +162,7 @@ final class TripDocuments
         $this->deleteMissing('stops', 'day_id IN (SELECT id FROM days WHERE trip_id = ?)', $tripId, $stopIds);
         $this->deleteMissing('days', 'trip_id = ?', $tripId, array_column($days, 'id'));
         foreach ($days as $position => $day) {
-            $upsertDay->execute([$day['id'], $tripId, $position, $day['name'], $day['departAt'], $day['notes']]);
+            $upsertDay->execute([$day['id'], $tripId, $position, $day['name'], $day['date'], $day['notes']]);
             foreach ($day['routes'] as $index => $route) {
                 $upsertRoute->execute([$route['id'], $day['id'], $index, $route['name'], $route['kind'], $route['profile'], (int) $route['optional'], Json::encode($route['points']), Json::encode((object) $route['legs'])]);
             }

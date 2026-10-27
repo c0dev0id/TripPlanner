@@ -52,7 +52,6 @@ CREATE TABLE IF NOT EXISTS trips (
     folder_id INTEGER REFERENCES folders(id) ON DELETE SET NULL,
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
-    starts_on TEXT,
     version INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -63,7 +62,7 @@ CREATE TABLE IF NOT EXISTS days (
     trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
     position INTEGER NOT NULL,
     name TEXT NOT NULL,
-    depart_at TEXT,
+    date TEXT,
     notes TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS days_trip ON days(trip_id, position);

@@ -18,7 +18,7 @@ final class TripDocumentValidatorTest extends TestCase
         unset($document['days'][0]['routes'][0]['optional'], $document['days'][0]['stops'][0]['notes']);
         $valid = TripDocumentValidator::validated($document);
         self::assertSame('Alps', $valid['name']);
-        self::assertSame('2027-06-12', $valid['startsOn']);
+        self::assertSame('2027-06-12', $valid['days'][0]['date']);
         self::assertFalse($valid['days'][0]['routes'][0]['optional']);
         self::assertSame('', $valid['days'][0]['stops'][0]['notes']);
         self::assertSame('r1-0', $valid['days'][0]['stops'][0]['pointId']);
@@ -59,7 +59,7 @@ final class TripDocumentValidatorTest extends TestCase
     {
         yield 'no name' => [fn (array &$d) => $d['name'] = '  ', 'document.name'];
         yield 'name too long' => [fn (array &$d) => $d['name'] = str_repeat('x', 201), 'document.name'];
-        yield 'bad date' => [fn (array &$d) => $d['startsOn'] = '2027-02-30', 'document.startsOn'];
+        yield 'bad date' => [fn (array &$d) => $d['days'][0]['date'] = '2027-02-30', 'days[0].date'];
         yield 'unknown stop kind' => [fn (array &$d) => $d['days'][0]['stops'][0]['kind'] = 'castle', 'stops[0].kind'];
         yield 'position outside the world' => [fn (array &$d) => $d['days'][0]['stops'][2]['lngLat'] = [200, 0], 'stops[2].lngLat'];
         yield 'duplicate stop id' => [fn (array &$d) => $d['days'][0]['stops'][1]['id'] = 's1', 'stops holds the same id twice'];
@@ -70,7 +70,6 @@ final class TripDocumentValidatorTest extends TestCase
         yield 'stop bound to an unknown point' => [fn (array &$d) => $d['days'][0]['stops'][0]['pointId'] = 'nowhere', 'names no route point'];
         yield 'bound stop away from its point' => [fn (array &$d) => $d['days'][0]['stops'][0]['lngLat'] = [11.5, 48.11], 'must stand at its route point'];
         yield 'bad arrival time' => [fn (array &$d) => $d['days'][0]['stops'][0]['arriveAt'] = '25:00', 'arriveAt'];
-        yield 'bad departure time' => [fn (array &$d) => $d['days'][0]['departAt'] = '9:00', 'days[0].departAt'];
         yield 'negative pause' => [fn (array &$d) => $d['days'][0]['stops'][0]['pauseMinutes'] = -5, 'pauseMinutes'];
         yield 'unknown profile' => [fn (array &$d) => $d['days'][0]['routes'][0]['profile'] = 'horse', 'profile must be one of'];
         yield 'legs as a list' => [fn (array &$d) => $d['days'][0]['routes'][0]['legs'] = ['abc'], 'legs must be an object'];

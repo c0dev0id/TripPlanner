@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Day, Stop } from '../model/trip';
+import type { Stop } from '../model/trip';
 import type { SequenceEntry } from './sequence';
 import { dayTimeline, minutesOfDay } from './timeline';
 
@@ -20,38 +20,38 @@ const stop = (id: string, arriveAt: string | null = null, pauseMinutes: number |
 
 const entry = (timeS: number, s?: Stop): SequenceEntry => ({ id: s?.id ?? `p${timeS}`, routeIndex: 0, distanceM: timeS * 15, timeS, lngLat: [0, 0], ...(s && { stop: s }) });
 
-const day = (departAt: string | null): Day => ({ id: 'd', name: '', departAt, notes: '', routes: [], stops: [] });
-
 describe('dayTimeline', () => {
-  it('is none without a departure', () => {
-    expect(dayTimeline(day(null), [entry(0)])).toBeUndefined();
+  it('is none while no stop has a time', () => {
+    expect(dayTimeline([entry(0, stop('home')), entry(3600)])).toBeUndefined();
   });
 
-  it('adds riding times and pauses up to the end of the day', () => {
+  it('starts at the first stop with a time and adds riding times and pauses to the end', () => {
+    const home = stop('home', '08:30', 30);
     const lunch = stop('lunch', null, 60);
-    const sequence = [entry(0), entry(5400, lunch), entry(9000)];
-    const timeline = dayTimeline(day('09:00'), sequence)!;
-    expect(timeline.stops).toHaveLength(1);
-    expect(timeline.stops[0]).toMatchObject({ etaMin: 630, arrivalMin: 630, departureMin: 690 });
-    expect(timeline.stops[0]!.slackMin).toBeUndefined();
-    expect(timeline).toMatchObject({ departMin: 540, endMin: 750, ridingS: 9000, pauseMin: 60, late: 0 });
+    const timeline = dayTimeline([entry(0, home), entry(5400, lunch), entry(9000)])!;
+    expect(timeline.stops.map((t) => [t.stop.id, t.arrivalMin, t.departureMin, t.slackMin])).toEqual([
+      ['home', 510, 540, undefined],
+      ['lunch', 630, 690, undefined],
+    ]);
+    expect(timeline).toMatchObject({ departMin: 540, endMin: 750, ridingS: 9000, pauseMin: 90, late: 0 });
   });
 
   it('waits for a fixed arrival time and counts a missed one as late', () => {
+    const home = stop('home', '09:00');
     const coffee = stop('coffee', '10:00', 15);
     const hotel = stop('hotel', '12:00');
-    const sequence = [entry(0), entry(1800, coffee), entry(9000, hotel)];
-    const timeline = dayTimeline(day('09:00'), sequence)!;
+    const timeline = dayTimeline([entry(0, home), entry(1800, coffee), entry(9000, hotel)])!;
     // Half an hour of riding, there at 09:30, waits until 10:00, leaves at 10:15.
-    expect(timeline.stops[0]).toMatchObject({ etaMin: 570, arrivalMin: 600, departureMin: 615, slackMin: 30 });
+    expect(timeline.stops[1]).toMatchObject({ arrivalMin: 600, departureMin: 615, slackMin: 30 });
     // Two more hours of riding: 12:15, a quarter of an hour late; the hotel ends the day.
-    expect(timeline.stops[1]).toMatchObject({ etaMin: 735, arrivalMin: 735, departureMin: 735, slackMin: -15 });
-    expect(timeline).toMatchObject({ endMin: 735, late: 1, pauseMin: 15 });
+    expect(timeline.stops[2]).toMatchObject({ arrivalMin: 735, departureMin: 735, slackMin: -15 });
+    expect(timeline).toMatchObject({ departMin: 540, endMin: 735, late: 1, pauseMin: 15 });
   });
 
-  it('ends at the departure when the day has no route', () => {
-    const timeline = dayTimeline(day('08:30'), [])!;
-    expect(timeline).toMatchObject({ departMin: 510, endMin: 510, ridingS: 0, stops: [] });
+  it('leaves the stops before the first timed one without times', () => {
+    const timeline = dayTimeline([entry(0, stop('home')), entry(1800, stop('cafe', '10:00')), entry(5400)])!;
+    expect(timeline.stops.map((t) => t.stop.id)).toEqual(['cafe']);
+    expect(timeline).toMatchObject({ departMin: 600, endMin: 660 });
   });
 });
 

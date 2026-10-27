@@ -25,10 +25,11 @@
   the route passes closest. The plain route points are listed on request; a click pans
   the map to the entry. The days before and after the selected one are drawn dimmed on
   the map, switchable.
-- A start date for the trip; the days are dated from it. A departure time per day;
-  a stop can have a fixed arrival time and a pause. From the routed legs' durations the
-  panel computes the day's timeline: arrival and departure at each stop, waiting where
-  the rider is early for a fixed time, a late mark where not, and the day's summary of
+- A date per day; a new day after a dated one is dated the day after, and the library
+  shows a trip as starting on its first dated day. A stop can have a fixed arrival time
+  and a pause. From the first timed stop and the routed legs' durations the panel
+  computes the day's timeline: arrival and departure at each stop, waiting where the
+  rider is early for a fixed time, a late mark where not, and the day's summary of
   departure, arrival at the end, riding time, pauses and late stops. Straight legs and
   legs not routed yet count at 50 km/h.
 - Every change saved to the server a moment later, as one document with a version; a

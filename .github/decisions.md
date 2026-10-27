@@ -93,20 +93,23 @@ entries at the end of their section.
 
 ## Time
 
-- **The departure belongs to the day; the arrival time to the stop.** A day's timeline
-  starts at its departure and runs through its stops in riding order. A stop's arrival
-  time is a fixed one: a reservation, an opening hour, a check-in. The rider who gets
-  there early waits for it; one who gets there late has a conflict, shown on the stop and
-  counted on the day. A pause counts from the arrival the plan uses. Without a departure
-  a day has no times, only distances.
+- **Times live on stops; the day has a date.** A day's timeline starts at the first stop
+  in riding order that has a time: that time plus the stop's pause is the departure. A
+  first draft gave the day a departure time of its own; a day may hold route options
+  with different starts (a longer breakfast on one of them), so the day cannot know it,
+  and two places for the same time disagree. A stop's time is a fixed arrival: a
+  reservation, an opening hour, a check-in. The rider who gets there early waits for it;
+  one who gets there late has a conflict, shown on the stop and counted on the day. A
+  pause counts from the arrival the plan uses. Stops before the first timed one have no
+  times, and a day without a timed stop has distances only.
 - **Untimed legs ride at 50 km/h.** OSRM gives every routed leg its duration. A straight
   leg (by choice) or one not routed yet has none; the timeline counts it at 50 km/h over
   its crow-flies length rather than stopping there, so that a day with one such leg
   still has times. The pace is a guess and may become a setting.
-- **Days follow the trip's start date.** A trip has a start date and its days are
-  consecutive, so a day's date is its position after the start; a rest day is a day
-  without routes. The per-day date the first model carried could contradict that and
-  nothing set it.
+- **The trip starts on its first dated day.** A day has a date; the library shows a trip
+  as starting on the earliest of them. A new day after a dated one is dated the day
+  after, so a consecutive trip needs one date typed. A trip-level start date was tried
+  and dropped: it was a second source for the same fact.
 
 ## Export
 

@@ -30,7 +30,6 @@ final class TripDocumentValidator
         return [
             'name' => Name::of($body['name'] ?? null) ?? throw new InvalidDocument('document.name must be text of up to 200 characters, not empty.'),
             'description' => self::text($body, 'description', 'document'),
-            'startsOn' => self::date($body, 'startsOn', 'document'),
             'days' => $days,
         ];
     }
@@ -61,7 +60,7 @@ final class TripDocumentValidator
         return [
             'id' => self::id($day, $at),
             'name' => self::text($day, 'name', $at, 200),
-            'departAt' => self::time($day, 'departAt', $at),
+            'date' => self::date($day, 'date', $at),
             'notes' => self::text($day, 'notes', $at),
             'routes' => $routes,
             'stops' => $stops,

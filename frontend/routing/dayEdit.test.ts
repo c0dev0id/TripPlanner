@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, RoutedLeg, Trip } from '../model/trip';
-import { addFreeStop, addRoute, alignStops, connectStop, convertPoint, disconnectStop, insertStop, moveStop, removeRoute, removeStop, setRouteProfile, updateRoute, updateStop } from './dayEdit';
+import { addDay, addFreeStop, addRoute, alignStops, connectStop, convertPoint, disconnectStop, insertStop, moveStop, removeRoute, removeStop, setDayDate, setRouteProfile, updateRoute, updateStop } from './dayEdit';
 import { routeLegs } from './legs';
 import * as routeEdit from './routeEdit';
 
 const routed = (geometry: string): RoutedLeg => ({ geometry, distanceM: 1000, durationS: 60 });
 
-const empty = (): Trip => ({ id: 1, name: 'T', description: '', startsOn: null, version: 1, days: [{ id: 'd', name: '', departAt: null, notes: '', routes: [], stops: [] }] });
+const empty = (): Trip => ({ id: 1, name: 'T', description: '', version: 1, days: [{ id: 'd', name: '', date: null, notes: '', routes: [], stops: [] }] });
 
 const day = (trip: Trip): Day => trip.days[0]!;
 
@@ -123,5 +123,14 @@ describe('stops', () => {
     expect(alignStops(aligned)).toBe(aligned);
     const moved = { ...aligned, stops: aligned.stops.map((s) => (s.id === 's1' ? { ...s, lngLat: [9, 9] as [number, number] } : s)) };
     expect(alignStops(moved).stops[0]!.lngLat).toEqual([2, 2]);
+  });
+});
+
+describe('days', () => {
+  it('dates a new day after the last dated one', () => {
+    expect(addDay(empty(), 'e').days[1]!.date).toBeNull();
+    const dated = setDayDate(empty(), 'd', '2027-12-31');
+    expect(addDay(dated, 'e').days[1]!.date).toBe('2028-01-01');
+    expect(setDayDate(dated, 'd', '2027-12-31')).toBe(dated);
   });
 });
