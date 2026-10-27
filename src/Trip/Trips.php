@@ -19,10 +19,9 @@ final class Trips
     public function listFor(int $userId): array
     {
         $statement = $this->db->prepare(
-            'SELECT t.id, t.name, t.folder_id, t.updated_at,
-                    (SELECT MIN(d.date) FROM days d WHERE d.trip_id = t.id) AS starts_on,
-                    (SELECT COUNT(*) FROM days d WHERE d.trip_id = t.id) AS day_count
-             FROM trips t WHERE t.user_id = ? ORDER BY t.updated_at DESC, t.id DESC',
+            'SELECT t.id, t.name, t.folder_id, t.updated_at, MIN(d.date) AS starts_on, COUNT(d.id) AS day_count
+             FROM trips t LEFT JOIN days d ON d.trip_id = t.id
+             WHERE t.user_id = ? GROUP BY t.id ORDER BY t.updated_at DESC, t.id DESC',
         );
         $statement->execute([$userId]);
         return array_map($this->summary(...), $statement->fetchAll());

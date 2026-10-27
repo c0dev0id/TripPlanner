@@ -4,7 +4,7 @@ import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
 import { PROFILES, type Day, type Route } from '../model/trip';
 import { routeDistance } from '../routing/legs';
 import type { SequenceEntry } from '../routing/sequence';
-import type { DayTimeline, StopTime } from '../routing/timeline';
+import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { saveState } from '../state/autosave';
 import { panTo, setShowNeighbours, setShowRoutePoints, setStopDialogId, showNeighbours, showRoutePoints } from '../state/drawing';
 import {
@@ -126,7 +126,6 @@ function DayItem(props: { day: Day; index: number }) {
 /** The selected day's date and times, its routes, and its stops (and route points on request) in riding order. */
 function DayDetails(props: { day: Day }) {
   const listed = createMemo(() => new Map(selectedSequence().filter((e) => e.stop || showRoutePoints()).map((e) => [e.id, e])));
-  const times = createMemo(() => new Map(selectedTimeline()?.stops.map((t) => [t.stop.id, t])));
   return (
     <div class="day-details">
       <div class="row">
@@ -156,7 +155,7 @@ function DayDetails(props: { day: Day }) {
         </label>
       </div>
       <ol class="stops">
-        <For each={[...listed().keys()]}>{(id) => <SequenceItem entry={listed().get(id)!} time={times().get(id)} />}</For>
+        <For each={[...listed().keys()]}>{(id) => <SequenceItem entry={listed().get(id)!} time={selectedTimeline()?.times.get(id)} />}</For>
       </ol>
       <Show when={listed().size === 0 && props.day.routes.length > 0}>
         <p class="muted hint">Make stops of route points, or tap beside the route with the stop tool.</p>
@@ -203,22 +202,16 @@ function RouteItem(props: { route: Route; day: Day }) {
   );
 }
 
-/** A stop's planned arrival and departure, where the day has times. */
-function stopTimesText(time: StopTime): string {
+/** The planned arrival, and the departure where a pause separates them. */
+function timesText(time: EntryTime): string {
   const arrival = timeText(time.arrivalMin);
   return time.departureMin > time.arrivalMin ? `${arrival} – ${timeText(time.departureMin)}` : arrival;
 }
 
-/** What the plan does about the stop's fixed arrival time: waits for it, or misses it; nothing when it fits or there is none. */
-function slackText(time: StopTime): { text: string; missed: boolean } | undefined {
-  const slack = Math.round(time.slackMin ?? 0);
-  if (slack === 0) return undefined;
-  return slack > 0 ? { text: `waits ${durationText(slack * 60)}`, missed: false } : { text: `misses ${time.stop.arriveAt} by ${durationText(-slack * 60)}`, missed: true };
-}
-
-/** A stop with its times and distance from the day's start, or a plain route point; a click pans the map there. */
-function SequenceItem(props: { entry: SequenceEntry; time: StopTime | undefined }) {
+/** A stop or a plain route point with its times and distance from the day's start; a click pans the map there. */
+function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined }) {
   const stop = () => props.entry.stop;
+  const slack = () => props.time?.slackMin ?? 0;
   return (
     <li class="row sequence-item" classList={{ point: !stop() }}>
       <button class="text grow" onClick={() => panTo(props.entry.lngLat)} title={stop()?.pointId === null ? `Beside the route, ${distanceText(props.entry.near?.distanceM ?? 0)} from it; show on the map` : 'Show on the map'}>
@@ -232,9 +225,14 @@ function SequenceItem(props: { entry: SequenceEntry; time: StopTime | undefined 
             </Show>
           </span>
           <span class="muted detail">
-            <Show when={props.time}>{(time) => <>{stopTimesText(time())} · </>}</Show>
+            <Show when={props.time}>{(time) => <>{timesText(time())} · </>}</Show>
             {distanceText(props.entry.distanceM)}
-            <Show when={props.time && slackText(props.time)}>{(slack) => <span classList={{ missed: slack().missed }}> · {slack().text}</span>}</Show>
+            <Show when={slack() > 0}> · waits {durationText(slack() * 60)}</Show>
+            <Show when={slack() < 0}>
+              <span class="missed">
+                {' · '}misses {stop()?.arriveAt} by {durationText(-slack() * 60)}
+              </span>
+            </Show>
           </span>
         </span>
       </button>

@@ -1,24 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, LngLat, Route, RoutedLeg, Stop } from '../model/trip';
+import { newStop } from './dayEdit';
 import { daySequence } from './sequence';
 
 const decode = (geometry: string): LngLat[] => JSON.parse(geometry);
 const leg = (geometry: LngLat[], distanceM: number): RoutedLeg => ({ geometry: JSON.stringify(geometry), distanceM, durationS: 1 });
 
-const stop = (id: string, lngLat: LngLat, pointId: string | null): Stop => ({
-  id,
-  name: id,
-  kind: 'other',
-  lngLat,
-  pointId,
-  address: '',
-  contact: '',
-  bookingReference: '',
-  notes: '',
-  arriveAt: null,
-  pauseMinutes: null,
-  optional: false,
-});
+const stop = (id: string, lngLat: LngLat, pointId: string | null): Stop => newStop(id, id, lngLat, pointId);
 
 /** A route north along 11°E from 47° to 47.2°, in two legs of 11 km each (the second bends east). */
 const route: Route = {

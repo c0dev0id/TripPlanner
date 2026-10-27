@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { distanceText, durationText, timeText } from './format';
+import { dateText, distanceText, durationText, shortDateText, timeText } from './format';
 
 describe('distanceText', () => {
   it('scales the unit and precision with the distance', () => {
@@ -26,5 +26,14 @@ describe('durationText', () => {
     expect(durationText(45 * 60 + 20)).toBe('45 min');
     expect(durationText(3600)).toBe('1 h');
     expect(durationText(3 * 3600 + 40 * 60)).toBe('3 h 40 min');
+  });
+});
+
+describe('dateText', () => {
+  it('names the day, with the year only in the long form, and leaves what is no date alone', () => {
+    expect(dateText('2027-06-12')).toContain('2027');
+    expect(shortDateText('2027-06-12')).toContain('12');
+    expect(shortDateText('2027-06-12')).not.toContain('2027');
+    expect(shortDateText('soon')).toBe('soon');
   });
 });

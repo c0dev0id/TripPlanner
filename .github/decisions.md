@@ -105,9 +105,9 @@ entries at the end of their section.
   All of this is planned time: nothing is compared with the clock, and matching the plan
   against the ride as it happens is a navigation system's job, not this tool's.
 - **Untimed legs ride at 50 km/h.** OSRM gives every routed leg its duration. A straight
-  leg (by choice) or one not routed yet has none; the timeline counts it at 50 km/h over
-  its crow-flies length rather than stopping there, so that a day with one such leg
-  still has times. The pace is a guess and may become a setting.
+  leg (by choice) or one not routed yet has none; its riding time counts at 50 km/h over
+  its crow-flies length rather than being unknown, so that a day with one such leg still
+  has times. The pace is a guess and may become a setting.
 - **The trip starts on its first dated day.** A day has a date; the library shows a trip
   as starting on the earliest of them. A new day after a dated one is dated the day
   after, so a consecutive trip needs one date typed. A trip-level start date was tried

@@ -7,7 +7,8 @@ import * as routeEdit from './routeEdit';
  * routes the stops are aligned, and a stop whose point is gone becomes free where it was.
  */
 
-function newStop(id: string, name: string, lngLat: LngLat, pointId: string | null): Stop {
+/** A stop with nothing said about it yet. */
+export function newStop(id: string, name: string, lngLat: LngLat, pointId: string | null): Stop {
   return { id, name, kind: 'other', lngLat, pointId, address: '', contact: '', bookingReference: '', notes: '', arriveAt: null, pauseMinutes: null, optional: false };
 }
 
@@ -151,7 +152,7 @@ export function addDay(trip: Trip, id: string): Trip {
   return { ...trip, days: [...trip.days, { id, name: '', date: last === null ? null : dayAfter(last), notes: '', routes: [], stops: [] }] };
 }
 
-/** The date after a date given as YYYY-MM-DD, in the same form. */
+/** The date after a date given as YYYY-MM-DD, in the same form; counted in UTC, where no daylight-saving step can shorten a day. */
 function dayAfter(date: string): string {
   return new Date(Date.parse(`${date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
 }

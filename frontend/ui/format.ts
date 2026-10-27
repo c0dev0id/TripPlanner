@@ -5,17 +5,20 @@ export function distanceText(metres: number): string {
   return km < 100 ? `${km.toFixed(1)} km` : `${Math.round(km)} km`;
 }
 
-/** A date as YYYY-MM-DD in the browser's language, or the text itself where it is no date. */
-export function dateText(iso: string): string {
+const LONG_DATE = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const SHORT_DATE = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+
+/** A date as YYYY-MM-DD, read as the browser's local midnight; the text itself where it is no date. */
+function formatDate(iso: string, format: Intl.DateTimeFormat): string {
   const date = new Date(`${iso}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  return Number.isNaN(date.getTime()) ? iso : format.format(date);
 }
 
-/** A date as YYYY-MM-DD as weekday, day and month: "Sat 13 Jun". */
-export function shortDateText(iso: string): string {
-  const date = new Date(`${iso}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
-}
+/** A date in the browser's language with its year: "Sat, 13 Jun 2027". */
+export const dateText = (iso: string): string => formatDate(iso, LONG_DATE);
+
+/** A date in the browser's language as weekday, day and month: "Sat, 13 Jun". */
+export const shortDateText = (iso: string): string => formatDate(iso, SHORT_DATE);
 
 /** Minutes since midnight as HH:MM; past midnight with the days after it, as "+1". */
 export function timeText(minutes: number): string {

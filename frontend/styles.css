@@ -306,7 +306,7 @@ a {
   color: var(--error);
 }
 
-/* A short labelled input in a row: the trip's start date, a day's departure. */
+/* A short labelled input in a row: the day's date. */
 .field {
   display: flex;
   align-items: center;

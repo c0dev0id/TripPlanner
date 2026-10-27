@@ -67,15 +67,10 @@ export function routeDistance(route: RoutePath & Pick<Route, 'legs'>): number {
 /** The pace assumed for a leg the routing has not timed: a straight one, or one not routed yet. */
 const ASSUMED_SPEED_MPS = 50 / 3.6;
 
-/** The riding time of a leg in seconds: as routed, or at the assumed pace over its length. */
+/** The riding time of a leg in seconds: as routed, or at the assumed pace as the crow flies. */
 export function legDuration(route: Pick<Route, 'legs'>, leg: Leg): number {
   const routed = leg.straight ? undefined : route.legs[leg.key];
-  return routed ? routed.durationS : legDistance(route, leg) / ASSUMED_SPEED_MPS;
-}
-
-/** The riding time of a route in seconds. */
-export function routeDuration(route: RoutePath & Pick<Route, 'legs'>): number {
-  return routeLegs(route).reduce((sum, leg) => sum + legDuration(route, leg), 0);
+  return routed ? routed.durationS : distanceBetween(leg.from, leg.to) / ASSUMED_SPEED_MPS;
 }
 
 /** The routed legs the route still needs; everything else, straight legs included, is dropped. */
