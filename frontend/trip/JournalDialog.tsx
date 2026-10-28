@@ -1,7 +1,7 @@
 import { createSignal, For, Show } from 'solid-js';
 import { tripApi } from '../api';
 import { onTarget, type Entry, type EntryTarget } from '../model/journal';
-import { addEntry, editEntry, entriesOn, journalTarget, removeEntry, setJournalTarget } from '../state/journal';
+import { addEntry, closeJournal, editEntry, entriesOn, journalSpot, journalTarget, removeEntry } from '../state/journal';
 import { openTrip, routeById } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
 import { field } from '../ui/form';
@@ -46,14 +46,14 @@ export function JournalDialog() {
     setPlaced(undefined);
     void run(async () => {
       const target = journalTarget()!;
-      const entry = await addEntry(target, text, chosen && (await prepareUpload(chosen)));
+      const entry = await addEntry(target, text, chosen && (await prepareUpload(chosen)), journalSpot());
       form.reset();
       if (!onTarget(entry, target) && entry.dayId) setPlaced(`${entry.file!.name} was placed on ${targetLabel({ dayId: entry.dayId })} by the time it was taken.`);
     });
   };
   const close = () => {
     setPlaced(undefined);
-    setJournalTarget(undefined);
+    closeJournal();
   };
   return (
     <dialog ref={dialog} class="dialog journal-dialog" aria-label="Journal" onClose={close}>
@@ -81,6 +81,9 @@ export function JournalDialog() {
                 File or photo
                 <input type="file" name="file" />
               </label>
+              <Show when={journalSpot()}>
+                <p class="muted hint">A new entry stands where you pressed the map; a photo that knows where it was taken stands there instead.</p>
+              </Show>
               <Show when={error()}>{(message) => <p class="error">{message()}</p>}</Show>
               <Show when={placed()}>{(note) => <p class="muted hint">{note()}</p>}</Show>
               <div class="row end">

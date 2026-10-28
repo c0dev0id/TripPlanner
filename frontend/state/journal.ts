@@ -1,6 +1,7 @@
-import { createResource, createRoot, createSignal } from 'solid-js';
+import { batch, createResource, createRoot, createSignal } from 'solid-js';
 import { addEntry as postEntry, deleteEntry, listEntriesAt, tripApi, updateEntry } from '../api';
 import { entriesOn as entriesOf, type Entry, type EntryTarget } from '../model/journal';
+import type { LngLat } from '../model/trip';
 import { openTrip } from './trip';
 
 /** The open trip's journal, loaded with the trip; changes go to the server at once, there is no undo. */
@@ -18,9 +19,27 @@ export const entriesOn = (target: EntryTarget): Entry[] => entriesOf(allEntries(
 /** The part whose journal dialog is open, or the trip's for an empty target; none while the dialog is closed. */
 export const [journalTarget, setJournalTarget] = createSignal<EntryTarget>();
 
-/** Adds an entry and returns it as the server placed it: a photo with a time goes to the day of that date. */
-export async function addEntry(target: EntryTarget, text: string, file: File | undefined): Promise<Entry> {
-  const entry = await postEntry(openTrip()!.id, target, text, file);
+/** The spot on the map the open journal's new entries stand on, when it was opened from there. */
+export const [journalSpot, setJournalSpot] = createSignal<LngLat>();
+
+/** Opens the journal of a part for entries at a spot on the map. */
+export function openJournalAt(target: EntryTarget, spot: LngLat): void {
+  batch(() => {
+    setJournalTarget(target);
+    setJournalSpot(spot);
+  });
+}
+
+export function closeJournal(): void {
+  batch(() => {
+    setJournalTarget(undefined);
+    setJournalSpot(undefined);
+  });
+}
+
+/** Adds an entry and returns it as the server placed it: a photo with a time goes to the day of that date, one with a position stands there. */
+export async function addEntry(target: EntryTarget, text: string, file: File | undefined, spot: LngLat | undefined): Promise<Entry> {
+  const entry = await postEntry(openTrip()!.id, target, text, file, spot);
   mutate((list = []) => [...list, entry]);
   return entry;
 }

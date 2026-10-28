@@ -198,6 +198,10 @@ entries at the end of their section.
   to the trip itself goes to the day of its date; one added to a day, a stop or a route
   stays where the user put it. The position places it on the map; nothing is matched
   against the route. Without the exif extension a photo is kept and shown, not placed.
+  An entry made at a spot on the map is sent with that spot and stands there, unless
+  its photo has a position of its own, which wins: the camera knows where it was, the
+  press on the map is where the user roughly meant. The spot is a property of the
+  entry, not a kind of entry: the same table, dialog and markers serve it.
 - **Photos are made into JPEGs in the browser, not on the server.** A phone photo is 4 to
   8 MB and a HEIC on anything but Safari; the server's GD reads neither HEIC nor anything
   large cheaply, and php-fpm is chrooted on the box, so shelling out to ImageMagick would

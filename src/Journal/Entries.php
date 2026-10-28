@@ -49,12 +49,14 @@ final class Entries
     /**
      * Adds an entry to the trip, on the part `$target` names (one of PARTS' keys, an id of
      * the trip's) or on the trip itself; a photo with a time and no part goes to the day of
-     * that date. Null when the user has no such trip or part.
+     * that date. The entry stands where its photo was taken, else at `$spot` where given.
+     * Null when the user has no such trip or part.
      *
      * @param array{dayId?: string, stopId?: string, routeId?: string} $target
      * @param ?array{name: string, mediaType: string, size: int, takenAt: ?string, lngLat: ?array{0: float, 1: float}} $file
+     * @param ?array{0: float, 1: float} $spot
      */
-    public function add(int $userId, int $tripId, array $target, string $text, ?array $file, DateTimeImmutable $now): ?Entry
+    public function add(int $userId, int $tripId, array $target, string $text, ?array $file, DateTimeImmutable $now, ?array $spot = null): ?Entry
     {
         if (!$this->owns($userId, $tripId)) {
             return null;
@@ -68,13 +70,14 @@ final class Entries
         if ($target === [] && isset($file['takenAt'])) {
             $dayId = $this->dayOnDate($tripId, substr($file['takenAt'], 0, 10));
         }
+        $lngLat = $file['lngLat'] ?? $spot;
         $statement = $this->db->prepare(
             'INSERT INTO entries (trip_id, day_id, stop_id, route_id, text, file_name, media_type, size, taken_at, lng, lat, created_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         );
         $statement->execute([
             $tripId, $dayId, $target['stopId'] ?? null, $target['routeId'] ?? null, $text,
-            $file['name'] ?? null, $file['mediaType'] ?? null, $file['size'] ?? null, $file['takenAt'] ?? null, $file['lngLat'][0] ?? null, $file['lngLat'][1] ?? null,
+            $file['name'] ?? null, $file['mediaType'] ?? null, $file['size'] ?? null, $file['takenAt'] ?? null, $lngLat[0] ?? null, $lngLat[1] ?? null,
             Timestamp::of($now),
         ]);
         return $this->one('e.id = ?', [(int) $this->db->lastInsertId()]);

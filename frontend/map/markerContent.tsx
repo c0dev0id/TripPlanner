@@ -1,6 +1,7 @@
 import { entryFileUrl, entryPreviewUrl } from '../api';
-import type { Entry } from '../model/journal';
+import { entryTitle, type Entry } from '../model/journal';
 import type { Stop } from '../model/trip';
+import { NotebookIcon } from '../ui/icons';
 import { openImage } from '../ui/Lightbox';
 import { StopShape } from '../ui/StopShape';
 import { BOUND_COLOR, FREE_COLOR } from './routeOverlay';
@@ -25,12 +26,28 @@ export function stopContent(stop: Stop): HTMLElement {
   ) as HTMLElement;
 }
 
-/** A photo as a small preview that opens the photo over the page, under the API base the page reads from. */
-export function photoContent(photo: Entry, base: string): HTMLElement {
-  const image = { src: entryFileUrl(base, photo.id), preview: entryPreviewUrl(base, photo.id), name: photo.file!.name };
-  return (
-    <a class="photo" href={image.src} target="_blank" rel="noopener" title={image.name} on:click={(e) => openImage(e, image)}>
-      <img src={image.preview} alt={image.name} />
-    </a>
+/** The marker class of an entry: a photo marker for one with an image, a note marker otherwise. */
+export const entryMarkerClass = (entry: Entry): string => (entry.file?.image ? 'photo-marker' : 'note-marker');
+
+/**
+ * A journal entry where it stands: a photo as a small preview that opens it over the page,
+ * under the API base the page reads from; anything else as a journal icon that says what
+ * the entry is and runs `open` on a click, where given.
+ */
+export function entryContent(entry: Entry, base: string, open?: () => void): HTMLElement {
+  if (entry.file?.image) {
+    const image = { src: entryFileUrl(base, entry.id), preview: entryPreviewUrl(base, entry.id), name: entry.file.name };
+    return (
+      <a class="photo" href={image.src} target="_blank" rel="noopener" title={image.name} on:click={(e) => openImage(e, image)}>
+        <img src={image.preview} alt={image.name} />
+      </a>
+    ) as HTMLElement;
+  }
+  const note = (
+    <span class="note" role={open && 'button'} title={entryTitle(entry)}>
+      <NotebookIcon />
+    </span>
   ) as HTMLElement;
+  if (open) note.addEventListener('click', open);
+  return note;
 }

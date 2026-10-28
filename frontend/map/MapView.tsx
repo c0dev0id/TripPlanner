@@ -6,7 +6,7 @@ import { failedLegs } from '../state/routing';
 import { editingRouteId, neighbourDays, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
 import { newBaseMap } from './baseMap';
 import { Interactions } from './Interactions';
-import { PhotoMarkers } from './PhotoMarkers';
+import { EntryMarkers } from './EntryMarkers';
 import { PointMarkers } from './PointMarkers';
 import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { SearchBox } from './SearchBox';
@@ -30,7 +30,7 @@ export function MapView() {
           <>
             <RouteLines map={m()} />
             <StopMarkers map={m()} />
-            <PhotoMarkers map={m()} />
+            <EntryMarkers map={m()} />
             <PointMarkers map={m()} />
             <Interactions map={m()} />
             <SearchBox map={m()} />

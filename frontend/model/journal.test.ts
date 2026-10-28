@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { entriesOfDay, onTarget, photosOfDay, sizeText, type Entry } from './journal';
+import { entriesOfDay, entryTitle, onTarget, placedEntriesOfDay, sizeText, targetOf, type Entry } from './journal';
 import type { Day } from './trip';
 
 const entry = (id: number, on: Partial<Pick<Entry, 'dayId' | 'stopId' | 'routeId' | 'lngLat' | 'file'>>): Entry => ({
@@ -24,12 +24,19 @@ describe('the journal', () => {
     expect(onTarget(entry(1, { dayId: 'd1' }), {})).toBe(false);
     expect(onTarget(entry(1, { dayId: 'd1' }), { dayId: 'd1' })).toBe(true);
     expect(onTarget(entry(1, { stopId: 's1' }), { dayId: 'd1' })).toBe(false);
+    expect([targetOf(entry(1, {})), targetOf(entry(1, { stopId: 's1' })), targetOf(entry(1, { routeId: 'r1' }))]).toEqual([{}, { stopId: 's1' }, { routeId: 'r1' }]);
   });
 
-  it('collects a day\'s entries with those of its stops and routes, and the photos placed among them', () => {
-    const entries = [entry(1, { dayId: 'd1' }), entry(2, { routeId: 'r1', lngLat: [11, 47], file: photo }), entry(3, { dayId: 'd2', lngLat: [11, 47], file: photo }), entry(4, {})];
-    expect(entriesOfDay(entries, day).map((e) => e.id)).toEqual([1, 2]);
-    expect(photosOfDay(entries, day).map((e) => e.id)).toEqual([2]);
+  it('collects a day\'s entries with those of its stops and routes, and those placed among them', () => {
+    const entries = [entry(1, { dayId: 'd1' }), entry(2, { routeId: 'r1', lngLat: [11, 47], file: photo }), entry(3, { dayId: 'd2', lngLat: [11, 47], file: photo }), entry(4, {}), entry(5, { dayId: 'd1', lngLat: [12, 47] })];
+    expect(entriesOfDay(entries, day).map((e) => e.id)).toEqual([1, 2, 5]);
+    expect(placedEntriesOfDay(entries, day).map((e) => e.id)).toEqual([2, 5]);
+  });
+
+  it('titles a marker by the first line of the note, else the file', () => {
+    expect(entryTitle({ ...entry(1, { file: photo }), text: 'Viewpoint\nover the valley' })).toBe('Viewpoint');
+    expect(entryTitle(entry(1, { file: photo }))).toBe('a.jpg');
+    expect(entryTitle({ ...entry(1, {}), text: 'x'.repeat(100) })).toBe(`${'x'.repeat(79)}…`);
   });
 
   it('writes sizes', () => {

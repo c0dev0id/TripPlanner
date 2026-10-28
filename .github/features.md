@@ -65,7 +65,10 @@
   HEIC included, with its EXIF kept, so that a phone sends little and every browser shows
   it. A photo opens large over the page from its preview in the journal or its marker on
   the map, in the planner and on the read-only page alike; other files open or download
-  under their name. An entry stays with the trip when its part is removed.
+  under their name. An entry is also made at a spot on the map, from the map's menu, on
+  the selected day: it stands there, as a journal icon that opens the day's journal, or
+  as its photo's preview; a photo that knows where it was taken stands there instead.
+  An entry stays with the trip when its part is removed.
 - A trip is planned or done; the library marks done trips.
 - A read-only page of the trip for reading and printing: the map with every day, the
   journal, each day with its routes and its stops in riding order with their times,

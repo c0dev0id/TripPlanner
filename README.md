@@ -37,9 +37,9 @@ share work; sharing between users is on the way.
   day, routes as tracks or as points for the device to route, with or without the
   optional parts; the settings kept as named presets.
 - **A journal on everything** — notes, photos, receipts and documents on the trip, a
-  day, a stop or a route. Photos shrink to a web size before they leave the phone, stand
-  on the map where they were taken, land on the day they were taken and open large in
-  place.
+  day, a stop, a route, or a spot on the map. Photos shrink to a web size before they
+  leave the phone, stand on the map where they were taken, land on the day they were
+  taken and open large in place.
 - **Planned, then ridden** — mark a trip done; the library shows it.
 - **Print it, share it** — a read-only page with the map, every day's stops and times
   and the journal, for printing, or shared under a link that needs no account.
@@ -59,12 +59,13 @@ share work; sharing between users is on the way.
    the day's timeline.
 5. *Export GPX…* in the trip's panel: pick the scope and the form, download.
 6. After the ride, *Journal…* on the trip, a day, a stop or a route takes the notes and
-   photos; *Print, share…* opens the trip's page or shares it under a link.
+   photos, *Journal here…* in the map's menu puts one at a spot; *Print, share…* opens
+   the trip's page or shares it under a link.
 
 | Key or gesture | Does |
 |---|---|
 | Ctrl+Z, Ctrl+Shift+Z | Undo, redo |
 | Esc | Closes a menu; back to the Point tool; ends editing |
 | Right-click or long press on a stop or point | Make a stop, connect, disconnect, straight leg, remove |
-| Right-click or long press on the map | Add a point or a free stop here |
+| Right-click or long press on the map | Add a point or a free stop here, or a journal entry |
 | Enter in the search box | Find a place; Esc closes the list |

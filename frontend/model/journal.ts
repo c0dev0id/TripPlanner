@@ -21,13 +21,21 @@ export interface Entry {
   file: EntryFile | null;
   /** When a photo was taken, as its camera wrote it: YYYY-MM-DDTHH:MM:SS without a zone. */
   takenAt: string | null;
-  /** Where a photo was taken, from its EXIF data. */
+  /** Where the entry stands on the map: where a photo was taken by its EXIF data, else where it was put. */
   lngLat: LngLat | null;
   createdAt: string;
 }
 
 /** What an entry is on: one part by its id, or the trip for an empty target. */
 export type EntryTarget = { dayId: string } | { stopId: string } | { routeId: string } | Record<string, never>;
+
+/** The part an entry is on, as a target. */
+export function targetOf(entry: Entry): EntryTarget {
+  if (entry.dayId !== null) return { dayId: entry.dayId };
+  if (entry.stopId !== null) return { stopId: entry.stopId };
+  if (entry.routeId !== null) return { routeId: entry.routeId };
+  return {};
+}
 
 export function onTarget(entry: Entry, target: EntryTarget): boolean {
   const t = target as { dayId?: string; stopId?: string; routeId?: string };
@@ -43,9 +51,16 @@ export function entriesOfDay(entries: readonly Entry[], day: Day): Entry[] {
   return entries.filter((e) => e.dayId === day.id || (e.stopId !== null && stops.has(e.stopId)) || (e.routeId !== null && routes.has(e.routeId)));
 }
 
-/** The day's photos that know where they were taken, for the map. */
-export function photosOfDay(entries: readonly Entry[], day: Day): Entry[] {
-  return entriesOfDay(entries, day).filter((e) => e.lngLat !== null && e.file?.image);
+/** The day's entries that stand somewhere, for the map. */
+export function placedEntriesOfDay(entries: readonly Entry[], day: Day): Entry[] {
+  return entriesOfDay(entries, day).filter((e) => e.lngLat !== null);
+}
+
+/** What a marker of the entry says: the first line of its note, else its file's name. */
+export function entryTitle(entry: Entry): string {
+  const line = entry.text.split('\n', 1)[0]!.trim();
+  const title = line || entry.file?.name || '';
+  return title.length > 80 ? `${title.slice(0, 79)}…` : title;
 }
 
 /** A file's size as text: bytes, kB or MB. */

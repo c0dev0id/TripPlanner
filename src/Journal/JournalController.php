@@ -28,7 +28,7 @@ final class JournalController
         return $entries === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $entries);
     }
 
-    /** Adds an entry from a multipart form: `text`, at most one of `dayId`, `stopId`, `routeId`, and a `file`. */
+    /** Adds an entry from a multipart form: `text`, at most one of `dayId`, `stopId`, `routeId`, a `file`, and `lng` and `lat` for a spot on the map. */
     public function add(Request $request, Response $response, array $args): Response
     {
         $body = (array) $request->getParsedBody();
@@ -50,8 +50,12 @@ final class JournalController
         if (count($target) > 1) {
             return Json::error($response, 422, 'An entry is on one part at most.');
         }
+        $spot = self::spotOf($body);
+        if ($spot === false) {
+            return Json::error($response, 422, 'The spot is not a position.');
+        }
         $tripId = (int) $args['id'];
-        $entry = $this->entries->add($this->currentUser->get()->id, $tripId, $target, $text, $upload === null ? null : self::fileOf($upload), new DateTimeImmutable());
+        $entry = $this->entries->add($this->currentUser->get()->id, $tripId, $target, $text, $upload === null ? null : self::fileOf($upload), new DateTimeImmutable(), $spot);
         if ($entry === null) {
             return Json::error($response, 404, 'No such trip or part of it.');
         }
@@ -96,6 +100,24 @@ final class JournalController
      * the browser claims), its size, and a photo's EXIF time and position, read from the
      * upload where it still lies.
      */
+    /**
+     * The spot the form names by `lng` and `lat`: null without them, false where they are no position.
+     *
+     * @return ?array{0: float, 1: float}|false
+     */
+    private static function spotOf(array $body): array|null|false
+    {
+        if (!isset($body['lng']) && !isset($body['lat'])) {
+            return null;
+        }
+        $lng = filter_var($body['lng'] ?? null, FILTER_VALIDATE_FLOAT);
+        $lat = filter_var($body['lat'] ?? null, FILTER_VALIDATE_FLOAT);
+        if ($lng === false || $lat === false || abs($lng) > 180 || abs($lat) > 90) {
+            return false;
+        }
+        return [$lng, $lat];
+    }
+
     private static function fileOf(UploadedFileInterface $upload): array
     {
         $stream = $upload->getStream();

@@ -1,5 +1,5 @@
 import type { Entry, EntryTarget } from './model/journal';
-import type { Folder, Trip, TripSummary } from './model/trip';
+import type { Folder, LngLat, Trip, TripSummary } from './model/trip';
 
 /** Requests to the JSON API, and the one form the app posts: sign out. */
 
@@ -74,12 +74,16 @@ export const entryFileUrl = (base: string, entryId: number): string => `${base}/
 
 export const entryPreviewUrl = (base: string, entryId: number): string => `${base}/entries/${entryId}/preview`;
 
-/** Adds a journal entry on the trip or on the part the target names, with a file where given. */
-export function addEntry(tripId: number, target: EntryTarget, text: string, file: File | undefined): Promise<Entry> {
+/** Adds a journal entry on the trip or on the part the target names, with a file where given, at a spot on the map where given. */
+export function addEntry(tripId: number, target: EntryTarget, text: string, file: File | undefined, spot: LngLat | undefined): Promise<Entry> {
   const form = new FormData();
   form.set('text', text);
   for (const [key, value] of Object.entries(target)) form.set(key, value);
   if (file) form.set('file', file);
+  if (spot) {
+    form.set('lng', String(spot[0]));
+    form.set('lat', String(spot[1]));
+  }
   return request('POST', `${tripApi(tripId)}/entries`, form);
 }
 

@@ -1,7 +1,8 @@
 import { createSignal } from 'solid-js';
 import type { LngLat, RoutePoint } from '../model/trip';
 import type { MenuItem } from '../ui/menu';
-import { addFreeStop, appendPoint, editingRoute, setStraight } from './trip';
+import { openJournalAt } from './journal';
+import { addFreeStop, appendPoint, editingRoute, selectedDay, setStraight } from './trip';
 
 /** Transient state of editing on the map; never kept. */
 
@@ -45,14 +46,18 @@ export function tapAction(): Tool | undefined {
   return editingRoute() ? tool() : undefined;
 }
 
-/** What a spot on the map offers while a route is edited: a point at the route's end, or a free stop; nothing otherwise. */
+/** What a spot on the map offers: a point at the edited route's end or a free stop while a route is edited, a journal entry of the selected day there; nothing without a day. */
 export function spotItems(spot: LngLat): MenuItem[] | undefined {
   const route = editingRoute();
-  if (!route) return undefined;
-  return [
-    { label: 'Add a point here', run: () => appendPoint(route.id, spot) },
-    { label: 'Add a stop here, beside the route', run: () => addFreeStop(spot) },
-  ];
+  const day = selectedDay();
+  const items: MenuItem[] = route
+    ? [
+        { label: 'Add a point here', run: () => appendPoint(route.id, spot) },
+        { label: 'Add a stop here, beside the route', run: () => addFreeStop(spot) },
+      ]
+    : [];
+  if (day) items.push({ label: 'Journal here…', run: () => openJournalAt({ dayId: day.id }, spot) });
+  return items.length > 0 ? items : undefined;
 }
 
 /** The menu item that makes the leg to a point of a route straight, or routed again. */

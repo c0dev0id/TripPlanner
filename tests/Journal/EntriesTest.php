@@ -68,6 +68,15 @@ final class EntriesTest extends TestCase
         self::assertSame(['s1', null], [$onStop->stopId, $onStop->dayId]);
     }
 
+    public function testStandsAtTheSpotUnlessThePhotoKnowsBetter(): void
+    {
+        $note = $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], 'Viewpoint', null, $this->now, [10.5, 47.5]);
+        self::assertSame([10.5, 47.5], $note->lngLat);
+        $located = ['lngLat' => [11.45, 47.8]] + self::PHOTO;
+        self::assertSame([11.45, 47.8], $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], '', $located, $this->now, [10.5, 47.5])->lngLat);
+        self::assertSame([10.5, 47.5], $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], '', self::PHOTO, $this->now, [10.5, 47.5])->lngLat);
+    }
+
     public function testRefusesAnEntryOnTwoParts(): void
     {
         $this->expectException(\PDOException::class);

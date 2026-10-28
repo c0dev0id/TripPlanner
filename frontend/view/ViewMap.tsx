@@ -1,12 +1,12 @@
 import { GeoJSONSource, LngLatBounds, Marker } from 'maplibre-gl';
 import { onCleanup, onMount } from 'solid-js';
 import { newBaseMap } from '../map/baseMap';
-import { markerElement, photoContent, stopContent } from '../map/markerContent';
+import { entryContent, entryMarkerClass, markerElement, stopContent } from '../map/markerContent';
 import { ROUTES_SOURCE, routeFeatures } from '../map/routeOverlay';
 import type { Entry } from '../model/journal';
 import type { Trip } from '../model/trip';
 
-/** The whole trip on a map that cannot be edited: every day's routes, the stops by name, the photos where they were taken. */
+/** The whole trip on a map that cannot be edited: every day's routes, the stops by name, the journal entries where they stand. */
 export function ViewMap(props: { trip: Trip; entries: Entry[]; api: string }) {
   let container!: HTMLDivElement;
   onMount(() => {
@@ -22,8 +22,8 @@ export function ViewMap(props: { trip: Trip; entries: Entry[]; api: string }) {
           new Marker({ element: markerElement('stop-marker', stopContent(stop)), anchor: 'bottom' }).setLngLat(stop.lngLat).addTo(m);
         }
       }
-      for (const photo of props.entries) {
-        if (photo.lngLat && photo.file?.image) new Marker({ element: markerElement('photo-marker', photoContent(photo, props.api)) }).setLngLat(photo.lngLat).addTo(m);
+      for (const entry of props.entries) {
+        if (entry.lngLat) new Marker({ element: markerElement(entryMarkerClass(entry), entryContent(entry, props.api)) }).setLngLat(entry.lngLat).addTo(m);
       }
       if (!bounds.isEmpty()) m.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 0 });
     });
