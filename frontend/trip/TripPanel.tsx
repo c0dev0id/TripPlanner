@@ -245,13 +245,17 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
   ];
   return (
     <li class="row route" classList={{ editing: editing() }}>
-      <EditableName value={label()} label="route" onRename={(name) => renameRoute(props.route.id, name)} />
-      <span class="muted">
-        {routeKindLabel(props.route)}
-        {props.route.points.length > 1 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
-        {props.route.optional ? ' · optional' : ''}
-        {journal() ? ` · ${journal()}` : ''}
-      </span>
+      <div class="grow lines">
+        <div class="row">
+          <EditableName value={label()} label="route" onRename={(name) => renameRoute(props.route.id, name)} />
+        </div>
+        <span class="muted detail">
+          {routeKindLabel(props.route)}
+          {props.route.points.length > 1 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
+          {props.route.optional ? ' · optional' : ''}
+          {journal() ? ` · ${journal()}` : ''}
+        </span>
+      </div>
       <button classList={{ primary: editing() }} onClick={() => editRoute(editing() ? undefined : props.route.id)}>
         {editing() ? 'Done' : 'Edit'}
       </button>

@@ -261,6 +261,21 @@ a {
   border-radius: 4px;
 }
 
+/* A route's name over its kind and length, like a stop's name over its times. */
+.route .lines {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-left: 4px;
+}
+
+.route .detail {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .sequence-item {
   padding: 1px 0;
 }
