@@ -102,6 +102,11 @@ entries at the end of their section.
   is copied on the server with new ids for every part, so the copy's parts never name the
   original's.
 
+- **A trip opens whole, and the arrow goes up one level.** Opening a trip shows all its
+  days on the map and no day open; the first draft opened the first day, which left no
+  level between a day and the trip list. The panel's arrow goes from a day to the trip,
+  from the trip to the list; the list keeps its folder while a trip is open, so leaving
+  the trip returns to the folder it was opened from rather than to the top.
 - **Folders are one level deep.** A trip is in one folder or in none. Trips sort by year
   or region in practice; nesting would add paths and moves for a handful of trips.
 - **The search runs in the browser.** The library loads all trip summaries and folders of

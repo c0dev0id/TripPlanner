@@ -3,7 +3,7 @@ import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } 
 import type { Day } from '../model/trip';
 import { panTarget, showNeighbours } from '../state/drawing';
 import { failedLegs } from '../state/routing';
-import { editingRouteId, neighbourDays, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
+import { editingRouteId, neighbourDays, openTrip, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
 import { newBaseMap } from './baseMap';
 import { Interactions } from './Interactions';
 import { EntryMarkers } from './EntryMarkers';
@@ -41,26 +41,27 @@ export function MapView() {
   );
 }
 
-/** The days drawn: the selected one, and with `showNeighbours` the ones before and after. */
+/** The days drawn: the selected one, and with `showNeighbours` the ones before and after; every day while none is selected. */
 function shownDays(): { day: Day; role: RouteRole }[] {
   const day = selectedDay();
-  if (!day) return [];
+  if (!day) return (openTrip()?.days ?? []).map((d) => ({ day: d, role: 'selected' as const }));
   const neighbours = showNeighbours() ? neighbourDays().map((d) => ({ day: d, role: 'neighbour' as const })) : [];
   return [...neighbours, { day, role: 'selected' }];
 }
 
-/** Keeps the route lines on the map, shows the selected day when it changes, and goes where the panel points. */
+/** Keeps the route lines on the map, shows the selected day, or the whole trip, when it changes, and goes where the panel points. */
 function RouteLines(props: { map: MapLibreMap }) {
   const marks = () => selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : []));
   const features = createMemo(() => routeFeatures(shownDays(), editingRouteId(), failedLegs(), marks()));
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
-    on(selectedDayId, () => {
-      const day = selectedDay();
-      if (!day) return;
+    on([selectedDayId, () => openTrip()?.id], () => {
+      const days = shownDays().filter((d) => d.role === 'selected');
       const bounds = new LngLatBounds();
-      for (const route of day.routes) for (const point of route.points) bounds.extend(point.lngLat);
-      for (const stop of day.stops) bounds.extend(stop.lngLat);
+      for (const { day } of days) {
+        for (const route of day.routes) for (const point of route.points) bounds.extend(point.lngLat);
+        for (const stop of day.stops) bounds.extend(stop.lngLat);
+      }
       if (!bounds.isEmpty()) props.map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 600 });
     }),
   );

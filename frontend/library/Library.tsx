@@ -1,6 +1,7 @@
 import { createMemo, createResource, createSignal, For, Match, Show, Switch } from 'solid-js';
 import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder } from '../api';
 import type { Folder, TripSummary } from '../model/trip';
+import { listFolderId, setListFolderId } from '../state/library';
 import { askConfirmation } from '../ui/confirm';
 import { EditDialog } from '../ui/EditDialog';
 import { field } from '../ui/form';
@@ -18,13 +19,14 @@ type LibraryDialog = { kind: 'new-trip' } | { kind: 'new-folder' } | { kind: 'fo
 export function Library(props: { onOpen: (id: number) => void; opening: boolean; error: string | undefined }) {
   const [trips, { refetch: refetchTrips }] = createResource(listTrips);
   const [folders, { refetch: refetchFolders }] = createResource(listFolders);
-  /** The open folder; none at the top, where the folders and the trips in no folder are. */
-  const [folderId, setFolderId] = createSignal<number>();
+
   const [query, setQuery] = createSignal('');
   const [busy, setBusy] = createSignal<string>();
   const [dialog, setDialog] = createSignal<LibraryDialog>();
 
-  const folder = () => folders()?.find((f) => f.id === folderId());
+  /** The open folder; none at the top, where the folders and the trips in no folder are. */
+  const folder = () => folders()?.find((f) => f.id === listFolderId());
+  const folderId = () => folder()?.id;
   const shownTrips = createMemo(() => (trips() ?? []).filter((t) => t.folderId === (folderId() ?? null)));
   const tripCounts = createMemo(() => {
     const counts = new Map<number | null, number>();
@@ -60,7 +62,7 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
     });
   };
   const openFolder = (id: number | undefined) => {
-    setFolderId(id);
+    setListFolderId(id);
     setQuery('');
   };
   const editedFolder = () => {

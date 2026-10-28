@@ -52,10 +52,12 @@ function otherDayItems(dayId: string, action: string, run: (dayId: string) => vo
 /** The open trip: its name, its days with their routes and stops, the export links and the saving state. */
 export function TripPanel(props: { onLeave: () => void; onReload: () => void }) {
   const trip = () => openTrip()!;
+  /** One level up: from a day to the whole trip, from the trip to the list it was opened from. */
+  const back = () => (selectedDayId() ? { label: 'Back to the trip', run: () => selectDay(undefined) } : { label: 'Back to the trips', run: props.onLeave });
   return (
     <section class="trip">
       <div class="row">
-        <button class="icon" title="Back to the trips" aria-label="Back to the trips" onClick={props.onLeave}>
+        <button class="icon" title={back().label} aria-label={back().label} onClick={() => back().run()}>
           <BackIcon />
         </button>
         <h2 class="grow name" title={trip().name}>

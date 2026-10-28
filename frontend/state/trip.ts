@@ -114,13 +114,13 @@ function restore(trip: Trip | undefined): void {
   });
 }
 
-/** Opens a trip as loaded from the server; nothing before it can be undone. */
+/** Opens a trip as loaded from the server, with no day shown; nothing before it can be undone. */
 export function loadTrip(trip: Trip): void {
   history.clear();
   batch(() => {
     setState('trip', reconcile(trip, { key: 'id', merge: false }));
     setHistoryVersion((v) => v + 1);
-    setSelectedDayId(trip.days[0]?.id);
+    setSelectedDayId(undefined);
     setEditingRouteId(undefined);
   });
 }
