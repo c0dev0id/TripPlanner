@@ -87,7 +87,10 @@ export function Interactions(props: { map: MapLibreMap }) {
       else addFreeStop(toLngLat(e.lngLat));
     }
   };
-  const onMoveStart = () => setMenu(undefined);
+  // A drag or a scroll closes the menu; a move the app makes (fitting a day, panning to a stop) leaves a menu opened from the panel alone.
+  const onMoveStart = (e: { originalEvent?: Event }) => {
+    if (e.originalEvent) setMenu(undefined);
+  };
   // A tap made before a key comes first, so that Esc or Undo act on it.
   const onKeyDownFirst = () => taps.flush();
   const onKeyDown = (e: KeyboardEvent) => {
