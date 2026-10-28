@@ -13,7 +13,7 @@ const route: Route = {
   id: 'r',
   name: '',
   kind: 'routed',
-  profile: 'car',
+  profile: 'motorcycle',
   highways: 'allow',
   optional: false,
   points: [
@@ -22,8 +22,8 @@ const route: Route = {
     { id: 'c', lngLat: [11, 47.2] },
   ],
   legs: {
-    'car:allow/11,47;11,47.1': leg([[11, 47], [11, 47.1]], 11_000),
-    'car:allow/11,47.1;11,47.2': leg([[11, 47.1], [11.02, 47.15], [11, 47.2]], 11_000),
+    'motorcycle:allow/11,47;11,47.1': leg([[11, 47], [11, 47.1]], 11_000),
+    'motorcycle:allow/11,47.1;11,47.2': leg([[11, 47.1], [11.02, 47.15], [11, 47.2]], 11_000),
   },
 };
 
@@ -91,7 +91,7 @@ describe('daySequence', () => {
   });
 
   it('counts a second route on from the end of the first', () => {
-    const hike: Route = { ...route, id: 'h', profile: 'foot', points: [{ id: 'h1', lngLat: [11, 47.2] }, { id: 'h2', lngLat: [11.01, 47.2] }], legs: {} };
+    const hike: Route = { ...route, id: 'h', profile: 'pedestrian', points: [{ id: 'h1', lngLat: [11, 47.2] }, { id: 'h2', lngLat: [11.01, 47.2] }], legs: {} };
     const entries = daySequence(day([], [route, hike]), decode);
     expect(entries.map((e) => e.point!.id)).toEqual(['a', 'b', 'c', 'h1', 'h2']);
     expect(entries[3]).toMatchObject({ routeIndex: 1, distanceM: 22_000 });

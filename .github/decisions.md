@@ -45,8 +45,14 @@ entries at the end of their section.
   the route being edited. The dial (avoid, allow, prefer motorways) sits beside it: a
   transfer day wants the motorway, a loop day wants the passes, and both are routes of
   one trip, so an app-wide setting would be wrong for one of them. The dial is part of
-  the leg key, so turning it routes the legs again. It counts for the road profile only;
-  bike and foot ignore it.
+  the leg key, so turning it routes the legs again. It counts for the motorcycle only;
+  bicycle and pedestrian ignore it.
+- **Profiles are Valhalla's costings by name: motorcycle, bicycle, pedestrian.** The
+  first names, car, bike and foot, came from OSRM and misled in a motorcycle planner:
+  "bike" reads as motorbike, and "car" was the motorcycle costing anyway. Valhalla's auto
+  costing is the motorcycle's at the default dial, so it adds nothing; its motor scooter
+  costing is built for mopeds kept off motorways, which the dial covers. Bicycle and
+  pedestrian stay for the hike after lunch and the rental bike on a rest day.
 - **The schedule check is the feature.** The routing returns a duration with every leg. The
   departure plus route durations plus pauses, compared with the fixed arrival times, tells
   before the trip where a day does not work. This is what the times on stops are for.

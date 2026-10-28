@@ -183,7 +183,7 @@ erDiagram
     int position
     string name
     string kind "routed, track"
-    string profile "car, bike, foot"
+    string profile "motorcycle, bicycle, pedestrian"
     bool optional
     json points "in order: id, position, straight"
     json legs "by profile and ends: geometry, distance, duration"

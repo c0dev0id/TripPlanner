@@ -29,10 +29,10 @@ final class TripDocumentValidatorTest extends TestCase
     {
         $document = TripFixture::document();
         $document['days'][0]['routes'][0]['points'][1]['straight'] = true;
-        $document['days'][0]['routes'][0]['legs'] = ['car/11.5,48.1;11.45,47.8' => ['geometry' => 'abc', 'distanceM' => 1234.6, 'durationS' => 99.2]];
+        $document['days'][0]['routes'][0]['legs'] = ['motorcycle:allow/11.5,48.1;11.45,47.8' => ['geometry' => 'abc', 'distanceM' => 1234.6, 'durationS' => 99.2]];
         $route = TripDocumentValidator::validated($document)['days'][0]['routes'][0];
         self::assertTrue($route['points'][1]['straight']);
-        self::assertSame(['geometry' => 'abc', 'distanceM' => 1235, 'durationS' => 99], $route['legs']['car/11.5,48.1;11.45,47.8']);
+        self::assertSame(['geometry' => 'abc', 'distanceM' => 1235, 'durationS' => 99], $route['legs']['motorcycle:allow/11.5,48.1;11.45,47.8']);
     }
 
     public function testAcceptsARouteWithoutPointsAndADayWithoutRoutes(): void

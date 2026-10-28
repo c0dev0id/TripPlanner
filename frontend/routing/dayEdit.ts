@@ -52,9 +52,9 @@ export function updateRoute(trip: Trip, routeId: string, change: (route: Route) 
   });
 }
 
-/** The profile a new route of the day gets: that of the day's last route, or the road profile. */
+/** The profile a new route of the day gets: that of the day's last route, or the motorcycle. */
 export function defaultProfile(day: Day): Profile {
-  return day.routes.at(-1)?.profile ?? 'car';
+  return day.routes.at(-1)?.profile ?? 'motorcycle';
 }
 
 export function addRoute(trip: Trip, dayId: string, id: string): Trip {

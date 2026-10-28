@@ -3,13 +3,13 @@
 /** A position as longitude and latitude in degrees. */
 export type LngLat = [number, number];
 
-/** What a route is ridden with; the road profile is Valhalla's motorcycle costing. */
-export type Profile = 'car' | 'bike' | 'foot';
+/** What a route is travelled with: Valhalla's costings by their names. */
+export type Profile = 'motorcycle' | 'bicycle' | 'pedestrian';
 
 export const PROFILES: readonly { value: Profile; label: string }[] = [
-  { value: 'car', label: 'Road' },
-  { value: 'bike', label: 'Bike' },
-  { value: 'foot', label: 'Foot' },
+  { value: 'motorcycle', label: 'Motorcycle' },
+  { value: 'bicycle', label: 'Bicycle' },
+  { value: 'pedestrian', label: 'On foot' },
 ];
 
 /** How much a road route takes to motorways: a transfer day prefers them, a loop day avoids them. */
@@ -21,8 +21,8 @@ export const HIGHWAYS: readonly { value: Highways; label: string }[] = [
   { value: 'prefer', label: 'Prefer' },
 ];
 
-/** Whether the motorway dial counts for a profile: the road profile's costing takes it, bike and foot do not. */
-export const takesMotorwayDial = (profile: Profile): boolean => profile === 'car';
+/** Whether the motorway dial counts for a profile: the motorcycle costing takes it, the others do not. */
+export const takesMotorwayDial = (profile: Profile): boolean => profile === 'motorcycle';
 
 /** What a stop is, which decides its icon. */
 export type StopKind = 'hotel' | 'restaurant' | 'cafe' | 'fuel' | 'sight' | 'photo' | 'break' | 'other';

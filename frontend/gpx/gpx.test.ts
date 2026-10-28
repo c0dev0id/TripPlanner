@@ -55,13 +55,13 @@ describe('parseGpx', () => {
 
 describe('gpxToDayParts', () => {
   let n = 0;
-  const options = { fileName: 'tour', profile: 'bike' as const, newId: () => `id${n++}` };
+  const options = { fileName: 'tour', profile: 'bicycle' as const, newId: () => `id${n++}` };
 
   it('routes GPX routes, joins track points by straight lines, makes stops of waypoints', () => {
     const parts = gpxToDayParts(parseGpx(GPX_11), options);
     expect(parts.routes.map((r) => [r.name, r.kind, r.profile, r.points.map((p) => p.straight === true)])).toEqual([
-      ['Planned', 'routed', 'bike', [false, false]],
-      ['tour 2', 'track', 'bike', [false, true, true]],
+      ['Planned', 'routed', 'bicycle', [false, false]],
+      ['tour 2', 'track', 'bicycle', [false, true, true]],
     ]);
     // The café stands on the route's first point and is bound to it; the castle is no kind of ours.
     expect(parts.stops.map((s) => [s.name, s.kind, s.notes, s.pointId])).toEqual([
@@ -78,7 +78,7 @@ describe('gpxToDayParts', () => {
       [11.2, 48.3],
     ]);
     const [key, leg] = Object.entries(garmin!.legs)[0]!;
-    expect(key).toBe('bike:allow/11,48;11.2,48.3');
+    expect(key).toBe('bicycle:allow/11,48;11.2,48.3');
     // Three segments of 13, 11 and 13 km along the way, not the 36 km straight from end to end.
     expect(leg.distanceM).toBeGreaterThan(37_000);
     expect(leg.distanceM).toBeLessThan(38_500);
@@ -93,7 +93,7 @@ describe('gpxToDayParts', () => {
       [11, 48],
       [11.2, 48.3],
     ]);
-    expect(Object.keys(route!.legs)).toEqual(['bike:allow/11,48;11.2,48.3']);
+    expect(Object.keys(route!.legs)).toEqual(['bicycle:allow/11,48;11.2,48.3']);
   });
 
   it('names a single unnamed line after the file, drops repeated points, simplifies long tracks', () => {

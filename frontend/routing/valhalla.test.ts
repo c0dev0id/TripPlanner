@@ -3,7 +3,7 @@ import { fetchLeg, parseRouteResponse, routeRequest, type LegRequest } from './v
 
 describe('routeRequest', () => {
   it('asks for one leg with the motorcycle costing and the motorway dial for the road profile', () => {
-    expect(routeRequest({ profile: 'car', highways: 'avoid', from: [11.5, 48.1], to: [11.6, 48.2] })).toEqual({
+    expect(routeRequest({ profile: 'motorcycle', highways: 'avoid', from: [11.5, 48.1], to: [11.6, 48.2] })).toEqual({
       locations: [
         { lon: 11.5, lat: 48.1 },
         { lon: 11.6, lat: 48.2 },
@@ -15,8 +15,8 @@ describe('routeRequest', () => {
   });
 
   it('asks for the bicycle and pedestrian costings without the dial', () => {
-    expect(routeRequest({ profile: 'bike', highways: 'prefer', from: [1, 1], to: [2, 2] })).toMatchObject({ costing: 'bicycle' });
-    expect(routeRequest({ profile: 'foot', highways: 'allow', from: [1, 1], to: [2, 2] }).costing_options).toBeUndefined();
+    expect(routeRequest({ profile: 'bicycle', highways: 'prefer', from: [1, 1], to: [2, 2] })).toMatchObject({ costing: 'bicycle' });
+    expect(routeRequest({ profile: 'pedestrian', highways: 'allow', from: [1, 1], to: [2, 2] }).costing_options).toBeUndefined();
   });
 });
 
@@ -37,7 +37,7 @@ describe('parseRouteResponse', () => {
 });
 
 describe('fetchLeg', () => {
-  const leg: LegRequest = { profile: 'car', highways: 'allow', from: [1, 1], to: [2, 2] };
+  const leg: LegRequest = { profile: 'motorcycle', highways: 'allow', from: [1, 1], to: [2, 2] };
 
   it('reports a non-JSON answer by its status', async () => {
     const fetchFn = (async () => new Response('gateway timeout', { status: 504 })) as typeof fetch;

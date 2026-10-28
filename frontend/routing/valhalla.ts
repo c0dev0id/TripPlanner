@@ -1,4 +1,4 @@
-import { takesMotorwayDial, type Highways, type Profile, type RoutedLeg } from '../model/trip';
+import { takesMotorwayDial, type Highways, type RoutedLeg } from '../model/trip';
 import type { Costing, Leg } from './legs';
 
 /** The FOSSGIS Valhalla server: one request per second at most, see fossgis.de/arbeitsgruppen/osm-server/nutzungsbedingungen. */
@@ -9,22 +9,19 @@ export const ROUTING_ATTRIBUTION =
 export const ROUTING_MIN_INTERVAL_MS = 1100;
 const ROUTING_TIMEOUT_MS = 15_000;
 
-/** Valhalla's costing per profile: the road profile is the motorcycle costing, which is the car's with the motorway dial. */
-const COSTING: Record<Profile, 'motorcycle' | 'bicycle' | 'pedestrian'> = { car: 'motorcycle', bike: 'bicycle', foot: 'pedestrian' };
-
 /** The motorway dial as Valhalla's `use_highways`: 0 avoids, 1 favours. */
 const USE_HIGHWAYS: Record<Highways, number> = { avoid: 0, allow: 0.5, prefer: 1 };
 
 export type LegRequest = Costing & Pick<Leg, 'from' | 'to'>;
 
-/** The request for one leg: both ends, the costing, and for the road profile the motorway dial. */
+/** The request for one leg: both ends, the profile as the costing, and for the motorcycle the motorway dial. */
 export function routeRequest(leg: LegRequest) {
   return {
     locations: [
       { lon: leg.from[0], lat: leg.from[1] },
       { lon: leg.to[0], lat: leg.to[1] },
     ],
-    costing: COSTING[leg.profile],
+    costing: leg.profile,
     costing_options: takesMotorwayDial(leg.profile) ? { motorcycle: { use_highways: USE_HIGHWAYS[leg.highways] } } : undefined,
     units: 'kilometers',
   };

@@ -12,7 +12,7 @@ export function dayLabel(day: Day, index: number): string {
   return [`Day ${index + 1}`, day.date && shortDateText(day.date), day.name].filter(Boolean).join(' · ');
 }
 
-/** "Track" for a track, else the route's profile (Road, Bike, Foot), and where the motorway dial is turned, how. */
+/** "Track" for a track, else the route's profile (Motorcycle, Bicycle, On foot), and where the motorway dial is turned, how. */
 export function routeKindLabel(route: Route): string {
   if (route.kind === 'track') return 'Track';
   const profile = PROFILES.find((p) => p.value === route.profile)?.label ?? route.profile;

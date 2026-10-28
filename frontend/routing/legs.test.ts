@@ -8,7 +8,7 @@ const route = (id: string, points: [number, number][], legs: Record<string, Rout
   id,
   name: '',
   kind: 'routed',
-  profile: 'bike',
+  profile: 'bicycle',
   highways: 'allow',
   optional: false,
   points: points.map((lngLat, i) => ({ id: `${id}${i}`, lngLat })),
@@ -17,8 +17,8 @@ const route = (id: string, points: [number, number][], legs: Record<string, Rout
 
 describe('legs', () => {
   it('builds keys from profile and coordinates', () => {
-    expect(legKey({ profile: 'car', highways: 'avoid' }, [11.5, 48.1], [11.6, 48.2])).toBe('car:avoid/11.5,48.1;11.6,48.2');
-    expect(legKey({ profile: 'car', highways: 'allow' }, [11, 48], [0.000001, -0])).toBe('car:allow/11,48;0.000001,0');
+    expect(legKey({ profile: 'motorcycle', highways: 'avoid' }, [11.5, 48.1], [11.6, 48.2])).toBe('motorcycle:avoid/11.5,48.1;11.6,48.2');
+    expect(legKey({ profile: 'motorcycle', highways: 'allow' }, [11, 48], [0.000001, -0])).toBe('motorcycle:allow/11,48;0.000001,0');
   });
 
   it('needs one leg per pair of consecutive points', () => {
@@ -31,7 +31,7 @@ describe('legs', () => {
           [3, 3],
         ]),
       ).map((l) => l.key),
-    ).toEqual(['bike:allow/1,1;2,2', 'bike:allow/2,2;3,3']);
+    ).toEqual(['bicycle:allow/1,1;2,2', 'bicycle:allow/2,2;3,3']);
   });
 
   it('drops cached legs that are no longer needed', () => {
@@ -41,9 +41,9 @@ describe('legs', () => {
         [1, 1],
         [2, 2],
       ],
-      { 'bike:allow/1,1;2,2': routed('a'), 'bike:allow/2,2;3,3': routed('b'), 'car:allow/1,1;2,2': routed('c') },
+      { 'bicycle:allow/1,1;2,2': routed('a'), 'bicycle:allow/2,2;3,3': routed('b'), 'motorcycle:allow/1,1;2,2': routed('c') },
     );
-    expect(pruneLegs(r)).toEqual({ 'bike:allow/1,1;2,2': routed('a') });
+    expect(pruneLegs(r)).toEqual({ 'bicycle:allow/1,1;2,2': routed('a') });
   });
 
   it('finds the next missing leg, skipping cached and failed ones', () => {
@@ -55,10 +55,10 @@ describe('legs', () => {
         [3, 3],
         [4, 4],
       ],
-      { 'bike:allow/1,1;2,2': routed('a') },
+      { 'bicycle:allow/1,1;2,2': routed('a') },
     );
-    const failed = new Set(['bike:allow/2,2;3,3']);
-    expect(nextMissingLeg([r], failed)).toMatchObject({ routeId: 'r', key: 'bike:allow/3,3;4,4', from: [3, 3], to: [4, 4] });
+    const failed = new Set(['bicycle:allow/2,2;3,3']);
+    expect(nextMissingLeg([r], failed)).toMatchObject({ routeId: 'r', key: 'bicycle:allow/3,3;4,4', from: [3, 3], to: [4, 4] });
     expect(
       nextMissingLeg(
         [
@@ -68,7 +68,7 @@ describe('legs', () => {
               [1, 1],
               [2, 2],
             ],
-            { 'bike:allow/1,1;2,2': routed('a') },
+            { 'bicycle:allow/1,1;2,2': routed('a') },
           ),
         ],
         new Set(),
@@ -101,9 +101,9 @@ const tour: Route = {
     [2, 2],
     [3, 3],
   ]),
-  profile: 'car',
+  profile: 'motorcycle',
   highways: 'allow',
-  legs: { 'car:allow/1,1;2,2': routed('[[1,1],[1.5,1.2],[2,2]]'), 'car:allow/2,2;3,3': routed('[[2,2],[2.5,2.8],[3,3]]') },
+  legs: { 'motorcycle:allow/1,1;2,2': routed('[[1,1],[1.5,1.2],[2,2]]'), 'motorcycle:allow/2,2;3,3': routed('[[2,2],[2.5,2.8],[3,3]]') },
 };
 
 describe('legCoordinates', () => {
@@ -114,7 +114,7 @@ describe('legCoordinates', () => {
       [1.5, 1.2],
       [2, 2],
     ]);
-    const partial = { ...tour, legs: { 'car:allow/1,1;2,2': routed('[[1,1],[1.5,1.2],[2,2]]') } };
+    const partial = { ...tour, legs: { 'motorcycle:allow/1,1;2,2': routed('[[1,1],[1.5,1.2],[2,2]]') } };
     expect(legCoordinates(partial, second!, decode)).toEqual([
       [2, 2],
       [3, 3],
@@ -134,7 +134,7 @@ describe('legCoordinates', () => {
 describe('routeDistance', () => {
   it('adds routed lengths and counts other legs as the crow flies', () => {
     expect(routeDistance(tour)).toBe(2000);
-    const partial = { ...tour, legs: { 'car:allow/1,1;2,2': routed('[[1,1],[2,2]]', 500) } };
+    const partial = { ...tour, legs: { 'motorcycle:allow/1,1;2,2': routed('[[1,1],[2,2]]', 500) } };
     // 2,2 to 3,3 is about 157 km on the sphere.
     expect(routeDistance(partial)).toBeCloseTo(500 + 157_000, -4);
   });
@@ -153,12 +153,12 @@ describe('straight legs', () => {
   });
 
   it('are never routed', () => {
-    expect(nextMissingLeg([r], new Set())).toMatchObject({ key: 'bike:allow/2,2;3,3' });
-    expect(nextMissingLeg([{ ...r, legs: { 'bike:allow/2,2;3,3': routed('b') } }], new Set())).toBeUndefined();
+    expect(nextMissingLeg([r], new Set())).toMatchObject({ key: 'bicycle:allow/2,2;3,3' });
+    expect(nextMissingLeg([{ ...r, legs: { 'bicycle:allow/2,2;3,3': routed('b') } }], new Set())).toBeUndefined();
   });
 
   it('keep no cached geometry', () => {
-    expect(pruneLegs({ ...r, legs: { 'bike:allow/1,1;2,2': routed('a'), 'bike:allow/2,2;3,3': routed('b') } })).toEqual({ 'bike:allow/2,2;3,3': routed('b') });
+    expect(pruneLegs({ ...r, legs: { 'bicycle:allow/1,1;2,2': routed('a'), 'bicycle:allow/2,2;3,3': routed('b') } })).toEqual({ 'bicycle:allow/2,2;3,3': routed('b') });
   });
 });
 
@@ -172,10 +172,10 @@ describe('legState', () => {
         [3, 3],
         [4, 4],
       ],
-      { 'bike:allow/1,1;2,2': routed('a') },
+      { 'bicycle:allow/1,1;2,2': routed('a') },
     );
     r.points[3]!.straight = true;
-    expect(routeLegs(r).map((leg) => legState(r, leg, new Set(['bike:allow/2,2;3,3'])))).toEqual(['routed', 'failed', 'straight']);
+    expect(routeLegs(r).map((leg) => legState(r, leg, new Set(['bicycle:allow/2,2;3,3'])))).toEqual(['routed', 'failed', 'straight']);
     expect(legState(r, routeLegs(r)[1]!, new Set())).toBe('pending');
   });
 });

@@ -12,10 +12,10 @@ final class RouteGeometryTest extends TestCase
 {
     public function testWritesLegKeysAsTheClientDoes(): void
     {
-        self::assertSame('car:avoid/11.5,48.1;11.6,48.2', RouteGeometry::legKey('car', 'avoid', [11.5, 48.1], [11.6, 48.2]));
-        self::assertSame('bike:allow/11,48;0,0', RouteGeometry::legKey('bike', 'allow', [11.0, 48.0], [0.0, -0.0]));
-        self::assertSame('foot:allow/0.000001,-0.1;179.999999,-85.05', RouteGeometry::legKey('foot', 'allow', [0.000001, -0.1], [179.999999, -85.05]));
-        self::assertSame('car:prefer/11.123457,48.987654;1,2', RouteGeometry::legKey('car', 'prefer', [11.123457, 48.987654], [1, 2]));
+        self::assertSame('motorcycle:avoid/11.5,48.1;11.6,48.2', RouteGeometry::legKey('motorcycle', 'avoid', [11.5, 48.1], [11.6, 48.2]));
+        self::assertSame('bicycle:allow/11,48;0,0', RouteGeometry::legKey('bicycle', 'allow', [11.0, 48.0], [0.0, -0.0]));
+        self::assertSame('pedestrian:allow/0.000001,-0.1;179.999999,-85.05', RouteGeometry::legKey('pedestrian', 'allow', [0.000001, -0.1], [179.999999, -85.05]));
+        self::assertSame('motorcycle:prefer/11.123457,48.987654;1,2', RouteGeometry::legKey('motorcycle', 'prefer', [11.123457, 48.987654], [1, 2]));
     }
 
     public function testDecodesPolylines(): void
@@ -27,7 +27,7 @@ final class RouteGeometryTest extends TestCase
     public function testJoinsRoutedLegsAndFallsBackToStraightLines(): void
     {
         $route = [
-            'profile' => 'car',
+            'profile' => 'motorcycle',
             'highways' => 'allow',
             'points' => [
                 ['id' => 'a', 'lngLat' => [1.0, 1.0]],
@@ -37,9 +37,9 @@ final class RouteGeometryTest extends TestCase
             ],
             'legs' => [
                 // 1,1 -> 1.5,1.2 -> 2,2 as polyline6
-                'car:allow/1,1;2,2' => ['geometry' => '_c`|@_c`|@_seK_qo]_oyo@_qo]', 'distanceM' => 1, 'durationS' => 1],
+                'motorcycle:allow/1,1;2,2' => ['geometry' => '_c`|@_c`|@_seK_qo]_oyo@_qo]', 'distanceM' => 1, 'durationS' => 1],
                 // Kept for a straight leg by mistake: a straight leg is drawn straight all the same.
-                'car:allow/2,2;3,3' => ['geometry' => '_gayB_gayB_{fjL_{fjL', 'distanceM' => 1, 'durationS' => 1],
+                'motorcycle:allow/2,2;3,3' => ['geometry' => '_gayB_gayB_{fjL_{fjL', 'distanceM' => 1, 'durationS' => 1],
             ],
         ];
         self::assertSame([[1.0, 1.0], [1.5, 1.2], [2.0, 2.0], [3.0, 3.0], [4.0, 4.0]], RouteGeometry::line($route));

@@ -16,7 +16,7 @@ const entry = (id: number, on: Partial<Pick<Entry, 'dayId' | 'stopId' | 'routeId
   ...on,
 });
 const photo = { name: 'a.jpg', mediaType: 'image/jpeg', size: 10, image: true };
-const day: Day = { id: 'd1', name: '', date: null, notes: '', routes: [{ id: 'r1', name: '', kind: 'routed', profile: 'car', highways: 'allow', optional: false, points: [], legs: {} }], stops: [] };
+const day: Day = { id: 'd1', name: '', date: null, notes: '', routes: [{ id: 'r1', name: '', kind: 'routed', profile: 'motorcycle', highways: 'allow', optional: false, points: [], legs: {} }], stops: [] };
 
 describe('the journal', () => {
   it('tells which part an entry is on', () => {
