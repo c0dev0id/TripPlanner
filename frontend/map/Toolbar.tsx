@@ -1,5 +1,5 @@
 import { For, Show, type JSX } from 'solid-js';
-import { HIGHWAYS, PROFILES } from '../model/trip';
+import { HIGHWAYS, PROFILES, takesMotorwayDial } from '../model/trip';
 import { setTool, tool, TOOLS, type Tool } from '../state/drawing';
 import { recalculateRoute } from '../state/routing';
 import { editingRoute, editRoute, redo, redoLabel, setRouteHighways, setRouteProfile, undo, undoLabel } from '../state/trip';
@@ -22,6 +22,23 @@ function ToolButton(props: { label: string; title: string; active?: boolean; dis
   );
 }
 
+/** A choice among a few values, one radio button each, with an optional title before them. */
+function Segmented<T extends string>(props: { name: string; label: string; title?: string; choices: readonly { value: T; label: string }[]; value: T; onChange: (value: T) => void }) {
+  return (
+    <div class="toolbar-group segmented" role="radiogroup" aria-label={props.label}>
+      <Show when={props.title}>{(title) => <span class="segmented-title">{title()}</span>}</Show>
+      <For each={props.choices}>
+        {(choice) => (
+          <label>
+            <input type="radio" name={props.name} value={choice.value} checked={props.value === choice.value} onChange={() => props.onChange(choice.value)} />
+            <span>{choice.label}</span>
+          </label>
+        )}
+      </For>
+    </div>
+  );
+}
+
 /** The tools of the route being edited, over the map: what a tap does, the profile and the motorway dial, undo and redo, reroute, done. */
 export function Toolbar() {
   const button = (t: Tool, icon: JSX.Element) => (
@@ -38,28 +55,9 @@ export function Toolbar() {
             {button('stop', <StopIcon />)}
             {button('delete', <DeleteIcon />)}
           </div>
-          <div class="toolbar-group segmented" role="radiogroup" aria-label="Routing profile">
-            <For each={PROFILES}>
-              {(profile) => (
-                <label>
-                  <input type="radio" name="profile" value={profile.value} checked={route().profile === profile.value} onChange={() => setRouteProfile(route().id, profile.value)} />
-                  <span>{profile.label}</span>
-                </label>
-              )}
-            </For>
-          </div>
-          <Show when={route().profile === 'car'}>
-            <div class="toolbar-group segmented" role="radiogroup" aria-label="Motorways">
-              <span class="segmented-title">Motorways</span>
-              <For each={HIGHWAYS}>
-                {(choice) => (
-                  <label>
-                    <input type="radio" name="highways" value={choice.value} checked={route().highways === choice.value} onChange={() => setRouteHighways(route().id, choice.value)} />
-                    <span>{choice.label}</span>
-                  </label>
-                )}
-              </For>
-            </div>
+          <Segmented name="profile" label="Routing profile" choices={PROFILES} value={route().profile} onChange={(profile) => setRouteProfile(route().id, profile)} />
+          <Show when={takesMotorwayDial(route().profile)}>
+            <Segmented name="highways" label="Motorways" title="Motorways" choices={HIGHWAYS} value={route().highways} onChange={(highways) => setRouteHighways(route().id, highways)} />
           </Show>
           <div class="toolbar-group" role="group" aria-label="History">
             <ToolButton label="Undo" title={undoLabel() ? `Undo: ${undoLabel()} (Ctrl+Z)` : 'Nothing to undo'} disabled={!undoLabel()} onClick={undo}>

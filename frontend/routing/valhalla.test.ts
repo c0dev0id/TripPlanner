@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fetchLeg, parseRouteResponse, routeRequest } from './valhalla';
+import { fetchLeg, parseRouteResponse, routeRequest, type LegRequest } from './valhalla';
 
 describe('routeRequest', () => {
   it('asks for one leg with the motorcycle costing and the motorway dial for the road profile', () => {
@@ -16,7 +16,7 @@ describe('routeRequest', () => {
 
   it('asks for the bicycle and pedestrian costings without the dial', () => {
     expect(routeRequest({ profile: 'bike', highways: 'prefer', from: [1, 1], to: [2, 2] })).toMatchObject({ costing: 'bicycle' });
-    expect(routeRequest({ profile: 'foot', highways: 'allow', from: [1, 1], to: [2, 2] })).not.toHaveProperty('costing_options');
+    expect(routeRequest({ profile: 'foot', highways: 'allow', from: [1, 1], to: [2, 2] }).costing_options).toBeUndefined();
   });
 });
 
@@ -37,7 +37,7 @@ describe('parseRouteResponse', () => {
 });
 
 describe('fetchLeg', () => {
-  const leg = { profile: 'car' as const, highways: 'allow' as const, from: [1, 1] as [number, number], to: [2, 2] as [number, number] };
+  const leg: LegRequest = { profile: 'car', highways: 'allow', from: [1, 1], to: [2, 2] };
 
   it('reports a non-JSON answer by its status', async () => {
     const fetchFn = (async () => new Response('gateway timeout', { status: 504 })) as typeof fetch;

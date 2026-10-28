@@ -1,5 +1,5 @@
 import { distanceBetween } from '../geo/measure';
-import type { Highways, LngLat, Profile, Route, RoutedLeg } from '../model/trip';
+import type { LngLat, Route, RoutedLeg } from '../model/trip';
 import { decodePolyline } from './polyline';
 
 /** What a leg is routed with: the profile and the motorway dial. */
@@ -83,10 +83,8 @@ export function pruneLegs(route: RoutePath & Pick<Route, 'legs'>): Record<string
   return Object.fromEntries(Object.entries(route.legs).filter(([key]) => needed.has(key)));
 }
 
-export interface LegJob extends Leg {
+export interface LegJob extends Leg, Costing {
   routeId: string;
-  profile: Profile;
-  highways: Highways;
 }
 
 /** The next routed leg without geometry that has not failed; the routes of the preferred day go first. */

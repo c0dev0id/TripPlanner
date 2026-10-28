@@ -1,6 +1,7 @@
 import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
 import { createEffect, onCleanup } from 'solid-js';
-import { menu, setMenu, setTool, tapAction, tool } from '../state/drawing';
+import { setTool, tapAction, tool } from '../state/drawing';
+import { menu, setMenu } from '../ui/menu';
 import { addFreeStop, appendPoint, editingRoute, editRoute, insertPoint, insertStop, redo, undo } from '../state/trip';
 import { fromMarker, toLngLat } from './markers';
 import { hitRouteLine } from './routeTools';
@@ -87,10 +88,6 @@ export function Interactions(props: { map: MapLibreMap }) {
       else addFreeStop(toLngLat(e.lngLat));
     }
   };
-  // A drag or a scroll closes the menu; a move the app makes (fitting a day, panning to a stop) leaves a menu opened from the panel alone.
-  const onMoveStart = (e: { originalEvent?: Event }) => {
-    if (e.originalEvent) setMenu(undefined);
-  };
   // A tap made before a key comes first, so that Esc or Undo act on it.
   const onKeyDownFirst = () => taps.flush();
   const onKeyDown = (e: KeyboardEvent) => {
@@ -119,7 +116,6 @@ export function Interactions(props: { map: MapLibreMap }) {
   window.addEventListener('pointercancel', onPointerUp, true);
   map.on('contextmenu', onContextMenu);
   map.on('click', onClick);
-  map.on('movestart', onMoveStart);
   window.addEventListener('keydown', onKeyDownFirst, true);
   document.addEventListener('keydown', onKeyDown);
   onCleanup(() => {
@@ -130,7 +126,6 @@ export function Interactions(props: { map: MapLibreMap }) {
     window.removeEventListener('pointercancel', onPointerUp, true);
     map.off('contextmenu', onContextMenu);
     map.off('click', onClick);
-    map.off('movestart', onMoveStart);
     document.removeEventListener('keydown', onKeyDown);
   });
   return null;

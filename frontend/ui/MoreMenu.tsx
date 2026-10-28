@@ -1,4 +1,4 @@
-import { setMenu, type MenuItem } from '../state/drawing';
+import { setMenu, type MenuItem } from './menu';
 import { DotsIcon } from './icons';
 
 /** A row's further actions behind a dots button, opened as the app's one menu below it. */

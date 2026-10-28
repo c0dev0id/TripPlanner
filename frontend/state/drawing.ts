@@ -1,5 +1,6 @@
 import { createSignal } from 'solid-js';
 import type { LngLat, RoutePoint } from '../model/trip';
+import type { MenuItem } from '../ui/menu';
 import { editingRoute, setStraight } from './trip';
 
 /** Transient state of editing on the map; never kept. */
@@ -37,19 +38,6 @@ export const [panTarget, setPanTarget] = createSignal<{ lngLat: LngLat }>();
 export function panTo(lngLat: LngLat): void {
   setPanTarget({ lngLat });
 }
-
-export interface MenuItem {
-  label: string;
-  run: () => void;
-  disabled?: boolean;
-}
-
-/**
- * The open menu, at a spot in viewport pixels: a context menu on the map or a marker, or
- * the further actions of a row in the panel. A menu opened by a long press (`touch`)
- * ignores the lifting finger until it is tapped again.
- */
-export const [menu, setMenu] = createSignal<{ x: number; y: number; touch: boolean; items: MenuItem[] }>();
 
 /** What the next tap on the map does: the tool's work on the route being edited; nothing while no route is. */
 export function tapAction(): Tool | undefined {

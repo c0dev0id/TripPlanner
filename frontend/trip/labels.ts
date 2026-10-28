@@ -1,4 +1,4 @@
-import { PROFILES, type Day, type Route } from '../model/trip';
+import { PROFILES, takesMotorwayDial, type Day, type Route } from '../model/trip';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { durationText, shortDateText, timeText } from '../ui/format';
 
@@ -16,7 +16,7 @@ export function dayLabel(day: Day, index: number): string {
 export function routeKindLabel(route: Route): string {
   if (route.kind === 'track') return 'Track';
   const profile = PROFILES.find((p) => p.value === route.profile)?.label ?? route.profile;
-  if (route.profile !== 'car' || route.highways === 'allow') return profile;
+  if (!takesMotorwayDial(route.profile) || route.highways === 'allow') return profile;
   return route.highways === 'avoid' ? `${profile}, no motorways` : `${profile}, motorways first`;
 }
 

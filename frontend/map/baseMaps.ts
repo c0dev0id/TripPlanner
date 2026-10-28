@@ -1,4 +1,5 @@
 import type { StyleSpecification } from 'maplibre-gl';
+import { createSignal } from 'solid-js';
 import { readPreference, writePreference } from '../ui/preferences';
 
 /** The base maps to choose from: OpenFreeMap's vector styles, and raster tiles for the topographic and the classic looks. */
@@ -30,12 +31,12 @@ export const BASE_MAPS: readonly BaseMap[] = [
   { id: 'cyclosm', label: 'CyclOSM', style: raster('https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', `Map style: <a href="https://www.cyclosm.org">CyclOSM</a>, hosted by OpenStreetMap France · Map data: ${OSM_ATTRIBUTION}`, 20) },
 ];
 
+const stored = readPreference('baseMap');
 /** The base map this browser chose last, or the first. */
-export function chosenBaseMap(): BaseMap {
-  const id = readPreference('baseMap');
-  return BASE_MAPS.find((b) => b.id === id) ?? BASE_MAPS[0]!;
-}
+const [chosenBaseMap, setChosenBaseMap] = createSignal(BASE_MAPS.find((b) => b.id === stored) ?? BASE_MAPS[0]!);
+export { chosenBaseMap };
 
 export function chooseBaseMap(baseMap: BaseMap): void {
-  writePreference('baseMap', baseMap.id === BASE_MAPS[0]!.id ? undefined : baseMap.id);
+  setChosenBaseMap(baseMap);
+  writePreference('baseMap', baseMap.id);
 }

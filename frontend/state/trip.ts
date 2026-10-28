@@ -185,11 +185,11 @@ export function setRouteOptional(routeId: string, optional: boolean): void {
 }
 
 export function setRouteProfile(routeId: string, profile: Profile): void {
-  edit((trip) => dayEdit.setRouteProfile(trip, routeId, profile), 'Change profile');
+  changeRoute(routeId, (r) => (r.profile === profile ? r : routeEdit.changeCosting(r, { profile })), 'Change profile');
 }
 
 export function setRouteHighways(routeId: string, highways: Highways): void {
-  edit((trip) => dayEdit.setRouteHighways(trip, routeId, highways), 'Turn the motorway dial');
+  changeRoute(routeId, (r) => (r.highways === highways ? r : routeEdit.changeCosting(r, { highways })), 'Turn the motorway dial');
 }
 
 /** Applies a route edit (see routeEdit) to a route; the day's bound stops follow their points. */

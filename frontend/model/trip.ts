@@ -21,6 +21,9 @@ export const HIGHWAYS: readonly { value: Highways; label: string }[] = [
   { value: 'prefer', label: 'Prefer' },
 ];
 
+/** Whether the motorway dial counts for a profile: the road profile's costing takes it, bike and foot do not. */
+export const takesMotorwayDial = (profile: Profile): boolean => profile === 'car';
+
 /** What a stop is, which decides its icon. */
 export type StopKind = 'hotel' | 'restaurant' | 'cafe' | 'fuel' | 'sight' | 'photo' | 'break' | 'other';
 

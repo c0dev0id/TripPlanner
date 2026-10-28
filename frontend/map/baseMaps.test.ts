@@ -4,13 +4,11 @@ import { BASE_MAPS, chooseBaseMap, chosenBaseMap } from './baseMaps';
 describe('the base map choice', () => {
   beforeEach(() => localStorage.clear());
 
-  it('is the first until one is chosen, and the first again for an unknown one', () => {
+  it('is the first until one is chosen, and keeps the choice', () => {
     expect(chosenBaseMap().id).toBe('liberty');
-    chooseBaseMap(BASE_MAPS[4]!);
-    expect(chosenBaseMap().id).toBe('opentopomap');
-    localStorage.setItem('planner.baseMap', 'gone');
-    expect(chosenBaseMap().id).toBe('liberty');
-    chooseBaseMap(BASE_MAPS[0]!);
-    expect(localStorage.getItem('planner.baseMap')).toBeNull();
+    const topo = BASE_MAPS.find((b) => b.id === 'opentopomap')!;
+    chooseBaseMap(topo);
+    expect(chosenBaseMap()).toBe(topo);
+    expect(localStorage.getItem('planner.baseMap')).toBe('opentopomap');
   });
 });

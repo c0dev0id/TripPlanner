@@ -1,6 +1,6 @@
 import { Map as MapLibreMap, Marker, type LngLat as MapLibreLngLat } from 'maplibre-gl';
 import type { LngLat } from '../model/trip';
-import { setMenu, type MenuItem } from '../state/drawing';
+import { setMenu, type MenuItem } from '../ui/menu';
 import { onLongPress } from './longPress';
 import { markerElement } from './markerContent';
 
@@ -70,8 +70,7 @@ export class MarkerHandle {
 /**
  * Opens the context menu with `items` from a draggable marker, which swallows the map's
  * own contextmenu event and long press: right-click for mice, a long press for touch and
- * pens. No items, no menu. Dragging the marker closes an open menu. Returns a function
- * that removes the listeners.
+ * pens. No items, no menu. Returns a function that removes the listeners.
  */
 export function onMarkerMenu(handle: MarkerHandle, items: () => MenuItem[] | undefined): () => void {
   const root = handle.root;
@@ -89,15 +88,12 @@ export function onMarkerMenu(handle: MarkerHandle, items: () => MenuItem[] | und
     // Android also fires contextmenu on a long press; that one comes from onLongPress.
     if (pointerType === 'mouse') open(e.clientX, e.clientY, false);
   };
-  const onDragStart = () => setMenu(undefined);
   root.addEventListener('pointerdown', onPointerDown);
   root.addEventListener('contextmenu', onContextMenu);
-  handle.marker.on('dragstart', onDragStart);
   const stopLongPress = onLongPress(root, (x, y) => open(x, y, true));
   return () => {
     stopLongPress();
     root.removeEventListener('pointerdown', onPointerDown);
     root.removeEventListener('contextmenu', onContextMenu);
-    handle.marker.off('dragstart', onDragStart);
   };
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, RoutedLeg, Trip } from '../model/trip';
-import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copyStopToDay, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, removeRoute, removeStop, setDayDate, setRouteProfile, updateRoute, updateStop } from './dayEdit';
+import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copyStopToDay, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, removeRoute, removeStop, setDayDate, updateRoute, updateStop } from './dayEdit';
+import { changeCosting } from './routeEdit';
 import { routeLegs } from './legs';
 import * as routeEdit from './routeEdit';
 
@@ -27,7 +28,7 @@ describe('routes and points', () => {
   it('adds a route with the day profile and points at its end', () => {
     const trip = fixture();
     expect(day(trip).routes[0]!.points.map((p) => p.id)).toEqual(['a', 'b', 'c']);
-    const bike = setRouteProfile(trip, 'r', 'bike');
+    const bike = updateRoute(trip, 'r', (r) => changeCosting(r, { profile: 'bike' }));
     const two = addRoute(bike, 'd', 'r2');
     expect(day(two).routes[1]!.profile).toBe('bike');
     expect(day(bike).routes[0]!.legs).toEqual({});

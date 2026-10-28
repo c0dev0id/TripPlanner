@@ -6,6 +6,7 @@ import { routeDistance } from '../routing/legs';
 import { daySequence, type SequenceEntry } from '../routing/sequence';
 import { dayTimeline, type EntryTime } from '../routing/timeline';
 import { EntryFile } from '../trip/EntryFile';
+import { ContextMenu } from '../ui/ContextMenu';
 import { dayLabel, routeKindLabel, routeLabel, timelineText, timesText } from '../trip/labels';
 import { dateText, distanceText, durationText, takenAtText } from '../ui/format';
 import { StopShape } from '../ui/StopShape';
@@ -37,6 +38,7 @@ export function TripView(props: { api: string }) {
               <ViewMap trip={p().trip} entries={p().entries} api={props.api} />
               <EntryList entries={on({})} api={props.api} />
               <For each={p().trip.days}>{(day, index) => <DaySection day={day} index={index()} entriesOn={on} api={props.api} />}</For>
+              <ContextMenu />
             </article>
           );
         }}

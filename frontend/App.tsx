@@ -1,7 +1,7 @@
 import { createResource, createSignal, For, Show } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout } from './api';
 import { Library } from './library/Library';
-import { ContextMenu } from './map/ContextMenu';
+import { ContextMenu } from './ui/ContextMenu';
 import { HintBar } from './map/HintBar';
 import { MapView } from './map/MapView';
 import { Toolbar } from './map/Toolbar';

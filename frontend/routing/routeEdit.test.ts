@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Route, RoutedLeg } from '../model/trip';
-import { addLeg, appendPoint, changeProfile, insertPoint, movePoint, removePoint, setStraight } from './routeEdit';
+import { addLeg, appendPoint, changeCosting, insertPoint, movePoint, removePoint, setStraight } from './routeEdit';
 
 const routed = (geometry: string): RoutedLeg => ({ geometry, distanceM: 1, durationS: 1 });
 
@@ -64,10 +64,11 @@ describe('route edits', () => {
     expect(back.legs).toEqual({ 'car:allow/2,2;3,3': routed('bc') });
   });
 
-  it('drops every leg when the profile changes', () => {
-    const r = changeProfile(base, 'bike');
+  it('drops every leg when the costing changes', () => {
+    const r = changeCosting(base, { profile: 'bike' });
     expect(r.profile).toBe('bike');
     expect(r.legs).toEqual({});
+    expect(changeCosting(base, { highways: 'avoid' }).legs).toEqual({});
   });
 
   it('stores needed legs and ignores outdated results', () => {

@@ -1,5 +1,5 @@
-import type { LngLat, Highways, Profile, Route, RoutedLeg, RoutePoint } from '../model/trip';
-import { pruneLegs, routedLegs } from './legs';
+import type { LngLat, Route, RoutedLeg, RoutePoint } from '../model/trip';
+import { pruneLegs, routedLegs, type Costing } from './legs';
 
 /** Pure edits of one route. Each result keeps exactly the routed legs it still needs. */
 
@@ -35,13 +35,9 @@ export function setStraight(route: Route, id: string, straight: boolean): Route 
   return withPrunedLegs({ ...route, points });
 }
 
-export function changeProfile(route: Route, profile: Profile): Route {
-  return withPrunedLegs({ ...route, profile });
-}
-
-/** Turns the motorway dial; the legs are routed again under it. */
-export function changeHighways(route: Route, highways: Highways): Route {
-  return withPrunedLegs({ ...route, highways });
+/** Changes the profile or the motorway dial; the legs are routed again under the new costing. */
+export function changeCosting(route: Route, costing: Partial<Costing>): Route {
+  return withPrunedLegs({ ...route, ...costing });
 }
 
 /** Stores a routed leg if the route still needs it (the request may be outdated). */

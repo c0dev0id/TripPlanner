@@ -9,7 +9,8 @@ import { routeDistance } from '../routing/legs';
 import type { SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { saveState } from '../state/autosave';
-import { panTo, setExportOpen, setShareOpen, setShowNeighbours, setShowRoutePoints, setStopDialogId, showNeighbours, showRoutePoints, type MenuItem } from '../state/drawing';
+import { panTo, setExportOpen, setShareOpen, setShowNeighbours, setShowRoutePoints, setStopDialogId, showNeighbours, showRoutePoints } from '../state/drawing';
+import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, setJournalTarget } from '../state/journal';
 import {
