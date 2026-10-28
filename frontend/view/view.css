@@ -1,22 +1,7 @@
 /* The read-only trip page: one column for reading, the same for printing. */
 
 :root {
-  color-scheme: light dark;
   --bg: light-dark(#ffffff, #15171a);
-  --fg: light-dark(#1f2328, #e6e6e3);
-  --muted: light-dark(#5b6168, #9aa0a6);
-  --line: light-dark(#d9d7d2, #30343a);
-  --hover: light-dark(#eeece7, #2a2e34);
-  --accent: light-dark(#b4440f, #ef8354);
-}
-
-/* The theme chosen by hand overrides the browser's; without it, the colours follow the browser. */
-:root[data-theme='light'] {
-  color-scheme: light;
-}
-
-:root[data-theme='dark'] {
-  color-scheme: dark;
 }
 
 * {

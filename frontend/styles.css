@@ -1,24 +1,5 @@
 :root {
-  color-scheme: light dark;
-  --bg: light-dark(#f6f5f2, #15171a);
-  --fg: light-dark(#1f2328, #e6e6e3);
-  --muted: light-dark(#5b6168, #9aa0a6);
-  --line: light-dark(#d9d7d2, #30343a);
-  --panel: light-dark(#ffffff, #1e2126);
-  --hover: light-dark(#eeece7, #2a2e34);
-  --active: light-dark(#f8e3d6, #3a2a22);
-  --accent: light-dark(#b4440f, #ef8354);
-  --error: light-dark(#b42318, #f97066);
   --panel-width: 340px;
-}
-
-/* The theme chosen by hand overrides the browser's; without it, the colours follow the browser. */
-:root[data-theme='light'] {
-  color-scheme: light;
-}
-
-:root[data-theme='dark'] {
-  color-scheme: dark;
 }
 
 * {
@@ -564,42 +545,6 @@ a {
   color: #fff;
 }
 
-.context-menu {
-  position: fixed;
-  z-index: 10;
-  min-width: 160px;
-  margin: 0;
-  padding: 4px 0;
-  list-style: none;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--panel);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-  -webkit-touch-callout: none;
-  user-select: none;
-}
-
-.context-menu button {
-  display: block;
-  width: 100%;
-  padding: 6px 12px;
-  border: none;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.context-menu button:hover:not(:disabled) {
-  background: var(--active);
-}
-
-.context-menu button:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
 .dialog {
   width: min(360px, calc(100vw - 32px));
   padding: 12px 16px 16px;
@@ -669,7 +614,6 @@ a {
 .share-dialog p {
   margin: 0;
 }
-
 
 @media (max-width: 720px) {
   #root {

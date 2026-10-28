@@ -1,0 +1,14 @@
+/* The colours of both pages: pairs that follow the browser's scheme, or the one chosen by hand (ui/theme.ts). */
+
+:root {
+  color-scheme: light dark;
+  --bg: light-dark(#f6f5f2, #15171a);
+  --fg: light-dark(#1f2328, #e6e6e3);
+  --muted: light-dark(#5b6168, #9aa0a6);
+  --line: light-dark(#d9d7d2, #30343a);
+  --panel: light-dark(#ffffff, #1e2126);
+  --hover: light-dark(#eeece7, #2a2e34);
+  --active: light-dark(#f8e3d6, #3a2a22);
+  --accent: light-dark(#b4440f, #ef8354);
+  --error: light-dark(#b42318, #f97066);
+}

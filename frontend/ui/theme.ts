@@ -2,9 +2,10 @@ import { createSignal } from 'solid-js';
 import { readPreference, writePreference } from './preferences';
 
 /**
- * Light or dark by hand, or as the browser says. The choice is a `data-theme` attribute
- * on the document that the stylesheets turn into a colour scheme; the pages set it from
- * the preference before their first paint (templates/theme.php), this module from then on.
+ * Light or dark by hand, or as the browser says. The choice is the document's own
+ * `color-scheme`, which turns every `light-dark()` pair of the stylesheets at once; the
+ * pages set it from the preference before their first paint (templates/theme.php), this
+ * module from then on.
  */
 
 export type Theme = 'system' | 'light' | 'dark';
@@ -22,6 +23,5 @@ export { theme };
 export function chooseTheme(choice: Theme): void {
   setTheme(choice);
   writePreference('theme', choice === 'system' ? undefined : choice);
-  if (choice === 'system') delete document.documentElement.dataset.theme;
-  else document.documentElement.dataset.theme = choice;
+  document.documentElement.style.colorScheme = choice === 'system' ? '' : choice;
 }
