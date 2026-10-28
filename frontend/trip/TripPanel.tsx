@@ -245,7 +245,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
   const slack = () => props.time?.slackMin ?? 0;
   return (
     <li class="row sequence-item" classList={{ point: !stop() }}>
-      <button class="text grow" onClick={() => panTo(props.entry.lngLat)} title={stop()?.pointId === null ? `Beside the route, ${distanceText(props.entry.near?.distanceM ?? 0)} from it; show on the map` : 'Show on the map'}>
+      <button class="text grow" onClick={() => panTo(props.entry.lngLat)}>
         <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
           {(s) => <StopShape kind={s().kind} color={s().pointId === null ? FREE_COLOR : BOUND_COLOR} height={22} />}
         </Show>
@@ -258,6 +258,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
           <span class="muted detail">
             <Show when={props.time}>{(time) => <>{timesText(time())} · </>}</Show>
             {distanceText(props.entry.distanceM)}
+            <Show when={stop()?.pointId === null}> · {distanceText(props.entry.near?.distanceM ?? 0)} beside the route</Show>
             <Show when={slack() > 0}> · waits {durationText(slack() * 60)}</Show>
             <Show when={slack() < 0}>
               <span class="short"> · {durationText(-slack() * 60)} short</span>

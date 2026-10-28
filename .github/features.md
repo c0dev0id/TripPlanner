@@ -29,9 +29,10 @@
   contact, booking reference and notes in a dialog.
 - The panel lists the selected day's routes with profile and distance, and its stops in
   riding order with the distance from the day's start; free stops take the place where
-  the route passes closest. The plain route points are listed on request; a click pans
-  the map to the entry. The days before and after the selected one are drawn dimmed on
-  the map, switchable.
+  the route passes closest, and say how far beside it they stand. The plain route points
+  are listed on request; a click pans the map to the entry. The days before and after
+  the selected one are drawn dimmed on the map, switchable. The panel is as wide as its
+  edge is dragged, kept per browser; a double click on the edge puts the default back.
 - A date per day; a new day after a dated one is dated the day after, and the library
   shows a trip as starting on its first dated day. A stop can have a fixed arrival time
   and a pause. From the first timed stop and the routed legs' durations the panel
