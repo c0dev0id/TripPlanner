@@ -1,0 +1,43 @@
+/* The app's one menu, in the planner and on the read-only page. */
+
+.context-menu {
+  position: fixed;
+  z-index: 10;
+  min-width: 160px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--fg);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  font: 14px/1.4 system-ui, sans-serif;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.context-menu button {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.context-menu button:hover:not(:disabled) {
+  background: var(--active);
+}
+
+.context-menu button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.context-menu button[aria-checked='true'] {
+  font-weight: 600;
+}

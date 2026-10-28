@@ -1,13 +1,14 @@
 import { For, onCleanup, onMount, Show } from 'solid-js';
-import { menu, setMenu } from '../state/drawing';
+import { menu, setMenu } from './menu';
 
-/** The open menu, kept inside the viewport; a click elsewhere or Esc closes it. */
+/** The open menu, kept inside the viewport; a press or a scroll elsewhere, or Esc, closes it. */
 export function ContextMenu() {
   let list: HTMLUListElement | undefined;
 
   const onPointerDown = (e: PointerEvent) => {
     if (list && !list.contains(e.target as Node)) setMenu(undefined);
   };
+  const onWheel = () => setMenu(undefined);
   // Before the map's own Esc handling, which steps back a level only while no menu is open.
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape' && menu()) {
@@ -16,9 +17,11 @@ export function ContextMenu() {
     }
   };
   document.addEventListener('pointerdown', onPointerDown, true);
+  document.addEventListener('wheel', onWheel, true);
   document.addEventListener('keydown', onKeyDown, true);
   onCleanup(() => {
     document.removeEventListener('pointerdown', onPointerDown, true);
+    document.removeEventListener('wheel', onWheel, true);
     document.removeEventListener('keydown', onKeyDown, true);
   });
 
@@ -37,6 +40,8 @@ export function ContextMenu() {
               {(item) => (
                 <li>
                   <button
+                    role={item.checked === undefined ? undefined : 'menuitemradio'}
+                    aria-checked={item.checked}
                     disabled={item.disabled}
                     onClick={() => {
                       if (!armed) return;
