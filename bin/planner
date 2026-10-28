@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 use Planner\Account\Users;
 use Planner\Database;
+use Planner\Journal\FileStore;
 use Planner\Kernel;
 use Planner\Signup\Inviter;
 
@@ -20,6 +21,12 @@ switch ($command) {
         Database::applySchema($container->get(PDO::class), $root . '/db/schema.sql');
         echo "Schema applied.\n";
         break;
+    case 'db:recreate':
+        Database::dropAll($container->get(PDO::class));
+        Database::applySchema($container->get(PDO::class), $root . '/db/schema.sql');
+        $container->get(FileStore::class)->clear();
+        echo "Database recreated; every account, trip and file is gone.\n";
+        break;
     case 'invite':
         $container->get(Inviter::class)->invite(require_argument($argument), null, new DateTimeImmutable());
         echo "Invitation sent to $argument.\n";
@@ -29,7 +36,7 @@ switch ($command) {
         echo $granted ? "$argument is an admin now.\n" : "No account for $argument.\n";
         exit($granted ? 0 : 1);
     default:
-        fwrite(STDERR, "Usage: bin/planner db:init | invite <email> | admin:grant <email>\n");
+        fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | admin:grant <email>\n");
         exit(1);
 }
 

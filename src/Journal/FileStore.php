@@ -38,6 +38,16 @@ final class FileStore
         }
     }
 
+    /** Removes every trip's files: for a database recreated from scratch. */
+    public function clear(): void
+    {
+        foreach (is_dir($this->dir) ? scandir($this->dir) : [] as $name) {
+            if (ctype_digit($name)) {
+                $this->deleteAll((int) $name);
+            }
+        }
+    }
+
     /** Removes everything of a trip, for a trip being deleted. */
     public function deleteAll(int $tripId): void
     {

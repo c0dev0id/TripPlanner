@@ -261,7 +261,8 @@ entries at the end of their section.
   written again, worse.
 - **SQLite, one schema file, no migrations before 1.0.** One user base on one box. The
   schema is `db/schema.sql`; while nothing is released, a schema change recreates the
-  database. Migrations start with the first release.
+  database (`make recreate`, which also empties the file store, since `CREATE TABLE IF
+  NOT EXISTS` adds tables but never columns). Migrations start with the first release.
 - **Sign-up by invitation.** Open sign-up on a hobby server with photo uploads invites
   abuse. Visitors leave their e-mail on a waiting list; an admin sends an invitation link
   by mail; the link opens sign-up for that address. The address is verified by

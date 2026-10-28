@@ -17,6 +17,10 @@ install:
 
 init:
 	doas -u www php-8.4 bin/planner db:init
+# A fresh start while nothing is released: drops every table, applies the schema again
+# and removes the journal's files. Every account, trip and file is lost.
+recreate:
+	doas -u www php-8.4 bin/planner db:recreate
 invite:
 	doas -u www php-8.4 bin/planner invite $(EMAIL)
 admin:
@@ -31,4 +35,4 @@ check:
 	$(NPM) test
 	$(NPM) run build
 
-.PHONY: build install init invite admin check
+.PHONY: build install init recreate invite admin check

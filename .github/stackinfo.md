@@ -45,4 +45,6 @@
 - The server deploys with `git pull` and `make build`: Composer dependencies without
   development packages, `npm ci` and the Vite build into `public/build`.
 - The database, the file store and the local configuration live outside the checkout.
+  `make init` applies the schema (new tables only); `make recreate` drops everything and
+  applies it afresh, which is how a schema change is deployed before the first release.
 - Node.js 22 with npm 10 and Composer 2 on the server and for development.
