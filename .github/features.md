@@ -9,7 +9,9 @@
   folders, create a trip in the open folder. A search by name across trips and folders,
   listing at most twenty results.
 - Trips as a sequence of days; a day as one or more routes and its stops. Days and routes
-  are added, renamed and removed in the panel. A day is moved up or down and duplicated
+  are added in the panel and named, set up and removed in their dialogs; the trip has a
+  description and a day has notes, shown under the day's row and on the read-only page.
+  A day is moved up or down and duplicated
   (with new ids, undated); a route is moved up or down within its day, duplicated, or
   moved to another day with the stops bound to it; a stop is copied to another day as a
   free stop.
@@ -46,8 +48,7 @@
   way; its tracks become routes of kind track, simplified to at most 500 points joined by
   straight legs; its waypoints become stops, bound to a route point they stand on, free
   otherwise, with their type as the kind where it is one of ours.
-- Routes and stops can be marked optional (a route in its menu, a stop in its dialog)
-  and are shown so.
+- Routes and stops can be marked optional, each in its dialog, and are shown so.
 - GPX export from a dialog: the whole trip or the selected day; one file or one file per
   day in a zip; routes as tracks with their full line, or as routes of their points for
   the device to route between; with or without the optional routes and stops; free stops

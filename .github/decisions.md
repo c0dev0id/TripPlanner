@@ -71,9 +71,19 @@ entries at the end of their section.
 
 ## Library
 
-- **Rearranging is a menu per row, not drag and drop.** Each day, route, stop and trip
-  has a dots menu with move up, move down, duplicate, move or copy to another day,
-  remove. Drag and drop needs a library or a few hundred lines, fights the map's own
+- **The panel shows; dialogs edit.** Each element the panel lists (the trip, a day, a
+  route, a stop; in the library a folder and a trip) has one pencil that opens a dialog
+  holding everything the element has to set, and its removal. The panel keeps no input
+  field but the search: a name field, a date field or a folder select in a row makes the
+  row wide and busy, and every setting added later would add another; a dialog grows
+  with its element instead. The toolbar follows the same pattern, with one button that
+  opens the edited route's dialog in place of radio groups for the profile and the
+  motorway dial. This is a balance rather than a rule: the toggles for route points and
+  neighbouring days stay in the panel, since they switch what is shown and change
+  nothing in the trip.
+- **Rearranging is a menu per row, not drag and drop.** Each day, route and stop has a
+  dots menu with move up, move down, duplicate, move or copy to another day, and the
+  journal; a trip in the library is duplicated from its dialog. Drag and drop needs a library or a few hundred lines, fights the map's own
   dragging on touch screens, and the lists are short. The row menus and the map's
   context menus and the base map list are one mechanism: one open menu at a time, at a
   viewport position, closed by a press or a scroll elsewhere or by Esc, and by nothing
