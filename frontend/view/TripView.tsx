@@ -8,8 +8,8 @@ import { dayTimeline, type EntryTime } from '../routing/timeline';
 import { EntryFile } from '../trip/EntryFile';
 import { ContextMenu } from '../ui/ContextMenu';
 import { Lightbox } from '../ui/Lightbox';
-import { dayLabel, routeKindLabel, routeLabel, timelineText, timesText } from '../trip/labels';
-import { dateText, distanceText, durationText, takenAtText } from '../ui/format';
+import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from '../trip/labels';
+import { dateText, distanceText, takenAtText, timeText } from '../ui/format';
 import { StopShape } from '../ui/StopShape';
 import { ViewMap } from './ViewMap';
 
@@ -124,7 +124,8 @@ function StopItem(props: { entry: SequenceEntry; time: EntryTime | undefined; en
   const times = () => {
     const t = props.time;
     if (!t) return '';
-    return t.slackMin < 0 ? `${timesText(t)} (${durationText(-t.slackMin * 60)} short)` : timesText(t);
+    const off = offTime(t);
+    return off ? `${timesText(t)} (${off.text}, arrives ${timeText(off.rideMin)})` : timesText(t);
   };
   const detail = () => [times(), distanceText(props.entry.distanceM), stop().kind !== 'other' && kind(), stop().optional && 'optional'].filter(Boolean).join(' · ');
   return (

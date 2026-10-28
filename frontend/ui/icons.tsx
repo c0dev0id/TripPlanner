@@ -61,6 +61,13 @@ export const PinIcon = () => (
   </Icon>
 );
 
+export const ClockIcon = () => (
+  <Icon>
+    <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+    <path d="M12 7v5l3 3" />
+  </Icon>
+);
+
 export const HandIcon = () => (
   <Icon>
     <path d="M8 13v-7.5a1.5 1.5 0 0 1 3 0v6.5" />

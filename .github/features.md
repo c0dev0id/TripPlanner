@@ -41,10 +41,11 @@
   shows a trip as starting on its first dated day. A stop can have a fixed arrival time
   and a pause. From the first timed stop and the routed legs' durations the panel
   computes the day's planned timeline: arrival and departure at each stop, a fixed time
-  kept as it is with the waiting before it or by how much the ride falls short of it,
-  each route starting afresh at its first stop's time where it has one,
-  and the day's summary of departure, arrival at the end, riding time, pauses and the
-  stops the ride is short at. Nothing is corrected. Straight legs and legs not routed
+  kept as it is, each route starting afresh at its first stop's time where it has one.
+  Before a stop whose fixed time the ride misses stands a row of its own: by how much
+  the ride is late (red) or early (green), and when it gets there. The route's row and
+  the day's summary of departure, arrival at the end, riding time and pauses count the
+  stops the ride is late at. Nothing is corrected. Straight legs and legs not routed
   yet count at 50 km/h. Nothing is compared with the clock; that is a navigation
   system's job.
 - Every change saved to the server a moment later, as one document with a version; a

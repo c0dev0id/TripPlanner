@@ -29,6 +29,13 @@ export function routeKindLabel(route: Route): string {
   return route.highways === 'avoid' ? `${profile}, no motorways` : `${profile}, motorways first`;
 }
 
+/** Where the ride misses a stop's fixed time: by how much it is late or early, and when it gets there; none where it fits. */
+export function offTime(time: EntryTime): { late: boolean; text: string; rideMin: number } | undefined {
+  if (time.slackMin === 0) return undefined;
+  const late = time.slackMin < 0;
+  return { late, text: `${durationText(Math.abs(time.slackMin) * 60)} ${late ? 'late' : 'early'}`, rideMin: time.arrivalMin - time.slackMin };
+}
+
 /** The planned arrival, and the departure where a pause separates them. */
 export function timesText(time: EntryTime): string {
   const arrival = timeText(time.arrivalMin);

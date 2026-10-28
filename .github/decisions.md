@@ -170,9 +170,11 @@ entries at the end of their section.
   with different starts (a longer breakfast on one of them), so the day cannot know it,
   and two places for the same time disagree. A stop's time is a fixed arrival: a
   reservation, an opening hour, a check-in. The plan keeps it: the day goes on from that
-  time plus the pause. Where the ride gets there early the stop shows the waiting; where
-  it would get there late the stop shows by how much the ride is short, and the day
-  counts such stops. Nothing is corrected: whether to leave earlier, shorten a pause,
+  time plus the pause. Where the ride gets there early or late, a row of its own stands
+  before the stop, green or red, with by how much and when the ride gets there; the
+  route's row and the day count the late stops. A first draft put the waiting and the
+  shortfall at the end of the stop's detail line, where a long line cut them off and the
+  day's count was the only sign of a problem, far from the stop it was about. Nothing is corrected: whether to leave earlier, shorten a pause,
   move the stop or ignore a pessimistic calculation is the user's call, and a corrected
   arrival would disagree with the time the stop says. Stops before the first timed one
   have no times, and a day without a timed stop has distances only. Each route keeps its

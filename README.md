@@ -26,8 +26,8 @@ share work; sharing between users is on the way.
   with the distance from the start; a click shows the stop on the map. The days before
   and after are drawn dimmed for orientation.
 - **Times that add up** — give the first stop a time, others a fixed arrival time or a
-  pause: the plan shows when it gets where, where it waits, and where the ride falls
-  short of a fixed time.
+  pause: the plan shows when it gets where, and right before a stop whether the ride is
+  late or early for its time.
 - **Saved as you go** — every change is saved to your account moments later.
 - **Rearranged as plans change** — days and routes move up and down or get duplicated,
   a route moves to another day, a stop is copied to one, a whole trip is duplicated.

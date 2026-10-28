@@ -31,11 +31,11 @@ import {
   selectedSequence,
   selectedTimeline,
 } from '../state/trip';
-import { distanceText, durationText } from '../ui/format';
-import { BackIcon, DownloadIcon, NotebookIcon, PencilIcon, ShareIcon } from '../ui/icons';
+import { distanceText, timeText } from '../ui/format';
+import { BackIcon, ClockIcon, DownloadIcon, NotebookIcon, PencilIcon, ShareIcon } from '../ui/icons';
 import { MoreMenu } from '../ui/MoreMenu';
 import { StopShape } from '../ui/StopShape';
-import { dayLabel, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
+import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 
 /** How many journal entries a part has, for its row: "2 in the journal", or nothing for none. */
 function journalCount(target: EntryTarget): string {
@@ -187,14 +187,16 @@ function DayDetails(props: { day: Day }) {
   );
 }
 
-/** The day's timeline in one line, and where the ride falls short of a fixed time. */
+const lateText = (stops: number): string => (stops === 1 ? 'late at 1 stop' : `late at ${stops} stops`);
+
+/** The day's timeline in one line, and at how many stops the ride gets there after the fixed time. */
 function DaySummary(props: { timeline: DayTimeline }) {
   return (
     <p class="day-summary">
       {timelineText(props.timeline)}
-      <Show when={props.timeline.short > 0}>
+      <Show when={props.timeline.late > 0}>
         {' · '}
-        <span class="short">{props.timeline.short === 1 ? 'short at 1 stop' : `short at ${props.timeline.short} stops`}</span>
+        <span class="late">{lateText(props.timeline.late)}</span>
       </Show>
     </p>
   );
@@ -208,6 +210,7 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
   /** The route's points and bound stops, and the free stops that stand beside it. */
   const entries = createMemo(() => selectedSequence().filter((e) => e.routeIndex === props.index && !(e.stop?.pointId === null && !e.near)));
   const stopCount = createMemo(() => entries().filter((e) => e.stop).length);
+  const lateCount = createMemo(() => entries().filter((e) => (selectedTimeline()?.times.get(e.id)?.slackMin ?? 0) < 0).length);
   const more = (): MenuItem[] => [
     { label: 'Move up', run: () => moveRoute(props.route.id, -1), disabled: props.index === 0 },
     { label: 'Move down', run: () => moveRoute(props.route.id, 1), disabled: props.index === props.day.routes.length - 1 },
@@ -227,6 +230,9 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
               {routeKindLabel(props.route)}
               {props.route.points.length > 1 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
               {stopCount() > 0 ? ` · ${stopCount()} ${stopCount() === 1 ? 'stop' : 'stops'}` : ''}
+              <Show when={lateCount() > 0}>
+                <span class="late"> · {lateText(lateCount())}</span>
+              </Show>
               {props.route.optional ? ' · optional' : ''}
               {journal() ? ` · ${journal()}` : ''}
             </span>
@@ -252,12 +258,36 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
   );
 }
 
-/** A stop or a plain route point with its times and distance from the day's start; a click pans the map there. */
+/**
+ * A stop or a plain route point with its times and distance from the day's start; a click
+ * pans the map there. Before a stop whose fixed time the ride misses stands a row of its
+ * own that says by how much it is late or early, and when the ride gets there.
+ */
 function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined }) {
-  const stop = () => props.entry.stop;
-  const slack = () => props.time?.slackMin ?? 0;
   return (
-    <li class="row sequence-item" classList={{ point: !stop() }}>
+    <>
+      <Show when={props.time && offTime(props.time)}>
+        {(off) => (
+          <li class="off-time" classList={{ late: off().late, early: !off().late }}>
+            <span class="mark">
+              <ClockIcon />
+            </span>
+            <span class="lines">
+              <span>{off().text}</span>
+              <span class="muted">arrives {timeText(off().rideMin)}</span>
+            </span>
+          </li>
+        )}
+      </Show>
+      <SequenceRow entry={props.entry} time={props.time} />
+    </>
+  );
+}
+
+function SequenceRow(props: { entry: SequenceEntry; time: EntryTime | undefined }) {
+  const stop = () => props.entry.stop;
+  return (
+    <li class="row sequence-item" classList={{ point: !stop(), stop: stop() !== undefined }}>
       <button class="text grow" onClick={() => panTo(props.entry.lngLat)}>
         <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
           {(s) => <StopShape kind={s().kind} color={s().pointId === null ? FREE_COLOR : BOUND_COLOR} height={22} />}
@@ -272,10 +302,6 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
             <Show when={props.time}>{(time) => <>{timesText(time())} · </>}</Show>
             {distanceText(props.entry.distanceM)}
             <Show when={stop()?.pointId === null}> · {distanceText(props.entry.near?.distanceM ?? 0)} beside the route</Show>
-            <Show when={slack() > 0}> · waits {durationText(slack() * 60)}</Show>
-            <Show when={slack() < 0}>
-              <span class="short"> · {durationText(-slack() * 60)} short</span>
-            </Show>
             <Show when={stop()?.optional}> · optional</Show>
             <Show when={stop() && journalCount({ stopId: stop()!.id })}>{(journal) => <> · {journal()}</>}</Show>
           </span>

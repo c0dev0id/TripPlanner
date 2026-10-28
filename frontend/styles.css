@@ -315,9 +315,52 @@ a {
   gap: 8px;
 }
 
-/* Where the ride falls short of a stop's fixed time. */
-.short {
+/* Where the ride gets to a stop after its fixed time. */
+.late {
   color: var(--error);
+}
+
+/* The row before a stop whose fixed time the ride misses: late in red, early in green. */
+.off-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.off-time.late {
+  color: var(--error);
+}
+
+.off-time.early {
+  color: var(--ok);
+}
+
+.off-time .mark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 22px;
+}
+
+.off-time .mark svg {
+  width: 14px;
+  height: 14px;
+}
+
+.off-time .lines {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: row;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.off-time .muted {
+  font-weight: normal;
 }
 
 /* A short labelled input in a row. */

@@ -11,4 +11,5 @@
   --active: light-dark(#f8e3d6, #3a2a22);
   --accent: light-dark(#b4440f, #ef8354);
   --error: light-dark(#b42318, #f97066);
+  --ok: light-dark(#2b8a3e, #69db7c);
 }

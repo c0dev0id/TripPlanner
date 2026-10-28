@@ -3,8 +3,8 @@ import type { SequenceEntry } from './sequence';
 /**
  * A day's planned times, from the first stop that has a time on: the riding times of the
  * legs, the pauses, and the stops' fixed arrival times. A fixed time is kept as planned;
- * the ride to it is reported as waiting when it gets there early and as short when it
- * would get there late. Each route keeps its own clock: a route whose first stop has a
+ * the ride to it is reported as early when it gets there before it and as late when it
+ * would get there after it. Each route keeps its own clock: a route whose first stop has a
  * time starts there, whatever the route before ended at. Nothing is corrected, and
  * nothing here is the clock; matching the plan against the ride is a navigation system's
  * job.
@@ -15,7 +15,7 @@ export interface EntryTime {
   arrivalMin: number;
   /** After the pause; the arrival itself at a plain route point. */
   departureMin: number;
-  /** Whole minutes from the ride's arrival to the fixed time: waiting when positive, short when negative; 0 without one or when it fits. */
+  /** Whole minutes from the ride's arrival to the fixed time: early when positive, late when negative; 0 without one or when it fits. */
   slackMin: number;
 }
 
@@ -29,8 +29,8 @@ export interface DayTimeline {
   /** Of the whole day. */
   ridingS: number;
   pauseMin: number;
-  /** At how many stops the ride falls short of the fixed time. */
-  short: number;
+  /** At how many stops the ride gets there after the fixed time. */
+  late: number;
 }
 
 /** Minutes since midnight of a time of day written as HH:MM. */
@@ -44,7 +44,7 @@ function minutesOfDay(time: string): number {
  * arrival is the last departure plus the riding since; where there is no clock yet, a
  * stop's fixed time starts it. A route whose first stop has a fixed time starts its own
  * clock, set so that the ride from the route's start arrives there on time: the start of
- * a route is never short of its time or waiting for it, since the ride before it was
+ * a route is never late or early for its time, since the ride before it was
  * another route's. A route whose first stop has no time goes on from the route before.
  */
 export function dayTimeline(sequence: readonly SequenceEntry[]): DayTimeline | undefined {
@@ -55,7 +55,7 @@ export function dayTimeline(sequence: readonly SequenceEntry[]): DayTimeline | u
   let departMin: number | undefined;
   let endMin = 0;
   let pauseMin = 0;
-  let short = 0;
+  let late = 0;
   for (const entry of sequence) {
     if (entry.routeIndex !== route) {
       route = entry.routeIndex;
@@ -69,14 +69,14 @@ export function dayTimeline(sequence: readonly SequenceEntry[]): DayTimeline | u
     const arrivalMin = fixedMin ?? etaMin;
     const pause = entry.stop?.pauseMinutes ?? 0;
     times.set(entry.id, { arrivalMin, departureMin: arrivalMin + pause, slackMin });
-    if (slackMin < 0) short++;
+    if (slackMin < 0) late++;
     pauseMin += pause;
     departMin ??= arrivalMin + pause;
     clock = { min: arrivalMin + pause, riddenS: entry.timeS };
     endMin = arrivalMin;
   }
   if (departMin === undefined) return undefined;
-  return { times, departMin, endMin, ridingS: sequence.at(-1)!.timeS, pauseMin, short };
+  return { times, departMin, endMin, ridingS: sequence.at(-1)!.timeS, pauseMin, late };
 }
 
 /** By route, the fixed time of the route's first stop where it has one, with the riding time from the day's start to it. */

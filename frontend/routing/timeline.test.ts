@@ -22,10 +22,10 @@ describe('dayTimeline', () => {
       ['lunch', 630, 690, 0],
       ['p9000', 750, 750, 0],
     ]);
-    expect(timeline).toMatchObject({ departMin: 540, endMin: 750, ridingS: 9000, pauseMin: 90, short: 0 });
+    expect(timeline).toMatchObject({ departMin: 540, endMin: 750, ridingS: 9000, pauseMin: 90, late: 0 });
   });
 
-  it('keeps a fixed arrival time, waiting for it when early and short of it when late', () => {
+  it('keeps a fixed arrival time, early or late for it', () => {
     const timeline = dayTimeline([entry(0, stop('home', '09:00')), entry(1800, stop('coffee', '10:00', 15)), entry(9000, stop('hotel', '12:00', 30)), entry(9600)]);
     // Half an hour of riding, there at 09:30, waits until 10:00, leaves at 10:15; two more
     // hours of riding would reach the hotel at 12:15, a quarter of an hour short of its
@@ -36,7 +36,7 @@ describe('dayTimeline', () => {
       ['hotel', 720, 750, -15],
       ['p9600', 760, 760, 0],
     ]);
-    expect(timeline).toMatchObject({ departMin: 540, endMin: 760, pauseMin: 45, short: 1 });
+    expect(timeline).toMatchObject({ departMin: 540, endMin: 760, pauseMin: 45, late: 1 });
   });
 
   it('leaves the entries before the first timed stop without times', () => {
@@ -54,7 +54,7 @@ describe('dayTimeline', () => {
     ]);
   });
 
-  it('starts each route at its first stop\'s time, never short of it or waiting for it', () => {
+  it('starts each route at its first stop\'s time, never late or early for it', () => {
     // The first route ends at 10:00; the second starts at its ferry stop, fixed at 09:30, and goes on from there.
     const timeline = dayTimeline([entry(0, stop('home', '09:00')), entry(3600), entry(3600, stop('ferry', '09:30', 60), 1), entry(5400, stop('lunch'), 1)]);
     expect(listed(timeline)).toEqual([
@@ -63,7 +63,7 @@ describe('dayTimeline', () => {
       ['ferry', 570, 630, 0],
       ['lunch', 660, 660, 0],
     ]);
-    expect(timeline).toMatchObject({ short: 0, endMin: 660 });
+    expect(timeline).toMatchObject({ late: 0, endMin: 660 });
   });
 
   it('goes on into a route whose first stop has no time, and keeps later fixed times within a route', () => {
@@ -73,6 +73,6 @@ describe('dayTimeline', () => {
       ['pass', 600, 600, 0],
       ['hut', 585, 585, -45],
     ]);
-    expect(timeline!.short).toBe(1);
+    expect(timeline!.late).toBe(1);
   });
 });
