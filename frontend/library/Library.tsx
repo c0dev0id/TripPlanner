@@ -1,4 +1,4 @@
-import { createMemo, createResource, createSignal, For, Show } from 'solid-js';
+import { createMemo, createResource, createSignal, For, Match, Show, Switch } from 'solid-js';
 import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder } from '../api';
 import type { Folder, TripSummary } from '../model/trip';
 import { askConfirmation } from '../ui/confirm';
@@ -73,8 +73,10 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
       </Show>
       <input class="search" type="search" placeholder="Search trips and folders" aria-label="Search trips and folders" value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
       <Show when={busy() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
-      <Show when={trips.error ?? folders.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Show>
-      <Show when={trips() && folders()} fallback={<p class="muted">Loading…</p>}>
+      {/* Reading a resource that failed throws; its error is shown instead. */}
+      <Switch fallback={<p class="muted">Loading…</p>}>
+        <Match when={trips.error ?? folders.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
+        <Match when={trips() && folders()}>
         <Show
           when={query().trim()}
           fallback={
@@ -125,7 +127,8 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
         >
           {(q) => <SearchResults query={q()} folders={folders()!} trips={trips()!} onOpenFolder={openFolder} onOpenTrip={props.onOpen} disabled={props.opening} />}
         </Show>
-      </Show>
+        </Match>
+      </Switch>
     </section>
   );
 }
