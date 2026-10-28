@@ -71,7 +71,7 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
           </div>
         )}
       </Show>
-      <input class="search" type="search" placeholder="Search trips and folders" aria-label="Search trips and folders" value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
+      <input class="filter" type="search" placeholder="Search trips and folders" aria-label="Search trips and folders" value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
       <Show when={busy() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
       {/* Reading a resource that failed throws; its error is shown instead. */}
       <Switch fallback={<p class="muted">Loading…</p>}>
