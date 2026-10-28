@@ -188,6 +188,17 @@ entries at the end of their section.
   to the trip itself goes to the day of its date; one added to a day, a stop or a route
   stays where the user put it. The position places it on the map; nothing is matched
   against the route. Without the exif extension a photo is kept and shown, not placed.
+- **Photos are made into JPEGs in the browser, not on the server.** A phone photo is 4 to
+  8 MB and a HEIC on anything but Safari; the server's GD reads neither HEIC nor anything
+  large cheaply, and php-fpm is chrooted on the box, so shelling out to ImageMagick would
+  have meant copying it into the chroot. The browser decodes the photo, draws it at most
+  2560 px on the longer side onto a canvas and encodes a JPEG at 0.85; libheif compiled
+  to WebAssembly decodes a HEIC where the browser cannot, loaded only then. A canvas
+  drawing has no EXIF, and the server places photos by it, so the original's EXIF block
+  is copied into the new JPEG, from the JPEG's APP1 segment or the HEIF's Exif item, with
+  its orientation tag set to upright, since the pixels were turned. Anything that fails
+  is uploaded as it is. The server keeps reading EXIF from the file it gets, so it does
+  not know the difference.
 - **Files are served through PHP, not by httpd.** A file is read by its owner or through
   the trip's share token, so every read passes the application's check; the file store
   lies outside the web root. Previews are small JPEGs made with GD on first request and

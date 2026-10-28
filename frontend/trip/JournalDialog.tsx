@@ -10,6 +10,7 @@ import { showModalWhile } from '../ui/modal';
 import { createRequest } from '../ui/request';
 import { EntryFile } from './EntryFile';
 import { dayLabel, routeLabel } from './labels';
+import { prepareUpload } from './photo';
 
 /** What the open journal is about: the trip, or the part by its label. */
 function targetLabel(target: EntryTarget): string {
@@ -47,7 +48,7 @@ export function JournalDialog() {
     setPlaced(undefined);
     void run(async () => {
       const target = journalTarget()!;
-      const entry = await addEntry(target, text, chosen);
+      const entry = await addEntry(target, text, chosen && (await prepareUpload(chosen)));
       form.reset();
       if (!onTarget(entry, target) && entry.dayId) setPlaced(`${entry.file!.name} was placed on ${targetLabel({ dayId: entry.dayId })} by the time it was taken.`);
     });

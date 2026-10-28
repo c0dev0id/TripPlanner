@@ -60,8 +60,9 @@
   deleted in place; rows say how many entries a part has. A photo's time and position
   are read from its EXIF data: it is shown with the time it was taken, stands on the
   map where it was taken, and a photo added to the trip goes to the day of its date.
-  JPEG, PNG and WebP get a preview; other files, HEIC among them, open or download under
-  their name. An entry stays
+  A photo is made into a JPEG of at most 2560 px in the browser before it is uploaded,
+  HEIC included, with its EXIF kept, so that a phone sends little and every browser shows
+  it; other files open or download under their name. An entry stays
   with the trip when its part is removed.
 - A trip is planned or done; the library marks done trips.
 - A read-only page of the trip for reading and printing: the map with every day, the

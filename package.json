@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "libheif-js": "^1.23.5",
     "maplibre-gl": "^6.16.0",
     "solid-js": "^1.9.17"
   },

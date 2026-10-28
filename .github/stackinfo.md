@@ -11,8 +11,9 @@
 - The journal's files are uploads: httpd's `connection max request body` (1 MB by
   default, answered with 413 above it) and php-fpm's `upload_max_filesize` and
   `post_max_size` (2 MB and 8 MB by default) bound a photo's size; phone photos need
-  20 MB or so from all three. JPEG, PNG and WebP get a preview and a JPEG its EXIF
-  placement; a HEIC is kept and offered as a file, since GD and PHP's exif do not read it.
+  20 MB or so from all three, although a photo arrives as a JPEG of at most 2560 px made
+  in the browser (see the frontend). JPEG, PNG and WebP get a preview; a JPEG its EXIF
+  placement.
 - SQLite in WAL mode with foreign keys on, one database file.
 - Mail over SMTP to the local smtpd at 127.0.0.1:25; PHP's `mail()` is not used (no
   sendmail inside the chroot).
@@ -26,6 +27,8 @@
   (type checking), Vitest 5 with jsdom for unit tests of the pure modules. Two entries:
   the planner app and the read-only trip page.
 - MapLibre GL JS 6 (map rendering, Web Mercator).
+- libheif-js 1.23 (libheif compiled to WebAssembly, LGPL): decodes a HEIC in browsers that
+  cannot, loaded on demand as a chunk of its own, about 2 MB.
 - Route tool, GPX reading, line simplification and polyline handling ported from Layer Slayer.
 - Routing by the FOSSGIS Valhalla server (valhalla1.openstreetmap.de): at most one request
   per second, attribution shown. The profiles are Valhalla's motorcycle, bicycle and

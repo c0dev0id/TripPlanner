@@ -23,8 +23,8 @@ export default defineConfig({
     rollupOptions: {
       input: [fileURLToPath(new URL('frontend/main.tsx', import.meta.url)), fileURLToPath(new URL('frontend/view.tsx', import.meta.url))],
     },
-    // MapLibre alone is about 1 MB minified.
-    chunkSizeWarningLimit: 1500,
+    // MapLibre alone is about 1 MB minified; the HEIC decoder, loaded on demand, 2 MB.
+    chunkSizeWarningLimit: 2500,
   },
   test: {
     environment: 'jsdom',
