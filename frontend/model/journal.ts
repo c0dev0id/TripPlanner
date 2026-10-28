@@ -6,7 +6,7 @@ export interface EntryFile {
   name: string;
   mediaType: string;
   size: number;
-  /** Whether the server can show a preview of it. */
+  /** Whether the server has a preview of it: a JPEG, PNG or WebP; a HEIC or a document is offered by name. */
   image: boolean;
 }
 

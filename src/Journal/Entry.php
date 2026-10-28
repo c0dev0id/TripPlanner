@@ -8,7 +8,7 @@ namespace Planner\Journal;
 final readonly class Entry
 {
     /**
-     * @param ?array{name: string, mediaType: string, size: int, image: bool} $file
+     * @param ?array{name: string, mediaType: string, size: int, image: bool} $file the file, `image` where it has a preview
      * @param ?array{0: float, 1: float} $lngLat
      */
     public function __construct(
@@ -35,7 +35,7 @@ final readonly class Entry
             $row['stop_id'],
             $row['route_id'],
             $row['text'],
-            $row['file_name'] === null ? null : ['name' => $row['file_name'], 'mediaType' => $row['media_type'], 'size' => (int) $row['size'], 'image' => str_starts_with($row['media_type'], 'image/')],
+            $row['file_name'] === null ? null : ['name' => $row['file_name'], 'mediaType' => $row['media_type'], 'size' => (int) $row['size'], 'image' => in_array($row['media_type'], FileStore::PREVIEWABLE, true)],
             $row['taken_at'],
             $row['lng'] === null ? null : [(float) $row['lng'], (float) $row['lat']],
             $row['created_at'],

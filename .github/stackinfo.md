@@ -8,9 +8,11 @@
   fileinfo extensions: gd makes the journal's image previews, fileinfo tells uploaded
   files' types, exif reads when and where a photo was taken (without exif, photos are
   kept but not placed).
-- The journal's files are uploads through php-fpm: `upload_max_filesize` and
-  `post_max_size` in its php.ini bound a photo's size (PHP's defaults are 2 MB and 8 MB;
-  phone photos need more).
+- The journal's files are uploads: httpd's `connection max request body` (1 MB by
+  default, answered with 413 above it) and php-fpm's `upload_max_filesize` and
+  `post_max_size` (2 MB and 8 MB by default) bound a photo's size; phone photos need
+  20 MB or so from all three. JPEG, PNG and WebP get a preview and a JPEG its EXIF
+  placement; a HEIC is kept and offered as a file, since GD and PHP's exif do not read it.
 - SQLite in WAL mode with foreign keys on, one database file.
 - Mail over SMTP to the local smtpd at 127.0.0.1:25; PHP's `mail()` is not used (no
   sendmail inside the chroot).

@@ -9,6 +9,9 @@ use Psr\Http\Message\UploadedFileInterface;
 /** The journal's files on disk, one per entry under its trip, and small JPEG previews of the images. */
 final class FileStore
 {
+    /** The image types GD reads here, so the ones that get a preview; a HEIC is kept and offered as a file. */
+    public const PREVIEWABLE = ['image/jpeg', 'image/png', 'image/webp'];
+
     /** The longer side of a preview, in pixels. */
     private const PREVIEW_PX = 400;
 
