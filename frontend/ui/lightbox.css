@@ -1,0 +1,56 @@
+/* An image over the page, as large as the viewport allows, with its name under it. */
+
+.lightbox {
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: #111;
+  color: #eee;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.lightbox figure {
+  margin: 0;
+}
+
+.lightbox img {
+  display: block;
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 76px);
+  object-fit: contain;
+}
+
+.lightbox figcaption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.lightbox .name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lightbox a {
+  color: inherit;
+}
+
+.lightbox button {
+  display: flex;
+  padding: 2px;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}

@@ -63,8 +63,9 @@
   map where it was taken, and a photo added to the trip goes to the day of its date.
   A photo is made into a JPEG of at most 2560 px in the browser before it is uploaded,
   HEIC included, with its EXIF kept, so that a phone sends little and every browser shows
-  it; other files open or download under their name. An entry stays
-  with the trip when its part is removed.
+  it. A photo opens large over the page from its preview in the journal or its marker on
+  the map, in the planner and on the read-only page alike; other files open or download
+  under their name. An entry stays with the trip when its part is removed.
 - A trip is planned or done; the library marks done trips.
 - A read-only page of the trip for reading and printing: the map with every day, the
   journal, each day with its routes and its stops in riding order with their times,

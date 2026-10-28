@@ -1,6 +1,7 @@
 import { entryFileUrl, entryPreviewUrl } from '../api';
 import type { Entry } from '../model/journal';
 import type { Stop } from '../model/trip';
+import { openImage } from '../ui/Lightbox';
 import { StopShape } from '../ui/StopShape';
 import { BOUND_COLOR, FREE_COLOR } from './routeOverlay';
 
@@ -24,11 +25,12 @@ export function stopContent(stop: Stop): HTMLElement {
   ) as HTMLElement;
 }
 
-/** A photo as a small preview that opens the photo, under the API base the page reads from. */
+/** A photo as a small preview that opens the photo over the page, under the API base the page reads from. */
 export function photoContent(photo: Entry, base: string): HTMLElement {
+  const image = { src: entryFileUrl(base, photo.id), preview: entryPreviewUrl(base, photo.id), name: photo.file!.name };
   return (
-    <a class="photo" href={entryFileUrl(base, photo.id)} target="_blank" rel="noopener" title={photo.file!.name}>
-      <img src={entryPreviewUrl(base, photo.id)} alt={photo.file!.name} />
+    <a class="photo" href={image.src} target="_blank" rel="noopener" title={image.name} on:click={(e) => openImage(e, image)}>
+      <img src={image.preview} alt={image.name} />
     </a>
   ) as HTMLElement;
 }

@@ -38,7 +38,8 @@ share work; sharing between users is on the way.
   optional parts; the settings kept as named presets.
 - **A journal on everything** — notes, photos, receipts and documents on the trip, a
   day, a stop or a route. Photos shrink to a web size before they leave the phone, stand
-  on the map where they were taken and land on the day they were taken.
+  on the map where they were taken, land on the day they were taken and open large in
+  place.
 - **Planned, then ridden** — mark a trip done; the library shows it.
 - **Print it, share it** — a read-only page with the map, every day's stops and times
   and the journal, for printing, or shared under a link that needs no account.
