@@ -59,9 +59,9 @@ share work; sharing between users is on the way.
 4. Open a stop's details for its arrival time and pause; the first stop's time starts
    the day's timeline.
 5. *Export GPX…* in the trip's panel: pick the scope and the form, download.
-6. After the ride, *Journal…* on the trip, a day, a stop or a route takes the notes and
-   photos, *Journal here…* in the map's menu puts one at a spot; *Print, share…* opens
-   the trip's page or shares it under a link.
+6. After the ride, *Journal…* on a day, a stop or a route takes the notes and photos,
+   *Journal here…* in the map's menu puts one at a spot, and *Journal…* on the trip reads
+   it all top down; *Print, share…* opens the trip's page or shares it under a link.
 
 | Key or gesture | Does |
 |---|---|

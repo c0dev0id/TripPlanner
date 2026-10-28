@@ -2,7 +2,7 @@ import { Show, type JSX } from 'solid-js';
 import { setEditTarget, setTool, tool, TOOLS, type Tool } from '../state/drawing';
 import { recalculateRoute } from '../state/routing';
 import { editingRoute, editRoute, redo, redoLabel, undo, undoLabel } from '../state/trip';
-import { CheckIcon, DeleteIcon, HandIcon, InsertIcon, RedoIcon, RefreshIcon, SettingsIcon, StopIcon, UndoIcon } from '../ui/icons';
+import { CheckIcon, DeleteIcon, HandIcon, InsertIcon, PinIcon, RedoIcon, RefreshIcon, SettingsIcon, UndoIcon } from '../ui/icons';
 
 /** A toolbar button: an icon over a short caption, with a tooltip that says more. `active` marks the picked tool. */
 function ToolButton(props: { label: string; title: string; active?: boolean; disabled?: boolean; onClick: () => void; children: JSX.Element }) {
@@ -35,7 +35,7 @@ export function Toolbar() {
           <div class="toolbar-group" role="group" aria-label="Tool">
             {button('hand', <HandIcon />)}
             {button('point', <InsertIcon />)}
-            {button('stop', <StopIcon />)}
+            {button('stop', <PinIcon />)}
             {button('delete', <DeleteIcon />)}
           </div>
           <div class="toolbar-group" role="group" aria-label="Route">

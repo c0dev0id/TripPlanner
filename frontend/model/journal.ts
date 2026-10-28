@@ -44,6 +44,11 @@ export function onTarget(entry: Entry, target: EntryTarget): boolean {
 
 export const entriesOn = (entries: readonly Entry[], target: EntryTarget): Entry[] => entries.filter((e) => onTarget(e, target));
 
+/** The day an entry belongs to, by its day, its stop or its route; none for an entry on the trip itself. */
+export function dayOfEntry(days: readonly Day[], entry: Entry): Day | undefined {
+  return days.find((d) => d.id === entry.dayId || (entry.stopId !== null && d.stops.some((s) => s.id === entry.stopId)) || (entry.routeId !== null && d.routes.some((r) => r.id === entry.routeId)));
+}
+
 /** The entries that belong to the day: its own and those on its stops and routes. */
 export function entriesOfDay(entries: readonly Entry[], day: Day): Entry[] {
   const stops = new Set(day.stops.map((s) => s.id));

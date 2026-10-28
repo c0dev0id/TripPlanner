@@ -700,13 +700,41 @@ a {
   width: min(520px, calc(100vw - 32px));
 }
 
-.journal-dialog .entries {
-  max-height: 50vh;
+.journal-dialog .journal-list {
+  max-height: 55vh;
   overflow: auto;
 }
 
 .journal-dialog .entry {
   border-bottom: 1px solid var(--line);
+}
+
+/* The whole trip's journal: a heading per day, a smaller one per route or stop, the photos small. */
+.journal-part h4 {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.journal-part.day h4 {
+  margin-top: 16px;
+  padding-bottom: 2px;
+  border-bottom: 2px solid var(--line);
+  font-size: 0.95rem;
+}
+
+.journal-part:first-child h4 {
+  margin-top: 4px;
+}
+
+.journal-part h4 .kind {
+  font-weight: normal;
+  color: var(--muted);
+}
+
+.journal-list.overview .entry .file img {
+  width: 64px;
+  max-height: 64px;
 }
 
 .entry .detail {

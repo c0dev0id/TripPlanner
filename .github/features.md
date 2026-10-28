@@ -62,7 +62,10 @@
 
 - A journal on the trip, on a day, on a stop and on a route, opened from their rows and
   menus: entries of a note, a file (a photo, a receipt, a document) or both, edited and
-  deleted in place; rows say how many entries a part has. A photo's time and position
+  deleted in place; rows say how many entries a part has. The trip's own journal reads
+  the whole trip top down: a heading per day, under it the day's entries, then those of
+  its routes and its stops in riding order, with smaller photos; an entry that stands
+  somewhere has a button that shows it on the map, with its day. A photo's time and position
   are read from its EXIF data: it is shown with the time it was taken, stands on the
   map where it was taken, and a photo added to the trip goes to the day of its date.
   A photo is made into a JPEG of at most 2560 px in the browser before it is uploaded,

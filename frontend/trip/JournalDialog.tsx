@@ -1,15 +1,18 @@
-import { createSignal, For, Show } from 'solid-js';
+import { createMemo, createSignal, For, Show } from 'solid-js';
 import { tripApi } from '../api';
-import { onTarget, type Entry, type EntryTarget } from '../model/journal';
-import { addEntry, closeJournal, editEntry, entriesOn, journalSpot, journalTarget, removeEntry } from '../state/journal';
-import { openTrip, routeById } from '../state/trip';
+import { dayOfEntry, onTarget, type Entry, type EntryTarget } from '../model/journal';
+import type { LngLat } from '../model/trip';
+import { panTo } from '../state/drawing';
+import { addEntry, allEntries, closeJournal, editEntry, entriesOn, journalSpot, journalTarget, removeEntry } from '../state/journal';
+import { openTrip, routeById, selectDay } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
 import { field } from '../ui/form';
 import { takenAtText } from '../ui/format';
-import { DeleteIcon, PencilIcon } from '../ui/icons';
+import { DeleteIcon, PencilIcon, PinIcon } from '../ui/icons';
 import { showModalWhile } from '../ui/modal';
 import { createRequest } from '../ui/request';
 import { EntryFile } from './EntryFile';
+import { journalOverview } from './journalOverview';
 import { dayLabelOf, routeLabelOf } from './labels';
 import { prepareUpload } from './photo';
 
@@ -28,7 +31,11 @@ function targetLabel(target: EntryTarget): string {
   return trip.name;
 }
 
-/** The journal of the trip or of one of its parts: its entries, oldest first, and a form for a new note or file. */
+/**
+ * The journal of one part of the trip: its entries, oldest first, and a form for a new note
+ * or file. The trip's own journal reads the whole trip top down, part by part, and takes
+ * new entries on the trip itself.
+ */
 export function JournalDialog() {
   let dialog!: HTMLDialogElement;
   let form!: HTMLFormElement;
@@ -55,23 +62,46 @@ export function JournalDialog() {
     setPlaced(undefined);
     closeJournal();
   };
+  /** Shows where an entry stands: its day on the map, the map flown there, the journal closed. */
+  const show = (entry: Entry, spot: LngLat) => {
+    const day = dayOfEntry(openTrip()!.days, entry);
+    if (day) selectDay(day.id);
+    panTo(spot);
+    close();
+  };
   return (
     <dialog ref={dialog} class="dialog journal-dialog" aria-label="Journal" onClose={close}>
       <Show when={journalTarget()}>
         {(target) => {
           const label = () => targetLabel(target());
+          const wholeTrip = () => Object.keys(target()).length === 0;
           const list = () => entriesOn(target());
+          const overview = createMemo(() => (wholeTrip() ? journalOverview(openTrip()!, allEntries()) : []));
           return (
             <div class="dialog-body">
               <h3 class="name" title={label()}>
                 Journal · {label()}
               </h3>
-              <ul class="entries">
-                <For each={list()}>{(entry) => <EntryItem entry={entry} run={run} />}</For>
-              </ul>
-              <Show when={list().length === 0}>
-                <p class="muted">Nothing noted yet.</p>
-              </Show>
+              <div class="journal-list" classList={{ overview: wholeTrip() }}>
+                <Show when={wholeTrip()} fallback={<EntryList entries={list()} run={run} show={show} />}>
+                  <For each={overview()}>
+                    {(part) => (
+                      <section class="journal-part" classList={{ day: part.kind === 'day' }}>
+                        <h4>
+                          <Show when={part.kind === 'route' || part.kind === 'stop'}>
+                            <span class="kind">{part.kind === 'route' ? 'Route' : 'Stop'} · </span>
+                          </Show>
+                          {part.label}
+                        </h4>
+                        <EntryList entries={part.entries} run={run} show={show} />
+                      </section>
+                    )}
+                  </For>
+                </Show>
+                <Show when={(wholeTrip() ? overview() : list()).length === 0}>
+                  <p class="muted">Nothing noted yet.</p>
+                </Show>
+              </div>
             <form ref={form} onSubmit={add}>
               <label>
                 Note
@@ -103,8 +133,18 @@ export function JournalDialog() {
   );
 }
 
-/** An entry: its file, when a photo was taken, its text, editable, and its deletion; its requests run through the dialog's runner. */
-function EntryItem(props: { entry: Entry; run: (work: () => Promise<void>) => Promise<void> }) {
+type EntryActions = { run: (work: () => Promise<void>) => Promise<void>; show: (entry: Entry, spot: LngLat) => void };
+
+function EntryList(props: { entries: Entry[] } & EntryActions) {
+  return (
+    <ul class="entries">
+      <For each={props.entries}>{(entry) => <EntryItem entry={entry} run={props.run} show={props.show} />}</For>
+    </ul>
+  );
+}
+
+/** An entry: its file, when a photo was taken, its text, editable, where it stands, and its deletion; its requests run through the dialog's runner. */
+function EntryItem(props: { entry: Entry } & EntryActions) {
   const [editing, setEditing] = createSignal(false);
   const remove = async () => {
     if (!(await askConfirmation('Delete this journal entry?', 'Delete'))) return;
@@ -125,6 +165,13 @@ function EntryItem(props: { entry: Entry; run: (work: () => Promise<void>) => Pr
           </textarea>
         </Show>
       </div>
+      <Show when={props.entry.lngLat}>
+        {(spot) => (
+          <button type="button" class="icon" title="Show on the map" aria-label="Show on the map" onClick={() => props.show(props.entry, spot())}>
+            <PinIcon />
+          </button>
+        )}
+      </Show>
       <button type="button" class="icon" title="Edit the note" aria-label="Edit the note" onClick={() => setEditing(true)}>
         <PencilIcon />
       </button>
