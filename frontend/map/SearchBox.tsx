@@ -90,7 +90,7 @@ export function SearchBox(props: { map: MapLibreMap }) {
   });
 
   return (
-    <div class="search" classList={{ open: open() }}>
+    <div class="place-search" classList={{ open: open() }}>
       <button
         type="button"
         class="search-toggle"

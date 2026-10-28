@@ -203,7 +203,7 @@ a {
   margin: 8px 0;
 }
 
-.library .filter {
+.library .search {
   width: 100%;
   margin: 8px 0;
 }
@@ -408,7 +408,7 @@ a {
 }
 
 /* The place search, top left over the map. */
-.search {
+.place-search {
   position: absolute;
   top: 10px;
   left: 10px;
@@ -419,7 +419,7 @@ a {
 
 .search-form,
 .search-results,
-.search > .search-note,
+.place-search > .search-note,
 .search-toggle {
   border-radius: 6px;
   background: var(--panel);
@@ -770,11 +770,11 @@ a {
     cursor: pointer;
   }
 
-  .search:not(.open) :is(.search-form, .search-results, .search > .search-note) {
+  .place-search:not(.open) :is(.search-form, .search-results, .place-search > .search-note) {
     display: none;
   }
 
-  .search.open .search-toggle {
+  .place-search.open .search-toggle {
     display: none;
   }
 }
