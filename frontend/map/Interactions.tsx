@@ -1,6 +1,6 @@
 import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
 import { createEffect, onCleanup } from 'solid-js';
-import { setTool, spotItems, tapAction, tool } from '../state/drawing';
+import { setTool, spotItems, tapAction, tool, type Tool } from '../state/drawing';
 import { menu, setMenu } from '../ui/menu';
 import { addFreeStop, appendPoint, editingRoute, editRoute, insertPoint, insertStop, redo, undo } from '../state/trip';
 import { fromMarker, toLngLat } from './markers';
@@ -8,8 +8,9 @@ import { hitRouteLine } from './routeTools';
 import { TapFilter, tapReach, type PointerSample } from './tapFilter';
 
 /**
- * Taps on the map and keys while a route is edited: the tool's work on that route, undo
- * and redo, and the menu of a spot on the map (right-click or long press).
+ * Taps on the map and keys while a route is selected: the tool's work on that route, undo
+ * and redo, the hand while the space bar is held, and the menu of a spot on the map
+ * (right-click or long press).
  */
 export function Interactions(props: { map: MapLibreMap }) {
   const map = props.map;
@@ -68,7 +69,7 @@ export function Interactions(props: { map: MapLibreMap }) {
   const onTap = (e: MapMouseEvent) => {
     const action = tapAction();
     const route = editingRoute();
-    if (!action || !route || fromMarker(e.originalEvent)) return;
+    if (!action || action === 'hand' || !route || fromMarker(e.originalEvent)) return;
     setMenu(undefined);
     const hit = hitRouteLine(map, route, [e.point.x, e.point.y], tapReach(pointerType !== 'mouse'));
     if (action === 'point') {
@@ -81,6 +82,8 @@ export function Interactions(props: { map: MapLibreMap }) {
   };
   // A tap made before a key comes first, so that Esc or Undo act on it.
   const onKeyDownFirst = () => taps.flush();
+  /** The tool the held space bar put aside for the hand. */
+  let toolBeforeSpace: Tool | undefined;
   const onKeyDown = (e: KeyboardEvent) => {
     // Text fields keep their own undo and Escape handling, and an open modal dialog has
     // the keyboard to itself.
@@ -94,10 +97,28 @@ export function Interactions(props: { map: MapLibreMap }) {
       else undo();
       return;
     }
+    if (e.key === ' ') {
+      // The hand while the space bar is held: the map moves without a tap that adds.
+      e.preventDefault();
+      if (!e.repeat && tool() !== 'hand') {
+        toolBeforeSpace = tool();
+        setTool('hand');
+      }
+      return;
+    }
     if (e.key !== 'Escape') return;
-    // Esc goes back to the point tool, then ends editing; an open menu takes it first.
-    if (tool() !== 'point') setTool('point');
+    // Esc goes back to the hand, then ends editing; an open menu takes it first.
+    if (tool() !== 'hand') setTool('hand');
     else editRoute(undefined);
+  };
+  const onSpaceUp = (e: KeyboardEvent) => {
+    if (e.key === ' ') handBack();
+  };
+  /** The tool put aside for the hand comes back: on the space bar's release, or when the window loses the keys. */
+  const handBack = () => {
+    if (toolBeforeSpace === undefined) return;
+    if (editingRoute()) setTool(toolBeforeSpace);
+    toolBeforeSpace = undefined;
   };
 
   // On the window, so it runs before the menu closes itself on the same press.
@@ -109,8 +130,12 @@ export function Interactions(props: { map: MapLibreMap }) {
   map.on('click', onClick);
   window.addEventListener('keydown', onKeyDownFirst, true);
   document.addEventListener('keydown', onKeyDown);
+  document.addEventListener('keyup', onSpaceUp);
+  window.addEventListener('blur', handBack);
   onCleanup(() => {
     window.removeEventListener('keydown', onKeyDownFirst, true);
+    document.removeEventListener('keyup', onSpaceUp);
+    window.removeEventListener('blur', handBack);
     window.removeEventListener('pointerdown', onPointerDown, true);
     window.removeEventListener('pointermove', onPointerMove, true);
     window.removeEventListener('pointerup', onPointerUp, true);

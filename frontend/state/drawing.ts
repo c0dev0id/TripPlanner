@@ -6,20 +6,19 @@ import { addFreeStop, appendPoint, editingRoute, selectedDay, setStraight } from
 
 /** Transient state of editing on the map; never kept. */
 
-/** Tools while a route is edited: add or insert a point, make a stop, delete. */
-export type Tool = 'point' | 'stop' | 'delete';
+/** Tools while a route is selected: the hand moves about, the others add or insert a point, make a stop, delete. */
+export type Tool = 'hand' | 'point' | 'stop' | 'delete';
 
 /** Each tool's caption and what it does, for the toolbar and the hint bar. */
 export const TOOLS: Record<Tool, { label: string; hint: string }> = {
+  hand: { label: 'Hand', hint: 'drag the map; drag points and stops to move them; tap a stop for its details. Hold Space for the hand with another tool.' },
   point: { label: 'Point', hint: 'tap the map to add a point at the end of the route, or tap the route to insert one there; drag points and stops to move them.' },
   stop: { label: 'Stop', hint: 'tap a route point or the route to make a stop there; tap elsewhere for a stop beside the route.' },
   delete: { label: 'Delete', hint: 'tap a point or a stop to delete it.' },
 };
 
-export const [tool, setTool] = createSignal<Tool>('point');
-
-/** Whether the panel lists the plain route points between the stops. */
-export const [showRoutePoints, setShowRoutePoints] = createSignal(false);
+/** The hand to start with: a tap adds nothing until a tool is picked. */
+export const [tool, setTool] = createSignal<Tool>('hand');
 
 /** Whether the days before and after the selected one are drawn, dimmed, for orientation. */
 export const [showNeighbours, setShowNeighbours] = createSignal(true);
@@ -41,7 +40,7 @@ export function panTo(lngLat: LngLat): void {
   setPanTarget({ lngLat });
 }
 
-/** What the next tap on the map does: the tool's work on the route being edited; nothing while no route is. */
+/** What the next tap on the map does: the tool's work on the selected route; nothing while no route is selected. */
 export function tapAction(): Tool | undefined {
   return editingRoute() ? tool() : undefined;
 }

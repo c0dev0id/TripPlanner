@@ -516,7 +516,7 @@ a {
   inset: 0;
 }
 
-.map[data-tool] .maplibregl-canvas-container.maplibregl-interactive {
+.map:is([data-tool='point'], [data-tool='stop'], [data-tool='delete']) .maplibregl-canvas-container.maplibregl-interactive {
   cursor: crosshair;
 }
 

@@ -2,7 +2,7 @@ import { Show, type JSX } from 'solid-js';
 import { setEditTarget, setTool, tool, TOOLS, type Tool } from '../state/drawing';
 import { recalculateRoute } from '../state/routing';
 import { editingRoute, editRoute, redo, redoLabel, undo, undoLabel } from '../state/trip';
-import { CheckIcon, DeleteIcon, InsertIcon, RedoIcon, RefreshIcon, SettingsIcon, StopIcon, UndoIcon } from '../ui/icons';
+import { CheckIcon, DeleteIcon, HandIcon, InsertIcon, RedoIcon, RefreshIcon, SettingsIcon, StopIcon, UndoIcon } from '../ui/icons';
 
 /** A toolbar button: an icon over a short caption, with a tooltip that says more. `active` marks the picked tool. */
 function ToolButton(props: { label: string; title: string; active?: boolean; disabled?: boolean; onClick: () => void; children: JSX.Element }) {
@@ -21,7 +21,7 @@ function ToolButton(props: { label: string; title: string; active?: boolean; dis
   );
 }
 
-/** The tools of the route being edited, over the map: what a tap does, the route's settings, undo and redo, reroute, done. */
+/** The tools of the selected route, over the map: what a tap does, the route's settings, undo and redo, reroute, done. */
 export function Toolbar() {
   const button = (t: Tool, icon: JSX.Element) => (
     <ToolButton label={TOOLS[t].label} title={`${TOOLS[t].hint[0]!.toUpperCase()}${TOOLS[t].hint.slice(1)}`} active={tool() === t} onClick={() => setTool(t)}>
@@ -32,7 +32,8 @@ export function Toolbar() {
     <Show when={editingRoute()}>
       {(route) => (
         <div class="toolbar" role="toolbar" aria-label="Route tools">
-          <div class="toolbar-group" role="group" aria-label="Tap">
+          <div class="toolbar-group" role="group" aria-label="Tool">
+            {button('hand', <HandIcon />)}
             {button('point', <InsertIcon />)}
             {button('stop', <StopIcon />)}
             {button('delete', <DeleteIcon />)}
@@ -54,7 +55,7 @@ export function Toolbar() {
             </ToolButton>
           </div>
           <div class="toolbar-group" role="group" aria-label="Editing">
-            <ToolButton label="Done" title="Stop editing the route (Esc)" onClick={() => editRoute(undefined)}>
+            <ToolButton label="Done" title="Leave the route (Esc)" onClick={() => editRoute(undefined)}>
               <CheckIcon />
             </ToolButton>
           </div>
