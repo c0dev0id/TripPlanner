@@ -130,3 +130,8 @@ export interface Folder {
 }
 
 export const newId = (): string => crypto.randomUUID();
+
+/** The item with the changes applied, or the same item where every change is already so. */
+export function withChanges<T extends object>(item: T, change: NoInfer<Partial<T>>): T {
+  return (Object.keys(change) as (keyof T)[]).every((key) => item[key] === change[key]) ? item : { ...item, ...change };
+}

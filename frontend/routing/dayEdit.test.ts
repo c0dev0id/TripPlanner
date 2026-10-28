@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { Day, RoutedLeg, Trip } from '../model/trip';
-import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copyStopToDay, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, removeRoute, removeStop, setDayDate, updateRoute, updateStop } from './dayEdit';
-import { changeCosting } from './routeEdit';
+import { withChanges, type Day, type RoutedLeg, type Trip } from '../model/trip';
+import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copyStopToDay, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, removeRoute, removeStop, updateDay, updateRoute, updateStop } from './dayEdit';
+import { changeSettings } from './routeEdit';
 import { routeLegs } from './legs';
 import * as routeEdit from './routeEdit';
 
@@ -10,6 +10,9 @@ const routed = (geometry: string): RoutedLeg => ({ geometry, distanceM: 1000, du
 const empty = (): Trip => ({ id: 1, name: 'T', description: '', state: 'planned', version: 1, days: [{ id: 'd', name: '', date: null, notes: '', routes: [], stops: [] }] });
 
 const day = (trip: Trip): Day => trip.days[0]!;
+
+/** The first day of the trip, dated. */
+const dateDay = (trip: Trip, date: string): Trip => updateDay(trip, 'd', (d) => withChanges(d, { date }));
 
 /** A day with one routed route of three points, a stop bound to the middle one, and a free stop. */
 function fixture(): Trip {
@@ -28,7 +31,7 @@ describe('routes and points', () => {
   it('adds a route with the day profile and points at its end', () => {
     const trip = fixture();
     expect(day(trip).routes[0]!.points.map((p) => p.id)).toEqual(['a', 'b', 'c']);
-    const bike = updateRoute(trip, 'r', (r) => changeCosting(r, { profile: 'bicycle' }));
+    const bike = updateRoute(trip, 'r', (r) => changeSettings(r, { profile: 'bicycle' }));
     const two = addRoute(bike, 'd', 'r2');
     expect(day(two).routes[1]!.profile).toBe('bicycle');
     expect(day(bike).routes[0]!.legs).toEqual({});
@@ -130,9 +133,9 @@ describe('stops', () => {
 describe('days', () => {
   it('dates a new day after the last dated one', () => {
     expect(addDay(empty(), 'e').days[1]!.date).toBeNull();
-    const dated = setDayDate(empty(), 'd', '2027-12-31');
+    const dated = dateDay(empty(), '2027-12-31');
     expect(addDay(dated, 'e').days[1]!.date).toBe('2028-01-01');
-    expect(setDayDate(dated, 'd', '2027-12-31')).toBe(dated);
+    expect(dateDay(dated, '2027-12-31')).toBe(dated);
   });
 });
 
@@ -141,7 +144,7 @@ describe('reordering and copying', () => {
     let n = 0;
     return () => `${prefix}${++n}`;
   };
-  const twoDays = (): Trip => addDay(setDayDate(fixture(), 'd', '2027-06-12'), 'e');
+  const twoDays = (): Trip => addDay(dateDay(fixture(), '2027-06-12'), 'e');
 
   it('swaps a day with its neighbour and stays at the ends', () => {
     const trip = twoDays();

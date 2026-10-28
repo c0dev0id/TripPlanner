@@ -1,6 +1,6 @@
 import { batch, createMemo, createRoot, createSignal } from 'solid-js';
 import { createStore, reconcile, unwrap } from 'solid-js/store';
-import { newId, type Day, type LngLat, type Route, type RoutedLeg, type Stop, type Trip } from '../model/trip';
+import { newId, withChanges, type Day, type LngLat, type Route, type RoutedLeg, type Stop, type Trip } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { roundLngLat } from '../routing/legs';
 import * as routeEdit from '../routing/routeEdit';
@@ -183,16 +183,7 @@ function changeRoute(routeId: string, change: (route: Route) => Route, label?: s
 
 /** Changes what a route says about itself; a new profile or motorway dial routes its legs again. */
 export function updateRoute(routeId: string, settings: Pick<Route, 'name' | 'profile' | 'highways' | 'optional'>): void {
-  changeRoute(
-    routeId,
-    (r) => {
-      const sameCosting = r.profile === settings.profile && r.highways === settings.highways;
-      if (sameCosting && r.name === settings.name && r.optional === settings.optional) return r;
-      const named = { ...r, name: settings.name, optional: settings.optional };
-      return sameCosting ? named : routeEdit.changeCosting(named, { profile: settings.profile, highways: settings.highways });
-    },
-    'Edit route',
-  );
+  changeRoute(routeId, (r) => routeEdit.changeSettings(r, settings), 'Edit route');
 }
 
 export function appendPoint(routeId: string, lngLat: LngLat): void {
@@ -312,13 +303,10 @@ export function removeDay(dayId: string): void {
 
 /** Changes what a day says about itself: its name, date and notes. */
 export function updateDay(dayId: string, change: Pick<Day, 'name' | 'date' | 'notes'>): void {
-  edit(
-    (trip) => dayEdit.updateDay(trip, dayId, (day) => (day.name === change.name && day.date === change.date && day.notes === change.notes ? day : { ...day, ...change })),
-    'Edit day',
-  );
+  edit((trip) => dayEdit.updateDay(trip, dayId, (day) => withChanges(day, change)), 'Edit day');
 }
 
 /** Changes what the trip says about itself: its name, description, and whether it has been ridden. */
 export function updateTrip(change: Pick<Trip, 'name' | 'description' | 'state'>): void {
-  edit((trip) => (trip.name === change.name && trip.description === change.description && trip.state === change.state ? trip : { ...trip, ...change }), 'Edit trip');
+  edit((trip) => withChanges(trip, change), 'Edit trip');
 }

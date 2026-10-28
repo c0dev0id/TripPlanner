@@ -1,4 +1,4 @@
-import type { Day, LngLat, Profile, Route, RoutePoint, Stop, Trip } from '../model/trip';
+import { withChanges, type Day, type LngLat, type Profile, type Route, type RoutePoint, type Stop, type Trip } from '../model/trip';
 import * as routeEdit from './routeEdit';
 
 /**
@@ -75,10 +75,6 @@ export function removeRoute(trip: Trip, dayId: string, routeId: string): Trip {
   return updateDay(trip, dayId, (day) => (day.routes.some((r) => r.id === routeId) ? alignStops({ ...day, routes: day.routes.filter((r) => r.id !== routeId) }) : day));
 }
 
-export function renameRoute(trip: Trip, routeId: string, name: string): Trip {
-  return updateRoute(trip, routeId, (r) => (r.name === name ? r : { ...r, name }));
-}
-
 /** Drops every routed leg of the route so that they are routed again. */
 export function clearLegs(trip: Trip, routeId: string): Trip {
   return updateRoute(trip, routeId, (r) => (Object.keys(r.legs).length === 0 ? r : { ...r, legs: {} }));
@@ -147,8 +143,8 @@ export function removeStop(trip: Trip, dayId: string, stopId: string): Trip {
 export function updateStop(trip: Trip, dayId: string, stopId: string, change: Partial<Omit<Stop, 'id' | 'pointId'>>): Trip {
   return updateDay(trip, dayId, (day) => {
     const stop = day.stops.find((s) => s.id === stopId);
-    if (!stop || (Object.keys(change) as (keyof typeof change)[]).every((key) => stop[key] === change[key])) return day;
-    return { ...day, stops: day.stops.map((s) => (s.id === stopId ? { ...s, ...change } : s)) };
+    const next = stop && withChanges(stop, change);
+    return !next || next === stop ? day : { ...day, stops: day.stops.map((s) => (s === stop ? next : s)) };
   });
 }
 
@@ -248,11 +244,3 @@ function copyRoute(route: Route, newId: () => string): Route {
   return { ...route, id: newId(), points: route.points.map((p) => ({ ...p, id: newId() })) };
 }
 
-export function renameDay(trip: Trip, dayId: string, name: string): Trip {
-  return updateDay(trip, dayId, (day) => (day.name === name ? day : { ...day, name }));
-}
-
-/** Dates the day, as YYYY-MM-DD, or takes the date away. */
-export function setDayDate(trip: Trip, dayId: string, date: string | null): Trip {
-  return updateDay(trip, dayId, (day) => (day.date === date ? day : { ...day, date }));
-}
