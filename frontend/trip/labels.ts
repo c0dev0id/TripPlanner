@@ -12,9 +12,12 @@ export function dayLabel(day: Day, index: number): string {
   return [`Day ${index + 1}`, day.date && shortDateText(day.date), day.name].filter(Boolean).join(' · ');
 }
 
-/** "Track" for a track, else the route's profile: Road, Bike, Foot. */
+/** "Track" for a track, else the route's profile (Road, Bike, Foot), and where the motorway dial is turned, how. */
 export function routeKindLabel(route: Route): string {
-  return route.kind === 'track' ? 'Track' : (PROFILES.find((p) => p.value === route.profile)?.label ?? route.profile);
+  if (route.kind === 'track') return 'Track';
+  const profile = PROFILES.find((p) => p.value === route.profile)?.label ?? route.profile;
+  if (route.profile !== 'car' || route.highways === 'allow') return profile;
+  return route.highways === 'avoid' ? `${profile}, no motorways` : `${profile}, motorways first`;
 }
 
 /** The planned arrival, and the departure where a pause separates them. */

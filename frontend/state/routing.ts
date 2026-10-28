@@ -3,7 +3,7 @@ import { unwrap } from 'solid-js/store';
 import type { Route, RoutedLeg } from '../model/trip';
 import { errorMessage } from '../api';
 import { legState, nextMissingLeg, routedLegs, routeLegs, type LegJob } from '../routing/legs';
-import { fetchLeg, ROUTING_MIN_INTERVAL_MS } from '../routing/osrm';
+import { fetchLeg, ROUTING_MIN_INTERVAL_MS } from '../routing/valhalla';
 import { createPump } from './pump';
 import { clearLegs, editingRouteId, openTrip, routeById, selectedDay, setRouteLeg } from './trip';
 

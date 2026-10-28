@@ -15,6 +15,7 @@ final class TripDocumentValidator
     public const STOP_KINDS = ['hotel', 'restaurant', 'cafe', 'fuel', 'sight', 'photo', 'break', 'other'];
     public const ROUTE_KINDS = ['routed', 'track'];
     public const PROFILES = ['car', 'bike', 'foot'];
+    public const HIGHWAYS = ['avoid', 'allow', 'prefer'];
     public const STATES = ['planned', 'done'];
     private const MAX_TEXT = 20000;
 
@@ -138,6 +139,7 @@ final class TripDocumentValidator
             'name' => self::text($route, 'name', $at, 200),
             'kind' => self::oneOf($route, 'kind', self::ROUTE_KINDS, $at),
             'profile' => self::oneOf($route, 'profile', self::PROFILES, $at),
+            'highways' => self::oneOf($route, 'highways', self::HIGHWAYS, $at),
             'optional' => self::bool($route, 'optional', $at),
             'points' => $points,
             'legs' => $legs,

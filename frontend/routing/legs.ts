@@ -1,10 +1,13 @@
 import { distanceBetween } from '../geo/measure';
-import type { LngLat, Profile, Route, RoutedLeg } from '../model/trip';
+import type { Highways, LngLat, Profile, Route, RoutedLeg } from '../model/trip';
 import { decodePolyline } from './polyline';
 
-/** The key a routed leg's geometry is kept under: profile and both end points (exact coordinates). */
-export function legKey(profile: Profile, from: LngLat, to: LngLat): string {
-  return `${profile}/${from[0]},${from[1]};${to[0]},${to[1]}`;
+/** What a leg is routed with: the profile and the motorway dial. */
+export type Costing = Pick<Route, 'profile' | 'highways'>;
+
+/** The key a routed leg's geometry is kept under: the costing and both end points (exact coordinates). */
+export function legKey(costing: Costing, from: LngLat, to: LngLat): string {
+  return `${costing.profile}:${costing.highways}/${from[0]},${from[1]};${to[0]},${to[1]}`;
 }
 
 export interface Leg {
@@ -15,7 +18,7 @@ export interface Leg {
   straight: boolean;
 }
 
-export type RoutePath = Pick<Route, 'profile' | 'points'>;
+export type RoutePath = Costing & Pick<Route, 'points'>;
 
 /** The legs of a route: one per pair of consecutive points, straight where the second point says so. */
 export function routeLegs(route: RoutePath): Leg[] {
@@ -23,7 +26,7 @@ export function routeLegs(route: RoutePath): Leg[] {
   for (let i = 1; i < route.points.length; i++) {
     const from = route.points[i - 1]!.lngLat;
     const to = route.points[i]!.lngLat;
-    legs.push({ key: legKey(route.profile, from, to), from, to, straight: route.points[i]!.straight === true });
+    legs.push({ key: legKey(route, from, to), from, to, straight: route.points[i]!.straight === true });
   }
   return legs;
 }
@@ -83,6 +86,7 @@ export function pruneLegs(route: RoutePath & Pick<Route, 'legs'>): Record<string
 export interface LegJob extends Leg {
   routeId: string;
   profile: Profile;
+  highways: Highways;
 }
 
 /** The next routed leg without geometry that has not failed; the routes of the preferred day go first. */
@@ -90,7 +94,7 @@ export function nextMissingLeg(routes: readonly Route[], failed: ReadonlySet<str
   const ordered = [...routes].sort((a, b) => Number(preferred.has(b.id)) - Number(preferred.has(a.id)));
   for (const route of ordered) {
     const leg = routeLegs(route).find((l) => legState(route, l, failed) === 'pending');
-    if (leg) return { ...leg, routeId: route.id, profile: route.profile };
+    if (leg) return { ...leg, routeId: route.id, profile: route.profile, highways: route.highways };
   }
   return undefined;
 }

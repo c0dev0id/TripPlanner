@@ -1,4 +1,4 @@
-import type { Day, LngLat, Profile, Route, RoutePoint, Stop, Trip } from '../model/trip';
+import type { Day, LngLat, Highways, Profile, Route, RoutePoint, Stop, Trip } from '../model/trip';
 import * as routeEdit from './routeEdit';
 
 /**
@@ -60,7 +60,7 @@ export function defaultProfile(day: Day): Profile {
 export function addRoute(trip: Trip, dayId: string, id: string): Trip {
   return updateDay(trip, dayId, (day) => ({
     ...day,
-    routes: [...day.routes, { id, name: '', kind: 'routed', profile: defaultProfile(day), optional: false, points: [], legs: {} }],
+    routes: [...day.routes, { id, name: '', kind: 'routed', profile: defaultProfile(day), highways: 'allow', optional: false, points: [], legs: {} }],
   }));
 }
 
@@ -81,6 +81,10 @@ export function renameRoute(trip: Trip, routeId: string, name: string): Trip {
 
 export function setRouteProfile(trip: Trip, routeId: string, profile: Profile): Trip {
   return updateRoute(trip, routeId, (r) => (r.profile === profile ? r : routeEdit.changeProfile(r, profile)));
+}
+
+export function setRouteHighways(trip: Trip, routeId: string, highways: Highways): Trip {
+  return updateRoute(trip, routeId, (r) => (r.highways === highways ? r : routeEdit.changeHighways(r, highways)));
 }
 
 /** Drops every routed leg of the route so that they are routed again. */

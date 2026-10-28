@@ -86,7 +86,7 @@ describe('stops', () => {
       ['c', [3, 3]],
     ]);
     expect(day(trip).stops[1]!.pointId).toBe('p');
-    expect(Object.keys(day(trip).routes[0]!.legs)).toEqual(['car/1,1;2,2']);
+    expect(Object.keys(day(trip).routes[0]!.legs)).toEqual(['car:allow/1,1;2,2']);
     expect(connectStop(trip, 'd', 's2', 'r', 2, 'q')).toBe(trip);
   });
 

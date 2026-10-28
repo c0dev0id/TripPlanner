@@ -1,8 +1,8 @@
 import { For, Show, type JSX } from 'solid-js';
-import { PROFILES } from '../model/trip';
+import { HIGHWAYS, PROFILES } from '../model/trip';
 import { setTool, tool, TOOLS, type Tool } from '../state/drawing';
 import { recalculateRoute } from '../state/routing';
-import { editingRoute, editRoute, redo, redoLabel, setRouteProfile, undo, undoLabel } from '../state/trip';
+import { editingRoute, editRoute, redo, redoLabel, setRouteHighways, setRouteProfile, undo, undoLabel } from '../state/trip';
 import { CheckIcon, DeleteIcon, InsertIcon, RedoIcon, RefreshIcon, StopIcon, UndoIcon } from '../ui/icons';
 
 /** A toolbar button: an icon over a short caption, with a tooltip that says more. `active` marks the picked tool. */
@@ -22,7 +22,7 @@ function ToolButton(props: { label: string; title: string; active?: boolean; dis
   );
 }
 
-/** The tools of the route being edited, over the map: what a tap does, the profile, undo and redo, reroute, done. */
+/** The tools of the route being edited, over the map: what a tap does, the profile and the motorway dial, undo and redo, reroute, done. */
 export function Toolbar() {
   const button = (t: Tool, icon: JSX.Element) => (
     <ToolButton label={TOOLS[t].label} title={`${TOOLS[t].hint[0]!.toUpperCase()}${TOOLS[t].hint.slice(1)}`} active={tool() === t} onClick={() => setTool(t)}>
@@ -48,6 +48,19 @@ export function Toolbar() {
               )}
             </For>
           </div>
+          <Show when={route().profile === 'car'}>
+            <div class="toolbar-group segmented" role="radiogroup" aria-label="Motorways">
+              <span class="segmented-title">Motorways</span>
+              <For each={HIGHWAYS}>
+                {(choice) => (
+                  <label>
+                    <input type="radio" name="highways" value={choice.value} checked={route().highways === choice.value} onChange={() => setRouteHighways(route().id, choice.value)} />
+                    <span>{choice.label}</span>
+                  </label>
+                )}
+              </For>
+            </div>
+          </Show>
           <div class="toolbar-group" role="group" aria-label="History">
             <ToolButton label="Undo" title={undoLabel() ? `Undo: ${undoLabel()} (Ctrl+Z)` : 'Nothing to undo'} disabled={!undoLabel()} onClick={undo}>
               <UndoIcon />

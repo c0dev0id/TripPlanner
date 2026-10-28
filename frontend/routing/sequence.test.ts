@@ -14,6 +14,7 @@ const route: Route = {
   name: '',
   kind: 'routed',
   profile: 'car',
+  highways: 'allow',
   optional: false,
   points: [
     { id: 'a', lngLat: [11, 47] },
@@ -21,8 +22,8 @@ const route: Route = {
     { id: 'c', lngLat: [11, 47.2] },
   ],
   legs: {
-    'car/11,47;11,47.1': leg([[11, 47], [11, 47.1]], 11_000),
-    'car/11,47.1;11,47.2': leg([[11, 47.1], [11.02, 47.15], [11, 47.2]], 11_000),
+    'car:allow/11,47;11,47.1': leg([[11, 47], [11, 47.1]], 11_000),
+    'car:allow/11,47.1;11,47.2': leg([[11, 47.1], [11.02, 47.15], [11, 47.2]], 11_000),
   },
 };
 

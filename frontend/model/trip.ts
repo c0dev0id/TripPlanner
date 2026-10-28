@@ -3,13 +3,22 @@
 /** A position as longitude and latitude in degrees. */
 export type LngLat = [number, number];
 
-/** The OSRM profiles the routing server offers; motorcycles ride the car profile. */
+/** What a route is ridden with; the road profile is Valhalla's motorcycle costing. */
 export type Profile = 'car' | 'bike' | 'foot';
 
 export const PROFILES: readonly { value: Profile; label: string }[] = [
   { value: 'car', label: 'Road' },
   { value: 'bike', label: 'Bike' },
   { value: 'foot', label: 'Foot' },
+];
+
+/** How much a road route takes to motorways: a transfer day prefers them, a loop day avoids them. */
+export type Highways = 'avoid' | 'allow' | 'prefer';
+
+export const HIGHWAYS: readonly { value: Highways; label: string }[] = [
+  { value: 'avoid', label: 'Avoid' },
+  { value: 'allow', label: 'Allow' },
+  { value: 'prefer', label: 'Prefer' },
 ];
 
 /** What a stop is, which decides its icon. */
@@ -68,9 +77,11 @@ export interface Route {
   name: string;
   kind: 'routed' | 'track';
   profile: Profile;
+  /** The motorway dial; it counts for the road profile. */
+  highways: Highways;
   optional: boolean;
   points: RoutePoint[];
-  /** Routed legs keyed by profile and both end points (legKey); straight legs have none. */
+  /** Routed legs keyed by profile, motorway dial and both end points (legKey); straight legs have none. */
   legs: Record<string, RoutedLeg>;
 }
 

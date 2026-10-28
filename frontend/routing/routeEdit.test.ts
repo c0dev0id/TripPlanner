@@ -9,13 +9,14 @@ const base: Route = {
   name: '',
   kind: 'routed',
   profile: 'car',
+  highways: 'allow',
   optional: false,
   points: [
     { id: 'a', lngLat: [1, 1] },
     { id: 'b', lngLat: [2, 2] },
     { id: 'c', lngLat: [3, 3] },
   ],
-  legs: { 'car/1,1;2,2': routed('ab'), 'car/2,2;3,3': routed('bc') },
+  legs: { 'car:allow/1,1;2,2': routed('ab'), 'car:allow/2,2;3,3': routed('bc') },
 };
 
 describe('route edits', () => {
@@ -28,7 +29,7 @@ describe('route edits', () => {
   it('inserts a point and keeps only the legs it does not split', () => {
     const r = insertPoint(base, 1, { id: 'x', lngLat: [1.5, 1.5] });
     expect(r.points.map((p) => p.id)).toEqual(['a', 'x', 'b', 'c']);
-    expect(r.legs).toEqual({ 'car/2,2;3,3': routed('bc') });
+    expect(r.legs).toEqual({ 'car:allow/2,2;3,3': routed('bc') });
   });
 
   it('splits a straight leg into two straight legs', () => {
@@ -57,10 +58,10 @@ describe('route edits', () => {
   it('makes a leg straight and routed again, dropping its geometry either way', () => {
     const straight = setStraight(base, 'b', true);
     expect(straight.points[1]).toEqual({ id: 'b', lngLat: [2, 2], straight: true });
-    expect(straight.legs).toEqual({ 'car/2,2;3,3': routed('bc') });
+    expect(straight.legs).toEqual({ 'car:allow/2,2;3,3': routed('bc') });
     const back = setStraight(straight, 'b', false);
     expect(back.points[1]).toEqual({ id: 'b', lngLat: [2, 2] });
-    expect(back.legs).toEqual({ 'car/2,2;3,3': routed('bc') });
+    expect(back.legs).toEqual({ 'car:allow/2,2;3,3': routed('bc') });
   });
 
   it('drops every leg when the profile changes', () => {
@@ -71,10 +72,10 @@ describe('route edits', () => {
 
   it('stores needed legs and ignores outdated results', () => {
     const r = movePoint(base, 'c', [9, 9]);
-    expect(addLeg(r, 'car/2,2;9,9', routed('new')).legs).toEqual({ 'car/1,1;2,2': routed('ab'), 'car/2,2;9,9': routed('new') });
-    expect(addLeg(r, 'car/2,2;3,3', routed('stale'))).toBe(r);
+    expect(addLeg(r, 'car:allow/2,2;9,9', routed('new')).legs).toEqual({ 'car:allow/1,1;2,2': routed('ab'), 'car:allow/2,2;9,9': routed('new') });
+    expect(addLeg(r, 'car:allow/2,2;3,3', routed('stale'))).toBe(r);
     const straight = setStraight(base, 'b', true);
-    expect(addLeg(straight, 'car/1,1;2,2', routed('ab'))).toBe(straight);
+    expect(addLeg(straight, 'car:allow/1,1;2,2', routed('ab'))).toBe(straight);
   });
 
   it('does not modify its input', () => {

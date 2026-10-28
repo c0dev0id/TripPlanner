@@ -109,6 +109,8 @@ CREATE TABLE IF NOT EXISTS routes (
     name TEXT NOT NULL DEFAULT '',
     kind TEXT NOT NULL,
     profile TEXT NOT NULL,
+    -- The motorway dial of the road profile: avoid, allow, prefer.
+    highways TEXT NOT NULL DEFAULT 'allow',
     optional INTEGER NOT NULL DEFAULT 0,
     points TEXT NOT NULL,
     legs TEXT NOT NULL

@@ -72,6 +72,7 @@ final class TripDocumentValidatorTest extends TestCase
         yield 'bad arrival time' => [fn (array &$d) => $d['days'][0]['stops'][0]['arriveAt'] = '25:00', 'arriveAt'];
         yield 'negative pause' => [fn (array &$d) => $d['days'][0]['stops'][0]['pauseMinutes'] = -5, 'pauseMinutes'];
         yield 'unknown profile' => [fn (array &$d) => $d['days'][0]['routes'][0]['profile'] = 'horse', 'profile must be one of'];
+        yield 'unknown motorway dial' => [fn (array &$d) => $d['days'][0]['routes'][0]['highways'] = 'love', 'highways must be one of'];
         yield 'legs as a list' => [fn (array &$d) => $d['days'][0]['routes'][0]['legs'] = ['abc'], 'legs must be an object'];
         yield 'leg without distance' => [fn (array &$d) => $d['days'][0]['routes'][0]['legs'] = ['k' => ['geometry' => 'abc', 'durationS' => null]], 'legs must map'];
         yield 'leg with a duration that is no number' => [fn (array &$d) => $d['days'][0]['routes'][0]['legs'] = ['k' => ['geometry' => 'abc', 'distanceM' => 1, 'durationS' => 'soon']], 'legs must map'];

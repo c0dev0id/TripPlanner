@@ -8,13 +8,14 @@ namespace Planner\Export;
 final class RouteGeometry
 {
     /**
-     * The key a leg's geometry is kept under, as the client builds it: the profile and both
-     * ends, each coordinate written as JavaScript writes a number rounded to six decimals.
+     * The key a leg's geometry is kept under, as the client builds it: the profile, the
+     * motorway dial and both ends, each coordinate written as JavaScript writes a number
+     * rounded to six decimals.
      */
-    public static function legKey(string $profile, array $from, array $to): string
+    public static function legKey(string $profile, string $highways, array $from, array $to): string
     {
         $c = self::coordinate(...);
-        return "$profile/{$c($from[0])},{$c($from[1])};{$c($to[0])},{$c($to[1])}";
+        return "$profile:$highways/{$c($from[0])},{$c($from[1])};{$c($to[0])},{$c($to[1])}";
     }
 
     /**
@@ -31,7 +32,7 @@ final class RouteGeometry
         for ($i = 1, $n = count($points); $i < $n; $i++) {
             $from = $points[$i - 1]['lngLat'];
             $to = $points[$i]['lngLat'];
-            $leg = ($points[$i]['straight'] ?? false) ? null : $legs[self::legKey($route['profile'], $from, $to)] ?? null;
+            $leg = ($points[$i]['straight'] ?? false) ? null : $legs[self::legKey($route['profile'], $route['highways'], $from, $to)] ?? null;
             $coordinates = $leg === null ? [$from, $to] : Polyline::decode($leg['geometry']);
             foreach ($coordinates as $point) {
                 $last = $line[count($line) - 1] ?? null;

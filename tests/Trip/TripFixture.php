@@ -59,6 +59,7 @@ final class TripFixture
             'name' => '',
             'kind' => 'routed',
             'profile' => 'car',
+            'highways' => 'allow',
             'optional' => false,
             'points' => array_map(fn (int $i, array $lngLat) => ['id' => "$id-$i", 'lngLat' => $lngLat], array_keys($positions), $positions),
             'legs' => $legs,

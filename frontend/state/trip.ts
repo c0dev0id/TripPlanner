@@ -1,6 +1,6 @@
 import { batch, createMemo, createRoot, createSignal } from 'solid-js';
 import { createStore, reconcile, unwrap } from 'solid-js/store';
-import { newId, type Day, type LngLat, type Profile, type Route, type RoutedLeg, type Stop, type Trip, type TripState } from '../model/trip';
+import { newId, type Day, type Highways, type LngLat, type Profile, type Route, type RoutedLeg, type Stop, type Trip, type TripState } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { roundLngLat } from '../routing/legs';
 import * as routeEdit from '../routing/routeEdit';
@@ -186,6 +186,10 @@ export function setRouteOptional(routeId: string, optional: boolean): void {
 
 export function setRouteProfile(routeId: string, profile: Profile): void {
   edit((trip) => dayEdit.setRouteProfile(trip, routeId, profile), 'Change profile');
+}
+
+export function setRouteHighways(routeId: string, highways: Highways): void {
+  edit((trip) => dayEdit.setRouteHighways(trip, routeId, highways), 'Turn the motorway dial');
 }
 
 /** Applies a route edit (see routeEdit) to a route; the day's bound stops follow their points. */

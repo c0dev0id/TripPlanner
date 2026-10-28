@@ -78,7 +78,7 @@ describe('gpxToDayParts', () => {
       [11.2, 48.3],
     ]);
     const [key, leg] = Object.entries(garmin!.legs)[0]!;
-    expect(key).toBe('bike/11,48;11.2,48.3');
+    expect(key).toBe('bike:allow/11,48;11.2,48.3');
     // Three segments of 13, 11 and 13 km along the way, not the 36 km straight from end to end.
     expect(leg.distanceM).toBeGreaterThan(37_000);
     expect(leg.distanceM).toBeLessThan(38_500);
@@ -93,7 +93,7 @@ describe('gpxToDayParts', () => {
       [11, 48],
       [11.2, 48.3],
     ]);
-    expect(Object.keys(route!.legs)).toEqual(['bike/11,48;11.2,48.3']);
+    expect(Object.keys(route!.legs)).toEqual(['bike:allow/11,48;11.2,48.3']);
   });
 
   it('names a single unnamed line after the file, drops repeated points, simplifies long tracks', () => {

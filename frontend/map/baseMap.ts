@@ -1,6 +1,6 @@
 import { GeolocateControl, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl, type MapOptions, type StyleSpecification } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
-import { ROUTING_ATTRIBUTION } from '../routing/osrm';
+import { ROUTING_ATTRIBUTION } from '../routing/valhalla';
 import { BaseMapControl } from './BaseMapControl';
 import { chosenBaseMap } from './baseMaps';
 import { ROUTE_LAYERS, ROUTES_SOURCE } from './routeOverlay';

@@ -41,7 +41,7 @@ function calculatedLegs(points: readonly LngLat[], ways: readonly LngLat[][], pr
     const from = rounded[i - 1];
     const to = rounded[i]!;
     if (from && (from[0] !== to[0] || from[1] !== to[1])) {
-      if (way.length > 0) legs[legKey(profile, from, to)] = legAlong(cleanPoints([from, ...way, to]));
+      if (way.length > 0) legs[legKey({ profile, highways: 'allow' }, from, to)] = legAlong(cleanPoints([from, ...way, to]));
       way = [];
     }
     way = way.concat(ways[i]!);
@@ -67,6 +67,7 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
     name: line.name ?? (lines.length === 1 ? options.fileName : `${options.fileName} ${i + 1}`),
     kind: line.kind,
     profile: options.profile,
+    highways: 'allow',
     optional: false,
     points: cleanPoints(line.points).map((lngLat, j) => (line.kind === 'track' && j > 0 ? { id: options.newId(), lngLat, straight: true } : { id: options.newId(), lngLat })),
     legs: line.legs,

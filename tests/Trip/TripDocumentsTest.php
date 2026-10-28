@@ -51,7 +51,7 @@ final class TripDocumentsTest extends TestCase
     public function testSavesAndLoadsADocumentUnchanged(): void
     {
         $document = TripFixture::document();
-        $document['days'][0]['routes'][0]['legs'] = ['car/11.5,48.1;11.45,47.8' => ['geometry' => 'abc', 'distanceM' => 100, 'durationS' => 60]];
+        $document['days'][0]['routes'][0]['legs'] = ['car:allow/11.5,48.1;11.45,47.8' => ['geometry' => 'abc', 'distanceM' => 100, 'durationS' => 60]];
         $document['days'][0]['stops'][1]['arriveAt'] = '18:30';
         $document['days'][0]['stops'][1]['pauseMinutes'] = 0;
         self::assertSame(2, $this->save($document, 1));
