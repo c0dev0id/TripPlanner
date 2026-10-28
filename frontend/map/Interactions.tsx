@@ -1,6 +1,6 @@
 import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
 import { createEffect, onCleanup } from 'solid-js';
-import { setTool, tapAction, tool } from '../state/drawing';
+import { setTool, spotItems, tapAction, tool } from '../state/drawing';
 import { menu, setMenu } from '../ui/menu';
 import { addFreeStop, appendPoint, editingRoute, editRoute, insertPoint, insertStop, redo, undo } from '../state/trip';
 import { fromMarker, toLngLat } from './markers';
@@ -50,21 +50,12 @@ export function Interactions(props: { map: MapLibreMap }) {
     const touch = pointerType !== 'mouse';
     if (touch) swallowClick = true;
     // Stops and route points open their own menus.
-    const route = editingRoute();
-    if (fromMarker(e.originalEvent) || !route) return;
+    const items = fromMarker(e.originalEvent) ? undefined : spotItems(toLngLat(e.lngLat));
+    if (!items) return;
     // Windows sends the contextmenu event when the button comes up, also after turning the map.
     const { clientX, clientY } = e.originalEvent;
     if (!touch && rightDown && Math.hypot(clientX - rightDown.x, clientY - rightDown.y) > 5) return;
-    const spot = toLngLat(e.lngLat);
-    setMenu({
-      x: clientX,
-      y: clientY,
-      touch,
-      items: [
-        { label: 'Add a point here', run: () => appendPoint(route.id, spot) },
-        { label: 'Add a stop here, beside the route', run: () => addFreeStop(spot) },
-      ],
-    });
+    setMenu({ x: clientX, y: clientY, touch, items });
   };
   const onClick = (e: MapMouseEvent) => {
     if (swallowClick) {

@@ -9,6 +9,7 @@ import { Interactions } from './Interactions';
 import { PhotoMarkers } from './PhotoMarkers';
 import { PointMarkers } from './PointMarkers';
 import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
+import { SearchBox } from './SearchBox';
 import { StopMarkers } from './StopMarkers';
 
 /** The map with the trip's routes and stops drawn over the base map, and the editing on it. */
@@ -32,6 +33,7 @@ export function MapView() {
             <PhotoMarkers map={m()} />
             <PointMarkers map={m()} />
             <Interactions map={m()} />
+            <SearchBox map={m()} />
           </>
         )}
       </Show>

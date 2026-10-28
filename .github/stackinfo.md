@@ -28,6 +28,8 @@
 - Routing by the FOSSGIS Valhalla server (valhalla1.openstreetmap.de): at most one request
   per second, attribution shown. The profiles are Valhalla's motorcycle, bicycle and
   pedestrian costings by name; the motorcycle takes the `use_highways` option.
+- Place search by Nominatim (nominatim.openstreetmap.org): at most one request per second,
+  no search as you type, attribution shown.
 - Base maps: OpenFreeMap's vector styles (Liberty, Bright, Positron, Dark) without an
   API key, and raster tiles from OpenTopoMap, OpenStreetMap and CyclOSM, each with its
   attribution; the choice is kept in the browser.

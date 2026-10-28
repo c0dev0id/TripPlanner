@@ -68,6 +68,10 @@
   addresses, bookings and notes. The page is the owner's, or shared under a link that
   needs no sign-in and can be withdrawn.
 
+- A place and address search over the map, by Nominatim on Enter: the first place found
+  gets a pin and the map flies there, the others are listed to pick from. The pin stays
+  until the search is cleared; while a route is edited, its menu adds a point or a stop
+  there.
 - A base map to choose on the map: OpenFreeMap's Liberty, Bright, Positron and Dark
   styles, or the OpenTopoMap, OpenStreetMap and CyclOSM raster tiles; the route lines
   and markers stay. A locate-me button shows where the browser is. The interface light

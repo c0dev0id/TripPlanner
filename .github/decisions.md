@@ -102,6 +102,13 @@ entries at the end of their section.
   choice is a preference of the browser, in localStorage, as the theme is: a matter of
   the device, not of the trip, and it costs no table. The list is fixed in code; adding
   a service of one's own is Layer Slayer's business, not this planner's.
+- **Place search by Nominatim, on Enter, ported from Layer Slayer.** OpenStreetMap's own
+  geocoder needs no key; its policy allows one request per second and no search as you
+  type, so the box searches when Enter is pressed and keeps a second between requests.
+  The search prefers the view without being limited to it. The place found is a pin, not
+  a stop: the rider decides what it becomes from the pin's menu while editing a route.
+  The hint bar moved from the top of the map to just above the toolbar it describes,
+  since the search box took the top left.
 - **The route overlay is appended by a style transform.** MapLibre's `setStyle` replaces
   every source and layer. A transform given when the map is made is applied to every
   style it loads afterwards, so the overlay's source and layers are added in one place

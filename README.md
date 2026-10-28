@@ -42,6 +42,8 @@ share work; sharing between users is on the way.
 - **Planned, then ridden** — mark a trip done; the library shows it.
 - **Print it, share it** — a read-only page with the map, every day's stops and times
   and the journal, for printing, or shared under a link that needs no account.
+- **Find the place** — search a town, a pass or an address; the map flies there and pins
+  it, ready to become a point or a stop.
 - **Your map, your colours** — OpenFreeMap styles or OpenTopoMap, OpenStreetMap and
   CyclOSM tiles under the routes; the interface light or dark by hand.
 
@@ -64,3 +66,4 @@ share work; sharing between users is on the way.
 | Esc | Closes a menu; back to the Point tool; ends editing |
 | Right-click or long press on a stop or point | Make a stop, connect, disconnect, straight leg, remove |
 | Right-click or long press on the map | Add a point or a free stop here |
+| Enter in the search box | Find a place; Esc closes the list |

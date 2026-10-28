@@ -1,7 +1,7 @@
 import { createSignal } from 'solid-js';
 import type { LngLat, RoutePoint } from '../model/trip';
 import type { MenuItem } from '../ui/menu';
-import { editingRoute, setStraight } from './trip';
+import { addFreeStop, appendPoint, editingRoute, setStraight } from './trip';
 
 /** Transient state of editing on the map; never kept. */
 
@@ -42,6 +42,16 @@ export function panTo(lngLat: LngLat): void {
 /** What the next tap on the map does: the tool's work on the route being edited; nothing while no route is. */
 export function tapAction(): Tool | undefined {
   return editingRoute() ? tool() : undefined;
+}
+
+/** What a spot on the map offers while a route is edited: a point at the route's end, or a free stop; nothing otherwise. */
+export function spotItems(spot: LngLat): MenuItem[] | undefined {
+  const route = editingRoute();
+  if (!route) return undefined;
+  return [
+    { label: 'Add a point here', run: () => appendPoint(route.id, spot) },
+    { label: 'Add a stop here, beside the route', run: () => addFreeStop(spot) },
+  ];
 }
 
 /** The menu item that makes the leg to a point of a route straight, or routed again. */
