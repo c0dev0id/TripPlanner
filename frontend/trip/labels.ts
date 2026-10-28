@@ -1,4 +1,4 @@
-import { PROFILES, takesMotorwayDial, type Day, type Route } from '../model/trip';
+import { PROFILES, takesMotorwayDial, type Day, type Route, type Trip } from '../model/trip';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { durationText, shortDateText, timeText } from '../ui/format';
 
@@ -7,10 +7,19 @@ export function routeLabel(route: Route, day: Day): string {
   return route.name || `Route ${day.routes.findIndex((r) => r.id === route.id) + 1}`;
 }
 
+/** A route's label within its trip. */
+export function routeLabelOf(trip: Trip, route: Route): string {
+  const day = trip.days.find((d) => d.routes.some((r) => r.id === route.id));
+  return day ? routeLabel(route, day) : route.name;
+}
+
 /** A day's number, its date where it has one, and its name. */
 export function dayLabel(day: Day, index: number): string {
   return [`Day ${index + 1}`, day.date && shortDateText(day.date), day.name].filter(Boolean).join(' · ');
 }
+
+/** A day's label within its trip. */
+export const dayLabelOf = (trip: Trip, day: Day): string => dayLabel(day, trip.days.findIndex((d) => d.id === day.id));
 
 /** "Track" for a track, else the route's profile (Motorcycle, Bicycle, On foot), and where the motorway dial is turned, how. */
 export function routeKindLabel(route: Route): string {

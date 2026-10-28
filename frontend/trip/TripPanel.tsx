@@ -9,7 +9,7 @@ import { routeDistance } from '../routing/legs';
 import type { SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { saveState } from '../state/autosave';
-import { panTo, setEditing, setExportOpen, setShareOpen, setShowNeighbours, setShowRoutePoints, showNeighbours, showRoutePoints } from '../state/drawing';
+import { panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, setShowRoutePoints, showNeighbours, showRoutePoints } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, setJournalTarget } from '../state/journal';
@@ -61,7 +61,7 @@ export function TripPanel(props: { onLeave: () => void; onReload: () => void }) 
         <h2 class="grow name" title={trip().name}>
           {trip().name}
         </h2>
-        <button class="icon" title="Edit trip" aria-label="Edit trip" onClick={() => setEditing({ kind: 'trip' })}>
+        <button class="icon" title="Edit trip" aria-label="Edit trip" onClick={() => setEditTarget({ kind: 'trip' })}>
           <PencilIcon />
         </button>
       </div>
@@ -107,7 +107,7 @@ function SaveStatus(props: { onReload: () => void }) {
 
 function DayItem(props: { day: Day; index: number }) {
   const selected = () => selectedDayId() === props.day.id;
-  const label = () => dayLabel(props.day, props.index);
+  const label = createMemo(() => dayLabel(props.day, props.index));
   const distance = createMemo(() => props.day.routes.reduce((sum, route) => sum + routeDistance(route), 0));
   const note = () => [distance() > 0 ? distanceText(distance()) : '', journalCount({ dayId: props.day.id })].filter(Boolean).join(' · ');
   const more = (): MenuItem[] => [
@@ -123,7 +123,7 @@ function DayItem(props: { day: Day; index: number }) {
           <span class="name">{label()}</span>
           <span class="muted">{note()}</span>
         </button>
-        <button class="icon" title="Edit day" aria-label={`Edit ${label()}`} onClick={() => setEditing({ kind: 'day', id: props.day.id })}>
+        <button class="icon" title="Edit day" aria-label={`Edit ${label()}`} onClick={() => setEditTarget({ kind: 'day', id: props.day.id })}>
           <PencilIcon />
         </button>
         <MoreMenu label={`More for ${label()}`} items={more} />
@@ -135,7 +135,7 @@ function DayItem(props: { day: Day; index: number }) {
   );
 }
 
-/** The selected day's date and times, its routes, and its stops (and route points on request) in riding order. */
+/** The selected day's notes and times, its routes, and its stops (and route points on request) in riding order. */
 function DayDetails(props: { day: Day }) {
   const listed = createMemo(() => new Map(selectedSequence().filter((e) => e.stop || showRoutePoints()).map((e) => [e.id, e])));
   const [importNote, setImportNote] = createSignal<{ text: string; error: boolean }>();
@@ -206,7 +206,7 @@ function DaySummary(props: { timeline: DayTimeline }) {
 
 function RouteItem(props: { route: Route; index: number; day: Day }) {
   const editing = () => editingRouteId() === props.route.id;
-  const label = () => routeLabel(props.route, props.day);
+  const label = createMemo(() => routeLabel(props.route, props.day));
   const journal = () => journalCount({ routeId: props.route.id });
   const more = (): MenuItem[] => [
     { label: 'Move up', run: () => moveRoute(props.route.id, -1), disabled: props.index === 0 },
@@ -228,7 +228,7 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
           {journal() ? ` · ${journal()}` : ''}
         </span>
       </div>
-      <button class="icon" title="Edit route" aria-label={`Edit ${label()}`} onClick={() => setEditing({ kind: 'route', id: props.route.id })}>
+      <button class="icon" title="Edit route" aria-label={`Edit ${label()}`} onClick={() => setEditTarget({ kind: 'route', id: props.route.id })}>
         <PencilIcon />
       </button>
       <button classList={{ primary: editing() }} onClick={() => editRoute(editing() ? undefined : props.route.id)}>
@@ -270,7 +270,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
       <Show when={stop()}>
         {(s) => (
           <>
-            <button class="icon" title="Edit stop" aria-label={`Edit ${s().name}`} onClick={() => setEditing({ kind: 'stop', id: s().id })}>
+            <button class="icon" title="Edit stop" aria-label={`Edit ${s().name}`} onClick={() => setEditTarget({ kind: 'stop', id: s().id })}>
               <PencilIcon />
             </button>
             <MoreMenu

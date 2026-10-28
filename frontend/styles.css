@@ -315,7 +315,7 @@ a {
   color: var(--error);
 }
 
-/* A short labelled input in a row: the day's date. */
+/* A short labelled input in a row. */
 .field {
   display: flex;
   align-items: center;
@@ -581,36 +581,6 @@ a {
   cursor: default;
 }
 
-/* The profile choice: radio buttons drawn as one segmented control. */
-
-.segmented {
-  align-items: center;
-}
-
-.segmented label {
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.segmented-title {
-  padding: 0 4px 0 8px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.segmented label:has(input:checked) {
-  background: var(--accent);
-  color: #fff;
-}
-
-.segmented input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
 .hint-bar {
   position: absolute;
   bottom: 108px;
@@ -660,7 +630,7 @@ a {
   gap: 10px;
 }
 
-.dialog label {
+.dialog label:not(.toggle) {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -690,15 +660,6 @@ a {
 .dialog h3 {
   margin: 0 0 4px;
   font-size: 1rem;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--fg);
-}
-
-.dialog label.toggle {
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
 }
 
 .dialog button.danger {
@@ -714,11 +675,6 @@ a {
 
 .journal-dialog {
   width: min(520px, calc(100vw - 32px));
-}
-
-.journal-dialog h3 {
-  margin: 0;
-  font-size: 1rem;
 }
 
 .journal-dialog .entries {

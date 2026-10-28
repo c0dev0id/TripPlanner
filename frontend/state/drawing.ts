@@ -24,8 +24,8 @@ export const [showRoutePoints, setShowRoutePoints] = createSignal(false);
 export const [showNeighbours, setShowNeighbours] = createSignal(true);
 
 /** The element whose edit dialog is open: the trip, or a day, a route or a stop of it by id. */
-export type Editing = { kind: 'trip' } | { kind: 'day'; id: string } | { kind: 'route'; id: string } | { kind: 'stop'; id: string };
-export const [editing, setEditing] = createSignal<Editing>();
+export type EditTarget = { kind: 'trip' } | { kind: 'day'; id: string } | { kind: 'route'; id: string } | { kind: 'stop'; id: string };
+export const [editTarget, setEditTarget] = createSignal<EditTarget>();
 
 /** Whether the export dialog is open. */
 export const [exportOpen, setExportOpen] = createSignal(false);

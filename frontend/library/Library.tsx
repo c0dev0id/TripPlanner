@@ -2,7 +2,8 @@ import { createMemo, createResource, createSignal, For, Match, Show, Switch } fr
 import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder } from '../api';
 import type { Folder, TripSummary } from '../model/trip';
 import { askConfirmation } from '../ui/confirm';
-import { EditDialog, field } from '../ui/EditDialog';
+import { EditDialog } from '../ui/EditDialog';
+import { field } from '../ui/form';
 import { dateText } from '../ui/format';
 import { BackIcon, FolderIcon, PencilIcon } from '../ui/icons';
 import { NameDialog } from '../ui/NameDialog';
@@ -62,7 +63,6 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
     setFolderId(id);
     setQuery('');
   };
-  const dialogOf = (kind: LibraryDialog['kind']) => dialog()?.kind === kind;
   const editedFolder = () => {
     const d = dialog();
     return d?.kind === 'folder' ? d.folder : undefined;
@@ -142,26 +142,20 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
       <NameDialog
         label="New trip"
         title="New trip"
-        open={dialogOf('new-trip')}
+        open={dialog()?.kind === 'new-trip'}
         placeholder="Name of the trip"
         submit="Start"
         onClose={closeDialog}
-        onSubmit={(name) => {
-          closeDialog();
-          void run(async () => props.onOpen((await createTrip(name, folderId() ?? null)).id));
-        }}
+        onSubmit={(name) => void run(async () => props.onOpen((await createTrip(name, folderId() ?? null)).id))}
       />
       <NameDialog
         label="New folder"
         title="New folder"
-        open={dialogOf('new-folder')}
+        open={dialog()?.kind === 'new-folder'}
         placeholder="Name of the folder"
         submit="Create"
         onClose={closeDialog}
-        onSubmit={(name) => {
-          closeDialog();
-          void run(() => createFolder(name), () => void refetchFolders());
-        }}
+        onSubmit={(name) => void run(() => createFolder(name), () => void refetchFolders())}
       />
       <NameDialog
         label="Folder"
@@ -169,49 +163,42 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
         open={editedFolder() !== undefined}
         placeholder="Name of the folder"
         initial={editedFolder()?.name}
-        submit="Save"
         onClose={closeDialog}
         onSubmit={(name) => {
           const f = editedFolder()!;
-          closeDialog();
           if (name !== f.name) void run(() => renameFolder(f.id, name), refetchFolders);
         }}
         actions={[{ label: 'Delete', run: () => void removeFolder(editedFolder()!), danger: true }]}
       />
       <EditDialog
         label="Trip"
-        title={editedTrip()?.name ?? ''}
-        open={editedTrip() !== undefined}
+        value={editedTrip()}
+        title={(trip) => trip.name}
         onClose={closeDialog}
-        onSubmit={(form) => {
-          const trip = editedTrip()!;
-          const target = field(form, 'folder') === '' ? null : Number(field(form, 'folder'));
-          closeDialog();
+        onSubmit={(form, trip) => {
+          const target = Number(field(form, 'folder')) || null;
           if (target !== trip.folderId) void run(() => moveTrip(trip.id, target), refetchTrips);
         }}
-        actions={[
-          { label: 'Delete', run: () => void removeTrip(editedTrip()!), danger: true },
+        actions={(trip) => [
+          { label: 'Delete', run: () => void removeTrip(trip), danger: true },
           {
             label: 'Duplicate',
             run: () => {
-              const trip = editedTrip()!;
               closeDialog();
               void run(() => duplicateTrip(trip.id), refetchTrips);
             },
           },
         ]}
       >
-        <Show when={editedTrip()} keyed>
-          {(trip) => (
-            <label>
-              Folder
-              <select name="folder" value={trip.folderId ?? ''}>
-                <option value="">No folder</option>
-                <For each={folders()}>{(f) => <option value={f.id}>{f.name}</option>}</For>
-              </select>
-            </label>
-          )}
-        </Show>
+        {(trip) => (
+          <label>
+            Folder
+            <select name="folder" value={trip.folderId ?? ''}>
+              <option value="">No folder</option>
+              <For each={folders()}>{(f) => <option value={f.id}>{f.name}</option>}</For>
+            </select>
+          </label>
+        )}
       </EditDialog>
     </section>
   );

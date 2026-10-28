@@ -1,5 +1,5 @@
 import { Show, type JSX } from 'solid-js';
-import { setEditing, setTool, tool, TOOLS, type Tool } from '../state/drawing';
+import { setEditTarget, setTool, tool, TOOLS, type Tool } from '../state/drawing';
 import { recalculateRoute } from '../state/routing';
 import { editingRoute, editRoute, redo, redoLabel, undo, undoLabel } from '../state/trip';
 import { CheckIcon, DeleteIcon, InsertIcon, RedoIcon, RefreshIcon, SettingsIcon, StopIcon, UndoIcon } from '../ui/icons';
@@ -38,7 +38,7 @@ export function Toolbar() {
             {button('delete', <DeleteIcon />)}
           </div>
           <div class="toolbar-group" role="group" aria-label="Route">
-            <ToolButton label="Route" title="The route's name, profile, motorways and more" onClick={() => setEditing({ kind: 'route', id: route().id })}>
+            <ToolButton label="Route" title="The route's name, profile, motorways and more" onClick={() => setEditTarget({ kind: 'route', id: route().id })}>
               <SettingsIcon />
             </ToolButton>
           </div>

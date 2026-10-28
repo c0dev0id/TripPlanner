@@ -2,30 +2,28 @@ import { createSignal, For, Show } from 'solid-js';
 import { tripApi } from '../api';
 import { onTarget, type Entry, type EntryTarget } from '../model/journal';
 import { addEntry, editEntry, entriesOn, journalTarget, removeEntry, setJournalTarget } from '../state/journal';
-import { openTrip } from '../state/trip';
+import { openTrip, routeById } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
+import { field } from '../ui/form';
 import { takenAtText } from '../ui/format';
 import { DeleteIcon, PencilIcon } from '../ui/icons';
 import { showModalWhile } from '../ui/modal';
 import { createRequest } from '../ui/request';
 import { EntryFile } from './EntryFile';
-import { dayLabel, routeLabel } from './labels';
+import { dayLabelOf, routeLabelOf } from './labels';
 import { prepareUpload } from './photo';
 
 /** What the open journal is about: the trip, or the part by its label. */
 function targetLabel(target: EntryTarget): string {
   const trip = openTrip()!;
   if ('dayId' in target) {
-    const index = trip.days.findIndex((d) => d.id === target.dayId);
-    return index < 0 ? 'a removed day' : dayLabel(trip.days[index]!, index);
+    const day = trip.days.find((d) => d.id === target.dayId);
+    return day ? dayLabelOf(trip, day) : 'a removed day';
   }
   if ('stopId' in target) return trip.days.flatMap((d) => d.stops).find((s) => s.id === target.stopId)?.name ?? 'a removed stop';
   if ('routeId' in target) {
-    for (const day of trip.days) {
-      const route = day.routes.find((r) => r.id === target.routeId);
-      if (route) return routeLabel(route, day);
-    }
-    return 'a removed route';
+    const route = routeById(target.routeId);
+    return route ? routeLabelOf(trip, route) : 'a removed route';
   }
   return trip.name;
 }
@@ -41,7 +39,7 @@ export function JournalDialog() {
   const add = (e: SubmitEvent) => {
     e.preventDefault();
     const data = new FormData(form);
-    const text = String(data.get('text') ?? '').trim();
+    const text = field(data, 'text');
     const file = data.get('file');
     const chosen = file instanceof File && file.size > 0 ? file : undefined;
     if (!text && !chosen) return;

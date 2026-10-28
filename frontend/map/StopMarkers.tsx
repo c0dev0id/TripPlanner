@@ -2,7 +2,7 @@ import type { Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, For, onCleanup, Show } from 'solid-js';
 import type { Stop } from '../model/trip';
 import { pointOfDay } from '../routing/dayEdit';
-import { setEditing, showNeighbours, straightLegItem, tapAction } from '../state/drawing';
+import { setEditTarget, showNeighbours, straightLegItem, tapAction } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import { connectStop, disconnectStop, editingRouteId, moveStop, neighbourDays, removeStop, selectedDay } from '../state/trip';
 import { stopContent } from './markerContent';
@@ -33,11 +33,11 @@ function StopMarker(props: { map: MapLibreMap; stop: Stop }) {
   handle.marker.on('dragend', () => moveStop(stop.id, toLngLat(handle.marker.getLngLat())));
   handle.root.addEventListener('click', () => {
     if (tapAction() === 'delete') removeStop(stop.id);
-    else if (tapAction() !== undefined) setEditing({ kind: 'stop', id: stop.id });
+    else if (tapAction() !== undefined) setEditTarget({ kind: 'stop', id: stop.id });
   });
   const stopMenu = onMarkerMenu(handle, () => {
     const day = selectedDay()!;
-    const items: MenuItem[] = [{ label: 'Edit stop…', run: () => setEditing({ kind: 'stop', id: stop.id }) }];
+    const items: MenuItem[] = [{ label: 'Edit stop…', run: () => setEditTarget({ kind: 'stop', id: stop.id }) }];
     if (stop.pointId !== null) {
       const at = pointOfDay(day, stop.pointId);
       if (at && at.route.points[0] !== at.point) items.push(straightLegItem(at.route.id, at.point));
