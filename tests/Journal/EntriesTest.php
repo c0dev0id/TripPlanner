@@ -47,9 +47,9 @@ final class EntriesTest extends TestCase
         $photo = $this->entries->add($this->userId, $this->tripId, ['stopId' => 's2'], '', self::PHOTO, $this->now);
         self::assertSame([null, null, null, 'Packed the bags.', null], [$note->dayId, $note->stopId, $note->routeId, $note->text, $note->file]);
         self::assertSame(['s2', ['name' => 'IMG_1.jpg', 'mediaType' => 'image/jpeg', 'size' => 1234, 'image' => true]], [$photo->stopId, $photo->file]);
+        self::assertSame([$note->id, $photo->id], array_map(fn ($e) => $e->id, $this->entries->listFor($this->userId, $this->tripId)));
         $heic = $this->entries->add($this->userId, $this->tripId, [], '', ['mediaType' => 'image/heic', 'name' => 'IMG_2.heic'] + self::PHOTO, $this->now);
         self::assertFalse($heic->file['image']);
-        self::assertSame([$note->id, $photo->id], array_map(fn ($e) => $e->id, $this->entries->listFor($this->userId, $this->tripId)));
         self::assertNull($this->entries->listFor($this->otherUserId, $this->tripId));
         self::assertNull($this->entries->add($this->otherUserId, $this->tripId, [], 'Mine', null, $this->now));
         self::assertNull($this->entries->add($this->userId, $this->tripId, ['dayId' => 'nope'], 'Nowhere', null, $this->now));
