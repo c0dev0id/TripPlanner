@@ -111,7 +111,8 @@ entries at the end of their section.
   riders know from other tools. Each server's attribution rides with its source. The
   choice is a preference of the browser, in localStorage, as the theme is: a matter of
   the device, not of the trip, and it costs no table. The list is fixed in code; adding
-  a service of one's own is Layer Slayer's business, not this planner's.
+  a service of one's own is Layer Slayer's business, not this planner's. The panel's
+  width, dragged at its edge, is kept the same way: it depends on the screen.
 - **Place search by Nominatim, on Enter, ported from Layer Slayer.** OpenStreetMap's own
   geocoder needs no key; its policy allows one request per second and no search as you
   type, so the box searches when Enter is pressed and keeps a second between requests.

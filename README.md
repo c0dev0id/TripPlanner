@@ -69,3 +69,4 @@ share work; sharing between users is on the way.
 | Right-click or long press on a stop or point | Make a stop, connect, disconnect, straight leg, remove |
 | Right-click or long press on the map | Add a point or a free stop here, or a journal entry |
 | Enter in the search box | Find a place; Esc closes the list |
+| Drag the panel's edge | Set the panel's width; double-click for the default |

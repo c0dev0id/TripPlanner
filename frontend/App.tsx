@@ -3,6 +3,7 @@ import { errorMessage, fetchMe, fetchTrip, logout } from './api';
 import { Library } from './library/Library';
 import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';
+import { PanelResizer } from './ui/PanelResizer';
 import { HintBar } from './map/HintBar';
 import { MapView } from './map/MapView';
 import { Toolbar } from './map/Toolbar';
@@ -60,6 +61,7 @@ export function App() {
         </Show>
       </aside>
       <div class="map-wrap">
+        <PanelResizer />
         <MapView />
         <HintBar />
         <Toolbar />

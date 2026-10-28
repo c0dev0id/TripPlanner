@@ -1,5 +1,5 @@
 :root {
-  --panel-width: 340px;
+  --panel-width: 400px;
 }
 
 * {
@@ -407,6 +407,24 @@ a {
   min-width: 0;
 }
 
+/* The edge between the panel and the map, dragged to set the panel's width. */
+.panel-resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  z-index: 7;
+  width: 6px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.panel-resizer:hover,
+.panel-resizer:active {
+  background: var(--accent);
+  opacity: 0.5;
+}
+
 /* The place search, top left over the map. */
 .place-search {
   position: absolute;
@@ -709,6 +727,10 @@ a {
     max-height: 45vh;
     border-right: 0;
     border-top: 1px solid var(--line);
+  }
+
+  .panel-resizer {
+    display: none;
   }
 
   .hint-bar {
