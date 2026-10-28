@@ -35,7 +35,7 @@ export function RouteDialog() {
     close();
   };
   return (
-    <EditDialog label="Route" title={route()?.label ?? ''} open={route() !== undefined} onClose={close} onSubmit={save} danger={{ label: 'Remove', run: () => void remove() }}>
+    <EditDialog label="Route" title={route()?.label ?? ''} open={route() !== undefined} onClose={close} onSubmit={save} actions={[{ label: 'Remove', run: () => void remove(), danger: true }]}>
       <Show when={route()} keyed>
         {({ route: r }) => (
           <>

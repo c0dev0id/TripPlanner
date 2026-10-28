@@ -2,14 +2,16 @@ import { createMemo, createResource, createSignal, For, Match, Show, Switch } fr
 import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder } from '../api';
 import type { Folder, TripSummary } from '../model/trip';
 import { askConfirmation } from '../ui/confirm';
-import { EditableName } from '../ui/EditableName';
+import { EditDialog, field } from '../ui/EditDialog';
 import { dateText } from '../ui/format';
-import { BackIcon, DeleteIcon, FolderIcon } from '../ui/icons';
-import { MoreMenu } from '../ui/MoreMenu';
-import { NameForm } from '../ui/NameForm';
+import { BackIcon, FolderIcon, PencilIcon } from '../ui/icons';
+import { NameDialog } from '../ui/NameDialog';
 
 /** At most this many search results are listed. */
 const SEARCH_LIMIT = 20;
+
+/** The dialog the library has open: naming a new trip or folder, or the settings of a folder or a trip. */
+type LibraryDialog = { kind: 'new-trip' } | { kind: 'new-folder' } | { kind: 'folder'; folder: Folder } | { kind: 'trip'; trip: TripSummary };
 
 /** The user's trips in their folders, one level deep: open one, start one, move, delete; a search across all folders. */
 export function Library(props: { onOpen: (id: number) => void; opening: boolean; error: string | undefined }) {
@@ -19,6 +21,7 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
   const [folderId, setFolderId] = createSignal<number>();
   const [query, setQuery] = createSignal('');
   const [busy, setBusy] = createSignal<string>();
+  const [dialog, setDialog] = createSignal<LibraryDialog>();
 
   const folder = () => folders()?.find((f) => f.id === folderId());
   const shownTrips = createMemo(() => (trips() ?? []).filter((t) => t.folderId === (folderId() ?? null)));
@@ -39,14 +42,17 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
       setBusy(errorMessage(error));
     }
   };
+  const closeDialog = () => setDialog(undefined);
   const removeTrip = async (trip: TripSummary) => {
     if (!(await askConfirmation(`Delete the trip “${trip.name}” with all its days?`, 'Delete'))) return;
+    closeDialog();
     await run(() => deleteTrip(trip.id), refetchTrips);
   };
   const removeFolder = async (f: Folder) => {
     const count = tripCount(f.id);
     const trips = count === 0 ? '' : count === 1 ? ' Its trip stays, in no folder.' : ` Its ${count} trips stay, in no folder.`;
     if (!(await askConfirmation(`Delete the folder “${f.name}”?${trips}`, 'Delete'))) return;
+    closeDialog();
     await run(() => deleteFolder(f.id), () => {
       void refetchFolders();
       void refetchTrips();
@@ -55,6 +61,15 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
   const openFolder = (id: number | undefined) => {
     setFolderId(id);
     setQuery('');
+  };
+  const dialogOf = (kind: LibraryDialog['kind']) => dialog()?.kind === kind;
+  const editedFolder = () => {
+    const d = dialog();
+    return d?.kind === 'folder' ? d.folder : undefined;
+  };
+  const editedTrip = () => {
+    const d = dialog();
+    return d?.kind === 'trip' ? d.trip : undefined;
   };
 
   return (
@@ -81,42 +96,37 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
           when={query().trim()}
           fallback={
             <>
-              <NameForm placeholder="Name of a new trip" button="New trip" primary disabled={props.opening} onSubmit={(name) => run(async () => props.onOpen((await createTrip(name, folderId() ?? null)).id))} />
+              <div class="row new">
+                <button class="primary" disabled={props.opening} onClick={() => setDialog({ kind: 'new-trip' })}>
+                  New trip…
+                </button>
+                <Show when={!folder()}>
+                  <button onClick={() => setDialog({ kind: 'new-folder' })}>New folder…</button>
+                </Show>
+              </div>
               <Show when={!folder()}>
-                <NameForm placeholder="Name of a new folder" button="New folder" onSubmit={(name) => run(() => createFolder(name), () => void refetchFolders())} />
                 <ul class="folders">
                   <For each={folders()}>
                     {(f) => (
                       <li class="row">
                         <FolderButton folder={f} note={tripCount(f.id) === 1 ? '1 trip' : `${tripCount(f.id)} trips`} onOpen={openFolder} />
-                        <EditableName value={f.name} label="folder" onRename={(name) => void run(() => renameFolder(f.id, name), refetchFolders)}>
-                          <span />
-                        </EditableName>
-                        <button class="icon" title="Delete folder" aria-label={`Delete the folder ${f.name}`} onClick={() => void removeFolder(f)}>
-                          <DeleteIcon />
+                        <button class="icon" title="Edit folder" aria-label={`Edit the folder ${f.name}`} onClick={() => setDialog({ kind: 'folder', folder: f })}>
+                          <PencilIcon />
                         </button>
                       </li>
                     )}
                   </For>
                 </ul>
               </Show>
-              <Show when={shownTrips().length > 0} fallback={<p class="muted">{folder() ? 'No trips in this folder yet.' : folders()!.length > 0 ? 'No trips outside the folders.' : 'No trips yet. Name one above to start planning.'}</p>}>
+              <Show when={shownTrips().length > 0} fallback={<p class="muted">{folder() ? 'No trips in this folder yet.' : folders()!.length > 0 ? 'No trips outside the folders.' : 'No trips yet. Start one with New trip…'}</p>}>
                 <ul class="trips">
                   <For each={shownTrips()}>
                     {(trip) => (
                       <li class="row">
                         <TripButton trip={trip} onOpen={props.onOpen} disabled={props.opening} />
-                        <select aria-label={`Folder of ${trip.name}`} value={trip.folderId ?? ''} onChange={(e) => void run(() => moveTrip(trip.id, e.currentTarget.value === '' ? null : Number(e.currentTarget.value)), refetchTrips)}>
-                          <option value="">No folder</option>
-                          <For each={folders()}>{(f) => <option value={f.id}>{f.name}</option>}</For>
-                        </select>
-                        <MoreMenu
-                          label={`More for ${trip.name}`}
-                          items={() => [
-                            { label: 'Duplicate', run: () => void run(() => duplicateTrip(trip.id), refetchTrips) },
-                            { label: 'Delete', run: () => void removeTrip(trip) },
-                          ]}
-                        />
+                        <button class="icon" title="Edit trip" aria-label={`Edit the trip ${trip.name}`} onClick={() => setDialog({ kind: 'trip', trip })}>
+                          <PencilIcon />
+                        </button>
                       </li>
                     )}
                   </For>
@@ -129,6 +139,80 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
         </Show>
         </Match>
       </Switch>
+      <NameDialog
+        label="New trip"
+        title="New trip"
+        open={dialogOf('new-trip')}
+        placeholder="Name of the trip"
+        submit="Start"
+        onClose={closeDialog}
+        onSubmit={(name) => {
+          closeDialog();
+          void run(async () => props.onOpen((await createTrip(name, folderId() ?? null)).id));
+        }}
+      />
+      <NameDialog
+        label="New folder"
+        title="New folder"
+        open={dialogOf('new-folder')}
+        placeholder="Name of the folder"
+        submit="Create"
+        onClose={closeDialog}
+        onSubmit={(name) => {
+          closeDialog();
+          void run(() => createFolder(name), () => void refetchFolders());
+        }}
+      />
+      <NameDialog
+        label="Folder"
+        title={editedFolder()?.name ?? ''}
+        open={editedFolder() !== undefined}
+        placeholder="Name of the folder"
+        initial={editedFolder()?.name}
+        submit="Save"
+        onClose={closeDialog}
+        onSubmit={(name) => {
+          const f = editedFolder()!;
+          closeDialog();
+          if (name !== f.name) void run(() => renameFolder(f.id, name), refetchFolders);
+        }}
+        actions={[{ label: 'Delete', run: () => void removeFolder(editedFolder()!), danger: true }]}
+      />
+      <EditDialog
+        label="Trip"
+        title={editedTrip()?.name ?? ''}
+        open={editedTrip() !== undefined}
+        onClose={closeDialog}
+        onSubmit={(form) => {
+          const trip = editedTrip()!;
+          const target = field(form, 'folder') === '' ? null : Number(field(form, 'folder'));
+          closeDialog();
+          if (target !== trip.folderId) void run(() => moveTrip(trip.id, target), refetchTrips);
+        }}
+        actions={[
+          { label: 'Delete', run: () => void removeTrip(editedTrip()!), danger: true },
+          {
+            label: 'Duplicate',
+            run: () => {
+              const trip = editedTrip()!;
+              closeDialog();
+              void run(() => duplicateTrip(trip.id), refetchTrips);
+            },
+          },
+        ]}
+      >
+        <Show when={editedTrip()} keyed>
+          {(trip) => (
+            <label>
+              Folder
+              <select name="folder" value={trip.folderId ?? ''}>
+                <option value="">No folder</option>
+                <For each={folders()}>{(f) => <option value={f.id}>{f.name}</option>}</For>
+              </select>
+            </label>
+          )}
+        </Show>
+      </EditDialog>
     </section>
   );
 }

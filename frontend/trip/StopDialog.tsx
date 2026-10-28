@@ -31,7 +31,7 @@ export function StopDialog() {
     close();
   };
   return (
-    <EditDialog label="Stop" title={stop()?.name ?? ''} open={stop() !== undefined} onClose={close} onSubmit={save} danger={{ label: 'Remove', run: remove }}>
+    <EditDialog label="Stop" title={stop()?.name ?? ''} open={stop() !== undefined} onClose={close} onSubmit={save} actions={[{ label: 'Remove', run: remove, danger: true }]}>
       <Show when={stop()} keyed>
         {(s) => (
           <>

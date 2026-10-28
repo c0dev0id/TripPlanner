@@ -31,7 +31,7 @@ export function DayDialog() {
     close();
   };
   return (
-    <EditDialog label="Day" title={day() ? dayLabel(day()!.day, day()!.index) : ''} open={day() !== undefined} onClose={close} onSubmit={save} danger={{ label: 'Remove', run: () => void remove() }}>
+    <EditDialog label="Day" title={day() ? dayLabel(day()!.day, day()!.index) : ''} open={day() !== undefined} onClose={close} onSubmit={save} actions={[{ label: 'Remove', run: () => void remove(), danger: true }]}>
       <Show when={day()} keyed>
         {({ day: d }) => (
           <>

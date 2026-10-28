@@ -199,7 +199,7 @@ a {
   display: block;
 }
 
-.library form {
+.library .new {
   margin: 8px 0;
 }
 
@@ -208,8 +208,6 @@ a {
   margin: 8px 0;
 }
 
-/* The folder a trip is in, chosen in its row. */
-.library select,
 .panel-header .theme {
   max-width: 96px;
   padding: 3px 4px;
@@ -692,6 +690,15 @@ a {
 .dialog h3 {
   margin: 0 0 4px;
   font-size: 1rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--fg);
+}
+
+.dialog label.toggle {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
 }
 
 .dialog button.danger {

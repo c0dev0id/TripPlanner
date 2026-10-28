@@ -1,26 +1,17 @@
-import { Show, type JSX } from 'solid-js';
+import { For, Show, type JSX } from 'solid-js';
 import { showModalWhile } from './modal';
+
+/** What a dialog can do with its element besides saving it, such as deleting it. */
+export type DialogAction = { label: string; run: () => void; danger?: boolean };
 
 /**
  * The one shape of the dialogs that edit an element: a title, its fields in a form,
- * Cancel and Save, and where the element can go, a Delete at the other end. The fields
- * are built afresh each time it opens, so they show the element as it is then.
+ * Cancel and Save, and the element's other actions at the other end. The fields are
+ * built afresh each time it opens, so they show the element as it is then.
  */
-export function EditDialog(props: {
-  label: string;
-  title: string;
-  open: boolean;
-  onClose: () => void;
-  onSubmit: (form: FormData) => void;
-  submit?: string;
-  danger?: { label: string; run: () => void };
-  children: JSX.Element;
-}) {
+export function EditDialog(props: { label: string; title: string; open: boolean; onClose: () => void; onSubmit: (form: FormData) => void; submit?: string; actions?: DialogAction[]; children: JSX.Element }) {
   let dialog!: HTMLDialogElement;
-  showModalWhile(
-    () => dialog,
-    () => props.open,
-  );
+  showModalWhile(() => dialog, () => props.open);
   const submit = (e: SubmitEvent) => {
     e.preventDefault();
     props.onSubmit(new FormData(e.currentTarget as HTMLFormElement));
@@ -34,13 +25,13 @@ export function EditDialog(props: {
           </h3>
           {props.children}
           <div class="row end">
-            <Show when={props.danger}>
-              {(danger) => (
-                <button type="button" class="danger" onClick={() => danger().run()}>
-                  {danger().label}
+            <For each={props.actions}>
+              {(action) => (
+                <button type="button" classList={{ danger: action.danger }} onClick={action.run}>
+                  {action.label}
                 </button>
               )}
-            </Show>
+            </For>
             <span class="grow" />
             <button type="button" onClick={props.onClose}>
               Cancel
