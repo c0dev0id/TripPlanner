@@ -69,8 +69,11 @@ entries at the end of their section.
   has a dots menu with move up, move down, duplicate, move or copy to another day,
   remove. Drag and drop needs a library or a few hundred lines, fights the map's own
   dragging on touch screens, and the lists are short. The row menus and the map's
-  context menus are one mechanism: one open menu at a time, at a viewport position,
-  closed by a click elsewhere or Esc. A duplicated day gets no date,
+  context menus and the base map list are one mechanism: one open menu at a time, at a
+  viewport position, closed by a press or a scroll elsewhere or by Esc, and by nothing
+  else (a first draft had the map close it on its own camera moves, which took a row's
+  menu away while the map was still flying to the day). The menu depends on nothing but
+  Solid, so the read-only page uses it too. A duplicated day gets no date,
   since the day's date would clash with the original's; a duplicated route keeps its
   points but not the stops, which belong to the day; a route moved to another day takes
   the stops bound to its points along, a stop copied to another day arrives free. A trip
@@ -100,10 +103,10 @@ entries at the end of their section.
   is handed the style being left. Adding them again on every `style.load` would have
   raced the first `setData`.
 - **Light or dark by hand is a colour-scheme override.** The stylesheets' colours are
-  `light-dark()` pairs that follow the browser; a `data-theme` attribute on the document
-  sets the colour scheme instead, which turns every pair at once. The pages set the
-  attribute from the preference in one line of inline script before the first paint, so
-  a dark choice never flashes light.
+  `light-dark()` pairs that follow the browser; the document's own inline `color-scheme`
+  overrides them all at once, with no rule in any stylesheet. The pages set it from the
+  preference in one line of inline script before the first paint, so a dark choice never
+  flashes light. The pairs themselves live in one stylesheet both bundles load.
 
 ## Saving
 
