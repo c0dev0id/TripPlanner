@@ -175,7 +175,12 @@ entries at the end of their section.
   counts such stops. Nothing is corrected: whether to leave earlier, shorten a pause,
   move the stop or ignore a pessimistic calculation is the user's call, and a corrected
   arrival would disagree with the time the stop says. Stops before the first timed one
-  have no times, and a day without a timed stop has distances only. All of this is
+  have no times, and a day without a timed stop has distances only. Each route keeps its
+  own clock: a route whose first stop has a time starts there, with the route points
+  before that stop timed back from it, so the start of a route is never short of its
+  time or waiting for it; the ride before it was another route's, and what lies between
+  two routes (a ferry, a transfer, a night) is not ridden. A route whose first stop has
+  no time goes on from where the route before ended. All of this is
   planned time: nothing is compared with the clock, and matching the plan against the
   ride as it happens is a navigation system's job, not this tool's.
 - **Untimed legs ride at 50 km/h.** The routing gives every routed leg its duration. A straight

@@ -41,6 +41,7 @@
   and a pause. From the first timed stop and the routed legs' durations the panel
   computes the day's planned timeline: arrival and departure at each stop, a fixed time
   kept as it is with the waiting before it or by how much the ride falls short of it,
+  each route starting afresh at its first stop's time where it has one,
   and the day's summary of departure, arrival at the end, riding time, pauses and the
   stops the ride is short at. Nothing is corrected. Straight legs and legs not routed
   yet count at 50 km/h. Nothing is compared with the clock; that is a navigation

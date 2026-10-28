@@ -6,7 +6,7 @@ import { dayTimeline } from './timeline';
 
 const stop = (id: string, arriveAt: string | null = null, pauseMinutes: number | null = null): Stop => ({ ...newStop(id, id, [0, 0], null), arriveAt, pauseMinutes });
 
-const entry = (timeS: number, s?: Stop): SequenceEntry => ({ id: s?.id ?? `p${timeS}`, routeIndex: 0, distanceM: timeS * 15, timeS, lngLat: [0, 0], ...(s && { stop: s }) });
+const entry = (timeS: number, s?: Stop, routeIndex = 0): SequenceEntry => ({ id: s?.id ?? `p${timeS}`, routeIndex, distanceM: timeS * 15, timeS, lngLat: [0, 0], ...(s && { stop: s }) });
 
 const listed = (timeline: ReturnType<typeof dayTimeline>) => [...timeline!.times].map(([id, t]) => [id, t.arrivalMin, t.departureMin, t.slackMin]);
 
@@ -43,5 +43,36 @@ describe('dayTimeline', () => {
     const timeline = dayTimeline([entry(0, stop('home')), entry(1800, stop('cafe', '10:00')), entry(5400)]);
     expect([...timeline!.times.keys()]).toEqual(['cafe', 'p5400']);
     expect(timeline).toMatchObject({ departMin: 600, endMin: 660 });
+  });
+
+  it('times the route points before its first stop from that stop\'s time', () => {
+    const timeline = dayTimeline([entry(0), entry(1800, stop('cafe', '10:00')), entry(3600)]);
+    expect(listed(timeline)).toEqual([
+      ['p0', 570, 570, 0],
+      ['cafe', 600, 600, 0],
+      ['p3600', 630, 630, 0],
+    ]);
+  });
+
+  it('starts each route at its first stop\'s time, never short of it or waiting for it', () => {
+    // The first route ends at 10:00; the second starts at its ferry stop, fixed at 09:30, and goes on from there.
+    const timeline = dayTimeline([entry(0, stop('home', '09:00')), entry(3600), entry(3600, stop('ferry', '09:30', 60), 1), entry(5400, stop('lunch'), 1)]);
+    expect(listed(timeline)).toEqual([
+      ['home', 540, 540, 0],
+      ['p3600', 600, 600, 0],
+      ['ferry', 570, 630, 0],
+      ['lunch', 660, 660, 0],
+    ]);
+    expect(timeline).toMatchObject({ short: 0, endMin: 660 });
+  });
+
+  it('goes on into a route whose first stop has no time, and keeps later fixed times within a route', () => {
+    const timeline = dayTimeline([entry(0, stop('home', '09:00')), entry(3600, stop('pass'), 1), entry(5400, stop('hut', '09:45'), 1)]);
+    expect(listed(timeline)).toEqual([
+      ['home', 540, 540, 0],
+      ['pass', 600, 600, 0],
+      ['hut', 585, 585, -45],
+    ]);
+    expect(timeline!.short).toBe(1);
   });
 });

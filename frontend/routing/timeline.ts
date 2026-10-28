@@ -4,8 +4,10 @@ import type { SequenceEntry } from './sequence';
  * A day's planned times, from the first stop that has a time on: the riding times of the
  * legs, the pauses, and the stops' fixed arrival times. A fixed time is kept as planned;
  * the ride to it is reported as waiting when it gets there early and as short when it
- * would get there late. Nothing is corrected, and nothing here is the clock; matching
- * the plan against the ride is a navigation system's job.
+ * would get there late. Each route keeps its own clock: a route whose first stop has a
+ * time starts there, whatever the route before ended at. Nothing is corrected, and
+ * nothing here is the clock; matching the plan against the ride is a navigation system's
+ * job.
  */
 
 export interface EntryTime {
@@ -40,16 +42,26 @@ function minutesOfDay(time: string): number {
 /**
  * The day's timeline over its riding sequence; none while no stop has a time. An entry's
  * arrival is the last departure plus the riding since; where there is no clock yet, a
- * stop's fixed time starts it.
+ * stop's fixed time starts it. A route whose first stop has a fixed time starts its own
+ * clock, set so that the ride from the route's start arrives there on time: the start of
+ * a route is never short of its time or waiting for it, since the ride before it was
+ * another route's. A route whose first stop has no time goes on from the route before.
  */
 export function dayTimeline(sequence: readonly SequenceEntry[]): DayTimeline | undefined {
   const times = new Map<string, EntryTime>();
+  const starts = routeStarts(sequence);
   let clock: { min: number; riddenS: number } | undefined;
+  let route: number | undefined;
   let departMin: number | undefined;
   let endMin = 0;
   let pauseMin = 0;
   let short = 0;
   for (const entry of sequence) {
+    if (entry.routeIndex !== route) {
+      route = entry.routeIndex;
+      const start = starts.get(route);
+      if (start) clock = { min: start.fixedMin - (start.timeS - entry.timeS) / 60, riddenS: entry.timeS };
+    }
     const fixedMin = entry.stop?.arriveAt == null ? undefined : minutesOfDay(entry.stop.arriveAt);
     const etaMin = clock ? clock.min + (entry.timeS - clock.riddenS) / 60 : fixedMin;
     if (etaMin === undefined) continue;
@@ -65,4 +77,16 @@ export function dayTimeline(sequence: readonly SequenceEntry[]): DayTimeline | u
   }
   if (departMin === undefined) return undefined;
   return { times, departMin, endMin, ridingS: sequence.at(-1)!.timeS, pauseMin, short };
+}
+
+/** By route, the fixed time of the route's first stop where it has one, with the riding time from the day's start to it. */
+function routeStarts(sequence: readonly SequenceEntry[]): Map<number, { fixedMin: number; timeS: number }> {
+  const starts = new Map<number, { fixedMin: number; timeS: number }>();
+  const seen = new Set<number>();
+  for (const entry of sequence) {
+    if (!entry.stop || seen.has(entry.routeIndex)) continue;
+    seen.add(entry.routeIndex);
+    if (entry.stop.arriveAt != null) starts.set(entry.routeIndex, { fixedMin: minutesOfDay(entry.stop.arriveAt), timeS: entry.timeS });
+  }
+  return starts;
 }
