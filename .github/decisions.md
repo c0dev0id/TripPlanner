@@ -37,12 +37,17 @@ entries at the end of their section.
   as Layer Slayer's does: a list of points and a map from leg key (profile and both ends)
   to geometry. Nothing queries single points, so rows per point would add joins and
   ordering for no gain.
-- **Legs carry distance and duration, not geometry alone.** OSRM answers all three at
-  once; a route's distance and a stop's distance from the start show now, and the
+- **Legs carry distance and duration, not geometry alone.** The routing answers all three
+  at once; a route's distance and a stop's distance from the start show now, and the
   timeline needs the durations without routing everything again.
-- **The profile belongs to the route.** A day with a ride, a hike and a ride is three
-  routes with three profiles; the toolbar sets the profile of the route being edited.
-- **The schedule check is the feature.** OSRM returns a duration with every leg. The
+- **The profile belongs to the route, and so does the motorway dial.** A day with a ride,
+  a hike and a ride is three routes with three profiles; the toolbar sets the profile of
+  the route being edited. The dial (avoid, allow, prefer motorways) sits beside it: a
+  transfer day wants the motorway, a loop day wants the passes, and both are routes of
+  one trip, so an app-wide setting would be wrong for one of them. The dial is part of
+  the leg key, so turning it routes the legs again. It counts for the road profile only;
+  bike and foot ignore it.
+- **The schedule check is the feature.** The routing returns a duration with every leg. The
   departure plus route durations plus pauses, compared with the fixed arrival times, tells
   before the trip where a day does not work. This is what the times on stops are for.
 - **Editing is a mode of one route.** Selecting a day shows it: its routes in colour, its
@@ -140,7 +145,7 @@ entries at the end of their section.
   have no times, and a day without a timed stop has distances only. All of this is
   planned time: nothing is compared with the clock, and matching the plan against the
   ride as it happens is a navigation system's job, not this tool's.
-- **Untimed legs ride at 50 km/h.** OSRM gives every routed leg its duration. A straight
+- **Untimed legs ride at 50 km/h.** The routing gives every routed leg its duration. A straight
   leg (by choice) or one not routed yet has none; its riding time counts at 50 km/h over
   its crow-flies length rather than being unknown, so that a day with one such leg still
   has times. The pace is a guess and may become a setting.
@@ -237,7 +242,7 @@ entries at the end of their section.
   sharing and the read-only page as a guest, and then
   from the mailed link, a trip with stops added by tapping, routing, the line tools, undo
   and redo, the save, a reload and the downloads. Routing in that run answers from a mock
-  where OSRM cannot be reached. Keeping it in CI would mean a browser and a PHP server in
+  where Valhalla cannot be reached. Keeping it in CI would mean a browser and a PHP server in
   the workflow for a few minutes per push; not worth it yet.
 
 ## Server and stack
@@ -263,12 +268,20 @@ entries at the end of their section.
   and a zip of per-day files are a read of the database, and a download is a URL that can
   be bookmarked. Import needs the editor's context (which day, which gap) and the routing
   of imported legs, so it stays in the browser, ported from Layer Slayer.
-- **Routing in the browser by FOSSGIS OSRM.** The same pattern as Layer Slayer: one request
-  per 1.1 s per browser, attribution shown, no server in between. The leg key (profile,
-  from, to) does not name an engine. Valhalla is the option for later: its motorcycle
-  costing (beta) knows `use_highways` and `use_trails`, answers in polyline6 like OSRM, and
-  FOSSGIS runs a public instance at valhalla1.openstreetmap.de whose terms of use have not
-  been checked.
+- **Routing in the browser by FOSSGIS Valhalla, and by nothing else.** The same pattern as
+  Layer Slayer: one request per 1.1 s per browser, attribution shown, no server in
+  between. The first four phases routed on FOSSGIS's OSRM; the switch was made for one
+  thing OSRM's car profile cannot do, the motorway dial of Valhalla's motorcycle costing.
+  Checked before switching: the same FOSSGIS terms name both servers (one request per
+  second, attribution, a single server each with no availability promise); both answer
+  the browser's CORS preflight; latency was the same, 0.4 to 0.8 s a leg; with the dial
+  at its default the motorcycle costing gave the auto costing's road on every test leg,
+  and on three of four the road OSRM gave; Valhalla's times off the motorway are more
+  conservative (about 50 km/h against OSRM's 70 to 80). An engine switch with OSRM as a
+  fallback was considered and dropped: two engines' durations in one day's timeline
+  disagree in both directions, and once the dial exists the switch buys nothing. The leg
+  key names the costing (profile and dial), not the engine; changing the engine means
+  routing everything again.
 - **Only the route tool and a base map switcher come from Layer Slayer.** Stacking WMS,
   WFS, ArcGIS and PMTiles layers is Layer Slayer's purpose, not a trip planner's. The route
   model, edits, legs, routing pump, undo history, markers and GPX code are ported with

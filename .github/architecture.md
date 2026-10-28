@@ -20,7 +20,7 @@ flowchart LR
     smtpd["smtpd<br/>127.0.0.1:25"]
   end
   subgraph remote["Remote services"]
-    osrm["OSRM<br/>routing.openstreetmap.de"]
+    valhalla["Valhalla<br/>valhalla1.openstreetmap.de"]
     tiles["OpenFreeMap<br/>base map tiles"]
   end
   pages --> httpd
@@ -30,7 +30,7 @@ flowchart LR
   php --> db
   php --> files
   php -->|invitations, password resets| smtpd
-  app --> osrm
+  app --> valhalla
   app --> tiles
   view --> tiles
 ```
@@ -62,7 +62,7 @@ flowchart TB
 |---|---|
 | Presentation (frontend) | The library (`library/`), the trip panel and its dialogs for a stop, the export, the journal and sharing (`trip/`), the map with its base maps and their control, route lines, stop, point and photo markers, interactions, toolbar, hint bar and context menu (`map/`), small controls, the theme and the browser's preferences (`ui/`), and the read-only trip page with its own map (`view/`), a second entry (`view.tsx`). |
 | Application state (frontend) | The open trip, the selected day and the route being edited, undo and redo and the actions that edit the trip (`state/trip.ts`), the pull-based routing pump (`state/routing.ts`), the autosave, which sends the stops in riding order (`state/autosave.ts`), the open trip's journal (`state/journal.ts`), the tool, the toggles, the open menu and dialogs (`state/drawing.ts`). |
-| Domain (frontend) | Pure edits of a route and of a day's stops and routes, the riding sequence of a day with distances and riding times, the day's timeline, leg keys and geometry, the polyline codec, the OSRM client (`routing/`); reading GPX files into routes and stops (`gpx/`); distances, nearest-line search and line simplification (`geo/`); the document types (`model/`). |
+| Domain (frontend) | Pure edits of a route and of a day's stops and routes, the riding sequence of a day with distances and riding times, the day's timeline, leg keys and geometry, the polyline codec, the Valhalla client (`routing/`); reading GPX files into routes and stops (`gpx/`); distances, nearest-line search and line simplification (`geo/`); the document types (`model/`). |
 | API client (frontend) | `api.ts`: requests to the JSON API, the one place that knows its URLs. |
 | HTTP (backend) | Slim routes and middleware (sessions, CSRF, body parsing, authentication), Plates templates for the public pages and the two bundle pages, JSON encoding of API answers (`Http/`, `Pages/`, `Api/`). |
 | Domain (backend) | Accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, trip documents with their validator and copies (`Trip/`), GPX writing with its options, the proximity of free stops and the export presets (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the read-only API of a shared trip (`Share/`). |
@@ -221,7 +221,7 @@ A trip's parts carry ids the client generates, so that the trip's content is sav
 one document: rows are upserted by id and the ones the document no longer holds are
 deleted. A route's points and legs are stored as JSON in the route's row, in the shape
 the editor works with; each routed leg holds its polyline6 geometry, length and riding
-time as OSRM answered. A bound stop's position equals its route point's, which the
+time as the routing answered. A bound stop's position equals its route point's, which the
 validator checks. A journal entry belongs to its trip and names at most one of a day, a
 stop or a route by a nullable foreign key, which the schema checks; when that part goes,
 the key is set to null and the entry stays with the trip. An entry's file lies in the

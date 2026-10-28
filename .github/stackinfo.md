@@ -25,8 +25,9 @@
   the planner app and the read-only trip page.
 - MapLibre GL JS 6 (map rendering, Web Mercator).
 - Route tool, GPX reading, line simplification and polyline handling ported from Layer Slayer.
-- Routing by the FOSSGIS OSRM servers (routing.openstreetmap.de): at most one request per
-  second, attribution shown. Motorcycles ride the car profile.
+- Routing by the FOSSGIS Valhalla server (valhalla1.openstreetmap.de): at most one request
+  per second, attribution shown. The road profile is Valhalla's motorcycle costing with
+  its `use_highways` option; bike and foot are the bicycle and pedestrian costings.
 - Base maps: OpenFreeMap's vector styles (Liberty, Bright, Positron, Dark) without an
   API key, and raster tiles from OpenTopoMap, OpenStreetMap and CyclOSM, each with its
   attribution; the choice is kept in the browser.

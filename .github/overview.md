@@ -25,7 +25,7 @@ parts, as a single file or a zip.
 Users have accounts. Sign-up is by invitation: visitors join a waiting list and an admin
 sends invitations. All data lives on the server in a SQLite database and a file store.
 The map and route editor are taken from Layer Slayer (<https://github.com/c0dev0id/LayerSlayer>);
-routing is done in the browser by the FOSSGIS OSRM servers.
+routing is done in the browser by the FOSSGIS Valhalla server, with a motorway dial per route.
 
 ## Phases
 
@@ -40,4 +40,4 @@ phase 2 brought in. The later work describes intent and changes as it progresses
 | 3 Time | Dates on days. Arrival times and pauses on stops, the computed day timeline from the first timed stop, with waiting and late arrivals. Day summary: distance, riding time, departure and arrival, pauses, late stops. | Built; a day planned with a fixed lunch confirms it. |
 | 4 Library and export | GPX import into a day: routes, tracks, Garmin's calculated way, waypoints as stops. Move, duplicate and copy for days, routes, stops and trips. The export dialog with scope, packaging, tracks or routes, optional parts, reach of free stops, and saved presets. | Built; an export that works on the device and an import of a file from it confirm it. |
 | 5 After the trip | A journal of notes and files on the trip, a day, a stop or a route. Photos placed on the day and the map by their EXIF time and position. Trip state planned or done. A read-only trip page for printing, shared under a link. | Built; a ridden trip with its photos and notes on the shared page confirms it. |
-| Later | Sharing between users. Valhalla routing with its motorcycle costing. Elevation and surface colouring of routes. Further export formats. |  |
+| Later | Sharing between users. Elevation and surface colouring of routes. Further export formats. |  |

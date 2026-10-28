@@ -15,7 +15,8 @@ share work; sharing between users is on the way.
   stops of the day.
 - **Routes drawn on the map** — tap to add points, tap the route to insert one, drag
   points and stops, delete them; straight legs where the routing knows no way. Routed
-  along the roads by OSRM with a road, bike or foot profile per route; undo and redo.
+  along the roads by Valhalla with a road, bike or foot profile per route and a motorway
+  dial for the transfer days; undo and redo.
 - **Stops bound or free** — a route point becomes a stop with one tap; a stop beside the
   route is placed freely, listed where the rider passes closest, connected to the route
   when wanted. Hotel, restaurant, café, fuel, sight, photo spot or break, each drawn as

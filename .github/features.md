@@ -16,8 +16,9 @@
 - Routes as geometry: points in order with routed legs between them, one profile (road,
   bike, foot) per route. A route is edited on its own: a tap adds a point at its end or,
   on the line, inserts one there; points are dragged and deleted; the leg to any point
-  can be straight. Routed along the roads by OSRM, with undo and redo, and a reroute of
-  the route. Legs not routed yet are dashed, failed ones red with a retry.
+  can be straight. Routed along the roads by Valhalla's motorcycle, bicycle or pedestrian
+  costing, with a motorway dial per road route (avoid, allow, prefer), undo and redo, and
+  a reroute of the route. Legs not routed yet are dashed, failed ones red with a retry.
 - Stops bound to a route point (a waypoint and a route point at once, dragged together)
   or free beside the route. The stop tool makes a stop of a route point, inserts one on
   the line, or places a free stop elsewhere; a free stop is connected to the route where
