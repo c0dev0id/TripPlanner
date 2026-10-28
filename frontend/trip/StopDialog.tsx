@@ -1,38 +1,40 @@
 import { createMemo, For, Show } from 'solid-js';
 import { STOP_KINDS, type Stop, type StopKind } from '../model/trip';
-import { setStopDialogId, stopDialogId } from '../state/drawing';
-import { selectedDay, updateStop } from '../state/trip';
-import { showModalWhile } from '../ui/modal';
+import { editing, setEditing } from '../state/drawing';
+import { removeStop, selectedDay, updateStop } from '../state/trip';
+import { EditDialog, field } from '../ui/EditDialog';
 
-/** The details of a stop, in a modal dialog: name, kind, arrival time and pause, address, contact, booking, notes, whether it is optional. */
+/** A stop of the selected day: name, kind, arrival time and pause, address, contact, booking, notes, whether it is optional; and its removal. */
 export function StopDialog() {
-  let dialog!: HTMLDialogElement;
-  const stop = createMemo((): Stop | undefined => selectedDay()?.stops.find((s) => s.id === stopDialogId()));
-  showModalWhile(() => dialog, () => stop() !== undefined);
-  const save = (e: SubmitEvent) => {
-    e.preventDefault();
-    const s = stop();
-    if (!s) return;
-    const form = new FormData(e.currentTarget as HTMLFormElement);
-    const text = (name: string) => String(form.get(name) ?? '').trim();
+  const stop = createMemo((): Stop | undefined => {
+    const target = editing();
+    return target?.kind === 'stop' ? selectedDay()?.stops.find((s) => s.id === target.id) : undefined;
+  });
+  const close = () => setEditing(undefined);
+  const save = (form: FormData) => {
+    const s = stop()!;
     updateStop(s.id, {
-      name: text('name') || s.name,
-      kind: text('kind') as StopKind,
-      arriveAt: text('arriveAt') || null,
-      pauseMinutes: text('pauseMinutes') === '' ? null : Number(text('pauseMinutes')),
+      name: field(form, 'name') || s.name,
+      kind: field(form, 'kind') as StopKind,
+      arriveAt: field(form, 'arriveAt') || null,
+      pauseMinutes: field(form, 'pauseMinutes') === '' ? null : Number(field(form, 'pauseMinutes')),
       optional: form.get('optional') === 'on',
-      address: text('address'),
-      contact: text('contact'),
-      bookingReference: text('bookingReference'),
-      notes: text('notes'),
+      address: field(form, 'address'),
+      contact: field(form, 'contact'),
+      bookingReference: field(form, 'bookingReference'),
+      notes: field(form, 'notes'),
     });
-    setStopDialogId(undefined);
+    close();
+  };
+  const remove = () => {
+    removeStop(stop()!.id);
+    close();
   };
   return (
-    <dialog ref={dialog} class="dialog" aria-label="Stop" onClose={() => setStopDialogId(undefined)}>
+    <EditDialog label="Stop" title={stop()?.name ?? ''} open={stop() !== undefined} onClose={close} onSubmit={save} danger={{ label: 'Remove', run: remove }}>
       <Show when={stop()} keyed>
         {(s) => (
-          <form onSubmit={save}>
+          <>
             <label>
               Name
               <input name="name" value={s.name} maxlength={200} required />
@@ -76,17 +78,9 @@ export function StopDialog() {
             <label class="toggle">
               <input type="checkbox" name="optional" checked={s.optional} /> Optional: a stop to decide on the day, left out of an export on request
             </label>
-            <div class="row end">
-              <button type="button" onClick={() => setStopDialogId(undefined)}>
-                Cancel
-              </button>
-              <button type="submit" class="primary">
-                Save
-              </button>
-            </div>
-          </form>
+          </>
         )}
       </Show>
-    </dialog>
+    </EditDialog>
   );
 }

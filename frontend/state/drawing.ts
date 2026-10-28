@@ -23,8 +23,9 @@ export const [showRoutePoints, setShowRoutePoints] = createSignal(false);
 /** Whether the days before and after the selected one are drawn, dimmed, for orientation. */
 export const [showNeighbours, setShowNeighbours] = createSignal(true);
 
-/** The stop whose details dialog is open. */
-export const [stopDialogId, setStopDialogId] = createSignal<string>();
+/** The element whose edit dialog is open: the trip, or a day, a route or a stop of it by id. */
+export type Editing = { kind: 'trip' } | { kind: 'day'; id: string } | { kind: 'route'; id: string } | { kind: 'stop'; id: string };
+export const [editing, setEditing] = createSignal<Editing>();
 
 /** Whether the export dialog is open. */
 export const [exportOpen, setExportOpen] = createSignal(false);

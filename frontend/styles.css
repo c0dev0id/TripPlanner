@@ -100,8 +100,7 @@ a {
   white-space: nowrap;
 }
 
-.panel input,
-.name-input {
+.panel input {
   min-width: 0;
   padding: 4px 6px;
   border: 1px solid var(--line);
@@ -688,6 +687,22 @@ a {
 
 .dialog::backdrop {
   background: rgba(0, 0, 0, 0.25);
+}
+
+.dialog h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+.dialog button.danger {
+  color: var(--error);
+}
+
+/* A day's notes under its row, as written. */
+.day-details .notes {
+  margin: 0 0 6px;
+  font-size: 13px;
+  white-space: pre-wrap;
 }
 
 .journal-dialog {

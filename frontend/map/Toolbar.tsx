@@ -1,9 +1,8 @@
-import { For, Show, type JSX } from 'solid-js';
-import { HIGHWAYS, PROFILES, takesMotorwayDial } from '../model/trip';
-import { setTool, tool, TOOLS, type Tool } from '../state/drawing';
+import { Show, type JSX } from 'solid-js';
+import { setEditing, setTool, tool, TOOLS, type Tool } from '../state/drawing';
 import { recalculateRoute } from '../state/routing';
-import { editingRoute, editRoute, redo, redoLabel, setRouteHighways, setRouteProfile, undo, undoLabel } from '../state/trip';
-import { CheckIcon, DeleteIcon, InsertIcon, RedoIcon, RefreshIcon, StopIcon, UndoIcon } from '../ui/icons';
+import { editingRoute, editRoute, redo, redoLabel, undo, undoLabel } from '../state/trip';
+import { CheckIcon, DeleteIcon, InsertIcon, RedoIcon, RefreshIcon, SettingsIcon, StopIcon, UndoIcon } from '../ui/icons';
 
 /** A toolbar button: an icon over a short caption, with a tooltip that says more. `active` marks the picked tool. */
 function ToolButton(props: { label: string; title: string; active?: boolean; disabled?: boolean; onClick: () => void; children: JSX.Element }) {
@@ -22,24 +21,7 @@ function ToolButton(props: { label: string; title: string; active?: boolean; dis
   );
 }
 
-/** A choice among a few values, one radio button each, with an optional title before them. */
-function Segmented<T extends string>(props: { name: string; label: string; title?: string; choices: readonly { value: T; label: string }[]; value: T; onChange: (value: T) => void }) {
-  return (
-    <div class="toolbar-group segmented" role="radiogroup" aria-label={props.label}>
-      <Show when={props.title}>{(title) => <span class="segmented-title">{title()}</span>}</Show>
-      <For each={props.choices}>
-        {(choice) => (
-          <label>
-            <input type="radio" name={props.name} value={choice.value} checked={props.value === choice.value} onChange={() => props.onChange(choice.value)} />
-            <span>{choice.label}</span>
-          </label>
-        )}
-      </For>
-    </div>
-  );
-}
-
-/** The tools of the route being edited, over the map: what a tap does, the profile and the motorway dial, undo and redo, reroute, done. */
+/** The tools of the route being edited, over the map: what a tap does, the route's settings, undo and redo, reroute, done. */
 export function Toolbar() {
   const button = (t: Tool, icon: JSX.Element) => (
     <ToolButton label={TOOLS[t].label} title={`${TOOLS[t].hint[0]!.toUpperCase()}${TOOLS[t].hint.slice(1)}`} active={tool() === t} onClick={() => setTool(t)}>
@@ -55,10 +37,11 @@ export function Toolbar() {
             {button('stop', <StopIcon />)}
             {button('delete', <DeleteIcon />)}
           </div>
-          <Segmented name="profile" label="Routing profile" choices={PROFILES} value={route().profile} onChange={(profile) => setRouteProfile(route().id, profile)} />
-          <Show when={takesMotorwayDial(route().profile)}>
-            <Segmented name="highways" label="Motorways" title="Motorways" choices={HIGHWAYS} value={route().highways} onChange={(highways) => setRouteHighways(route().id, highways)} />
-          </Show>
+          <div class="toolbar-group" role="group" aria-label="Route">
+            <ToolButton label="Route" title="The route's name, profile, motorways and more" onClick={() => setEditing({ kind: 'route', id: route().id })}>
+              <SettingsIcon />
+            </ToolButton>
+          </div>
           <div class="toolbar-group" role="group" aria-label="History">
             <ToolButton label="Undo" title={undoLabel() ? `Undo: ${undoLabel()} (Ctrl+Z)` : 'Nothing to undo'} disabled={!undoLabel()} onClick={undo}>
               <UndoIcon />

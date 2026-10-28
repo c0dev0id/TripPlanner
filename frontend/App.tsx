@@ -7,10 +7,13 @@ import { MapView } from './map/MapView';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState } from './state/autosave';
 import { closeTrip, loadTrip, openTrip } from './state/trip';
+import { DayDialog } from './trip/DayDialog';
 import { ExportDialog } from './trip/ExportDialog';
 import { JournalDialog } from './trip/JournalDialog';
+import { RouteDialog } from './trip/RouteDialog';
 import { ShareDialog } from './trip/ShareDialog';
 import { StopDialog } from './trip/StopDialog';
+import { TripDialog } from './trip/TripDialog';
 import { TripPanel } from './trip/TripPanel';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { chooseTheme, theme, THEMES, type Theme } from './ui/theme';
@@ -62,6 +65,9 @@ export function App() {
       </div>
       <ContextMenu />
       <ConfirmDialog />
+      <TripDialog />
+      <DayDialog />
+      <RouteDialog />
       <StopDialog />
       <ExportDialog />
       <JournalDialog />

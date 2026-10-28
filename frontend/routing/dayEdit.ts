@@ -24,7 +24,7 @@ export function alignStops(day: Day): Day {
   return stops.every((s, i) => s === day.stops[i]) ? day : { ...day, stops };
 }
 
-function updateDay(trip: Trip, dayId: string, change: (day: Day) => Day): Trip {
+export function updateDay(trip: Trip, dayId: string, change: (day: Day) => Day): Trip {
   const days = trip.days.map((day) => (day.id === dayId ? change(day) : day));
   return days.every((d, i) => d === trip.days[i]) ? trip : { ...trip, days };
 }
