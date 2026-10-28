@@ -19,8 +19,9 @@ share work; sharing between users is on the way.
   for the transfer days; undo and redo.
 - **Stops bound or free** — a route point becomes a stop with one tap; a stop beside the
   route is placed freely, listed where the rider passes closest, connected to the route
-  when wanted. Hotel, restaurant, café, fuel, sight, photo spot or break, each drawn as
-  what it is, with address, contact, booking reference and notes.
+  when wanted. Start, end, meeting point, hotel, restaurant, café, fuel, sight, photo
+  spot or break, each drawn as what it is, with address, contact, booking reference
+  and notes.
 - **The day at a glance** — the panel lists a day's routes and its stops in riding order
   with the distance from the start; a click shows the stop on the map. The days before
   and after are drawn dimmed for orientation.

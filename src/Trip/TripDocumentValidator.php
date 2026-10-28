@@ -12,7 +12,7 @@ use Planner\Name;
  */
 final class TripDocumentValidator
 {
-    public const STOP_KINDS = ['hotel', 'restaurant', 'cafe', 'fuel', 'sight', 'photo', 'break', 'other'];
+    public const STOP_KINDS = ['start', 'end', 'meeting', 'hotel', 'restaurant', 'cafe', 'fuel', 'sight', 'photo', 'break', 'other'];
     public const ROUTE_KINDS = ['routed', 'track'];
     public const PROFILES = ['motorcycle', 'bicycle', 'pedestrian'];
     public const HIGHWAYS = ['avoid', 'allow', 'prefer'];

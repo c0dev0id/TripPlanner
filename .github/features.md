@@ -26,8 +26,9 @@
 - Stops bound to a route point (a waypoint and a route point at once, dragged together)
   or free beside the route. The stop tool makes a stop of a route point, inserts one on
   the line, or places a free stop elsewhere; a free stop is connected to the route where
-  it passes closest, a bound one disconnected. A stop has a kind (hotel, restaurant,
-  café, fuel, sight, photo spot, break, other) drawn on the map, a name, address,
+  it passes closest, a bound one disconnected. A stop has a kind (start, end, meeting
+  point, hotel, restaurant, café, fuel, sight, photo spot, break, other) drawn on the
+  map, a name, address,
   contact, booking reference and notes in a dialog.
 - The panel lists the selected day's routes with profile, distance and the number of
   stops on each. Under the selected route stand its stops and route points in riding

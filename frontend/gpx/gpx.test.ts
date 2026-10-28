@@ -70,6 +70,12 @@ describe('gpxToDayParts', () => {
     ]);
   });
 
+  it('takes a start, an end and a meeting point by their type, as the export writes them', () => {
+    const waypoint = (type: string) => `<wpt lat="48" lon="11"><type>${type}</type></wpt>`;
+    const gpx = `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">${waypoint('start')}${waypoint('meeting')}${waypoint('end')}</gpx>`;
+    expect(gpxToDayParts(parseGpx(gpx), options).stops.map((s) => s.kind)).toEqual(['start', 'meeting', 'end']);
+  });
+
   it("keeps a Garmin route's points, each leg along the way Garmin calculated, its time left to the pace", () => {
     const [garmin, plain] = gpxToDayParts(parseGpx(GARMIN), options).routes;
     expect(garmin!.name).toBe('Pass road');

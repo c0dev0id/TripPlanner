@@ -25,10 +25,13 @@ export const HIGHWAYS: readonly { value: Highways; label: string }[] = [
 export const takesMotorwayDial = (profile: Profile): boolean => profile === 'motorcycle';
 
 /** What a stop is, which decides its icon. */
-export type StopKind = 'hotel' | 'restaurant' | 'cafe' | 'fuel' | 'sight' | 'photo' | 'break' | 'other';
+export type StopKind = 'start' | 'end' | 'meeting' | 'hotel' | 'restaurant' | 'cafe' | 'fuel' | 'sight' | 'photo' | 'break' | 'other';
 
 export const STOP_KINDS: readonly { value: StopKind; label: string }[] = [
   { value: 'other', label: 'Stop' },
+  { value: 'start', label: 'Start' },
+  { value: 'end', label: 'End' },
+  { value: 'meeting', label: 'Meeting point' },
   { value: 'hotel', label: 'Hotel' },
   { value: 'restaurant', label: 'Restaurant' },
   { value: 'cafe', label: 'Café' },

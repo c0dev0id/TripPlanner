@@ -1,4 +1,4 @@
-// The little objects are from Layer Slayer's waypoint shapes; the bed and the pin are new.
+// The little objects are from Layer Slayer's waypoint shapes; the bed, the pin, the flags and the meeting sign are new.
 import { createUniqueId, Show, type JSX } from 'solid-js';
 import type { StopKind } from '../model/trip';
 
@@ -14,6 +14,19 @@ function Post() {
   return <rect x="15" y="18" width="2" height="17" rx="0.6" fill={POLE} />;
 }
 
+/** A flag on a pole whose foot is the stop's spot; the cloth is drawn after it. */
+function FlagPole() {
+  return (
+    <>
+      <rect x="15" y="3" width="2" height="32" rx="0.8" fill={POLE} />
+      <circle cx="16" cy="2.6" r="1.6" fill={POLE} />
+    </>
+  );
+}
+
+/** The squares of a chequered flag's cloth: four across, three down. */
+const CHEQUERS = [0, 1, 2].flatMap((row) => [0, 1, 2, 3].filter((col) => (row + col) % 2 === 0).map((col) => ({ x: 17 + col * 3.5, y: 3.5 + row * 4 })));
+
 /** A pin in the stop's colour: bound to the route or free beside it. */
 function Pin(props: { color: string }) {
   return (
@@ -27,6 +40,39 @@ function Pin(props: { color: string }) {
 /** The drawing of each kind, in a 32 × 36 box with its foot at (16, 35). */
 const DRAWINGS: Record<StopKind, (color: string) => JSX.Element> = {
   other: (color) => <Pin color={color} />,
+  start: () => (
+    <>
+      <FlagPole />
+      <rect x="17" y="3.5" width="14" height="12" rx="0.6" fill="#2f9e44" />
+    </>
+  ),
+  end: () => (
+    <>
+      <FlagPole />
+      <rect x="17" y="3.5" width="14" height="12" rx="0.6" fill="#fff" stroke={INK} stroke-width="0.8" />
+      <g fill={INK}>
+        {CHEQUERS.map((c) => (
+          <rect x={c.x} y={c.y} width="3.5" height="4" />
+        ))}
+      </g>
+    </>
+  ),
+  meeting: () => (
+    <>
+      <Post />
+      <rect x="4" y="2.5" width="24" height="18" rx="3" fill="#7048e8" />
+      <g fill="#fff">
+        <circle cx="10.5" cy="8" r="2.2" />
+        <path d="M6 17 a4.5 5 0 0 1 9 0 Z" />
+        <circle cx="21.5" cy="8" r="2.2" />
+        <path d="M17 17 a4.5 5 0 0 1 9 0 Z" />
+      </g>
+      <g fill="#fff" stroke="#7048e8" stroke-width="1.1">
+        <circle cx="16" cy="9.6" r="2.6" />
+        <path d="M10.6 18.6 a5.4 5.6 0 0 1 10.8 0 Z" />
+      </g>
+    </>
+  ),
   hotel: () => (
     <>
       <Post />
