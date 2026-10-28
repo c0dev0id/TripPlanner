@@ -253,9 +253,15 @@ a {
   padding: 2px 0;
 }
 
-.route.editing {
+/* The selected route: its row marked, its stops and points listed under it. */
+.route.editing > .row {
   background: var(--active);
+  box-shadow: inset 3px 0 0 var(--accent);
   border-radius: 4px;
+}
+
+.route .stops {
+  padding: 2px 0 4px 8px;
 }
 
 /* A route's name over its kind and length, like a stop's name over its times. */
@@ -263,7 +269,6 @@ a {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  padding-left: 4px;
 }
 
 .route .detail {

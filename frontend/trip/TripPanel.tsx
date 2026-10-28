@@ -9,7 +9,7 @@ import { routeDistance } from '../routing/legs';
 import type { SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { saveState } from '../state/autosave';
-import { panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, setShowRoutePoints, showNeighbours, showRoutePoints } from '../state/drawing';
+import { panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, showNeighbours } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, setJournalTarget } from '../state/journal';
@@ -135,9 +135,9 @@ function DayItem(props: { day: Day; index: number }) {
   );
 }
 
-/** The selected day's notes and times, its routes, and its stops (and route points on request) in riding order. */
+/** The selected day's notes and times, its routes with their stops, and the stops that stand beside no route. */
 function DayDetails(props: { day: Day }) {
-  const listed = createMemo(() => new Map(selectedSequence().filter((e) => e.stop || showRoutePoints()).map((e) => [e.id, e])));
+  const unplaced = createMemo(() => selectedSequence().filter((e) => e.stop?.pointId === null && !e.near));
   const [importNote, setImportNote] = createSignal<{ text: string; error: boolean }>();
   let fileInput!: HTMLInputElement;
   const importFile = async (file: File | undefined) => {
@@ -172,20 +172,16 @@ function DayDetails(props: { day: Day }) {
         <For each={props.day.routes}>{(route, index) => <RouteItem route={route} index={index()} day={props.day} />}</For>
       </ul>
       <Show when={props.day.routes.length === 0}>
-        <p class="muted hint">Add a route, then tap the map to draw it, or import a GPX file.</p>
+        <p class="muted hint">Add a route, pick the Point tool and tap the map to draw it, or import a GPX file.</p>
       </Show>
       <Show when={importNote()}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
-      <div class="row heading">
-        <h4 class="grow">Stops</h4>
-        <label class="toggle">
-          <input type="checkbox" checked={showRoutePoints()} onChange={(e) => setShowRoutePoints(e.currentTarget.checked)} /> route points
-        </label>
-      </div>
-      <ol class="stops">
-        <For each={[...listed().keys()]}>{(id) => <SequenceItem entry={listed().get(id)!} time={selectedTimeline()?.times.get(id)} />}</For>
-      </ol>
-      <Show when={listed().size === 0 && props.day.routes.length > 0}>
-        <p class="muted hint">Make stops of route points, or tap beside the route with the stop tool.</p>
+      <Show when={unplaced().length > 0}>
+        <div class="row heading">
+          <h4 class="grow">Stops beside no route</h4>
+        </div>
+        <ol class="stops">
+          <For each={unplaced()}>{(entry) => <SequenceItem entry={entry} time={selectedTimeline()?.times.get(entry.id)} />}</For>
+        </ol>
       </Show>
     </div>
   );
@@ -204,10 +200,14 @@ function DaySummary(props: { timeline: DayTimeline }) {
   );
 }
 
+/** A route of the day: its row, and while it is selected, its stops and points in riding order under it. */
 function RouteItem(props: { route: Route; index: number; day: Day }) {
   const editing = () => editingRouteId() === props.route.id;
   const label = createMemo(() => routeLabel(props.route, props.day));
   const journal = () => journalCount({ routeId: props.route.id });
+  /** The route's points and bound stops, and the free stops that stand beside it. */
+  const entries = createMemo(() => selectedSequence().filter((e) => e.routeIndex === props.index && !(e.stop?.pointId === null && !e.near)));
+  const stopCount = createMemo(() => entries().filter((e) => e.stop).length);
   const more = (): MenuItem[] => [
     { label: 'Move up', run: () => moveRoute(props.route.id, -1), disabled: props.index === 0 },
     { label: 'Move down', run: () => moveRoute(props.route.id, 1), disabled: props.index === props.day.routes.length - 1 },
@@ -216,25 +216,38 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
     { label: 'Journal…', run: () => setJournalTarget({ routeId: props.route.id }) },
   ];
   return (
-    <li class="row route" classList={{ editing: editing() }}>
-      <div class="grow lines">
-        <span class="name" title={label()}>
-          {label()}
-        </span>
-        <span class="muted detail">
-          {routeKindLabel(props.route)}
-          {props.route.points.length > 1 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
-          {props.route.optional ? ' · optional' : ''}
-          {journal() ? ` · ${journal()}` : ''}
-        </span>
+    <li class="route" classList={{ editing: editing() }}>
+      <div class="row">
+        <button class="text grow" aria-expanded={editing()} onClick={() => editRoute(editing() ? undefined : props.route.id)}>
+          <span class="lines">
+            <span class="name" title={label()}>
+              {label()}
+            </span>
+            <span class="muted detail">
+              {routeKindLabel(props.route)}
+              {props.route.points.length > 1 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
+              {stopCount() > 0 ? ` · ${stopCount()} ${stopCount() === 1 ? 'stop' : 'stops'}` : ''}
+              {props.route.optional ? ' · optional' : ''}
+              {journal() ? ` · ${journal()}` : ''}
+            </span>
+          </span>
+        </button>
+        <button class="icon" title="Edit route" aria-label={`Edit ${label()}`} onClick={() => setEditTarget({ kind: 'route', id: props.route.id })}>
+          <PencilIcon />
+        </button>
+        <MoreMenu label={`More for ${label()}`} items={more} />
       </div>
-      <button class="icon" title="Edit route" aria-label={`Edit ${label()}`} onClick={() => setEditTarget({ kind: 'route', id: props.route.id })}>
-        <PencilIcon />
-      </button>
-      <button classList={{ primary: editing() }} onClick={() => editRoute(editing() ? undefined : props.route.id)}>
-        {editing() ? 'Done' : 'Draw'}
-      </button>
-      <MoreMenu label={`More for ${label()}`} items={more} />
+      <Show when={editing()}>
+        <ol class="stops">
+          <For each={entries()}>{(entry) => <SequenceItem entry={entry} time={selectedTimeline()?.times.get(entry.id)} />}</For>
+        </ol>
+        <Show when={props.route.points.length === 0}>
+          <p class="muted hint">Pick the Point tool and tap the map to draw the route.</p>
+        </Show>
+        <Show when={props.route.points.length > 0 && stopCount() === 0}>
+          <p class="muted hint">Make stops of route points with the Stop tool, or tap beside the route.</p>
+        </Show>
+      </Show>
     </li>
   );
 }

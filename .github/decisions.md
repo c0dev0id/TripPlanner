@@ -56,18 +56,24 @@ entries at the end of their section.
 - **The schedule check is the feature.** The routing returns a duration with every leg. The
   departure plus route durations plus pauses, compared with the fixed arrival times, tells
   before the trip where a day does not work. This is what the times on stops are for.
-- **Editing is a mode of one route.** Selecting a day shows it: its routes in colour, its
-  stops as pins, the days before and after dimmed for orientation (switchable). Editing a
-  route shows its route points as draggable dots and the tools: a tap appends a point or
-  inserts one on the line, a tap with the stop tool makes a stop (bound where it hits a
-  point or the line, free elsewhere), the delete tool removes. The routing pump serves
-  the edited route's legs first. The panel lists the day's routes and its stops in riding
-  order with their distance from the start, with the plain route points shown on request,
-  and pans the map to what is clicked.
+- **Editing is a mode of one route, entered by selecting it.** Selecting a day shows it:
+  its routes in colour, its stops as pins, the days before and after dimmed for
+  orientation (switchable). A click on a route's row selects it: its route points
+  appear as draggable dots, the tools over the map, and its stops and points under its
+  row in the panel, where the other routes stay folded with their stop counts. Stops and
+  points belong to a route, so the panel groups them by it; a day-wide list in riding
+  order was tried first and hid which route a stop was on. A separate Draw button was
+  dropped: selecting and editing are one state, since the toolbar costs nothing while
+  the hand is picked. The routing pump serves the selected route's legs first.
+- **The hand is the default tool.** A tap on the map adds nothing until the point or the
+  stop tool is picked: a click that was meant as a drag used to leave a point behind.
+  The hand still drags points and stops and opens a stop's details. While a drawing
+  tool is picked, holding the space bar gives the hand and releasing it gives the tool
+  back, the way image editors do it.
 
-- **Esc steps back one level at a time.** While a route is edited, Esc closes an open menu,
-  else returns to the point tool, else ends editing. One key for "get me out of this",
-  without ever doing more than the next step back.
+- **Esc steps back one level at a time.** While a route is selected, Esc closes an open
+  menu, else returns to the hand, else leaves the route. One key for "get me out of
+  this", without ever doing more than the next step back.
 
 ## Library
 

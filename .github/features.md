@@ -16,9 +16,11 @@
   moved to another day with the stops bound to it; a stop is copied to another day as a
   free stop.
 - Routes as geometry: points in order with routed legs between them, one profile (road,
-  bike, foot) per route. A route is edited on its own: a tap adds a point at its end or,
-  on the line, inserts one there; points are dragged and deleted; the leg to any point
-  can be straight. Routed along the roads by Valhalla's motorcycle, bicycle or pedestrian
+  bike, foot) per route. A click on a route's row selects it and shows the tools over
+  the map. The hand, the default, moves the map and drags points and stops without
+  adding anything; with the point tool a tap adds a point at the route's end or, on the
+  line, inserts one there; points are dragged and deleted; the leg to any point can be
+  straight. The space bar holds the hand while another tool is picked. Routed along the roads by Valhalla's motorcycle, bicycle or pedestrian
   costing, with a motorway dial per road route (avoid, allow, prefer), undo and redo, and
   a reroute of the route. Legs not routed yet are dashed, failed ones red with a retry.
 - Stops bound to a route point (a waypoint and a route point at once, dragged together)
@@ -27,10 +29,11 @@
   it passes closest, a bound one disconnected. A stop has a kind (hotel, restaurant,
   café, fuel, sight, photo spot, break, other) drawn on the map, a name, address,
   contact, booking reference and notes in a dialog.
-- The panel lists the selected day's routes with profile and distance, and its stops in
-  riding order with the distance from the day's start; free stops take the place where
-  the route passes closest, and say how far beside it they stand. The plain route points
-  are listed on request; a click pans the map to the entry. The days before and after
+- The panel lists the selected day's routes with profile, distance and the number of
+  stops on each. Under the selected route stand its stops and route points in riding
+  order with the distance from the day's start; free stops take the place where the
+  route passes closest, and say how far beside it they stand. A click pans the map to
+  the entry. Free stops of a day without a route are listed on their own. The days before and after
   the selected one are drawn dimmed on the map, switchable. The panel is as wide as its
   edge is dragged, kept per browser; a double click on the edge puts the default back.
 - A date per day; a new day after a dated one is dated the day after, and the library

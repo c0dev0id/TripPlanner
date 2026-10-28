@@ -52,9 +52,10 @@ share work; sharing between users is on the way.
 
 1. Join the waiting list on the landing page; the invitation comes by mail.
 2. Sign in, name a new trip, add a day, add a route.
-3. Tap the map for the route's points; the road between them is routed. Pick the *Stop*
-   tool and tap a point to make it a stop, or tap beside the route for a free stop.
-   *Done* ends editing.
+3. Pick the *Point* tool and tap the map for the route's points; the road between them
+   is routed. Pick the *Stop* tool and tap a point to make it a stop, or tap beside the
+   route for a free stop. *Done* or Esc leaves the route; a click on a route's row
+   selects it again, with its stops listed under it.
 4. Open a stop's details for its arrival time and pause; the first stop's time starts
    the day's timeline.
 5. *Export GPX…* in the trip's panel: pick the scope and the form, download.
@@ -65,7 +66,8 @@ share work; sharing between users is on the way.
 | Key or gesture | Does |
 |---|---|
 | Ctrl+Z, Ctrl+Shift+Z | Undo, redo |
-| Esc | Closes a menu; back to the Point tool; ends editing |
+| Esc | Closes a menu; back to the Hand; leaves the route |
+| Space, held | The Hand while a drawing tool is picked |
 | Right-click or long press on a stop or point | Make a stop, connect, disconnect, straight leg, remove |
 | Right-click or long press on the map | Add a point or a free stop here, or a journal entry |
 | Enter in the search box | Find a place; Esc closes the list |
