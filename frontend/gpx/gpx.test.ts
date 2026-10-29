@@ -76,6 +76,13 @@ describe('gpxToDayParts', () => {
     expect(gpxToDayParts(parseGpx(gpx), options).stops.map((s) => s.kind)).toEqual(['start', 'meeting', 'info', 'end']);
   });
 
+  it("takes Garmin's symbols for information, a restaurant and a gas station as those kinds, any other as a plain stop", () => {
+    const waypoint = (symbol: string, type = 'user') => `<wpt lat="48" lon="11"><sym>${symbol}</sym><type>${type}</type></wpt>`;
+    const symbols = ['Information', 'Restaurant', 'Gas Station', 'Pizza', 'Lodging', 'information', 'constructor'].map((s) => waypoint(s)).join('');
+    const gpx = `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">${symbols}${waypoint('Restaurant', 'hotel')}</gpx>`;
+    expect(gpxToDayParts(parseGpx(gpx), options).stops.map((s) => s.kind)).toEqual(['info', 'restaurant', 'fuel', 'other', 'other', 'other', 'other', 'hotel']);
+  });
+
   it("keeps a Garmin route's points, each leg along the way Garmin calculated, its time left to the pace", () => {
     const [garmin, plain] = gpxToDayParts(parseGpx(GARMIN), options).routes;
     expect(garmin!.name).toBe('Pass road');

@@ -46,13 +46,26 @@ function calculatedLegs(points: readonly LngLat[], ways: readonly LngLat[][], pr
   return legs;
 }
 
+/** The Garmin symbols that name one of our kinds exactly. */
+const GARMIN_SYMBOLS = new Map<string, StopKind>([
+  ['Information', 'info'],
+  ['Restaurant', 'restaurant'],
+  ['Gas Station', 'fuel'],
+]);
+
+/** A waypoint's kind: its type where that is one of ours, else its Garmin symbol where that names one exactly, else a plain stop. */
+function kindOf(waypoint: GpxContent['waypoints'][number]): StopKind {
+  if (STOP_KINDS.some((k) => k.value === waypoint.type)) return waypoint.type as StopKind;
+  return GARMIN_SYMBOLS.get(waypoint.symbol ?? '') ?? 'other';
+}
+
 /**
  * Routes and stops from a GPX file. A GPX route keeps all its points and its legs are
  * routed with `profile`, except those it carries the way Garmin calculated for. A track
  * becomes a route of kind `track`: every one of its points, joined by straight legs, so
  * that it keeps its shape; condensing it or making a route of it is the user's choice. Unnamed routes are named after the
  * file. A waypoint becomes a stop, bound to a route point it stands on, free otherwise,
- * with its `type` as the kind where that is one of ours.
+ * of the kind kindOf reads from it.
  */
 export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string }): DayParts {
   const lines = [
@@ -73,7 +86,7 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
   const stops = gpx.waypoints.map((w, i) => {
     const lngLat = roundLngLat(w.lngLat);
     const stop = newStop(options.newId(), w.name ?? `Waypoint ${i + 1}`, lngLat, pointAt.get(lngLat.join(',')) ?? null);
-    return { ...stop, kind: STOP_KINDS.some((k) => k.value === w.type) ? (w.type as StopKind) : 'other', notes: w.description ?? '' };
+    return { ...stop, kind: kindOf(w), notes: w.description ?? '' };
   });
   return { routes, stops };
 }
