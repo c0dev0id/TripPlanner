@@ -26,7 +26,7 @@ export interface LineHit {
  */
 export function hitRouteLine(map: MapLibreMap, route: Route, tap: XY, tolerance: number): LineHit | undefined {
   const lines = routeLegs(route).map((leg) => onScreen(map, legCoordinates(route, leg, decodeCached)));
-  const hit = nearestLine(lines, tap);
-  if (!hit || hit.distance > tolerance) return undefined;
+  const hit = nearestLine(lines, tap, tolerance);
+  if (!hit) return undefined;
   return { legIndex: hit.index, lngLat: toLngLat(map.unproject([hit.point[0], hit.point[1]])) };
 }
