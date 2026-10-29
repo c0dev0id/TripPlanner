@@ -153,6 +153,12 @@ function DayItem(props: { day: Day; index: number }) {
 /** The selected day's notes and times, its routes with their stops, and the stops that stand beside no route. */
 function DayDetails(props: { day: Day }) {
   const unplaced = createMemo(() => selectedSequence().filter(standsAlone));
+  /** The sequence by route, in order: each route's points and the stops placed along it. */
+  const byRoute = createMemo(() => {
+    const groups = props.day.routes.map((): SequenceEntry[] => []);
+    for (const entry of selectedSequence()) if (!standsAlone(entry)) groups[entry.routeIndex]?.push(entry);
+    return groups;
+  });
   const [importNote, setImportNote] = createSignal<{ text: string; error: boolean }>();
   let fileInput!: HTMLInputElement;
   const importFile = async (file: File | undefined) => {
@@ -184,7 +190,7 @@ function DayDetails(props: { day: Day }) {
         <input ref={fileInput} type="file" accept=".gpx,application/gpx+xml" hidden onChange={(e) => void importFile(e.currentTarget.files?.[0])} />
       </div>
       <ul class="routes">
-        <ForById each={props.day.routes}>{(route, index) => <RouteItem route={route()} index={index()} day={props.day} />}</ForById>
+        <ForById each={props.day.routes}>{(route, index) => <RouteItem route={route()} index={index()} day={props.day} sequence={byRoute()[index()] ?? []} />}</ForById>
       </ul>
       <Show when={props.day.routes.length === 0}>
         <p class="muted hint">Add a route, pick the Point tool and tap the map to draw it, or import a GPX file.</p>
@@ -217,14 +223,12 @@ function DaySummary(props: { timeline: DayTimeline }) {
   );
 }
 
-/** A route of the day: its row, and while it is selected, its stops and points in riding order under it. */
-function RouteItem(props: { route: Route; index: number; day: Day }) {
+/** A route of the day: its row, and while it is selected, its stops and points in riding order under it, out of `sequence`, its part of the day's. */
+function RouteItem(props: { route: Route; index: number; day: Day; sequence: SequenceEntry[] }) {
   const editing = () => editingRouteId() === props.route.id;
   const label = createMemo(() => routeLabel(props.route, props.day));
   /** The route's points and bound stops, and the free stops that stand beside it; of a track, whose points are many, the stops alone. */
-  const entries = createMemo(() =>
-    selectedSequence().filter((e) => e.routeIndex === props.index && !standsAlone(e) && (e.stop || props.route.kind !== 'track')),
-  );
+  const entries = createMemo(() => (props.route.kind === 'track' ? props.sequence.filter((e) => e.stop) : props.sequence));
   const stopCount = createMemo(() => entries().filter((e) => e.stop).length);
   const lateCount = createMemo(() => entries().filter((e) => (selectedTimeline()?.times.get(e.id)?.slackMin ?? 0) < 0).length);
   const more = (): MenuItem[] => [
