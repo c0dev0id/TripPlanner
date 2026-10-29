@@ -51,7 +51,7 @@ final class TripDocumentValidatorTest extends TestCase
         $document['days'][0]['stops'] = array_map(fn ($kind) => TripFixture::stop("s-$kind", $kind, [11.46, 47.81], null, $kind), TripDocumentValidator::STOP_KINDS);
         $kinds = array_column(TripDocumentValidator::validated($document)['days'][0]['stops'], 'kind');
         self::assertSame(TripDocumentValidator::STOP_KINDS, $kinds);
-        self::assertContains('meeting', $kinds);
+        self::assertContains('info', $kinds);
     }
 
     #[DataProvider('invalidDocuments')]

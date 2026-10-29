@@ -194,7 +194,7 @@ erDiagram
     string id PK
     int position "riding order, as the client computes it"
     string name
-    string kind "the icon: hotel, restaurant, fuel, sight, photo, break, other"
+    string kind "the icon: start, end, meeting, hotel, restaurant, cafe, fuel, sight, info, photo, break, other"
     float lng
     float lat
     string point_id "a route point of the day, or null for a free stop"

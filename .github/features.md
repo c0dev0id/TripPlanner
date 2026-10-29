@@ -32,7 +32,7 @@
   or free beside the route. The stop tool makes a stop of a route point, inserts one on
   the line, or places a free stop elsewhere; a free stop within 500 m of the route is
   connected to it where it passes closest, a bound one disconnected. A stop has a kind (start, end, meeting
-  point, hotel, restaurant, café, fuel, sight, photo spot, break, other) drawn on the
+  point, hotel, restaurant, café, fuel, sight, info, photo spot, break, other) drawn on the
   map, a name, address,
   contact, booking reference and notes in a dialog.
 - A trip opens whole: every day's routes on the map with the stops as dots, no day open;

@@ -1,4 +1,4 @@
-// The little objects are from Layer Slayer's waypoint shapes; the bed, the pin, the flags and the meeting sign are new.
+// The little objects are from Layer Slayer's waypoint shapes; the bed, the pin, the flags, the meeting and the info sign are new.
 import { createUniqueId, Show, type JSX } from 'solid-js';
 import type { StopKind } from '../model/trip';
 
@@ -137,6 +137,14 @@ const DRAWINGS: Record<StopKind, (color: string) => JSX.Element> = {
       <rect x="6.5" y="4" width="19" height="17" rx="2" fill="none" stroke="#fff" stroke-width="0.9" />
       <circle cx="16" cy="7.8" r="2" fill="#fff" />
       <path d="M13.6 11 h3.8 v6.6 h1.4 v1.6 h-5.6 v-1.6 h1.4 v-5 h-1 z" fill="#fff" />
+    </>
+  ),
+  info: () => (
+    <>
+      <Post />
+      <circle cx="16" cy="11" r="9.6" fill="#0c8599" />
+      <circle cx="16" cy="6.4" r="1.8" fill="#fff" />
+      <rect x="14.4" y="9.2" width="3.2" height="8.2" rx="1" fill="#fff" />
     </>
   ),
   photo: () => (
