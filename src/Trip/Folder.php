@@ -10,6 +10,8 @@ final readonly class Folder
     public function __construct(
         public int $id,
         public string $name,
+        /** The folder it is in; null at the top of the library. */
+        public ?int $parentId,
     ) {
     }
 }

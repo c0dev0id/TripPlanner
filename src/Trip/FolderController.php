@@ -31,7 +31,15 @@ final class FolderController
         if ($name === null) {
             return Json::error($response, 422, 'A folder needs a name of up to 200 characters.');
         }
-        $folder = $this->folders->create($this->currentUser->get()->id, $name, new DateTimeImmutable());
+        $parentId = Json::field($request, 'parentId');
+        if ($parentId !== null && !is_int($parentId)) {
+            return Json::error($response, 422, 'parentId must be a number or null.');
+        }
+        try {
+            $folder = $this->folders->create($this->currentUser->get()->id, $name, $parentId, new DateTimeImmutable());
+        } catch (UnknownFolder $unknown) {
+            return Json::error($response, 422, $unknown->getMessage());
+        }
         return Json::of($response->withStatus(201), $folder);
     }
 

@@ -97,10 +97,10 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `GET /export-presets` | The user's export presets by name. |
 | `POST /export-presets` | Keeps `{name, options}` as a preset, replacing one of that name. |
 | `DELETE /export-presets/{id}` | Deletes the preset. |
-| `GET /folders` | The user's folders by name. |
-| `POST /folders` | Creates a folder from `{name}`. |
+| `GET /folders` | The user's folders by name, each with the folder it is in (`parentId`, null at the top). |
+| `POST /folders` | Creates a folder from `{name, parentId}`; the parent may be null. |
 | `PATCH /folders/{id}` | Renames the folder from `{name}`. |
-| `DELETE /folders/{id}` | Deletes the folder; its trips stay, in no folder. |
+| `DELETE /folders/{id}` | Deletes the folder; its trips and folders move up into the folder it was in, or to the top. |
 
 A trip shared under a token is readable without sign-in under `/api/shared/{token}`:
 the document, `/entries`, `/entries/{entry}/file` and `/entries/{entry}/preview`, as above.
@@ -121,6 +121,7 @@ erDiagram
   USER ||--o{ EXPORT_PRESET : keeps
   WAITLIST_ENTRY |o--o| INVITATION : "invited by"
   FOLDER |o--o{ TRIP : holds
+  FOLDER |o--o{ FOLDER : holds
   TRIP ||--o{ DAY : "days, in order"
   DAY ||--o{ ROUTE : "routes, in order"
   DAY ||--o{ STOP : "stops"
@@ -157,6 +158,7 @@ erDiagram
   }
   FOLDER {
     int id PK
+    int parent_id FK "null at the top of the library"
     string name
   }
   EXPORT_PRESET {

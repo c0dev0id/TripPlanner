@@ -64,14 +64,17 @@ CREATE TABLE IF NOT EXISTS export_presets (
     UNIQUE (user_id, name)
 );
 
--- Folders sort the library one level deep; a trip is in one folder or in none.
+-- Folders sort the library: a folder is at the top or inside another (`parent_id`), a
+-- trip is in one folder or in none.
 CREATE TABLE IF NOT EXISTS folders (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    parent_id INTEGER REFERENCES folders(id),
     name TEXT NOT NULL,
     created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS folders_user ON folders(user_id);
+CREATE INDEX IF NOT EXISTS folders_parent ON folders(parent_id);
 
 -- A trip's parts carry ids the client generates, so that the whole trip is saved as one
 -- document: rows are upserted by id and the ones no longer in the document are deleted.
