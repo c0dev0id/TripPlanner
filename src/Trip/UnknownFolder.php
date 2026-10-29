@@ -6,7 +6,7 @@ namespace Planner\Trip;
 
 use RuntimeException;
 
-/** A trip was to go into a folder the user does not have. */
+/** A trip or a folder was to go into a folder the user does not have. */
 final class UnknownFolder extends RuntimeException
 {
     public function __construct()

@@ -12,6 +12,7 @@ use Planner\Tests\TestDatabase;
 use Planner\Trip\InvalidDocument;
 use Planner\Trip\TripDocuments;
 use Planner\Trip\TripDocumentValidator;
+use Planner\Trip\Folders;
 use Planner\Trip\Trips;
 use Planner\Trip\VersionConflict;
 
@@ -29,7 +30,7 @@ final class TripDocumentsTest extends TestCase
         $this->db = TestDatabase::create();
         $this->now = new DateTimeImmutable('2026-10-27T10:00:00Z');
         $this->userId = (new Users($this->db))->create('rider@example.com', 'correct horse battery', $this->now)->id;
-        $this->trips = new Trips($this->db);
+        $this->trips = new Trips($this->db, new Folders($this->db));
         $this->tripId = $this->trips->create($this->userId, 'Alps', $this->now)->id;
         $this->documents = new TripDocuments($this->db);
     }

@@ -11,8 +11,10 @@ use Planner\Timestamp;
 /** A user's trips as the library sees them; their content is TripDocuments' business. */
 final class Trips
 {
-    public function __construct(private readonly PDO $db)
-    {
+    public function __construct(
+        private readonly PDO $db,
+        private readonly Folders $folders,
+    ) {
     }
 
     /** @return TripSummary[] the user's trips, last changed first, each starting on its first dated day */
@@ -34,7 +36,7 @@ final class Trips
      */
     public function create(int $userId, string $name, DateTimeImmutable $now, ?int $folderId = null): TripSummary
     {
-        $this->assertFolder($userId, $folderId);
+        $this->folders->assertOwned($userId, $folderId);
         $statement = $this->db->prepare('INSERT INTO trips (user_id, folder_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
         $statement->execute([$userId, $folderId, $name, Timestamp::of($now), Timestamp::of($now)]);
         return new TripSummary((int) $this->db->lastInsertId(), $name, $folderId, 'planned', null, 0, Timestamp::of($now));
@@ -47,7 +49,7 @@ final class Trips
      */
     public function move(int $userId, int $tripId, ?int $folderId): bool
     {
-        $this->assertFolder($userId, $folderId);
+        $this->folders->assertOwned($userId, $folderId);
         $statement = $this->db->prepare('UPDATE trips SET folder_id = ? WHERE id = ? AND user_id = ?');
         $statement->execute([$folderId, $tripId, $userId]);
         return $statement->rowCount() === 1;
@@ -96,18 +98,6 @@ final class Trips
         $statement = $this->db->prepare('DELETE FROM trips WHERE id = ? AND user_id = ?');
         $statement->execute([$tripId, $userId]);
         return $statement->rowCount() === 1;
-    }
-
-    private function assertFolder(int $userId, ?int $folderId): void
-    {
-        if ($folderId === null) {
-            return;
-        }
-        $statement = $this->db->prepare('SELECT 1 FROM folders WHERE id = ? AND user_id = ?');
-        $statement->execute([$folderId, $userId]);
-        if ($statement->fetchColumn() === false) {
-            throw new UnknownFolder();
-        }
     }
 
     private function summary(array $row): TripSummary

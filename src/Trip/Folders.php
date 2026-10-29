@@ -30,16 +30,27 @@ final class Folders
      */
     public function create(int $userId, string $name, ?int $parentId, DateTimeImmutable $now): Folder
     {
-        if ($parentId !== null) {
-            $statement = $this->db->prepare('SELECT 1 FROM folders WHERE id = ? AND user_id = ?');
-            $statement->execute([$parentId, $userId]);
-            if ($statement->fetchColumn() === false) {
-                throw new UnknownFolder();
-            }
-        }
+        $this->assertOwned($userId, $parentId);
         $statement = $this->db->prepare('INSERT INTO folders (user_id, parent_id, name, created_at) VALUES (?, ?, ?, ?)');
         $statement->execute([$userId, $parentId, $name, Timestamp::of($now)]);
         return new Folder((int) $this->db->lastInsertId(), $name, $parentId);
+    }
+
+    /**
+     * Checks that a folder is the user's; no folder, null, is everyone's.
+     *
+     * @throws UnknownFolder for a folder the user does not have
+     */
+    public function assertOwned(int $userId, ?int $folderId): void
+    {
+        if ($folderId === null) {
+            return;
+        }
+        $statement = $this->db->prepare('SELECT 1 FROM folders WHERE id = ? AND user_id = ?');
+        $statement->execute([$folderId, $userId]);
+        if ($statement->fetchColumn() === false) {
+            throw new UnknownFolder();
+        }
     }
 
     /** False when the user has no such folder. */

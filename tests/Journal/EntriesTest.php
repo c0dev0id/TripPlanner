@@ -14,6 +14,7 @@ use Planner\Tests\TestDatabase;
 use Planner\Tests\Trip\TripFixture;
 use Planner\Trip\TripDocuments;
 use Planner\Trip\TripDocumentValidator;
+use Planner\Trip\Folders;
 use Planner\Trip\Trips;
 
 final class EntriesTest extends TestCase
@@ -35,7 +36,7 @@ final class EntriesTest extends TestCase
         $users = new Users($this->db);
         $this->userId = $users->create('rider@example.com', 'correct horse battery', $this->now)->id;
         $this->otherUserId = $users->create('other@example.com', 'correct horse battery', $this->now)->id;
-        $this->tripId = (new Trips($this->db))->create($this->userId, 'Alps', $this->now)->id;
+        $this->tripId = (new Trips($this->db, new Folders($this->db)))->create($this->userId, 'Alps', $this->now)->id;
         $this->documents = new TripDocuments($this->db);
         $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated(TripFixture::document()), 1, $this->now);
         $this->entries = new Entries($this->db);
@@ -107,7 +108,7 @@ final class EntriesTest extends TestCase
     public function testListsTheEntriesOfASharedTrip(): void
     {
         $note = $this->entries->add($this->userId, $this->tripId, [], 'Packed the bags.', null, $this->now);
-        $trips = new Trips($this->db);
+        $trips = new Trips($this->db, new Folders($this->db));
         self::assertNull($this->entries->listShared(str_repeat('0', 32)));
         $token = $trips->share($this->userId, $this->tripId);
         self::assertSame([$note->id], array_map(fn ($e) => $e->id, $this->entries->listShared($token)));

@@ -30,7 +30,7 @@ final class FoldersTest extends TestCase
         $this->userId = $users->create('rider@example.com', 'correct horse battery', $this->now)->id;
         $this->otherUserId = $users->create('other@example.com', 'correct horse battery', $this->now)->id;
         $this->folders = new Folders($db);
-        $this->trips = new Trips($db);
+        $this->trips = new Trips($db, $this->folders);
     }
 
     public function testListsOwnFoldersByName(): void
