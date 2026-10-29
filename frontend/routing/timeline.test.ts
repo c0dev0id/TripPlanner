@@ -4,13 +4,24 @@ import { newStop } from './dayEdit';
 import type { SequenceEntry } from './sequence';
 import { dayTimeline } from './timeline';
 
-const stop = (id: string, arriveAt: string | null = null, pauseMinutes: number | null = null): Stop => ({ ...newStop(id, id, [0, 0], null), arriveAt, pauseMinutes });
+/** A stop on the ride, bound to a route point. */
+const stop = (id: string, arriveAt: string | null = null, pauseMinutes: number | null = null): Stop => ({ ...newStop(id, id, [0, 0], `point-${id}`), arriveAt, pauseMinutes });
 
 const entry = (timeS: number, s?: Stop, routeIndex = 0): SequenceEntry => ({ id: s?.id ?? `p${timeS}`, routeIndex, distanceM: timeS * 15, timeS, lngLat: [0, 0], ...(s && { stop: s }) });
 
 const listed = (timeline: ReturnType<typeof dayTimeline>) => [...timeline!.times].map(([id, t]) => [id, t.arrivalMin, t.departureMin, t.slackMin]);
 
 describe('dayTimeline', () => {
+  it('passes over a stop that stands for itself, whatever its time', () => {
+    const alone: Stop = { ...stop('hut', '07:00', 60), pointId: null };
+    const timeline = dayTimeline([entry(0, stop('home', '09:00')), entry(1800), entry(1800, alone)]);
+    expect(listed(timeline)).toEqual([
+      ['home', 540, 540, 0],
+      ['p1800', 570, 570, 0],
+    ]);
+    expect(timeline).toMatchObject({ endMin: 570, pauseMin: 0, late: 0 });
+  });
+
   it('is none while no stop has a time', () => {
     expect(dayTimeline([entry(0, stop('home')), entry(3600)])).toBeUndefined();
   });

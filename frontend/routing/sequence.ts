@@ -1,5 +1,5 @@
 import { distanceBetween, planeAt } from '../geo/measure';
-import { nearestLine, type XY } from '../geo/nearest';
+import { nearestOnLines, type NearestPlace, type XY } from '../geo/nearest';
 import type { Day, LngLat, RoutePoint, Stop, Trip } from '../model/trip';
 import { legCoordinates, legDistance, legDuration, routeLegs } from './legs';
 import { decodeCached } from './polyline';
@@ -8,6 +8,9 @@ import { decodeCached } from './polyline';
  * A day's stops and route points in riding order, each with its distance from the day's
  * start along the routes. A free stop takes the place where a route passes closest.
  */
+
+/** How far from the routes a free stop may stand and still take a place along them; farther away, it stands for itself. */
+export const FREE_STOP_REACH_M = 500;
 
 export interface SequenceEntry {
   /** The stop's id, or the plain route point's. */
@@ -22,6 +25,9 @@ export interface SequenceEntry {
   /** For a free stop: the leg (from point `legIndex` of the route) and the spot on it nearest to the stop, and how far away that is. */
   near?: { routeId: string; legIndex: number; lngLat: LngLat; distanceM: number };
 }
+
+/** Whether the entry is a free stop that no route passes within reach: it stands for itself, with no place on the ride. */
+export const standsAlone = (entry: SequenceEntry): boolean => entry.stop?.pointId === null && !entry.near;
 
 /** A leg of the day with its line, the line on the plane, its length and riding time, and where it starts along the day. */
 interface LegLine {
@@ -60,9 +66,15 @@ function alongLine(line: readonly LngLat[], segment: number, spot: LngLat): numb
   return metres + distanceBetween(line[segment]!, spot);
 }
 
-/** The entry of a free stop, placed where the legs pass closest; after the day's end where there is no leg. */
-function freeStopEntry(stop: Stop, legs: readonly LegLine[], origin: XY, fallback: { routeIndex: number; distanceM: number; timeS: number }): SequenceEntry {
-  const hit = nearestLine(legs.map((l) => l.xy), origin);
+/** The entry of a free stop, placed where the legs pass closest; after the day's end where no leg passes within reach. */
+function freeStopEntry(
+  stop: Stop,
+  legs: readonly LegLine[],
+  nearest: (p: XY, within: number) => NearestPlace | undefined,
+  origin: XY,
+  fallback: { routeIndex: number; distanceM: number; timeS: number },
+): SequenceEntry {
+  const hit = nearest(origin, FREE_STOP_REACH_M);
   if (!hit) return { id: stop.id, ...fallback, lngLat: stop.lngLat, stop };
   const leg = legs[hit.index]!;
   const [a, b] = [leg.line[hit.segment]!, leg.line[hit.segment + 1] ?? leg.line[hit.segment]!];
@@ -82,8 +94,8 @@ function freeStopEntry(stop: Stop, legs: readonly LegLine[], origin: XY, fallbac
 /**
  * The day's stops and route points in riding order. Bound stops stand in for their
  * points (each of several on one point); free stops are placed where the routes pass
- * closest, after a stop or point at the same distance. Free stops of a day without a leg
- * come last, in their order.
+ * closest, after a stop or point at the same distance. Free stops that no leg passes
+ * within FREE_STOP_REACH_M come last, in their order.
  */
 export function daySequence(day: Day, decode = decodeCached): SequenceEntry[] {
   const bound = new Map<string, Stop[]>();
@@ -110,8 +122,9 @@ export function daySequence(day: Day, decode = decodeCached): SequenceEntry[] {
   if (free.length > 0) {
     const toPlane = planeAt(day.routes[0]?.points[0]?.lngLat ?? free[0]!.lngLat);
     const legs = legLines(day, toPlane, decode);
+    const nearest = nearestOnLines(legs.map((l) => l.xy));
     const end = { routeIndex: Math.max(0, day.routes.length - 1), distanceM: metres, timeS: seconds };
-    for (const stop of free) entries.push(freeStopEntry(stop, legs, toPlane(stop.lngLat), end));
+    for (const stop of free) entries.push(freeStopEntry(stop, legs, nearest, toPlane(stop.lngLat), end));
   }
   // A stable sort keeps points before the free stops placed at the same distance.
   return entries.sort((a, b) => a.routeIndex - b.routeIndex || a.distanceM - b.distanceM);

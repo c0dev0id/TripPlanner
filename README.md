@@ -18,8 +18,8 @@ share work; sharing between users is on the way.
   along the roads by Valhalla as a motorcycle, a bicycle or on foot, with a motorway dial
   for the transfer days; undo and redo.
 - **Stops bound or free** — a route point becomes a stop with one tap; a stop beside the
-  route is placed freely, listed where the rider passes closest, connected to the route
-  when wanted. Start, end, meeting point, hotel, restaurant, café, fuel, sight, photo
+  route is placed freely, listed where the rider passes closest within 500 m, connected
+  to the route when wanted. Start, end, meeting point, hotel, restaurant, café, fuel, sight, photo
   spot or break, each drawn as what it is, with address, contact, booking reference
   and notes.
 - **The day at a glance** — the panel lists a day's routes and its stops in riding order

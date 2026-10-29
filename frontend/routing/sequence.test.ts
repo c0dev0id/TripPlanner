@@ -31,12 +31,12 @@ const day = (stops: Stop[], routes: Route[] = [route]): Day => ({ id: 'd', name:
 
 describe('daySequence', () => {
   it('places a free stop at the leg and the spot where the route passes closest', () => {
-    const [entry] = daySequence(day([stop('cafe', [11.01, 47.05], null)]), decode).filter((e) => e.stop);
+    const [entry] = daySequence(day([stop('cafe', [11.005, 47.05], null)]), decode).filter((e) => e.stop);
     expect(entry!.near).toMatchObject({ routeId: 'r', legIndex: 0 });
     expect(entry!.near!.lngLat[0]).toBeCloseTo(11, 6);
     expect(entry!.near!.lngLat[1]).toBeCloseTo(47.05, 3);
-    // About 760 m east of the line, 5.5 km along it.
-    expect(entry!.near!.distanceM).toBeCloseTo(760, -2);
+    // About 380 m east of the line, 5.5 km along it.
+    expect(entry!.near!.distanceM).toBeCloseTo(380, -2);
     expect(entry!.distanceM).toBeCloseTo(5560, -2);
   });
 
@@ -49,6 +49,16 @@ describe('daySequence', () => {
     expect(entry!.distanceM).toBeLessThan(11_000 + 7_000);
   });
 
+  it('leaves a free stop farther than the reach from the routes to stand for itself, after the day\'s end', () => {
+    const entries = daySequence(day([stop('far', [11.01, 47.05], null)]), decode);
+    expect(entries.map((e) => [e.id, e.near, e.distanceM])).toEqual([
+      ['a', undefined, 0],
+      ['b', undefined, 11_000],
+      ['c', undefined, 22_000],
+      ['far', undefined, 22_000],
+    ]);
+  });
+
   it('gives a free stop no place on a day without a leg', () => {
     const onePoint = { ...route, points: route.points.slice(0, 1), legs: {} };
     expect(daySequence(day([stop('x', [11, 47], null)], [onePoint]), decode).map((e) => [e.id, e.near])).toEqual([
@@ -58,7 +68,7 @@ describe('daySequence', () => {
   });
 
   it('lists points and stops in riding order with their distance from the start', () => {
-    const stops = [stop('hotel', [11, 47.2], 'c'), stop('cafe', [11.01, 47.05], null), stop('home', [11, 47], 'a')];
+    const stops = [stop('hotel', [11, 47.2], 'c'), stop('cafe', [11.005, 47.05], null), stop('home', [11, 47], 'a')];
     const entries = daySequence(day(stops), decode);
     expect(entries.map((e) => [e.id, Math.round(e.distanceM / 100) * 100])).toEqual([
       ['home', 0],
@@ -67,12 +77,12 @@ describe('daySequence', () => {
       ['hotel', 22_000],
     ]);
     expect(entries[0]!.point?.id).toBe('a');
-    expect(entries[1]!.near?.distanceM).toBeCloseTo(760, -2);
+    expect(entries[1]!.near?.distanceM).toBeCloseTo(380, -2);
     expect(entries[1]!.near?.lngLat[1]).toBeCloseTo(47.05, 3);
   });
 
   it('carries the riding time, a free stop at its share of the leg', () => {
-    const entries = daySequence(day([stop('cafe', [11.01, 47.05], null)]), decode);
+    const entries = daySequence(day([stop('cafe', [11.005, 47.05], null)]), decode);
     // Each leg is 11 km and takes a second in the fixture; the café is half way along the first.
     expect(entries.map((e) => [e.id, Math.round(e.timeS * 100) / 100])).toEqual([
       ['a', 0],
@@ -107,8 +117,10 @@ describe('daySequence', () => {
 
 describe('withStopsInRidingOrder', () => {
   it('orders each day\'s stops as the sequence lists them, keeping every stop', () => {
-    const stops = [stop('end', [11, 47.2], 'c'), stop('cafe', [11.01, 47.05], null), stop('start', [11, 47], 'a'), stop('fuel', [11, 47.1], 'b')];
-    const trip = withStopsInRidingOrder({ id: 1, name: 'T', description: '', state: 'planned', version: 1, days: [day(stops), day([stop('lost', [12, 48], null)], [])] });
+    const stops = [stop('end', [11, 47.2], 'c'), stop('cafe', [11.005, 47.05], null), stop('start', [11, 47], 'a'), stop('fuel', [11, 47.1], 'b')];
+    // Not routed yet, the legs run straight between the points.
+    const straight = { ...route, legs: {} };
+    const trip = withStopsInRidingOrder({ id: 1, name: 'T', description: '', state: 'planned', version: 1, days: [day(stops, [straight]), day([stop('lost', [12, 48], null)], [])] });
     expect(trip.days[0]!.stops.map((s) => s.id)).toEqual(['start', 'cafe', 'fuel', 'end']);
     expect(trip.days[1]!.stops.map((s) => s.id)).toEqual(['lost']);
   });

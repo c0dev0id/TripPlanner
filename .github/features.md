@@ -30,8 +30,8 @@
   a reroute of the route. Legs not routed yet are dashed, failed ones red with a retry.
 - Stops bound to a route point (a waypoint and a route point at once, dragged together)
   or free beside the route. The stop tool makes a stop of a route point, inserts one on
-  the line, or places a free stop elsewhere; a free stop is connected to the route where
-  it passes closest, a bound one disconnected. A stop has a kind (start, end, meeting
+  the line, or places a free stop elsewhere; a free stop within 500 m of the route is
+  connected to it where it passes closest, a bound one disconnected. A stop has a kind (start, end, meeting
   point, hotel, restaurant, café, fuel, sight, photo spot, break, other) drawn on the
   map, a name, address,
   contact, booking reference and notes in a dialog.
@@ -40,9 +40,10 @@
   the trip, from the trip to the list, in the folder the trip was opened from.
 - The panel lists the selected day's routes with profile, distance and the number of
   stops on each. Under the selected route stand its stops and route points in riding
-  order with the distance from the day's start; free stops take the place where the
-  route passes closest, and say how far beside it they stand. A click pans the map to
-  the entry. Free stops of a day without a route are listed on their own. The days before and after
+  order with the distance from the day's start; free stops within 500 m take the place
+  where the route passes closest, and say how far beside it they stand. A click pans the
+  map to the entry. Free stops farther away, or of a day without a route, are listed on
+  their own. The days before and after
   the selected one are drawn dimmed on the map, switchable. The panel is as wide as its
   edge is dragged, kept per browser; a double click on the edge puts the default back.
 - A date per day; a new day after a dated one is dated the day after, and the library

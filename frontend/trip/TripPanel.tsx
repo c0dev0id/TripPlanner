@@ -6,7 +6,7 @@ import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
 import { newId, type Day, type Route } from '../model/trip';
 import { defaultProfile } from '../routing/dayEdit';
 import { routeDistance } from '../routing/legs';
-import type { SequenceEntry } from '../routing/sequence';
+import { standsAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { saveState } from '../state/autosave';
 import { panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, setTrackAction, showNeighbours } from '../state/drawing';
@@ -151,7 +151,7 @@ function DayItem(props: { day: Day; index: number }) {
 
 /** The selected day's notes and times, its routes with their stops, and the stops that stand beside no route. */
 function DayDetails(props: { day: Day }) {
-  const unplaced = createMemo(() => selectedSequence().filter((e) => e.stop?.pointId === null && !e.near));
+  const unplaced = createMemo(() => selectedSequence().filter(standsAlone));
   const [importNote, setImportNote] = createSignal<{ text: string; error: boolean }>();
   let fileInput!: HTMLInputElement;
   const importFile = async (file: File | undefined) => {
@@ -171,7 +171,7 @@ function DayDetails(props: { day: Day }) {
       <Show when={props.day.notes}>
         <p class="muted notes">{props.day.notes}</p>
       </Show>
-      <Show when={props.day.stops.length > 0}>
+      <Show when={selectedSequence().some((e) => e.stop && !standsAlone(e))}>
         <Show when={selectedTimeline()} fallback={<p class="day-summary muted">Give the first stop a time for the day's times.</p>}>
           {(timeline) => <DaySummary timeline={timeline()} />}
         </Show>
@@ -222,7 +222,7 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
   const label = createMemo(() => routeLabel(props.route, props.day));
   /** The route's points and bound stops, and the free stops that stand beside it; of a track, whose points are many, the stops alone. */
   const entries = createMemo(() =>
-    selectedSequence().filter((e) => e.routeIndex === props.index && !(e.stop?.pointId === null && !e.near) && (e.stop || props.route.kind !== 'track')),
+    selectedSequence().filter((e) => e.routeIndex === props.index && !standsAlone(e) && (e.stop || props.route.kind !== 'track')),
   );
   const stopCount = createMemo(() => entries().filter((e) => e.stop).length);
   const lateCount = createMemo(() => entries().filter((e) => (selectedTimeline()?.times.get(e.id)?.slackMin ?? 0) < 0).length);
@@ -321,8 +321,8 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
             </span>
             <span class="muted detail">
               <Show when={props.time}>{(time) => <>{timesText(time())} · </>}</Show>
-              {distanceText(props.entry.distanceM)}
-              <Show when={stop()?.pointId === null}> · {distanceText(props.entry.near?.distanceM ?? 0)} beside the route</Show>
+              <Show when={!standsAlone(props.entry)}>{distanceText(props.entry.distanceM)}</Show>
+              <Show when={props.entry.near}>{(near) => <> · {distanceText(near().distanceM)} beside the route</>}</Show>
               <Show when={stop()?.optional}> · optional</Show>
             </span>
           </span>

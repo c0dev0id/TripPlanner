@@ -23,6 +23,14 @@ entries at the end of their section.
   (a route point is inserted into the nearest leg at its position) and a bound stop is
   disconnected (the route point goes, the stop stays free). On the map a free stop stands
   at its own position, in a second colour, with a mark on the route where it is nearest.
+- **A free stop takes a place along the routes only within 500 m of them.** Farther away
+  it stands for itself: listed with the stops beside no route, without a mark on the
+  route and without the menu's connect. A stop kilometres off the route has no
+  meaningful place along it, and an imported file can carry hundreds of waypoints about
+  a region. The reach also bounds the search: the legs' segments are kept in blocks of
+  32 with a bounding box, and a query looks only into the blocks that could hold a
+  nearer place, which took placing 212 waypoints beside 130,000 track points from about
+  five seconds to a fifth of one.
 - **A stop carries everything about the place; there is no shared place.** A first draft
   kept places apart from stops so that one hotel could serve several nights. That made
   dragging a stop on one day move route points on other days, and it fixed one hotel per
