@@ -30,7 +30,7 @@ describe('legs', () => {
           [2, 2],
           [3, 3],
         ]),
-      ).map((l) => l.key),
+      ).map((l) => !l.straight && l.key),
     ).toEqual(['bicycle:allow/1,1;2,2', 'bicycle:allow/2,2;3,3']);
   });
 

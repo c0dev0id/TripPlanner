@@ -10,13 +10,22 @@ export function legKey(costing: Costing, from: LngLat, to: LngLat): string {
   return `${costing.profile}:${costing.highways}/${from[0]},${from[1]};${to[0]},${to[1]}`;
 }
 
-export interface Leg {
-  key: string;
+/** A leg drawn and exported as the straight line between its ends, never routed. */
+export interface StraightLeg {
   from: LngLat;
   to: LngLat;
-  /** Drawn and exported as the straight line between its ends, never routed. */
-  straight: boolean;
+  straight: true;
 }
+
+/** A leg routed along the roads, its geometry kept under its key. */
+export interface RoadLeg {
+  from: LngLat;
+  to: LngLat;
+  straight: false;
+  key: string;
+}
+
+export type Leg = StraightLeg | RoadLeg;
 
 export type RoutePath = Costing & Pick<Route, 'points'>;
 
@@ -26,14 +35,14 @@ export function routeLegs(route: RoutePath): Leg[] {
   for (let i = 1; i < route.points.length; i++) {
     const from = route.points[i - 1]!.lngLat;
     const to = route.points[i]!.lngLat;
-    legs.push({ key: legKey(route, from, to), from, to, straight: route.points[i]!.straight === true });
+    legs.push(route.points[i]!.straight === true ? { from, to, straight: true } : { from, to, straight: false, key: legKey(route, from, to) });
   }
   return legs;
 }
 
 /** The legs that are routed, not straight. */
-export function routedLegs(route: RoutePath): Leg[] {
-  return routeLegs(route).filter((leg) => !leg.straight);
+export function routedLegs(route: RoutePath): RoadLeg[] {
+  return routeLegs(route).filter((leg): leg is RoadLeg => !leg.straight);
 }
 
 /** Routed and straight legs are drawn as part of the route; pending and failed ones wait for routing. */
@@ -83,7 +92,7 @@ export function pruneLegs(route: RoutePath & Pick<Route, 'legs'>): Record<string
   return Object.fromEntries(Object.entries(route.legs).filter(([key]) => needed.has(key)));
 }
 
-export interface LegJob extends Leg, Costing {
+export interface LegJob extends RoadLeg, Costing {
   routeId: string;
 }
 
@@ -91,7 +100,7 @@ export interface LegJob extends Leg, Costing {
 export function nextMissingLeg(routes: readonly Route[], failed: ReadonlySet<string>, preferred: ReadonlySet<string> = new Set()): LegJob | undefined {
   const ordered = [...routes].sort((a, b) => Number(preferred.has(b.id)) - Number(preferred.has(a.id)));
   for (const route of ordered) {
-    const leg = routeLegs(route).find((l) => legState(route, l, failed) === 'pending');
+    const leg = routedLegs(route).find((l) => legState(route, l, failed) === 'pending');
     if (leg) return { ...leg, routeId: route.id, profile: route.profile, highways: route.highways };
   }
   return undefined;

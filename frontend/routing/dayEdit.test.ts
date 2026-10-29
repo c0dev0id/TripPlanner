@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { withChanges, type Day, type RoutedLeg, type Trip } from '../model/trip';
 import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copyStopToDay, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, removeRoute, removeStop, updateDay, updateRoute, updateStop } from './dayEdit';
 import { changeSettings } from './routeEdit';
-import { routeLegs } from './legs';
+import { routedLegs } from './legs';
 import * as routeEdit from './routeEdit';
 
 const routed = (geometry: string): RoutedLeg => ({ geometry, distanceM: 1000, durationS: 60 });
@@ -21,7 +21,7 @@ function fixture(): Trip {
     trip = updateRoute(trip, 'r', (r) => routeEdit.appendPoint(r, { id, lngLat: [...lngLat] }));
   }
   const route = day(trip).routes[0]!;
-  const legs = Object.fromEntries(routeLegs(route).map((l) => [l.key, routed(l.key)]));
+  const legs = Object.fromEntries(routedLegs(route).map((l) => [l.key, routed(l.key)]));
   trip = { ...trip, days: [{ ...day(trip), routes: [{ ...route, legs }] }] };
   trip = convertPoint(trip, 'd', 'b', 's1');
   return addFreeStop(trip, 'd', [2.5, 2.4], 's2');
