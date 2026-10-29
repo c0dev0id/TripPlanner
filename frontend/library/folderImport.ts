@@ -1,11 +1,19 @@
 import { createFolder, createTrip, errorMessage, fetchTrip, listFolders, saveTrip } from '../api';
 import { readGpxFile, type DayParts } from '../gpx/import';
-import { newId } from '../model/trip';
+import { newId, type TripKind } from '../model/trip';
 import { addDay, addParts, dayAfter, updateDay } from '../routing/dayEdit';
 
-/** A trip the import makes of a folder that holds GPX files. */
+/**
+ * How a picked folder tree is organized: a trip per folder of GPX files with a day per
+ * file or date; a trip per file, the folders plain folders; or planning material, a
+ * collection per folder of GPX files with a section per file.
+ */
+export type ImportMode = 'trip-per-folder' | 'trip-per-file' | 'planning-material';
+
+/** A trip or a collection the import makes. */
 export interface PlannedTrip {
-  /** The names of the folders above the trip's folder, from the picked folder down. */
+  kind: TripKind;
+  /** The names of the folders it goes into, from the picked folder down. */
   folders: string[];
   name: string;
   days: PlannedDay[];
@@ -52,13 +60,11 @@ const byName = new Intl.Collator(undefined, { numeric: true }).compare;
 export const pickedPath = (file: File): string => (file.webkitRelativePath || file.name).normalize('NFC');
 
 /**
- * The trips a picked folder tree makes, from the files' paths relative to it: each folder
- * that holds GPX files itself is a trip, named after it without its date, inside the
- * folders above it. Files with a date in their name make one day per date; the others a
- * day each, dated on from the trip folder's date after the dated days, or undated where
- * the folder has none. Days follow their dates, undated ones last.
+ * The trips or collections a picked folder tree makes, from the files' paths relative to
+ * it, organized as `mode` says; hidden files and files that are no GPX are left out, the
+ * rest taken in name order.
  */
-export function planFolderImport(paths: readonly string[]): PlannedTrip[] {
+export function planFolderImport(paths: readonly string[], mode: ImportMode): PlannedTrip[] {
   const byFolder = new Map<string, number[]>();
   /** The file names without their extension, by path. */
   const stems: string[] = [];
@@ -72,32 +78,54 @@ export function planFolderImport(paths: readonly string[]): PlannedTrip[] {
     else byFolder.set(folder, [i]);
   });
   const stem = (i: number) => stems[i]!;
-  return [...byFolder.keys()].sort(byName).map((folder) => {
+  return [...byFolder.keys()].sort(byName).flatMap((folder) => {
     const segments = folder.split('/');
-    const folderName = segments.at(-1)!;
     const files = byFolder.get(folder)!.sort((a, b) => byName(stem(a), stem(b)));
-    const dated = new Map<string, number[]>();
-    const undated: number[] = [];
-    for (const i of files) {
-      const date = dateIn(stem(i));
-      if (!date) undated.push(i);
-      else if (dated.has(date)) dated.get(date)!.push(i);
-      else dated.set(date, [i]);
-    }
-    const dayOf = (date: string | null, of: number[]): PlannedDay => ({ date, name: of.length === 1 ? withoutDate(stem(of[0]!)) : '', files: of });
-    const days = [...dated.keys()].sort().map((date) => dayOf(date, dated.get(date)!));
-    const start = dateIn(folderName);
-    const lastDated = days.at(-1)?.date;
-    let next = start && (lastDated && lastDated >= start ? dayAfter(lastDated) : start);
-    for (const i of undated) {
-      days.push(dayOf(next ?? null, [i]));
-      if (next) next = dayAfter(next);
-    }
-    return { folders: segments.slice(0, -1), name: withoutDate(folderName) || folderName || 'Imported trip', days };
+    if (mode === 'trip-per-file') return files.map((i) => tripOfFile(segments.filter(Boolean), stem(i), i));
+    if (mode === 'planning-material') return [collectionOfFolder(segments, files, stem)];
+    return [tripOfFolder(segments, files, stem)];
   });
 }
 
-/** What an import did: how many trips it made, and what it could not read or save. */
+/**
+ * A folder of GPX files as a trip, named after it without its date, inside the folders
+ * above it. Files with a date in their name make one day per date; the others a day each,
+ * dated on from the folder's date after the dated days, or undated where the folder has
+ * none. Days follow their dates, undated ones last.
+ */
+function tripOfFolder(segments: string[], files: number[], stem: (i: number) => string): PlannedTrip {
+  const folderName = segments.at(-1)!;
+  const dated = new Map<string, number[]>();
+  const undated: number[] = [];
+  for (const i of files) {
+    const date = dateIn(stem(i));
+    if (!date) undated.push(i);
+    else if (dated.has(date)) dated.get(date)!.push(i);
+    else dated.set(date, [i]);
+  }
+  const dayOf = (date: string | null, of: number[]): PlannedDay => ({ date, name: of.length === 1 ? withoutDate(stem(of[0]!)) : '', files: of });
+  const days = [...dated.keys()].sort().map((date) => dayOf(date, dated.get(date)!));
+  const start = dateIn(folderName);
+  const lastDated = days.at(-1)?.date;
+  let next = start && (lastDated && lastDated >= start ? dayAfter(lastDated) : start);
+  for (const i of undated) {
+    days.push(dayOf(next ?? null, [i]));
+    if (next) next = dayAfter(next);
+  }
+  return { kind: 'trip', folders: segments.slice(0, -1), name: withoutDate(folderName) || folderName || 'Imported trip', days };
+}
+
+/** A GPX file as a trip of one day, named after the file without its date, dated by it; in the folders it is in. */
+function tripOfFile(folders: string[], stem: string, file: number): PlannedTrip {
+  return { kind: 'trip', folders, name: withoutDate(stem) || stem, days: [{ date: dateIn(stem) ?? null, name: '', files: [file] }] };
+}
+
+/** A folder of GPX files as a collection named after it, inside the folders above it, with a section per file named after it. */
+function collectionOfFolder(segments: string[], files: number[], stem: (i: number) => string): PlannedTrip {
+  return { kind: 'collection', folders: segments.slice(0, -1), name: segments.at(-1) || 'Imported collection', days: files.map((i) => ({ date: null, name: stem(i), files: [i] })) };
+}
+
+/** What an import did: how many trips or collections it made, and what it could not read or save. */
 interface ImportResult {
   trips: number;
   errors: string[];
@@ -105,7 +133,7 @@ interface ImportResult {
 
 /**
  * Makes the planned trips from the picked files inside the folder `parentId` (none for the
- * top): the folders above each trip are found by name or created, the trip is created and
+ * top): the folders each goes into are found by name or created, the trip is created and
  * its days saved as one document. A file that is no GPX is left out, as is a day or a trip
  * left without one; what cannot be read or saved is reported, and the import goes on.
  */
@@ -138,7 +166,7 @@ export async function importFolder(files: readonly File[], plan: readonly Planne
     try {
       let folderId = parentId;
       for (const name of planned.folders) folderId = await folderIn(folderId, name);
-      let trip = await fetchTrip((await createTrip(planned.name, folderId)).id);
+      let trip = await fetchTrip((await createTrip(planned.name, folderId, planned.kind)).id);
       for (const { day, parts } of days) {
         const id = newId();
         trip = updateDay(addDay(trip, id), id, (d) => ({ ...d, name: day.name, date: day.date }));

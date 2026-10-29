@@ -164,7 +164,20 @@ entries at the end of their section.
   files, not for the dates between them. Folders are found by name in their parent and
   reused, so an import into an existing tree adds to it; trips are always new. A trip's
   files are read before anything is created, so that a folder of unreadable files leaves
-  no empty trip behind.
+  no empty trip behind. One archive holds rides as folders of days, rides as single files
+  in plain folders, and planning material such as the Trans Euro Trail by country, so the
+  import dialog asks how the picked tree is organized, one way for the whole tree, and
+  shows what each way makes of it; a tree organized in several ways is imported folder by
+  folder.
+- **Planning material is a trip of another kind, not a store of its own.** A collection
+  is a trip whose days are its sections, one per file, without dates: it is stored,
+  loaded, saved, drawn and searched as a trip is, and its panel leaves out what belongs
+  to riding (dates, times, the journal, the tools, the export). Its kind is fixed when it
+  is created. Routes go from a collection into a trip by copy and paste through a
+  clipboard that outlives the open trip, so that the same two steps also copy between
+  trips and between days; the stop's former *Copy…* to another day became the same Copy.
+  A collection's map shows only the section opened, and no stop dots while none is: the
+  Trans Euro Trail has 5,000 waypoints, each a marker of its own.
 
 ## Map and appearance
 

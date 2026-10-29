@@ -43,7 +43,7 @@ final class TripDocumentsTest extends TestCase
     public function testLoadsANewTripAsAnEmptyDocument(): void
     {
         self::assertSame(
-            ['id' => $this->tripId, 'name' => 'Alps', 'description' => '', 'state' => 'planned', 'version' => 1, 'days' => []],
+            ['id' => $this->tripId, 'kind' => 'trip', 'name' => 'Alps', 'description' => '', 'state' => 'planned', 'version' => 1, 'days' => []],
             $this->documents->load($this->userId, $this->tripId),
         );
         self::assertNull($this->documents->load($this->userId + 1, $this->tripId));
@@ -193,6 +193,15 @@ final class TripDocumentsTest extends TestCase
         self::assertSame(1, $this->trips->listFor($this->userId)[0]->dayCount);
     }
 
+    public function testKeepsACollectionAsOneThroughListsLoadsAndCopies(): void
+    {
+        $id = $this->trips->create($this->userId, 'TET', $this->now, null, 'collection')->id;
+        self::assertSame('collection', $this->documents->load($this->userId, $id)['kind']);
+        $copyId = $this->documents->copy($this->userId, $id, $this->now);
+        self::assertSame(['collection', 'collection', 'trip'], array_map(fn ($t) => $t->kind, $this->trips->listFor($this->userId)));
+        self::assertSame('collection', $this->documents->load($this->userId, (int) $copyId)['kind']);
+    }
+
     public function testListsTripsWithTheirDayCountAndDeletesThemWithTheirContent(): void
     {
         $this->save(TripFixture::document(), 1);
@@ -200,7 +209,7 @@ final class TripDocumentsTest extends TestCase
         $list = $this->trips->listFor($this->userId);
         self::assertSame(['Later', 'Alps'], array_map(fn ($t) => $t->name, $list));
         self::assertSame([0, 1], array_map(fn ($t) => $t->dayCount, $list));
-        self::assertSame('{"id":' . $this->tripId . ',"name":"Alps","folderId":null,"state":"planned","startsOn":"2027-06-12","dayCount":1,"updatedAt":"2026-10-27T10:00:00Z"}', json_encode($list[1]));
+        self::assertSame('{"id":' . $this->tripId . ',"kind":"trip","name":"Alps","folderId":null,"state":"planned","startsOn":"2027-06-12","dayCount":1,"updatedAt":"2026-10-27T10:00:00Z"}', json_encode($list[1]));
         self::assertFalse($this->trips->delete($this->userId + 1, $this->tripId));
         self::assertTrue($this->trips->delete($this->userId, $this->tripId));
         self::assertSame(0, (int) $this->db->query('SELECT COUNT(*) FROM stops')->fetchColumn());

@@ -183,11 +183,7 @@ export function duplicateDay(trip: Trip, dayId: string, id: string, newId: () =>
   if (index < 0) return trip;
   const day = trip.days[index]!;
   const routes = day.routes.map((route) => copyRoute(route, newId));
-  const pointIds = new Map<string, string>();
-  day.routes.forEach((route, r) => {
-    const copy = routes[r]!;
-    if (route.kind === 'routed' && copy.kind === 'routed') route.points.forEach((p, i) => pointIds.set(p.id, copy.points[i]!.id));
-  });
+  const pointIds = new Map(day.routes.flatMap((route, r) => copiedPointIds(route, routes[r]!)));
   const stops = day.stops.map((stop) => ({ ...stop, id: newId(), pointId: stop.pointId === null ? null : pointIds.get(stop.pointId)! }));
   const copy: Day = { ...day, id, date: null, routes, stops };
   return { ...trip, days: trip.days.toSpliced(index + 1, 0, copy) };
@@ -231,10 +227,32 @@ export function moveRouteToDay(trip: Trip, routeId: string, dayId: string): Trip
   return { ...trip, days };
 }
 
-/** A copy of the stop in another day, free where it stands. */
-export function copyStopToDay(trip: Trip, stopId: string, dayId: string, newId: string): Trip {
-  const stop = trip.days.flatMap((d) => d.stops).find((s) => s.id === stopId);
-  return stop ? updateDay(trip, dayId, (day) => ({ ...day, stops: [...day.stops, { ...stop, id: newId, pointId: null }] })) : trip;
+/** A route as copied to be pasted into a day, of its trip or another, with the stops bound to its points. */
+export interface CopiedRoute {
+  route: Route;
+  stops: Stop[];
+}
+
+/** The route with the stops bound to its points, as a copy to paste; none for a route the trip does not have. */
+export function copiedRoute(trip: Trip, routeId: string): CopiedRoute | undefined {
+  const day = dayOfRoute(trip, routeId);
+  const route = day?.routes.find((r) => r.id === routeId);
+  if (!day || !route) return undefined;
+  const pointIds = new Set(route.kind === 'routed' ? route.points.map((p) => p.id) : []);
+  return { route, stops: day.stops.filter((s) => s.pointId !== null && pointIds.has(s.pointId)) };
+}
+
+/** Adds a copied route at the end of the day, it, its points and its stops under new ids, the stops bound to the new points. */
+export function pasteRoute(trip: Trip, dayId: string, copied: CopiedRoute, newId: () => string): Trip {
+  const route = copyRoute(copied.route, newId);
+  const pointIds = new Map(copiedPointIds(copied.route, route));
+  const stops = copied.stops.map((s) => ({ ...s, id: newId(), pointId: s.pointId === null ? null : (pointIds.get(s.pointId) ?? null) }));
+  return updateDay(trip, dayId, (day) => ({ ...day, routes: [...day.routes, route], stops: [...day.stops, ...stops] }));
+}
+
+/** Adds a copied stop to the day under `id`, free where it stands. */
+export function pasteStop(trip: Trip, dayId: string, stop: Stop, id: string): Trip {
+  return updateDay(trip, dayId, (day) => ({ ...day, stops: [...day.stops, { ...stop, id, pointId: null }] }));
 }
 
 /** The ids of the day's route points that stops stand on. */
@@ -260,5 +278,10 @@ function movedTo<T extends { id: string }>(items: readonly T[], id: string, to: 
 /** The route with new ids for itself and its points; the legs stay, as they are keyed by position. */
 function copyRoute(route: Route, newId: () => string): Route {
   return route.kind === 'track' ? { ...route, id: newId() } : { ...route, id: newId(), points: route.points.map((p) => ({ ...p, id: newId() })) };
+}
+
+/** Each point id of a route with the id of the same point in its copy. */
+function copiedPointIds(original: Route, copy: Route): [string, string][] {
+  return original.kind === 'routed' && copy.kind === 'routed' ? original.points.map((p, i) => [p.id, copy.points[i]!.id]) : [];
 }
 

@@ -130,7 +130,7 @@ describe('withStopsInRidingOrder', () => {
     const stops = [stop('end', [11, 47.2], 'c'), stop('cafe', [11.005, 47.05], null), stop('start', [11, 47], 'a'), stop('fuel', [11, 47.1], 'b')];
     // Not routed yet, the legs run straight between the points.
     const straight = { ...route, legs: {} };
-    const trip = withStopsInRidingOrder({ id: 1, name: 'T', description: '', state: 'planned', version: 1, days: [day(stops, [straight]), day([stop('lost', [12, 48], null)], [])] });
+    const trip = withStopsInRidingOrder({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [day(stops, [straight]), day([stop('lost', [12, 48], null)], [])] });
     expect(trip.days[0]!.stops.map((s) => s.id)).toEqual(['start', 'cafe', 'fuel', 'end']);
     expect(trip.days[1]!.stops.map((s) => s.id)).toEqual(['lost']);
   });

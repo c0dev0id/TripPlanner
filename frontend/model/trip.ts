@@ -123,8 +123,16 @@ export interface Day {
 /** Planned, or ridden: done. */
 export type TripState = 'planned' | 'done';
 
+/**
+ * A trip to plan and ride, or a collection of planning material: routes and waypoints to
+ * look through and copy from, whose days are its sections (a file each) and have no date.
+ * Fixed when it is created.
+ */
+export type TripKind = 'trip' | 'collection';
+
 export interface Trip {
   id: number;
+  kind: TripKind;
   name: string;
   description: string;
   state: TripState;
@@ -136,6 +144,7 @@ export interface Trip {
 /** A trip as the library lists it; it starts on its first dated day. */
 export interface TripSummary {
   id: number;
+  kind: TripKind;
   name: string;
   folderId: number | null;
   state: TripState;

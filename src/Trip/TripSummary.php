@@ -9,6 +9,8 @@ final readonly class TripSummary
 {
     public function __construct(
         public int $id,
+        /** A trip, or a collection of planning material. */
+        public string $kind,
         public string $name,
         public ?int $folderId,
         /** Planned, or ridden: done. */

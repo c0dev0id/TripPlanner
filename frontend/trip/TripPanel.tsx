@@ -7,16 +7,15 @@ import { defaultProfile } from '../routing/dayEdit';
 import { pointCount, routeDistance } from '../routing/legs';
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
-import { saveState } from '../state/autosave';
 import { panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, setTrackAction, showNeighbours } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
+import { copyRoute, copyStop, pasteItem } from '../state/clipboard';
 import {
   addDay,
   addParts,
   addRoute,
-  copyStopToDay,
   duplicateDay,
   duplicateRoute,
   editingRouteId,
@@ -39,6 +38,7 @@ import { Grip } from '../ui/Grip';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 import { removeDayAsked, removeRouteAsked } from './remove';
+import { SaveStatus } from './SaveStatus';
 
 /** The journal of a part as an icon, with the number of its entries where it has any. */
 function JournalButton(props: { target: EntryTarget; of: string }) {
@@ -54,7 +54,7 @@ function JournalButton(props: { target: EntryTarget; of: string }) {
   );
 }
 
-/** An item named `label` whose submenu lists the trip's other days, for moving or copying something there; none in a trip of one day. */
+/** An item named `label` whose submenu lists the trip's other days, for moving something there; none in a trip of one day. */
 function otherDaysItem(dayId: string, label: string, run: (dayId: string) => void): MenuItem[] {
   const items = openTrip()!.days.flatMap((day, index) => (day.id === dayId ? [] : [{ label: dayLabel(day, index), run: () => run(day.id) }]));
   return items.length > 0 ? [{ label, items }] : [];
@@ -104,21 +104,7 @@ export function TripPanel(props: { onLeave: () => void; onReload: () => void }) 
   );
 }
 
-function SaveStatus(props: { onReload: () => void }) {
-  return (
-    <p class="save-status muted" classList={{ failed: saveState() === 'failed' || saveState() === 'conflict' }}>
-      {saveState() === 'saved' && 'Saved'}
-      {saveState() === 'dirty' && 'Unsaved changes'}
-      {saveState() === 'saving' && 'Saving…'}
-      {saveState() === 'failed' && 'Saving failed; trying again shortly'}
-      <Show when={saveState() === 'conflict'}>
-        The trip was changed elsewhere. <button onClick={props.onReload}>Reload it</button> to go on; the changes made here since are lost.
-      </Show>
-    </p>
-  );
-}
-
-/** A day as a card: its number and name over its date and length; its menu edits, duplicates and removes it. */
+/** A day as a card: its number and name over its date and length; its menu edits, duplicates, pastes into and removes it. */
 function DayItem(props: { day: Day; index: number }) {
   const selected = () => selectedDayId() === props.day.id;
   const label = createMemo(() => dayLabel(props.day, props.index));
@@ -129,6 +115,7 @@ function DayItem(props: { day: Day; index: number }) {
   const more = (): MenuItem[] => [
     { label: 'Edit…', run: () => setEditTarget({ kind: 'day', id: props.day.id }) },
     { label: 'Duplicate', run: () => duplicateDay(props.day.id) },
+    ...pasteItem(props.day.id),
     { label: 'Remove', run: () => void removeDayAsked(props.day) },
   ];
   return (
@@ -224,7 +211,7 @@ function DaySummary(props: { timeline: DayTimeline }) {
 
 /**
  * A route of the day: its row, whose menu (right-click or a long press) edits, duplicates,
- * moves, condenses or converts a track, and removes it; and while it is selected, its stops
+ * copies, moves, condenses or converts a track, and removes it; and while it is selected, its stops
  * and points in riding order under it, out of `sequence`, its part of the day's.
  */
 function RouteItem(props: { route: Route; index: number; day: Day; sequence: SequenceEntry[] }) {
@@ -237,6 +224,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
   const items = (): MenuItem[] => [
     { label: 'Edit…', run: () => setEditTarget({ kind: 'route', id: props.route.id }) },
     { label: 'Duplicate', run: () => duplicateRoute(props.route.id) },
+    { label: 'Copy', run: () => copyRoute(props.route.id) },
     ...otherDaysItem(props.day.id, 'Move…', (dayId) => moveRouteToDay(props.route.id, dayId)),
     ...(props.route.kind === 'track'
       ? [
@@ -354,11 +342,11 @@ function AloneStopItem(props: { stop: Stop }) {
   );
 }
 
-/** A stop's menu, opened from its row by right-click or a long press: edit, copy to another day, remove. */
+/** A stop's menu, opened from its row by right-click or a long press: edit, copy to paste into a day, remove. */
 function stopItems(stop: Stop): MenuItem[] {
   return [
     { label: 'Edit…', run: () => setEditTarget({ kind: 'stop', id: stop.id }) },
-    ...otherDaysItem(selectedDayId()!, 'Copy…', (dayId) => copyStopToDay(stop.id, dayId)),
+    { label: 'Copy', run: () => copyStop(stop.id) },
     { label: 'Remove', run: () => removeStop(stop.id) },
   ];
 }

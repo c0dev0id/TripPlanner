@@ -19,6 +19,7 @@ const entry = (id: number, on: Partial<Pick<Entry, 'dayId' | 'stopId' | 'routeId
 
 const trip: Trip = {
   id: 1,
+  kind: 'trip',
   name: 'Alps',
   description: '',
   state: 'planned',

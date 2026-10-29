@@ -9,8 +9,11 @@ import { stopContent } from './markerContent';
 import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
 import { ForById } from '../ui/ForById';
 
-/** The days whose stops are small grey dots: the selected day's neighbours where shown, every day while none is selected. */
-const dimDays = () => (selectedDay() ? (showNeighbours() ? neighbourDays() : []) : (openTrip()?.days ?? []));
+/**
+ * The days whose stops are small grey dots: of a trip, the selected day's neighbours where
+ * shown, every day while none is selected; none of a collection, which can hold thousands.
+ */
+const dimDays = () => (openTrip()?.kind !== 'trip' ? [] : selectedDay() ? (showNeighbours() ? neighbourDays() : []) : openTrip()!.days);
 
 /**
  * The stops of the selected day, drawn by their kind and named, draggable while a route

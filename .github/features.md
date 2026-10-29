@@ -12,14 +12,15 @@
   search by name across trips and folders, listing at most twenty results.
 - Trips as a sequence of days; a day as one or more routes and its stops. A day is a
   card with its number and name over its date and length, and its menu (right-click or
-  long press) edits, duplicates and removes it. Days and routes
+  long press) edits, duplicates, pastes into and removes it. Days and routes
   are added in the panel and named, set up and removed in their dialogs or menus; the trip has a
   description and a day has notes, shown under the day's row and on the read-only page.
   A day is dragged into another place by its grip and duplicated (with new ids,
   undated); a route is dragged into another place within its day, duplicated, or
   moved to another day with the stops bound to it, from its row's menu (right-click or
-  long press), where Move… opens the other days; a stop is copied to another day as a
-  free stop, from Copy… in its menu.
+  long press), where Move… opens the other days. Copy in a route's or a stop's menu keeps
+  it to be pasted from a day's menu into that day, of the same trip or another: a route
+  with the stops bound to it, a stop free where it stands.
 - Routes as geometry: points in order with routed legs between them, one profile (road,
   bike, foot) per route. A click on a route's row selects it and shows the tools over
   the map. The hand, the default, moves the map and opens a stop's details, and neither
@@ -73,12 +74,22 @@
   each of its points. Its menu condenses it (Douglas–Peucker at a distance chosen from a
   few, each with the count of points it leaves) or makes a route of it: fewer points,
   every leg routed, with the time the routing will take.
-- Import of a folder tree from disk into the open folder of the library: each folder
-  holding GPX files becomes a trip named after it without its date, the folders above it
-  folders (existing ones reused by name). A date in a file's name (YYYY-MM-DD, YYYY_MM_DD,
-  or YYYYMMDD at its start) puts it on that day,
-  several files of a date on one day; other files are a day each, dated on from a date in
-  the trip folder's name, or undated. Files that are no GPX are reported and left out.
+- Import of a folder tree from disk into the open folder of the library, its folders
+  recreated (existing ones reused by name), organized one of three ways, chosen in the
+  import dialog with what each makes of the tree. A trip per folder: each folder holding
+  GPX files becomes a trip named after it without its date; a date in a file's name
+  (YYYY-MM-DD, YYYY_MM_DD, or YYYYMMDD at its start) puts it on that day, several files
+  of a date on one day; other files are a day each, dated on from a date in the trip
+  folder's name, or undated. A trip per file: each GPX file becomes a trip of one day,
+  named and dated by the file, in its folder. Planning material: each folder holding GPX
+  files becomes a collection with a section per file. Files that are no GPX are reported
+  and left out.
+- Collections of planning material, such as a long-distance trail by country: listed in
+  the library as planning material, opened like a trip but with sections instead of
+  days and no dates, times, journal, tools or export. A section lists its routes and
+  waypoints; a click on a route shows it whole on the map, on a waypoint goes there, and
+  their menus copy them, to be pasted into a day of a trip, or remove them. A section is
+  renamed or removed from its menu.
 - Routes and stops can be marked optional, each in its dialog, and are shown so.
 - GPX export from a dialog: the whole trip or the selected day; one file or one file per
   day in a zip; routes as tracks with their full line, or as routes of their points for

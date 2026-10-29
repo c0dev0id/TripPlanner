@@ -83,6 +83,8 @@ CREATE TABLE IF NOT EXISTS trips (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     folder_id INTEGER REFERENCES folders(id) ON DELETE SET NULL,
+    -- A trip, or a collection of planning material whose days are its sections; fixed at creation.
+    kind TEXT NOT NULL DEFAULT 'trip' CHECK (kind IN ('trip', 'collection')),
     name TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     version INTEGER NOT NULL DEFAULT 1,

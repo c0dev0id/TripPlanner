@@ -1,5 +1,5 @@
 import type { Entry, EntryTarget } from './model/journal';
-import type { Folder, LngLat, Trip, TripSummary } from './model/trip';
+import type { Folder, LngLat, Trip, TripKind, TripSummary } from './model/trip';
 import { withStopsInRidingOrder } from './routing/sequence';
 
 /** Requests to the JSON API, and the one form the app posts: sign out. */
@@ -42,7 +42,7 @@ export const fetchMe = (): Promise<Me> => request('GET', '/api/me');
 
 export const listTrips = (): Promise<TripSummary[]> => request('GET', '/api/trips');
 
-export const createTrip = (name: string, folderId: number | null): Promise<TripSummary> => request('POST', '/api/trips', { name, folderId });
+export const createTrip = (name: string, folderId: number | null, kind: TripKind = 'trip'): Promise<TripSummary> => request('POST', '/api/trips', { name, folderId, kind });
 
 /** A copy of the trip with all its days, next to it in the library; the answer is the copy's id. */
 export const duplicateTrip = (id: number): Promise<{ id: number }> => request('POST', `/api/trips/${id}/copies`);

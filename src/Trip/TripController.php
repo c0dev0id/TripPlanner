@@ -38,8 +38,12 @@ final class TripController
         if ($folderId !== null && !is_int($folderId)) {
             return Json::error($response, 422, 'folderId must be a number or null.');
         }
+        $kind = Json::field($request, 'kind') ?? 'trip';
+        if (!in_array($kind, Trips::KINDS, true)) {
+            return Json::error($response, 422, 'kind must be trip or collection.');
+        }
         try {
-            $trip = $this->trips->create($this->currentUser->get()->id, $name, new DateTimeImmutable(), $folderId);
+            $trip = $this->trips->create($this->currentUser->get()->id, $name, new DateTimeImmutable(), $folderId, $kind);
         } catch (UnknownFolder $unknown) {
             return Json::error($response, 422, $unknown->getMessage());
         }

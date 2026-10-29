@@ -44,11 +44,11 @@ export function MapView() {
 
 type ShownDay = { day: Day; role: RouteRole };
 
-/** The days drawn: the selected one, and with `showNeighbours` the ones before and after; every day while none is selected. */
+/** The days drawn: the selected one, and of a trip with `showNeighbours` the ones before and after; every day while none is selected. */
 function shownDays(): ShownDay[] {
   const day = selectedDay();
   if (!day) return (openTrip()?.days ?? []).map((d) => ({ day: d, role: 'selected' as const }));
-  const neighbours = showNeighbours() ? neighbourDays().map((d) => ({ day: d, role: 'neighbour' as const })) : [];
+  const neighbours = showNeighbours() && openTrip()!.kind === 'trip' ? neighbourDays().map((d) => ({ day: d, role: 'neighbour' as const })) : [];
   return [...neighbours, { day, role: 'selected' }];
 }
 
@@ -76,7 +76,9 @@ function RouteLines(props: { map: MapLibreMap }) {
   );
   createEffect(
     on(panTarget, (target) => {
-      if (target) props.map.flyTo({ center: target.lngLat, zoom: Math.max(props.map.getZoom(), 12), duration: 500 });
+      if (!target) return;
+      if ('lngLat' in target) props.map.flyTo({ center: target.lngLat, zoom: Math.max(props.map.getZoom(), 12), duration: 500 });
+      else if (target.positions.length > 0) props.map.fitBounds(target.positions.reduce((b, p) => b.extend(p), new LngLatBounds()), { padding: 80, maxZoom: 15, duration: 500 });
     }),
   );
   return null;

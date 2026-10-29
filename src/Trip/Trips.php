@@ -21,7 +21,7 @@ final class Trips
     public function listFor(int $userId): array
     {
         $statement = $this->db->prepare(
-            'SELECT t.id, t.name, t.folder_id, t.state, t.updated_at, MIN(d.date) AS starts_on, COUNT(d.id) AS day_count
+            'SELECT t.id, t.kind, t.name, t.folder_id, t.state, t.updated_at, MIN(d.date) AS starts_on, COUNT(d.id) AS day_count
              FROM trips t LEFT JOIN days d ON d.trip_id = t.id
              WHERE t.user_id = ? GROUP BY t.id ORDER BY t.updated_at DESC, t.id DESC',
         );
@@ -29,17 +29,19 @@ final class Trips
         return array_map($this->summary(...), $statement->fetchAll());
     }
 
+    public const KINDS = ['trip', 'collection'];
+
     /**
-     * Creates a trip in a folder of the user's, or in none.
+     * Creates a trip, or a collection, in a folder of the user's or in none.
      *
      * @throws UnknownFolder for a folder the user does not have
      */
-    public function create(int $userId, string $name, DateTimeImmutable $now, ?int $folderId = null): TripSummary
+    public function create(int $userId, string $name, DateTimeImmutable $now, ?int $folderId = null, string $kind = 'trip'): TripSummary
     {
         $this->folders->assertOwned($userId, $folderId);
-        $statement = $this->db->prepare('INSERT INTO trips (user_id, folder_id, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?)');
-        $statement->execute([$userId, $folderId, $name, Timestamp::of($now), Timestamp::of($now)]);
-        return new TripSummary((int) $this->db->lastInsertId(), $name, $folderId, 'planned', null, 0, Timestamp::of($now));
+        $statement = $this->db->prepare('INSERT INTO trips (user_id, folder_id, kind, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
+        $statement->execute([$userId, $folderId, $kind, $name, Timestamp::of($now), Timestamp::of($now)]);
+        return new TripSummary((int) $this->db->lastInsertId(), $kind, $name, $folderId, 'planned', null, 0, Timestamp::of($now));
     }
 
     /**
@@ -102,6 +104,6 @@ final class Trips
 
     private function summary(array $row): TripSummary
     {
-        return new TripSummary((int) $row['id'], $row['name'], $row['folder_id'] === null ? null : (int) $row['folder_id'], $row['state'], $row['starts_on'], (int) $row['day_count'], $row['updated_at']);
+        return new TripSummary((int) $row['id'], $row['kind'], $row['name'], $row['folder_id'] === null ? null : (int) $row['folder_id'], $row['state'], $row['starts_on'], (int) $row['day_count'], $row['updated_at']);
     }
 }

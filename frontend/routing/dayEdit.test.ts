@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { withChanges, type Day, type RoutedLeg, type Trip } from '../model/trip';
-import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copyStopToDay, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop } from './dayEdit';
+import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, pasteRoute, pasteStop, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop } from './dayEdit';
 import { changeSettings } from './routeEdit';
 import { pointCount, routedLegs } from './legs';
 import { routedOf } from './testing';
@@ -8,7 +8,7 @@ import * as routeEdit from './routeEdit';
 
 const routed = (geometry: string): RoutedLeg => ({ geometry, distanceM: 1000, durationS: 60 });
 
-const empty = (): Trip => ({ id: 1, name: 'T', description: '', state: 'planned', version: 1, days: [{ id: 'd', name: '', date: null, notes: '', routes: [], stops: [] }] });
+const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [{ id: 'd', name: '', date: null, notes: '', routes: [], stops: [] }] });
 
 const day = (trip: Trip): Day => trip.days[0]!;
 
@@ -192,9 +192,19 @@ describe('reordering and copying', () => {
     expect(moveRouteToDay(same, 'r', 'd')).toBe(same);
   });
 
-  it('copies a stop to another day as a free stop', () => {
-    const trip = copyStopToDay(twoDays(), 's1', 'e', 'c');
+  it('pastes a stop into a day as a free stop', () => {
+    const trip = pasteStop(twoDays(), 'e', day(twoDays()).stops[0]!, 'c');
     expect(trip.days[1]!.stops).toEqual([{ ...day(trip).stops[0]!, id: 'c', pointId: null }]);
+  });
+
+  it('pastes a copied route with its bound stops under new ids, the stops bound to the new points', () => {
+    const copied = copiedRoute(twoDays(), 'r')!;
+    expect(copied.stops.map((s) => s.id)).toEqual(['s1']);
+    const trip = pasteRoute(twoDays(), 'e', copied, ids('p'));
+    const pasted = routedOf(trip.days[1]!.routes[0]!);
+    expect([pasted.id, pasted.points.map((p) => p.id), pasted.legs]).toEqual(['p1', ['p2', 'p3', 'p4'], routedOf(day(trip).routes[0]!).legs]);
+    expect(trip.days[1]!.stops.map((s) => [s.id, s.name, s.pointId])).toEqual([['p5', 'Stop 1', 'p3']]);
+    expect(copiedRoute(trip, 'nope')).toBeUndefined();
   });
 });
 

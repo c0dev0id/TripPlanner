@@ -33,7 +33,7 @@ final class TripDocuments
 
     private function document(string $where, array $params): ?array
     {
-        $statement = $this->db->prepare("SELECT id, name, description, state, version FROM trips WHERE $where");
+        $statement = $this->db->prepare("SELECT id, kind, name, description, state, version FROM trips WHERE $where");
         $statement->execute($params);
         $trip = $statement->fetch();
         if ($trip === false) {
@@ -73,6 +73,7 @@ final class TripDocuments
         }
         return [
             'id' => (int) $trip['id'],
+            'kind' => $trip['kind'],
             'name' => $trip['name'],
             'description' => $trip['description'],
             'state' => $trip['state'],
@@ -128,8 +129,8 @@ final class TripDocuments
         $this->db->beginTransaction();
         try {
             $this->db->prepare(
-                "INSERT INTO trips (user_id, folder_id, name, description, created_at, updated_at)
-                 SELECT user_id, folder_id, substr(name, 1, 195) || ' copy', description, ?, ? FROM trips WHERE id = ?",
+                "INSERT INTO trips (user_id, folder_id, kind, name, description, created_at, updated_at)
+                 SELECT user_id, folder_id, kind, substr(name, 1, 195) || ' copy', description, ?, ? FROM trips WHERE id = ?",
             )->execute([Timestamp::of($now), Timestamp::of($now), $tripId]);
             $copyId = (int) $this->db->lastInsertId();
             $this->saveDays($copyId, TripCopy::withNewIds($document)['days']);

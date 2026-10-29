@@ -3,7 +3,8 @@ import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, erro
 import type { Folder, TripSummary } from '../model/trip';
 import { listFolderId, setListFolderId } from '../state/library';
 import { folderPath, heldCounts } from './folders';
-import { importFolder, pickedPath, planFolderImport } from './folderImport';
+import { importFolder, pickedPath, planFolderImport, type PlannedTrip } from './folderImport';
+import { ImportDialog } from './ImportDialog';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { counted, dateText } from '../ui/format';
@@ -66,23 +67,22 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
   /** How the last folder import goes or went, and what it could not read or save. */
   const [importNote, setImportNote] = createSignal<{ text: string; errors: string[] }>();
   const [importing, setImporting] = createSignal(false);
+  /** The folder tree picked for import, while the dialog asks how it is organized. */
+  const [picked, setPicked] = createSignal<{ files: File[]; paths: string[] }>();
   let folderInput!: HTMLInputElement;
-  /** Imports a picked folder tree into the open folder, after asking. */
-  const importPicked = async (picked: FileList | null) => {
-    const files = [...(picked ?? [])];
+  const pick = (list: FileList | null) => {
+    const files = [...(list ?? [])];
     folderInput.value = '';
-    const plan = planFolderImport(files.map(pickedPath));
-    if (plan.length === 0) {
-      setImportNote({ text: 'No GPX files in that folder.', errors: [] });
-      return;
-    }
-    const days = plan.reduce((sum, trip) => sum + trip.days.length, 0);
-    const into = folder() ? ` into “${pathOf(folderId())}”` : '';
-    if (!(await askConfirmation(`Import ${counted(plan.length, 'trip')} with ${counted(days, 'day')}${into}?`, 'Import'))) return;
+    const paths = files.map(pickedPath);
+    if (planFolderImport(paths, 'trip-per-folder').length === 0) setImportNote({ text: 'No GPX files in that folder.', errors: [] });
+    else setPicked({ files, paths });
+  };
+  /** Imports the picked folder tree into the open folder as planned. */
+  const importPicked = async (files: File[], plan: PlannedTrip[]) => {
     setImporting(true);
     await run(async () => {
       const result = await importFolder(files, plan, folderId(), (text) => setImportNote({ text, errors: [] }));
-      setImportNote({ text: `${counted(result.trips, 'trip')} imported.`, errors: result.errors });
+      setImportNote({ text: `${counted(result.trips, plan[0]!.kind === 'collection' ? 'collection' : 'trip')} imported.`, errors: result.errors });
     });
     setImporting(false);
     void refetchFolders();
@@ -167,7 +167,7 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
                   }}
                   type="file"
                   hidden
-                  onChange={(e) => void importPicked(e.currentTarget.files)}
+                  onChange={(e) => pick(e.currentTarget.files)}
                 />
               </div>
               <Show when={importNote()}>
@@ -206,6 +206,12 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
         </Show>
         </Match>
       </Switch>
+      <ImportDialog
+        paths={picked()?.paths}
+        into={folder() ? pathOf(folderId()) : ''}
+        onClose={() => setPicked(undefined)}
+        onImport={(plan) => void importPicked(picked()!.files, plan)}
+      />
       <NameDialog
         title="New trip"
         open={dialog()?.kind === 'new-trip'}
@@ -249,12 +255,18 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
 }
 
 /**
- * A trip as a card: its name over its days, its start and whether it was ridden, after the
- * folder it is in where `where` names it; its menu renames, moves, copies and deletes it.
+ * A trip as a card: its name over its days, its start and whether it was ridden, or for a
+ * collection its sections, after the folder it is in where `where` names it; its menu
+ * renames, moves, copies and deletes it.
  */
 function TripCard(props: { trip: TripSummary; onOpen: (id: number) => void; disabled: boolean; items: () => MenuItem[]; where?: string }) {
   const meta = () =>
-    [props.where, counted(props.trip.dayCount, 'day'), props.trip.startsOn && `from ${dateText(props.trip.startsOn)}`, props.trip.state === 'done' && 'done'].filter(Boolean).join(' · ');
+    (props.trip.kind === 'collection'
+      ? [props.where, 'Planning material', counted(props.trip.dayCount, 'section')]
+      : [props.where, counted(props.trip.dayCount, 'day'), props.trip.startsOn && `from ${dateText(props.trip.startsOn)}`, props.trip.state === 'done' && 'done']
+    )
+      .filter(Boolean)
+      .join(' · ');
   return (
     <li class="card" ref={(el) => cardMenu(el, props.items)}>
       <button class="text" onClick={() => props.onOpen(props.trip.id)} disabled={props.disabled}>

@@ -3,7 +3,7 @@ import type { Trip } from '../model/trip';
 import { routedOf } from '../routing/testing';
 import { addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRouteId, loadTrip, markSaved, openTrip, redo, selectDay, selectedDay, undo, undoLabel, updateStop } from './trip';
 
-const empty = (): Trip => ({ id: 1, name: 'T', description: '', state: 'planned', version: 1, days: [] });
+const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
 /** The open trip as the autosave sends it. */
 const sent = (): Trip => JSON.parse(JSON.stringify(openTrip()));
