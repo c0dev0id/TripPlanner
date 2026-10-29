@@ -606,7 +606,14 @@ a {
   cursor: crosshair;
 }
 
-/* Stops and route points as markers: MapLibre gives a draggable one the grab cursor; a stop is otherwise opened by a click. */
+/*
+ * Stops and route points as markers: MapLibre gives a draggable one the grab cursor; a stop
+ * is otherwise opened by a click, and a point takes none of the map's own grab cursor.
+ */
+
+.point-marker:not(.maplibregl-marker-draggable) {
+  cursor: default;
+}
 
 .stop-marker:not(.maplibregl-marker-draggable),
 .map[data-tool='delete'] :is(.stop-marker, .point-marker) {
