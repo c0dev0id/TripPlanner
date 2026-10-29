@@ -3,11 +3,11 @@ import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, erro
 import type { Folder, TripSummary } from '../model/trip';
 import { listFolderId, setListFolderId, setShowingDuplicates, showingDuplicates } from '../state/library';
 import { DuplicatesReport } from './DuplicatesReport';
-import { folderPath, heldCounts } from './folders';
+import { folderPath, heldCounts, heldInAll } from './folders';
 import { importFolder, pickedPath, planFolderImport, type PlannedTrip } from './folderImport';
 import { ImportDialog } from './ImportDialog';
 import { cardMenu } from '../ui/cardMenu';
-import { askConfirmation } from '../ui/confirm';
+import { askChoice, askConfirmation } from '../ui/confirm';
 import { counted, dateText } from '../ui/format';
 import { BackIcon, FolderIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
@@ -55,12 +55,24 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
     if (!(await askConfirmation(`Delete the trip “${trip.name}” with all its days?`, 'Delete'))) return;
     await run(() => deleteTrip(trip.id), refetchTrips);
   };
-  const removeFolder = async (f: Folder) => {
-    const { trips, folders } = held()(f.id);
-    const what = [folders > 0 && counted(folders, 'folder'), trips > 0 && counted(trips, 'trip')].filter(Boolean).join(' and ');
+  /** Asks to delete the folder and, when it holds anything, whether that moves up or goes with it; undefined when the user cancels. */
+  const askFolderDeletion = async (f: Folder): Promise<'move' | 'delete' | undefined> => {
+    const contentsText = ({ folders, trips }: { folders: number; trips: number }) =>
+      [folders > 0 && counted(folders, 'folder'), trips > 0 && counted(trips, 'trip')].filter(Boolean).join(' and ');
+    const own = contentsText(held()(f.id));
+    if (!own) return (await askConfirmation(`Delete the folder “${f.name}”?`, 'Delete')) ? 'move' : undefined;
+    const all = contentsText(heldInAll(folders() ?? [], trips() ?? [], f.id));
     const where = f.parentId === null ? 'to the top' : `into “${pathOf(f.parentId)}”`;
-    if (!(await askConfirmation(`Delete the folder “${f.name}”?${what ? ` What it holds (${what}) moves ${where}.` : ''}`, 'Delete'))) return;
-    await run(() => deleteFolder(f.id), () => {
+    const choice = await askChoice(
+      `The folder “${f.name}” holds ${own}${all === own ? '' : ` (${all} in all)`}. Move them ${where} and delete the folder, or delete it with everything in it?`,
+      ['Delete all', 'Move contents'],
+    );
+    return choice && ({ 'Delete all': 'delete', 'Move contents': 'move' } as const)[choice];
+  };
+  const removeFolder = async (f: Folder) => {
+    const contents = await askFolderDeletion(f);
+    if (!contents) return;
+    await run(() => deleteFolder(f.id, contents), () => {
       void refetchFolders();
       void refetchTrips();
     });

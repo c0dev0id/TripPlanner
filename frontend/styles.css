@@ -809,6 +809,11 @@ fieldset.choices legend {
   font-size: 1rem;
 }
 
+/* Buttons that do not fit side by side, on a phone, go onto a second line. */
+.dialog .row.end {
+  flex-wrap: wrap;
+}
+
 .dialog button.danger {
   color: var(--error);
 }

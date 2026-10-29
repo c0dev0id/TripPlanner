@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TripSummary } from '../model/trip';
-import { folderPath, heldCounts } from './folders';
+import { folderPath, heldCounts, heldInAll } from './folders';
 
 const folders = [
   { id: 1, name: 'Rides', parentId: null },
@@ -25,6 +25,18 @@ describe('heldCounts', () => {
       { folders: 1, trips: 0 },
       { folders: 0, trips: 1 },
       { folders: 1, trips: 1 },
+    ]);
+  });
+});
+
+describe('heldInAll', () => {
+  it('counts what a folder holds at any depth', () => {
+    const trip = (folderId: number | null) => ({ folderId }) as TripSummary;
+    const trips = [trip(1), trip(2), trip(3), trip(3), trip(null)];
+    expect([heldInAll(folders, trips, 1), heldInAll(folders, trips, 2), heldInAll(folders, trips, 3)]).toEqual([
+      { folders: 2, trips: 4 },
+      { folders: 1, trips: 3 },
+      { folders: 0, trips: 2 },
     ]);
   });
 });

@@ -145,8 +145,10 @@ entries at the end of their section.
   top or inside another. A first version kept folders one level deep, since trips sort by
   year or region; the import of a folder tree from disk made the library mirror deeper
   trees. The library shows one folder at a time, its arrow goes up one level, and search
-  results and the move menu name a folder by its path. Deleting a folder moves what it
-  holds up into its parent rather than out of every folder. Folders themselves are not
+  results and the move menu name a folder by its path. Deleting a folder that holds
+  anything asks whether that moves up into its parent or is deleted with it, all the way
+  down. Moving is the default answer, so Enter never deletes trips; deleting with contents
+  exists for clearing out an import. Folders themselves are not
   moved; nothing asked for it, and a folder that cannot move cannot end up inside itself.
 - **The search runs in the browser.** The library loads all trip summaries and folders of
   the user (a few hundred small rows at most for a personal planner) and filters them by

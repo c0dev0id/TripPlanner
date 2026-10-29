@@ -58,8 +58,8 @@ export const createFolder = (name: string, parentId: number | null): Promise<Fol
 
 export const renameFolder = (id: number, name: string): Promise<void> => request('PATCH', `/api/folders/${id}`, { name });
 
-/** Deletes a folder; its trips stay, in no folder. */
-export const deleteFolder = (id: number): Promise<void> => request('DELETE', `/api/folders/${id}`);
+/** Deletes the folder; what it holds moves up into its parent, or is deleted with it. */
+export const deleteFolder = (id: number, contents: 'move' | 'delete'): Promise<void> => request('DELETE', `/api/folders/${id}?contents=${contents}`);
 
 export const tripApi = (id: number): string => `/api/trips/${id}`;
 
