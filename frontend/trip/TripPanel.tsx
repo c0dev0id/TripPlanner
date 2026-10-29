@@ -2,10 +2,10 @@ import { createMemo, createSignal, Show } from 'solid-js';
 import { errorMessage } from '../api';
 import { readGpxFile } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
-import type { Day, Route } from '../model/trip';
+import type { Day, Route, Stop } from '../model/trip';
 import { defaultProfile } from '../routing/dayEdit';
 import { routeDistance } from '../routing/legs';
-import { standsAlone, type SequenceEntry } from '../routing/sequence';
+import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { saveState } from '../state/autosave';
 import { panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, setTrackAction, showNeighbours } from '../state/drawing';
@@ -151,11 +151,11 @@ function DayItem(props: { day: Day; index: number }) {
 
 /** The selected day's notes and times, its routes with their stops, and the stops that stand beside no route. */
 function DayDetails(props: { day: Day }) {
-  const unplaced = createMemo(() => selectedSequence().filter(standsAlone));
+  const unplaced = createMemo(() => standingAlone(props.day, selectedSequence()));
   /** The sequence by route, in order: each route's points and the stops placed along it. */
   const byRoute = createMemo(() => {
     const groups = props.day.routes.map((): SequenceEntry[] => []);
-    for (const entry of selectedSequence()) if (!standsAlone(entry)) groups[entry.routeIndex]?.push(entry);
+    for (const entry of selectedSequence()) groups[entry.routeIndex]?.push(entry);
     return groups;
   });
   const [importNote, setImportNote] = createSignal<{ text: string; error: boolean }>();
@@ -176,7 +176,7 @@ function DayDetails(props: { day: Day }) {
       <Show when={props.day.notes}>
         <p class="muted notes">{props.day.notes}</p>
       </Show>
-      <Show when={selectedSequence().some((e) => e.stop && !standsAlone(e))}>
+      <Show when={selectedSequence().some((e) => e.stop)}>
         <Show when={selectedTimeline()} fallback={<p class="day-summary muted">Give the first stop a time for the day's times.</p>}>
           {(timeline) => <DaySummary timeline={timeline()} />}
         </Show>
@@ -199,7 +199,7 @@ function DayDetails(props: { day: Day }) {
           <h4 class="grow">Stops beside no route</h4>
         </div>
         <ol class="stops">
-          <SequenceItems entries={unplaced()} />
+          <ForById each={unplaced()}>{(stop) => <AloneStopItem stop={stop()} />}</ForById>
         </ol>
       </Show>
     </div>
@@ -323,31 +323,52 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
             </span>
             <span class="muted detail">
               <Show when={props.time}>{(time) => <>{timesText(time())} · </>}</Show>
-              <Show when={!standsAlone(props.entry)}>{distanceText(props.entry.distanceM)}</Show>
+              {distanceText(props.entry.distanceM)}
               <Show when={props.entry.near}>{(near) => <> · {distanceText(near().distanceM)} beside the route</>}</Show>
               <Show when={stop()?.optional}> · optional</Show>
             </span>
           </span>
         </button>
-        <Show when={stop()}>
-          {(s) => (
-            <>
-              <JournalButton target={{ stopId: s().id }} of={s().name} />
-              <button class="icon" title="Edit stop" aria-label={`Edit ${s().name}`} onClick={() => setEditTarget({ kind: 'stop', id: s().id })}>
-                <PencilIcon />
-              </button>
-              <MoreMenu
-                label={`More for ${s().name}`}
-                items={() => [
-                  { label: 'Edit…', run: () => setEditTarget({ kind: 'stop', id: s().id }) },
-                  ...otherDayItems(selectedDayId()!, 'Copy to', (dayId) => copyStopToDay(s().id, dayId)),
-                  { label: 'Remove', run: () => removeStop(s().id) },
-                ]}
-              />
-            </>
-          )}
-        </Show>
+        <Show when={stop()}>{(s) => <StopActions stop={s()} />}</Show>
       </li>
+    </>
+  );
+}
+
+/** A stop that stands for itself beside no route, with no place or times on the ride; a click pans the map there. */
+function AloneStopItem(props: { stop: Stop }) {
+  return (
+    <li class="row sequence-item">
+      <button class="text grow" onClick={() => panTo(props.stop.lngLat)}>
+        <StopShape kind={props.stop.kind} color={FREE_COLOR} height={22} />
+        <span class="lines">
+          <span class="name">{props.stop.name}</span>
+          <Show when={props.stop.optional}>
+            <span class="muted detail">optional</span>
+          </Show>
+        </span>
+      </button>
+      <StopActions stop={props.stop} />
+    </li>
+  );
+}
+
+/** A stop's journal, its pencil, and its menu: edit, copy to another day, remove. */
+function StopActions(props: { stop: Stop }) {
+  return (
+    <>
+      <JournalButton target={{ stopId: props.stop.id }} of={props.stop.name} />
+      <button class="icon" title="Edit stop" aria-label={`Edit ${props.stop.name}`} onClick={() => setEditTarget({ kind: 'stop', id: props.stop.id })}>
+        <PencilIcon />
+      </button>
+      <MoreMenu
+        label={`More for ${props.stop.name}`}
+        items={() => [
+          { label: 'Edit…', run: () => setEditTarget({ kind: 'stop', id: props.stop.id }) },
+          ...otherDayItems(selectedDayId()!, 'Copy to', (dayId) => copyStopToDay(props.stop.id, dayId)),
+          { label: 'Remove', run: () => removeStop(props.stop.id) },
+        ]}
+      />
     </>
   );
 }

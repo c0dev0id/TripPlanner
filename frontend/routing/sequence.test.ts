@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, LngLat, Route, RoutedLeg, Stop } from '../model/trip';
 import { newStop } from './dayEdit';
-import { daySequence, withStopsInRidingOrder } from './sequence';
+import { daySequence, standingAlone, withStopsInRidingOrder } from './sequence';
 
 const decode = (geometry: string): LngLat[] => JSON.parse(geometry);
 const leg = (geometry: LngLat[], distanceM: number): RoutedLeg => ({ geometry: JSON.stringify(geometry), distanceM, durationS: 1 });
@@ -49,22 +49,19 @@ describe('daySequence', () => {
     expect(entry!.distanceM).toBeLessThan(11_000 + 7_000);
   });
 
-  it('leaves a free stop farther than the reach from the routes to stand for itself, after the day\'s end', () => {
-    const entries = daySequence(day([stop('far', [11.01, 47.05], null)]), decode);
-    expect(entries.map((e) => [e.id, e.near, e.distanceM])).toEqual([
-      ['a', undefined, 0],
-      ['b', undefined, 11_000],
-      ['c', undefined, 22_000],
-      ['far', undefined, 22_000],
-    ]);
+  it('leaves out a free stop that no route passes within reach of: it stands alone', () => {
+    const far = day([stop('far', [11.01, 47.05], null)]);
+    const entries = daySequence(far, decode);
+    expect(entries.map((e) => e.id)).toEqual(['a', 'b', 'c']);
+    expect(standingAlone(far, entries).map((s) => s.id)).toEqual(['far']);
   });
 
-  it('gives a free stop no place on a day without a leg', () => {
+  it('gives the free stops of a day without a leg no place: they stand alone, in their order', () => {
     const onePoint = { ...route, points: route.points.slice(0, 1), legs: {} };
-    expect(daySequence(day([stop('x', [11, 47], null)], [onePoint]), decode).map((e) => [e.id, e.near])).toEqual([
-      ['a', undefined],
-      ['x', undefined],
-    ]);
+    const lonely = day([stop('x', [11, 47], null), stop('y', [12, 48], null)], [onePoint]);
+    const entries = daySequence(lonely, decode);
+    expect(entries.map((e) => e.id)).toEqual(['a']);
+    expect(standingAlone(lonely, entries).map((s) => s.id)).toEqual(['x', 'y']);
   });
 
   it('lists points and stops in riding order with their distance from the start', () => {
@@ -89,14 +86,6 @@ describe('daySequence', () => {
       ['cafe', 0.51],
       ['b', 1],
       ['c', 2],
-    ]);
-  });
-
-  it('puts the free stops of a day without legs last, in their order', () => {
-    const entries = daySequence(day([stop('x', [1, 1], null), stop('y', [2, 2], null)], []), decode);
-    expect(entries.map((e) => [e.stop?.id, e.distanceM])).toEqual([
-      ['x', 0],
-      ['y', 0],
     ]);
   });
 

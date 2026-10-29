@@ -24,8 +24,11 @@ entries at the end of their section.
   disconnected (the route point goes, the stop stays free). On the map a free stop stands
   at its own position, in a second colour, with a mark on the route where it is nearest.
 - **A free stop takes a place along the routes only within 500 m of them.** Farther away
-  it stands for itself: listed with the stops beside no route, without a mark on the
-  route and without the menu's connect. A stop kilometres off the route has no
+  it stands for itself: the riding sequence leaves it out, so it has no distance, no
+  time and no place in the timeline; the panel and the read-only page list it apart
+  (standingAlone), without a mark on the route and without the menu's connect. A first
+  version kept such stops in the sequence at the day's end and had every reader skip
+  them, which one reader forgot. A stop kilometres off the route has no
   meaningful place along it, and an imported file can carry hundreds of waypoints about
   a region. The reach also bounds the search: the legs' segments are kept in blocks of
   32 with a bounding box, and a query looks only into the blocks that could hold a

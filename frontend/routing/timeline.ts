@@ -1,4 +1,4 @@
-import { standsAlone, type SequenceEntry } from './sequence';
+import type { SequenceEntry } from './sequence';
 
 /**
  * A day's planned times, from the first stop that has a time on: the riding times of the
@@ -57,7 +57,6 @@ export function dayTimeline(sequence: readonly SequenceEntry[]): DayTimeline | u
   let pauseMin = 0;
   let late = 0;
   for (const entry of sequence) {
-    if (standsAlone(entry)) continue;
     if (entry.routeIndex !== route) {
       route = entry.routeIndex;
       const start = starts.get(route);
@@ -85,7 +84,7 @@ function routeStarts(sequence: readonly SequenceEntry[]): Map<number, { fixedMin
   const starts = new Map<number, { fixedMin: number; timeS: number }>();
   const seen = new Set<number>();
   for (const entry of sequence) {
-    if (!entry.stop || standsAlone(entry) || seen.has(entry.routeIndex)) continue;
+    if (!entry.stop || seen.has(entry.routeIndex)) continue;
     seen.add(entry.routeIndex);
     if (entry.stop.arriveAt != null) starts.set(entry.routeIndex, { fixedMin: minutesOfDay(entry.stop.arriveAt), timeS: entry.timeS });
   }

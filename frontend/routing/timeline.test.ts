@@ -12,16 +12,6 @@ const entry = (timeS: number, s?: Stop, routeIndex = 0): SequenceEntry => ({ id:
 const listed = (timeline: ReturnType<typeof dayTimeline>) => [...timeline!.times].map(([id, t]) => [id, t.arrivalMin, t.departureMin, t.slackMin]);
 
 describe('dayTimeline', () => {
-  it('passes over a stop that stands for itself, whatever its time', () => {
-    const alone: Stop = { ...stop('hut', '07:00', 60), pointId: null };
-    const timeline = dayTimeline([entry(0, stop('home', '09:00')), entry(1800), entry(1800, alone)]);
-    expect(listed(timeline)).toEqual([
-      ['home', 540, 540, 0],
-      ['p1800', 570, 570, 0],
-    ]);
-    expect(timeline).toMatchObject({ endMin: 570, pauseMin: 0, late: 0 });
-  });
-
   it('is none while no stop has a time', () => {
     expect(dayTimeline([entry(0, stop('home')), entry(3600)])).toBeUndefined();
   });

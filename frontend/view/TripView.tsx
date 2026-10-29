@@ -1,9 +1,9 @@
 import { createEffect, createMemo, createResource, For, Match, Show, Switch } from 'solid-js';
 import { errorMessage, fetchTripAt, listEntriesAt } from '../api';
 import { entriesOn, type Entry, type EntryTarget } from '../model/journal';
-import { STOP_KINDS, type Day, type Route, type Trip } from '../model/trip';
+import { STOP_KINDS, type Day, type Route, type Stop, type Trip } from '../model/trip';
 import { routeDistance } from '../routing/legs';
-import { daySequence, type SequenceEntry } from '../routing/sequence';
+import { daySequence, standingAlone } from '../routing/sequence';
 import { dayTimeline, type EntryTime } from '../routing/timeline';
 import { EntryFile } from '../trip/EntryFile';
 import { ContextMenu } from '../ui/ContextMenu';
@@ -77,7 +77,11 @@ function Header(props: { trip: Trip }) {
 function DaySection(props: { day: Day; index: number; entriesOn: (target: EntryTarget) => Entry[]; api: string }) {
   const sequence = createMemo(() => daySequence(props.day));
   const timeline = createMemo(() => dayTimeline(sequence()));
-  const stops = () => sequence().filter((e) => e.stop);
+  /** The stops in riding order with their distance from the day's start, then those that stand alone, with none. */
+  const stops = () => [
+    ...sequence().flatMap((e) => (e.stop ? [{ stop: e.stop, distanceM: e.distanceM as number | undefined }] : [])),
+    ...standingAlone(props.day, sequence()).map((stop) => ({ stop, distanceM: undefined })),
+  ];
   const distance = () => props.day.routes.reduce((sum, r) => sum + routeDistance(r), 0);
   const summary = () => {
     const t = timeline();
@@ -100,7 +104,7 @@ function DaySection(props: { day: Day; index: number; entriesOn: (target: EntryT
       </Show>
       <Show when={stops().length > 0}>
         <ol class="stops">
-          <For each={stops()}>{(entry) => <StopItem entry={entry} time={timeline()?.times.get(entry.id)} entries={props.entriesOn({ stopId: entry.stop!.id })} api={props.api} />}</For>
+          <For each={stops()}>{(s) => <StopItem stop={s.stop} distanceM={s.distanceM} time={timeline()?.times.get(s.stop.id)} entries={props.entriesOn({ stopId: s.stop.id })} api={props.api} />}</For>
         </ol>
       </Show>
     </section>
@@ -117,9 +121,9 @@ function RouteItem(props: { route: Route; day: Day; entries: Entry[]; api: strin
   );
 }
 
-/** A stop with its times and distance, what the planner noted about it, and its journal. */
-function StopItem(props: { entry: SequenceEntry; time: EntryTime | undefined; entries: Entry[]; api: string }) {
-  const stop = () => props.entry.stop!;
+/** A stop with its times and its distance where it has a place on the ride, what the planner noted about it, and its journal. */
+function StopItem(props: { stop: Stop; distanceM: number | undefined; time: EntryTime | undefined; entries: Entry[]; api: string }) {
+  const stop = () => props.stop;
   const kind = () => STOP_KINDS.find((k) => k.value === stop().kind)?.label;
   const times = () => {
     const t = props.time;
@@ -127,7 +131,7 @@ function StopItem(props: { entry: SequenceEntry; time: EntryTime | undefined; en
     const off = offTime(t);
     return off ? `${timesText(t)} (${off.text}, arrives ${timeText(off.rideMin)})` : timesText(t);
   };
-  const detail = () => [times(), distanceText(props.entry.distanceM), stop().kind !== 'other' && kind(), stop().optional && 'optional'].filter(Boolean).join(' · ');
+  const detail = () => [times(), props.distanceM !== undefined && distanceText(props.distanceM), stop().kind !== 'other' && kind(), stop().optional && 'optional'].filter(Boolean).join(' · ');
   return (
     <li class="stop-item">
       <StopShape kind={stop().kind} color={stop().pointId === null ? '#1971c2' : '#d9480f'} height={24} />
