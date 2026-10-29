@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { counted, folderPath } from './folders';
+import type { TripSummary } from '../model/trip';
+import { folderPath, heldCounts } from './folders';
+
+const folders = [
+  { id: 1, name: 'Rides', parentId: null },
+  { id: 2, name: '2023', parentId: 1 },
+  { id: 3, name: 'Alps', parentId: 2 },
+];
 
 describe('folderPath', () => {
-  const folders = [
-    { id: 1, name: 'Rides', parentId: null },
-    { id: 2, name: '2023', parentId: 1 },
-    { id: 3, name: 'Alps', parentId: 2 },
-  ];
-
   it('names the folders from the top down to the folder', () => {
     expect(folderPath(folders, 3)).toBe('Rides / 2023 / Alps');
     expect(folderPath(folders, 1)).toBe('Rides');
@@ -15,8 +16,15 @@ describe('folderPath', () => {
   });
 });
 
-describe('counted', () => {
-  it('says one thing and several things', () => {
-    expect([counted(1, 'trip'), counted(0, 'trip'), counted(2, 'folder')]).toEqual(['1 trip', '0 trips', '2 folders']);
+describe('heldCounts', () => {
+  it('counts the folders and trips each folder holds itself, none for an empty one', () => {
+    const trip = (folderId: number | null) => ({ folderId }) as TripSummary;
+    const held = heldCounts(folders, [trip(1), trip(1), trip(3), trip(null)]);
+    expect([held(1), held(2), held(3), held(null)]).toEqual([
+      { folders: 1, trips: 2 },
+      { folders: 1, trips: 0 },
+      { folders: 0, trips: 1 },
+      { folders: 1, trips: 1 },
+    ]);
   });
 });

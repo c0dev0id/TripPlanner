@@ -1,4 +1,4 @@
-import type { Folder } from '../model/trip';
+import type { Folder, TripSummary } from '../model/trip';
 
 /** The names of the folders from the top of the library down to the folder `id`, joined; empty for none. */
 export function folderPath(folders: readonly Folder[], id: number | null): string {
@@ -7,5 +7,11 @@ export function folderPath(folders: readonly Folder[], id: number | null): strin
   return names.join(' / ');
 }
 
-/** A count with its noun, plural where it is not one. */
-export const counted = (count: number, noun: string): string => `${count} ${noun}${count === 1 ? '' : 's'}`;
+/** How many folders and trips each folder holds itself, by its id; null stands for the top of the library. */
+export function heldCounts(folders: readonly Folder[], trips: readonly TripSummary[]): (id: number | null) => { folders: number; trips: number } {
+  const counts = new Map<number | null, { folders: number; trips: number }>();
+  const of = (id: number | null) => counts.get(id) ?? counts.set(id, { folders: 0, trips: 0 }).get(id)!;
+  for (const f of folders) of(f.parentId).folders++;
+  for (const trip of trips) of(trip.folderId).trips++;
+  return (id) => counts.get(id) ?? { folders: 0, trips: 0 };
+}

@@ -2,11 +2,11 @@ import { createMemo, createResource, createSignal, For, Match, Show, Switch } fr
 import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder, renameTrip } from '../api';
 import type { Folder, TripSummary } from '../model/trip';
 import { listFolderId, setListFolderId } from '../state/library';
-import { counted, folderPath } from './folders';
-import { importFolder, planFolderImport } from './folderImport';
+import { folderPath, heldCounts } from './folders';
+import { importFolder, pickedPath, planFolderImport } from './folderImport';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
-import { dateText } from '../ui/format';
+import { counted, dateText } from '../ui/format';
 import { BackIcon, FolderIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
@@ -31,16 +31,9 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
   const folderId = () => folder()?.id ?? null;
   const shownFolders = createMemo(() => (folders() ?? []).filter((f) => f.parentId === folderId()));
   const shownTrips = createMemo(() => (trips() ?? []).filter((t) => t.folderId === folderId()));
-  /** How many trips and folders each folder holds itself. */
-  const held = createMemo(() => {
-    const counts = new Map<number | null, { trips: number; folders: number }>();
-    const of = (id: number | null) => counts.get(id) ?? counts.set(id, { trips: 0, folders: 0 }).get(id)!;
-    for (const trip of trips() ?? []) of(trip.folderId).trips++;
-    for (const f of folders() ?? []) of(f.parentId).folders++;
-    return counts;
-  });
+  const held = createMemo(() => heldCounts(folders() ?? [], trips() ?? []));
   const heldText = (id: number) => {
-    const { trips, folders } = held().get(id) ?? { trips: 0, folders: 0 };
+    const { trips, folders } = held()(id);
     return [folders > 0 && counted(folders, 'folder'), counted(trips, 'trip')].filter(Boolean).join(' · ');
   };
   const pathOf = (id: number | null) => folderPath(folders() ?? [], id);
@@ -61,7 +54,7 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
     await run(() => deleteTrip(trip.id), refetchTrips);
   };
   const removeFolder = async (f: Folder) => {
-    const { trips, folders } = held().get(f.id) ?? { trips: 0, folders: 0 };
+    const { trips, folders } = held()(f.id);
     const what = [folders > 0 && counted(folders, 'folder'), trips > 0 && counted(trips, 'trip')].filter(Boolean).join(' and ');
     const where = f.parentId === null ? 'to the top' : `into “${pathOf(f.parentId)}”`;
     if (!(await askConfirmation(`Delete the folder “${f.name}”?${what ? ` What it holds (${what}) moves ${where}.` : ''}`, 'Delete'))) return;
@@ -78,7 +71,7 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
   const importPicked = async (picked: FileList | null) => {
     const files = [...(picked ?? [])];
     folderInput.value = '';
-    const plan = planFolderImport(files.map((f) => f.webkitRelativePath || f.name));
+    const plan = planFolderImport(files.map(pickedPath));
     if (plan.length === 0) {
       setImportNote({ text: 'No GPX files in that folder.', errors: [] });
       return;
@@ -255,7 +248,7 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
  */
 function TripCard(props: { trip: TripSummary; onOpen: (id: number) => void; disabled: boolean; items: () => MenuItem[]; where?: string }) {
   const meta = () =>
-    [props.where, `${props.trip.dayCount} ${props.trip.dayCount === 1 ? 'day' : 'days'}`, props.trip.startsOn && `from ${dateText(props.trip.startsOn)}`, props.trip.state === 'done' && 'done'].filter(Boolean).join(' · ');
+    [props.where, counted(props.trip.dayCount, 'day'), props.trip.startsOn && `from ${dateText(props.trip.startsOn)}`, props.trip.state === 'done' && 'done'].filter(Boolean).join(' · ');
   return (
     <li class="card" ref={(el) => cardMenu(el, props.items)}>
       <button class="text" onClick={() => props.onOpen(props.trip.id)} disabled={props.disabled}>
@@ -268,7 +261,7 @@ function TripCard(props: { trip: TripSummary; onOpen: (id: number) => void; disa
   );
 }
 
-/** A folder as a card: its name over how many trips it holds; its menu renames and deletes it. */
+/** A folder as a card: its name over `note`, what it holds and in search results where it is; its menu renames and deletes it. */
 function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[] }) {
   return (
     <li class="card" ref={(el) => cardMenu(el, props.items)}>

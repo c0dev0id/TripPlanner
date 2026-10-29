@@ -1,9 +1,7 @@
 import { createFolder, createTrip, errorMessage, fetchTrip, listFolders, saveTrip } from '../api';
-import { parseGpx } from '../gpx/gpx';
-import { gpxToDayParts, type DayParts } from '../gpx/import';
-import { newId, type Folder, type Trip } from '../model/trip';
+import { readGpxFile, type DayParts } from '../gpx/import';
+import { newId } from '../model/trip';
 import { addDay, addParts, dayAfter, updateDay } from '../routing/dayEdit';
-import { withStopsInRidingOrder } from '../routing/sequence';
 
 /** A trip the import makes of a folder that holds GPX files. */
 export interface PlannedTrip {
@@ -13,7 +11,7 @@ export interface PlannedTrip {
   days: PlannedDay[];
 }
 
-export interface PlannedDay {
+interface PlannedDay {
   date: string | null;
   name: string;
   /** The day's files, as indexes into the paths planned from. */
@@ -46,6 +44,9 @@ function withoutDate(name: string): string {
 
 const byName = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true });
 
+/** A picked file's path within the picked folder; its name alone where the browser gives none. */
+export const pickedPath = (file: File): string => file.webkitRelativePath || file.name;
+
 /**
  * The trips a picked folder tree makes, from the files' paths relative to it: each folder
  * that holds GPX files itself is a trip, named after it without its date, inside the
@@ -55,16 +56,20 @@ const byName = (a: string, b: string) => a.localeCompare(b, undefined, { numeric
  */
 export function planFolderImport(paths: readonly string[]): PlannedTrip[] {
   const byFolder = new Map<string, number[]>();
+  /** The file names without their extension, by path. */
+  const stems: string[] = [];
   paths.forEach((path, i) => {
-    const file = path.split('/').at(-1)!;
+    const cut = path.lastIndexOf('/');
+    const file = path.slice(cut + 1);
     if (file.startsWith('.') || !/\.gpx$/i.test(file)) return;
-    const folder = path.split('/').slice(0, -1).join('/');
+    stems[i] = file.slice(0, -'.gpx'.length);
+    const folder = path.slice(0, Math.max(0, cut));
     byFolder.set(folder, [...(byFolder.get(folder) ?? []), i]);
   });
+  const stem = (i: number) => stems[i]!;
   return [...byFolder.keys()].sort(byName).map((folder) => {
-    const segments = folder === '' ? [] : folder.split('/');
-    const folderName = segments.at(-1) ?? '';
-    const stem = (i: number) => paths[i]!.split('/').at(-1)!.replace(/\.gpx$/i, '');
+    const segments = folder.split('/');
+    const folderName = segments.at(-1)!;
     const files = byFolder.get(folder)!.sort((a, b) => byName(stem(a), stem(b)));
     const dated = new Map<string, number[]>();
     const undated: number[] = [];
@@ -87,7 +92,7 @@ export function planFolderImport(paths: readonly string[]): PlannedTrip[] {
 }
 
 /** What an import did: how many trips it made, and what it could not read or save. */
-export interface ImportResult {
+interface ImportResult {
   trips: number;
   errors: string[];
 }
@@ -99,7 +104,7 @@ export interface ImportResult {
  * left without one; what cannot be read or saved is reported, and the import goes on.
  */
 export async function importFolder(files: readonly File[], plan: readonly PlannedTrip[], parentId: number | null, onProgress: (text: string) => void): Promise<ImportResult> {
-  const folders: Folder[] = await listFolders();
+  const folders = await listFolders();
   const folderIn = async (parent: number | null, name: string): Promise<number> => {
     const found = folders.find((f) => f.parentId === parent && f.name === name);
     if (found) return found.id;
@@ -116,9 +121,9 @@ export async function importFolder(files: readonly File[], plan: readonly Planne
       for (const i of day.files) {
         const file = files[i]!;
         try {
-          parts.push(gpxToDayParts(parseGpx(await file.text()), { fileName: file.name.replace(/\.gpx$/i, ''), profile: 'motorcycle', newId }));
+          parts.push(await readGpxFile(file, 'motorcycle'));
         } catch (error) {
-          result.errors.push(`${file.webkitRelativePath || file.name}: ${errorMessage(error)}`);
+          result.errors.push(`${pickedPath(file)}: ${errorMessage(error)}`);
         }
       }
       if (parts.length > 0) days.push({ day, parts });
@@ -127,13 +132,13 @@ export async function importFolder(files: readonly File[], plan: readonly Planne
     try {
       let folderId = parentId;
       for (const name of planned.folders) folderId = await folderIn(folderId, name);
-      let trip: Trip = await fetchTrip((await createTrip(planned.name, folderId)).id);
+      let trip = await fetchTrip((await createTrip(planned.name, folderId)).id);
       for (const { day, parts } of days) {
         const id = newId();
         trip = updateDay(addDay(trip, id), id, (d) => ({ ...d, name: day.name, date: day.date }));
         for (const p of parts) trip = addParts(trip, id, p);
       }
-      await saveTrip(withStopsInRidingOrder(trip));
+      await saveTrip(trip);
       result.trips++;
     } catch (error) {
       result.errors.push(`${[...planned.folders, planned.name].join(' / ')}: ${errorMessage(error)}`);

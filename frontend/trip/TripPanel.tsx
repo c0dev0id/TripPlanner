@@ -1,9 +1,8 @@
 import { createMemo, createSignal, Show } from 'solid-js';
 import { errorMessage } from '../api';
-import { parseGpx } from '../gpx/gpx';
-import { gpxToDayParts } from '../gpx/import';
+import { readGpxFile } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
-import { newId, type Day, type Route } from '../model/trip';
+import type { Day, Route } from '../model/trip';
 import { defaultProfile } from '../routing/dayEdit';
 import { routeDistance } from '../routing/legs';
 import { standsAlone, type SequenceEntry } from '../routing/sequence';
@@ -34,7 +33,7 @@ import {
 } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
-import { distanceText, shortDateText, timeText } from '../ui/format';
+import { counted, distanceText, shortDateText, timeText } from '../ui/format';
 import { BackIcon, ClockIcon, DownloadIcon, NotebookIcon, PencilIcon, ShareIcon } from '../ui/icons';
 import { Grip } from '../ui/Grip';
 import { MoreMenu } from '../ui/MoreMenu';
@@ -165,10 +164,9 @@ function DayDetails(props: { day: Day }) {
     fileInput.value = '';
     if (!file) return;
     try {
-      const parts = gpxToDayParts(parseGpx(await file.text()), { fileName: file.name.replace(/\.gpx$/i, ''), profile: defaultProfile(props.day), newId });
+      const parts = await readGpxFile(file, defaultProfile(props.day));
       addParts(parts);
-      const { routes, stops } = { routes: parts.routes.length, stops: parts.stops.length };
-      setImportNote({ text: `${file.name}: ${routes} ${routes === 1 ? 'route' : 'routes'}, ${stops} ${stops === 1 ? 'stop' : 'stops'} added.`, error: false });
+      setImportNote({ text: `${file.name}: ${counted(parts.routes.length, 'route')}, ${counted(parts.stops.length, 'stop')} added.`, error: false });
     } catch (fault) {
       setImportNote({ text: `${file.name}: ${errorMessage(fault)}`, error: true });
     }

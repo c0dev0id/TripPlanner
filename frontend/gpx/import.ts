@@ -1,9 +1,9 @@
 import { distanceBetween } from '../geo/measure';
-import { STOP_KINDS, type LngLat, type Profile, type Route, type Stop, type StopKind } from '../model/trip';
+import { newId, STOP_KINDS, type LngLat, type Profile, type Route, type Stop, type StopKind } from '../model/trip';
 import { newStop } from '../routing/dayEdit';
 import { legKey, roundLngLat } from '../routing/legs';
 import { encodePolyline } from '../routing/polyline';
-import type { GpxContent } from './gpx';
+import { parseGpx, type GpxContent } from './gpx';
 
 /** What a GPX file becomes in a day: routes, and stops for its waypoints. */
 export interface DayParts {
@@ -89,4 +89,9 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
     return { ...stop, kind: kindOf(w), address: w.address ?? '', contact: w.phone ?? '', notes: w.description ?? '' };
   });
   return { routes, stops };
+}
+
+/** A GPX file read into routes and stops, the routes named after the file where they have no name. */
+export async function readGpxFile(file: File, profile: Profile): Promise<DayParts> {
+  return gpxToDayParts(parseGpx(await file.text()), { fileName: file.name.replace(/\.gpx$/i, ''), profile, newId });
 }

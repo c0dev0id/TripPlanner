@@ -1,5 +1,6 @@
 import type { Entry, EntryTarget } from './model/journal';
 import type { Folder, LngLat, Trip, TripSummary } from './model/trip';
+import { withStopsInRidingOrder } from './routing/sequence';
 
 /** Requests to the JSON API, and the one form the app posts: sign out. */
 
@@ -103,9 +104,9 @@ export const unshareTrip = (tripId: number): Promise<void> => request('DELETE', 
 /** The read-only page of a trip shared under a token. */
 export const sharedPageUrl = (token: string): string => `${location.origin}/t/${token}`;
 
-/** Saves the whole trip; the answer is its new version. */
+/** Saves the whole trip as the server keeps it, each day's stops in riding order; the answer is its new version. */
 export async function saveTrip(trip: Trip, keepalive = false): Promise<number> {
-  const { version } = await request<{ version: number }>('PUT', `/api/trips/${trip.id}`, trip, keepalive);
+  const { version } = await request<{ version: number }>('PUT', `/api/trips/${trip.id}`, withStopsInRidingOrder(trip), keepalive);
   return version;
 }
 

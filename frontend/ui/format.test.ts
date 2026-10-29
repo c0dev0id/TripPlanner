@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dateText, distanceText, durationText, shortDateText, timeText } from './format';
+import { counted, dateText, distanceText, durationText, shortDateText, timeText } from './format';
 
 describe('distanceText', () => {
   it('scales the unit and precision with the distance', () => {
@@ -35,5 +35,11 @@ describe('dateText', () => {
     expect(shortDateText('2027-06-12')).toContain('12');
     expect(shortDateText('2027-06-12')).not.toContain('2027');
     expect(shortDateText('soon')).toBe('soon');
+  });
+});
+
+describe('counted', () => {
+  it('says one thing and several things', () => {
+    expect([counted(1, 'trip'), counted(0, 'trip'), counted(2, 'folder')]).toEqual(['1 trip', '0 trips', '2 folders']);
   });
 });

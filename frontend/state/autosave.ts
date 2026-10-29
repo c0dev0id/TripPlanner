@@ -1,6 +1,5 @@
 import { createEffect, createRoot, createSignal, on } from 'solid-js';
 import { ApiError, saveTrip } from '../api';
-import { withStopsInRidingOrder } from '../routing/sequence';
 import { changeCount, markSaved, openTrip } from './trip';
 
 /**
@@ -26,7 +25,7 @@ async function save(keepalive = false): Promise<void> {
   const count = changeCount();
   setSaveState('saving');
   try {
-    markSaved(await saveTrip(withStopsInRidingOrder(trip), keepalive));
+    markSaved(await saveTrip(trip, keepalive));
     if (changeCount() === count) setSaveState('saved');
     else {
       setSaveState('dirty');

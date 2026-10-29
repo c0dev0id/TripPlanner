@@ -44,3 +44,6 @@ export function durationText(seconds: number): string {
   if (hours === 0) return `${minutes} min`;
   return minutes % 60 === 0 ? `${hours} h` : `${hours} h ${minutes % 60} min`;
 }
+
+/** A count with its noun, plural where it is not one: "1 trip", "3 trips". */
+export const counted = (count: number, noun: string): string => `${count} ${noun}${count === 1 ? '' : 's'}`;
