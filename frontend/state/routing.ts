@@ -1,5 +1,4 @@
 import { batch, createEffect, createMemo, createRoot, createSignal } from 'solid-js';
-import { unwrap } from 'solid-js/store';
 import type { Route, RoutedLeg } from '../model/trip';
 import { errorMessage } from '../api';
 import { legState, nextMissingLeg, routedLegs, routeLegs, type LegJob } from '../routing/legs';
@@ -27,7 +26,7 @@ const allRoutes = (): Route[] => (openTrip()?.days ?? []).flatMap((day) => day.r
 export function recalculateRoute(routeId: string): void {
   const route = routeById(routeId);
   if (!route) return;
-  const keys = new Set(routedLegs(unwrap(route)).map((leg) => leg.key));
+  const keys = new Set(routedLegs(route).map((leg) => leg.key));
   batch(() => {
     setFailedLegs((failed) => new Set([...failed].filter((key) => !keys.has(key))));
     clearLegs(routeId);
@@ -36,7 +35,7 @@ export function recalculateRoute(routeId: string): void {
 
 const pump = createPump<LegJob, RoutedLeg>({
   next: () => {
-    const trip = unwrap(openTrip());
+    const trip = openTrip();
     if (!trip) return undefined;
     const edited = editingRouteId();
     const preferred = new Set(edited ? [edited] : selectedDay()?.routes.map((r) => r.id));

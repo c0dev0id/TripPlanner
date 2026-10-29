@@ -1,12 +1,11 @@
-import { unwrap } from 'solid-js/store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Trip } from '../model/trip';
-import { addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRouteId, loadTrip, markSaved, openTrip, redo, selectDay, undo, undoLabel, updateStop } from './trip';
+import { addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRouteId, loadTrip, markSaved, openTrip, redo, selectDay, selectedDay, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
 /** The open trip as the autosave sends it. */
-const sent = (): Trip => JSON.parse(JSON.stringify(unwrap(openTrip())));
+const sent = (): Trip => JSON.parse(JSON.stringify(openTrip()));
 
 /** A day with a route of two points, edited. */
 function dayWithRoute(): string {
@@ -18,7 +17,7 @@ function dayWithRoute(): string {
   return routeId;
 }
 
-describe('the trip store', () => {
+describe('the open trip', () => {
   beforeEach(() => {
     closeTrip();
     loadTrip(empty());
@@ -79,6 +78,21 @@ describe('the trip store', () => {
     undo();
     expect(sent().days).toHaveLength(0);
     expect(undoLabel()).toBeUndefined();
+  });
+
+  it('keeps every part an edit leaves alone, and the selected day through a save', () => {
+    const routeId = dayWithRoute();
+    addDay();
+    const [first, second] = openTrip()!.days;
+    const shown = selectedDay();
+    markSaved(2);
+    expect(selectedDay()).toBe(shown);
+    selectDay(first!.id);
+    appendPoint(routeId, [3, 3]);
+    expect(openTrip()!.days[1]).toBe(second);
+    expect(selectedDay()).not.toBe(first);
+    undo();
+    expect(openTrip()!.days[0]).toBe(first);
   });
 
   it('keeps the saved version through an undo', () => {

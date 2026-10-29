@@ -41,24 +41,31 @@ export function MapView() {
   );
 }
 
+type ShownDay = { day: Day; role: RouteRole };
+
 /** The days drawn: the selected one, and with `showNeighbours` the ones before and after; every day while none is selected. */
-function shownDays(): { day: Day; role: RouteRole }[] {
+function shownDays(): ShownDay[] {
   const day = selectedDay();
   if (!day) return (openTrip()?.days ?? []).map((d) => ({ day: d, role: 'selected' as const }));
   const neighbours = showNeighbours() ? neighbourDays().map((d) => ({ day: d, role: 'neighbour' as const })) : [];
   return [...neighbours, { day, role: 'selected' }];
 }
 
+const sameDays = (a: ShownDay[], b: ShownDay[]): boolean => a.length === b.length && a.every((d, i) => d.day === b[i]!.day && d.role === b[i]!.role);
+
 /** Keeps the route lines on the map, shows the selected day, or the whole trip, when it changes, and goes where the panel points. */
 function RouteLines(props: { map: MapLibreMap }) {
+  // The trip changes as a whole; its lines are drawn again only when a day drawn changes.
+  const days = createMemo(shownDays, [], { equals: sameDays });
   const marks = () => selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : []));
-  const features = createMemo(() => routeFeatures(shownDays(), editingRouteId(), failedLegs(), marks()));
+  const features = createMemo(() => routeFeatures(days(), editingRouteId(), failedLegs(), marks()));
+  // The map fits the trip when another trip opens, not on each change to this one.
+  const tripId = createMemo(() => openTrip()?.id);
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
-    on([selectedDayId, () => openTrip()?.id], () => {
-      const days = shownDays().filter((d) => d.role === 'selected');
+    on([selectedDayId, tripId], () => {
       const bounds = new LngLatBounds();
-      for (const { day } of days) {
+      for (const { day } of days().filter((d) => d.role === 'selected')) {
         for (const route of day.routes) for (const point of route.points) bounds.extend(point.lngLat);
         for (const stop of day.stops) bounds.extend(stop.lngLat);
       }

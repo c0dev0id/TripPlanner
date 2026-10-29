@@ -183,10 +183,22 @@ entries at the end of their section.
   checks that none of them belongs to another trip, in one place, rather than guarding
   each upsert. Trips themselves are created by the server with integer ids; a trip is the
   root the library works with, its content is the document.
-- **Positions are rounded in the store actions.** Leg keys are built from coordinates as
+- **The open trip is an immutable value in a signal, not a Solid store.** Each edit
+  replaces it with the result of a pure edit, which shares every part it leaves alone. A
+  store wraps every object in a proxy: each read of a point registered a dependency, and
+  a pass over an imported day of 130,000 track points through it took 2.2 s instead of
+  0.45 s; each edit was also diffed into the store with `reconcile` and copied whole for
+  the undo history. As a value, the undo history keeps the earlier trips themselves. The
+  cost is that what shows a part must not hold the object: lists keep their rows by id
+  (`ForById`), so that a changed copy updates its row; markers read their stop through
+  their props; a dialog holds its element by id while it is open, so that a routed leg
+  arriving or a save does not rebuild its form; and memos stand between the trip and
+  whatever would otherwise follow every change of it (the selected day, the days the map
+  draws, the trip's id for fitting the map).
+- **Positions are rounded in the edit actions.** Leg keys are built from coordinates as
   text, in the browser and in PHP, and agree only for coordinates of at most six
-  decimals. Rounding where coordinates enter the document, the store's actions, keeps
-  that an invariant of the model rather than something every map handler remembers.
+  decimals. Rounding where coordinates enter the document, the actions of the open trip,
+  keeps that an invariant of the model rather than something every map handler remembers.
 - **Leaving the page.** The autosave flushes with a keep-alive request when the page is
   hidden, and `beforeunload` warns while a change is unsaved. A keep-alive request may
   carry at most 64 KB, so a large trip left in the last second before closing the tab
@@ -336,7 +348,7 @@ entries at the end of their section.
 ## Testing
 
 - **The HTTP layer is checked by a scripted browser run, not in CI.** PHPUnit covers the
-  repositories, the validator and the export; Vitest the pure modules and the store. The
+  repositories, the validator and the export; Vitest the pure modules and the open trip's state. The
   pages and the editor are exercised with Playwright against `php -S` by hand: sign-up,
   a route with the point, stop and delete tools, free stops connected and disconnected,
   the stop dialog, neighbouring days, folders and the search, the GPX import and the
