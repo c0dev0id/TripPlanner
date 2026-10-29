@@ -1,6 +1,8 @@
 import { createMemo, createResource, createSignal, For, Match, Show, Switch } from 'solid-js';
-import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder, renameTrip } from '../api';
-import type { Folder, TripSummary } from '../model/trip';
+import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, fetchTrip, listFolders, listTrips, moveTrip, renameFolder, renameTrip, saveTrip } from '../api';
+import { asName, newId, type Folder, type TripSummary } from '../model/trip';
+import { pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
+import { routesPasteItem } from '../state/clipboard';
 import { listFolderId, setListFolderId, setShowingDuplicates, showingDuplicates } from '../state/library';
 import { DuplicatesReport } from './DuplicatesReport';
 import { folderPath, heldCounts, heldInAll } from './folders';
@@ -117,8 +119,18 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
     const d = dialog();
     return d?.kind === 'rename-trip' ? d.trip : undefined;
   };
+  /** Pastes copied routes into the trip where an import would put them, and saves it. */
+  const pasteOntoTrip = (trip: TripSummary) => (routes: CopiedRoute[]) =>
+    void run(async () => saveTrip(pasteIntoTrip(await fetchTrip(trip.id), routes, newId)), refetchTrips);
+  /** Pastes copied routes as a new collection in the folder, a section each, named after the first route. */
+  const pasteIntoFolder = (f: Folder) => (routes: CopiedRoute[]) => {
+    const first = routes[0]!.route.name || 'Pasted routes';
+    const name = asName(routes.length > 1 ? `${first} and ${routes.length - 1} more` : first);
+    void run(async () => saveTrip(pasteIntoTrip(await fetchTrip((await createTrip(name, f.id, 'collection')).id), routes, newId)), refetchTrips);
+  };
   const folderItems = (f: Folder): MenuItem[] => [
     { label: 'Rename…', run: () => setDialog({ kind: 'rename-folder', folder: f }) },
+    ...routesPasteItem(pasteIntoFolder(f)),
     { label: 'Delete', run: () => void removeFolder(f) },
   ];
   const tripItems = (trip: TripSummary): MenuItem[] => {
@@ -134,6 +146,7 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
       { label: 'Rename…', run: () => setDialog({ kind: 'rename-trip', trip }) },
       ...(places.length > 0 ? [{ label: 'Move…', items: places }] : []),
       { label: 'Duplicate', run: () => void run(() => duplicateTrip(trip.id), refetchTrips) },
+      ...routesPasteItem(pasteOntoTrip(trip)),
       { label: 'Delete', run: () => void removeTrip(trip) },
     ];
   };

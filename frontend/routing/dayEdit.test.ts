@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { withChanges, type Day, type RoutedLeg, type Trip } from '../model/trip';
-import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, pasteRoute, pasteStop, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop } from './dayEdit';
+import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, pasteIntoTrip, pasteRoute, pasteStop, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop } from './dayEdit';
 import { changeSettings } from './routeEdit';
 import { pointCount, routedLegs } from './legs';
 import { encodePolyline } from './polyline';
@@ -212,6 +212,30 @@ describe('reordering and copying', () => {
     const pasted = routedOf(trip.days[1]!.routes[0]!);
     expect([pasted.id, pasted.points.map((p) => p.id), pasted.legs]).toEqual(['p1', ['p2', 'p3', 'p4'], routedOf(day(trip).routes[0]!).legs]);
     expect(trip.days[1]!.stops.map((s) => [s.id, s.name, s.pointId])).toEqual([['p5', 'Stop 1', 'p3']]);
+  });
+
+  it('pastes routes into a trip onto the day of their date, a new day of that date among the others, or a new day at the end', () => {
+    const copied = copiedRoute(day(twoDays()), day(twoDays()).routes[0]!);
+    const from = (date: string | null, name: string) => ({ ...copied, from: { date, name } });
+    const trip = pasteIntoTrip(addDay(twoDays(), 'f'), [from('2027-06-13', 'North'), from('2027-06-01', 'Early'), from(null, 'Loose')], ids('p'));
+    expect(trip.days.map((d) => [d.date, d.name, d.routes.length])).toEqual([
+      ['2027-06-01', 'Early', 1],
+      ['2027-06-12', '', 1],
+      ['2027-06-13', '', 1],
+      ['2027-06-14', '', 0],
+      [null, 'Loose', 1],
+    ]);
+    expect(trip.days[2]!.stops.map((s) => s.pointId)).toEqual([routedOf(trip.days[2]!.routes[0]!).points[1]!.id]);
+  });
+
+  it('pastes routes into a collection as a new section each, named after the route', () => {
+    const collection: Trip = { ...twoDays(), kind: 'collection' };
+    const copied = copiedRoute(day(collection), withChanges(day(collection).routes[0]!, { name: 'Pass' }));
+    const pasted = pasteIntoTrip(collection, [{ ...copied, from: { date: '2027-06-12', name: 'Alps' } }, { ...copied, route: withChanges(copied.route, { name: '' }), from: { date: null, name: 'Alps' } }], ids('p'));
+    expect(pasted.days.slice(2).map((d) => [d.date, d.name, d.routes.length])).toEqual([
+      [null, 'Pass', 1],
+      [null, 'Alps', 1],
+    ]);
   });
 });
 

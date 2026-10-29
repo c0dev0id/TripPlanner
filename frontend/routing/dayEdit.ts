@@ -235,15 +235,16 @@ export function moveRouteToDay(trip: Trip, routeId: string, dayId: string): Trip
   return { ...trip, days };
 }
 
-/** A route as copied to be pasted into a day, of its trip or another, with the stops bound to its points. */
+/** A route as copied to be pasted into a day, of its trip or another, with the stops bound to its points and the date and name of the day it was on. */
 export interface CopiedRoute {
   route: Route;
   stops: Stop[];
+  from: Pick<Day, 'date' | 'name'>;
 }
 
 /** The route of the day with the stops bound to its points, as a copy to paste. */
 export function copiedRoute(day: Day, route: Route): CopiedRoute {
-  return { route, stops: stopsBoundTo(route, day.stops) };
+  return { route, stops: stopsBoundTo(route, day.stops), from: { date: day.date, name: day.name } };
 }
 
 /** Adds a copied route at the end of the day, it, its points and its stops under new ids, the stops bound to the new points. */
@@ -252,6 +253,27 @@ export function pasteRoute(trip: Trip, dayId: string, copied: CopiedRoute, newId
   const pointIds = new Map(copiedPointIds(copied.route, route));
   const stops = copied.stops.map((s) => ({ ...s, id: newId(), pointId: pointIds.get(s.pointId!)! }));
   return updateDay(trip, dayId, (day) => ({ ...day, routes: [...day.routes, route], stops: [...day.stops, ...stops] }));
+}
+
+/**
+ * Pastes copied routes into the trip where an import of their files would put them: in a
+ * collection each into a new section named after it; in a trip each onto the day of its
+ * date, or a new day of that date among the dated days, and an undated one onto a new day
+ * of its own at the end. A new day of a trip takes the name of the day the route was on.
+ */
+export function pasteIntoTrip(trip: Trip, copied: readonly CopiedRoute[], newId: () => string): Trip {
+  let next = trip;
+  for (const c of copied) {
+    const date = trip.kind === 'collection' ? null : c.from.date;
+    let day = date === null ? undefined : next.days.find((d) => d.date === date);
+    if (!day) {
+      day = { id: newId(), name: trip.kind === 'collection' ? c.route.name || c.from.name : c.from.name, date, notes: '', routes: [], stops: [] };
+      const later = date === null ? -1 : next.days.findIndex((d) => d.date !== null && d.date > date);
+      next = { ...next, days: next.days.toSpliced(later < 0 ? next.days.length : later, 0, day) };
+    }
+    next = pasteRoute(next, day.id, c, newId);
+  }
+  return next;
 }
 
 /** Adds a copied stop to the day under `id`, free where it stands. */

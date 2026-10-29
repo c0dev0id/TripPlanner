@@ -316,9 +316,9 @@ export function moveRouteToDay(routeId: string, dayId: string): void {
   if (editingRouteId() === routeId) setEditingRouteId(undefined);
 }
 
-/** Adds a copied route, with its bound stops, at the end of a day. */
-export function pasteRoute(dayId: string, copied: dayEdit.CopiedRoute): void {
-  edit((trip) => dayEdit.pasteRoute(trip, dayId, copied, newId), 'Paste route');
+/** Adds copied routes, with their bound stops, at the end of a day, as one step to undo. */
+export function pasteRoutes(dayId: string, copied: readonly dayEdit.CopiedRoute[]): void {
+  edit((trip) => copied.reduce((t, c) => dayEdit.pasteRoute(t, dayId, c, newId), trip), copied.length > 1 ? 'Paste routes' : 'Paste route');
 }
 
 /** Adds a copied stop to a day, free where it stands. */
