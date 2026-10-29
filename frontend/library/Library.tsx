@@ -108,16 +108,22 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
     { label: 'Rename…', run: () => setDialog({ kind: 'rename-folder', folder: f }) },
     { label: 'Delete', run: () => void removeFolder(f) },
   ];
-  const tripItems = (trip: TripSummary): MenuItem[] => [
-    { label: 'Rename…', run: () => setDialog({ kind: 'rename-trip', trip }) },
-    ...(folders() ?? [])
-      .filter((f) => f.id !== trip.folderId)
-      .map((f) => ({ label: `Move to ${pathOf(f.id)}`, run: () => void run(() => moveTrip(trip.id, f.id), refetchTrips) }))
-      .sort((a, b) => a.label.localeCompare(b.label)),
-    ...(trip.folderId === null ? [] : [{ label: 'Move out of the folder', run: () => void run(() => moveTrip(trip.id, null), refetchTrips) }]),
-    { label: 'Duplicate', run: () => void run(() => duplicateTrip(trip.id), refetchTrips) },
-    { label: 'Delete', run: () => void removeTrip(trip) },
-  ];
+  const tripItems = (trip: TripSummary): MenuItem[] => {
+    const moveTo = (folderId: number | null) => () => void run(() => moveTrip(trip.id, folderId), refetchTrips);
+    const places: MenuItem[] = [
+      ...(trip.folderId === null ? [] : [{ label: 'No folder', run: moveTo(null) }]),
+      ...(folders() ?? [])
+        .filter((f) => f.id !== trip.folderId)
+        .map((f) => ({ label: pathOf(f.id), run: moveTo(f.id) }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    ];
+    return [
+      { label: 'Rename…', run: () => setDialog({ kind: 'rename-trip', trip }) },
+      ...(places.length > 0 ? [{ label: 'Move…', items: places }] : []),
+      { label: 'Duplicate', run: () => void run(() => duplicateTrip(trip.id), refetchTrips) },
+      { label: 'Delete', run: () => void removeTrip(trip) },
+    ];
+  };
 
   return (
     <section class="library">
