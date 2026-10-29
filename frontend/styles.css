@@ -278,6 +278,10 @@ a {
   width: 100%;
 }
 
+.duplicates li.selected > button.text {
+  background: var(--active);
+}
+
 /* A file name kept as a day's name has no spaces to wrap at. */
 .duplicates .detail {
   overflow-wrap: anywhere;
