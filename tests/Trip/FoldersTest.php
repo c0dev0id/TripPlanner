@@ -83,6 +83,27 @@ final class FoldersTest extends TestCase
         self::assertSame([[$trip->id, $rides->id]], array_map(fn ($t) => [$t->id, $t->folderId], $this->trips->listFor($this->userId)));
     }
 
+    public function testDeletesAFolderWithEverythingInside(): void
+    {
+        $rides = $this->folders->create($this->userId, 'Rides', null, $this->now);
+        $year = $this->folders->create($this->userId, '2023', $rides->id, $this->now);
+        $alps = $this->folders->create($this->userId, 'Alps', $year->id, $this->now);
+        $other = $this->folders->create($this->userId, '2024', $rides->id, $this->now);
+        $inYear = $this->trips->create($this->userId, 'Weekend', $this->now, $year->id);
+        $inAlps = $this->trips->create($this->userId, 'Passes', $this->now, $alps->id);
+        $kept = $this->trips->create($this->userId, 'Elsewhere', $this->now, $other->id);
+        $this->db->prepare("INSERT INTO days (id, trip_id, position, name) VALUES ('d1', ?, 0, 'South')")->execute([$inAlps->id]);
+
+        self::assertNull($this->folders->deleteWithContents($this->otherUserId, $year->id));
+        $deleted = $this->folders->deleteWithContents($this->userId, $year->id);
+        sort($deleted);
+        self::assertSame([$inYear->id, $inAlps->id], $deleted);
+        self::assertSame([$other->id, $rides->id], array_map(fn ($f) => $f->id, $this->folders->listFor($this->userId)));
+        self::assertSame([$kept->id], array_map(fn ($t) => $t->id, $this->trips->listFor($this->userId)));
+        self::assertSame(0, (int) $this->db->query('SELECT COUNT(*) FROM days')->fetchColumn());
+        self::assertNull($this->folders->deleteWithContents($this->userId, $year->id));
+    }
+
     public function testMovesATripBetweenFolders(): void
     {
         $folder = $this->folders->create($this->userId, 'Alps', null, $this->now);

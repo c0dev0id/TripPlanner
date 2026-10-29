@@ -83,4 +83,36 @@ final class Folders
             throw $error;
         }
     }
+
+    /**
+     * Deletes a folder with the folders inside it, at any depth, and every trip in them.
+     *
+     * @return int[]|null the ids of the deleted trips, for their journal files to go too; null when the user has no such folder
+     */
+    public function deleteWithContents(int $userId, int $folderId): ?array
+    {
+        $this->db->beginTransaction();
+        try {
+            $statement = $this->db->prepare(
+                'WITH RECURSIVE inside(id) AS (SELECT id FROM folders WHERE id = ? AND user_id = ? UNION ALL SELECT f.id FROM folders f JOIN inside ON f.parent_id = inside.id) SELECT id FROM inside',
+            );
+            $statement->execute([$folderId, $userId]);
+            $folderIds = $statement->fetchAll(PDO::FETCH_COLUMN);
+            if ($folderIds === []) {
+                $this->db->rollBack();
+                return null;
+            }
+            $in = implode(',', array_fill(0, count($folderIds), '?'));
+            $statement = $this->db->prepare("SELECT id FROM trips WHERE folder_id IN ($in)");
+            $statement->execute($folderIds);
+            $tripIds = array_map('intval', $statement->fetchAll(PDO::FETCH_COLUMN));
+            $this->db->prepare("DELETE FROM trips WHERE folder_id IN ($in)")->execute($folderIds);
+            $this->db->prepare("DELETE FROM folders WHERE id IN ($in)")->execute($folderIds);
+            $this->db->commit();
+            return $tripIds;
+        } catch (\Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
+        }
+    }
 }
