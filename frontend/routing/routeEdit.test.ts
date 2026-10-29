@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import type { LngLat, Route, RoutedLeg } from '../model/trip';
+import type { LngLat, RoutedLeg, RoutedRoute, Track } from '../model/trip';
 import { routedLegs } from './legs';
-import { addLeg, appendPoint, changeSettings, condensePoints, insertPoint, movePoint, removePoint, setStraight, trackToRoute } from './routeEdit';
+import { decodePolyline, encodePolyline } from './polyline';
+import { routedOf } from './testing';
+import { addLeg, appendPoint, changeSettings, condenseTrack, insertPoint, movePoint, removePoint, setStraight, trackToRoute } from './routeEdit';
 
 const routed = (geometry: string): RoutedLeg => ({ geometry, distanceM: 1, durationS: 1 });
 
-const base: Route = {
+const base: RoutedRoute = {
   id: 'r',
   name: '',
   kind: 'routed',
@@ -66,11 +68,11 @@ describe('route edits', () => {
   });
 
   it('drops every leg when the costing changes, and keeps them for a name', () => {
-    const r = changeSettings(base, { profile: 'bicycle' });
+    const r = routedOf(changeSettings(base, { profile: 'bicycle' }));
     expect(r.profile).toBe('bicycle');
     expect(r.legs).toEqual({});
-    expect(changeSettings(base, { highways: 'avoid' }).legs).toEqual({});
-    expect(changeSettings(base, { name: 'Pass road' }).legs).toEqual(base.legs);
+    expect(routedOf(changeSettings(base, { highways: 'avoid' })).legs).toEqual({});
+    expect(routedOf(changeSettings(base, { name: 'Pass road' })).legs).toEqual(base.legs);
     expect(changeSettings(base, { profile: base.profile })).toBe(base);
   });
 
@@ -90,33 +92,34 @@ describe('route edits', () => {
 });
 
 describe('thinning a track', () => {
-  const track: Route = {
-    ...base,
-    kind: 'track',
-    legs: {},
-    points: (
-      [
-        [11, 48],
-        [11.1, 48],
-        [11.2, 48],
-        [11.2, 48.1],
-        [11.2, 48.2],
-      ] as LngLat[]
-    ).map((lngLat, i) => ({ id: `t${i}`, lngLat, ...(i > 0 && { straight: true }) })),
-  };
-  const ids = (route: Route) => route.points.map((p) => p.id);
+  const corners: LngLat[] = [
+    [11, 48],
+    [11.1, 48],
+    [11.2, 48],
+    [11.2, 48.1],
+    [11.2, 48.2],
+  ];
+  const track: Track = { id: 't', name: 'Pass', kind: 'track', profile: 'bicycle', optional: true, line: encodePolyline(corners) };
 
-  it('condenses to the corners, keeping the points stops stand on and the straight legs', () => {
-    const condensed = condensePoints(track, 10, new Set());
-    expect(ids(condensed)).toEqual(['t0', 't2', 't4']);
-    expect([condensed.kind, condensed.points[1]!.straight]).toEqual(['track', true]);
-    expect(ids(condensePoints(track, 10, new Set(['t1'])))).toEqual(['t0', 't1', 't2', 't4']);
+  it('condenses to the corners', () => {
+    const condensed = condenseTrack(track, 10);
+    expect(decodePolyline(condensed.line)).toEqual([corners[0], corners[2], corners[4]]);
+    expect({ ...condensed, line: track.line }).toEqual(track);
   });
 
-  it('makes a route of it whose legs are routed', () => {
-    const made = trackToRoute(track, 10, new Set());
-    expect([made.kind, ids(made)]).toEqual(['routed', ['t0', 't2', 't4']]);
-    expect(made.points.some((p) => p.straight)).toBe(false);
+  it('makes a route of it under its id, its points under new ids, every leg routed', () => {
+    let n = 0;
+    const made = trackToRoute(track, 10, () => `p${n++}`);
+    expect(made).toMatchObject({ id: 't', name: 'Pass', kind: 'routed', profile: 'bicycle', highways: 'allow', optional: true, legs: {} });
+    expect(made.points).toEqual([
+      { id: 'p0', lngLat: corners[0] },
+      { id: 'p1', lngLat: corners[2] },
+      { id: 'p2', lngLat: corners[4] },
+    ]);
     expect(routedLegs(made)).toHaveLength(2);
+  });
+
+  it('leaves a motorway dial out of a track', () => {
+    expect(changeSettings(track, { name: 'Col', highways: 'avoid' })).toEqual({ ...track, name: 'Col' });
   });
 });

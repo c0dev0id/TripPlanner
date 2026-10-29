@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Trip } from '../model/trip';
+import { routedOf } from '../routing/testing';
 import { addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRouteId, loadTrip, markSaved, openTrip, redo, selectDay, selectedDay, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, name: 'T', description: '', state: 'planned', version: 1, days: [] });
@@ -28,7 +29,7 @@ describe('the open trip', () => {
     const trip = sent();
     expect(trip.days).toHaveLength(1);
     expect(trip.days[0]!.routes).toHaveLength(1);
-    expect(trip.days[0]!.routes[0]!.points.map((p) => p.lngLat)).toEqual([
+    expect(routedOf(trip.days[0]!.routes[0]!).points.map((p) => p.lngLat)).toEqual([
       [1, 1],
       [2, 2],
     ]);
@@ -45,7 +46,7 @@ describe('the open trip', () => {
 
   it('makes stops of points and beside the route', () => {
     dayWithRoute();
-    convertPoint(sent().days[0]!.routes[0]!.points[1]!.id);
+    convertPoint(routedOf(sent().days[0]!.routes[0]!).points[1]!.id);
     addFreeStop([1.5, 1.6]);
     const stops = sent().days[0]!.stops;
     expect(stops.map((s) => [s.name, s.pointId !== null])).toEqual([
@@ -58,7 +59,7 @@ describe('the open trip', () => {
 
   it('undoes and redoes edits without losing the rest of the trip', () => {
     dayWithRoute();
-    convertPoint(sent().days[0]!.routes[0]!.points[0]!.id);
+    convertPoint(routedOf(sent().days[0]!.routes[0]!).points[0]!.id);
     const stopId = sent().days[0]!.stops[0]!.id;
     updateStop(stopId, { name: 'Home' });
     expect(undoLabel()).toBe('Edit stop');
@@ -69,7 +70,7 @@ describe('the open trip', () => {
     undo();
     undo();
     expect(sent().days[0]!.stops).toHaveLength(0);
-    expect(sent().days[0]!.routes[0]!.points).toHaveLength(2);
+    expect(routedOf(sent().days[0]!.routes[0]!).points).toHaveLength(2);
     undo();
     undo();
     undo();

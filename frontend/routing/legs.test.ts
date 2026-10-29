@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { LngLat, Route, RoutedLeg } from '../model/trip';
-import { legCoordinates, legKey, legState, nextMissingLeg, pruneLegs, roundLngLat, routeDistance, routeLegs } from './legs';
+import type { LngLat, RoutedLeg, RoutedRoute, Track } from '../model/trip';
+import { encodePolyline } from './polyline';
+import { legCoordinates, legKey, legState, nextMissingLeg, pointCount, pruneLegs, roundLngLat, routeDistance, routeLegs, routePositions } from './legs';
 
 const routed = (geometry: string, distanceM = 1000): RoutedLeg => ({ geometry, distanceM, durationS: 60 });
 
-const route = (id: string, points: [number, number][], legs: Record<string, RoutedLeg> = {}): Route => ({
+const route = (id: string, points: [number, number][], legs: Record<string, RoutedLeg> = {}): RoutedRoute => ({
   id,
   name: '',
   kind: 'routed',
@@ -30,7 +31,7 @@ describe('legs', () => {
           [2, 2],
           [3, 3],
         ]),
-      ).map((l) => !l.straight && l.key),
+      ).map((l) => l.kind === 'road' && l.key),
     ).toEqual(['bicycle:allow/1,1;2,2', 'bicycle:allow/2,2;3,3']);
   });
 
@@ -95,7 +96,7 @@ describe('legs', () => {
 });
 
 const decode = (geometry: string): LngLat[] => JSON.parse(geometry);
-const tour: Route = {
+const tour: RoutedRoute = {
   ...route('t', [
     [1, 1],
     [2, 2],
@@ -149,7 +150,7 @@ describe('straight legs', () => {
   r.points[1]!.straight = true;
 
   it('are marked by the point they lead to', () => {
-    expect(routeLegs(r).map((l) => l.straight)).toEqual([true, false]);
+    expect(routeLegs(r).map((l) => l.kind)).toEqual(['straight', 'road']);
   });
 
   it('are never routed', () => {
@@ -177,5 +178,29 @@ describe('legState', () => {
     r.points[3]!.straight = true;
     expect(routeLegs(r).map((leg) => legState(r, leg, new Set(['bicycle:allow/2,2;3,3'])))).toEqual(['routed', 'failed', 'straight']);
     expect(legState(r, routeLegs(r)[1]!, new Set())).toBe('pending');
+  });
+});
+
+describe('tracks', () => {
+  const line: LngLat[] = [
+    [11, 48],
+    [11.001, 48],
+    [11.002, 48.001],
+  ];
+  const track: Track = { id: 't', name: '', kind: 'track', profile: 'motorcycle', optional: false, line: encodePolyline(line) };
+
+  it('are one leg along their line, drawn as a track and never routed', () => {
+    const legs = routeLegs(track);
+    expect(legs.map((l) => l.kind)).toEqual(['track']);
+    expect(legCoordinates(track, legs[0]!)).toEqual(line);
+    expect(legState(track, legs[0]!, new Set())).toBe('track');
+    expect(nextMissingLeg([track], new Set())).toBeUndefined();
+  });
+
+  it('measure along their line and count its points', () => {
+    // 0.001° of longitude at 48° north is about 74.4 m, of latitude 111.2 m: 74.4 m, then 133.8 m.
+    expect(routeDistance(track)).toBeCloseTo(74.4 + 133.8, 0);
+    expect(pointCount(track)).toBe(3);
+    expect(routePositions(track)).toEqual(line);
   });
 });

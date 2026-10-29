@@ -1,19 +1,20 @@
 import { distanceBetween, planeAt } from '../geo/measure';
 import { nearestOnLines, type NearestPlace, type XY } from '../geo/nearest';
 import type { Day, LngLat, RoutePoint, Stop, Trip } from '../model/trip';
-import { legCoordinates, legDistance, legDuration, routeLegs } from './legs';
+import { legCoordinates, legDistance, legDuration, routeLegs, routePositions } from './legs';
 import { decodeCached } from './polyline';
 
 /**
  * A day's stops and route points in riding order, each with its distance from the day's
- * start along the routes. A free stop takes the place where a route passes closest.
+ * start along the routes. A free stop takes the place where a route passes closest; a
+ * track, which has no points of its own, has an entry where it ends.
  */
 
 /** How far from the routes a free stop may stand and still take a place along them; farther away, it stands for itself. */
 const FREE_STOP_REACH_M = 500;
 
 export interface SequenceEntry {
-  /** The stop's id, or the plain route point's. */
+  /** The stop's id, the plain route point's, or for the end of a track the track's. */
   id: string;
   /** Which route of the day, in order, and the distance and riding time from the day's start. */
   routeIndex: number;
@@ -26,13 +27,14 @@ export interface SequenceEntry {
   near?: { routeId: string; legIndex: number; lngLat: LngLat; distanceM: number };
 }
 
-/** A leg of the day with its line, the line on the plane, its length and riding time, and where it starts along the day. */
+/** A leg of the day with its line, the line on the plane, the metres along it to each of its points, its length and riding time, and where it starts along the day. */
 interface LegLine {
   routeIndex: number;
   routeId: string;
   legIndex: number;
   line: LngLat[];
   xy: XY[];
+  alongM: Float64Array;
   distanceM: number;
   durationS: number;
   startM: number;
@@ -46,9 +48,11 @@ function legLines(day: Day, toPlane: (p: LngLat) => XY, decode: (geometry: strin
   day.routes.forEach((route, routeIndex) => {
     routeLegs(route).forEach((leg, legIndex) => {
       const line = legCoordinates(route, leg, decode);
+      const alongM = new Float64Array(line.length);
+      for (let i = 1; i < line.length; i++) alongM[i] = alongM[i - 1]! + distanceBetween(line[i - 1]!, line[i]!);
       const distanceM = legDistance(route, leg);
       const durationS = legDuration(route, leg);
-      legs.push({ routeIndex, routeId: route.id, legIndex, line, xy: line.map(toPlane), distanceM, durationS, startM, startS });
+      legs.push({ routeIndex, routeId: route.id, legIndex, line, xy: line.map(toPlane), alongM, distanceM, durationS, startM, startS });
       startM += distanceM;
       startS += durationS;
     });
@@ -56,19 +60,12 @@ function legLines(day: Day, toPlane: (p: LngLat) => XY, decode: (geometry: strin
   return legs;
 }
 
-/** Metres along a line from its start to a spot on its segment `segment`. */
-function alongLine(line: readonly LngLat[], segment: number, spot: LngLat): number {
-  let metres = 0;
-  for (let i = 1; i <= segment; i++) metres += distanceBetween(line[i - 1]!, line[i]!);
-  return metres + distanceBetween(line[segment]!, spot);
-}
-
 /** The entry of a free stop, placed at `hit`, the place on the legs nearest to it. */
 function freeStopEntry(stop: Stop, legs: readonly LegLine[], hit: NearestPlace): SequenceEntry {
   const leg = legs[hit.index]!;
   const [a, b] = [leg.line[hit.segment]!, leg.line[hit.segment + 1] ?? leg.line[hit.segment]!];
   const spot: LngLat = [a[0] + hit.t * (b[0] - a[0]), a[1] + hit.t * (b[1] - a[1])];
-  const alongM = alongLine(leg.line, hit.segment, spot);
+  const alongM = leg.alongM[hit.segment]! + distanceBetween(a, spot);
   return {
     id: stop.id,
     routeIndex: leg.routeIndex,
@@ -96,6 +93,13 @@ export function daySequence(day: Day, decode = decodeCached): SequenceEntry[] {
   let seconds = 0;
   day.routes.forEach((route, routeIndex) => {
     const legs = routeLegs(route);
+    if (route.kind === 'track') {
+      const line = routePositions(route);
+      metres += legDistance(route, legs[0]!);
+      seconds += legDuration(route, legs[0]!);
+      if (line.length > 0) entries.push({ id: route.id, routeIndex, distanceM: metres, timeS: seconds, lngLat: line.at(-1)! });
+      return;
+    }
     route.points.forEach((point, i) => {
       if (i > 0) {
         metres += legDistance(route, legs[i - 1]!);
@@ -109,7 +113,7 @@ export function daySequence(day: Day, decode = decodeCached): SequenceEntry[] {
   });
   const free = day.stops.filter((s) => s.pointId === null);
   if (free.length > 0) {
-    const toPlane = planeAt(day.routes[0]?.points[0]?.lngLat ?? free[0]!.lngLat);
+    const toPlane = planeAt((day.routes[0] && routePositions(day.routes[0])[0]) ?? free[0]!.lngLat);
     const legs = legLines(day, toPlane, decode);
     const nearest = nearestOnLines(legs.map((l) => l.xy));
     for (const stop of free) {

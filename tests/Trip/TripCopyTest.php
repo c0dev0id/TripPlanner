@@ -12,7 +12,9 @@ final class TripCopyTest extends TestCase
 {
     public function testGivesEveryPartANewIdAndKeepsBoundStopsAtTheirPoints(): void
     {
-        $original = TripDocumentValidator::validated(TripFixture::document());
+        $document = TripFixture::document();
+        $document['days'][0]['routes'][] = TripFixture::track('t1');
+        $original = TripDocumentValidator::validated($document);
         $copy = TripCopy::withNewIds($original);
         $day = $copy['days'][0];
         $before = $original['days'][0];
@@ -27,6 +29,8 @@ final class TripCopyTest extends TestCase
         self::assertSame($route['points'][0]['id'], $day['stops'][0]['pointId']);
         self::assertSame($route['points'][2]['id'], $day['stops'][1]['pointId']);
         self::assertNull($day['stops'][2]['pointId']);
+        self::assertSame(['id' => $day['routes'][1]['id']] + TripFixture::track('t1'), $day['routes'][1]);
+        self::assertNotSame('t1', $day['routes'][1]['id']);
         self::assertSame('Café & Bar', $day['stops'][2]['name']);
         self::assertNotSame('s3', $day['stops'][2]['id']);
         // The copy is a valid document.

@@ -2,6 +2,7 @@ import { GeoJSONSource, LngLatBounds, type Map as MapLibreMap } from 'maplibre-g
 import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
 import type { Day, LngLat } from '../model/trip';
 import { panTarget, showNeighbours } from '../state/drawing';
+import { routePositions } from '../routing/legs';
 import { failedLegs } from '../state/routing';
 import { editingRouteId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
 import { newBaseMap } from './baseMap';
@@ -67,7 +68,7 @@ function RouteLines(props: { map: MapLibreMap }) {
     on([selectedDayId, openTripId], () => {
       const bounds = new LngLatBounds();
       for (const { day } of shownDays().filter((d) => d.role === 'selected')) {
-        for (const route of day.routes) for (const point of route.points) bounds.extend(point.lngLat);
+        for (const route of day.routes) for (const position of routePositions(route)) bounds.extend(position);
         for (const stop of day.stops) bounds.extend(stop.lngLat);
       }
       if (!bounds.isEmpty()) props.map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 600 });

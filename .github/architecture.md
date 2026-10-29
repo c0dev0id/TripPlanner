@@ -188,9 +188,11 @@ erDiagram
     string name
     string kind "routed, track"
     string profile "motorcycle, bicycle, pedestrian"
+    string highways "a routed route's motorway dial"
     bool optional
-    json points "in order: id, position, straight"
-    json legs "by profile and ends: geometry, distance, duration"
+    json points "a routed route's, in order: id, position, straight"
+    json legs "a routed route's, by profile and ends: geometry, distance, duration"
+    string line "a track's, as polyline6"
   }
   STOP {
     string id PK

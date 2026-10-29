@@ -7,7 +7,7 @@ import { field } from '../ui/form';
 import { routeLabelOf } from './labels';
 import { removeRouteAsked } from './remove';
 
-/** A route: its name, profile, motorway dial and whether it is optional; and its removal. */
+/** A route: its name, profile, motorway dial (of a routed route) and whether it is optional; and its removal. */
 export function RouteDialog() {
   const route = createMemo((): Route | undefined => {
     const target = editTarget();
@@ -19,7 +19,7 @@ export function RouteDialog() {
     updateRoute(r.id, {
       name: field(form, 'name'),
       profile: field(form, 'profile') as Profile,
-      highways: (field(form, 'highways') || r.highways) as Highways,
+      ...(r.kind === 'routed' && { highways: (field(form, 'highways') || r.highways) as Highways }),
       optional: form.get('optional') === 'on',
     });
   const remove = async (r: Route) => {
@@ -39,13 +39,15 @@ export function RouteDialog() {
               <For each={PROFILES}>{(profile) => <option value={profile.value}>{profile.label}</option>}</For>
             </select>
           </label>
-          <Show when={takesMotorwayDial(r.profile)}>
-            <label>
-              Motorways
-              <select name="highways" value={r.highways}>
-                <For each={HIGHWAYS}>{(choice) => <option value={choice.value}>{choice.label}</option>}</For>
-              </select>
-            </label>
+          <Show when={r.kind === 'routed' && takesMotorwayDial(r.profile) && r}>
+            {(routed) => (
+              <label>
+                Motorways
+                <select name="highways" value={routed().highways}>
+                  <For each={HIGHWAYS}>{(choice) => <option value={choice.value}>{choice.label}</option>}</For>
+                </select>
+              </label>
+            )}
           </Show>
           <label class="toggle">
             <input type="checkbox" name="optional" checked={r.optional} /> Optional: a route to decide on the day, left out of an export on request

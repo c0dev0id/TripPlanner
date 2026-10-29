@@ -5,6 +5,7 @@ import { entryMarkerElement, markerElement, stopContent } from '../map/markerCon
 import { ROUTES_SOURCE, routeFeatures } from '../map/routeOverlay';
 import type { Entry } from '../model/journal';
 import type { Trip } from '../model/trip';
+import { routePositions } from '../routing/legs';
 
 /** The whole trip on a map that cannot be edited: every day's routes, the stops by name, the journal entries where they stand. */
 export function ViewMap(props: { trip: Trip; entries: Entry[]; api: string }) {
@@ -16,7 +17,7 @@ export function ViewMap(props: { trip: Trip; entries: Entry[]; api: string }) {
       m.getSource<GeoJSONSource>(ROUTES_SOURCE)!.setData(routeFeatures(days, undefined, new Set(), []));
       const bounds = new LngLatBounds();
       for (const day of props.trip.days) {
-        for (const route of day.routes) for (const point of route.points) bounds.extend(point.lngLat);
+        for (const route of day.routes) for (const position of routePositions(route)) bounds.extend(position);
         for (const stop of day.stops) {
           bounds.extend(stop.lngLat);
           new Marker({ element: markerElement('stop-marker', stopContent(() => stop)), anchor: 'bottom' }).setLngLat(stop.lngLat).addTo(m);

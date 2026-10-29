@@ -15,10 +15,9 @@
   in the browser (see the frontend). JPEG, PNG and WebP get a preview; a JPEG its EXIF
   placement.
 - A save sends the whole trip as one JSON body, so the same request body limits bound a
-  trip's size, and PHP's `memory_limit` must hold about fifteen times the body while it
-  decodes and checks it: an imported trip of 240,000 track points is a 23 MB body and
-  some 300 MB; one of 1.5 million points 139 MB and 2.2 GB, with about 30 s of work per
-  save.
+  trip's size. Tracks are stored as encoded lines of some six bytes a point: an imported
+  trip of 1.5 million track points and 5,000 waypoints is an 8.4 MB body, which PHP
+  checks and stores in about a second and under 100 MB.
 - SQLite in WAL mode with foreign keys on, one database file.
 - Mail over SMTP to the local smtpd at 127.0.0.1:25; PHP's `mail()` is not used (no
   sendmail inside the chroot).

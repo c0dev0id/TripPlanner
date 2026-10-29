@@ -1,5 +1,6 @@
 import { Show, type JSX } from 'solid-js';
 import { setEditTarget, setTool, tool, TOOLS, type Tool } from '../state/drawing';
+import { routedLegs } from '../routing/legs';
 import { recalculateRoute } from '../state/routing';
 import { editingRoute, editRoute, redo, redoLabel, undo, undoLabel } from '../state/trip';
 import { CheckIcon, DeleteIcon, HandIcon, InsertIcon, PinIcon, RedoIcon, RefreshIcon, SettingsIcon, UndoIcon } from '../ui/icons';
@@ -34,7 +35,7 @@ export function Toolbar() {
         <div class="toolbar" role="toolbar" aria-label="Route tools">
           <div class="toolbar-group" role="group" aria-label="Tool">
             {button('hand', <HandIcon />)}
-            {button('point', <InsertIcon />)}
+            <Show when={route().kind === 'routed'}>{button('point', <InsertIcon />)}</Show>
             {button('stop', <PinIcon />)}
             {button('delete', <DeleteIcon />)}
           </div>
@@ -50,7 +51,7 @@ export function Toolbar() {
             <ToolButton label="Redo" title={redoLabel() ? `Redo: ${redoLabel()} (Ctrl+Shift+Z)` : 'Nothing to redo'} disabled={!redoLabel()} onClick={redo}>
               <RedoIcon />
             </ToolButton>
-            <ToolButton label="Reroute" title="Route every leg of the route again" disabled={route().points.length < 2} onClick={() => recalculateRoute(route().id)}>
+            <ToolButton label="Reroute" title="Route every leg of the route again" disabled={routedLegs(route()).length === 0} onClick={() => recalculateRoute(route().id)}>
               <RefreshIcon />
             </ToolButton>
           </div>

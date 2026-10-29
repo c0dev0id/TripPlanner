@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Planner\Export;
 
-/** The line of a route from its points and the legs the client routed between them. */
+/** The line of a route: a track's own, or a routed route's from its points and the legs the client routed between them. */
 final class RouteGeometry
 {
     /**
@@ -19,13 +19,17 @@ final class RouteGeometry
     }
 
     /**
-     * The route's line: each leg's routed geometry where the client has it, the straight
-     * line between the leg's ends otherwise, without a point repeating the one before.
+     * The route's line: a track's own; of a routed route each leg's routed geometry where
+     * the client has it, the straight line between the leg's ends otherwise, without a point
+     * repeating the one before.
      *
      * @return list<array{0: float, 1: float}>
      */
     public static function line(array $route): array
     {
+        if ($route['kind'] === 'track') {
+            return Polyline::decode($route['line']);
+        }
         $points = $route['points'];
         $legs = (array) $route['legs'];
         $line = [];

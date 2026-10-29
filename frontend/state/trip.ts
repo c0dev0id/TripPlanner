@@ -1,5 +1,5 @@
 import { batch, createMemo, createRoot, createSignal } from 'solid-js';
-import { newId, withChanges, type Day, type LngLat, type Route, type RoutedLeg, type Stop, type Trip } from '../model/trip';
+import { newId, withChanges, type Day, type LngLat, type Route, type RoutedLeg, type RoutedRoute, type Stop, type Trip } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { roundLngLat } from '../routing/legs';
 import * as routeEdit from '../routing/routeEdit';
@@ -184,46 +184,51 @@ function changeRoute(routeId: string, change: (route: Route) => Route, label?: s
   edit((trip) => dayEdit.updateRoute(trip, routeId, change), label);
 }
 
-/** Leaves out the track's points that keep its line within `toleranceM`; those stops stand on stay. */
+/** Applies an edit of a routed route; a track stays as it is. */
+function changeRoutedRoute(routeId: string, change: (route: RoutedRoute) => RoutedRoute, label?: string): void {
+  changeRoute(routeId, dayEdit.routedOnly(change), label);
+}
+
+/** Leaves out the track's points that keep its line within `toleranceM`. */
 export function condenseTrack(routeId: string, toleranceM: number): void {
-  edit((trip) => dayEdit.thinRoute(trip, routeId, (r, keep) => routeEdit.condensePoints(r, toleranceM, keep)), 'Condense points');
+  changeRoute(routeId, (r) => (r.kind === 'track' ? routeEdit.condenseTrack(r, toleranceM) : r), 'Condense points');
 }
 
 /** Makes a route of the track: its points thinned at `toleranceM`, the legs between them routed along the roads. */
 export function convertTrackToRoute(routeId: string, toleranceM: number): void {
-  edit((trip) => dayEdit.thinRoute(trip, routeId, (r, keep) => routeEdit.trackToRoute(r, toleranceM, keep)), 'Convert to route');
+  changeRoute(routeId, (r) => (r.kind === 'track' ? routeEdit.trackToRoute(r, toleranceM, newId) : r), 'Convert to route');
 }
 
 /** Changes what a route says about itself; a new profile or motorway dial routes its legs again. */
-export function updateRoute(routeId: string, settings: Pick<Route, 'name' | 'profile' | 'highways' | 'optional'>): void {
+export function updateRoute(routeId: string, settings: Partial<routeEdit.RouteSettings>): void {
   changeRoute(routeId, (r) => routeEdit.changeSettings(r, settings), 'Edit route');
 }
 
 export function appendPoint(routeId: string, lngLat: LngLat): void {
-  changeRoute(routeId, (r) => routeEdit.appendPoint(r, { id: newId(), lngLat: roundLngLat(lngLat) }), 'Add point');
+  changeRoutedRoute(routeId, (r) => routeEdit.appendPoint(r, { id: newId(), lngLat: roundLngLat(lngLat) }), 'Add point');
 }
 
 /** Inserts a point of a route before the one at `index`. */
 export function insertPoint(routeId: string, index: number, lngLat: LngLat): void {
-  changeRoute(routeId, (r) => routeEdit.insertPoint(r, index, { id: newId(), lngLat: roundLngLat(lngLat) }), 'Insert point');
+  changeRoutedRoute(routeId, (r) => routeEdit.insertPoint(r, index, { id: newId(), lngLat: roundLngLat(lngLat) }), 'Insert point');
 }
 
 export function movePoint(routeId: string, pointId: string, lngLat: LngLat): void {
-  changeRoute(routeId, (r) => routeEdit.movePoint(r, pointId, roundLngLat(lngLat)), 'Move point');
+  changeRoutedRoute(routeId, (r) => routeEdit.movePoint(r, pointId, roundLngLat(lngLat)), 'Move point');
 }
 
 export function removePoint(routeId: string, pointId: string): void {
-  changeRoute(routeId, (r) => routeEdit.removePoint(r, pointId), 'Remove point');
+  changeRoutedRoute(routeId, (r) => routeEdit.removePoint(r, pointId), 'Remove point');
 }
 
 /** Makes the leg that leads to the point straight, or routed again. */
 export function setStraight(routeId: string, pointId: string, straight: boolean): void {
-  changeRoute(routeId, (r) => routeEdit.setStraight(r, pointId, straight), straight ? 'Straight leg' : 'Routed leg');
+  changeRoutedRoute(routeId, (r) => routeEdit.setStraight(r, pointId, straight), straight ? 'Straight leg' : 'Routed leg');
 }
 
 /** Stores a routed leg; routing results are no undo steps. */
 export function setRouteLeg(routeId: string, key: string, leg: RoutedLeg): void {
-  changeRoute(routeId, (r) => routeEdit.addLeg(r, key, leg));
+  changeRoutedRoute(routeId, (r) => routeEdit.addLeg(r, key, leg));
 }
 
 /** Drops a route's routed legs so that they are routed again; undoing it brings the old ones back. */
@@ -248,6 +253,12 @@ export function addFreeStop(lngLat: LngLat): void {
 
 /** Where the routes of the selected day pass closest to a free stop of it, within reach; none for a stop that stands alone or is bound. */
 export const nearOf = (stopId: string): SequenceEntry['near'] => selectedSequence().find((e) => e.stop?.id === stopId)?.near;
+
+/** Whether a free stop of the selected day can be bound where its routes pass closest: a track there has no points to bind to. */
+export function canConnect(stopId: string): boolean {
+  const near = nearOf(stopId);
+  return near !== undefined && routeById(near.routeId)?.kind === 'routed';
+}
 
 /** Binds a free stop of the selected day to its routes where they pass closest. */
 export function connectStop(stopId: string): void {

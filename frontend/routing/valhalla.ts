@@ -1,5 +1,5 @@
 import { takesMotorwayDial, type Highways, type RoutedLeg } from '../model/trip';
-import type { Costing, Leg } from './legs';
+import type { Costing, RoadLeg } from './legs';
 
 /** The FOSSGIS Valhalla server: one request per second at most, see fossgis.de/arbeitsgruppen/osm-server/nutzungsbedingungen. */
 const ROUTING_URL = 'https://valhalla1.openstreetmap.de/route';
@@ -12,7 +12,7 @@ const ROUTING_TIMEOUT_MS = 15_000;
 /** The motorway dial as Valhalla's `use_highways`: 0 avoids, 1 favours. */
 const USE_HIGHWAYS: Record<Highways, number> = { avoid: 0, allow: 0.5, prefer: 1 };
 
-export type LegRequest = Costing & Pick<Leg, 'from' | 'to'>;
+export type LegRequest = Costing & Pick<RoadLeg, 'from' | 'to'>;
 
 /** The request for one leg: both ends, the profile as the costing, and for the motorcycle the motorway dial. */
 export function routeRequest(leg: LegRequest) {

@@ -6,6 +6,17 @@ namespace Planner\Export;
 
 final class Polyline
 {
+    /** Whether the text is an encoded polyline: values of printable characters, each closed, in pairs. */
+    public static function isWellFormed(string $encoded): bool
+    {
+        if (preg_match('/^[\x3f-\x7e]*$/', $encoded) !== 1) {
+            return false;
+        }
+        // A character below 0x5f (63 + 32) closes a value; one at or above it continues it.
+        $closed = preg_match_all('/[\x3f-\x5e]/', $encoded);
+        return $closed % 2 === 0 && ($encoded === '' || ord($encoded[-1]) < 0x5f);
+    }
+
     /**
      * Decodes an encoded polyline (Google's format, as OSRM returns it) to [lng, lat]
      * pairs; OSRM's polyline6 has precision 6.

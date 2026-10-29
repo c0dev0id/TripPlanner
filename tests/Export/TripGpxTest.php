@@ -49,6 +49,16 @@ final class TripGpxTest extends TestCase
         self::assertCount(3, $tracks[0]->trkseg->trkpt);
     }
 
+    public function testWritesATrackWithEveryPointOfItsLineInEitherForm(): void
+    {
+        $document = TripFixture::document();
+        $document['days'][0]['routes'] = [TripFixture::track('t1')];
+        $tracks = $this->parse(TripGpx::trip($document, new DateTimeImmutable()))->xpath('/g:gpx/g:trk/g:trkseg/g:trkpt');
+        self::assertSame(['47.300000', '47.200000', '47.100000'], array_map(fn ($p) => (string) $p['lat'], $tracks));
+        $routes = $this->parse(TripGpx::trip($document, new DateTimeImmutable(), new ExportOptions(form: 'routes')))->xpath('/g:gpx/g:rte/g:rtept');
+        self::assertCount(3, $routes);
+    }
+
     public function testLeavesOutAFreeStopFarFromEveryRoute(): void
     {
         $xml = $this->parse(TripGpx::day($this->document(), 1, new DateTimeImmutable()));

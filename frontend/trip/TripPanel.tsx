@@ -4,7 +4,7 @@ import { readGpxFile } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
 import type { Day, Route, Stop } from '../model/trip';
 import { defaultProfile } from '../routing/dayEdit';
-import { routeDistance } from '../routing/legs';
+import { pointCount, routeDistance } from '../routing/legs';
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { saveState } from '../state/autosave';
@@ -54,7 +54,6 @@ function JournalButton(props: { target: EntryTarget; of: string }) {
   );
 }
 
-/** One item per other day of the trip, for moving or copying something there. */
 /** An item named `label` whose submenu lists the trip's other days, for moving or copying something there; none in a trip of one day. */
 function otherDaysItem(dayId: string, label: string, run: (dayId: string) => void): MenuItem[] {
   const items = openTrip()!.days.flatMap((day, index) => (day.id === dayId ? [] : [{ label: dayLabel(day, index), run: () => run(day.id) }]));
@@ -258,8 +257,8 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
             </span>
             <span class="muted detail">
               {routeKindLabel(props.route)}
-              {props.route.points.length > 1 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
-              {props.route.kind === 'track' ? ` · ${props.route.points.length.toLocaleString()} points` : ''}
+              {routeDistance(props.route) > 0 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
+              {props.route.kind === 'track' ? ` · ${pointCount(props.route).toLocaleString()} points` : ''}
               {stopCount() > 0 ? ` · ${stopCount()} ${stopCount() === 1 ? 'stop' : 'stops'}` : ''}
               <Show when={lateCount() > 0}>
                 <span class="late"> · {lateText(lateCount())}</span>
@@ -274,10 +273,10 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
         <ol class="stops">
           <SequenceItems entries={entries()} />
         </ol>
-        <Show when={props.route.points.length === 0}>
+        <Show when={pointCount(props.route) === 0}>
           <p class="muted hint">Pick the Point tool and tap the map to draw the route.</p>
         </Show>
-        <Show when={props.route.points.length > 0 && stopCount() === 0 && props.route.kind !== 'track'}>
+        <Show when={props.route.kind === 'routed' && pointCount(props.route) > 0 && stopCount() === 0}>
           <p class="muted hint">Make stops of route points with the Stop tool, or tap beside the route.</p>
         </Show>
       </Show>

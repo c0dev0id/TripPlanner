@@ -4,7 +4,7 @@ import type { Stop } from '../model/trip';
 import { pointOfDay } from '../routing/dayEdit';
 import { dragsMarkers, setEditTarget, showNeighbours, straightLegItem, tapAction } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
-import { connectStop, disconnectStop, editingRouteId, moveStop, nearOf, neighbourDays, openTrip, removeStop, selectedDay } from '../state/trip';
+import { canConnect, connectStop, disconnectStop, editingRouteId, moveStop, neighbourDays, openTrip, removeStop, selectedDay } from '../state/trip';
 import { stopContent } from './markerContent';
 import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
 import { ForById } from '../ui/ForById';
@@ -49,7 +49,7 @@ function StopMarker(props: { map: MapLibreMap; stop: Stop }) {
       const at = pointOfDay(day, pointId);
       if (at && at.route.points[0] !== at.point) items.push(straightLegItem(at.route.id, at.point));
       items.push({ label: 'Disconnect from the route', run: () => disconnectStop(id) });
-    } else if (nearOf(id)) {
+    } else if (canConnect(id)) {
       items.push({ label: 'Connect to the route', run: () => connectStop(id) });
     }
     items.push({ label: 'Remove stop', run: () => removeStop(id) });

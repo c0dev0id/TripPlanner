@@ -105,18 +105,23 @@ CREATE TABLE IF NOT EXISTS days (
 CREATE INDEX IF NOT EXISTS days_trip ON days(trip_id, position);
 
 -- A route is geometry: its points in order, and the routed legs between them.
+-- A routed route has its motorway dial, its points and its routed legs as JSON; a track
+-- has its line as polyline6 instead.
 CREATE TABLE IF NOT EXISTS routes (
     id TEXT PRIMARY KEY,
     day_id TEXT NOT NULL REFERENCES days(id) ON DELETE CASCADE,
     position INTEGER NOT NULL,
     name TEXT NOT NULL DEFAULT '',
-    kind TEXT NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('routed', 'track')),
     profile TEXT NOT NULL,
     -- The motorway dial of the road profile: avoid, allow, prefer.
-    highways TEXT NOT NULL DEFAULT 'allow',
+    highways TEXT,
     optional INTEGER NOT NULL DEFAULT 0,
-    points TEXT NOT NULL,
-    legs TEXT NOT NULL
+    points TEXT,
+    legs TEXT,
+    line TEXT,
+    CHECK ((kind = 'routed') = (highways IS NOT NULL AND points IS NOT NULL AND legs IS NOT NULL AND line IS NULL)),
+    CHECK ((kind = 'track') = (highways IS NULL AND points IS NULL AND legs IS NULL AND line IS NOT NULL))
 );
 CREATE INDEX IF NOT EXISTS routes_day ON routes(day_id, position);
 

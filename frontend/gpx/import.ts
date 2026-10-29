@@ -1,5 +1,5 @@
 import { distanceBetween } from '../geo/measure';
-import { MAX_NAME, MAX_TEXT, newId, STOP_KINDS, type LngLat, type Profile, type Route, type Stop, type StopKind } from '../model/trip';
+import { MAX_NAME, MAX_TEXT, newId, STOP_KINDS, type LngLat, type Profile, type Route, type RoutedLeg, type Stop, type StopKind } from '../model/trip';
 import { newStop } from '../routing/dayEdit';
 import { legKey, roundLngLat } from '../routing/legs';
 import { encodePolyline } from '../routing/polyline';
@@ -31,7 +31,7 @@ function cleanPoints(points: readonly LngLat[]): LngLat[] {
 }
 
 /** A leg along the given way, measured along it; its riding time is left to the assumed pace until the routing is asked. */
-function legAlong(way: readonly LngLat[]): Route['legs'][string] {
+function legAlong(way: readonly LngLat[]): RoutedLeg {
   let distanceM = 0;
   for (let i = 1; i < way.length; i++) distanceM += distanceBetween(way[i - 1]!, way[i]!);
   return { geometry: encodePolyline(way), distanceM, durationS: null };
@@ -42,8 +42,8 @@ function legAlong(way: readonly LngLat[]): Route['legs'][string] {
  * way as its geometry, keyed as the routing keys it. The other legs are left to the
  * routing. A point that repeats the one before joins its way to the leg it lies on.
  */
-function calculatedLegs(points: readonly LngLat[], ways: readonly LngLat[][], profile: Profile): Route['legs'] {
-  const legs: Route['legs'] = {};
+function calculatedLegs(points: readonly LngLat[], ways: readonly LngLat[][], profile: Profile): Record<string, RoutedLeg> {
+  const legs: Record<string, RoutedLeg> = {};
   const rounded = points.map(roundLngLat);
   let way: LngLat[] = [];
   for (let i = 0; i < rounded.length; i++) {
@@ -74,28 +74,24 @@ function kindOf(waypoint: GpxContent['waypoints'][number]): StopKind {
 /**
  * Routes and stops from a GPX file. A GPX route keeps all its points and its legs are
  * routed with `profile`, except those it carries the way Garmin calculated for. A track
- * becomes a route of kind `track`: every one of its points, joined by straight legs, so
- * that it keeps its shape; condensing it or making a route of it is the user's choice. Unnamed routes are named after the
- * file. A waypoint becomes a stop, bound to a route point it stands on, free otherwise,
+ * keeps its line with every point; condensing it or making a route of it is the user's
+ * choice. Unnamed routes are named after the file. A waypoint becomes a stop, bound to a
+ * point of a GPX route it stands on, free otherwise,
  * of the kind kindOf reads from it, with its address and phone numbers where Garmin gave them.
  * Names and notes are fitted to what a trip holds: composed, blank runs closed up, overlong text cut.
  */
 export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string }): DayParts {
   const lines = [
-    ...gpx.routes.map((r) => ({ name: r.name, kind: 'routed' as const, points: r.points, legs: calculatedLegs(r.points, r.ways, options.profile) })),
-    ...gpx.tracks.map((t) => ({ name: t.name, kind: 'track' as const, points: t.segments.flat(), legs: {} })),
+    ...gpx.routes.map((r) => ({ name: r.name, kind: 'routed' as const, points: r.points, ways: r.ways })),
+    ...gpx.tracks.map((t) => ({ name: t.name, kind: 'track' as const, points: t.segments.flat(), ways: [] })),
   ].filter((l) => l.points.length > 0);
-  const routes: Route[] = lines.map((line, i) => ({
-    id: options.newId(),
-    name: asName(line.name ?? (lines.length === 1 ? options.fileName : `${options.fileName} ${i + 1}`)),
-    kind: line.kind,
-    profile: options.profile,
-    highways: 'allow',
-    optional: false,
-    points: cleanPoints(line.points).map((lngLat, j) => (line.kind === 'track' && j > 0 ? { id: options.newId(), lngLat, straight: true } : { id: options.newId(), lngLat })),
-    legs: line.legs,
-  }));
-  const pointAt = new Map(routes.flatMap((r) => r.points.map((p) => [p.lngLat.join(','), p.id] as const)));
+  const routes = lines.map((line, i): Route => {
+    const base = { id: options.newId(), name: asName(line.name ?? (lines.length === 1 ? options.fileName : `${options.fileName} ${i + 1}`)), profile: options.profile, optional: false };
+    if (line.kind === 'track') return { ...base, kind: 'track', line: encodePolyline(cleanPoints(line.points)) };
+    const points = cleanPoints(line.points).map((lngLat) => ({ id: options.newId(), lngLat }));
+    return { ...base, kind: 'routed', highways: 'allow', points, legs: calculatedLegs(line.points, line.ways, options.profile) };
+  });
+  const pointAt = new Map(routes.flatMap((r) => (r.kind === 'routed' ? r.points.map((p) => [p.lngLat.join(','), p.id] as const) : [])));
   const stops = gpx.waypoints.map((w, i) => {
     const lngLat = roundLngLat(w.lngLat);
     const stop = newStop(options.newId(), asName(w.name ?? `Waypoint ${i + 1}`), lngLat, pointAt.get(lngLat.join(',')) ?? null);

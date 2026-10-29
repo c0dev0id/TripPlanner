@@ -339,19 +339,23 @@ entries at the end of their section.
   is routed between them; where the file carries the way a Garmin or BaseCamp calculated
   (`gpxx:rpt`), that way is the leg's geometry, measured along it and timed at the
   assumed pace, since it is what the rider saw and planned; *Reroute* trades it for the
-  routing's own way and durations. A track is a route of kind `track` with straight legs
-  between all its points, so that it keeps its shape and stays editable like any route;
-  the kind is shown instead of a profile. A first draft cut tracks down to 500 points on
-  import; the user decides instead, from the track's menu, whether to condense it
-  (Douglas–Peucker at a chosen distance) or to make a route of it, since only the user
-  knows whether the recording or a lighter file matters. A track's points are not shown
-  one by one, neither as markers nor as rows: there are thousands. A track of 10,000
-  points makes every save of the trip near 1 MB; the dialog shows what condensing it
-  leaves. Consecutive legs of a route in the same state are one line on the map, which
-  took an edit with such a track from about 300 ms of blocked page to none. Waypoints become stops,
-  bound where they stand on a route point, so that this planner's own export comes back
-  as it went out. The alternative, a separate immutable track object, would have needed
-  its own drawing, editing and export paths for little gain.
+  routing's own way and durations. A first draft cut tracks down to 500 points on import;
+  the user decides instead, from the track's menu, whether to condense it (Douglas–Peucker
+  at a chosen distance) or to make a route of it, since only the user knows whether the
+  recording or a lighter file matters. Waypoints become stops, bound where they stand on
+  a point of a GPX route, so that this planner's own export comes back as it went out.
+- **A track is its line, not a route of points.** A track keeps every point of its line
+  as one polyline6 string; its points have no ids, no legs and no markers, and a stop
+  along it is free, placed by where the line passes closest. Tracks were first routes
+  with a straight leg to every point, so that they stayed editable like any route: an
+  archive with the Trans Euro Trail of 1.5 million track points made a 139 MB document,
+  2.2 GB of PHP memory and some 30 s of work per save, at 94 bytes a point for its id,
+  position and straight flag. As lines the same trip is 8.5 MB. For the leg code a track
+  is one leg along its line, so that the map, the riding order, the distances and the
+  tap tests take it as they take a routed route. Editing a track's points, should it come
+  back, belongs in an explicit mode that unpacks the line into points with ids for as
+  long as it is open and packs it again when it closes; the stored line does not stand in
+  its way.
 - **Imported text is fitted, not refused.** A file's names and descriptions are written
   by other apps: a waypoint's description in one archive was an address, some 32,000
   empty lines and an email. The import closes up blank runs and cuts a name to 200

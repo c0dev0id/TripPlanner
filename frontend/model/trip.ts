@@ -47,9 +47,9 @@ export const STOP_KINDS: readonly { value: StopKind; label: string }[] = [
 ];
 
 /**
- * A point to stop at. Bound to a route point of its day (`pointId`), it stands at that
- * point and moves with it; free, it stands where it is and is ordered by where the route
- * passes closest.
+ * A point to stop at. Bound to a point of a routed route of its day (`pointId`), it stands
+ * at that point and moves with it; free, it stands where it is and is ordered by where the
+ * routes pass closest.
  */
 export interface Stop {
   id: string;
@@ -82,19 +82,32 @@ export interface RoutedLeg {
   durationS: number | null;
 }
 
-/** A road to drive: points in order, the legs between consecutive points routed, or straight where the point they lead to says so. */
-export interface Route {
+/** What every route has: a track as much as a routed one. */
+interface RouteBase {
   id: string;
   name: string;
-  kind: 'routed' | 'track';
+  /** What it is travelled with; a track made into a route is routed with it. */
   profile: Profile;
+  optional: boolean;
+}
+
+/** A road to drive: points in order, the legs between consecutive points routed, or straight where the point they lead to says so. */
+export interface RoutedRoute extends RouteBase {
+  kind: 'routed';
   /** The motorway dial; it counts for the road profile. */
   highways: Highways;
-  optional: boolean;
   points: RoutePoint[];
   /** Routed legs keyed by profile, motorway dial and both end points (legKey); straight legs have none. */
   legs: Record<string, RoutedLeg>;
 }
+
+/** A line as recorded or drawn elsewhere, kept as it is: its points as one polyline6, none of them a point of its own. */
+export interface Track extends RouteBase {
+  kind: 'track';
+  line: string;
+}
+
+export type Route = RoutedRoute | Track;
 
 export interface Day {
   id: string;

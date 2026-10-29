@@ -51,16 +51,13 @@ export function tapAction(): Tool | undefined {
   return editingRoute() ? tool() : undefined;
 }
 
-/** What a spot on the map offers: a point at the edited route's end or a free stop while a route is edited, a journal entry of the selected day there; nothing without a day. */
+/** What a spot on the map offers: a point at the edited routed route's end, a free stop while a route is edited, a journal entry of the selected day there; nothing without a day. */
 export function spotItems(spot: LngLat): MenuItem[] | undefined {
   const route = editingRoute();
   const day = selectedDay();
-  const items: MenuItem[] = route
-    ? [
-        { label: 'Add a point here', run: () => appendPoint(route.id, spot) },
-        { label: 'Add a stop here, beside the route', run: () => addFreeStop(spot) },
-      ]
-    : [];
+  const items: MenuItem[] = [];
+  if (route?.kind === 'routed') items.push({ label: 'Add a point here', run: () => appendPoint(route.id, spot) });
+  if (route) items.push({ label: 'Add a stop here, beside the route', run: () => addFreeStop(spot) });
   if (day) items.push({ label: 'Journal here…', run: () => openJournal({ dayId: day.id }, spot) });
   return items.length > 0 ? items : undefined;
 }

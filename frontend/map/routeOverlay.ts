@@ -16,8 +16,8 @@ export const BOUND_COLOR = '#d9480f';
 export const FREE_COLOR = '#1971c2';
 const NEIGHBOUR_COLOR = '#adb5bd';
 
-/** Legs drawn as part of the route: routed, or straight by choice. Pending and failed legs are dashed. */
-const DRAWN: FilterSpecification = ['all', ['==', ['geometry-type'], 'LineString'], ['in', ['get', 'state'], ['literal', ['routed', 'straight']]]];
+/** Legs drawn as part of the route: routed, straight by choice, or a track's line. Pending and failed legs are dashed. */
+const DRAWN: FilterSpecification = ['all', ['==', ['geometry-type'], 'LineString'], ['in', ['get', 'state'], ['literal', ['routed', 'straight', 'track']]]];
 
 /** Rounded joins and ends; the edited route over the selected day's others, those over the neighbours. */
 const LINE_LAYOUT: LineLayerSpecification['layout'] = {
@@ -69,8 +69,8 @@ export const ROUTE_LAYERS: LayerSpecification[] = [
 
 /**
  * The legs of the days shown as lines with their role and routing state, consecutive legs
- * of a route in the same state as one line (a track of thousands of straight legs is one),
- * and a mark at each spot given (where a free stop is nearest to the route).
+ * of a route in the same state as one line, and a mark at each spot given (where a free
+ * stop is nearest to the route).
  */
 export function routeFeatures(days: readonly { day: Day; role: RouteRole }[], editingRouteId: string | undefined, failed: ReadonlySet<string>, marks: readonly LngLat[]): FeatureCollection<Geometry> {
   const features: Feature<Geometry>[] = [];

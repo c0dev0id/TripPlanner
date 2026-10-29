@@ -54,6 +54,14 @@ final class TripDocumentValidatorTest extends TestCase
         self::assertContains('info', $kinds);
     }
 
+    public function testKeepsATrackAsItsLineAlone(): void
+    {
+        $document = TripFixture::document();
+        $document['days'][0]['routes'][] = TripFixture::track('t1') + ['highways' => 'avoid', 'points' => [], 'legs' => []];
+        $checked = TripDocumentValidator::validated($document)['days'][0]['routes'][1];
+        self::assertSame(TripFixture::track('t1'), $checked);
+    }
+
     public function testCountsNamesAndTextsInCharacters(): void
     {
         $document = TripFixture::document();
@@ -97,5 +105,11 @@ final class TripDocumentValidatorTest extends TestCase
         yield 'leg without distance' => [fn (array &$d) => $d['days'][0]['routes'][0]['legs'] = ['k' => ['geometry' => 'abc', 'durationS' => null]], 'legs must map'];
         yield 'leg with a duration that is no number' => [fn (array &$d) => $d['days'][0]['routes'][0]['legs'] = ['k' => ['geometry' => 'abc', 'distanceM' => 1, 'durationS' => 'soon']], 'legs must map'];
         yield 'not an object' => [fn (array &$d) => $d['days'][0] = 'monday', 'days[0] must be an object'];
+        yield 'track without a line' => [fn (array &$d) => $d['days'][0]['routes'][] = ['line' => null] + TripFixture::track('t1'), 'line must be a polyline'];
+        yield 'track with an unfinished line' => [fn (array &$d) => $d['days'][0]['routes'][] = ['line' => '_y}eyA_'] + TripFixture::track('t1'), 'line must be a polyline'];
+        yield 'track with half a point' => [fn (array &$d) => $d['days'][0]['routes'][] = ['line' => '_y}eyA'] + TripFixture::track('t1'), 'line must be a polyline'];
+        yield 'stop bound to a track' => [function (array &$d): void {
+            $d['days'][0]['routes'] = [TripFixture::track('r1')];
+        }, 'names no route point'];
     }
 }

@@ -63,16 +63,16 @@
   save over a newer version is refused and the trip offered for reloading.
 - GPX import into a day: a file's routes become routes with every point, their legs
   routed, except those the file carries the way a Garmin calculated for, which keep that
-  way; its tracks become routes of kind track with every point, joined by straight legs;
-  its waypoints become stops, bound to a route point they stand on, free otherwise, with
+  way; its tracks keep their line with every point;
+  its waypoints become stops, bound to a point of a GPX route they stand on, free otherwise, with
   their type as the kind where it is one of ours, else the kind a Garmin symbol names
   exactly (Information, Restaurant, Gas Station), else a plain stop, and with the
   address and phone numbers Garmin's waypoint extension gives as their address and
   contact. A track's row counts its points and
-  lists only its stops, and the map shows no marker for each of its points. Its menu
-  condenses it (Douglas–Peucker at a distance chosen from a few, each with the count of
-  points it leaves) or makes a route of it: fewer points, every leg routed, with the time
-  the routing will take. Points that stops stand on are kept either way.
+  lists only its stops, which are free along its line, and the map shows no marker for
+  each of its points. Its menu condenses it (Douglas–Peucker at a distance chosen from a
+  few, each with the count of points it leaves) or makes a route of it: fewer points,
+  every leg routed, with the time the routing will take.
 - Import of a folder tree from disk into the open folder of the library: each folder
   holding GPX files becomes a trip named after it without its date, the folders above it
   folders (existing ones reused by name). A date in a file's name (YYYY-MM-DD, YYYY_MM_DD,

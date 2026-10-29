@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Day, LngLat, Route, RoutedLeg, Stop } from '../model/trip';
 import { newStop } from './dayEdit';
+import { encodePolyline } from './polyline';
 import { daySequence, standingAlone, withStopsInRidingOrder } from './sequence';
 
 const decode = (geometry: string): LngLat[] => JSON.parse(geometry);
@@ -101,6 +102,26 @@ describe('daySequence', () => {
     const entries = daySequence(day([stop('fuel', [11, 47.1], 'b'), stop('cafe', [11, 47.1], 'b')]), decode);
     expect(entries.map((e) => e.id)).toEqual(['a', 'fuel', 'cafe', 'c']);
     expect(entries[1]!.distanceM).toBe(11_000);
+  });
+});
+
+describe('daySequence along a track', () => {
+  // North along 11°E from 47° to 47.2° in steps of 0.05°, about 5.56 km each; the decoder is the real one.
+  const track: Route = { id: 't', name: '', kind: 'track', profile: 'motorcycle', optional: false, line: encodePolyline([[11, 47], [11, 47.05], [11, 47.1], [11, 47.15], [11, 47.2]]) };
+
+  it('places a free stop along the line and ends with the track', () => {
+    const entries = daySequence(day([stop('cafe', [11.002, 47.12], null)], [track]));
+    expect(entries.map((e) => e.id)).toEqual(['cafe', 't']);
+    expect(entries[0]!.near).toMatchObject({ routeId: 't', legIndex: 0 });
+    expect(entries[0]!.distanceM).toBeCloseTo(13_343, -1);
+    expect(entries[1]!.distanceM).toBeCloseTo(22_239, -1);
+    expect(entries[1]!.timeS).toBeCloseTo(22_239 / (50 / 3.6), -1);
+  });
+
+  it('counts a route after the track on from its end', () => {
+    const entries = daySequence(day([], [track, route]), decode);
+    expect(entries.map((e) => e.id)).toEqual(['t', 'a', 'b', 'c']);
+    expect(entries[1]!.distanceM).toBeCloseTo(entries[0]!.distanceM, 6);
   });
 });
 

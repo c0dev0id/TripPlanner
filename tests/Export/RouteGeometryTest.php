@@ -7,6 +7,7 @@ namespace Planner\Tests\Export;
 use PHPUnit\Framework\TestCase;
 use Planner\Export\Polyline;
 use Planner\Export\RouteGeometry;
+use Planner\Tests\Trip\TripFixture;
 
 final class RouteGeometryTest extends TestCase
 {
@@ -27,6 +28,7 @@ final class RouteGeometryTest extends TestCase
     public function testJoinsRoutedLegsAndFallsBackToStraightLines(): void
     {
         $route = [
+            'kind' => 'routed',
             'profile' => 'motorcycle',
             'highways' => 'allow',
             'points' => [
@@ -43,5 +45,19 @@ final class RouteGeometryTest extends TestCase
             ],
         ];
         self::assertSame([[1.0, 1.0], [1.5, 1.2], [2.0, 2.0], [3.0, 3.0], [4.0, 4.0]], RouteGeometry::line($route));
+    }
+
+    public function testReadsATrackAsItsLine(): void
+    {
+        self::assertSame([[11.4, 47.3], [11.35, 47.2], [11.3, 47.1]], RouteGeometry::line(TripFixture::track('t1')));
+    }
+
+    public function testTellsAWellFormedPolyline(): void
+    {
+        self::assertTrue(Polyline::isWellFormed(''));
+        self::assertTrue(Polyline::isWellFormed('_p~iF~ps|U_ulLnnqC'));
+        self::assertFalse(Polyline::isWellFormed('_p~iF'), 'half a point');
+        self::assertFalse(Polyline::isWellFormed('_p~iF~ps|'), 'an unfinished value');
+        self::assertFalse(Polyline::isWellFormed('_p~iF ps|U'), 'a character outside the code');
     }
 }

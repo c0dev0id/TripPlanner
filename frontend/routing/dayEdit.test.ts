@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { withChanges, type Day, type RoutedLeg, type Trip } from '../model/trip';
-import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copyStopToDay, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, removeRoute, removeStop, updateDay, updateRoute, updateStop } from './dayEdit';
+import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copyStopToDay, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop } from './dayEdit';
 import { changeSettings } from './routeEdit';
-import { routedLegs } from './legs';
+import { pointCount, routedLegs } from './legs';
+import { routedOf } from './testing';
 import * as routeEdit from './routeEdit';
 
 const routed = (geometry: string): RoutedLeg => ({ geometry, distanceM: 1000, durationS: 60 });
@@ -18,9 +19,9 @@ const dateDay = (trip: Trip, date: string): Trip => updateDay(trip, 'd', (d) => 
 function fixture(): Trip {
   let trip = addRoute(empty(), 'd', 'r');
   for (const [id, lngLat] of [['a', [1, 1]], ['b', [2, 2]], ['c', [3, 3]]] as const) {
-    trip = updateRoute(trip, 'r', (r) => routeEdit.appendPoint(r, { id, lngLat: [...lngLat] }));
+    trip = updateRoute(trip, 'r', routedOnly((r) => routeEdit.appendPoint(r, { id, lngLat: [...lngLat] })));
   }
-  const route = day(trip).routes[0]!;
+  const route = routedOf(day(trip).routes[0]!);
   const legs = Object.fromEntries(routedLegs(route).map((l) => [l.key, routed(l.key)]));
   trip = { ...trip, days: [{ ...day(trip), routes: [{ ...route, legs }] }] };
   trip = convertPoint(trip, 'd', 'b', 's1');
@@ -30,22 +31,22 @@ function fixture(): Trip {
 describe('routes and points', () => {
   it('adds a route with the day profile and points at its end', () => {
     const trip = fixture();
-    expect(day(trip).routes[0]!.points.map((p) => p.id)).toEqual(['a', 'b', 'c']);
+    expect(routedOf(day(trip).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'b', 'c']);
     const bike = updateRoute(trip, 'r', (r) => changeSettings(r, { profile: 'bicycle' }));
     const two = addRoute(bike, 'd', 'r2');
     expect(day(two).routes[1]!.profile).toBe('bicycle');
-    expect(day(bike).routes[0]!.legs).toEqual({});
+    expect(routedOf(day(bike).routes[0]!).legs).toEqual({});
   });
 
   it('moves a bound stop with its point', () => {
-    const trip = updateRoute(fixture(), 'r', (r) => routeEdit.movePoint(r, 'b', [2.1, 2.1]));
+    const trip = updateRoute(fixture(), 'r', routedOnly((r) => routeEdit.movePoint(r, 'b', [2.1, 2.1])));
     expect(day(trip).stops[0]!.lngLat).toEqual([2.1, 2.1]);
-    expect(day(trip).routes[0]!.legs).toEqual({});
+    expect(routedOf(day(trip).routes[0]!).legs).toEqual({});
   });
 
   it('frees a stop whose point is removed, where it stood', () => {
-    const trip = updateRoute(fixture(), 'r', (r) => routeEdit.removePoint(r, 'b'));
-    expect(day(trip).routes[0]!.points.map((p) => p.id)).toEqual(['a', 'c']);
+    const trip = updateRoute(fixture(), 'r', routedOnly((r) => routeEdit.removePoint(r, 'b')));
+    expect(routedOf(day(trip).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'c']);
     expect(day(trip).stops[0]).toMatchObject({ pointId: null, lngLat: [2, 2] });
   });
 
@@ -56,21 +57,21 @@ describe('routes and points', () => {
   });
 
   it('inserts a point without touching the stops', () => {
-    const trip = updateRoute(fixture(), 'r', (r) => routeEdit.insertPoint(r, 1, { id: 'x', lngLat: [1.5, 1.5] }));
-    expect(day(trip).routes[0]!.points.map((p) => p.id)).toEqual(['a', 'x', 'b', 'c']);
+    const trip = updateRoute(fixture(), 'r', routedOnly((r) => routeEdit.insertPoint(r, 1, { id: 'x', lngLat: [1.5, 1.5] })));
+    expect(routedOf(day(trip).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'x', 'b', 'c']);
     expect(day(trip).stops[0]!.pointId).toBe('b');
   });
 
   it('leaves a route of another trip part alone', () => {
     const trip = fixture();
-    expect(updateRoute(trip, 'nope', (r) => routeEdit.removePoint(r, 'b'))).toBe(trip);
+    expect(updateRoute(trip, 'nope', routedOnly((r) => routeEdit.removePoint(r, 'b')))).toBe(trip);
   });
 });
 
 describe('stops', () => {
   it('inserts a stop on the line as a bound stop', () => {
     const trip = insertStop(fixture(), 'd', 'r', 1, [1.5, 1.5], 'x', 's3');
-    expect(day(trip).routes[0]!.points.map((p) => p.id)).toEqual(['a', 'x', 'b', 'c']);
+    expect(routedOf(day(trip).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'x', 'b', 'c']);
     expect(day(trip).stops[2]).toMatchObject({ id: 's3', pointId: 'x', lngLat: [1.5, 1.5] });
   });
 
@@ -83,37 +84,37 @@ describe('stops', () => {
 
   it('connects a free stop by a new point at its position', () => {
     const trip = connectStop(fixture(), 'd', 's2', 'r', 2, 'p');
-    expect(day(trip).routes[0]!.points.map((p) => [p.id, p.lngLat])).toEqual([
+    expect(routedOf(day(trip).routes[0]!).points.map((p) => [p.id, p.lngLat])).toEqual([
       ['a', [1, 1]],
       ['b', [2, 2]],
       ['p', [2.5, 2.4]],
       ['c', [3, 3]],
     ]);
     expect(day(trip).stops[1]!.pointId).toBe('p');
-    expect(Object.keys(day(trip).routes[0]!.legs)).toEqual(['motorcycle:allow/1,1;2,2']);
+    expect(Object.keys(routedOf(day(trip).routes[0]!).legs)).toEqual(['motorcycle:allow/1,1;2,2']);
     expect(connectStop(trip, 'd', 's2', 'r', 2, 'q')).toBe(trip);
   });
 
   it('disconnects a bound stop, which stays where it was', () => {
     const trip = disconnectStop(fixture(), 'd', 's1');
-    expect(day(trip).routes[0]!.points.map((p) => p.id)).toEqual(['a', 'c']);
+    expect(routedOf(day(trip).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'c']);
     expect(day(trip).stops[0]).toMatchObject({ pointId: null, lngLat: [2, 2] });
     expect(disconnectStop(trip, 'd', 's1')).toBe(trip);
   });
 
   it('moves a bound stop through its point and a free stop on its own', () => {
     const bound = moveStop(fixture(), 'd', 's1', [2.2, 2.2]);
-    expect(day(bound).routes[0]!.points[1]!.lngLat).toEqual([2.2, 2.2]);
+    expect(routedOf(day(bound).routes[0]!).points[1]!.lngLat).toEqual([2.2, 2.2]);
     expect(day(bound).stops[0]!.lngLat).toEqual([2.2, 2.2]);
     const free = moveStop(fixture(), 'd', 's2', [5, 5]);
     expect(day(free).stops[1]!.lngLat).toEqual([5, 5]);
-    expect(day(free).routes[0]!.points[1]!.lngLat).toEqual([2, 2]);
+    expect(routedOf(day(free).routes[0]!).points[1]!.lngLat).toEqual([2, 2]);
   });
 
   it('removes a stop and leaves its point', () => {
     const trip = removeStop(fixture(), 'd', 's1');
     expect(day(trip).stops.map((s) => s.id)).toEqual(['s2']);
-    expect(day(trip).routes[0]!.points).toHaveLength(3);
+    expect(routedOf(day(trip).routes[0]!).points).toHaveLength(3);
   });
 
   it('updates what a stop says and returns the same trip for no change', () => {
@@ -160,8 +161,8 @@ describe('reordering and copying', () => {
     const copy = trip.days[1]!;
     expect(copy.date).toBeNull();
     expect(copy.routes[0]!.id).toBe('n1');
-    expect(copy.routes[0]!.points.map((p) => p.id)).toEqual(['n2', 'n3', 'n4']);
-    expect(copy.routes[0]!.legs).toEqual(day(trip).routes[0]!.legs);
+    expect(routedOf(copy.routes[0]!).points.map((p) => p.id)).toEqual(['n2', 'n3', 'n4']);
+    expect(routedOf(copy.routes[0]!).legs).toEqual(routedOf(day(trip).routes[0]!).legs);
     expect(copy.stops.map((s) => [s.id, s.pointId])).toEqual([
       ['n5', 'n3'],
       ['n6', null],
@@ -173,7 +174,7 @@ describe('reordering and copying', () => {
     expect(day(moveRoute(two, 'r2', 0)).routes.map((r) => r.id)).toEqual(['r2', 'r']);
     expect(moveRoute(two, 'r2', 1)).toBe(two);
     const copied = duplicateRoute({ ...two, days: [{ ...day(two), routes: [{ ...day(two).routes[0]!, name: 'Loop' }, day(two).routes[1]!] }] }, 'r', ids('c'));
-    expect(day(copied).routes.map((r) => [r.id, r.name, r.points.length])).toEqual([
+    expect(day(copied).routes.map((r) => [r.id, r.name, pointCount(r)])).toEqual([
       ['r', 'Loop', 3],
       ['c1', 'Loop copy', 3],
       ['r2', '', 0],

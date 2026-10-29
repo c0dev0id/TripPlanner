@@ -52,7 +52,7 @@ final class TripGpx
         foreach ($indices as $index) {
             $day = $document['days'][$index];
             $routes = array_values(array_filter($day['routes'], $included));
-            // The routes' full lines, decoded once and only where they are needed: the tracks form, and free stops.
+            // The routes' full lines, decoded once and only where they are needed: the tracks form, a track's points, and free stops.
             $dayLines = null;
             $linesOf = function () use (&$dayLines, $routes): array {
                 return $dayLines ??= array_map(RouteGeometry::line(...), $routes);
@@ -61,9 +61,10 @@ final class TripGpx
             $several = count($routes) > 1;
             foreach ($routes as $i => $route) {
                 $label = $several ? $dayLabel . ' – ' . ($route['name'] === '' ? 'Route ' . ($i + 1) : $route['name']) : $dayLabel;
-                $lines[] = ['name' => $label, 'points' => $options->form === 'routes' ? array_column($route['points'], 'lngLat') : $linesOf()[$i]];
+                $points = $options->form === 'routes' && $route['kind'] === 'routed' ? array_column($route['points'], 'lngLat') : $linesOf()[$i];
+                $lines[] = ['name' => $label, 'points' => $points];
             }
-            $pointIds = array_merge([], ...array_map(fn (array $route) => array_column($route['points'], 'id'), $routes));
+            $pointIds = array_merge([], ...array_map(fn (array $route) => array_column($route['points'] ?? [], 'id'), $routes));
             foreach ($day['stops'] as $stop) {
                 $bound = $stop['pointId'] !== null && in_array($stop['pointId'], $pointIds, true);
                 if ($included($stop) && ($bound || self::nearALine($stop['lngLat'], $linesOf(), $options->reachM))) {

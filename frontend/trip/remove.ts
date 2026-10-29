@@ -1,4 +1,5 @@
 import type { Day, Route } from '../model/trip';
+import { pointCount } from '../routing/legs';
 import { openTrip, removeDay, removeRoute } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
 import { dayLabelOf, routeLabelOf } from './labels';
@@ -14,7 +15,8 @@ export async function removeDayAsked(day: Day): Promise<boolean> {
 /** Removes the route, after asking where it has points; whether it was removed. */
 export async function removeRouteAsked(route: Route): Promise<boolean> {
   const label = routeLabelOf(openTrip()!, route);
-  if (route.points.length > 0 && !(await askConfirmation(`Remove ${label} with its ${route.points.length.toLocaleString()} points?`, 'Remove'))) return false;
+  const points = pointCount(route);
+  if (points > 0 && !(await askConfirmation(`Remove ${label} with its ${points.toLocaleString()} points?`, 'Remove'))) return false;
   removeRoute(route.id);
   return true;
 }

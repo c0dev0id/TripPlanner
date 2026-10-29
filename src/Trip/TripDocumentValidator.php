@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Planner\Trip;
 
+use Planner\Export\Polyline;
 use Planner\Name;
 
 /**
@@ -47,7 +48,7 @@ final class TripDocumentValidator
         $positions = [];
         foreach (self::list($day, 'routes') as $i => $route) {
             $routes[] = $checked = self::route($route, "$at.routes[$i]");
-            foreach ($checked['points'] as $point) {
+            foreach ($checked['points'] ?? [] as $point) {
                 if (isset($positions[$point['id']])) {
                     throw new InvalidDocument("$at.routes' points hold the same id twice.");
                 }
@@ -107,10 +108,25 @@ final class TripDocumentValidator
         ];
     }
 
+    /** A routed route with its motorway dial, points and legs, or a track with its line. */
     private static function route(mixed $route, string $at): array
     {
         if (!is_array($route)) {
             throw new InvalidDocument("$at must be an object.");
+        }
+        $common = [
+            'id' => self::id($route, $at),
+            'name' => self::text($route, 'name', $at, 200),
+            'kind' => self::oneOf($route, 'kind', self::ROUTE_KINDS, $at),
+            'profile' => self::oneOf($route, 'profile', self::PROFILES, $at),
+            'optional' => self::bool($route, 'optional', $at),
+        ];
+        if ($common['kind'] === 'track') {
+            $line = $route['line'] ?? null;
+            if (!is_string($line) || !Polyline::isWellFormed($line)) {
+                throw new InvalidDocument("$at.line must be a polyline.");
+            }
+            return $common + ['line' => $line];
         }
         $points = [];
         foreach (self::list($route, 'points') as $i => $point) {
@@ -134,16 +150,7 @@ final class TripDocumentValidator
             }
             $legs[$key] = ['geometry' => $leg['geometry'], 'distanceM' => (int) round($leg['distanceM']), 'durationS' => $duration === null ? null : (int) round($duration)];
         }
-        return [
-            'id' => self::id($route, $at),
-            'name' => self::text($route, 'name', $at, 200),
-            'kind' => self::oneOf($route, 'kind', self::ROUTE_KINDS, $at),
-            'profile' => self::oneOf($route, 'profile', self::PROFILES, $at),
-            'highways' => self::oneOf($route, 'highways', self::HIGHWAYS, $at),
-            'optional' => self::bool($route, 'optional', $at),
-            'points' => $points,
-            'legs' => $legs,
-        ];
+        return $common + ['highways' => self::oneOf($route, 'highways', self::HIGHWAYS, $at), 'points' => $points, 'legs' => $legs];
     }
 
     private static function list(array $parent, string $key): array

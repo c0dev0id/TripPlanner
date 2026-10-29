@@ -1,6 +1,5 @@
 import { createMemo, For } from 'solid-js';
-import type { Route } from '../model/trip';
-import { boundPointIds, dayOfRoute } from '../routing/dayEdit';
+import type { Track } from '../model/trip';
 import { thinningTolerances } from '../routing/routeEdit';
 import { ROUTING_MIN_INTERVAL_MS } from '../routing/valhalla';
 import { setTrackAction, trackAction } from '../state/drawing';
@@ -34,24 +33,17 @@ const ACTIONS = {
 
 const distance = (metres: number): string => (metres < 1000 ? `${metres} m` : `${metres / 1000} km`);
 
-/**
- * Condenses a track's points, or makes a route of it, at a tolerance chosen with the count
- * of points it leaves; points that stops stand on are always kept.
- */
+/** Condenses a track's points, or makes a route of it, at a tolerance chosen with the count of points it leaves. */
 export function TrackDialog() {
-  const route = createMemo((): Route | undefined => {
+  const track = createMemo((): Track | undefined => {
     const target = trackAction();
-    return target ? routeById(target.routeId) : undefined;
+    const route = target && routeById(target.routeId);
+    return route?.kind === 'track' ? route : undefined;
   });
   const action = () => ACTIONS[trackAction()?.action ?? 'condense'];
-  /** The stops of the route's day, which change less often than the trip. */
-  const stops = createMemo(() => {
-    const r = route();
-    return r && dayOfRoute(openTrip()!, r.id)?.stops;
-  });
   const tolerances = createMemo(() => {
-    const [r, s] = [route(), stops()];
-    return r && s ? thinningTolerances(r, boundPointIds({ stops: s })) : new Float64Array(0);
+    const t = track();
+    return t ? thinningTolerances(t) : new Float64Array(0);
   });
   const option = (toleranceM: number) => {
     const points = tolerances().filter((t) => t > toleranceM).length;
@@ -61,16 +53,16 @@ export function TrackDialog() {
   return (
     <EditDialog
       label={action().title}
-      value={route()}
+      value={track()}
       title={(r) => `${action().title} · ${routeLabelOf(openTrip()!, r)}`}
       submit={action().submit}
       onClose={() => setTrackAction(undefined)}
       onSubmit={(form, r) => action().run(r.id, Number(field(form, 'tolerance')))}
     >
-      {(r) => (
+      {() => (
         <>
           <p class="muted">
-            {action().intro} Points that stops stand on stay. The track has {r.points.length.toLocaleString()} points now.
+            {action().intro} The track has {tolerances().length.toLocaleString()} points now.
           </p>
           <label>
             {action().field}

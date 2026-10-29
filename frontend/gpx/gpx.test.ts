@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { LngLat } from '../model/trip';
 import { parseGpx, type GpxContent } from './gpx';
+import { pointCount } from '../routing/legs';
+import { decodePolyline } from '../routing/polyline';
+import { routedOf } from '../routing/testing';
 import { gpxToDayParts } from './import';
 
 const GPX_11 = `<?xml version="1.0" encoding="UTF-8"?>
@@ -57,15 +60,15 @@ describe('gpxToDayParts', () => {
   let n = 0;
   const options = { fileName: 'tour', profile: 'bicycle' as const, newId: () => `id${n++}` };
 
-  it('routes GPX routes, joins track points by straight lines, makes stops of waypoints', () => {
+  it('routes GPX routes, keeps a track as its line, makes stops of waypoints', () => {
     const parts = gpxToDayParts(parseGpx(GPX_11), options);
-    expect(parts.routes.map((r) => [r.name, r.kind, r.profile, r.points.map((p) => p.straight === true)])).toEqual([
-      ['Planned', 'routed', 'bicycle', [false, false]],
-      ['tour 2', 'track', 'bicycle', [false, true, true]],
-    ]);
+    const [planned, track] = parts.routes;
+    expect([planned!.name, planned!.kind, planned!.profile, routedOf(planned!).points.map((p) => p.lngLat)]).toEqual(['Planned', 'routed', 'bicycle', [[11.5, 48.1], [11.7, 48.3]]]);
+    expect(track).toMatchObject({ name: 'tour 2', kind: 'track', profile: 'bicycle' });
+    expect(track!.kind === 'track' && decodePolyline(track!.line)).toEqual([[12, 47], [12.1, 47.1], [12.2, 47.2]]);
     // The café stands on the route's first point and is bound to it; the castle is no kind of ours.
     expect(parts.stops.map((s) => [s.name, s.kind, s.notes, s.pointId])).toEqual([
-      ['Café', 'cafe', 'Good cake', parts.routes[0]!.points[0]!.id],
+      ['Café', 'cafe', 'Good cake', routedOf(planned!).points[0]!.id],
       ['Waypoint 2', 'other', 'No name', null],
     ]);
   });
@@ -109,7 +112,7 @@ describe('gpxToDayParts', () => {
   });
 
   it("keeps a Garmin route's points, each leg along the way Garmin calculated, its time left to the pace", () => {
-    const [garmin, plain] = gpxToDayParts(parseGpx(GARMIN), options).routes;
+    const [garmin, plain] = gpxToDayParts(parseGpx(GARMIN), options).routes.map(routedOf);
     expect(garmin!.name).toBe('Pass road');
     expect(garmin!.points.map((p) => p.lngLat)).toEqual([
       [11, 48],
@@ -126,7 +129,7 @@ describe('gpxToDayParts', () => {
 
   it('joins the way of a Garmin route point that repeats the one before to the leg it lies on', () => {
     const gpx: GpxContent = { waypoints: [], tracks: [], routes: [{ points: [[11, 48], [11, 48], [11.2, 48.3]], ways: [[], [[11.1, 48.1]], []] }] };
-    const [route] = gpxToDayParts(gpx, options).routes;
+    const [route] = gpxToDayParts(gpx, options).routes.map(routedOf);
     expect(route!.points.map((p) => p.lngLat)).toEqual([
       [11, 48],
       [11.2, 48.3],
@@ -151,9 +154,9 @@ describe('gpxToDayParts', () => {
   it('names a single unnamed line after the file, drops repeated points, keeps every point of a long track', () => {
     const zigzag = (count: number): LngLat[] => Array.from({ length: count }, (_, i) => [i * 0.0001, (i % 2) * 0.0002]);
     const parts = gpxToDayParts({ waypoints: [], routes: [], tracks: [{ segments: [[[1, 1], [1.0000001, 1]], [[2, 2]]] }] }, options);
-    expect(parts.routes.map((r) => [r.name, r.points.map((p) => p.lngLat)])).toEqual([['tour', [[1, 1], [2, 2]]]]);
+    expect(parts.routes.map((r) => [r.name, r.kind === 'track' && decodePolyline(r.line)])).toEqual([['tour', [[1, 1], [2, 2]]]]);
     const long = gpxToDayParts({ waypoints: [], routes: [], tracks: [{ segments: [zigzag(3000)] }] }, options);
-    expect(long.routes[0]!.points).toHaveLength(3000);
+    expect(pointCount(long.routes[0]!)).toBe(3000);
     expect(gpxToDayParts({ waypoints: [], routes: [], tracks: [] }, options)).toEqual({ routes: [], stops: [] });
   });
 });

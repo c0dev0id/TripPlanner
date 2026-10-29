@@ -73,7 +73,10 @@ export function Interactions(props: { map: MapLibreMap }) {
     if (!action || action === 'hand' || !route || fromMarker(e.originalEvent)) return;
     setMenu(undefined);
     const hit = hitRouteLine(map, route, [e.point.x, e.point.y], tapReach(pointerType !== 'mouse'));
-    if (action === 'point') {
+    // A track has no points to add to or to bind a stop to: a stop on it is free.
+    if (route.kind === 'track') {
+      if (action === 'stop') addFreeStop(hit ? hit.lngLat : toLngLat(e.lngLat));
+    } else if (action === 'point') {
       if (hit) insertPoint(route.id, hit.legIndex + 1, hit.lngLat);
       else appendPoint(route.id, toLngLat(e.lngLat));
     } else if (action === 'stop') {

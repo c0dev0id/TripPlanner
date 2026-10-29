@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Planner\Trip;
 
-/** A trip document as a copy: every day, route, point and stop under a new id, bound stops following their points. */
+/** A trip document as a copy: every day, route, point of a routed route and stop under a new id, bound stops following their points. */
 final class TripCopy
 {
     public static function withNewIds(array $document): array
@@ -14,6 +14,10 @@ final class TripCopy
             $pointIds = [];
             $routes = [];
             foreach ($day['routes'] as $route) {
+                if ($route['kind'] === 'track') {
+                    $routes[] = ['id' => self::id()] + $route;
+                    continue;
+                }
                 $points = [];
                 foreach ($route['points'] as $point) {
                     $pointIds[$point['id']] = self::id();

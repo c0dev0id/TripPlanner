@@ -66,6 +66,12 @@ final class TripFixture
         ];
     }
 
+    /** A track south from Hotel Post: 11.4,47.3 to 11.35,47.2 to 11.3,47.1. */
+    public static function track(string $id): array
+    {
+        return ['id' => $id, 'name' => '', 'kind' => 'track', 'profile' => 'motorcycle', 'optional' => false, 'line' => '_y}eyA_sxvT~hbE~s`B~hbE~s`B'];
+    }
+
     public static function day(string $id, array $routes = [], array $stops = []): array
     {
         return ['id' => $id, 'name' => '', 'date' => null, 'notes' => '', 'routes' => $routes, 'stops' => $stops];

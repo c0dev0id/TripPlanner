@@ -115,7 +115,7 @@ function RouteItem(props: { route: Route; day: Day; entries: Entry[]; api: strin
   return (
     <li>
       <span>{routeLabel(props.route, props.day)}</span>
-      <span class="muted"> · {[routeKindLabel(props.route), props.route.points.length > 1 && distanceText(routeDistance(props.route)), props.route.optional && 'optional'].filter(Boolean).join(' · ')}</span>
+      <span class="muted"> · {[routeKindLabel(props.route), routeDistance(props.route) > 0 && distanceText(routeDistance(props.route)), props.route.optional && 'optional'].filter(Boolean).join(' · ')}</span>
       <EntryList entries={props.entries} api={props.api} />
     </li>
   );
