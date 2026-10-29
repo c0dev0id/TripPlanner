@@ -102,12 +102,12 @@ describe('gpxToDayParts', () => {
     expect(Object.keys(route!.legs)).toEqual(['bicycle:allow/11,48;11.2,48.3']);
   });
 
-  it('names a single unnamed line after the file, drops repeated points, simplifies long tracks', () => {
+  it('names a single unnamed line after the file, drops repeated points, keeps every point of a long track', () => {
     const zigzag = (count: number): LngLat[] => Array.from({ length: count }, (_, i) => [i * 0.0001, (i % 2) * 0.0002]);
     const parts = gpxToDayParts({ waypoints: [], routes: [], tracks: [{ segments: [[[1, 1], [1.0000001, 1]], [[2, 2]]] }] }, options);
     expect(parts.routes.map((r) => [r.name, r.points.map((p) => p.lngLat)])).toEqual([['tour', [[1, 1], [2, 2]]]]);
     const long = gpxToDayParts({ waypoints: [], routes: [], tracks: [{ segments: [zigzag(3000)] }] }, options);
-    expect(long.routes[0]!.points.length).toBeLessThanOrEqual(500);
+    expect(long.routes[0]!.points).toHaveLength(3000);
     expect(gpxToDayParts({ waypoints: [], routes: [], tracks: [] }, options)).toEqual({ routes: [], stops: [] });
   });
 });

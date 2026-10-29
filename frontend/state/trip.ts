@@ -181,6 +181,16 @@ function changeRoute(routeId: string, change: (route: Route) => Route, label?: s
   edit((trip) => dayEdit.updateRoute(trip, routeId, change), label);
 }
 
+/** Leaves out the track's points that keep its line within `toleranceM`; those stops stand on stay. */
+export function condenseTrack(routeId: string, toleranceM: number): void {
+  edit((trip) => dayEdit.thinRoute(trip, routeId, (r, keep) => routeEdit.condensePoints(r, toleranceM, keep)), 'Condense points');
+}
+
+/** Makes a route of the track: its points thinned at `toleranceM`, the legs between them routed along the roads. */
+export function convertTrackToRoute(routeId: string, toleranceM: number): void {
+  edit((trip) => dayEdit.thinRoute(trip, routeId, (r, keep) => routeEdit.trackToRoute(r, toleranceM, keep)), 'Convert to route');
+}
+
 /** Changes what a route says about itself; a new profile or motorway dial routes its legs again. */
 export function updateRoute(routeId: string, settings: Pick<Route, 'name' | 'profile' | 'highways' | 'optional'>): void {
   changeRoute(routeId, (r) => routeEdit.changeSettings(r, settings), 'Edit route');

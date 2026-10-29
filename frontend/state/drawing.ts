@@ -27,6 +27,9 @@ export const [showNeighbours, setShowNeighbours] = createSignal(true);
 export type EditTarget = { kind: 'trip' } | { kind: 'day'; id: string } | { kind: 'route'; id: string } | { kind: 'stop'; id: string };
 export const [editTarget, setEditTarget] = createSignal<EditTarget>();
 
+/** The track whose points are being condensed or made into a route, in a dialog. */
+export const [trackAction, setTrackAction] = createSignal<{ routeId: string; action: 'condense' | 'convert' }>();
+
 /** Whether the export dialog is open. */
 export const [exportOpen, setExportOpen] = createSignal(false);
 

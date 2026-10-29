@@ -9,7 +9,7 @@ import { routeDistance } from '../routing/legs';
 import type { SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { saveState } from '../state/autosave';
-import { panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, showNeighbours } from '../state/drawing';
+import { panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, setTrackAction, showNeighbours } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, setJournalTarget } from '../state/journal';
@@ -209,8 +209,10 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
   const editing = () => editingRouteId() === props.route.id;
   const label = createMemo(() => routeLabel(props.route, props.day));
   const journal = () => journalCount({ routeId: props.route.id });
-  /** The route's points and bound stops, and the free stops that stand beside it. */
-  const entries = createMemo(() => selectedSequence().filter((e) => e.routeIndex === props.index && !(e.stop?.pointId === null && !e.near)));
+  /** The route's points and bound stops, and the free stops that stand beside it; of a track, whose points are many, the stops alone. */
+  const entries = createMemo(() =>
+    selectedSequence().filter((e) => e.routeIndex === props.index && !(e.stop?.pointId === null && !e.near) && (e.stop || props.route.kind !== 'track')),
+  );
   const stopCount = createMemo(() => entries().filter((e) => e.stop).length);
   const lateCount = createMemo(() => entries().filter((e) => (selectedTimeline()?.times.get(e.id)?.slackMin ?? 0) < 0).length);
   const more = (): MenuItem[] => [
@@ -218,6 +220,12 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
     { label: 'Move down', run: () => moveRoute(props.route.id, 1), disabled: props.index === props.day.routes.length - 1 },
     { label: 'Duplicate', run: () => duplicateRoute(props.route.id) },
     ...otherDayItems(props.day.id, 'Move to', (dayId) => moveRouteToDay(props.route.id, dayId)),
+    ...(props.route.kind === 'track'
+      ? [
+          { label: 'Condense points…', run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) },
+          { label: 'Convert to route…', run: () => setTrackAction({ routeId: props.route.id, action: 'convert' }) },
+        ]
+      : []),
     { label: 'Journal…', run: () => setJournalTarget({ routeId: props.route.id }) },
   ];
   return (
@@ -231,6 +239,7 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
             <span class="muted detail">
               {routeKindLabel(props.route)}
               {props.route.points.length > 1 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
+              {props.route.kind === 'track' ? ` · ${props.route.points.length.toLocaleString()} points` : ''}
               {stopCount() > 0 ? ` · ${stopCount()} ${stopCount() === 1 ? 'stop' : 'stops'}` : ''}
               <Show when={lateCount() > 0}>
                 <span class="late"> · {lateText(lateCount())}</span>
@@ -252,7 +261,7 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
         <Show when={props.route.points.length === 0}>
           <p class="muted hint">Pick the Point tool and tap the map to draw the route.</p>
         </Show>
-        <Show when={props.route.points.length > 0 && stopCount() === 0}>
+        <Show when={props.route.points.length > 0 && stopCount() === 0 && props.route.kind !== 'track'}>
           <p class="muted hint">Make stops of route points with the Stop tool, or tap beside the route.</p>
         </Show>
       </Show>

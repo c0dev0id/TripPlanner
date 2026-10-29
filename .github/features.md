@@ -57,9 +57,13 @@
   save over a newer version is refused and the trip offered for reloading.
 - GPX import into a day: a file's routes become routes with every point, their legs
   routed, except those the file carries the way a Garmin calculated for, which keep that
-  way; its tracks become routes of kind track, simplified to at most 500 points joined by
-  straight legs; its waypoints become stops, bound to a route point they stand on, free
-  otherwise, with their type as the kind where it is one of ours.
+  way; its tracks become routes of kind track with every point, joined by straight legs;
+  its waypoints become stops, bound to a route point they stand on, free otherwise, with
+  their type as the kind where it is one of ours. A track's row counts its points and
+  lists only its stops, and the map shows no marker for each of its points. Its menu
+  condenses it (Douglas–Peucker at a distance chosen from a few, each with the count of
+  points it leaves) or makes a route of it: fewer points, every leg routed, with the time
+  the routing will take. Points that stops stand on are kept either way.
 - Routes and stops can be marked optional, each in its dialog, and are shown so.
 - GPX export from a dialog: the whole trip or the selected day; one file or one file per
   day in a zip; routes as tracks with their full line, or as routes of their points for

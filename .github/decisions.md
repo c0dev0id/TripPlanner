@@ -277,8 +277,15 @@ entries at the end of their section.
   (`gpxx:rpt`), that way is the leg's geometry, measured along it and timed at the
   assumed pace, since it is what the rider saw and planned; *Reroute* trades it for the
   routing's own way and durations. A track is a route of kind `track` with straight legs
-  between its points, simplified to 500 at most, so that it keeps its shape and stays
-  editable like any route; the kind is shown instead of a profile. Waypoints become stops,
+  between all its points, so that it keeps its shape and stays editable like any route;
+  the kind is shown instead of a profile. A first draft cut tracks down to 500 points on
+  import; the user decides instead, from the track's menu, whether to condense it
+  (Douglas–Peucker at a chosen distance) or to make a route of it, since only the user
+  knows whether the recording or a lighter file matters. A track's points are not shown
+  one by one, neither as markers nor as rows: there are thousands. A track of 10,000
+  points makes every save of the trip near 1 MB; the dialog shows what condensing it
+  leaves. Consecutive legs of a route in the same state are one line on the map, which
+  took an edit with such a track from about 300 ms of blocked page to none. Waypoints become stops,
   bound where they stand on a route point, so that this planner's own export comes back
   as it went out. The alternative, a separate immutable track object, would have needed
   its own drawing, editing and export paths for little gain.

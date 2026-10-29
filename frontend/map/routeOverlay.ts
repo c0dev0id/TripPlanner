@@ -1,7 +1,7 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { FilterSpecification, LayerSpecification, LineLayerSpecification } from 'maplibre-gl';
 import type { Day, LngLat } from '../model/trip';
-import { legCoordinates, legState, routeLegs } from '../routing/legs';
+import { legCoordinates, legState, routeLegs, type LegState } from '../routing/legs';
 import { decodeCached } from '../routing/polyline';
 
 /** The source and layers of the route lines and the free stops' marks, and their features. */
@@ -68,18 +68,26 @@ export const ROUTE_LAYERS: LayerSpecification[] = [
 ];
 
 /**
- * Every leg of the days shown as a line with its role and routing state, and a mark at
- * each spot given (where a free stop is nearest to the route). The features hold no store
- * proxies: decoded geometries are plain and legCoordinates copies the ends.
+ * The legs of the days shown as lines with their role and routing state, consecutive legs
+ * of a route in the same state as one line (a track of thousands of straight legs is one),
+ * and a mark at each spot given (where a free stop is nearest to the route). The features
+ * hold no store proxies: decoded geometries are plain and legCoordinates copies the ends.
  */
 export function routeFeatures(days: readonly { day: Day; role: RouteRole }[], editingRouteId: string | undefined, failed: ReadonlySet<string>, marks: readonly LngLat[]): FeatureCollection<Geometry> {
   const features: Feature<Geometry>[] = [];
   for (const { day, role } of days) {
     for (const route of day.routes) {
       const routeRole: RouteRole = route.id === editingRouteId ? 'edited' : role;
+      let line: { state: LegState; coordinates: LngLat[] } | undefined;
       for (const leg of routeLegs(route)) {
+        const state = legState(route, leg, failed);
         const coordinates = legCoordinates(route, leg, decodeCached);
-        features.push({ type: 'Feature', properties: { state: legState(route, leg, failed), role: routeRole }, geometry: { type: 'LineString', coordinates } });
+        if (line?.state === state) {
+          for (let i = 1; i < coordinates.length; i++) line.coordinates.push(coordinates[i]!);
+          continue;
+        }
+        line = { state, coordinates: [...coordinates] };
+        features.push({ type: 'Feature', properties: { state, role: routeRole }, geometry: { type: 'LineString', coordinates: line.coordinates } });
       }
     }
   }

@@ -225,6 +225,17 @@ export function copyStopToDay(trip: Trip, stopId: string, dayId: string, newId: 
   return stop ? updateDay(trip, dayId, (day) => ({ ...day, stops: [...day.stops, { ...stop, id: newId, pointId: null }] })) : trip;
 }
 
+/** The ids of the day's route points that stops stand on. */
+export function boundPointIds(day: Day): Set<string> {
+  return new Set(day.stops.flatMap((s) => (s.pointId === null ? [] : [s.pointId])));
+}
+
+/** Thins a route's points with `thin`, keeping those its day's stops stand on. */
+export function thinRoute(trip: Trip, routeId: string, thin: (route: Route, keep: ReadonlySet<string>) => Route): Trip {
+  const day = dayOfRoute(trip, routeId);
+  return day ? updateRoute(trip, routeId, (r) => thin(r, boundPointIds(day))) : trip;
+}
+
 function dayOfRoute(trip: Trip, routeId: string): Day | undefined {
   return trip.days.find((d) => d.routes.some((r) => r.id === routeId));
 }

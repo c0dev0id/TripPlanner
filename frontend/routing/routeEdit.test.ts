@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { Route, RoutedLeg } from '../model/trip';
-import { addLeg, appendPoint, changeSettings, insertPoint, movePoint, removePoint, setStraight } from './routeEdit';
+import type { LngLat, Route, RoutedLeg } from '../model/trip';
+import { routedLegs } from './legs';
+import { addLeg, appendPoint, changeSettings, condensePoints, insertPoint, movePoint, removePoint, setStraight, trackToRoute } from './routeEdit';
 
 const routed = (geometry: string): RoutedLeg => ({ geometry, distanceM: 1, durationS: 1 });
 
@@ -85,5 +86,37 @@ describe('route edits', () => {
     movePoint(base, 'b', [5, 5]);
     expect(base.points[1]!.lngLat).toEqual([2, 2]);
     expect(Object.keys(base.legs)).toHaveLength(2);
+  });
+});
+
+describe('thinning a track', () => {
+  const track: Route = {
+    ...base,
+    kind: 'track',
+    legs: {},
+    points: (
+      [
+        [11, 48],
+        [11.1, 48],
+        [11.2, 48],
+        [11.2, 48.1],
+        [11.2, 48.2],
+      ] as LngLat[]
+    ).map((lngLat, i) => ({ id: `t${i}`, lngLat, ...(i > 0 && { straight: true }) })),
+  };
+  const ids = (route: Route) => route.points.map((p) => p.id);
+
+  it('condenses to the corners, keeping the points stops stand on and the straight legs', () => {
+    const condensed = condensePoints(track, 10, new Set());
+    expect(ids(condensed)).toEqual(['t0', 't2', 't4']);
+    expect([condensed.kind, condensed.points[1]!.straight]).toEqual(['track', true]);
+    expect(ids(condensePoints(track, 10, new Set(['t1'])))).toEqual(['t0', 't1', 't2', 't4']);
+  });
+
+  it('makes a route of it whose legs are routed', () => {
+    const made = trackToRoute(track, 10, new Set());
+    expect([made.kind, ids(made)]).toEqual(['routed', ['t0', 't2', 't4']]);
+    expect(made.points.some((p) => p.straight)).toBe(false);
+    expect(routedLegs(made)).toHaveLength(2);
   });
 });

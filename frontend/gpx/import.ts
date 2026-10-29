@@ -1,5 +1,4 @@
 import { distanceBetween } from '../geo/measure';
-import { simplifyToCount } from '../geo/simplify';
 import { STOP_KINDS, type LngLat, type Profile, type Route, type Stop, type StopKind } from '../model/trip';
 import { newStop } from '../routing/dayEdit';
 import { legKey, roundLngLat } from '../routing/legs';
@@ -12,8 +11,6 @@ export interface DayParts {
   stops: Stop[];
 }
 
-/** A track is simplified to at most this many points, each a marker while the route is edited. */
-const MAX_TRACK_POINTS = 500;
 
 /** Rounded positions without consecutive repeats, which would make legs of no length. */
 function cleanPoints(points: readonly LngLat[]): LngLat[] {
@@ -52,15 +49,15 @@ function calculatedLegs(points: readonly LngLat[], ways: readonly LngLat[][], pr
 /**
  * Routes and stops from a GPX file. A GPX route keeps all its points and its legs are
  * routed with `profile`, except those it carries the way Garmin calculated for. A track
- * becomes a route of kind `track`: its points simplified to at most MAX_TRACK_POINTS,
- * joined by straight legs, so that it keeps its shape. Unnamed routes are named after the
+ * becomes a route of kind `track`: every one of its points, joined by straight legs, so
+ * that it keeps its shape; condensing it or making a route of it is the user's choice. Unnamed routes are named after the
  * file. A waypoint becomes a stop, bound to a route point it stands on, free otherwise,
  * with its `type` as the kind where that is one of ours.
  */
 export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string }): DayParts {
   const lines = [
     ...gpx.routes.map((r) => ({ name: r.name, kind: 'routed' as const, points: r.points, legs: calculatedLegs(r.points, r.ways, options.profile) })),
-    ...gpx.tracks.map((t) => ({ name: t.name, kind: 'track' as const, points: simplifyToCount(t.segments.flat(), MAX_TRACK_POINTS), legs: {} })),
+    ...gpx.tracks.map((t) => ({ name: t.name, kind: 'track' as const, points: t.segments.flat(), legs: {} })),
   ].filter((l) => l.points.length > 0);
   const routes: Route[] = lines.map((line, i) => ({
     id: options.newId(),

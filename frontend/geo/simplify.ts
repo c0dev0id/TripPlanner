@@ -12,7 +12,8 @@ const MIN_TOLERANCE_M = 5;
  * the line between the points that split its stretch, and below theirs. Points within the
  * minimum get 0.
  */
-function keptUpTo(points: readonly LngLat[]): Float64Array {
+export function keepTolerances(points: readonly LngLat[]): Float64Array {
+  if (points.length === 0) return new Float64Array(0);
   const xy = points.map(planeAt(points[0]!));
   const upTo = new Float64Array(points.length);
   upTo[0] = upTo[points.length - 1] = Infinity;
@@ -41,11 +42,3 @@ function keptUpTo(points: readonly LngLat[]): Float64Array {
   return upTo;
 }
 
-/** The line simplified to at most `maxPoints`: at the minimum tolerance, or where that keeps too many, at the least tolerance that does not. */
-export function simplifyToCount(points: readonly LngLat[], maxPoints: number): LngLat[] {
-  if (points.length <= maxPoints) return [...points];
-  const upTo = keptUpTo(points);
-  // Kept above the tolerance of the point ranked just after the last that fits.
-  const tolerance = upTo.slice().sort()[points.length - 1 - maxPoints]!;
-  return points.filter((_, i) => upTo[i]! > tolerance);
-}

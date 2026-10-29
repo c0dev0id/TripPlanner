@@ -4,12 +4,16 @@ import { dragsMarkers, straightLegItem, tapAction } from '../state/drawing';
 import { convertPoint, editingRoute, movePoint, removePoint, routeById, selectedDay } from '../state/trip';
 import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
 
-/** Markers for the points of the route being edited, except those a stop stands on; draggable with every tool but the hand. */
+/**
+ * Markers for the points of the route being edited, except those a stop stands on and
+ * those of a track, which are many; draggable with every tool but the hand.
+ */
 export function PointMarkers(props: { map: MapLibreMap }) {
   const plain = createMemo(() => {
     const route = editingRoute();
+    if (!route || route.kind === 'track') return [];
     const taken = new Set(selectedDay()?.stops.map((s) => s.pointId));
-    return route ? route.points.filter((p) => !taken.has(p.id)).map((p) => p.id) : [];
+    return route.points.filter((p) => !taken.has(p.id)).map((p) => p.id);
   });
   return (
     <Show when={editingRoute()?.id} keyed>
