@@ -1,6 +1,6 @@
 import { GeoJSONSource, LngLatBounds, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
-import type { Day } from '../model/trip';
+import type { Day, LngLat } from '../model/trip';
 import { panTarget, showNeighbours } from '../state/drawing';
 import { failedLegs } from '../state/routing';
 import { editingRouteId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
@@ -51,19 +51,22 @@ function shownDays(): ShownDay[] {
   return [...neighbours, { day, role: 'selected' }];
 }
 
-const sameDays = (a: ShownDay[], b: ShownDay[]): boolean => a.length === b.length && a.every((d, i) => d.day === b[i]!.day && d.role === b[i]!.role);
+/** Whether the lines of the days drawn are the same: the same routes in the same roles. */
+const sameLines = (a: ShownDay[], b: ShownDay[]): boolean => a.length === b.length && a.every((d, i) => d.day.routes === b[i]!.day.routes && d.role === b[i]!.role);
+
+const samePlaces = (a: readonly LngLat[], b: readonly LngLat[]): boolean => a.length === b.length && a.every((p, i) => p[0] === b[i]![0] && p[1] === b[i]![1]);
 
 /** Keeps the route lines on the map, shows the selected day, or the whole trip, when it changes, and goes where the panel points. */
 function RouteLines(props: { map: MapLibreMap }) {
-  // The trip changes as a whole; its lines are drawn again only when a day drawn changes.
-  const days = createMemo(shownDays, [], { equals: sameDays });
-  const marks = () => selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : []));
+  // The trip changes as a whole; its lines are drawn again only when the routes drawn or the marks on them change.
+  const days = createMemo(shownDays, [], { equals: sameLines });
+  const marks = createMemo(() => selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : [])), [], { equals: samePlaces });
   const features = createMemo(() => routeFeatures(days(), editingRouteId(), failedLegs(), marks()));
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
     on([selectedDayId, openTripId], () => {
       const bounds = new LngLatBounds();
-      for (const { day } of days().filter((d) => d.role === 'selected')) {
+      for (const { day } of shownDays().filter((d) => d.role === 'selected')) {
         for (const route of day.routes) for (const point of route.points) bounds.extend(point.lngLat);
         for (const stop of day.stops) bounds.extend(stop.lngLat);
       }

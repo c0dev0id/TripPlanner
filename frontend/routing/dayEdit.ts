@@ -226,7 +226,7 @@ export function copyStopToDay(trip: Trip, stopId: string, dayId: string, newId: 
 }
 
 /** The ids of the day's route points that stops stand on. */
-export function boundPointIds(day: Day): Set<string> {
+export function boundPointIds(day: Pick<Day, 'stops'>): Set<string> {
   return new Set(day.stops.flatMap((s) => (s.pointId === null ? [] : [s.pointId])));
 }
 

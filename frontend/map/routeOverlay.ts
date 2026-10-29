@@ -70,8 +70,7 @@ export const ROUTE_LAYERS: LayerSpecification[] = [
 /**
  * The legs of the days shown as lines with their role and routing state, consecutive legs
  * of a route in the same state as one line (a track of thousands of straight legs is one),
- * and a mark at each spot given (where a free stop is nearest to the route). The features
- * hold no store proxies: decoded geometries are plain and legCoordinates copies the ends.
+ * and a mark at each spot given (where a free stop is nearest to the route).
  */
 export function routeFeatures(days: readonly { day: Day; role: RouteRole }[], editingRouteId: string | undefined, failed: ReadonlySet<string>, marks: readonly LngLat[]): FeatureCollection<Geometry> {
   const features: Feature<Geometry>[] = [];

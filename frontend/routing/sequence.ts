@@ -134,8 +134,16 @@ export function standingAlone(day: Day, sequence: readonly SequenceEntry[]): Sto
  */
 export function withStopsInRidingOrder(trip: Trip): Trip {
   const days = trip.days.map((day) => {
-    const rank = new Map(daySequence(day).map((e, i) => [e.id, i]));
-    return { ...day, stops: [...day.stops].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity)) };
+    let sorted = sortedDays.get(day);
+    if (!sorted) {
+      const rank = new Map(daySequence(day).map((e, i) => [e.id, i]));
+      sorted = { ...day, stops: [...day.stops].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity)) };
+      sortedDays.set(day, sorted);
+    }
+    return sorted;
   });
   return { ...trip, days };
 }
+
+/** Days in riding order by the day they were sorted from: days are never changed in place, so a day an edit left alone is sorted once. */
+const sortedDays = new WeakMap<Day, Day>();

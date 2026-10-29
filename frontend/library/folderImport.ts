@@ -42,7 +42,8 @@ function withoutDate(name: string): string {
   return rest.replace(/^[\s_.,–-]+|[\s_.,–-]+$/g, '').replace(/\s{2,}/g, ' ');
 }
 
-const byName = (a: string, b: string) => a.localeCompare(b, undefined, { numeric: true });
+/** Names in the order a person reads them: "day 2" before "day 10". */
+const byName = new Intl.Collator(undefined, { numeric: true }).compare;
 
 /** A picked file's path within the picked folder; its name alone where the browser gives none. */
 export const pickedPath = (file: File): string => file.webkitRelativePath || file.name;
@@ -64,7 +65,8 @@ export function planFolderImport(paths: readonly string[]): PlannedTrip[] {
     if (file.startsWith('.') || !/\.gpx$/i.test(file)) return;
     stems[i] = file.slice(0, -'.gpx'.length);
     const folder = path.slice(0, Math.max(0, cut));
-    byFolder.set(folder, [...(byFolder.get(folder) ?? []), i]);
+    if (byFolder.has(folder)) byFolder.get(folder)!.push(i);
+    else byFolder.set(folder, [i]);
   });
   const stem = (i: number) => stems[i]!;
   return [...byFolder.keys()].sort(byName).map((folder) => {
@@ -75,8 +77,9 @@ export function planFolderImport(paths: readonly string[]): PlannedTrip[] {
     const undated: number[] = [];
     for (const i of files) {
       const date = dateIn(stem(i));
-      if (date) dated.set(date, [...(dated.get(date) ?? []), i]);
-      else undated.push(i);
+      if (!date) undated.push(i);
+      else if (dated.has(date)) dated.get(date)!.push(i);
+      else dated.set(date, [i]);
     }
     const dayOf = (date: string | null, of: number[]): PlannedDay => ({ date, name: of.length === 1 ? withoutDate(stem(of[0]!)) : '', files: of });
     const days = [...dated.keys()].sort().map((date) => dayOf(date, dated.get(date)!));

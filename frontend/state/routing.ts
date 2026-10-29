@@ -51,10 +51,12 @@ const pump = createPump<LegJob, RoutedLeg>({
 
 const service = createRoot(() => {
   // Of the legs the routes have now; a failed leg whose point moved is no longer counted.
+  // The routes change less often than the trip: not with its stops, its days or a save.
+  const routes = createMemo(allRoutes, [], { equals: (a, b) => a.length === b.length && a.every((r, i) => r === b[i]) });
   const counts = createMemo(() => {
     const failed = failedLegs();
     const count = { pending: 0, failed: 0 };
-    for (const route of allRoutes()) {
+    for (const route of routes()) {
       for (const leg of routeLegs(route)) {
         const state = legState(route, leg, failed);
         if (state === 'pending' || state === 'failed') count[state]++;

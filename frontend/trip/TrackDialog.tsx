@@ -44,10 +44,14 @@ export function TrackDialog() {
     return target ? routeById(target.routeId) : undefined;
   });
   const action = () => ACTIONS[trackAction()?.action ?? 'condense'];
-  const tolerances = createMemo(() => {
+  /** The stops of the route's day, which change less often than the trip. */
+  const stops = createMemo(() => {
     const r = route();
-    const day = r && dayOfRoute(openTrip()!, r.id);
-    return r && day ? thinningTolerances(r, boundPointIds(day)) : new Float64Array(0);
+    return r && dayOfRoute(openTrip()!, r.id)?.stops;
+  });
+  const tolerances = createMemo(() => {
+    const [r, s] = [route(), stops()];
+    return r && s ? thinningTolerances(r, boundPointIds({ stops: s })) : new Float64Array(0);
   });
   const option = (toleranceM: number) => {
     const points = tolerances().filter((t) => t > toleranceM).length;

@@ -54,15 +54,10 @@ export function legState(route: Pick<Route, 'legs'>, leg: Leg, failed: ReadonlyS
   return failed.has(leg.key) ? 'failed' : 'pending';
 }
 
-/** The line of a leg as plain pairs: its routed geometry once it has arrived, the straight line between its ends otherwise. */
+/** The line of a leg: its routed geometry once it has arrived, the straight line between its ends otherwise. */
 export function legCoordinates(route: Pick<Route, 'legs'>, leg: Leg, decode = decodePolyline): LngLat[] {
   const routed = leg.straight ? undefined : route.legs[leg.key];
-  return routed
-    ? decode(routed.geometry)
-    : [
-        [leg.from[0], leg.from[1]],
-        [leg.to[0], leg.to[1]],
-      ];
+  return routed ? decode(routed.geometry) : [leg.from, leg.to];
 }
 
 /** The length of a leg in metres: as routed, or as the crow flies for a straight leg or one not routed yet. */

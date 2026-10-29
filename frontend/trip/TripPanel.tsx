@@ -123,7 +123,9 @@ function SaveStatus(props: { onReload: () => void }) {
 function DayItem(props: { day: Day; index: number }) {
   const selected = () => selectedDayId() === props.day.id;
   const label = createMemo(() => dayLabel(props.day, props.index));
-  const distance = createMemo(() => props.day.routes.reduce((sum, route) => sum + routeDistance(route), 0));
+  // The day's routes change less often than the day.
+  const routes = createMemo(() => props.day.routes);
+  const distance = createMemo(() => routes().reduce((sum, route) => sum + routeDistance(route), 0));
   const meta = () => [props.day.date ? shortDateText(props.day.date) : 'No date', distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
   const more = (): MenuItem[] => [
     { label: 'Edit…', run: () => setEditTarget({ kind: 'day', id: props.day.id }) },
