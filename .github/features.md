@@ -20,7 +20,10 @@
   moved to another day with the stops bound to it, from its row's menu (right-click or
   long press), where Move… opens the other days. Copy in a route's or a stop's menu keeps
   it to be pasted from a day's menu into that day, of the same trip or another: a route
-  with the stops bound to it, a stop free where it stands.
+  with the stops bound to it, a stop free where it stands. Copied routes are also pasted
+  from a trip's menu in the library, each onto the day of its date or a new day (into a
+  collection as a new section each), and from a folder's menu as a new collection with a
+  section per route.
 - Routes as geometry: points in order with routed legs between them, one profile (road,
   bike, foot) per route. A click on a route's row selects it and shows the tools over
   the map. The hand, the default, moves the map and opens a stop's details, and neither
@@ -88,8 +91,9 @@
   and collections, grouped as exact copies (the same points or the same line, whatever
   the date) or as the same ride kept twice (the same way within a kilometre at both
   ends, lengths within a tenth, nine in ten of each line's points within 75 m of the
-  other, on the same date or an undated day). A route in it opens its trip at its day;
-  the report is made afresh each time it is shown.
+  other, on the same date or an undated day). A click selects a route, Cmd or Ctrl one more,
+  Shift a run of them; the menu opens a single route at its day, and copies or deletes
+  the selected ones. The report is made afresh each time it is shown and after a delete.
 - Collections of planning material, such as a long-distance trail by country: listed in
   the library as planning material, opened like a trip but with sections instead of
   days and no dates, times, journal, tools or export. A section lists its routes and

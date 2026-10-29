@@ -189,6 +189,11 @@ entries at the end of their section.
   is created. Routes go from a collection into a trip by copy and paste through a
   clipboard that outlives the open trip, so that the same two steps also copy between
   trips and between days; the stop's former *Copy…* to another day became the same Copy.
+  Pasted onto a whole trip, routes go where a file import would put them: onto the day of
+  the date they were copied from, or a new day of that date, undated ones onto a new day
+  each. Pasted onto a folder they make a collection, since a set of copied routes from
+  different trips is planning material rather than a ride. The duplicates report selects
+  rows with a click, since its rows are worked on in bulk, and opens one from its menu.
   A collection's map shows only the section opened, and no stop dots while none is: the
   Trans Euro Trail has 5,000 waypoints, each a marker of its own.
 

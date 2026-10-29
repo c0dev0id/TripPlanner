@@ -36,7 +36,7 @@ share work; sharing between users is on the way.
   across them. *Import folder…* turns a folder tree of GPX files into folders and trips:
   a trip per folder or per file, or planning material.
 - **Duplicates found** — a report lists the routes kept more than once across the
-  library, copies and the same ride from two apps, each a click from its day.
+  library, copies and the same ride from two apps; select some to copy or delete them.
 - **Planning material** — a trail or a tour collection, such as the TET by country, kept
   as a collection to browse on the map and copy routes from into your own days.
 - **GPX in as well as out** — a file from the device or BaseCamp drops into a day: its
