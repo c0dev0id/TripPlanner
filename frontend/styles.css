@@ -208,10 +208,10 @@ a {
   text-decoration: underline;
 }
 
-/* A button that reads as text: a trip's or a day's name. */
+/* A button that reads as text: a card's or a row's name and details. */
 .panel button.text {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   gap: 8px;
   padding: 6px 8px;
   border: none;
@@ -240,21 +240,20 @@ a {
   user-select: none;
 }
 
-.panel .card > button.text,
-.panel .card > .row > button.text {
-  justify-content: flex-start;
-  align-items: center;
+.card button.text {
   width: 100%;
   border-radius: 7px;
 }
 
-.card .lines {
+/* A name over its details, in a card or a row. */
+.lines {
   display: flex;
   flex-direction: column;
   min-width: 0;
 }
 
-.card .lines .detail {
+/* Detail lines wrap rather than lose their end, where a late stop or a distance stands. */
+.detail {
   font-size: 12px;
 }
 
@@ -332,37 +331,19 @@ a {
   padding: 2px 0 4px 8px;
 }
 
-/* A route's name over its kind and length, like a stop's name over its times. */
-.route .lines {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-/* Detail lines wrap rather than lose their end, where a late stop or a distance stands. */
-.route .detail {
-  font-size: 12px;
-}
-
 .sequence-item {
   padding: 1px 0;
 }
 
 .sequence-item .text {
-  align-items: center;
-  justify-content: flex-start;
   padding: 2px 4px;
 }
 
 .sequence-item .lines {
-  display: flex;
   flex: 1 1 auto;
-  flex-direction: column;
-  min-width: 0;
 }
 
 .sequence-item .detail {
-  font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -393,10 +374,6 @@ a {
   font-weight: 600;
 }
 
-.off-time.late {
-  color: var(--error);
-}
-
 .off-time.early {
   color: var(--ok);
 }
@@ -414,12 +391,10 @@ a {
 }
 
 .off-time .lines {
-  display: flex;
   flex: 1 1 auto;
   flex-direction: row;
   justify-content: space-between;
   gap: 8px;
-  min-width: 0;
 }
 
 .off-time .muted {
@@ -631,21 +606,11 @@ a {
   cursor: crosshair;
 }
 
-/* Stops and route points as markers. */
+/* Stops and route points as markers: MapLibre gives a draggable one the grab cursor; a stop is otherwise opened by a click. */
 
-.stop-marker,
-.point-marker {
-  cursor: grab;
-}
-
-.map[data-tool='delete'] :is(.stop-marker, .point-marker),
-.map[data-tool='hand'] .stop-marker {
+.stop-marker:not(.maplibregl-marker-draggable),
+.map[data-tool='delete'] :is(.stop-marker, .point-marker) {
   cursor: pointer;
-}
-
-/* The hand moves the map, not the points. */
-.map[data-tool='hand'] .point-marker {
-  cursor: default;
 }
 
 /* The toolbar floats over the map, above the scale bar and the attribution. */
@@ -866,10 +831,6 @@ a {
 .journal-list.overview .entry .file img {
   width: 64px;
   max-height: 64px;
-}
-
-.entry .detail {
-  font-size: 12px;
 }
 
 .share-dialog p {

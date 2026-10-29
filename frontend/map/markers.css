@@ -56,20 +56,23 @@
 /* A journal entry where it stands: a photo as a small round preview, a note as a journal icon in a disc. */
 .photo-marker img,
 .note-marker .note {
-  display: block;
   width: 36px;
   height: 36px;
   border: 2px solid #fff;
   border-radius: 50%;
-  object-fit: cover;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   cursor: pointer;
+}
+
+.photo-marker img {
+  display: block;
+  object-fit: cover;
 }
 
 .note-marker .note {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--panel, #fff);
-  color: var(--accent, #b4461e);
+  background: var(--panel);
+  color: var(--accent);
 }

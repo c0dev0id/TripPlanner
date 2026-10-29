@@ -67,7 +67,6 @@ function DimStopMarker(props: { map: MapLibreMap; stop: Stop }) {
   const content = (<div class="stop-dot" />) as HTMLElement;
   const handle = new MarkerHandle(props.map, content, 'stop-marker');
   handle.setInteractive(false);
-  handle.setDraggable(false);
   createEffect(() => handle.setPosition(props.stop.lngLat));
   onCleanup(() => handle.remove());
   return null;

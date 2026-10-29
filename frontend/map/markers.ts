@@ -32,7 +32,7 @@ export class MarkerHandle {
     anchor: 'center' | 'bottom' = 'center',
   ) {
     this.root = markerElement(className, content);
-    this.marker = new Marker({ element: this.root, draggable: true, anchor });
+    this.marker = new Marker({ element: this.root, anchor });
     // MapLibre starts a marker drag with any button. A right-click opens a menu under the
     // pointer that receives the release, which MapLibre never sees: the marker would then
     // follow the mouse. Only the primary button may drag.
