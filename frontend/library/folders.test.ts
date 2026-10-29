@@ -33,7 +33,8 @@ describe('heldInAll', () => {
   it('counts what a folder holds at any depth', () => {
     const trip = (folderId: number | null) => ({ folderId }) as TripSummary;
     const trips = [trip(1), trip(2), trip(3), trip(3), trip(null)];
-    expect([heldInAll(folders, trips, 1), heldInAll(folders, trips, 2), heldInAll(folders, trips, 3)]).toEqual([
+    const held = heldCounts(folders, trips);
+    expect([heldInAll(folders, held, 1), heldInAll(folders, held, 2), heldInAll(folders, held, 3)]).toEqual([
       { folders: 2, trips: 4 },
       { folders: 1, trips: 3 },
       { folders: 0, trips: 2 },

@@ -6,6 +6,7 @@ namespace Planner\Trip;
 
 use DateTimeImmutable;
 use PDO;
+use Planner\Database;
 use Planner\Timestamp;
 
 /** A user's folders: at the top of the library or inside another folder. */
@@ -102,11 +103,10 @@ final class Folders
                 $this->db->rollBack();
                 return null;
             }
-            $in = implode(',', array_fill(0, count($folderIds), '?'));
-            $statement = $this->db->prepare("SELECT id FROM trips WHERE folder_id IN ($in)");
+            $in = Database::placeholders($folderIds);
+            $statement = $this->db->prepare("DELETE FROM trips WHERE folder_id IN ($in) RETURNING id");
             $statement->execute($folderIds);
             $tripIds = array_map('intval', $statement->fetchAll(PDO::FETCH_COLUMN));
-            $this->db->prepare("DELETE FROM trips WHERE folder_id IN ($in)")->execute($folderIds);
             $this->db->prepare("DELETE FROM folders WHERE id IN ($in)")->execute($folderIds);
             $this->db->commit();
             return $tripIds;

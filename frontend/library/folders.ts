@@ -16,9 +16,8 @@ export function heldCounts(folders: readonly Folder[], trips: readonly TripSumma
   return (id) => counts.get(id) ?? { folders: 0, trips: 0 };
 }
 
-/** How many folders and trips a folder holds at any depth: its own and those of every folder inside it. */
-export function heldInAll(folders: readonly Folder[], trips: readonly TripSummary[], id: number): { folders: number; trips: number } {
-  const held = heldCounts(folders, trips);
+/** How many folders and trips a folder holds at any depth, from what each folder holds itself (see heldCounts). */
+export function heldInAll(folders: readonly Folder[], held: ReturnType<typeof heldCounts>, id: number): { folders: number; trips: number } {
   const total = { folders: 0, trips: 0 };
   const visit = (at: number) => {
     total.folders += held(at).folders;

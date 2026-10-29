@@ -1,5 +1,5 @@
 import { createMemo, createResource, createSignal, For, Match, Show, Switch } from 'solid-js';
-import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, fetchTrip, listFolders, listTrips, mergeTrips, moveTrip, renameFolder, renameTrip, saveTrip } from '../api';
+import { changeTrip, createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, mergeTrips, moveTrip, renameFolder, renameTrip } from '../api';
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { routesPasteItem } from '../state/clipboard';
@@ -14,7 +14,7 @@ import { counted, dateText } from '../ui/format';
 import { BackIcon, FolderIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
-import { clickSelect, NOTHING_SELECTED, type Selection } from '../ui/selection';
+import { clickSelect, menuSelection, NOTHING_SELECTED, type Selection } from '../ui/selection';
 
 /** At most this many search results are listed. */
 const SEARCH_LIMIT = 20;
@@ -64,7 +64,7 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
       [folders > 0 && counted(folders, 'folder'), trips > 0 && counted(trips, 'trip')].filter(Boolean).join(' and ');
     const own = contentsText(held()(f.id));
     if (!own) return (await askConfirmation(`Delete the folder “${f.name}”?`, 'Delete')) ? 'move' : undefined;
-    const all = contentsText(heldInAll(folders() ?? [], trips() ?? [], f.id));
+    const all = contentsText(heldInAll(folders() ?? [], held(), f.id));
     const where = f.parentId === null ? 'to the top' : `into “${pathOf(f.parentId)}”`;
     const choice = await askChoice(
       `The folder “${f.name}” holds ${own}${all === own ? '' : ` (${all} in all)`}. Move them ${where} and delete the folder, or delete it with everything in it?`,
@@ -114,12 +114,10 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
     setSelectedTrips(NOTHING_SELECTED);
   };
   /** The trips of the open folder selected to be merged, by id, the first selected first. */
-  const [selectedTrips, setSelectedTrips] = createSignal<Selection>(NOTHING_SELECTED);
-  const selectTrip = (trip: TripSummary, e: MouseEvent) =>
-    setSelectedTrips((s) => clickSelect(s, shownTrips().map((t) => String(t.id)), String(trip.id), { toggle: e.metaKey || e.ctrlKey, range: e.shiftKey }));
-  const tripNoun = (trip: TripSummary) => (trip.kind === 'collection' ? 'collection' : 'trip');
+  const [selectedTrips, setSelectedTrips] = createSignal<Selection<number>>(NOTHING_SELECTED);
+  const selectTrip = (trip: TripSummary, e: MouseEvent) => setSelectedTrips((s) => clickSelect(s, shownTrips().map((t) => t.id), trip.id, e));
   const merge = async (into: TripSummary, others: TripSummary[]) => {
-    const what = counted(others.length, tripNoun(into));
+    const what = counted(others.length, into.kind);
     const where = into.kind === 'collection' ? 'Their sections move into it' : 'Their days and journal move into it, a day onto its day of the same date where it has one';
     if (!(await askConfirmation(`Merge ${what} into “${into.name}”? ${where}, and the merged ${others.length > 1 ? 'ones are' : 'one is'} deleted.`, 'Merge'))) return;
     await run(() => mergeTrips(into.id, others.map((t) => t.id)), () => {
@@ -141,22 +139,20 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
     return d?.kind === 'rename-trip' ? d.trip : undefined;
   };
   /** Pastes copied routes into the trip where an import would put them, and saves it. */
-  const pasteOntoTrip = (trip: TripSummary) => (routes: CopiedRoute[]) =>
-    void run(async () => saveTrip(pasteIntoTrip(await fetchTrip(trip.id), routes, newId)), refetchTrips);
-  /** Pastes copied routes as a new collection in the folder, a section each, named after the first route. */
-  const pasteIntoFolder = (f: Folder) => (routes: CopiedRoute[]) => {
+  const pasteInto = (tripId: number, routes: CopiedRoute[]) => changeTrip(tripId, (trip) => pasteIntoTrip(trip, routes, newId));
+  /** A new collection in the folder for pasted routes, named after the first; its id. */
+  const collectionFor = async (f: Folder, routes: CopiedRoute[]) => {
     const first = routes[0]!.route.name || 'Pasted routes';
-    const name = asName(routes.length > 1 ? `${first} and ${routes.length - 1} more` : first);
-    void run(async () => saveTrip(pasteIntoTrip(await fetchTrip((await createTrip(name, f.id, 'collection')).id), routes, newId)), refetchTrips);
+    return (await createTrip(asName(routes.length > 1 ? `${first} and ${routes.length - 1} more` : first), f.id, 'collection')).id;
   };
   const folderItems = (f: Folder): MenuItem[] => [
     { label: 'Rename…', run: () => setDialog({ kind: 'rename-folder', folder: f }) },
-    ...routesPasteItem(pasteIntoFolder(f)),
+    ...routesPasteItem((routes) => void run(async () => pasteInto(await collectionFor(f, routes), routes), refetchTrips)),
     { label: 'Delete', run: () => void removeFolder(f) },
   ];
   const tripItems = (trip: TripSummary): MenuItem[] => {
-    if (!selectedTrips().keys.has(String(trip.id))) setSelectedTrips(NOTHING_SELECTED);
-    const [first, ...others] = [...selectedTrips().keys].flatMap((key) => trips()?.find((t) => String(t.id) === key) ?? []);
+    setSelectedTrips((s) => menuSelection(s, trip.id));
+    const [first, ...others] = [...selectedTrips().keys].flatMap((id) => trips()?.find((t) => t.id === id) ?? []);
     if (first && others.length > 0) return mergeItems(first, others);
     const moveTo = (folderId: number | null) => () => void run(() => moveTrip(trip.id, folderId), refetchTrips);
     const places: MenuItem[] = [
@@ -170,7 +166,7 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
       { label: 'Rename…', run: () => setDialog({ kind: 'rename-trip', trip }) },
       ...(places.length > 0 ? [{ label: 'Move…', items: places }] : []),
       { label: 'Duplicate', run: () => void run(() => duplicateTrip(trip.id), refetchTrips) },
-      ...routesPasteItem(pasteOntoTrip(trip)),
+      ...routesPasteItem((routes) => void run(() => pasteInto(trip.id, routes), refetchTrips)),
       { label: 'Delete', run: () => void removeTrip(trip) },
     ];
   };
@@ -245,7 +241,7 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
                           onOpen={props.onOpen}
                           disabled={props.opening}
                           items={() => tripItems(trip)}
-                          selected={selectedTrips().keys.has(String(trip.id))}
+                          selected={selectedTrips().keys.has(trip.id)}
                           onSelect={(e) => selectTrip(trip, e)}
                         />
                       )}

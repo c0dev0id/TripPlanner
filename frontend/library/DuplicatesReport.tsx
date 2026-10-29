@@ -1,6 +1,5 @@
 import { createMemo, createResource, createSignal, For, Match, Show, Switch } from 'solid-js';
-import { errorMessage, fetchTrip, listDuplicates, saveTrip, type DuplicateGroup, type DuplicateRoute } from '../api';
-import type { Trip } from '../model/trip';
+import { changeTrip, errorMessage, fetchTrip, listDuplicates, type DuplicateGroup, type DuplicateRoute } from '../api';
 import { copiedRoute, removeRoute, type CopiedRoute } from '../routing/dayEdit';
 import { copyRoutes } from '../state/clipboard';
 import { dayLabel } from '../trip/labels';
@@ -9,7 +8,7 @@ import { askConfirmation } from '../ui/confirm';
 import { counted, distanceText } from '../ui/format';
 import { BackIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
-import { clickSelect, NOTHING_SELECTED, type Selection } from '../ui/selection';
+import { clickSelect, menuSelection, NOTHING_SELECTED, type Selection } from '../ui/selection';
 
 /** Where a route of the report is: its trip, and its day by number, date and name, or its section. */
 function whereText(route: DuplicateRoute): string {
@@ -20,15 +19,11 @@ function whereText(route: DuplicateRoute): string {
 const keyOf = (route: DuplicateRoute): string => `${route.tripId}/${route.routeId}`;
 const nameOf = (route: DuplicateRoute): string => route.routeName || 'Unnamed route';
 
-/** The trips the routes are in, read afresh, by id. */
-async function tripsOf(routes: readonly DuplicateRoute[]): Promise<Map<number, Trip>> {
-  const ids = [...new Set(routes.map((r) => r.tripId))];
-  return new Map(await Promise.all(ids.map(async (id) => [id, await fetchTrip(id)] as const)));
-}
+const tripIdsOf = (routes: readonly DuplicateRoute[]): number[] => [...new Set(routes.map((r) => r.tripId))];
 
 /** The routes as copies to paste, with the stops bound to them; a route gone from its trip since the report was made is left out. */
 async function copiesOf(routes: readonly DuplicateRoute[]): Promise<CopiedRoute[]> {
-  const trips = await tripsOf(routes);
+  const trips = new Map(await Promise.all(tripIdsOf(routes).map(async (id) => [id, await fetchTrip(id)] as const)));
   return routes.flatMap((r) => {
     const day = trips.get(r.tripId)!.days.find((d) => d.id === r.dayId);
     const route = day?.routes.find((x) => x.id === r.routeId);
@@ -36,11 +31,9 @@ async function copiesOf(routes: readonly DuplicateRoute[]): Promise<CopiedRoute[
   });
 }
 
-/** Removes the routes from their trips, each trip saved once; the stops bound to them stay, free. */
+/** Removes the routes from their trips, each trip changed once, side by side; the stops bound to them stay, free. */
 async function removeRoutes(routes: readonly DuplicateRoute[]): Promise<void> {
-  for (const [id, trip] of await tripsOf(routes)) {
-    await saveTrip(routes.filter((r) => r.tripId === id).reduce((t, r) => removeRoute(t, r.dayId, r.routeId), trip));
-  }
+  await Promise.all(tripIdsOf(routes).map((id) => changeTrip(id, (trip) => routes.filter((r) => r.tripId === id).reduce((t, r) => removeRoute(t, r.dayId, r.routeId), trip))));
 }
 
 /**
@@ -52,12 +45,11 @@ async function removeRoutes(routes: readonly DuplicateRoute[]): Promise<void> {
 export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void; onClose: () => void; disabled: boolean }) {
   const [groups, { refetch }] = createResource(listDuplicates);
   const of = (kind: DuplicateGroup['kind']) => (groups() ?? []).filter((g) => g.kind === kind);
-  const [selection, setSelection] = createSignal<Selection>(NOTHING_SELECTED);
+  const [selection, setSelection] = createSignal<Selection<string>>(NOTHING_SELECTED);
   const [note, setNote] = createSignal<{ text: string; error: boolean }>();
   /** The routes in the order shown, by key; a route in a group of each kind is shown twice but listed once. */
   const shown = createMemo(() => new Map([...of('copies'), ...of('same ride')].flatMap((g) => g.routes).map((r) => [keyOf(r), r])));
-  const select = (route: DuplicateRoute, e: MouseEvent) =>
-    setSelection((s) => clickSelect(s, [...shown().keys()], keyOf(route), { toggle: e.metaKey || e.ctrlKey, range: e.shiftKey }));
+  const select = (route: DuplicateRoute, e: MouseEvent) => setSelection((s) => clickSelect(s, [...shown().keys()], keyOf(route), e));
   /** Runs a job that reads and writes trips, saying what it is doing and then what it did or why it failed. */
   const work = async (doing: string, job: () => Promise<string>) => {
     setNote({ text: doing, error: false });
@@ -87,8 +79,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   };
   /** The menu of a route: for the selected routes, or for it alone where it is not selected. */
   const items = (route: DuplicateRoute): MenuItem[] => {
-    const key = keyOf(route);
-    if (!selection().keys.has(key)) setSelection({ keys: new Set([key]), anchor: key });
+    setSelection((s) => menuSelection(s, keyOf(route)));
     const chosen = [...shown().values()].filter((r) => selection().keys.has(keyOf(r)));
     const one = chosen.length === 1 ? chosen[0] : undefined;
     const many = one ? '' : ` ${chosen.length} routes`;

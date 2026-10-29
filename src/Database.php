@@ -24,6 +24,12 @@ final class Database
         return $pdo;
     }
 
+    /** The placeholders of an `IN (…)` list for the values: one `?` each, joined by commas. */
+    public static function placeholders(array $values): string
+    {
+        return implode(',', array_fill(0, count($values), '?'));
+    }
+
     public static function applySchema(PDO $pdo, string $schemaFile): void
     {
         $pdo->exec(file_get_contents($schemaFile));

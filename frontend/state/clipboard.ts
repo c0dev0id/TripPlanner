@@ -26,9 +26,9 @@ export function copyStop(stop: Stop): void {
 /** What a paste menu item says it pastes: Paste route “Loop”, Paste 3 routes, Paste stop “Café”. */
 function pasteLabel(copied: Clip): string {
   if ('stop' in copied) return copied.stop.name ? `Paste stop “${copied.stop.name}”` : 'Paste stop';
-  const [first, ...more] = copied.routes;
-  if (more.length > 0) return `Paste ${copied.routes.length} routes`;
-  return first?.route.name ? `Paste route “${first.route.name}”` : 'Paste route';
+  if (copied.routes.length > 1) return `Paste ${copied.routes.length} routes`;
+  const name = copied.routes[0]!.route.name;
+  return name ? `Paste route “${name}”` : 'Paste route';
 }
 
 /** The menu item that pastes what was copied into the day of the open trip and shows the day; none while nothing is copied. */

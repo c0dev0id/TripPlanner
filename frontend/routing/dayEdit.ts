@@ -167,9 +167,12 @@ export function updateStop(trip: Trip, dayId: string, stopId: string, change: Pa
 }
 
 /** Adds a day at the end, dated the day after the last one where that has a date. */
+/** A day without routes, stops or notes. */
+const emptyDay = (id: string, name: string, date: string | null): Day => ({ id, name, date, notes: '', routes: [], stops: [] });
+
 export function addDay(trip: Trip, id: string): Trip {
   const last = trip.days.at(-1)?.date ?? null;
-  return { ...trip, days: [...trip.days, { id, name: '', date: last === null ? null : dayAfter(last), notes: '', routes: [], stops: [] }] };
+  return { ...trip, days: [...trip.days, emptyDay(id, '', last === null ? null : dayAfter(last))] };
 }
 
 /** The date after a date given as YYYY-MM-DD, in the same form; counted in UTC, where no daylight-saving step can shorten a day. */
@@ -267,7 +270,7 @@ export function pasteIntoTrip(trip: Trip, copied: readonly CopiedRoute[], newId:
     const date = trip.kind === 'collection' ? null : c.from.date;
     let day = date === null ? undefined : next.days.find((d) => d.date === date);
     if (!day) {
-      day = { id: newId(), name: trip.kind === 'collection' ? c.route.name || c.from.name : c.from.name, date, notes: '', routes: [], stops: [] };
+      day = emptyDay(newId(), trip.kind === 'collection' ? c.route.name || c.from.name : c.from.name, date);
       const later = date === null ? -1 : next.days.findIndex((d) => d.date !== null && d.date > date);
       next = { ...next, days: next.days.toSpliced(later < 0 ? next.days.length : later, 0, day) };
     }

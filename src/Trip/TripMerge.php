@@ -23,7 +23,11 @@ final class TripMerge
         $joined = [];
         foreach ($from as $day) {
             $date = $kind === 'collection' ? null : $day['date'];
-            $same = $date === null ? false : array_search($date, array_column($days, 'date'), true);
+            if ($date === null) {
+                $days[] = $day;
+                continue;
+            }
+            $same = array_search($date, array_column($days, 'date'), true);
             if ($same !== false) {
                 $days[$same] = self::joined($days[$same], $day);
                 $joined[$day['id']] = $days[$same]['id'];
@@ -34,10 +38,10 @@ final class TripMerge
         return ['days' => $days, 'joined' => $joined];
     }
 
-    /** Where a day of the date goes among the days: before the first of a later date; at the end where none is later, or for no date. */
-    private static function placeFor(array $days, ?string $date): int
+    /** Where a day of the date goes among the days: before the first of a later date, at the end where none is later. */
+    private static function placeFor(array $days, string $date): int
     {
-        foreach ($date === null ? [] : $days as $i => $day) {
+        foreach ($days as $i => $day) {
             if ($day['date'] !== null && $day['date'] > $date) {
                 return $i;
             }

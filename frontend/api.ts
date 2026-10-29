@@ -110,6 +110,11 @@ export async function saveTrip(trip: Trip, keepalive = false): Promise<number> {
   return version;
 }
 
+/** Reads the trip, changes it with `change` and saves it; the answer is its new version. */
+export async function changeTrip(id: number, change: (trip: Trip) => Trip): Promise<number> {
+  return saveTrip(change(await fetchTrip(id)));
+}
+
 export const deleteTrip = (id: number): Promise<void> => request('DELETE', `/api/trips/${id}`);
 
 /** Merges the trips into the trip `intoId` and deletes them; see the API's merge. */

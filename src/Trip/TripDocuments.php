@@ -6,6 +6,7 @@ namespace Planner\Trip;
 
 use DateTimeImmutable;
 use PDO;
+use Planner\Database;
 use Planner\Http\Json;
 use Planner\Timestamp;
 
@@ -171,11 +172,11 @@ final class TripDocuments
             }
             $fromDays = array_merge(...array_column($from, 'days'));
             ['days' => $days, 'joined' => $joined] = TripMerge::days($into['kind'], $into['days'], $fromDays);
-            $in = implode(',', array_fill(0, count($fromIds), '?'));
+            $in = Database::placeholders($fromIds);
             // The days that stay days change trips; saving moves the routes and stops of those that joined another.
             $moved = array_values(array_diff(array_column($fromDays, 'id'), array_keys($joined)));
             if ($moved !== []) {
-                $this->db->prepare('UPDATE days SET trip_id = ? WHERE id IN (' . implode(',', array_fill(0, count($moved), '?')) . ')')->execute([$intoId, ...$moved]);
+                $this->db->prepare('UPDATE days SET trip_id = ? WHERE id IN (' . Database::placeholders($moved) . ')')->execute([$intoId, ...$moved]);
             }
             $this->saveDays($intoId, $days);
             $this->db->prepare("UPDATE entries SET trip_id = ? WHERE trip_id IN ($in)")->execute([$intoId, ...$fromIds]);
@@ -212,7 +213,7 @@ final class TripDocuments
         if ($ids === []) {
             return 0;
         }
-        $statement = $this->db->prepare("SELECT COUNT(*) FROM $table WHERE $scope AND id IN (" . implode(',', array_fill(0, count($ids), '?')) . ')');
+        $statement = $this->db->prepare("SELECT COUNT(*) FROM $table WHERE $scope AND id IN (" . Database::placeholders($ids) . ')');
         $statement->execute([$tripId, ...$ids]);
         return (int) $statement->fetchColumn();
     }
@@ -276,7 +277,7 @@ final class TripDocuments
     {
         $sql = "DELETE FROM $table WHERE $scope";
         if ($keep !== []) {
-            $sql .= ' AND id NOT IN (' . implode(',', array_fill(0, count($keep), '?')) . ')';
+            $sql .= ' AND id NOT IN (' . Database::placeholders($keep) . ')';
         }
         $this->db->prepare($sql)->execute([$tripId, ...$keep]);
     }
