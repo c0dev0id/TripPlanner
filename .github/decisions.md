@@ -79,8 +79,9 @@ entries at the end of their section.
 ## Library
 
 - **The panel shows; dialogs edit.** Each element the panel lists (the trip, a day, a
-  route, a stop; in the library a folder and a trip) has one pencil that opens a dialog
-  holding everything the element has to set, and its removal. The panel keeps no input
+  route, a stop) has one dialog holding everything the element has to set, and its
+  removal, opened by its pencil or, on a day's card, from the card's menu; a folder or a
+  trip in the library has only its name to set, in a name dialog. The panel keeps no input
   field but the search: a name field, a date field or a folder select in a row makes the
   row wide and busy, and every setting added later would add another; a dialog grows
   with its element instead. The toolbar follows the same pattern, with one button that
@@ -94,10 +95,19 @@ entries at the end of their section.
   Stops have no grip: their order is where they stand along the route. The drag runs
   on pointer events from the grip alone, which works with touch where the browser's
   own drag and drop does not and leaves the rest of the row to its click; about fifty
-  lines, no library. Each row's dots menu holds edit, remove, duplicate and moving or
-  copying to another day; its journal is an icon on the row that counts the entries,
-  and the pencil stays beside it. A trip in the library is duplicated from its dialog.
-  The row menus and the map's
+  lines, no library. A route's or a stop's row has a pencil and a dots menu holding
+  edit, remove, duplicate and moving or copying to another day; its journal is an icon
+  on the row that counts the entries.
+- **Folders, trips and days are cards whose menu is the card itself.** A card shows two
+  lines, the name over its metadata (a folder's trip count; a trip's days, start and
+  state; a day's date and length), and has neither pencil nor dots: right-click, the
+  menu key or a long press of half a second on the card opens its menu, which therefore
+  holds every action the card has (rename, move, duplicate, delete; a day's edit,
+  duplicate and remove). The long press is left out on the grip, which drags, and the
+  click that ends a held press is swallowed so the card does not open as well. A
+  trip's rename from the library goes through `PATCH /trips/{id}` and counts as a
+  change to the trip, so an editor holding the old version gets a 409 on its next save
+  rather than writing the old name back. The card menus, the row menus and the map's
   context menus and the base map list are one mechanism: one open menu at a time, at a
   viewport position, closed by a press or a scroll elsewhere or by Esc, and by nothing
   else (a first draft had the map close it on its own camera moves, which took a row's

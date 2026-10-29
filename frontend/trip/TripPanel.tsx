@@ -32,7 +32,8 @@ import {
   selectedSequence,
   selectedTimeline,
 } from '../state/trip';
-import { distanceText, timeText } from '../ui/format';
+import { cardMenu } from '../ui/cardMenu';
+import { distanceText, shortDateText, timeText } from '../ui/format';
 import { BackIcon, ClockIcon, DownloadIcon, NotebookIcon, PencilIcon, ShareIcon } from '../ui/icons';
 import { Grip } from '../ui/Grip';
 import { MoreMenu } from '../ui/MoreMenu';
@@ -118,28 +119,28 @@ function SaveStatus(props: { onReload: () => void }) {
   );
 }
 
+/** A day as a card: its number and name over its date and length; its menu edits, duplicates and removes it. */
 function DayItem(props: { day: Day; index: number }) {
   const selected = () => selectedDayId() === props.day.id;
   const label = createMemo(() => dayLabel(props.day, props.index));
   const distance = createMemo(() => props.day.routes.reduce((sum, route) => sum + routeDistance(route), 0));
+  const meta = () => [props.day.date ? shortDateText(props.day.date) : 'No date', distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
   const more = (): MenuItem[] => [
     { label: 'Edit…', run: () => setEditTarget({ kind: 'day', id: props.day.id }) },
     { label: 'Duplicate', run: () => duplicateDay(props.day.id) },
     { label: 'Remove', run: () => void removeDayAsked(props.day) },
   ];
   return (
-    <li class="day" classList={{ selected: selected() }}>
-      <div class="row">
+    <li class="day card" classList={{ selected: selected() }}>
+      <div class="row" ref={(el) => cardMenu(el, more)}>
         <Grip label={`Drag ${label()} to another place`} index={props.index} count={openTrip()!.days.length} onMove={(to) => moveDay(props.day.id, to)} />
         <button class="text grow" onClick={() => selectDay(props.day.id)} aria-pressed={selected()}>
-          <span class="name">{label()}</span>
-          <span class="muted">{distance() > 0 ? distanceText(distance()) : ''}</span>
+          <span class="lines">
+            <span class="name">{[`Day ${props.index + 1}`, props.day.name].filter(Boolean).join(' · ')}</span>
+            <span class="muted detail">{meta()}</span>
+          </span>
         </button>
         <JournalButton target={{ dayId: props.day.id }} of={label()} />
-        <button class="icon" title="Edit day" aria-label={`Edit ${label()}`} onClick={() => setEditTarget({ kind: 'day', id: props.day.id })}>
-          <PencilIcon />
-        </button>
-        <MoreMenu label={`More for ${label()}`} items={more} />
       </div>
       <Show when={selected()}>
         <DayDetails day={props.day} />

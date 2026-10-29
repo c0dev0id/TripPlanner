@@ -1,19 +1,19 @@
 import { createMemo, createResource, createSignal, For, Match, Show, Switch } from 'solid-js';
-import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder } from '../api';
+import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder, renameTrip } from '../api';
 import type { Folder, TripSummary } from '../model/trip';
 import { listFolderId, setListFolderId } from '../state/library';
+import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
-import { EditDialog } from '../ui/EditDialog';
-import { field } from '../ui/form';
 import { dateText } from '../ui/format';
-import { BackIcon, FolderIcon, PencilIcon } from '../ui/icons';
+import { BackIcon, FolderIcon } from '../ui/icons';
+import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
 
 /** At most this many search results are listed. */
 const SEARCH_LIMIT = 20;
 
-/** The dialog the library has open: naming a new trip or folder, or the settings of a folder or a trip. */
-type LibraryDialog = { kind: 'new-trip' } | { kind: 'new-folder' } | { kind: 'folder'; folder: Folder } | { kind: 'trip'; trip: TripSummary };
+/** The dialog the library has open: naming a new trip or folder, or a new name for one. */
+type LibraryDialog = { kind: 'new-trip' } | { kind: 'new-folder' } | { kind: 'rename-folder'; folder: Folder } | { kind: 'rename-trip'; trip: TripSummary };
 
 /** The user's trips in their folders, one level deep: open one, start one, move, delete; a search across all folders. */
 export function Library(props: { onOpen: (id: number) => void; opening: boolean; error: string | undefined }) {
@@ -65,14 +65,25 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
     setListFolderId(id);
     setQuery('');
   };
-  const editedFolder = () => {
+  const renamedFolder = () => {
     const d = dialog();
-    return d?.kind === 'folder' ? d.folder : undefined;
+    return d?.kind === 'rename-folder' ? d.folder : undefined;
   };
-  const editedTrip = () => {
+  const renamedTrip = () => {
     const d = dialog();
-    return d?.kind === 'trip' ? d.trip : undefined;
+    return d?.kind === 'rename-trip' ? d.trip : undefined;
   };
+  const folderItems = (f: Folder): MenuItem[] => [
+    { label: 'Rename…', run: () => setDialog({ kind: 'rename-folder', folder: f }) },
+    { label: 'Delete', run: () => void removeFolder(f) },
+  ];
+  const tripItems = (trip: TripSummary): MenuItem[] => [
+    { label: 'Rename…', run: () => setDialog({ kind: 'rename-trip', trip }) },
+    ...(folders() ?? []).filter((f) => f.id !== trip.folderId).map((f) => ({ label: `Move to ${f.name}`, run: () => void run(() => moveTrip(trip.id, f.id), refetchTrips) })),
+    ...(trip.folderId === null ? [] : [{ label: 'Move out of the folder', run: () => void run(() => moveTrip(trip.id, null), refetchTrips) }]),
+    { label: 'Duplicate', run: () => void run(() => duplicateTrip(trip.id), refetchTrips) },
+    { label: 'Delete', run: () => void removeTrip(trip) },
+  ];
 
   return (
     <section class="library">
@@ -108,36 +119,18 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
               </div>
               <Show when={!folder()}>
                 <ul class="folders">
-                  <For each={folders()}>
-                    {(f) => (
-                      <li class="row">
-                        <FolderButton folder={f} note={tripCount(f.id) === 1 ? '1 trip' : `${tripCount(f.id)} trips`} onOpen={openFolder} />
-                        <button class="icon" title="Edit folder" aria-label={`Edit the folder ${f.name}`} onClick={() => setDialog({ kind: 'folder', folder: f })}>
-                          <PencilIcon />
-                        </button>
-                      </li>
-                    )}
-                  </For>
+                  <For each={folders()}>{(f) => <FolderCard folder={f} note={tripCount(f.id) === 1 ? '1 trip' : `${tripCount(f.id)} trips`} onOpen={openFolder} items={() => folderItems(f)} />}</For>
                 </ul>
               </Show>
               <Show when={shownTrips().length > 0} fallback={<p class="muted">{folder() ? 'No trips in this folder yet.' : folders()!.length > 0 ? 'No trips outside the folders.' : 'No trips yet. Start one with New trip…'}</p>}>
                 <ul class="trips">
-                  <For each={shownTrips()}>
-                    {(trip) => (
-                      <li class="row">
-                        <TripButton trip={trip} onOpen={props.onOpen} disabled={props.opening} />
-                        <button class="icon" title="Edit trip" aria-label={`Edit the trip ${trip.name}`} onClick={() => setDialog({ kind: 'trip', trip })}>
-                          <PencilIcon />
-                        </button>
-                      </li>
-                    )}
-                  </For>
+                  <For each={shownTrips()}>{(trip) => <TripCard trip={trip} onOpen={props.onOpen} disabled={props.opening} items={() => tripItems(trip)} />}</For>
                 </ul>
               </Show>
             </>
           }
         >
-          {(q) => <SearchResults query={q()} folders={folders()!} trips={trips()!} onOpenFolder={openFolder} onOpenTrip={props.onOpen} disabled={props.opening} />}
+          {(q) => <SearchResults query={q()} folders={folders()!} trips={trips()!} onOpenFolder={openFolder} onOpenTrip={props.onOpen} disabled={props.opening} folderItems={folderItems} tripItems={tripItems} />}
         </Show>
         </Match>
       </Switch>
@@ -160,98 +153,95 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
         onSubmit={(name) => void run(() => createFolder(name), () => void refetchFolders())}
       />
       <NameDialog
-        label="Folder"
-        title={editedFolder()?.name ?? ''}
-        open={editedFolder() !== undefined}
+        label="Rename folder"
+        title="Rename folder"
+        open={renamedFolder() !== undefined}
         placeholder="Name of the folder"
-        initial={editedFolder()?.name}
+        initial={renamedFolder()?.name}
         onClose={closeDialog}
         onSubmit={(name) => {
-          const f = editedFolder()!;
+          const f = renamedFolder()!;
           if (name !== f.name) void run(() => renameFolder(f.id, name), refetchFolders);
         }}
-        actions={[{ label: 'Delete', run: () => void removeFolder(editedFolder()!), danger: true }]}
       />
-      <EditDialog
-        label="Trip"
-        value={editedTrip()}
-        title={(trip) => trip.name}
+      <NameDialog
+        label="Rename trip"
+        title="Rename trip"
+        open={renamedTrip() !== undefined}
+        placeholder="Name of the trip"
+        initial={renamedTrip()?.name}
         onClose={closeDialog}
-        onSubmit={(form, trip) => {
-          const target = Number(field(form, 'folder')) || null;
-          if (target !== trip.folderId) void run(() => moveTrip(trip.id, target), refetchTrips);
+        onSubmit={(name) => {
+          const trip = renamedTrip()!;
+          if (name !== trip.name) void run(() => renameTrip(trip.id, name), refetchTrips);
         }}
-        actions={(trip) => [
-          { label: 'Delete', run: () => void removeTrip(trip), danger: true },
-          {
-            label: 'Duplicate',
-            run: () => {
-              closeDialog();
-              void run(() => duplicateTrip(trip.id), refetchTrips);
-            },
-          },
-        ]}
-      >
-        {(trip) => (
-          <label>
-            Folder
-            <select name="folder" value={trip.folderId ?? ''}>
-              <option value="">No folder</option>
-              <For each={folders()}>{(f) => <option value={f.id}>{f.name}</option>}</For>
-            </select>
-          </label>
-        )}
-      </EditDialog>
+      />
     </section>
   );
 }
 
-function TripButton(props: { trip: TripSummary; onOpen: (id: number) => void; disabled: boolean; note?: string }) {
+/**
+ * A trip as a card: its name over its days, its start and whether it was ridden, after the
+ * folder it is in where `where` names it; its menu renames, moves, copies and deletes it.
+ */
+function TripCard(props: { trip: TripSummary; onOpen: (id: number) => void; disabled: boolean; items: () => MenuItem[]; where?: string }) {
+  const meta = () =>
+    [props.where, `${props.trip.dayCount} ${props.trip.dayCount === 1 ? 'day' : 'days'}`, props.trip.startsOn && `from ${dateText(props.trip.startsOn)}`, props.trip.state === 'done' && 'done'].filter(Boolean).join(' · ');
   return (
-    <button class="text grow" onClick={() => props.onOpen(props.trip.id)} disabled={props.disabled}>
-      <span class="name">{props.trip.name}</span>
-      <span class="muted">
-        {props.note ?? `${props.trip.dayCount} ${props.trip.dayCount === 1 ? 'day' : 'days'}${props.trip.startsOn ? ` · from ${dateText(props.trip.startsOn)}` : ''}${props.trip.state === 'done' ? ' · done' : ''}`}
-      </span>
-    </button>
+    <li class="card" ref={(el) => cardMenu(el, props.items)}>
+      <button class="text" onClick={() => props.onOpen(props.trip.id)} disabled={props.disabled}>
+        <span class="lines">
+          <span class="name">{props.trip.name}</span>
+          <span class="muted detail">{meta()}</span>
+        </span>
+      </button>
+    </li>
   );
 }
 
-function FolderButton(props: { folder: Folder; note: string; onOpen: (id: number) => void }) {
+/** A folder as a card: its name over how many trips it holds; its menu renames and deletes it. */
+function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[] }) {
   return (
-    <button class="text grow" onClick={() => props.onOpen(props.folder.id)}>
-      <span class="row">
+    <li class="card" ref={(el) => cardMenu(el, props.items)}>
+      <button class="text" onClick={() => props.onOpen(props.folder.id)}>
         <FolderIcon />
-        <span class="name">{props.folder.name}</span>
-      </span>
-      <span class="muted">{props.note}</span>
-    </button>
+        <span class="lines">
+          <span class="name">{props.folder.name}</span>
+          <span class="muted detail">{props.note}</span>
+        </span>
+      </button>
+    </li>
   );
 }
 
 /** Folders and trips whose names contain the query, whatever folder they are in, up to a limit. */
-function SearchResults(props: { query: string; folders: Folder[]; trips: TripSummary[]; onOpenFolder: (id: number) => void; onOpenTrip: (id: number) => void; disabled: boolean }) {
+function SearchResults(props: {
+  query: string;
+  folders: Folder[];
+  trips: TripSummary[];
+  onOpenFolder: (id: number) => void;
+  onOpenTrip: (id: number) => void;
+  disabled: boolean;
+  folderItems: (f: Folder) => MenuItem[];
+  tripItems: (trip: TripSummary) => MenuItem[];
+}) {
   const matches = (name: string) => name.toLowerCase().includes(props.query.toLowerCase());
   const found = createMemo(() => ({ folders: props.folders.filter((f) => matches(f.name)), trips: props.trips.filter((t) => matches(t.name)) }));
   const total = () => found().folders.length + found().trips.length;
   const listedTrips = () => found().trips.slice(0, Math.max(0, SEARCH_LIMIT - found().folders.length));
   const folderName = (id: number | null) => props.folders.find((f) => f.id === id)?.name;
+  const tripsIn = (id: number) => {
+    const count = props.trips.filter((t) => t.folderId === id).length;
+    return count === 1 ? '1 trip' : `${count} trips`;
+  };
   return (
     <Show when={total() > 0} fallback={<p class="muted">Nothing found.</p>}>
       <ul class="results">
         <For each={found().folders.slice(0, SEARCH_LIMIT)}>
-          {(f) => (
-            <li class="row">
-              <FolderButton folder={f} note="folder" onOpen={props.onOpenFolder} />
-            </li>
-          )}
+          {(f) => <FolderCard folder={f} note={tripsIn(f.id)} onOpen={props.onOpenFolder} items={() => props.folderItems(f)} />}
         </For>
         <For each={listedTrips()}>
-          {(trip) => (
-            <li class="row">
-              <TripButton trip={trip} onOpen={props.onOpenTrip} disabled={props.disabled} note={folderName(trip.folderId) ?? 'no folder'} />
-            </li>
-          )}
+          {(trip) => <TripCard trip={trip} onOpen={props.onOpenTrip} disabled={props.disabled} items={() => props.tripItems(trip)} where={folderName(trip.folderId) ?? 'No folder'} />}
         </For>
       </ul>
       <Show when={total() > SEARCH_LIMIT}>

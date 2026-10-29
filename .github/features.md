@@ -6,9 +6,12 @@
   the command line, sign-in, sign-out, password reset by mail.
 - A library of the user's trips in folders, one level deep: create, open, rename,
   duplicate and delete trips, create, rename and delete folders, move a trip between
-  folders, create a trip in the open folder. A search by name across trips and folders,
-  listing at most twenty results.
-- Trips as a sequence of days; a day as one or more routes and its stops. Days and routes
+  folders, create a trip in the open folder. Folders and trips are cards with the name
+  over a line of metadata; right-click or a long press on a card opens its menu. A
+  search by name across trips and folders, listing at most twenty results.
+- Trips as a sequence of days; a day as one or more routes and its stops. A day is a
+  card with its number and name over its date and length, and its menu (right-click or
+  long press) edits, duplicates and removes it. Days and routes
   are added in the panel and named, set up and removed in their dialogs or menus; the trip has a
   description and a day has notes, shown under the day's row and on the read-only page.
   A day is dragged into another place by its grip and duplicated (with new ids,

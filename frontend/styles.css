@@ -230,11 +230,36 @@ a {
   padding: 0;
 }
 
-.trips li,
-.folders li,
-.results li,
-.day {
-  border-bottom: 1px solid var(--line);
+/* A card: a folder, a trip or a day, its name over its details; a press on it opens its menu. */
+.card {
+  margin: 0 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.panel .card > button.text,
+.panel .card > .row > button.text {
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  border-radius: 7px;
+}
+
+.card .lines {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.card .lines .detail {
+  font-size: 12px;
+}
+
+.card.selected {
+  border-color: var(--accent);
 }
 
 .trips .name,
@@ -265,12 +290,11 @@ a {
 
 .day.selected > .row {
   background: var(--active);
-  box-shadow: inset 3px 0 0 var(--accent);
-  border-radius: 4px;
+  border-radius: 7px 7px 0 0;
 }
 
 .day-details {
-  padding: 2px 0 10px 10px;
+  padding: 2px 8px 8px;
 }
 
 .panel h4 {
