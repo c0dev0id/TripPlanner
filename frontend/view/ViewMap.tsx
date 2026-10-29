@@ -19,7 +19,7 @@ export function ViewMap(props: { trip: Trip; entries: Entry[]; api: string }) {
         for (const route of day.routes) for (const point of route.points) bounds.extend(point.lngLat);
         for (const stop of day.stops) {
           bounds.extend(stop.lngLat);
-          new Marker({ element: markerElement('stop-marker', stopContent(stop)), anchor: 'bottom' }).setLngLat(stop.lngLat).addTo(m);
+          new Marker({ element: markerElement('stop-marker', stopContent(() => stop)), anchor: 'bottom' }).setLngLat(stop.lngLat).addTo(m);
         }
       }
       for (const entry of props.entries) {

@@ -7,6 +7,7 @@ import { addEntry, allEntries, closeJournal, editEntry, entriesOn, journalSpot, 
 import { openTrip, routeById, selectDay } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
 import { followPointer } from '../ui/followPointer';
+import { ForById } from '../ui/ForById';
 import { field, isTextField } from '../ui/form';
 import { takenAtText } from '../ui/format';
 import { DeleteIcon, PencilIcon, PinIcon } from '../ui/icons';
@@ -103,8 +104,7 @@ export function JournalDialog() {
           const label = () => targetLabel(target());
           const wholeTrip = () => Object.keys(target()).length === 0;
           const list = () => entriesOn(target());
-          /** The overview's parts by id, so that a change to the trip updates their sections rather than building them anew. */
-          const overview = createMemo(() => new Map(wholeTrip() ? journalOverview(openTrip()!, allEntries()).map((part) => [part.id, part]) : []));
+          const overview = createMemo(() => (wholeTrip() ? journalOverview(openTrip()!, allEntries()) : []));
           return (
             <div class="dialog-body">
               <h3 class="name grip" title={label()} onPointerDown={drag}>
@@ -112,24 +112,21 @@ export function JournalDialog() {
               </h3>
               <div class="journal-list" classList={{ overview: wholeTrip() }}>
                 <Show when={wholeTrip()} fallback={<EntryList entries={list()} run={run} />}>
-                  <For each={[...overview().keys()]}>
-                    {(id) => {
-                      const part = () => overview().get(id)!;
-                      return (
-                        <section class="journal-part" classList={{ day: part().kind === 'day' }}>
-                          <h4>
-                            <Show when={part().kind === 'route' || part().kind === 'stop'}>
-                              <span class="kind">{part().kind === 'route' ? 'Route' : 'Stop'} · </span>
-                            </Show>
-                            {part().label}
-                          </h4>
-                          <EntryList entries={part().entries} run={run} />
-                        </section>
-                      );
-                    }}
-                  </For>
+                  <ForById each={overview()}>
+                    {(part) => (
+                      <section class="journal-part" classList={{ day: part().kind === 'day' }}>
+                        <h4>
+                          <Show when={part().kind === 'route' || part().kind === 'stop'}>
+                            <span class="kind">{part().kind === 'route' ? 'Route' : 'Stop'} · </span>
+                          </Show>
+                          {part().label}
+                        </h4>
+                        <EntryList entries={part().entries} run={run} />
+                      </section>
+                    )}
+                  </ForById>
                 </Show>
-                <Show when={wholeTrip() ? overview().size === 0 : list().length === 0}>
+                <Show when={(wholeTrip() ? overview() : list()).length === 0}>
                   <p class="muted">Nothing noted yet.</p>
                 </Show>
               </div>

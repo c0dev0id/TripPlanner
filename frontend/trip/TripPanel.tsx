@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, Show } from 'solid-js';
+import { createMemo, createSignal, Show } from 'solid-js';
 import { errorMessage } from '../api';
 import { parseGpx } from '../gpx/gpx';
 import { gpxToDayParts } from '../gpx/import';
@@ -33,6 +33,7 @@ import {
   selectedTimeline,
 } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
+import { ForById } from '../ui/ForById';
 import { distanceText, shortDateText, timeText } from '../ui/format';
 import { BackIcon, ClockIcon, DownloadIcon, NotebookIcon, PencilIcon, ShareIcon } from '../ui/icons';
 import { Grip } from '../ui/Grip';
@@ -98,7 +99,7 @@ export function TripPanel(props: { onLeave: () => void; onReload: () => void }) 
         </label>
       </div>
       <ol class="days">
-        <For each={trip().days}>{(day, index) => <DayItem day={day} index={index()} />}</For>
+        <ForById each={trip().days}>{(day, index) => <DayItem day={day()} index={index()} />}</ForById>
       </ol>
       <button onClick={addDay}>Add day</button>
     </section>
@@ -183,7 +184,7 @@ function DayDetails(props: { day: Day }) {
         <input ref={fileInput} type="file" accept=".gpx,application/gpx+xml" hidden onChange={(e) => void importFile(e.currentTarget.files?.[0])} />
       </div>
       <ul class="routes">
-        <For each={props.day.routes}>{(route, index) => <RouteItem route={route} index={index()} day={props.day} />}</For>
+        <ForById each={props.day.routes}>{(route, index) => <RouteItem route={route()} index={index()} day={props.day} />}</ForById>
       </ul>
       <Show when={props.day.routes.length === 0}>
         <p class="muted hint">Add a route, pick the Point tool and tap the map to draw it, or import a GPX file.</p>
@@ -280,10 +281,9 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
   );
 }
 
-/** Rows of sequence entries, kept by id: an edit makes new entries, and their rows are updated rather than built anew. */
+/** Rows of sequence entries; an edit makes new entries, and their rows are kept by id. */
 function SequenceItems(props: { entries: SequenceEntry[] }) {
-  const byId = createMemo(() => new Map(props.entries.map((e) => [e.id, e])));
-  return <For each={[...byId().keys()]}>{(id) => <SequenceItem entry={byId().get(id)!} time={selectedTimeline()?.times.get(id)} />}</For>;
+  return <ForById each={props.entries}>{(entry) => <SequenceItem entry={entry()} time={selectedTimeline()?.times.get(entry().id)} />}</ForById>;
 }
 
 /**

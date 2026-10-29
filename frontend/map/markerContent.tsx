@@ -16,12 +16,12 @@ export function markerElement(className: string, content: Node): HTMLDivElement 
   return root;
 }
 
-/** A stop drawn by its kind, in the colour of its binding, named beside it; its foot is the anchor. */
-export function stopContent(stop: Stop): HTMLElement {
+/** A stop drawn by its kind, in the colour of its binding, named beside it; its foot is the anchor. Follows the stop as it changes. */
+export function stopContent(stop: () => Stop): HTMLElement {
   return (
-    <div class="stop" classList={{ free: stop.pointId === null }}>
-      <StopShape kind={stop.kind} color={stop.pointId === null ? FREE_COLOR : BOUND_COLOR} foot />
-      <span class="stop-name">{stop.name}</span>
+    <div class="stop" classList={{ free: stop().pointId === null }}>
+      <StopShape kind={stop().kind} color={stop().pointId === null ? FREE_COLOR : BOUND_COLOR} foot />
+      <span class="stop-name">{stop().name}</span>
     </div>
   ) as HTMLElement;
 }

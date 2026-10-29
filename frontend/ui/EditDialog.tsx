@@ -8,10 +8,11 @@ export type DialogAction = { label: string; run: () => void; danger?: boolean };
 /**
  * The one shape of the dialogs that edit an element: its title, its fields in a form, Cancel
  * and Save, and its other actions at the other end. It is open while there is a value, builds
- * the fields from the value as it is then, and closes once the form is submitted. It renders
- * outside the panel, so the panel's styles do not reach it.
+ * the fields from the value as it is then, and closes once the form is submitted. A changed
+ * copy of the element with the same id (a routed leg arriving, a save) keeps the fields as
+ * they are. It renders outside the panel, so the panel's styles do not reach it.
  */
-export function EditDialog<T>(props: {
+export function EditDialog<T extends { id: unknown } | true>(props: {
   label: string;
   value: T | undefined;
   title: (item: T) => string;
@@ -22,7 +23,8 @@ export function EditDialog<T>(props: {
   children: (item: T) => JSX.Element;
 }) {
   let dialog!: HTMLDialogElement;
-  showModalWhile(() => dialog, () => props.value !== undefined);
+  const element = createMemo(() => props.value, undefined, { equals: (a, b) => a === b || (typeof a === 'object' && typeof b === 'object' && a.id === b.id) });
+  showModalWhile(() => dialog, () => element() !== undefined);
   const submit = (e: SubmitEvent, item: T) => {
     e.preventDefault();
     batch(() => {
@@ -33,7 +35,7 @@ export function EditDialog<T>(props: {
   return (
     <Portal>
       <dialog ref={dialog} class="dialog" aria-label={props.label} onClose={props.onClose}>
-        <Show when={props.value} keyed>
+        <Show when={element()} keyed>
           {(item) => {
             const title = createMemo(() => props.title(item));
             return (
