@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { fractionOnSegment, nearestLine, nearestOnLines } from './nearest';
+import { fractionOnSegment, nearestOnLines } from './nearest';
 
-describe('nearestLine', () => {
+describe('nearestOnLines on one query', () => {
   it('finds the closest polyline and the point on it', () => {
     const lines = [
       [
@@ -14,26 +14,27 @@ describe('nearestLine', () => {
         [10, 20],
       ],
     ] as const;
-    expect(nearestLine(lines, [4, 2])).toEqual({ index: 0, segment: 0, t: 0.4, distance: 2, point: [4, 0] });
-    expect(nearestLine(lines, [13, 15])).toEqual({ index: 1, segment: 1, t: 0.5, distance: 3, point: [10, 15] });
+    expect(nearestOnLines(lines)([4, 2])).toEqual({ index: 0, segment: 0, t: 0.4, distance: 2, point: [4, 0] });
+    expect(nearestOnLines(lines)([13, 15])).toEqual({ index: 1, segment: 1, t: 0.5, distance: 3, point: [10, 15] });
   });
 
   it('handles single points and no lines', () => {
-    expect(nearestLine([[[3, 4]]], [0, 0])).toEqual({ index: 0, segment: 0, t: 0, distance: 5, point: [3, 4] });
-    expect(nearestLine([], [0, 0])).toBeUndefined();
+    expect(nearestOnLines([[[3, 4]]])([0, 0])).toEqual({ index: 0, segment: 0, t: 0, distance: 5, point: [3, 4] });
+    expect(nearestOnLines([])([0, 0])).toBeUndefined();
   });
 });
 
 describe('nearestOnLines', () => {
-  /** The nearest place by looking at every segment, earliest first on a tie. */
+  /** The nearest place by looking at every segment, earliest first on a tie, by squared distance as the index measures. */
   const bruteForce = (lines: [number, number][][], p: [number, number]) => {
-    let best: { index: number; segment: number; distance: number } | undefined;
+    let best: { index: number; segment: number; distance2: number } | undefined;
     lines.forEach((line, index) => {
       for (let i = line.length === 1 ? 0 : 1; i < line.length; i++) {
         const [a, b] = [line[Math.max(0, i - 1)]!, line[i]!];
         const t = fractionOnSegment(p, a, b);
-        const distance = Math.hypot(p[0] - (a[0] + t * (b[0] - a[0])), p[1] - (a[1] + t * (b[1] - a[1])));
-        if (!best || distance < best.distance) best = { index, segment: Math.max(0, i - 1), distance };
+        const [dx, dy] = [p[0] - (a[0] + t * (b[0] - a[0])), p[1] - (a[1] + t * (b[1] - a[1]))];
+        const distance2 = dx * dx + dy * dy;
+        if (!best || distance2 < best.distance2) best = { index, segment: Math.max(0, i - 1), distance2 };
       }
     });
     return best;
@@ -49,7 +50,7 @@ describe('nearestOnLines', () => {
       const hit = nearest(p)!;
       const expected = bruteForce(lines, p)!;
       expect([hit.index, hit.segment]).toEqual([expected.index, expected.segment]);
-      expect(hit.distance).toBeCloseTo(expected.distance, 9);
+      expect(hit.distance).toBeCloseTo(Math.sqrt(expected.distance2), 9);
     }
   });
 
@@ -64,8 +65,8 @@ describe('nearestOnLines', () => {
         [10, 4],
       ],
     ] as const;
-    expect(nearestLine(lines, [5, 2], 1.5)).toBeUndefined();
-    expect(nearestLine(lines, [5, 2], 2)).toMatchObject({ index: 0, distance: 2 });
-    expect(nearestLine(lines, [5, 2])).toMatchObject({ index: 0, segment: 0, point: [5, 0] });
+    expect(nearestOnLines(lines)([5, 2], 1.5)).toBeUndefined();
+    expect(nearestOnLines(lines)([5, 2], 2)).toMatchObject({ index: 0, distance: 2 });
+    expect(nearestOnLines(lines)([5, 2])).toMatchObject({ index: 0, segment: 0, point: [5, 0] });
   });
 });
