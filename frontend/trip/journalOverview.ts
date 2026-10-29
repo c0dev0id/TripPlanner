@@ -1,10 +1,12 @@
 import { entriesOn, type Entry } from '../model/journal';
 import type { Trip } from '../model/trip';
-import { daySequence } from '../routing/sequence';
+import { withStopsInRidingOrder } from '../routing/sequence';
 import { dayLabel, routeLabel } from './labels';
 
 /** A part of the trip with the journal entries on it, for reading the whole journal top down. */
 export interface JournalPart {
+  /** The part's id; the trip's part is 'trip'. */
+  id: string;
   kind: 'trip' | 'day' | 'route' | 'stop';
   label: string;
   entries: Entry[];
@@ -18,21 +20,19 @@ export interface JournalPart {
 export function journalOverview(trip: Trip, entries: readonly Entry[]): JournalPart[] {
   const parts: JournalPart[] = [];
   const onTrip = entriesOn(entries, {});
-  if (onTrip.length > 0) parts.push({ kind: 'trip', label: 'On the trip', entries: onTrip });
-  trip.days.forEach((day, index) => {
+  if (onTrip.length > 0) parts.push({ id: 'trip', kind: 'trip', label: 'On the trip', entries: onTrip });
+  withStopsInRidingOrder(trip).days.forEach((day, index) => {
     const ofDay: JournalPart[] = [];
     for (const route of day.routes) {
       const onRoute = entriesOn(entries, { routeId: route.id });
-      if (onRoute.length > 0) ofDay.push({ kind: 'route', label: routeLabel(route, day), entries: onRoute });
+      if (onRoute.length > 0) ofDay.push({ id: route.id, kind: 'route', label: routeLabel(route, day), entries: onRoute });
     }
-    const ridden = daySequence(day).flatMap((e) => (e.stop ? [e.stop] : []));
-    const stops = [...ridden, ...day.stops.filter((s) => !ridden.includes(s))];
-    for (const stop of stops) {
+    for (const stop of day.stops) {
       const onStop = entriesOn(entries, { stopId: stop.id });
-      if (onStop.length > 0) ofDay.push({ kind: 'stop', label: stop.name, entries: onStop });
+      if (onStop.length > 0) ofDay.push({ id: stop.id, kind: 'stop', label: stop.name, entries: onStop });
     }
     const onDay = entriesOn(entries, { dayId: day.id });
-    if (onDay.length > 0 || ofDay.length > 0) parts.push({ kind: 'day', label: dayLabel(day, index), entries: onDay }, ...ofDay);
+    if (onDay.length > 0 || ofDay.length > 0) parts.push({ id: day.id, kind: 'day', label: dayLabel(day, index), entries: onDay }, ...ofDay);
   });
   return parts;
 }

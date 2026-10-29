@@ -12,7 +12,7 @@ import { saveState } from '../state/autosave';
 import { panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, setTrackAction, showNeighbours } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
-import { entriesOn, setJournalTarget } from '../state/journal';
+import { entriesOn, openJournal } from '../state/journal';
 import {
   addDay,
   addParts,
@@ -46,7 +46,7 @@ function JournalButton(props: { target: EntryTarget; of: string }) {
   const count = createMemo(() => entriesOn(props.target).length);
   const label = () => `Journal of ${props.of}${count() === 0 ? '' : `: ${count()} ${count() === 1 ? 'entry' : 'entries'}`}`;
   return (
-    <button class="icon journal" title={label()} aria-label={label()} onClick={() => setJournalTarget(props.target)}>
+    <button class="icon journal" title={label()} aria-label={label()} onClick={() => openJournal(props.target)}>
       <NotebookIcon />
       <Show when={count() > 0}>
         <span class="badge">{count()}</span>
@@ -84,7 +84,7 @@ export function TripPanel(props: { onLeave: () => void; onReload: () => void }) 
         <button class="link" onClick={() => setExportOpen(true)}>
           <DownloadIcon /> Export GPX…
         </button>
-        <button class="link" onClick={() => setJournalTarget({})}>
+        <button class="link" onClick={() => openJournal({})}>
           <NotebookIcon /> Journal…
         </button>
         <button class="link" onClick={() => setShareOpen(true)}>

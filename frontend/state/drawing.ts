@@ -1,7 +1,7 @@
 import { createSignal } from 'solid-js';
 import type { LngLat, RoutePoint } from '../model/trip';
 import type { MenuItem } from '../ui/menu';
-import { openJournalAt } from './journal';
+import { openJournal } from './journal';
 import { addFreeStop, appendPoint, editingRoute, selectedDay, setStraight } from './trip';
 
 /** Transient state of editing on the map; never kept. */
@@ -61,7 +61,7 @@ export function spotItems(spot: LngLat): MenuItem[] | undefined {
         { label: 'Add a stop here, beside the route', run: () => addFreeStop(spot) },
       ]
     : [];
-  if (day) items.push({ label: 'Journal here…', run: () => openJournalAt({ dayId: day.id }, spot) });
+  if (day) items.push({ label: 'Journal here…', run: () => openJournal({ dayId: day.id }, spot) });
   return items.length > 0 ? items : undefined;
 }
 

@@ -44,17 +44,15 @@ export function onTarget(entry: Entry, target: EntryTarget): boolean {
 
 export const entriesOn = (entries: readonly Entry[], target: EntryTarget): Entry[] => entries.filter((e) => onTarget(e, target));
 
-/** The day an entry belongs to, by its day, its stop or its route; none for an entry on the trip itself. */
-export function dayOfEntry(days: readonly Day[], entry: Entry): Day | undefined {
-  return days.find((d) => d.id === entry.dayId || (entry.stopId !== null && d.stops.some((s) => s.id === entry.stopId)) || (entry.routeId !== null && d.routes.some((r) => r.id === entry.routeId)));
-}
+/** Whether an entry belongs to the day: on the day itself, or on one of its stops or routes. */
+const belongsTo = (entry: Entry, day: Day): boolean =>
+  entry.dayId === day.id || day.stops.some((s) => s.id === entry.stopId) || day.routes.some((r) => r.id === entry.routeId);
+
+/** The day an entry belongs to; none for an entry on the trip itself. */
+export const dayOfEntry = (days: readonly Day[], entry: Entry): Day | undefined => days.find((d) => belongsTo(entry, d));
 
 /** The entries that belong to the day: its own and those on its stops and routes. */
-export function entriesOfDay(entries: readonly Entry[], day: Day): Entry[] {
-  const stops = new Set(day.stops.map((s) => s.id));
-  const routes = new Set(day.routes.map((r) => r.id));
-  return entries.filter((e) => e.dayId === day.id || (e.stopId !== null && stops.has(e.stopId)) || (e.routeId !== null && routes.has(e.routeId)));
-}
+export const entriesOfDay = (entries: readonly Entry[], day: Day): Entry[] => entries.filter((e) => belongsTo(e, day));
 
 /** The day's entries that stand somewhere, for the map. */
 export function placedEntriesOfDay(entries: readonly Entry[], day: Day): Entry[] {

@@ -1,6 +1,7 @@
 import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
 import { createEffect, onCleanup } from 'solid-js';
 import { setTool, spotItems, tapAction, tool, type Tool } from '../state/drawing';
+import { isTextField } from '../ui/form';
 import { menu, setMenu } from '../ui/menu';
 import { addFreeStop, appendPoint, editingRoute, editRoute, insertPoint, insertStop, redo, undo } from '../state/trip';
 import { fromMarker, toLngLat } from './markers';
@@ -145,11 +146,4 @@ export function Interactions(props: { map: MapLibreMap }) {
     document.removeEventListener('keydown', onKeyDown);
   });
   return null;
-}
-
-const NON_TEXT_INPUTS = new Set(['checkbox', 'radio', 'range', 'file', 'button', 'submit', 'reset', 'color']);
-
-function isTextField(target: EventTarget | null): boolean {
-  if (target instanceof HTMLInputElement) return !NON_TEXT_INPUTS.has(target.type);
-  return target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || (target instanceof HTMLElement && target.isContentEditable);
 }

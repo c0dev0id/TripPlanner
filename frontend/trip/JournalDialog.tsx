@@ -6,7 +6,7 @@ import { panTo } from '../state/drawing';
 import { addEntry, allEntries, closeJournal, editEntry, entriesOn, journalSpot, journalTarget, removeEntry } from '../state/journal';
 import { openTrip, routeById, selectDay } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
-import { field } from '../ui/form';
+import { field, isTextField } from '../ui/form';
 import { takenAtText } from '../ui/format';
 import { DeleteIcon, PencilIcon, PinIcon } from '../ui/icons';
 import { showWhile } from '../ui/modal';
@@ -29,6 +29,13 @@ function targetLabel(target: EntryTarget): string {
     return route ? routeLabelOf(trip, route) : 'a removed route';
   }
   return trip.name;
+}
+
+/** Shows where an entry stands: its day on the map, and the map flown there. */
+function showOnMap(entry: Entry, spot: LngLat): void {
+  const day = dayOfEntry(openTrip()!.days, entry);
+  if (day) selectDay(day.id);
+  panTo(spot);
 }
 
 /** Where the journal window stands once dragged by its title; centred until then. Kept while the page lives. */
@@ -66,12 +73,6 @@ export function JournalDialog() {
     setPlaced(undefined);
     closeJournal();
   };
-  /** Shows where an entry stands: its day on the map, and the map flown there. */
-  const show = (entry: Entry, spot: LngLat) => {
-    const day = dayOfEntry(openTrip()!.days, entry);
-    if (day) selectDay(day.id);
-    panTo(spot);
-  };
   /** Moves the window with the pointer that pressed its title, kept whole inside the page. */
   const drag = (e: PointerEvent) => {
     if (e.button !== 0) return;
@@ -92,7 +93,7 @@ export function JournalDialog() {
   };
   /** Esc closes the window, unless a note being written or edited takes it. */
   const escape = (e: KeyboardEvent) => {
-    if (e.key !== 'Escape' || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
+    if (e.key !== 'Escape' || isTextField(e.target)) return;
     e.preventDefault();
     close();
   };
@@ -111,29 +112,33 @@ export function JournalDialog() {
           const label = () => targetLabel(target());
           const wholeTrip = () => Object.keys(target()).length === 0;
           const list = () => entriesOn(target());
-          const overview = createMemo(() => (wholeTrip() ? journalOverview(openTrip()!, allEntries()) : []));
+          /** The overview's parts by id, so that a change to the trip updates their sections rather than building them anew. */
+          const overview = createMemo(() => new Map(wholeTrip() ? journalOverview(openTrip()!, allEntries()).map((part) => [part.id, part]) : []));
           return (
             <div class="dialog-body">
               <h3 class="name grip" title={label()} onPointerDown={drag}>
                 Journal · {label()}
               </h3>
               <div class="journal-list" classList={{ overview: wholeTrip() }}>
-                <Show when={wholeTrip()} fallback={<EntryList entries={list()} run={run} show={show} />}>
-                  <For each={overview()}>
-                    {(part) => (
-                      <section class="journal-part" classList={{ day: part.kind === 'day' }}>
-                        <h4>
-                          <Show when={part.kind === 'route' || part.kind === 'stop'}>
-                            <span class="kind">{part.kind === 'route' ? 'Route' : 'Stop'} · </span>
-                          </Show>
-                          {part.label}
-                        </h4>
-                        <EntryList entries={part.entries} run={run} show={show} />
-                      </section>
-                    )}
+                <Show when={wholeTrip()} fallback={<EntryList entries={list()} run={run} />}>
+                  <For each={[...overview().keys()]}>
+                    {(id) => {
+                      const part = () => overview().get(id)!;
+                      return (
+                        <section class="journal-part" classList={{ day: part().kind === 'day' }}>
+                          <h4>
+                            <Show when={part().kind === 'route' || part().kind === 'stop'}>
+                              <span class="kind">{part().kind === 'route' ? 'Route' : 'Stop'} · </span>
+                            </Show>
+                            {part().label}
+                          </h4>
+                          <EntryList entries={part().entries} run={run} />
+                        </section>
+                      );
+                    }}
                   </For>
                 </Show>
-                <Show when={(wholeTrip() ? overview() : list()).length === 0}>
+                <Show when={wholeTrip() ? overview().size === 0 : list().length === 0}>
                   <p class="muted">Nothing noted yet.</p>
                 </Show>
               </div>
@@ -168,18 +173,18 @@ export function JournalDialog() {
   );
 }
 
-type EntryActions = { run: (work: () => Promise<void>) => Promise<void>; show: (entry: Entry, spot: LngLat) => void };
+type Runner = (work: () => Promise<void>) => Promise<void>;
 
-function EntryList(props: { entries: Entry[] } & EntryActions) {
+function EntryList(props: { entries: Entry[]; run: Runner }) {
   return (
     <ul class="entries">
-      <For each={props.entries}>{(entry) => <EntryItem entry={entry} run={props.run} show={props.show} />}</For>
+      <For each={props.entries}>{(entry) => <EntryItem entry={entry} run={props.run} />}</For>
     </ul>
   );
 }
 
 /** An entry: its file, when a photo was taken, its text, editable, where it stands, and its deletion; its requests run through the dialog's runner. */
-function EntryItem(props: { entry: Entry } & EntryActions) {
+function EntryItem(props: { entry: Entry; run: Runner }) {
   const [editing, setEditing] = createSignal(false);
   const remove = async () => {
     if (!(await askConfirmation('Delete this journal entry?', 'Delete'))) return;
@@ -202,7 +207,7 @@ function EntryItem(props: { entry: Entry } & EntryActions) {
       </div>
       <Show when={props.entry.lngLat}>
         {(spot) => (
-          <button type="button" class="icon" title="Show on the map" aria-label="Show on the map" onClick={() => props.show(props.entry, spot())}>
+          <button type="button" class="icon" title="Show on the map" aria-label="Show on the map" onClick={() => showOnMap(props.entry, spot())}>
             <PinIcon />
           </button>
         )}

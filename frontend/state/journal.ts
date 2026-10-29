@@ -1,4 +1,4 @@
-import { batch, createResource, createRoot, createSignal } from 'solid-js';
+import { createResource, createRoot, createSignal } from 'solid-js';
 import { addEntry as postEntry, deleteEntry, listEntriesAt, tripApi, updateEntry } from '../api';
 import { entriesOn as entriesOf, type Entry, type EntryTarget } from '../model/journal';
 import type { LngLat } from '../model/trip';
@@ -16,25 +16,22 @@ export function allEntries(): Entry[] {
 
 export const entriesOn = (target: EntryTarget): Entry[] => entriesOf(allEntries(), target);
 
-/** The part whose journal dialog is open, or the trip's for an empty target; none while the dialog is closed. */
-export const [journalTarget, setJournalTarget] = createSignal<EntryTarget>();
+/**
+ * The open journal: the part it is of, the trip for an empty target, and the spot on the map
+ * its new entries stand on where it was opened from there; none while it is closed.
+ */
+const [journal, setJournal] = createSignal<{ target: EntryTarget; spot?: LngLat }>();
 
-/** The spot on the map the open journal's new entries stand on, when it was opened from there. */
-export const [journalSpot, setJournalSpot] = createSignal<LngLat>();
+export const journalTarget = (): EntryTarget | undefined => journal()?.target;
+export const journalSpot = (): LngLat | undefined => journal()?.spot;
 
-/** Opens the journal of a part for entries at a spot on the map. */
-export function openJournalAt(target: EntryTarget, spot: LngLat): void {
-  batch(() => {
-    setJournalTarget(target);
-    setJournalSpot(spot);
-  });
+/** Opens the journal of a part, for new entries at a spot on the map where one is given. */
+export function openJournal(target: EntryTarget, spot?: LngLat): void {
+  setJournal({ target, spot });
 }
 
 export function closeJournal(): void {
-  batch(() => {
-    setJournalTarget(undefined);
-    setJournalSpot(undefined);
-  });
+  setJournal(undefined);
 }
 
 /** Adds an entry and returns it as the server placed it: a photo with a time goes to the day of that date, one with a position stands there. */
