@@ -36,7 +36,7 @@
   map, a name, address,
   contact, booking reference and notes in a dialog.
 - A trip opens whole: every day's routes on the map with the stops as dots, no day open;
-  a click on a day opens it. The panel's arrow goes up one level at a time: from a day to
+  a click on a day opens it, and another closes it. The panel's arrow goes up one level at a time: from a day to
   the trip, from the trip to the list, in the folder the trip was opened from.
 - The panel lists the selected day's routes with profile, distance and the number of
   stops on each. Under the selected route stand its stops and route points in riding

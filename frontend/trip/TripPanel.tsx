@@ -135,7 +135,7 @@ function DayItem(props: { day: Day; index: number }) {
     <li class="day card" classList={{ selected: selected() }}>
       <div class="row" ref={(el) => cardMenu(el, more)}>
         <Grip label={`Drag ${label()} to another place`} index={props.index} onMove={(to) => moveDay(props.day.id, to)} />
-        <button class="text grow" onClick={() => selectDay(props.day.id)} aria-pressed={selected()}>
+        <button class="text grow" onClick={() => selectDay(selected() ? undefined : props.day.id)} aria-pressed={selected()}>
           <span class="lines">
             <span class="name">{[`Day ${props.index + 1}`, props.day.name].filter(Boolean).join(' · ')}</span>
             <span class="muted detail">{meta()}</span>
