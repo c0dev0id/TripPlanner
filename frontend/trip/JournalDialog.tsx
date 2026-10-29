@@ -6,6 +6,7 @@ import { panTo } from '../state/drawing';
 import { addEntry, allEntries, closeJournal, editEntry, entriesOn, journalSpot, journalTarget, removeEntry } from '../state/journal';
 import { openTrip, routeById, selectDay } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
+import { followPointer } from '../ui/followPointer';
 import { field, isTextField } from '../ui/form';
 import { takenAtText } from '../ui/format';
 import { DeleteIcon, PencilIcon, PinIcon } from '../ui/icons';
@@ -76,20 +77,10 @@ export function JournalDialog() {
   /** Moves the window with the pointer that pressed its title, kept whole inside the page. */
   const drag = (e: PointerEvent) => {
     if (e.button !== 0) return;
-    const title = e.currentTarget as HTMLElement;
     const box = dialog.getBoundingClientRect();
     const grip = { x: e.clientX - box.left, y: e.clientY - box.top };
     const within = (at: number, size: number, room: number) => Math.min(Math.max(at, 0), Math.max(room - size, 0));
-    const place = (p: PointerEvent) => setJournalAt({ x: within(p.clientX - grip.x, box.width, innerWidth), y: within(p.clientY - grip.y, box.height, innerHeight) });
-    const end = () => {
-      title.removeEventListener('pointermove', place);
-      title.removeEventListener('pointerup', end);
-      title.removeEventListener('pointercancel', end);
-    };
-    title.setPointerCapture(e.pointerId);
-    title.addEventListener('pointermove', place);
-    title.addEventListener('pointerup', end);
-    title.addEventListener('pointercancel', end);
+    followPointer(e, (p) => setJournalAt({ x: within(p.clientX - grip.x, box.width, innerWidth), y: within(p.clientY - grip.y, box.height, innerHeight) }));
   };
   /** Esc closes the window, unless a note being written or edited takes it. */
   const escape = (e: KeyboardEvent) => {

@@ -1,3 +1,4 @@
+import { followPointer } from './followPointer';
 import { GripIcon } from './icons';
 
 /**
@@ -7,8 +8,7 @@ import { GripIcon } from './icons';
  */
 function dragToSort(e: PointerEvent, onDrop: (to: number) => void): void {
   if (e.button !== 0) return;
-  const handle = e.currentTarget as HTMLElement;
-  const item = handle.closest('li')!;
+  const item = (e.currentTarget as HTMLElement).closest('li')!;
   const items = [...item.parentElement!.children].filter((c): c is HTMLLIElement => c instanceof HTMLLIElement);
   const from = items.indexOf(item);
   const middles = items.map((i) => {
@@ -28,28 +28,20 @@ function dragToSort(e: PointerEvent, onDrop: (to: number) => void): void {
       other.style.transform = shift === 0 ? '' : `translateY(${shift}px)`;
     });
   };
-  const drop = () => {
-    handle.removeEventListener('pointermove', follow);
-    handle.removeEventListener('pointerup', drop);
-    handle.removeEventListener('pointercancel', drop);
+  item.classList.add('dragged');
+  followPointer(e, follow, () => {
     for (const i of items) i.style.transform = '';
     item.classList.remove('dragged');
     if (to !== from) onDrop(to);
-  };
-  handle.setPointerCapture(e.pointerId);
-  item.classList.add('dragged');
-  handle.addEventListener('pointermove', follow);
-  handle.addEventListener('pointerup', drop);
-  handle.addEventListener('pointercancel', drop);
+  });
 }
 
-/** The handle a list item is dragged by into another place; the arrow keys move it one place. */
-export function Grip(props: { label: string; index: number; count: number; onMove: (to: number) => void }) {
+/** The handle a list item is dragged by into another place; the arrow keys move it one place, within the list's ends. */
+export function Grip(props: { label: string; index: number; onMove: (to: number) => void }) {
   const key = (e: KeyboardEvent) => {
-    const to = e.key === 'ArrowUp' ? props.index - 1 : e.key === 'ArrowDown' ? props.index + 1 : -1;
-    if (to < 0 || to >= props.count) return;
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     e.preventDefault();
-    props.onMove(to);
+    props.onMove(props.index + (e.key === 'ArrowUp' ? -1 : 1));
   };
   return (
     <button type="button" class="icon grip" title={props.label} aria-label={props.label} onPointerDown={(e) => dragToSort(e, props.onMove)} onKeyDown={key}>

@@ -133,7 +133,7 @@ function DayItem(props: { day: Day; index: number }) {
   return (
     <li class="day card" classList={{ selected: selected() }}>
       <div class="row" ref={(el) => cardMenu(el, more)}>
-        <Grip label={`Drag ${label()} to another place`} index={props.index} count={openTrip()!.days.length} onMove={(to) => moveDay(props.day.id, to)} />
+        <Grip label={`Drag ${label()} to another place`} index={props.index} onMove={(to) => moveDay(props.day.id, to)} />
         <button class="text grow" onClick={() => selectDay(props.day.id)} aria-pressed={selected()}>
           <span class="lines">
             <span class="name">{[`Day ${props.index + 1}`, props.day.name].filter(Boolean).join(' · ')}</span>
@@ -241,7 +241,7 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
   return (
     <li class="route" classList={{ editing: editing() }}>
       <div class="row">
-        <Grip label={`Drag ${label()} to another place`} index={props.index} count={props.day.routes.length} onMove={(to) => moveRoute(props.route.id, to)} />
+        <Grip label={`Drag ${label()} to another place`} index={props.index} onMove={(to) => moveRoute(props.route.id, to)} />
         <button class="text grow" aria-expanded={editing()} onClick={() => editRoute(editing() ? undefined : props.route.id)}>
           <span class="lines">
             <span class="name" title={label()}>
