@@ -96,11 +96,6 @@ final class JournalController
     }
 
     /**
-     * What the entry keeps about the upload: its name, its type as its content says (not as
-     * the browser claims), its size, and a photo's EXIF time and position, read from the
-     * upload where it still lies.
-     */
-    /**
      * The spot the form names by `lng` and `lat`: null without them, false where they are no position.
      *
      * @return ?array{0: float, 1: float}|false
@@ -118,6 +113,11 @@ final class JournalController
         return [$lng, $lat];
     }
 
+    /**
+     * What the entry keeps about the upload: its name, its type as its content says (not as
+     * the browser claims), its size, and a photo's EXIF time and position, read from the
+     * upload where it still lies.
+     */
     private static function fileOf(UploadedFileInterface $upload): array
     {
         $stream = $upload->getStream();

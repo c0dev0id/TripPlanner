@@ -236,7 +236,8 @@ export function thinRoute(trip: Trip, routeId: string, thin: (route: Route, keep
   return day ? updateRoute(trip, routeId, (r) => thin(r, boundPointIds(day))) : trip;
 }
 
-function dayOfRoute(trip: Trip, routeId: string): Day | undefined {
+/** The day the route belongs to. */
+export function dayOfRoute(trip: Trip, routeId: string): Day | undefined {
   return trip.days.find((d) => d.routes.some((r) => r.id === routeId));
 }
 

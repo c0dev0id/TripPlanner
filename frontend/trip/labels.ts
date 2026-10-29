@@ -1,4 +1,5 @@
 import { PROFILES, takesMotorwayDial, type Day, type Route, type Trip } from '../model/trip';
+import { dayOfRoute } from '../routing/dayEdit';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { durationText, shortDateText, timeText } from '../ui/format';
 
@@ -9,7 +10,7 @@ export function routeLabel(route: Route, day: Day): string {
 
 /** A route's label within its trip. */
 export function routeLabelOf(trip: Trip, route: Route): string {
-  const day = trip.days.find((d) => d.routes.some((r) => r.id === route.id));
+  const day = dayOfRoute(trip, route.id);
   return day ? routeLabel(route, day) : route.name;
 }
 
