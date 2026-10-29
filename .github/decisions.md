@@ -148,7 +148,8 @@ entries at the end of their section.
   import a day uses, then saved through the API: no files on the server, no second GPX
   reader in PHP. The rules follow the paths: a folder that holds GPX files is a trip
   named after it without its date, the folders above it are folders, recreated inside
-  the open folder; a date (YYYY-MM-DD) in a file's name puts it on the day of that date,
+  the open folder; a date in a file's name (YYYY-MM-DD or YYYY_MM_DD anywhere, YYYYMMDD
+  only at the start, where a run of digits elsewhere could be any number) puts it on the day of that date,
   one day per date; other files are a day each, dated on from a date in the trip
   folder's name after the dated days, undated where it has none. Days exist only for
   files, not for the dates between them. Folders are found by name in their parent and

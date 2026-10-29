@@ -9,6 +9,16 @@ describe('dateIn', () => {
     expect(dateIn('2024-02-30 nope, 2024-02-29 yes')).toBe('2024-02-29');
     expect(dateIn('Alps')).toBeUndefined();
   });
+
+  it('reads YYYYMMDD at the start of a name and YYYY_MM_DD anywhere, as YYYY-MM-DD', () => {
+    expect(dateIn('20240612 Alps')).toBe('2024-06-12');
+    expect(dateIn('20240612')).toBe('2024-06-12');
+    expect(dateIn('Pass 2024_06_13')).toBe('2024-06-13');
+    expect(dateIn('Alps 20240612')).toBeUndefined();
+    expect(dateIn('202406123 Alps')).toBeUndefined();
+    expect(dateIn('2024-06_12')).toBeUndefined();
+    expect(dateIn('20241399 then 2024_06_14')).toBe('2024-06-14');
+  });
 });
 
 describe('planFolderImport', () => {
@@ -40,6 +50,17 @@ describe('planFolderImport', () => {
       ['2024-06-14', '', ['2024-06-14.gpx']],
       ['2024-06-15', 'extra', ['extra.gpx']],
     ]);
+  });
+
+  it('takes the dates of names written YYYYMMDD or YYYY_MM_DD, and leaves them out of the names', () => {
+    expect(plan(['20240612_Alps/2024_06_13_pass.gpx', '20240612_Alps/day.gpx'])[0]).toEqual({
+      folders: [],
+      name: 'Alps',
+      days: [
+        ['2024-06-13', 'pass', ['2024_06_13_pass.gpx']],
+        ['2024-06-14', 'day', ['day.gpx']],
+      ],
+    });
   });
 
   it('keeps undated files of an undated folder undated, after the dated days', () => {

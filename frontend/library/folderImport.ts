@@ -20,19 +20,27 @@ export interface PlannedDay {
   files: number[];
 }
 
-/** The first date written as YYYY-MM-DD in a name that is a real date. */
-export function dateIn(name: string): string | undefined {
-  for (const [date, year, month, day] of name.matchAll(/(\d{4})-(\d{2})-(\d{2})/g)) {
-    const parsed = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
-    if (parsed.toISOString().slice(0, 10) === date) return date;
+/**
+ * The first real date in a name, as YYYY-MM-DD, with the text it was written as: YYYYMMDD
+ * at the start of the name, or YYYY-MM-DD or YYYY_MM_DD anywhere in it.
+ */
+function findDate(name: string): { date: string; text: string } | undefined {
+  const written = [...name.matchAll(/^(\d{4})(\d{2})(\d{2})(?!\d)/g), ...name.matchAll(/(\d{4})([-_])(\d{2})\2(\d{2})/g)].sort((a, b) => a.index - b.index);
+  for (const match of written) {
+    const [year, month, day] = match.length === 4 ? match.slice(1) : [match[1], match[3], match[4]];
+    const date = `${year}-${month}-${day}`;
+    if (new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))).toISOString().slice(0, 10) === date) return { date, text: match[0] };
   }
   return undefined;
 }
 
+/** The first real date in a name, as YYYY-MM-DD; see findDate for how it may be written. */
+export const dateIn = (name: string): string | undefined => findDate(name)?.date;
+
 /** The name without its date and the separators around it; empty where nothing else is left. */
 function withoutDate(name: string): string {
-  const date = dateIn(name);
-  const rest = date ? name.replace(date, ' ') : name;
+  const found = findDate(name);
+  const rest = found ? name.replace(found.text, ' ') : name;
   return rest.replace(/^[\s_.,–-]+|[\s_.,–-]+$/g, '').replace(/\s{2,}/g, ' ');
 }
 

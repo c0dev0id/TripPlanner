@@ -74,7 +74,8 @@
   the routing will take. Points that stops stand on are kept either way.
 - Import of a folder tree from disk into the open folder of the library: each folder
   holding GPX files becomes a trip named after it without its date, the folders above it
-  folders (existing ones reused by name). A date in a file's name puts it on that day,
+  folders (existing ones reused by name). A date in a file's name (YYYY-MM-DD, YYYY_MM_DD,
+  or YYYYMMDD at its start) puts it on that day,
   several files of a date on one day; other files are a day each, dated on from a date in
   the trip folder's name, or undated. Files that are no GPX are reported and left out.
 - Routes and stops can be marked optional, each in its dialog, and are shown so.
