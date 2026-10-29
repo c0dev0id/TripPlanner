@@ -206,6 +206,11 @@ entries at the end of their section.
   receipts and documents as attachments and notes as comments. In use they are one
   thing: a note, a file, or a file with a note under it, in order of adding. One table,
   one dialog, one list; a file's media type says what it is.
+- **The journal is a window, not a modal.** The journal is read against the map: its
+  entries' places, the day they belong to. As a modal it dimmed and locked the map, so
+  showing an entry's place had to close it. It is a dialog shown without modality,
+  dragged by its title and kept whole on the page, closed by Esc or its button; the
+  dialogs that edit something stay modal.
 - **The trip's journal is the overview.** Opened on the trip, the journal lists every entry
   of the trip in the trip's order (the trip's own, then each day with its routes and its
   stops in riding order) rather than only the entries on the trip itself, which are few.

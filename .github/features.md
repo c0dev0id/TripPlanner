@@ -73,7 +73,8 @@
   deleted in place; rows say how many entries a part has. The trip's own journal reads
   the whole trip top down: a heading per day, under it the day's entries, then those of
   its routes and its stops in riding order, with smaller photos; an entry that stands
-  somewhere has a button that shows it on the map, with its day. A photo's time and position
+  somewhere has a button that shows it on the map, with its day. The journal is a window
+  over the map, dragged aside by its title; the map stays usable beside it. A photo's time and position
   are read from its EXIF data: it is shown with the time it was taken, stands on the
   map where it was taken, and a photo added to the trip goes to the day of its date.
   A photo is made into a JPEG of at most 2560 px in the browser before it is uploaded,

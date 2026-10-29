@@ -745,8 +745,27 @@ a {
   white-space: pre-wrap;
 }
 
+/* The journal: a window over the map, centred until dragged by its title. */
 .journal-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 20;
   width: min(520px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  margin: 0;
+  overflow: auto;
+  transform: translate(-50%, -50%);
+}
+
+.journal-dialog.placed {
+  transform: none;
+}
+
+.journal-dialog .grip {
+  cursor: move;
+  touch-action: none;
+  user-select: none;
 }
 
 .journal-dialog .journal-list {

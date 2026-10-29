@@ -9,7 +9,7 @@ import { askConfirmation } from '../ui/confirm';
 import { field } from '../ui/form';
 import { takenAtText } from '../ui/format';
 import { DeleteIcon, PencilIcon, PinIcon } from '../ui/icons';
-import { showModalWhile } from '../ui/modal';
+import { showWhile } from '../ui/modal';
 import { createRequest } from '../ui/request';
 import { EntryFile } from './EntryFile';
 import { journalOverview } from './journalOverview';
@@ -31,15 +31,19 @@ function targetLabel(target: EntryTarget): string {
   return trip.name;
 }
 
+/** Where the journal window stands once dragged by its title; centred until then. Kept while the page lives. */
+const [journalAt, setJournalAt] = createSignal<{ x: number; y: number }>();
+
 /**
  * The journal of one part of the trip: its entries, oldest first, and a form for a new note
  * or file. The trip's own journal reads the whole trip top down, part by part, and takes
- * new entries on the trip itself.
+ * new entries on the trip itself. It is a window over the map, not a modal: the map stays
+ * usable beside it, and it is dragged aside by its title.
  */
 export function JournalDialog() {
   let dialog!: HTMLDialogElement;
   let form!: HTMLFormElement;
-  showModalWhile(() => dialog, () => journalTarget() !== undefined);
+  showWhile(() => dialog, () => journalTarget() !== undefined);
   const { error, busy, run } = createRequest();
   /** Where the last photo went when the server placed it on the day of its date. */
   const [placed, setPlaced] = createSignal<string>();
@@ -62,15 +66,46 @@ export function JournalDialog() {
     setPlaced(undefined);
     closeJournal();
   };
-  /** Shows where an entry stands: its day on the map, the map flown there, the journal closed. */
+  /** Shows where an entry stands: its day on the map, and the map flown there. */
   const show = (entry: Entry, spot: LngLat) => {
     const day = dayOfEntry(openTrip()!.days, entry);
     if (day) selectDay(day.id);
     panTo(spot);
+  };
+  /** Moves the window with the pointer that pressed its title, kept whole inside the page. */
+  const drag = (e: PointerEvent) => {
+    if (e.button !== 0) return;
+    const title = e.currentTarget as HTMLElement;
+    const box = dialog.getBoundingClientRect();
+    const grip = { x: e.clientX - box.left, y: e.clientY - box.top };
+    const within = (at: number, size: number, room: number) => Math.min(Math.max(at, 0), Math.max(room - size, 0));
+    const place = (p: PointerEvent) => setJournalAt({ x: within(p.clientX - grip.x, box.width, innerWidth), y: within(p.clientY - grip.y, box.height, innerHeight) });
+    const end = () => {
+      title.removeEventListener('pointermove', place);
+      title.removeEventListener('pointerup', end);
+      title.removeEventListener('pointercancel', end);
+    };
+    title.setPointerCapture(e.pointerId);
+    title.addEventListener('pointermove', place);
+    title.addEventListener('pointerup', end);
+    title.addEventListener('pointercancel', end);
+  };
+  /** Esc closes the window, unless a note being written or edited takes it. */
+  const escape = (e: KeyboardEvent) => {
+    if (e.key !== 'Escape' || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
+    e.preventDefault();
     close();
   };
   return (
-    <dialog ref={dialog} class="dialog journal-dialog" aria-label="Journal" onClose={close}>
+    <dialog
+      ref={dialog}
+      class="dialog journal-dialog"
+      classList={{ placed: journalAt() !== undefined }}
+      style={journalAt() && { left: `${journalAt()!.x}px`, top: `${journalAt()!.y}px` }}
+      aria-label="Journal"
+      onClose={close}
+      on:keydown={escape}
+    >
       <Show when={journalTarget()}>
         {(target) => {
           const label = () => targetLabel(target());
@@ -79,7 +114,7 @@ export function JournalDialog() {
           const overview = createMemo(() => (wholeTrip() ? journalOverview(openTrip()!, allEntries()) : []));
           return (
             <div class="dialog-body">
-              <h3 class="name" title={label()}>
+              <h3 class="name grip" title={label()} onPointerDown={drag}>
                 Journal · {label()}
               </h3>
               <div class="journal-list" classList={{ overview: wholeTrip() }}>
