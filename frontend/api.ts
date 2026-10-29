@@ -49,6 +49,8 @@ export const duplicateTrip = (id: number): Promise<{ id: number }> => request('P
 /** Puts a trip into a folder, or into none. */
 export const moveTrip = (id: number, folderId: number | null): Promise<void> => request('PATCH', `/api/trips/${id}`, { folderId });
 
+export const renameTrip = (id: number, name: string): Promise<void> => request('PATCH', `/api/trips/${id}`, { name });
+
 export const listFolders = (): Promise<Folder[]> => request('GET', '/api/folders');
 
 export const createFolder = (name: string): Promise<Folder> => request('POST', '/api/folders', { name });

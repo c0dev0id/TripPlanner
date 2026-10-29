@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Planner\Tests\Trip;
 
 use DateTimeImmutable;
+use PDO;
 use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
 use Planner\Tests\TestDatabase;
@@ -14,6 +15,7 @@ use Planner\Trip\UnknownFolder;
 
 final class FoldersTest extends TestCase
 {
+    private PDO $db;
     private Folders $folders;
     private Trips $trips;
     private int $userId;
@@ -22,7 +24,7 @@ final class FoldersTest extends TestCase
 
     protected function setUp(): void
     {
-        $db = TestDatabase::create();
+        $this->db = $db = TestDatabase::create();
         $this->now = new DateTimeImmutable('2026-10-27T10:00:00Z');
         $users = new Users($db);
         $this->userId = $users->create('rider@example.com', 'correct horse battery', $this->now)->id;
@@ -70,6 +72,17 @@ final class FoldersTest extends TestCase
         self::assertTrue($this->trips->move($this->userId, $trip->id, null));
         self::assertNull($this->trips->listFor($this->userId)[0]->folderId);
         self::assertFalse($this->trips->move($this->otherUserId, $trip->id, null));
+    }
+
+    public function testRenamesATripAndCountsItAsAChange(): void
+    {
+        $trip = $this->trips->create($this->userId, 'Weekend', $this->now);
+        self::assertTrue($this->trips->rename($this->userId, $trip->id, 'Alps weekend', $this->now->modify('+1 day')));
+        $listed = $this->trips->listFor($this->userId)[0];
+        self::assertSame(['Alps weekend', '2026-10-28T10:00:00Z'], [$listed->name, $listed->updatedAt]);
+        $version = $this->db->query("SELECT version FROM trips WHERE id = $trip->id")->fetchColumn();
+        self::assertSame(2, (int) $version);
+        self::assertFalse($this->trips->rename($this->otherUserId, $trip->id, 'Mine', $this->now));
     }
 
     public function testRefusesAnotherUsersFolder(): void

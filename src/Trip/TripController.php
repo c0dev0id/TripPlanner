@@ -53,10 +53,19 @@ final class TripController
         return $copyId === null ? Json::error($response, 404, 'No such trip.') : Json::of($response->withStatus(201), ['id' => $copyId]);
     }
 
-    /** Puts the trip into the folder the body names, or into none for null. */
-    public function move(Request $request, Response $response, array $args): Response
+    /** Renames the trip where the body has a `name`; else puts it into the folder `folderId` names, or into none for null. */
+    public function change(Request $request, Response $response, array $args): Response
     {
-        $folderId = Json::field($request, 'folderId');
+        $body = (array) $request->getParsedBody();
+        if (array_key_exists('name', $body)) {
+            $name = Name::of($body['name']);
+            if ($name === null) {
+                return Json::error($response, 422, 'A trip needs a name of up to 200 characters.');
+            }
+            $renamed = $this->trips->rename($this->currentUser->get()->id, (int) $args['id'], $name, new DateTimeImmutable());
+            return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'No such trip.');
+        }
+        $folderId = $body['folderId'] ?? null;
         if ($folderId !== null && !is_int($folderId)) {
             return Json::error($response, 422, 'folderId must be a number or null.');
         }

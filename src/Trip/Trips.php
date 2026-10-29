@@ -53,6 +53,17 @@ final class Trips
         return $statement->rowCount() === 1;
     }
 
+    /**
+     * Renames the user's trip; false when there is no such trip. The trip's version goes up,
+     * so that a copy of the trip open elsewhere is refused when it saves the old name.
+     */
+    public function rename(int $userId, int $tripId, string $name, DateTimeImmutable $now): bool
+    {
+        $statement = $this->db->prepare('UPDATE trips SET name = ?, version = version + 1, updated_at = ? WHERE id = ? AND user_id = ?');
+        $statement->execute([$name, Timestamp::of($now), $tripId, $userId]);
+        return $statement->rowCount() === 1;
+    }
+
     /** The token the user's trip is shared under; null while it is not shared. */
     public function shareToken(int $userId, int $tripId): ?string
     {
