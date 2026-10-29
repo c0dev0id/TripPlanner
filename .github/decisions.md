@@ -357,7 +357,9 @@ entries at the end of their section.
   empty lines and an email. The import closes up blank runs and cuts a name to 200
   characters and any other text to 20,000, the limits the server holds, so that one
   waypoint does not keep a whole trip from saving. The server counts characters, not
-  bytes, as the form fields do.
+  bytes, as the form fields do. Names from file paths and from GPX text are composed
+  (NFC): macOS writes file names decomposed, and a decomposed "ö" looks right but matches
+  neither a typed one in the search nor a folder of the same name on a second import.
 - **One track or route per route, one waypoint per stop.** A GPX file holds the stops in
   scope as waypoints, bound ones at their route point and free ones at their own position
   when within the chosen reach of a route, with the stop's kind as the waypoint type, and

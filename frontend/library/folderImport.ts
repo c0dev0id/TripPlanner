@@ -45,8 +45,11 @@ function withoutDate(name: string): string {
 /** Names in the order a person reads them: "day 2" before "day 10". */
 const byName = new Intl.Collator(undefined, { numeric: true }).compare;
 
-/** A picked file's path within the picked folder; its name alone where the browser gives none. */
-export const pickedPath = (file: File): string => file.webkitRelativePath || file.name;
+/**
+ * A picked file's path within the picked folder, its name alone where the browser gives
+ * none; composed (NFC), since macOS writes names decomposed and names must compare as typed.
+ */
+export const pickedPath = (file: File): string => (file.webkitRelativePath || file.name).normalize('NFC');
 
 /**
  * The trips a picked folder tree makes, from the files' paths relative to it: each folder

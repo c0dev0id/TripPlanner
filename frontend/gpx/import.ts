@@ -18,11 +18,11 @@ function clipped(text: string, max: number): string {
   return characters.length > max ? characters.slice(0, max).join('') : text;
 }
 
-/** Text from a file as a name: one line, at most MAX_NAME characters. */
-const asName = (text: string): string => clipped(text.replace(/\s+/g, ' ').trim(), MAX_NAME);
+/** Text from a file as a name: composed (NFC), one line, at most MAX_NAME characters. */
+const asName = (text: string): string => clipped(text.normalize('NFC').replace(/\s+/g, ' ').trim(), MAX_NAME);
 
-/** Text from a file as notes: no blanks at the ends of lines, no more than one empty line in a row, at most MAX_TEXT characters. */
-const asNotes = (text: string): string => clipped(text.replace(/[^\S\n]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim(), MAX_TEXT);
+/** Text from a file as notes: composed (NFC), no blanks at the ends of lines, no more than one empty line in a row, at most MAX_TEXT characters. */
+const asNotes = (text: string): string => clipped(text.normalize('NFC').replace(/[^\S\n]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim(), MAX_TEXT);
 
 /** Rounded positions without consecutive repeats, which would make legs of no length. */
 function cleanPoints(points: readonly LngLat[]): LngLat[] {
@@ -78,7 +78,7 @@ function kindOf(waypoint: GpxContent['waypoints'][number]): StopKind {
  * that it keeps its shape; condensing it or making a route of it is the user's choice. Unnamed routes are named after the
  * file. A waypoint becomes a stop, bound to a route point it stands on, free otherwise,
  * of the kind kindOf reads from it, with its address and phone numbers where Garmin gave them.
- * Names and notes are fitted to what a trip holds: blank runs closed up, overlong text cut.
+ * Names and notes are fitted to what a trip holds: composed, blank runs closed up, overlong text cut.
  */
 export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string }): DayParts {
   const lines = [

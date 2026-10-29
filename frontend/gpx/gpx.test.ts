@@ -134,16 +134,18 @@ describe('gpxToDayParts', () => {
     expect(Object.keys(route!.legs)).toEqual(['bicycle:allow/11,48;11.2,48.3']);
   });
 
-  it('closes up blank runs in names and notes and cuts them to what a trip holds', () => {
+  it('composes names and notes, closes up their blank runs and cuts them to what a trip holds', () => {
     const gpx = `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">
       <wpt lat="48" lon="11"><name>  Touratech
         PT </name><desc>Av. Infante D. Henrique  \n\n${'\n  '.repeat(30000)}\nEmail: info@touratech.pt\n</desc></wpt>
       <wpt lat="48" lon="11"><name>${'ö'.repeat(250)}</name><desc>${'ü'.repeat(25000)}</desc></wpt>
       <rte><name>${'x'.repeat(300)}</name><rtept lat="48" lon="11"/></rte>
+      <wpt lat="48" lon="11"><name>Rho\u0308n</name></wpt>
     </gpx>`;
     const parts = gpxToDayParts(parseGpx(gpx), options);
     expect(parts.stops[0]).toMatchObject({ name: 'Touratech PT', notes: 'Av. Infante D. Henrique\n\nEmail: info@touratech.pt' });
     expect([parts.stops[1]!.name, parts.stops[1]!.notes, parts.routes[0]!.name].map((t) => t.length)).toEqual([200, 20000, 200]);
+    expect(parts.stops[2]!.name).toBe('Rh\u00f6n');
   });
 
   it('names a single unnamed line after the file, drops repeated points, keeps every point of a long track', () => {

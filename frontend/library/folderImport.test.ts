@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { dateIn, planFolderImport } from './folderImport';
+import { dateIn, pickedPath, planFolderImport } from './folderImport';
 
 const plan = (paths: string[]) => planFolderImport(paths).map((t) => ({ ...t, days: t.days.map((d) => [d.date, d.name, d.files.map((i) => paths[i]!.split('/').at(-1))]) }));
+
+describe('pickedPath', () => {
+  it('composes a name macOS wrote decomposed', () => {
+    expect(pickedPath(new File([''], 'MFRN Rho\u0308ntour.gpx'))).toBe('MFRN Rh\u00f6ntour.gpx');
+  });
+});
 
 describe('dateIn', () => {
   it('finds the first real date written as YYYY-MM-DD', () => {
