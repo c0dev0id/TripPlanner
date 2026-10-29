@@ -112,6 +112,9 @@ export async function saveTrip(trip: Trip, keepalive = false): Promise<number> {
 
 export const deleteTrip = (id: number): Promise<void> => request('DELETE', `/api/trips/${id}`);
 
+/** Merges the trips into the trip `intoId` and deletes them; see the API's merge. */
+export const mergeTrips = (intoId: number, tripIds: number[]): Promise<{ version: number }> => request('POST', `/api/trips/${intoId}/merge`, { tripIds });
+
 /** A route of the library as the duplicates report names it: where it is, and what it is. */
 export interface DuplicateRoute {
   tripId: number;

@@ -150,6 +150,14 @@ entries at the end of their section.
   down. Moving is the default answer, so Enter never deletes trips; deleting with contents
   exists for clearing out an import. Folders themselves are not
   moved; nothing asked for it, and a folder that cannot move cannot end up inside itself.
+- **Trips are merged on the server.** Merging joins trips imported one file each into the
+  trip they belong to, so their days are placed as a folder import would have placed
+  them: by date, a day of a date the trip has already joining it. The server moves the
+  rows themselves rather than saving a merged document under new ids, so that every
+  route, stop and day keeps its id, journal entries keep what they are attached to, and
+  their files move with them. The trip selected first is the one kept; a selection
+  remembers its order for that, a Shift run starting at the trip it was started from.
+  Trips and collections do not merge, since a section has no date to place it by.
 - **The search runs in the browser.** The library loads all trip summaries and folders of
   the user (a few hundred small rows at most for a personal planner) and filters them by
   name; the results are capped at twenty. A server search would add an endpoint for

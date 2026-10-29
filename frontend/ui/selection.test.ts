@@ -15,7 +15,7 @@ describe('clickSelect', () => {
 
   it('adds or takes away a row with Cmd or Ctrl', () => {
     const added = clickSelect(clickSelect(NOTHING_SELECTED, order, 'a', plain), order, 'c', toggle);
-    expect(keys(added)).toEqual(['a', 'c']);
+    expect([...clickSelect(added, order, 'b', toggle).keys]).toEqual(['a', 'c', 'b']);
     expect(keys(clickSelect(added, order, 'a', toggle))).toEqual(['c']);
   });
 
@@ -23,7 +23,7 @@ describe('clickSelect', () => {
     const start = clickSelect(NOTHING_SELECTED, order, 'b', plain);
     expect(keys(clickSelect(start, order, 'd', range))).toEqual(['b', 'c', 'd']);
     const back = clickSelect(clickSelect(start, order, 'd', range), order, 'a', range);
-    expect([keys(back), back.anchor]).toEqual([['a', 'b'], 'b']);
+    expect([[...back.keys], back.anchor]).toEqual([['b', 'a'], 'b']);
   });
 
   it('selects the row alone on Shift without an anchor', () => {

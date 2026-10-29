@@ -31,7 +31,7 @@ share work; sharing between users is on the way.
 - **Saved as you go** — every change is saved to your account moments later.
 - **Rearranged as plans change** — days and routes are dragged into place or duplicated,
   a route moves to another day, routes and stops are copied and pasted into any day of any
-  trip, a whole trip is duplicated.
+  trip, a whole trip is duplicated, trips imported one file each are merged into one.
 - **A library with folders** — trips sorted into folders inside folders, and a search
   across them. *Import folder…* turns a folder tree of GPX files into folders and trips:
   a trip per folder or per file, or planning material.
@@ -80,6 +80,7 @@ share work; sharing between users is on the way.
 | Right-click or long press on a stop or point on the map | Make a stop, connect, disconnect, straight leg, remove |
 | Right-click or long press on the map | Add a point or a free stop here, or a journal entry |
 | Right-click or long press on a folder, trip, day, route or stop in the panel | Its menu: rename or edit, move, copy or paste, duplicate, delete |
+| Cmd/Ctrl-click, Shift-click on trips in a folder | Select several; their menu merges them into the first selected |
 | Enter in the search box | Find a place; Esc closes the list |
 | Drag the panel's edge | Set the panel's width; double-click for the default |
 | Drag a day's or a route's grip | Put it in another place; the arrow keys on the grip move it one place |

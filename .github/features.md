@@ -10,6 +10,12 @@
   in the open folder; the arrow goes up one folder at a time. Folders and trips are cards with the name
   over a line of metadata; right-click or a long press on a card opens its menu. A
   search by name across trips and folders, listing at most twenty results.
+- Merging trips: Cmd or Ctrl with a click selects trips of the open folder, Shift with a
+  click a run of them (a plain click still opens a trip); the menu of the selection merges
+  them into the one selected first. A day joins that trip's day of the same date or goes
+  in among its days by date, an undated day at the end; a collection's sections go at its
+  end. The journal moves along, and the merged trips are deleted. Trips and collections
+  are not merged with each other.
 - Trips as a sequence of days; a day as one or more routes and its stops. A day is a
   card with its number and name over its date and length, and its menu (right-click or
   long press) edits, duplicates, pastes into and removes it. Days and routes
