@@ -4,13 +4,13 @@ const DELAY = 500;
 const TOLERANCE = 8;
 
 /**
- * Calls `onPress` with the client position when a touch or pen pointer rests on the target
- * for DELAY ms without moving. Mice keep using right-click. A second pointer (pinch)
- * cancels. Returns a function that removes the listeners.
+ * Calls `onPress` with the client position and the pressed element when a touch or pen
+ * pointer rests on the target for DELAY ms without moving. Mice keep using right-click. A
+ * second pointer (pinch) cancels. Returns a function that removes the listeners.
  */
-export function onLongPress(target: EventTarget, onPress: (clientX: number, clientY: number) => void): () => void {
+export function onLongPress(target: EventTarget, onPress: (clientX: number, clientY: number, pressed: EventTarget | null) => void): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
-  let start: { id: number; x: number; y: number } | undefined;
+  let start: { id: number; x: number; y: number; target: EventTarget | null } | undefined;
 
   const cancel = () => {
     clearTimeout(timer);
@@ -21,11 +21,11 @@ export function onLongPress(target: EventTarget, onPress: (clientX: number, clie
     const e = event as PointerEvent;
     cancel();
     if (e.pointerType === 'mouse' || !e.isPrimary) return;
-    const pressed = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    const pressed = { id: e.pointerId, x: e.clientX, y: e.clientY, target: e.target };
     start = pressed;
     timer = setTimeout(() => {
       cancel();
-      onPress(pressed.x, pressed.y);
+      onPress(pressed.x, pressed.y, pressed.target);
     }, DELAY);
   };
   const move = (event: Event) => {

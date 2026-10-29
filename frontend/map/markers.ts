@@ -1,7 +1,7 @@
 import { Map as MapLibreMap, Marker, type LngLat as MapLibreLngLat } from 'maplibre-gl';
 import type { LngLat } from '../model/trip';
 import { setMenu, type MenuItem } from '../ui/menu';
-import { onLongPress } from './longPress';
+import { onLongPress } from '../ui/longPress';
 import { markerElement } from './markerContent';
 
 /** A position as the map gives it, wrapped into the world, as the model's pair. */
