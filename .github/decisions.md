@@ -209,7 +209,7 @@ entries at the end of their section.
   store wraps every object in a proxy: each read of a point registered a dependency, and
   a pass over an imported day of 130,000 track points through it took 2.2 s instead of
   0.45 s; each edit was also diffed into the store with `reconcile` and copied whole for
-  the undo history. As a value, the undo history keeps the earlier trips themselves. The
+  the undo history. As a value, the undo history keeps the earlier trips themselves, and what is worked out of a day can be kept by the day object: a save sorts only the days an edit touched into riding order. The
   cost is that what shows a part must not hold the object: lists keep their rows by id
   (`ForById`), so that a changed copy updates its row; markers read their stop through
   their props; a dialog holds its element by id while it is open, so that a routed leg
