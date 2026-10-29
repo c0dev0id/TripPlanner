@@ -1,5 +1,5 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
-import { createEffect, For, onCleanup, Show } from 'solid-js';
+import { createEffect, For, onCleanup } from 'solid-js';
 import type { Stop } from '../model/trip';
 import { pointOfDay } from '../routing/dayEdit';
 import { dragsMarkers, setEditTarget, showNeighbours, straightLegItem, tapAction } from '../state/drawing';
@@ -8,21 +8,18 @@ import { connectStop, disconnectStop, editingRouteId, moveStop, neighbourDays, o
 import { stopContent } from './markerContent';
 import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
 
+/** The days whose stops are small grey dots: the selected day's neighbours where shown, every day while none is selected. */
+const dimDays = () => (selectedDay() ? (showNeighbours() ? neighbourDays() : []) : (openTrip()?.days ?? []));
+
 /**
  * The stops of the selected day, drawn by their kind and named, draggable while a route
- * of the day is edited with a tool other than the hand; the neighbouring days' stops as small grey dots, and every day's
- * while no day is selected.
+ * of the day is edited with a tool other than the hand; the other shown days' stops as dots.
  */
 export function StopMarkers(props: { map: MapLibreMap }) {
   return (
     <>
       <For each={selectedDay()?.stops}>{(stop) => <StopMarker map={props.map} stop={stop} />}</For>
-      <Show when={openTrip() && !selectedDay()}>
-        <For each={openTrip()!.days}>{(day) => <For each={day.stops}>{(stop) => <DimStopMarker map={props.map} stop={stop} />}</For>}</For>
-      </Show>
-      <Show when={showNeighbours()}>
-        <For each={neighbourDays()}>{(day) => <For each={day.stops}>{(stop) => <DimStopMarker map={props.map} stop={stop} />}</For>}</For>
-      </Show>
+      <For each={dimDays()}>{(day) => <For each={day.stops}>{(stop) => <DimStopMarker map={props.map} stop={stop} />}</For>}</For>
     </>
   );
 }

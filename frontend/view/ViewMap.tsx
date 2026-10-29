@@ -1,7 +1,7 @@
 import { GeoJSONSource, LngLatBounds, Marker } from 'maplibre-gl';
 import { onCleanup, onMount } from 'solid-js';
 import { newBaseMap } from '../map/baseMap';
-import { entryContent, entryMarkerClass, markerElement, stopContent } from '../map/markerContent';
+import { entryMarkerElement, markerElement, stopContent } from '../map/markerContent';
 import { ROUTES_SOURCE, routeFeatures } from '../map/routeOverlay';
 import type { Entry } from '../model/journal';
 import type { Trip } from '../model/trip';
@@ -23,7 +23,7 @@ export function ViewMap(props: { trip: Trip; entries: Entry[]; api: string }) {
         }
       }
       for (const entry of props.entries) {
-        if (entry.lngLat) new Marker({ element: markerElement(entryMarkerClass(entry), entryContent(entry, props.api)) }).setLngLat(entry.lngLat).addTo(m);
+        if (entry.lngLat) new Marker({ element: entryMarkerElement(entry, props.api) }).setLngLat(entry.lngLat).addTo(m);
       }
       if (!bounds.isEmpty()) m.fitBounds(bounds, { padding: 60, maxZoom: 13, duration: 0 });
     });
