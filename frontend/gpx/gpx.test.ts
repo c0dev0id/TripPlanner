@@ -83,6 +83,31 @@ describe('gpxToDayParts', () => {
     expect(gpxToDayParts(parseGpx(gpx), options).stops.map((s) => s.kind)).toEqual(['info', 'restaurant', 'fuel', 'other', 'other', 'other', 'other', 'hotel']);
   });
 
+  it("takes the address and the phone numbers from Garmin's waypoint extension, read once", () => {
+    const extension = (prefix: string, uri: string) => `
+      <${prefix}:WaypointExtension xmlns:${prefix}="${uri}">
+        <${prefix}:Address>
+          <${prefix}:StreetAddress>58 Rue des Vignerons</${prefix}:StreetAddress>
+          <${prefix}:StreetAddress>Bâtiment B</${prefix}:StreetAddress>
+          <${prefix}:City>Marieulles</${prefix}:City>
+          <${prefix}:State>Moselle</${prefix}:State>
+          <${prefix}:Country>FRA</${prefix}:Country>
+          <${prefix}:PostalCode>57420</${prefix}:PostalCode>
+        </${prefix}:Address>
+        <${prefix}:PhoneNumber>+33 3 87 69 91 98</${prefix}:PhoneNumber>
+        <${prefix}:PhoneNumber Category="Mobile">+33 6 45 06 62 35</${prefix}:PhoneNumber>
+        <${prefix}:PhoneNumber/>
+      </${prefix}:WaypointExtension>`;
+    const gpx = `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">
+      <wpt lat="48" lon="11"><name>Winery</name><sym>Winery</sym><type>user</type><extensions>${extension('gpxx', 'http://www.garmin.com/xmlschemas/GpxExtensions/v3')}${extension('wptx1', 'http://www.garmin.com/xmlschemas/WaypointExtension/v1')}</extensions></wpt>
+      <wpt lat="48" lon="11"><name>Plain</name></wpt>
+    </gpx>`;
+    expect(gpxToDayParts(parseGpx(gpx), options).stops.map((s) => [s.name, s.kind, s.address, s.contact])).toEqual([
+      ['Winery', 'other', '58 Rue des Vignerons, Bâtiment B, 57420 Marieulles, Moselle, FRA', '+33 3 87 69 91 98, Mobile: +33 6 45 06 62 35'],
+      ['Plain', 'other', '', ''],
+    ]);
+  });
+
   it("keeps a Garmin route's points, each leg along the way Garmin calculated, its time left to the pace", () => {
     const [garmin, plain] = gpxToDayParts(parseGpx(GARMIN), options).routes;
     expect(garmin!.name).toBe('Pass road');

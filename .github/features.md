@@ -64,7 +64,9 @@
   way; its tracks become routes of kind track with every point, joined by straight legs;
   its waypoints become stops, bound to a route point they stand on, free otherwise, with
   their type as the kind where it is one of ours, else the kind a Garmin symbol names
-  exactly (Information, Restaurant, Gas Station), else a plain stop. A track's row counts its points and
+  exactly (Information, Restaurant, Gas Station), else a plain stop, and with the
+  address and phone numbers Garmin's waypoint extension gives as their address and
+  contact. A track's row counts its points and
   lists only its stops, and the map shows no marker for each of its points. Its menu
   condenses it (Douglas–Peucker at a distance chosen from a few, each with the count of
   points it leaves) or makes a route of it: fewer points, every leg routed, with the time

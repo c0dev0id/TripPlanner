@@ -65,7 +65,7 @@ function kindOf(waypoint: GpxContent['waypoints'][number]): StopKind {
  * becomes a route of kind `track`: every one of its points, joined by straight legs, so
  * that it keeps its shape; condensing it or making a route of it is the user's choice. Unnamed routes are named after the
  * file. A waypoint becomes a stop, bound to a route point it stands on, free otherwise,
- * of the kind kindOf reads from it.
+ * of the kind kindOf reads from it, with its address and phone numbers where Garmin gave them.
  */
 export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string }): DayParts {
   const lines = [
@@ -86,7 +86,7 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
   const stops = gpx.waypoints.map((w, i) => {
     const lngLat = roundLngLat(w.lngLat);
     const stop = newStop(options.newId(), w.name ?? `Waypoint ${i + 1}`, lngLat, pointAt.get(lngLat.join(',')) ?? null);
-    return { ...stop, kind: kindOf(w), notes: w.description ?? '' };
+    return { ...stop, kind: kindOf(w), address: w.address ?? '', contact: w.phone ?? '', notes: w.description ?? '' };
   });
   return { routes, stops };
 }
