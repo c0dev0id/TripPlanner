@@ -1,7 +1,7 @@
 import { createResource, createSignal, Show } from 'solid-js';
 import { errorMessage, sharedPageUrl, shareToken, shareTrip, unshareTrip } from '../api';
 import { setShareOpen, shareOpen } from '../state/drawing';
-import { openTrip } from '../state/trip';
+import { openTripId } from '../state/trip';
 import { showModalWhile } from '../ui/modal';
 import { createRequest } from '../ui/request';
 
@@ -9,7 +9,7 @@ import { createRequest } from '../ui/request';
 export function ShareDialog() {
   let dialog!: HTMLDialogElement;
   showModalWhile(() => dialog, shareOpen);
-  const tripId = () => (shareOpen() ? openTrip()?.id : undefined);
+  const tripId = () => (shareOpen() ? openTripId() : undefined);
   const [token, { mutate }] = createResource(tripId, async (id) => (await shareToken(id)).token);
   const { error, run } = createRequest();
   const [copied, setCopied] = createSignal(false);

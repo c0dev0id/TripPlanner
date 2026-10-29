@@ -35,15 +35,9 @@ export function recalculateRoute(routeId: string): void {
 
 const pump = createPump<LegJob, RoutedLeg>({
   next: () => {
-    const trip = openTrip();
-    if (!trip) return undefined;
     const edited = editingRouteId();
     const preferred = new Set(edited ? [edited] : selectedDay()?.routes.map((r) => r.id));
-    return nextMissingLeg(
-      trip.days.flatMap((day) => day.routes),
-      failedLegs(),
-      preferred,
-    );
+    return nextMissingLeg(allRoutes(), failedLegs(), preferred);
   },
   run: (job) => fetchLeg(job),
   onResult: (job, leg) => setRouteLeg(job.routeId, job.key, leg),

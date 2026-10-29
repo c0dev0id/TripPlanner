@@ -3,7 +3,7 @@ import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } 
 import type { Day } from '../model/trip';
 import { panTarget, showNeighbours } from '../state/drawing';
 import { failedLegs } from '../state/routing';
-import { editingRouteId, neighbourDays, openTrip, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
+import { editingRouteId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
 import { newBaseMap } from './baseMap';
 import { Interactions } from './Interactions';
 import { EntryMarkers } from './EntryMarkers';
@@ -59,11 +59,9 @@ function RouteLines(props: { map: MapLibreMap }) {
   const days = createMemo(shownDays, [], { equals: sameDays });
   const marks = () => selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : []));
   const features = createMemo(() => routeFeatures(days(), editingRouteId(), failedLegs(), marks()));
-  // The map fits the trip when another trip opens, not on each change to this one.
-  const tripId = createMemo(() => openTrip()?.id);
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
-    on([selectedDayId, tripId], () => {
+    on([selectedDayId, openTripId], () => {
       const bounds = new LngLatBounds();
       for (const { day } of days().filter((d) => d.role === 'selected')) {
         for (const route of day.routes) for (const point of route.points) bounds.extend(point.lngLat);

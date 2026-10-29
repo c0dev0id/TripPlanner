@@ -2,15 +2,15 @@ import { createResource, createRoot, createSignal } from 'solid-js';
 import { addEntry as postEntry, deleteEntry, listEntriesAt, tripApi, updateEntry } from '../api';
 import { entriesOn as entriesOf, type Entry, type EntryTarget } from '../model/journal';
 import type { LngLat } from '../model/trip';
-import { openTrip } from './trip';
+import { openTripId } from './trip';
 
 /** The open trip's journal, loaded with the trip; changes go to the server at once, there is no undo. */
 
-const [entries, { mutate }] = createRoot(() => createResource(() => openTrip()?.id, (id) => listEntriesAt(tripApi(id))));
+const [entries, { mutate }] = createRoot(() => createResource(openTripId, (id) => listEntriesAt(tripApi(id))));
 
 /** The entries of the open trip, oldest first; none until they are loaded. */
 export function allEntries(): Entry[] {
-  const tripId = openTrip()?.id;
+  const tripId = openTripId();
   return (entries() ?? []).filter((e) => e.tripId === tripId);
 }
 
@@ -36,7 +36,7 @@ export function closeJournal(): void {
 
 /** Adds an entry and returns it as the server placed it: a photo with a time goes to the day of that date, one with a position stands there. */
 export async function addEntry(target: EntryTarget, text: string, file: File | undefined, spot: LngLat | undefined): Promise<Entry> {
-  const entry = await postEntry(openTrip()!.id, target, text, file, spot);
+  const entry = await postEntry(openTripId()!, target, text, file, spot);
   mutate((list = []) => [...list, entry]);
   return entry;
 }

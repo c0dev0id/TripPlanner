@@ -1,7 +1,7 @@
 import { createResource, createSignal, For, Show } from 'solid-js';
 import { DEFAULT_EXPORT, deleteExportPreset, gpxUrl, listExportPresets, saveExportPreset, type ExportOptions } from '../api';
 import { exportOpen, setExportOpen } from '../state/drawing';
-import { openTrip, selectedDay } from '../state/trip';
+import { openTrip, openTripId, selectedDay } from '../state/trip';
 import { showModalWhile } from '../ui/modal';
 import { NameForm } from '../ui/NameForm';
 import { createRequest } from '../ui/request';
@@ -25,7 +25,7 @@ export function ExportDialog() {
     const d = selectedDay();
     return d && { id: d.id, label: dayLabel(d, openTrip()!.days.indexOf(d)) };
   };
-  const url = () => gpxUrl(openTrip()!.id, options(), scope() === 'day' ? day()?.id : undefined);
+  const url = () => gpxUrl(openTripId()!, options(), scope() === 'day' ? day()?.id : undefined);
   const savePreset = (name: string) =>
     run(async () => {
       const preset = await saveExportPreset(name, options());

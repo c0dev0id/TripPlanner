@@ -15,9 +15,11 @@ import { History } from './history';
  * keys cannot agree on.
  */
 
-const [trip, setTrip] = createSignal<Trip>();
+const [openTrip, setOpenTrip] = createSignal<Trip>();
+export { openTrip };
 
-export const openTrip = trip;
+/** The open trip's id; it changes only when another trip opens, not with each edit. */
+export const openTripId: () => number | undefined = createRoot(() => createMemo(() => openTrip()?.id));
 
 const [selectedDayId, setSelectedDayId] = createSignal<string>();
 export { selectedDayId };
@@ -35,11 +37,11 @@ export function selectDay(id: string | undefined): void {
 }
 
 /** The selected day; it changes only when that day does. */
-export const selectedDay: () => Day | undefined = createRoot(() => createMemo(() => trip()?.days.find((d) => d.id === selectedDayId())));
+export const selectedDay: () => Day | undefined = createRoot(() => createMemo(() => openTrip()?.days.find((d) => d.id === selectedDayId())));
 
 /** The days before and after the selected one. */
 export function neighbourDays(): Day[] {
-  const days = trip()?.days ?? [];
+  const days = openTrip()?.days ?? [];
   const index = days.findIndex((d) => d.id === selectedDayId());
   return index < 0 ? [] : [days[index - 1], days[index + 1]].filter((d): d is Day => d !== undefined);
 }
@@ -63,7 +65,7 @@ export function editRoute(id: string | undefined): void {
 export const editingRoute = (): Route | undefined => selectedDay()?.routes.find((r) => r.id === editingRouteId());
 
 export function routeById(id: string): Route | undefined {
-  for (const day of trip()?.days ?? []) {
+  for (const day of openTrip()?.days ?? []) {
     const route = day.routes.find((r) => r.id === id);
     if (route) return route;
   }
@@ -91,20 +93,20 @@ export function redoLabel(): string | undefined {
 }
 
 export function undo(): void {
-  const current = trip();
-  if (current && history.undoLabel !== undefined) restore(history.undo(current), current);
+  const current = openTrip();
+  if (current) restore(history.undo(current), current);
 }
 
 export function redo(): void {
-  const current = trip();
-  if (current && history.redoLabel !== undefined) restore(history.redo(current), current);
+  const current = openTrip();
+  if (current) restore(history.redo(current), current);
 }
 
 /** Puts back an earlier trip; the version stays the current one, since saves are no edits. */
 function restore(earlier: Trip | undefined, current: Trip): void {
   if (!earlier) return;
   batch(() => {
-    setTrip({ ...earlier, version: current.version });
+    setOpenTrip({ ...earlier, version: current.version });
     setHistoryVersion((v) => v + 1);
     setChangeCount((c) => c + 1);
     if (editingRouteId() && !editingRoute()) setEditingRouteId(undefined);
@@ -115,7 +117,7 @@ function restore(earlier: Trip | undefined, current: Trip): void {
 export function loadTrip(loaded: Trip): void {
   history.clear();
   batch(() => {
-    setTrip(loaded);
+    setOpenTrip(loaded);
     setHistoryVersion((v) => v + 1);
     setSelectedDayId(undefined);
     setEditingRouteId(undefined);
@@ -125,7 +127,7 @@ export function loadTrip(loaded: Trip): void {
 export function closeTrip(): void {
   history.clear();
   batch(() => {
-    setTrip(undefined);
+    setOpenTrip(undefined);
     setSelectedDayId(undefined);
     setEditingRouteId(undefined);
     setHistoryVersion((v) => v + 1);
@@ -134,13 +136,13 @@ export function closeTrip(): void {
 
 /** Records the version a save stored; a save is no change. */
 export function markSaved(version: number): void {
-  const current = trip();
-  if (current) setTrip({ ...current, version });
+  const current = openTrip();
+  if (current) setOpenTrip({ ...current, version });
 }
 
 /** Applies a pure edit to the open trip; with a label it is an undo step. */
 function edit(change: (trip: Trip) => Trip, label?: string): void {
-  const current = trip();
+  const current = openTrip();
   if (!current) return;
   const next = change(current);
   if (next === current) return;
@@ -149,7 +151,7 @@ function edit(change: (trip: Trip) => Trip, label?: string): void {
       history.record(current, label);
       setHistoryVersion((v) => v + 1);
     }
-    setTrip(next);
+    setOpenTrip(next);
     setChangeCount((c) => c + 1);
   });
 }
@@ -244,9 +246,12 @@ export function addFreeStop(lngLat: LngLat): void {
   editDay((trip, dayId) => dayEdit.addFreeStop(trip, dayId, roundLngLat(lngLat), newId()), 'Add stop');
 }
 
+/** Where the routes of the selected day pass closest to a free stop of it, within reach; none for a stop that stands alone or is bound. */
+export const nearOf = (stopId: string): SequenceEntry['near'] => selectedSequence().find((e) => e.stop?.id === stopId)?.near;
+
 /** Binds a free stop of the selected day to its routes where they pass closest. */
 export function connectStop(stopId: string): void {
-  const near = selectedSequence().find((e) => e.stop?.id === stopId)?.near;
+  const near = nearOf(stopId);
   if (near) editDay((trip, dayId) => dayEdit.connectStop(trip, dayId, stopId, near.routeId, near.legIndex + 1, newId()), 'Connect stop');
 }
 
@@ -282,7 +287,7 @@ export function moveDay(dayId: string, to: number): void {
 export function duplicateDay(dayId: string): void {
   const id = newId();
   edit((trip) => dayEdit.duplicateDay(trip, dayId, id, newId), 'Duplicate day');
-  if (trip()?.days.some((d) => d.id === id)) selectDay(id);
+  if (openTrip()?.days.some((d) => d.id === id)) selectDay(id);
 }
 
 /** Moves the route to place `to` among the routes of its day. */
@@ -307,7 +312,7 @@ export function copyStopToDay(stopId: string, dayId: string): void {
 
 /** Removes a day; the day before it, or the first, is selected instead. */
 export function removeDay(dayId: string): void {
-  const days = trip()?.days ?? [];
+  const days = openTrip()?.days ?? [];
   const index = days.findIndex((d) => d.id === dayId);
   if (index < 0) return;
   edit((trip) => dayEdit.removeDay(trip, dayId), 'Remove day');
