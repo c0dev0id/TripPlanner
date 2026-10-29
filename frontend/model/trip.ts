@@ -24,6 +24,10 @@ export const HIGHWAYS: readonly { value: Highways; label: string }[] = [
 /** Whether the motorway dial counts for a profile: the motorcycle costing takes it, the others do not. */
 export const takesMotorwayDial = (profile: Profile): boolean => profile === 'motorcycle';
 
+/** The most characters a name in a trip may have, and any other text in it; the server holds the same limits. */
+export const MAX_NAME = 200;
+export const MAX_TEXT = 20000;
+
 /** What a stop is, which decides its icon. */
 export type StopKind = 'start' | 'end' | 'meeting' | 'hotel' | 'restaurant' | 'cafe' | 'fuel' | 'sight' | 'info' | 'photo' | 'break' | 'other';
 

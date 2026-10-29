@@ -352,6 +352,12 @@ entries at the end of their section.
   bound where they stand on a route point, so that this planner's own export comes back
   as it went out. The alternative, a separate immutable track object, would have needed
   its own drawing, editing and export paths for little gain.
+- **Imported text is fitted, not refused.** A file's names and descriptions are written
+  by other apps: a waypoint's description in one archive was an address, some 32,000
+  empty lines and an email. The import closes up blank runs and cuts a name to 200
+  characters and any other text to 20,000, the limits the server holds, so that one
+  waypoint does not keep a whole trip from saving. The server counts characters, not
+  bytes, as the form fields do.
 - **One track or route per route, one waypoint per stop.** A GPX file holds the stops in
   scope as waypoints, bound ones at their route point and free ones at their own position
   when within the chosen reach of a route, with the stop's kind as the waypoint type, and

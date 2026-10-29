@@ -1,5 +1,5 @@
 import { distanceBetween } from '../geo/measure';
-import { newId, STOP_KINDS, type LngLat, type Profile, type Route, type Stop, type StopKind } from '../model/trip';
+import { MAX_NAME, MAX_TEXT, newId, STOP_KINDS, type LngLat, type Profile, type Route, type Stop, type StopKind } from '../model/trip';
 import { newStop } from '../routing/dayEdit';
 import { legKey, roundLngLat } from '../routing/legs';
 import { encodePolyline } from '../routing/polyline';
@@ -11,6 +11,18 @@ export interface DayParts {
   stops: Stop[];
 }
 
+
+/** At most `max` characters of the text. */
+function clipped(text: string, max: number): string {
+  const characters = Array.from(text);
+  return characters.length > max ? characters.slice(0, max).join('') : text;
+}
+
+/** Text from a file as a name: one line, at most MAX_NAME characters. */
+const asName = (text: string): string => clipped(text.replace(/\s+/g, ' ').trim(), MAX_NAME);
+
+/** Text from a file as notes: no blanks at the ends of lines, no more than one empty line in a row, at most MAX_TEXT characters. */
+const asNotes = (text: string): string => clipped(text.replace(/[^\S\n]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim(), MAX_TEXT);
 
 /** Rounded positions without consecutive repeats, which would make legs of no length. */
 function cleanPoints(points: readonly LngLat[]): LngLat[] {
@@ -66,6 +78,7 @@ function kindOf(waypoint: GpxContent['waypoints'][number]): StopKind {
  * that it keeps its shape; condensing it or making a route of it is the user's choice. Unnamed routes are named after the
  * file. A waypoint becomes a stop, bound to a route point it stands on, free otherwise,
  * of the kind kindOf reads from it, with its address and phone numbers where Garmin gave them.
+ * Names and notes are fitted to what a trip holds: blank runs closed up, overlong text cut.
  */
 export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string }): DayParts {
   const lines = [
@@ -74,7 +87,7 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
   ].filter((l) => l.points.length > 0);
   const routes: Route[] = lines.map((line, i) => ({
     id: options.newId(),
-    name: line.name ?? (lines.length === 1 ? options.fileName : `${options.fileName} ${i + 1}`),
+    name: asName(line.name ?? (lines.length === 1 ? options.fileName : `${options.fileName} ${i + 1}`)),
     kind: line.kind,
     profile: options.profile,
     highways: 'allow',
@@ -85,8 +98,8 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
   const pointAt = new Map(routes.flatMap((r) => r.points.map((p) => [p.lngLat.join(','), p.id] as const)));
   const stops = gpx.waypoints.map((w, i) => {
     const lngLat = roundLngLat(w.lngLat);
-    const stop = newStop(options.newId(), w.name ?? `Waypoint ${i + 1}`, lngLat, pointAt.get(lngLat.join(',')) ?? null);
-    return { ...stop, kind: kindOf(w), address: w.address ?? '', contact: w.phone ?? '', notes: w.description ?? '' };
+    const stop = newStop(options.newId(), asName(w.name ?? `Waypoint ${i + 1}`), lngLat, pointAt.get(lngLat.join(',')) ?? null);
+    return { ...stop, kind: kindOf(w), address: asNotes(w.address ?? ''), contact: asNotes(w.phone ?? ''), notes: asNotes(w.description ?? '') };
   });
   return { routes, stops };
 }
