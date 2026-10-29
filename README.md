@@ -72,9 +72,9 @@ share work; sharing between users is on the way.
 | Ctrl+Z, Ctrl+Shift+Z | Undo, redo |
 | Esc | Closes a menu; back to the Hand; leaves the route |
 | Space, held | The Hand while a drawing tool is picked |
-| Right-click or long press on a stop or point | Make a stop, connect, disconnect, straight leg, remove |
+| Right-click or long press on a stop or point on the map | Make a stop, connect, disconnect, straight leg, remove |
 | Right-click or long press on the map | Add a point or a free stop here, or a journal entry |
-| Right-click or long press on a folder, trip, day or route | Its menu: rename or edit, move, duplicate, delete |
+| Right-click or long press on a folder, trip, day, route or stop in the panel | Its menu: rename or edit, move or copy, duplicate, delete |
 | Enter in the search box | Find a place; Esc closes the list |
 | Drag the panel's edge | Set the panel's width; double-click for the default |
 | Drag a day's or a route's grip | Put it in another place; the arrow keys on the grip move it one place |

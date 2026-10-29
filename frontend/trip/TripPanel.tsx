@@ -36,7 +36,6 @@ import { ForById } from '../ui/ForById';
 import { counted, distanceText, shortDateText, timeText } from '../ui/format';
 import { BackIcon, ClockIcon, DownloadIcon, NotebookIcon, PencilIcon, ShareIcon } from '../ui/icons';
 import { Grip } from '../ui/Grip';
-import { MoreMenu } from '../ui/MoreMenu';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 import { removeDayAsked, removeRouteAsked } from './remove';
@@ -313,7 +312,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
           </li>
         )}
       </Show>
-      <li class="row sequence-item" classList={{ point: !stop() }}>
+      <li class="row sequence-item" classList={{ point: !stop() }} ref={(el) => props.entry.stop && cardMenu(el, () => stopItems(stop()!))}>
         <button class="text grow" onClick={() => panTo(props.entry.lngLat)}>
           <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
             {(s) => <StopShape kind={s().kind} color={s().pointId === null ? FREE_COLOR : BOUND_COLOR} height={22} />}
@@ -332,7 +331,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
             </span>
           </span>
         </button>
-        <Show when={stop()}>{(s) => <StopActions stop={s()} />}</Show>
+        <Show when={stop()}>{(s) => <JournalButton target={{ stopId: s().id }} of={s().name} />}</Show>
       </li>
     </>
   );
@@ -341,7 +340,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
 /** A stop that stands for itself beside no route, with no place or times on the ride; a click pans the map there. */
 function AloneStopItem(props: { stop: Stop }) {
   return (
-    <li class="row sequence-item">
+    <li class="row sequence-item" ref={(el) => cardMenu(el, () => stopItems(props.stop))}>
       <button class="text grow" onClick={() => panTo(props.stop.lngLat)}>
         <StopShape kind={props.stop.kind} color={FREE_COLOR} height={22} />
         <span class="lines">
@@ -351,27 +350,16 @@ function AloneStopItem(props: { stop: Stop }) {
           </Show>
         </span>
       </button>
-      <StopActions stop={props.stop} />
+      <JournalButton target={{ stopId: props.stop.id }} of={props.stop.name} />
     </li>
   );
 }
 
-/** A stop's journal, its pencil, and its menu: edit, copy to another day, remove. */
-function StopActions(props: { stop: Stop }) {
-  return (
-    <>
-      <JournalButton target={{ stopId: props.stop.id }} of={props.stop.name} />
-      <button class="icon" title="Edit stop" aria-label={`Edit ${props.stop.name}`} onClick={() => setEditTarget({ kind: 'stop', id: props.stop.id })}>
-        <PencilIcon />
-      </button>
-      <MoreMenu
-        label={`More for ${props.stop.name}`}
-        items={() => [
-          { label: 'Edit…', run: () => setEditTarget({ kind: 'stop', id: props.stop.id }) },
-          ...otherDaysItem(selectedDayId()!, 'Copy…', (dayId) => copyStopToDay(props.stop.id, dayId)),
-          { label: 'Remove', run: () => removeStop(props.stop.id) },
-        ]}
-      />
-    </>
-  );
+/** A stop's menu, opened from its row by right-click or a long press: edit, copy to another day, remove. */
+function stopItems(stop: Stop): MenuItem[] {
+  return [
+    { label: 'Edit…', run: () => setEditTarget({ kind: 'stop', id: stop.id }) },
+    ...otherDaysItem(selectedDayId()!, 'Copy…', (dayId) => copyStopToDay(stop.id, dayId)),
+    { label: 'Remove', run: () => removeStop(stop.id) },
+  ];
 }

@@ -91,7 +91,8 @@ entries at the end of their section.
 
 - **The panel shows; dialogs edit.** Each element the panel lists (the trip, a day, a
   route, a stop) has one dialog holding everything the element has to set, and its
-  removal, opened by its pencil or, on a day's card, from the card's menu; a folder or a
+  removal, opened from its row's or card's menu, or for the trip by the pencil in the
+  panel's header; a folder or a
   trip in the library has only its name to set, in a name dialog. The panel keeps no input
   field but the search: a name field, a date field or a folder select in a row makes the
   row wide and busy, and every setting added later would add another; a dialog grows
@@ -106,12 +107,13 @@ entries at the end of their section.
   Stops have no grip: their order is where they stand along the route. The drag runs
   on pointer events from the grip alone, which works with touch where the browser's
   own drag and drop does not and leaves the rest of the row to its click; about fifty
-  lines, no library. A route's row, like a card, opens its menu by right-click or a long
-  press and has no pencil or dots: edit, duplicate, move to another day, condense or
-  convert a track, remove. A stop's row keeps a pencil and a dots menu. Each row's
-  journal is an icon on it that counts the entries. A menu that would list an entry per
-  day (moving a route, copying a stop) has one item that opens the other days as a
-  submenu, beside it: on hover with a mouse, on a click, a tap or the keyboard otherwise.
+  lines, no library. A route's or a stop's row, like a card, opens its menu by
+  right-click or a long press and has no pencil or dots: a route's menu edits,
+  duplicates, moves it to another day, condenses or converts a track and removes it; a
+  stop's edits, copies it to another day and removes it. Each row's journal is an icon on
+  it that counts the entries. A menu that would list an entry per day or per folder
+  (moving a route or a trip, copying a stop) has one item that opens them as a submenu,
+  beside it: on hover with a mouse, on a click, a tap or the keyboard otherwise.
   Submenus are part of the one menu mechanism, so every menu can have them.
 - **Folders, trips and days are cards whose menu is the card itself.** A card shows two
   lines, the name over its metadata (a folder's trip count; a trip's days, start and
