@@ -148,6 +148,53 @@ final class TripDocuments
         return $copyId;
     }
 
+    /**
+     * Merges the user's trips `fromIds` into the trip `intoId`, their days placed as
+     * TripMerge says, every part and journal entry kept under its id, and deletes them; one
+     * transaction. Returns the trip's new version, or null when the user lacks one of them.
+     *
+     * @param int[] $fromIds
+     * @throws InvalidDocument for trips of another kind
+     */
+    public function merge(int $userId, int $intoId, array $fromIds, DateTimeImmutable $now): ?int
+    {
+        $this->db->beginTransaction();
+        try {
+            $into = $this->load($userId, $intoId);
+            $from = array_map(fn (int $id) => $this->load($userId, $id), $fromIds);
+            if ($into === null || in_array(null, $from, true)) {
+                $this->db->rollBack();
+                return null;
+            }
+            if (array_diff(array_column($from, 'kind'), [$into['kind']]) !== []) {
+                throw new InvalidDocument('Only trips of one kind can be merged.');
+            }
+            $fromDays = array_merge(...array_column($from, 'days'));
+            ['days' => $days, 'joined' => $joined] = TripMerge::days($into['kind'], $into['days'], $fromDays);
+            $in = implode(',', array_fill(0, count($fromIds), '?'));
+            // The days that stay days change trips; saving moves the routes and stops of those that joined another.
+            $moved = array_values(array_diff(array_column($fromDays, 'id'), array_keys($joined)));
+            if ($moved !== []) {
+                $this->db->prepare('UPDATE days SET trip_id = ? WHERE id IN (' . implode(',', array_fill(0, count($moved), '?')) . ')')->execute([$intoId, ...$moved]);
+            }
+            $this->saveDays($intoId, $days);
+            $this->db->prepare("UPDATE entries SET trip_id = ? WHERE trip_id IN ($in)")->execute([$intoId, ...$fromIds]);
+            $joinEntries = $this->db->prepare('UPDATE entries SET day_id = ? WHERE day_id = ?');
+            foreach ($joined as $dayId => $intoDayId) {
+                $joinEntries->execute([$intoDayId, $dayId]);
+            }
+            $this->db->prepare("DELETE FROM trips WHERE id IN ($in)")->execute($fromIds);
+            $this->db->prepare('UPDATE trips SET version = ?, updated_at = ? WHERE id = ?')->execute([$into['version'] + 1, Timestamp::of($now), $intoId]);
+            $this->db->commit();
+        } catch (\Throwable $error) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            throw $error;
+        }
+        return $into['version'] + 1;
+    }
+
     /** Ids are the client's choice, but a row belongs to its trip: a document may not name another trip's parts. */
     private function assertIdsNotElsewhere(int $tripId, array $days): void
     {

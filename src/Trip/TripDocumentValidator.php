@@ -18,7 +18,7 @@ final class TripDocumentValidator
     public const PROFILES = ['motorcycle', 'bicycle', 'pedestrian'];
     public const HIGHWAYS = ['avoid', 'allow', 'prefer'];
     public const STATES = ['planned', 'done'];
-    private const MAX_TEXT = 20000;
+    public const MAX_TEXT = 20000;
 
     public static function validated(mixed $body): array
     {

@@ -54,6 +54,17 @@ final class FileStoreTest extends TestCase
         $this->files->deleteAll(9);
     }
 
+    public function testMovesATripsFilesToAnother(): void
+    {
+        $this->files->store($this->upload(self::jpeg(64, 48)), 8, 3);
+        $this->files->preview(8, 3, 'image/jpeg');
+        $this->files->store($this->upload('kept'), 7, 4);
+        $this->files->moveAll(8, 7);
+        self::assertDirectoryDoesNotExist("$this->dir/8");
+        self::assertSame(['3', '3.preview.jpg', '4'], array_values(array_diff(scandir("$this->dir/7"), ['.', '..'])));
+        $this->files->moveAll(9, 7);
+    }
+
     private function upload(string $content): UploadedFile
     {
         $path = tempnam(sys_get_temp_dir(), 'upload');

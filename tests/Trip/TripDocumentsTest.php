@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
+use Planner\Journal\Entries;
 use Planner\Tests\TestDatabase;
 use Planner\Trip\InvalidDocument;
 use Planner\Trip\TripDocuments;
@@ -214,5 +215,43 @@ final class TripDocumentsTest extends TestCase
         self::assertTrue($this->trips->delete($this->userId, $this->tripId));
         self::assertSame(0, (int) $this->db->query('SELECT COUNT(*) FROM stops')->fetchColumn());
         self::assertSame(['Later'], array_map(fn ($t) => $t->name, $this->trips->listFor($this->userId)));
+    }
+
+    public function testMergesTripsWithTheirJournalUnderTheSameIds(): void
+    {
+        $this->save(TripFixture::document(), 1);
+        $other = $this->trips->create($this->userId, 'Alps, day two', $this->now)->id;
+        $document = TripFixture::document();
+        $document['days'] = [
+            ['date' => '2027-06-12', 'notes' => 'Second file'] + TripFixture::day('b1', [TripFixture::route('br', [[11.4, 47.3], [11.3, 47.1]])], [TripFixture::stop('bs', 'Pass', [11.4, 47.3], 'br-0')]),
+            ['date' => '2027-06-13'] + TripFixture::day('b2'),
+        ];
+        $this->save($document, 1, $other);
+        $entries = new Entries($this->db);
+        $onDay = $entries->add($this->userId, $other, ['dayId' => 'b1'], 'Rain', null, $this->now);
+        $onStop = $entries->add($this->userId, $other, ['stopId' => 'bs'], 'View', null, $this->now);
+        $onTrip = $entries->add($this->userId, $other, [], 'Packed', null, $this->now);
+
+        self::assertNull($this->documents->merge($this->userId + 1, $this->tripId, [$other], $this->now));
+        self::assertSame(3, $this->documents->merge($this->userId, $this->tripId, [$other], $this->now));
+        $merged = $this->documents->load($this->userId, $this->tripId);
+        self::assertSame(['day1', 'b2'], array_column($merged['days'], 'id'));
+        self::assertSame(['r1', 'br'], array_column($merged['days'][0]['routes'], 'id'));
+        self::assertSame(['s1', 's2', 's3', 'bs'], array_column($merged['days'][0]['stops'], 'id'));
+        self::assertSame('Second file', $merged['days'][0]['notes']);
+        self::assertNull($this->documents->load($this->userId, $other));
+        $moved = array_map(fn ($e) => [$e->id, $e->tripId, $e->dayId, $e->stopId], $entries->listFor($this->userId, $this->tripId));
+        self::assertEqualsCanonicalizing([[$onDay->id, $this->tripId, 'day1', null], [$onStop->id, $this->tripId, null, 'bs'], [$onTrip->id, $this->tripId, null, null]], $moved);
+    }
+
+    public function testMergesOnlyTripsOfOneKind(): void
+    {
+        $collection = $this->trips->create($this->userId, 'TET', $this->now, null, 'collection')->id;
+        try {
+            $this->documents->merge($this->userId, $this->tripId, [$collection], $this->now);
+            self::fail('merged a collection into a trip');
+        } catch (InvalidDocument) {
+        }
+        self::assertNotNull($this->documents->load($this->userId, $collection));
     }
 }

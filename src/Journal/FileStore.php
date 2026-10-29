@@ -66,6 +66,24 @@ final class FileStore
         rmdir($dir);
     }
 
+    /** Moves every file of a trip to another, for a trip merged into it; files are named by entry, so none is in the way. */
+    public function moveAll(int $fromTripId, int $toTripId): void
+    {
+        $from = "$this->dir/$fromTripId";
+        if (!is_dir($from)) {
+            return;
+        }
+        if (!is_dir("$this->dir/$toTripId")) {
+            mkdir("$this->dir/$toTripId", 0750, true);
+        }
+        foreach (scandir($from) as $name) {
+            if ($name !== '.' && $name !== '..') {
+                rename("$from/$name", "$this->dir/$toTripId/$name");
+            }
+        }
+        rmdir($from);
+    }
+
     /** The preview of an image entry, made on first use; null where the image cannot be read. */
     public function preview(int $tripId, int $entryId, string $mediaType): ?string
     {

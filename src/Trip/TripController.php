@@ -57,6 +57,30 @@ final class TripController
         return $copyId === null ? Json::error($response, 404, 'No such trip.') : Json::of($response->withStatus(201), ['id' => $copyId]);
     }
 
+    /** Merges the trips `tripIds` lists into this one (see TripDocuments::merge) and moves their journal files; the answer is its new version. */
+    public function merge(Request $request, Response $response, array $args): Response
+    {
+        $intoId = (int) $args['id'];
+        $fromIds = Json::field($request, 'tripIds');
+        $valid = is_array($fromIds) && $fromIds !== [] && array_is_list($fromIds) && array_filter($fromIds, fn ($id) => !is_int($id)) === []
+            && !in_array($intoId, $fromIds, true) && count(array_unique($fromIds)) === count($fromIds);
+        if (!$valid) {
+            return Json::error($response, 422, 'tripIds must list other trips by number, each once.');
+        }
+        try {
+            $version = $this->documents->merge($this->currentUser->get()->id, $intoId, $fromIds, new DateTimeImmutable());
+        } catch (InvalidDocument $error) {
+            return Json::error($response, 422, $error->getMessage());
+        }
+        if ($version === null) {
+            return Json::error($response, 404, 'No such trip.');
+        }
+        foreach ($fromIds as $fromId) {
+            $this->files->moveAll($fromId, $intoId);
+        }
+        return Json::of($response, ['version' => $version]);
+    }
+
     /** Renames the trip where the body has a `name`; else puts it into the folder `folderId` names, or into none for null. */
     public function change(Request $request, Response $response, array $args): Response
     {
