@@ -31,7 +31,9 @@ share work; sharing between users is on the way.
 - **Saved as you go** — every change is saved to your account moments later.
 - **Rearranged as plans change** — days and routes are dragged into place or duplicated,
   a route moves to another day, a stop is copied to one, a whole trip is duplicated.
-- **A library with folders** — trips sorted into folders, and a search across them.
+- **A library with folders** — trips sorted into folders inside folders, and a search
+  across them. *Import folder…* turns a folder tree of GPX files into folders and trips,
+  a day per file or per date in the file name.
 - **GPX in as well as out** — a file from the device or BaseCamp drops into a day: its
   routes, tracks and waypoints become routes and stops. A recorded track keeps every
   point; condense it or turn it into a route from its menu.

@@ -155,7 +155,7 @@ export function addDay(trip: Trip, id: string): Trip {
 }
 
 /** The date after a date given as YYYY-MM-DD, in the same form; counted in UTC, where no daylight-saving step can shorten a day. */
-function dayAfter(date: string): string {
+export function dayAfter(date: string): string {
   return new Date(Date.parse(`${date}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
 }
 

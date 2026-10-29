@@ -143,6 +143,18 @@ entries at the end of their section.
   the user (a few hundred small rows at most for a personal planner) and filters them by
   name; the results are capped at twenty. A server search would add an endpoint for
   data the client already holds.
+- **A folder tree is imported in the browser.** The library's *Import folder…* opens the
+  browser's folder picker (`webkitdirectory`), and the files are read with the same GPX
+  import a day uses, then saved through the API: no files on the server, no second GPX
+  reader in PHP. The rules follow the paths: a folder that holds GPX files is a trip
+  named after it without its date, the folders above it are folders, recreated inside
+  the open folder; a date (YYYY-MM-DD) in a file's name puts it on the day of that date,
+  one day per date; other files are a day each, dated on from a date in the trip
+  folder's name after the dated days, undated where it has none. Days exist only for
+  files, not for the dates between them. Folders are found by name in their parent and
+  reused, so an import into an existing tree adds to it; trips are always new. A trip's
+  files are read before anything is created, so that a folder of unreadable files leaves
+  no empty trip behind.
 
 ## Map and appearance
 

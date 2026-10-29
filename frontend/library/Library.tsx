@@ -3,6 +3,7 @@ import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, erro
 import type { Folder, TripSummary } from '../model/trip';
 import { listFolderId, setListFolderId } from '../state/library';
 import { counted, folderPath } from './folders';
+import { importFolder, planFolderImport } from './folderImport';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { dateText } from '../ui/format';
@@ -69,6 +70,31 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
       void refetchTrips();
     });
   };
+  /** How the last folder import goes or went, and what it could not read or save. */
+  const [importNote, setImportNote] = createSignal<{ text: string; errors: string[] }>();
+  const [importing, setImporting] = createSignal(false);
+  let folderInput!: HTMLInputElement;
+  /** Imports a picked folder tree into the open folder, after asking. */
+  const importPicked = async (picked: FileList | null) => {
+    const files = [...(picked ?? [])];
+    folderInput.value = '';
+    const plan = planFolderImport(files.map((f) => f.webkitRelativePath || f.name));
+    if (plan.length === 0) {
+      setImportNote({ text: 'No GPX files in that folder.', errors: [] });
+      return;
+    }
+    const days = plan.reduce((sum, trip) => sum + trip.days.length, 0);
+    const into = folder() ? ` into “${pathOf(folderId())}”` : '';
+    if (!(await askConfirmation(`Import ${counted(plan.length, 'trip')} with ${counted(days, 'day')}${into}?`, 'Import'))) return;
+    setImporting(true);
+    await run(async () => {
+      const result = await importFolder(files, plan, folderId(), (text) => setImportNote({ text, errors: [] }));
+      setImportNote({ text: `${counted(result.trips, 'trip')} imported.`, errors: result.errors });
+    });
+    setImporting(false);
+    void refetchFolders();
+    void refetchTrips();
+  };
   const emptyText = () => {
     if (folder()) return shownFolders().length > 0 ? 'No trips in this folder.' : 'Nothing in this folder yet.';
     return (folders() ?? []).length > 0 ? 'No trips outside the folders.' : 'No trips yet. Start one with New trip…';
@@ -132,7 +158,27 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
                   New trip…
                 </button>
                 <button onClick={() => setDialog({ kind: 'new-folder' })}>New folder…</button>
+                <button disabled={importing()} onClick={() => folderInput.click()}>
+                  Import folder…
+                </button>
+                <input
+                  ref={(el) => {
+                    folderInput = el;
+                    el.webkitdirectory = true;
+                  }}
+                  type="file"
+                  hidden
+                  onChange={(e) => void importPicked(e.currentTarget.files)}
+                />
               </div>
+              <Show when={importNote()}>
+                {(note) => (
+                  <>
+                    <p class="muted hint">{note().text}</p>
+                    <For each={note().errors}>{(error) => <p class="error">{error}</p>}</For>
+                  </>
+                )}
+              </Show>
               <ul class="folders">
                 <For each={shownFolders()}>{(f) => <FolderCard folder={f} note={heldText(f.id)} onOpen={openFolder} items={() => folderItems(f)} />}</For>
               </ul>

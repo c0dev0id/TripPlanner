@@ -72,6 +72,11 @@
   condenses it (Douglas–Peucker at a distance chosen from a few, each with the count of
   points it leaves) or makes a route of it: fewer points, every leg routed, with the time
   the routing will take. Points that stops stand on are kept either way.
+- Import of a folder tree from disk into the open folder of the library: each folder
+  holding GPX files becomes a trip named after it without its date, the folders above it
+  folders (existing ones reused by name). A date in a file's name puts it on that day,
+  several files of a date on one day; other files are a day each, dated on from a date in
+  the trip folder's name, or undated. Files that are no GPX are reported and left out.
 - Routes and stops can be marked optional, each in its dialog, and are shown so.
 - GPX export from a dialog: the whole trip or the selected day; one file or one file per
   day in a zip; routes as tracks with their full line, or as routes of their points for
