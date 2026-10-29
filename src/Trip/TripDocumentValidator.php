@@ -167,7 +167,7 @@ final class TripDocumentValidator
     private static function text(array $parent, string $key, string $at, int $max = self::MAX_TEXT): string
     {
         $value = $parent[$key] ?? '';
-        if (!is_string($value) || strlen($value) > $max) {
+        if (!is_string($value) || mb_strlen($value) > $max) {
             throw new InvalidDocument("$at.$key must be text of up to $max characters.");
         }
         return $value;

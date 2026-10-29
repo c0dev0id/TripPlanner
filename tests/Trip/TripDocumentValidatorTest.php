@@ -54,6 +54,16 @@ final class TripDocumentValidatorTest extends TestCase
         self::assertContains('info', $kinds);
     }
 
+    public function testCountsNamesAndTextsInCharacters(): void
+    {
+        $document = TripFixture::document();
+        $document['name'] = str_repeat('ö', 200);
+        $document['days'][0]['stops'][0]['notes'] = str_repeat('ü', 20000);
+        $checked = TripDocumentValidator::validated($document);
+        self::assertSame(200, mb_strlen($checked['name']));
+        self::assertSame(20000, mb_strlen($checked['days'][0]['stops'][0]['notes']));
+    }
+
     #[DataProvider('invalidDocuments')]
     public function testRejectsADocumentThatBreaksTheShape(callable $break, string $messagePart): void
     {
@@ -68,6 +78,7 @@ final class TripDocumentValidatorTest extends TestCase
     {
         yield 'no name' => [fn (array &$d) => $d['name'] = '  ', 'document.name'];
         yield 'name too long' => [fn (array &$d) => $d['name'] = str_repeat('x', 201), 'document.name'];
+        yield 'notes too long' => [fn (array &$d) => $d['days'][0]['stops'][0]['notes'] = str_repeat('ü', 20001), 'stops[0].notes'];
         yield 'bad date' => [fn (array &$d) => $d['days'][0]['date'] = '2027-02-30', 'days[0].date'];
         yield 'unknown stop kind' => [fn (array &$d) => $d['days'][0]['stops'][0]['kind'] = 'castle', 'stops[0].kind'];
         yield 'position outside the world' => [fn (array &$d) => $d['days'][0]['stops'][2]['lngLat'] = [200, 0], 'stops[2].lngLat'];

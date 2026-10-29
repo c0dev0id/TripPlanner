@@ -14,6 +14,6 @@ final class Name
             return null;
         }
         $name = trim($value);
-        return $name === '' || strlen($name) > 200 ? null : $name;
+        return $name === '' || mb_strlen($name) > 200 ? null : $name;
     }
 }
