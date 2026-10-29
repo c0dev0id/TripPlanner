@@ -10,6 +10,19 @@ final class Proximity
     private const METRES_PER_DEGREE = 111_195.0;
 
     /**
+     * The distance in metres between two positions, close enough for a few kilometres.
+     *
+     * @param array{0: float, 1: float} $a
+     * @param array{0: float, 1: float} $b
+     */
+    public static function between(array $a, array $b): float
+    {
+        $dx = ($b[0] - $a[0]) * cos(deg2rad($a[1]));
+        $dy = $b[1] - $a[1];
+        return sqrt($dx * $dx + $dy * $dy) * self::METRES_PER_DEGREE;
+    }
+
+    /**
      * The distance in metres from a position to the nearest point of a line; infinite for
      * a line without points.
      *

@@ -27,7 +27,6 @@ final class Duplicates
     /** Points taken evenly along a line to compare it, and to compare it against. */
     private const SAMPLES = 64;
     private const OUTLINE = 400;
-    private const METRES_PER_DEGREE = 111_195.0;
 
     public function __construct(private readonly PDO $db)
     {
@@ -42,7 +41,7 @@ final class Duplicates
     public function of(int $userId): array
     {
         $statement = $this->db->prepare(
-            'SELECT r.id, r.name, r.kind, r.profile, r.highways, r.points, r.legs, r.line,
+            'SELECT r.id, r.name, r.kind, r.profile, r.highways, r.optional, r.points, r.legs, r.line,
                     d.id AS day_id, d.name AS day_name, d.date, d.position AS day_index, t.id AS trip_id, t.name AS trip_name, t.kind AS trip_kind
              FROM routes r JOIN days d ON d.id = r.day_id JOIN trips t ON t.id = d.trip_id
              WHERE t.user_id = ? ORDER BY t.name, t.id, d.position, r.position',
@@ -50,9 +49,9 @@ final class Duplicates
         $statement->execute([$userId]);
         $routes = [];
         foreach ($statement as $row) {
-            $shape = self::shape($row);
-            if ($shape !== null) {
-                $routes[] = $shape;
+            $summary = self::summary($row);
+            if ($summary !== null) {
+                $routes[] = $summary;
             }
         }
         return array_map(fn (array $members) => [
@@ -61,31 +60,25 @@ final class Duplicates
         ], self::groups($routes));
     }
 
-    /** What a route is compared by, with where it is; null for a route of less than two points. */
-    private static function shape(array $row): ?array
+    /** What a route is first compared by, with where it is and the route itself; null for a route of less than two points. */
+    private static function summary(array $row): ?array
     {
-        $route = $row['kind'] === 'track'
-            ? ['kind' => 'track', 'line' => $row['line']]
-            : ['kind' => 'routed', 'profile' => $row['profile'], 'highways' => $row['highways'], 'points' => json_decode($row['points'], true), 'legs' => json_decode($row['legs'], true)];
+        $route = TripDocuments::route($row);
         $line = RouteGeometry::line($route);
         if (count($line) < 2) {
             return null;
         }
-        $along = [0.0];
-        for ($i = 1, $n = count($line); $i < $n; $i++) {
-            $along[] = $along[$i - 1] + self::metres($line[$i - 1], $line[$i]);
-        }
+        $lengthM = self::along($line)[count($line) - 1];
         $lngs = array_column($line, 0);
         $lats = array_column($line, 1);
         return [
-            'copy' => $row['kind'] === 'track' ? 'track:' . md5($row['line']) : 'routed:' . md5(json_encode(array_column($route['points'], 'lngLat'))),
+            'route' => $route,
+            'copy' => $route['kind'] === 'track' ? 'track:' . md5($route['line']) : 'routed:' . md5(json_encode(array_column($route['points'], 'lngLat'))),
             'start' => $line[0],
             'end' => $line[count($line) - 1],
-            'lengthM' => $along[count($along) - 1],
+            'lengthM' => $lengthM,
             'box' => [min($lngs), min($lats), max($lngs), max($lats)],
             'date' => $row['date'],
-            'samples' => self::spread($line, $along, self::SAMPLES),
-            'outline' => self::spread($line, $along, self::OUTLINE),
             'entry' => [
                 'tripId' => (int) $row['trip_id'],
                 'tripName' => $row['trip_name'],
@@ -96,14 +89,16 @@ final class Duplicates
                 'date' => $row['date'],
                 'routeId' => $row['id'],
                 'routeName' => $row['name'],
-                'distanceM' => (int) round($along[count($along) - 1]),
+                'distanceM' => (int) round($lengthM),
             ],
         ];
     }
 
     /**
      * The routes joined into groups where one is a copy of another or the same ride; a
-     * group is all copies or holds the same ride kept more than once.
+     * group is all copies or holds the same ride kept more than once. A route's points along
+     * its line are worked out only once the cheap tests leave it a candidate, and dropped
+     * when it has been compared with every route after it.
      *
      * @return list<list<int>> the routes' indices by group, in their order
      */
@@ -121,12 +116,19 @@ final class Duplicates
             $first = $firstWithKey[$route['copy']] ??= $i;
             $parent[$root($i)] = $root($first);
         }
+        $points = [];
         for ($i = 0, $n = count($routes); $i < $n; $i++) {
             for ($j = $i + 1; $j < $n; $j++) {
-                if ($root($i) !== $root($j) && self::sameRide($routes[$i], $routes[$j])) {
+                if ($root($i) === $root($j) || !self::alike($routes[$i], $routes[$j])) {
+                    continue;
+                }
+                $a = $points[$i] ??= self::pointsAlong($routes[$i]['route']);
+                $b = $points[$j] ??= self::pointsAlong($routes[$j]['route']);
+                if (self::shareNear($a['samples'], $b['outline']) >= self::SHARE_NEAR && self::shareNear($b['samples'], $a['outline']) >= self::SHARE_NEAR) {
                     $parent[$root($j)] = $root($i);
                 }
             }
+            unset($points[$i]);
         }
         $groups = [];
         foreach (array_keys($routes) as $i) {
@@ -135,20 +137,14 @@ final class Duplicates
         return array_values(array_filter($groups, fn (array $members) => count($members) > 1));
     }
 
-    private static function sameRide(array $a, array $b): bool
+    /** Whether two routes could be the same ride by their dates, lengths, boxes and ends. */
+    private static function alike(array $a, array $b): bool
     {
         return ($a['date'] === null || $b['date'] === null || $a['date'] === $b['date'])
             && min($a['lengthM'], $b['lengthM']) >= self::LENGTH_RATIO * max($a['lengthM'], $b['lengthM'])
-            && self::boxesMeet($a['box'], $b['box'])
-            && self::metres($a['start'], $b['start']) <= self::ENDS_WITHIN_M
-            && self::metres($a['end'], $b['end']) <= self::ENDS_WITHIN_M
-            && self::shareNear($a['samples'], $b['outline']) >= self::SHARE_NEAR
-            && self::shareNear($b['samples'], $a['outline']) >= self::SHARE_NEAR;
-    }
-
-    private static function boxesMeet(array $a, array $b): bool
-    {
-        return $a[0] <= $b[2] && $b[0] <= $a[2] && $a[1] <= $b[3] && $b[1] <= $a[3];
+            && $a['box'][0] <= $b['box'][2] && $b['box'][0] <= $a['box'][2] && $a['box'][1] <= $b['box'][3] && $b['box'][1] <= $a['box'][3]
+            && Proximity::between($a['start'], $b['start']) <= self::ENDS_WITHIN_M
+            && Proximity::between($a['end'], $b['end']) <= self::ENDS_WITHIN_M;
     }
 
     /** The share of the points that lie within LINE_WITHIN_M of the line. */
@@ -161,6 +157,24 @@ final class Duplicates
             }
         }
         return $near / count($points);
+    }
+
+    /** @return array{samples: list<array{0: float, 1: float}>, outline: list<array{0: float, 1: float}>} points spread evenly along the route's line */
+    private static function pointsAlong(array $route): array
+    {
+        $line = RouteGeometry::line($route);
+        $along = self::along($line);
+        return ['samples' => self::spread($line, $along, self::SAMPLES), 'outline' => self::spread($line, $along, self::OUTLINE)];
+    }
+
+    /** @return list<float> the metres from the start of the line to each of its points */
+    private static function along(array $line): array
+    {
+        $along = [0.0];
+        for ($i = 1, $n = count($line); $i < $n; $i++) {
+            $along[] = $along[$i - 1] + Proximity::between($line[$i - 1], $line[$i]);
+        }
+        return $along;
     }
 
     /**
@@ -184,13 +198,5 @@ final class Duplicates
             $points[] = [$a[0] + $t * ($b[0] - $a[0]), $a[1] + $t * ($b[1] - $a[1])];
         }
         return $points;
-    }
-
-    /** The distance between two positions in metres, on a flat map around them; close enough for a few kilometres. */
-    private static function metres(array $a, array $b): float
-    {
-        $dx = ($b[0] - $a[0]) * cos(deg2rad(($a[1] + $b[1]) / 2));
-        $dy = $b[1] - $a[1];
-        return sqrt($dx * $dx + $dy * $dy) * self::METRES_PER_DEGREE;
     }
 }

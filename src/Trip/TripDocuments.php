@@ -45,13 +45,8 @@ final class TripDocuments
             $days[$day['id']] = ['id' => $day['id'], 'name' => $day['name'], 'date' => $day['date'], 'notes' => $day['notes'], 'routes' => [], 'stops' => []];
         }
         $routes = 'SELECT id, day_id, name, kind, profile, highways, optional, points, legs, line FROM routes WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
-        foreach ($this->rows($routes, $tripId) as $route) {
-            $common = ['id' => $route['id'], 'name' => $route['name'], 'kind' => $route['kind'], 'profile' => $route['profile'], 'optional' => (bool) $route['optional']];
-            $days[$route['day_id']]['routes'][] = $route['kind'] === 'track' ? $common + ['line' => $route['line']] : $common + [
-                'highways' => $route['highways'],
-                'points' => json_decode($route['points'], true, flags: JSON_THROW_ON_ERROR),
-                'legs' => (object) json_decode($route['legs'], true, flags: JSON_THROW_ON_ERROR),
-            ];
+        foreach ($this->rows($routes, $tripId) as $row) {
+            $days[$row['day_id']]['routes'][] = self::route($row);
         }
         $stops = 'SELECT id, day_id, name, kind, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional
                   FROM stops WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
@@ -79,6 +74,17 @@ final class TripDocuments
             'state' => $trip['state'],
             'version' => (int) $trip['version'],
             'days' => array_values($days),
+        ];
+    }
+
+    /** A row of the routes table as the document's route: a routed route's points and legs, or a track's line. */
+    public static function route(array $row): array
+    {
+        $common = ['id' => $row['id'], 'name' => $row['name'], 'kind' => $row['kind'], 'profile' => $row['profile'], 'optional' => (bool) $row['optional']];
+        return $row['kind'] === 'track' ? $common + ['line' => $row['line']] : $common + [
+            'highways' => $row['highways'],
+            'points' => json_decode($row['points'], true, flags: JSON_THROW_ON_ERROR),
+            'legs' => (object) json_decode($row['legs'], true, flags: JSON_THROW_ON_ERROR),
         ];
     }
 

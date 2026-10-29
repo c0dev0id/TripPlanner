@@ -13,7 +13,7 @@ final class Polyline
             return false;
         }
         // A character below 0x5f (63 + 32) closes a value; one at or above it continues it.
-        $closed = preg_match_all('/[\x3f-\x5e]/', $encoded);
+        $closed = array_sum(array_slice(count_chars($encoded, 0), 0x3f, 0x5f - 0x3f));
         return $closed % 2 === 0 && ($encoded === '' || ord($encoded[-1]) < 0x5f);
     }
 
