@@ -17,8 +17,9 @@
   description and a day has notes, shown under the day's row and on the read-only page.
   A day is dragged into another place by its grip and duplicated (with new ids,
   undated); a route is dragged into another place within its day, duplicated, or
-  moved to another day with the stops bound to it; a stop is copied to another day as a
-  free stop.
+  moved to another day with the stops bound to it, from its row's menu (right-click or
+  long press), where Move… opens the other days; a stop is copied to another day as a
+  free stop, from Copy… in its menu.
 - Routes as geometry: points in order with routed legs between them, one profile (road,
   bike, foot) per route. A click on a route's row selects it and shows the tools over
   the map. The hand, the default, moves the map and opens a stop's details, and neither

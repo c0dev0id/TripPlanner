@@ -32,6 +32,7 @@ export function cardMenu(card: HTMLElement, items: () => MenuItem[]): void {
     e.preventDefault();
     e.stopPropagation();
   };
+  card.classList.add('has-menu');
   const stopLongPress = onLongPress(card, (x, y, pressed) => {
     if ((pressed as Element).closest('.grip')) return;
     held = true;

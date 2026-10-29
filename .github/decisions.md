@@ -106,9 +106,13 @@ entries at the end of their section.
   Stops have no grip: their order is where they stand along the route. The drag runs
   on pointer events from the grip alone, which works with touch where the browser's
   own drag and drop does not and leaves the rest of the row to its click; about fifty
-  lines, no library. A route's or a stop's row has a pencil and a dots menu holding
-  edit, remove, duplicate and moving or copying to another day; its journal is an icon
-  on the row that counts the entries.
+  lines, no library. A route's row, like a card, opens its menu by right-click or a long
+  press and has no pencil or dots: edit, duplicate, move to another day, condense or
+  convert a track, remove. A stop's row keeps a pencil and a dots menu. Each row's
+  journal is an icon on it that counts the entries. A menu that would list an entry per
+  day (moving a route, copying a stop) has one item that opens the other days as a
+  submenu, beside it: on hover with a mouse, on a click, a tap or the keyboard otherwise.
+  Submenus are part of the one menu mechanism, so every menu can have them.
 - **Folders, trips and days are cards whose menu is the card itself.** A card shows two
   lines, the name over its metadata (a folder's trip count; a trip's days, start and
   state; a day's date and length), and has neither pencil nor dots: right-click, the

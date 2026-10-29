@@ -56,9 +56,10 @@ function JournalButton(props: { target: EntryTarget; of: string }) {
 }
 
 /** One item per other day of the trip, for moving or copying something there. */
-function otherDayItems(dayId: string, action: string, run: (dayId: string) => void): MenuItem[] {
-  return openTrip()!
-    .days.flatMap((day, index) => (day.id === dayId ? [] : [{ label: `${action} ${dayLabel(day, index)}`, run: () => run(day.id) }]));
+/** An item named `label` whose submenu lists the trip's other days, for moving or copying something there; none in a trip of one day. */
+function otherDaysItem(dayId: string, label: string, run: (dayId: string) => void): MenuItem[] {
+  const items = openTrip()!.days.flatMap((day, index) => (day.id === dayId ? [] : [{ label: dayLabel(day, index), run: () => run(day.id) }]));
+  return items.length > 0 ? [{ label, items }] : [];
 }
 
 /** The open trip: its name, its days with their routes and stops, the export links and the saving state. */
@@ -223,7 +224,11 @@ function DaySummary(props: { timeline: DayTimeline }) {
   );
 }
 
-/** A route of the day: its row, and while it is selected, its stops and points in riding order under it, out of `sequence`, its part of the day's. */
+/**
+ * A route of the day: its row, whose menu (right-click or a long press) edits, duplicates,
+ * moves, condenses or converts a track, and removes it; and while it is selected, its stops
+ * and points in riding order under it, out of `sequence`, its part of the day's.
+ */
 function RouteItem(props: { route: Route; index: number; day: Day; sequence: SequenceEntry[] }) {
   const editing = () => editingRouteId() === props.route.id;
   const label = createMemo(() => routeLabel(props.route, props.day));
@@ -231,10 +236,10 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
   const entries = createMemo(() => (props.route.kind === 'track' ? props.sequence.filter((e) => e.stop) : props.sequence));
   const stopCount = createMemo(() => entries().filter((e) => e.stop).length);
   const lateCount = createMemo(() => entries().filter((e) => (selectedTimeline()?.times.get(e.id)?.slackMin ?? 0) < 0).length);
-  const more = (): MenuItem[] => [
+  const items = (): MenuItem[] => [
     { label: 'Edit…', run: () => setEditTarget({ kind: 'route', id: props.route.id }) },
     { label: 'Duplicate', run: () => duplicateRoute(props.route.id) },
-    ...otherDayItems(props.day.id, 'Move to', (dayId) => moveRouteToDay(props.route.id, dayId)),
+    ...otherDaysItem(props.day.id, 'Move…', (dayId) => moveRouteToDay(props.route.id, dayId)),
     ...(props.route.kind === 'track'
       ? [
           { label: 'Condense points…', run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) },
@@ -245,7 +250,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
   ];
   return (
     <li class="route" classList={{ editing: editing() }}>
-      <div class="row">
+      <div class="row" ref={(el) => cardMenu(el, items)}>
         <Grip label={`Drag ${label()} to another place`} index={props.index} onMove={(to) => moveRoute(props.route.id, to)} />
         <button class="text grow" aria-expanded={editing()} onClick={() => editRoute(editing() ? undefined : props.route.id)}>
           <span class="lines">
@@ -265,10 +270,6 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
           </span>
         </button>
         <JournalButton target={{ routeId: props.route.id }} of={label()} />
-        <button class="icon" title="Edit route" aria-label={`Edit ${label()}`} onClick={() => setEditTarget({ kind: 'route', id: props.route.id })}>
-          <PencilIcon />
-        </button>
-        <MoreMenu label={`More for ${label()}`} items={more} />
       </div>
       <Show when={editing()}>
         <ol class="stops">
@@ -367,7 +368,7 @@ function StopActions(props: { stop: Stop }) {
         label={`More for ${props.stop.name}`}
         items={() => [
           { label: 'Edit…', run: () => setEditTarget({ kind: 'stop', id: props.stop.id }) },
-          ...otherDayItems(selectedDayId()!, 'Copy to', (dayId) => copyStopToDay(props.stop.id, dayId)),
+          ...otherDaysItem(selectedDayId()!, 'Copy…', (dayId) => copyStopToDay(props.stop.id, dayId)),
           { label: 'Remove', run: () => removeStop(props.stop.id) },
         ]}
       />

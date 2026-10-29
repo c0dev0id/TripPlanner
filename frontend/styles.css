@@ -236,6 +236,10 @@ a {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--panel);
+}
+
+/* An element whose long press opens its menu: the press selects no text and calls up no callout. */
+.has-menu {
   -webkit-touch-callout: none;
   user-select: none;
 }

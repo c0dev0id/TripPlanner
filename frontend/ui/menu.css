@@ -41,3 +41,15 @@
 .context-menu button[aria-checked='true'] {
   font-weight: 600;
 }
+
+/* An item that opens a submenu, marked with an arrow; open, it stays highlighted. */
+.context-menu button[aria-haspopup]::after {
+  content: '›';
+  float: right;
+  margin-left: 16px;
+  color: var(--muted);
+}
+
+.context-menu button[aria-expanded='true'] {
+  background: var(--active);
+}
