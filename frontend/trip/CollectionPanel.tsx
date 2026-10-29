@@ -1,7 +1,7 @@
 import { createMemo, createSignal, Show } from 'solid-js';
 import { FREE_COLOR } from '../map/routeOverlay';
-import { STOP_KINDS, type Day, type Route, type Stop } from '../model/trip';
-import { routeDistance, routePositions } from '../routing/legs';
+import type { Day, Route, Stop } from '../model/trip';
+import { routeDistance, routePositions, routesDistance } from '../routing/legs';
 import { copyRoute, copyStop } from '../state/clipboard';
 import { panTo, showWhole } from '../state/drawing';
 import { openTrip, removeDay, removeStop, selectDay, selectedDayId, updateDay } from '../state/trip';
@@ -13,7 +13,7 @@ import { BackIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
 import { StopShape } from '../ui/StopShape';
-import { routeKindLabel, routeLabel } from './labels';
+import { routeKindLabel, routeLabel, stopKindLabel } from './labels';
 import { removeRouteAsked } from './remove';
 import { SaveStatus } from './SaveStatus';
 
@@ -61,7 +61,7 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
   const selected = () => selectedDayId() === props.day.id;
   // The section's routes change less often than the section.
   const routes = createMemo(() => props.day.routes);
-  const distance = createMemo(() => routes().reduce((sum, route) => sum + routeDistance(route), 0));
+  const distance = createMemo(() => routesDistance(routes()));
   const meta = () =>
     [counted(routes().length, 'route'), props.day.stops.length > 0 && counted(props.day.stops.length, 'waypoint'), distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
   const remove = async () => {
@@ -103,8 +103,9 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
 /** A route of a section: a click shows it whole on the map; its menu copies and removes it. */
 function RouteItem(props: { route: Route; day: Day }) {
   const label = createMemo(() => routeLabel(props.route, props.day));
+  const distance = createMemo(() => routeDistance(props.route));
   const items = (): MenuItem[] => [
-    { label: 'Copy', run: () => copyRoute(props.route.id) },
+    { label: 'Copy', run: () => copyRoute(props.day, props.route) },
     { label: 'Remove', run: () => void removeRouteAsked(props.route) },
   ];
   return (
@@ -116,7 +117,7 @@ function RouteItem(props: { route: Route; day: Day }) {
               {label()}
             </span>
             <span class="muted detail">
-              {routeKindLabel(props.route)} · {distanceText(routeDistance(props.route))}
+              {[routeKindLabel(props.route), distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ')}
             </span>
           </span>
         </button>
@@ -127,9 +128,9 @@ function RouteItem(props: { route: Route; day: Day }) {
 
 /** A waypoint of a section: a click pans the map there; its menu copies and removes it. */
 function WaypointItem(props: { stop: Stop }) {
-  const kind = () => (props.stop.kind === 'other' ? undefined : STOP_KINDS.find((k) => k.value === props.stop.kind)?.label);
+  const kind = () => stopKindLabel(props.stop.kind);
   const items = (): MenuItem[] => [
-    { label: 'Copy', run: () => copyStop(props.stop.id) },
+    { label: 'Copy', run: () => copyStop(props.stop) },
     { label: 'Remove', run: () => removeStop(props.stop.id) },
   ];
   return (

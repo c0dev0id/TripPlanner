@@ -20,3 +20,20 @@ export function distanceBetween([lng1, lat1]: LngLat, [lng2, lat2]: LngLat): num
   const h = Math.sin(radians(lat2 - lat1) / 2) ** 2 + Math.cos(radians(lat1)) * Math.cos(radians(lat2)) * Math.sin(radians(lng2 - lng1) / 2) ** 2;
   return 2 * EARTH_RADIUS * Math.asin(Math.min(1, Math.sqrt(h)));
 }
+
+/** The metres along each line so far, by the line, which is never changed in place: a decoded track is measured once while it is kept. */
+const measured = new WeakMap<readonly LngLat[], Float64Array>();
+
+/** The metres from the start of the line to each of its points. */
+export function metresAlong(line: readonly LngLat[]): Float64Array {
+  let along = measured.get(line);
+  if (!along) {
+    along = new Float64Array(line.length);
+    for (let i = 1; i < line.length; i++) along[i] = along[i - 1]! + distanceBetween(line[i - 1]!, line[i]!);
+    measured.set(line, along);
+  }
+  return along;
+}
+
+/** The length of a line in metres. */
+export const lineLength = (line: readonly LngLat[]): number => metresAlong(line).at(-1) ?? 0;

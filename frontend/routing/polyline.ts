@@ -51,16 +51,22 @@ export function encodePolyline(points: readonly LngLat[], precision = 6): string
   return encoded;
 }
 
-/** Decoded geometries by their polyline, which is immutable and so its own key; emptied when it grows large. */
+/** Decoded geometries by their polyline, which is immutable and so its own key; emptied when it holds many geometries or points. */
 let decoded = new Map<string, LngLat[]>();
+let decodedPoints = 0;
+const MAX_DECODED = { geometries: 4096, points: 3_000_000 };
 
-/** Decodes a leg's geometry once; the map, the sequence and the tap tests share the result. */
+/** Decodes a leg's geometry or a track's line once; the map, the sequence and the tap tests share the result. */
 export function decodeCached(geometry: string): LngLat[] {
   let coordinates = decoded.get(geometry);
   if (!coordinates) {
-    if (decoded.size >= 4096) decoded = new Map();
+    if (decoded.size >= MAX_DECODED.geometries || decodedPoints >= MAX_DECODED.points) {
+      decoded = new Map();
+      decodedPoints = 0;
+    }
     coordinates = decodePolyline(geometry);
     decoded.set(geometry, coordinates);
+    decodedPoints += coordinates.length;
   }
   return coordinates;
 }

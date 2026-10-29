@@ -1,5 +1,5 @@
 import { Show } from 'solid-js';
-import { tool, TOOLS } from '../state/drawing';
+import { currentTool, TOOLS } from '../state/drawing';
 import { failedLegCount, lastError, pendingLegs, retryFailedLegs } from '../state/routing';
 import { editingRoute, selectedDay } from '../state/trip';
 import { routeLabel } from '../trip/labels';
@@ -11,7 +11,7 @@ export function HintBar() {
       {(route) => (
         <div class="hint-bar">
           <span>
-            <strong>{routeLabel(route(), selectedDay()!)}</strong> · {TOOLS[tool()].label}: {TOOLS[tool()].hint}
+            <strong>{routeLabel(route(), selectedDay()!)}</strong> · {TOOLS[currentTool()].label}: {TOOLS[currentTool()].hint}
           </span>
           <Show when={pendingLegs() > 0}>
             <span class="routing">Routing {pendingLegs()} {pendingLegs() === 1 ? 'leg' : 'legs'}…</span>

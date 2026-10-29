@@ -78,6 +78,12 @@ describe('planFolderImport', () => {
     ]);
   });
 
+  it('fits the names of folders, trips and days to what the library holds', () => {
+    const long = 'Ü'.repeat(250);
+    const [trip] = plan([`${long}/Rides  of\tsummer/${long}.gpx`]);
+    expect([trip!.folders[0]!.length, trip!.name, (trip!.days[0]![1] as string).length]).toEqual([200, 'Rides of summer', 200]);
+  });
+
   it('names a trip after its whole folder where the date is all there is, and finds none without GPX files', () => {
     expect(plan(['2024-06-12/a.gpx'])[0]!.name).toBe('2024-06-12');
     expect(plan(['Alps/readme.md'])).toEqual([]);

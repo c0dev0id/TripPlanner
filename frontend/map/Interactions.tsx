@@ -1,6 +1,6 @@
 import type { Map as MapLibreMap, MapMouseEvent } from 'maplibre-gl';
 import { createEffect, onCleanup } from 'solid-js';
-import { setTool, spotItems, tapAction, tool, type Tool } from '../state/drawing';
+import { currentTool, setTool, spotItems, tapAction, tool, type Tool } from '../state/drawing';
 import { isTextField } from '../ui/form';
 import { menu, setMenu } from '../ui/menu';
 import { addFreeStop, appendPoint, editingRoute, editRoute, insertPoint, insertStop, redo, undo } from '../state/trip';
@@ -70,13 +70,11 @@ export function Interactions(props: { map: MapLibreMap }) {
   const onTap = (e: MapMouseEvent) => {
     const action = tapAction();
     const route = editingRoute();
-    if (!action || action === 'hand' || !route || fromMarker(e.originalEvent)) return;
+    // A delete tap acts on markers only.
+    if ((action !== 'point' && action !== 'stop') || !route || fromMarker(e.originalEvent)) return;
     setMenu(undefined);
     const hit = hitRouteLine(map, route, [e.point.x, e.point.y], tapReach(pointerType !== 'mouse'));
-    // A track has no points to add to or to bind a stop to: a stop on it is free.
-    if (route.kind === 'track') {
-      if (action === 'stop') addFreeStop(hit ? hit.lngLat : toLngLat(e.lngLat));
-    } else if (action === 'point') {
+    if (action === 'point') {
       if (hit) insertPoint(route.id, hit.legIndex + 1, hit.lngLat);
       else appendPoint(route.id, toLngLat(e.lngLat));
     } else if (action === 'stop') {
@@ -104,7 +102,7 @@ export function Interactions(props: { map: MapLibreMap }) {
     if (e.key === ' ') {
       // The hand while the space bar is held: the map moves without a tap that adds.
       e.preventDefault();
-      if (!e.repeat && tool() !== 'hand') {
+      if (!e.repeat && currentTool() !== 'hand') {
         toolBeforeSpace = tool();
         setTool('hand');
       }
@@ -112,7 +110,7 @@ export function Interactions(props: { map: MapLibreMap }) {
     }
     if (e.key !== 'Escape') return;
     // Esc goes back to the hand, then ends editing; an open menu takes it first.
-    if (tool() !== 'hand') setTool('hand');
+    if (currentTool() !== 'hand') setTool('hand');
     else editRoute(undefined);
   };
   const onSpaceUp = (e: KeyboardEvent) => {

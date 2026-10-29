@@ -1,4 +1,4 @@
-import { distanceBetween, planeAt } from '../geo/measure';
+import { distanceBetween, metresAlong, planeAt } from '../geo/measure';
 import { nearestOnLines, type NearestPlace, type XY } from '../geo/nearest';
 import type { Day, LngLat, RoutePoint, Stop, Trip } from '../model/trip';
 import { legCoordinates, legDistance, legDuration, routeLegs, routePositions } from './legs';
@@ -48,8 +48,7 @@ function legLines(day: Day, toPlane: (p: LngLat) => XY, decode: (geometry: strin
   day.routes.forEach((route, routeIndex) => {
     routeLegs(route).forEach((leg, legIndex) => {
       const line = legCoordinates(route, leg, decode);
-      const alongM = new Float64Array(line.length);
-      for (let i = 1; i < line.length; i++) alongM[i] = alongM[i - 1]! + distanceBetween(line[i - 1]!, line[i]!);
+      const alongM = metresAlong(line);
       const distanceM = legDistance(route, leg);
       const durationS = legDuration(route, leg);
       legs.push({ routeIndex, routeId: route.id, legIndex, line, xy: line.map(toPlane), alongM, distanceM, durationS, startM, startS });

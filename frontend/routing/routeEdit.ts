@@ -40,12 +40,9 @@ export function setStraight(route: RoutedRoute, id: string, straight: boolean): 
 /** What a route says about itself; the motorway dial only a routed route has. */
 export type RouteSettings = Pick<RoutedRoute, 'name' | 'profile' | 'highways' | 'optional'>;
 
-/** Changes what a route says about itself; under a new profile or motorway dial a routed route's legs are routed again. */
+/** Changes what a route says about itself, the motorway dial a routed route's alone; under a new profile or motorway dial its legs are routed again. */
 export function changeSettings(route: Route, change: Partial<RouteSettings>): Route {
-  if (route.kind === 'track') {
-    const { highways: _, ...trackChange } = change;
-    return withChanges(route, trackChange);
-  }
+  if (route.kind === 'track') return withChanges(route, change);
   const next = withChanges(route, change);
   return next === route ? route : withPrunedLegs(next);
 }

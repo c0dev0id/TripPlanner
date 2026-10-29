@@ -83,7 +83,7 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
     setImporting(true);
     await run(async () => {
       const result = await importFolder(files, plan, folderId(), (text) => setImportNote({ text, errors: [] }));
-      setImportNote({ text: `${counted(result.trips, plan[0]!.kind === 'collection' ? 'collection' : 'trip')} imported.`, errors: result.errors });
+      setImportNote({ text: `${counted(result.trips, plan[0]!.kind)} imported.`, errors: result.errors });
     });
     setImporting(false);
     void refetchFolders();
@@ -130,7 +130,7 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
     <section class="library">
       <Show
         when={!showingDuplicates()}
-        fallback={<DuplicatesReport onOpen={(tripId, dayId) => props.onOpen(tripId, dayId)} onClose={() => setShowingDuplicates(false)} disabled={props.opening} />}
+        fallback={<DuplicatesReport onOpen={props.onOpen} onClose={() => setShowingDuplicates(false)} disabled={props.opening} />}
       >
         <Show when={folder()} fallback={<h2>Trips</h2>}>
           {(f) => {

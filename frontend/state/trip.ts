@@ -113,13 +113,13 @@ function restore(earlier: Trip | undefined, current: Trip): void {
   });
 }
 
-/** Opens a trip as loaded from the server, with no day shown; nothing before it can be undone. */
-export function loadTrip(loaded: Trip): void {
+/** Opens a trip as loaded from the server, at the day `dayId` or with none shown; nothing before it can be undone. */
+export function loadTrip(loaded: Trip, dayId?: string): void {
   history.clear();
   batch(() => {
     setOpenTrip(loaded);
     setHistoryVersion((v) => v + 1);
-    setSelectedDayId(undefined);
+    setSelectedDayId(dayId);
     setEditingRouteId(undefined);
   });
 }
@@ -252,7 +252,7 @@ export function addFreeStop(lngLat: LngLat): void {
 }
 
 /** Where the routes of the selected day pass closest to a free stop of it, within reach; none for a stop that stands alone or is bound. */
-export const nearOf = (stopId: string): SequenceEntry['near'] => selectedSequence().find((e) => e.stop?.id === stopId)?.near;
+const nearOf = (stopId: string): SequenceEntry['near'] => selectedSequence().find((e) => e.stop?.id === stopId)?.near;
 
 /** Whether a free stop of the selected day can be bound where its routes pass closest: a track there has no points to bind to. */
 export function canConnect(stopId: string): boolean {

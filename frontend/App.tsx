@@ -8,7 +8,7 @@ import { HintBar } from './map/HintBar';
 import { MapView } from './map/MapView';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState } from './state/autosave';
-import { closeTrip, loadTrip, openTrip, selectDay } from './state/trip';
+import { closeTrip, loadTrip, openTrip } from './state/trip';
 import { CollectionPanel } from './trip/CollectionPanel';
 import { DayDialog } from './trip/DayDialog';
 import { ExportDialog } from './trip/ExportDialog';
@@ -32,8 +32,7 @@ export function App() {
     setOpening(true);
     setError(undefined);
     try {
-      loadTrip(await fetchTrip(id));
-      if (dayId) selectDay(dayId);
+      loadTrip(await fetchTrip(id), dayId);
       resetSaveState();
     } catch (e) {
       setError(errorMessage(e));

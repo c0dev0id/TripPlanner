@@ -1,6 +1,6 @@
 import { createFolder, createTrip, errorMessage, fetchTrip, listFolders, saveTrip } from '../api';
 import { readGpxFile, type DayParts } from '../gpx/import';
-import { newId, type TripKind } from '../model/trip';
+import { asName, newId, type TripKind } from '../model/trip';
 import { addDay, addParts, dayAfter, updateDay } from '../routing/dayEdit';
 
 /**
@@ -62,7 +62,7 @@ export const pickedPath = (file: File): string => (file.webkitRelativePath || fi
 /**
  * The trips or collections a picked folder tree makes, from the files' paths relative to
  * it, organized as `mode` says; hidden files and files that are no GPX are left out, the
- * rest taken in name order.
+ * rest taken in name order. The names are fitted to what the library holds.
  */
 export function planFolderImport(paths: readonly string[], mode: ImportMode): PlannedTrip[] {
   const byFolder = new Map<string, number[]>();
@@ -78,13 +78,14 @@ export function planFolderImport(paths: readonly string[], mode: ImportMode): Pl
     else byFolder.set(folder, [i]);
   });
   const stem = (i: number) => stems[i]!;
-  return [...byFolder.keys()].sort(byName).flatMap((folder) => {
+  const planned = [...byFolder.keys()].sort(byName).flatMap((folder) => {
     const segments = folder.split('/');
     const files = byFolder.get(folder)!.sort((a, b) => byName(stem(a), stem(b)));
     if (mode === 'trip-per-file') return files.map((i) => tripOfFile(segments.filter(Boolean), stem(i), i));
     if (mode === 'planning-material') return [collectionOfFolder(segments, files, stem)];
     return [tripOfFolder(segments, files, stem)];
   });
+  return planned.map((t) => ({ ...t, folders: t.folders.map(asName), name: asName(t.name), days: t.days.map((d) => ({ ...d, name: asName(d.name) })) }));
 }
 
 /**

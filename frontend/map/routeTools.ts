@@ -2,7 +2,6 @@ import type { Map as MapLibreMap } from 'maplibre-gl';
 import { nearestOnLines, type XY } from '../geo/nearest';
 import type { LngLat, Route } from '../model/trip';
 import { legCoordinates, routeLegs } from '../routing/legs';
-import { decodeCached } from '../routing/polyline';
 import { toLngLat } from './markers';
 
 /** Points as the map shows them on screen, in CSS pixels. */
@@ -25,7 +24,7 @@ export interface LineHit {
  * shape until it is moved.
  */
 export function hitRouteLine(map: MapLibreMap, route: Route, tap: XY, tolerance: number): LineHit | undefined {
-  const lines = routeLegs(route).map((leg) => onScreen(map, legCoordinates(route, leg, decodeCached)));
+  const lines = routeLegs(route).map((leg) => onScreen(map, legCoordinates(route, leg)));
   const hit = nearestOnLines(lines)(tap, tolerance);
   if (!hit) return undefined;
   return { legIndex: hit.index, lngLat: toLngLat(map.unproject([hit.point[0], hit.point[1]])) };

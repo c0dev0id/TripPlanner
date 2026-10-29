@@ -1,6 +1,6 @@
-import { distanceBetween } from '../geo/measure';
-import { MAX_NAME, MAX_TEXT, newId, STOP_KINDS, type LngLat, type Profile, type Route, type RoutedLeg, type Stop, type StopKind } from '../model/trip';
-import { newStop } from '../routing/dayEdit';
+import { lineLength } from '../geo/measure';
+import { asName, asNotes, newId, STOP_KINDS, type LngLat, type Profile, type Route, type RoutedLeg, type Stop, type StopKind } from '../model/trip';
+import { newStop, routePoints } from '../routing/dayEdit';
 import { legKey, roundLngLat } from '../routing/legs';
 import { encodePolyline } from '../routing/polyline';
 import { parseGpx, type GpxContent } from './gpx';
@@ -12,18 +12,6 @@ export interface DayParts {
 }
 
 
-/** At most `max` characters of the text. */
-function clipped(text: string, max: number): string {
-  const characters = Array.from(text);
-  return characters.length > max ? characters.slice(0, max).join('') : text;
-}
-
-/** Text from a file as a name: composed (NFC), one line, at most MAX_NAME characters. */
-const asName = (text: string): string => clipped(text.normalize('NFC').replace(/\s+/g, ' ').trim(), MAX_NAME);
-
-/** Text from a file as notes: composed (NFC), no blanks at the ends of lines, no more than one empty line in a row, at most MAX_TEXT characters. */
-const asNotes = (text: string): string => clipped(text.normalize('NFC').replace(/[^\S\n]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim(), MAX_TEXT);
-
 /** Rounded positions without consecutive repeats, which would make legs of no length. */
 function cleanPoints(points: readonly LngLat[]): LngLat[] {
   const rounded = points.map(roundLngLat);
@@ -32,9 +20,7 @@ function cleanPoints(points: readonly LngLat[]): LngLat[] {
 
 /** A leg along the given way, measured along it; its riding time is left to the assumed pace until the routing is asked. */
 function legAlong(way: readonly LngLat[]): RoutedLeg {
-  let distanceM = 0;
-  for (let i = 1; i < way.length; i++) distanceM += distanceBetween(way[i - 1]!, way[i]!);
-  return { geometry: encodePolyline(way), distanceM, durationS: null };
+  return { geometry: encodePolyline(way), distanceM: lineLength(way), durationS: null };
 }
 
 /**
@@ -83,7 +69,7 @@ function kindOf(waypoint: GpxContent['waypoints'][number]): StopKind {
 export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string }): DayParts {
   const lines = [
     ...gpx.routes.map((r) => ({ name: r.name, kind: 'routed' as const, points: r.points, ways: r.ways })),
-    ...gpx.tracks.map((t) => ({ name: t.name, kind: 'track' as const, points: t.segments.flat(), ways: [] })),
+    ...gpx.tracks.map((t) => ({ name: t.name, kind: 'track' as const, points: t.segments.flat() })),
   ].filter((l) => l.points.length > 0);
   const routes = lines.map((line, i): Route => {
     const base = { id: options.newId(), name: asName(line.name ?? (lines.length === 1 ? options.fileName : `${options.fileName} ${i + 1}`)), profile: options.profile, optional: false };
@@ -91,7 +77,7 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
     const points = cleanPoints(line.points).map((lngLat) => ({ id: options.newId(), lngLat }));
     return { ...base, kind: 'routed', highways: 'allow', points, legs: calculatedLegs(line.points, line.ways, options.profile) };
   });
-  const pointAt = new Map(routes.flatMap((r) => (r.kind === 'routed' ? r.points.map((p) => [p.lngLat.join(','), p.id] as const) : [])));
+  const pointAt = new Map(routes.flatMap((r) => routePoints(r).map((p) => [p.lngLat.join(','), p.id] as const)));
   const stops = gpx.waypoints.map((w, i) => {
     const lngLat = roundLngLat(w.lngLat);
     const stop = newStop(options.newId(), asName(w.name ?? `Waypoint ${i + 1}`), lngLat, pointAt.get(lngLat.join(',')) ?? null);

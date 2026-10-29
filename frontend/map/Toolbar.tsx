@@ -1,5 +1,5 @@
-import { Show, type JSX } from 'solid-js';
-import { setEditTarget, setTool, tool, TOOLS, type Tool } from '../state/drawing';
+import { For, Show, type JSX } from 'solid-js';
+import { currentTool, setEditTarget, setTool, toolsOf, TOOLS, type Tool } from '../state/drawing';
 import { routedLegs } from '../routing/legs';
 import { recalculateRoute } from '../state/routing';
 import { editingRoute, editRoute, redo, redoLabel, undo, undoLabel } from '../state/trip';
@@ -22,11 +22,13 @@ function ToolButton(props: { label: string; title: string; active?: boolean; dis
   );
 }
 
+const TOOL_ICONS: Record<Tool, () => JSX.Element> = { hand: HandIcon, point: InsertIcon, stop: PinIcon, delete: DeleteIcon };
+
 /** The tools of the selected route, over the map: what a tap does, the route's settings, undo and redo, reroute, done. */
 export function Toolbar() {
-  const button = (t: Tool, icon: JSX.Element) => (
-    <ToolButton label={TOOLS[t].label} title={`${TOOLS[t].hint[0]!.toUpperCase()}${TOOLS[t].hint.slice(1)}`} active={tool() === t} onClick={() => setTool(t)}>
-      {icon}
+  const button = (t: Tool) => (
+    <ToolButton label={TOOLS[t].label} title={`${TOOLS[t].hint[0]!.toUpperCase()}${TOOLS[t].hint.slice(1)}`} active={currentTool() === t} onClick={() => setTool(t)}>
+      {TOOL_ICONS[t]()}
     </ToolButton>
   );
   return (
@@ -34,10 +36,7 @@ export function Toolbar() {
       {(route) => (
         <div class="toolbar" role="toolbar" aria-label="Route tools">
           <div class="toolbar-group" role="group" aria-label="Tool">
-            {button('hand', <HandIcon />)}
-            <Show when={route().kind === 'routed'}>{button('point', <InsertIcon />)}</Show>
-            {button('stop', <PinIcon />)}
-            {button('delete', <DeleteIcon />)}
+            <For each={toolsOf(route())}>{button}</For>
           </div>
           <div class="toolbar-group" role="group" aria-label="Route">
             <ToolButton label="Route" title="The route's name, profile, motorways and more" onClick={() => setEditTarget({ kind: 'route', id: route().id })}>

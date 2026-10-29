@@ -1,4 +1,4 @@
-import { distanceBetween } from '../geo/measure';
+import { distanceBetween, lineLength } from '../geo/measure';
 import type { LngLat, Route, RoutedLeg, RoutedRoute } from '../model/trip';
 import { decodeCached } from './polyline';
 
@@ -71,29 +71,9 @@ export function legCoordinates(route: Route, leg: Leg, decode = decodeCached): L
   return routed ? decode(routed.geometry) : [leg.from, leg.to];
 }
 
-/** The length of a line in metres. */
-function lineLength(line: readonly LngLat[]): number {
-  let metres = 0;
-  for (let i = 1; i < line.length; i++) metres += distanceBetween(line[i - 1]!, line[i]!);
-  return metres;
-}
-
-/** Track lengths by their line, which is immutable and so its own key; emptied when it grows large. */
-let trackLengths = new Map<string, number>();
-
-function trackLength(line: string): number {
-  let metres = trackLengths.get(line);
-  if (metres === undefined) {
-    if (trackLengths.size >= 4096) trackLengths = new Map();
-    metres = lineLength(decodeCached(line));
-    trackLengths.set(line, metres);
-  }
-  return metres;
-}
-
 /** The length of a leg in metres: along a track, as routed, or as the crow flies for a straight leg or one not routed yet. */
 export function legDistance(route: Route, leg: Leg): number {
-  if (leg.kind === 'track') return trackLength(leg.line);
+  if (leg.kind === 'track') return lineLength(decodeCached(leg.line));
   const routed = routedLeg(route, leg);
   return routed ? routed.distanceM : distanceBetween(leg.from, leg.to);
 }
@@ -102,6 +82,9 @@ export function legDistance(route: Route, leg: Leg): number {
 export function routeDistance(route: Route): number {
   return routeLegs(route).reduce((sum, leg) => sum + legDistance(route, leg), 0);
 }
+
+/** The length of routes together in metres, such as a day's. */
+export const routesDistance = (routes: readonly Route[]): number => routes.reduce((sum, route) => sum + routeDistance(route), 0);
 
 /** How many points a route has: those it runs through, or a track's along its line. */
 export function pointCount(route: Route): number {

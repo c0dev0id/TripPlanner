@@ -4,7 +4,7 @@ import { readGpxFile } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
 import type { Day, Route, Stop } from '../model/trip';
 import { defaultProfile } from '../routing/dayEdit';
-import { pointCount, routeDistance } from '../routing/legs';
+import { pointCount, routeDistance, routesDistance } from '../routing/legs';
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, setTrackAction, showNeighbours } from '../state/drawing';
@@ -54,10 +54,10 @@ function JournalButton(props: { target: EntryTarget; of: string }) {
   );
 }
 
-/** An item named `label` whose submenu lists the trip's other days, for moving something there; none in a trip of one day. */
-function otherDaysItem(dayId: string, label: string, run: (dayId: string) => void): MenuItem[] {
+/** Move… with the trip's other days as its submenu, to move something there; none in a trip of one day. */
+function moveToDayItem(dayId: string, run: (dayId: string) => void): MenuItem[] {
   const items = openTrip()!.days.flatMap((day, index) => (day.id === dayId ? [] : [{ label: dayLabel(day, index), run: () => run(day.id) }]));
-  return items.length > 0 ? [{ label, items }] : [];
+  return items.length > 0 ? [{ label: 'Move…', items }] : [];
 }
 
 /** The open trip: its name, its days with their routes and stops, the export links and the saving state. */
@@ -110,7 +110,7 @@ function DayItem(props: { day: Day; index: number }) {
   const label = createMemo(() => dayLabel(props.day, props.index));
   // The day's routes change less often than the day.
   const routes = createMemo(() => props.day.routes);
-  const distance = createMemo(() => routes().reduce((sum, route) => sum + routeDistance(route), 0));
+  const distance = createMemo(() => routesDistance(routes()));
   const meta = () => [props.day.date ? shortDateText(props.day.date) : 'No date', distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
   const more = (): MenuItem[] => [
     { label: 'Edit…', run: () => setEditTarget({ kind: 'day', id: props.day.id }) },
@@ -217,15 +217,16 @@ function DaySummary(props: { timeline: DayTimeline }) {
 function RouteItem(props: { route: Route; index: number; day: Day; sequence: SequenceEntry[] }) {
   const editing = () => editingRouteId() === props.route.id;
   const label = createMemo(() => routeLabel(props.route, props.day));
-  /** The route's points and bound stops, and the free stops that stand beside it; of a track, whose points are many, the stops alone. */
-  const entries = createMemo(() => (props.route.kind === 'track' ? props.sequence.filter((e) => e.stop) : props.sequence));
+  const distance = createMemo(() => routeDistance(props.route));
+  /** The route's points and bound stops, and the free stops that stand beside it; not where a track ends, which is no point of its own. */
+  const entries = createMemo(() => props.sequence.filter((e) => e.stop || e.point));
   const stopCount = createMemo(() => entries().filter((e) => e.stop).length);
   const lateCount = createMemo(() => entries().filter((e) => (selectedTimeline()?.times.get(e.id)?.slackMin ?? 0) < 0).length);
   const items = (): MenuItem[] => [
     { label: 'Edit…', run: () => setEditTarget({ kind: 'route', id: props.route.id }) },
     { label: 'Duplicate', run: () => duplicateRoute(props.route.id) },
-    { label: 'Copy', run: () => copyRoute(props.route.id) },
-    ...otherDaysItem(props.day.id, 'Move…', (dayId) => moveRouteToDay(props.route.id, dayId)),
+    { label: 'Copy', run: () => copyRoute(props.day, props.route) },
+    ...moveToDayItem(props.day.id, (dayId) => moveRouteToDay(props.route.id, dayId)),
     ...(props.route.kind === 'track'
       ? [
           { label: 'Condense points…', run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) },
@@ -245,7 +246,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
             </span>
             <span class="muted detail">
               {routeKindLabel(props.route)}
-              {routeDistance(props.route) > 0 ? ` · ${distanceText(routeDistance(props.route))}` : ''}
+              {distance() > 0 ? ` · ${distanceText(distance())}` : ''}
               {props.route.kind === 'track' ? ` · ${pointCount(props.route).toLocaleString()} points` : ''}
               {stopCount() > 0 ? ` · ${stopCount()} ${stopCount() === 1 ? 'stop' : 'stops'}` : ''}
               <Show when={lateCount() > 0}>
@@ -346,7 +347,7 @@ function AloneStopItem(props: { stop: Stop }) {
 function stopItems(stop: Stop): MenuItem[] {
   return [
     { label: 'Edit…', run: () => setEditTarget({ kind: 'stop', id: stop.id }) },
-    { label: 'Copy', run: () => copyStop(stop.id) },
+    { label: 'Copy', run: () => copyStop(stop) },
     { label: 'Remove', run: () => removeStop(stop.id) },
   ];
 }

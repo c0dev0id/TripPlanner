@@ -2,7 +2,6 @@ import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { FilterSpecification, LayerSpecification, LineLayerSpecification } from 'maplibre-gl';
 import type { Day, LngLat } from '../model/trip';
 import { legCoordinates, legState, routeLegs, type LegState } from '../routing/legs';
-import { decodeCached } from '../routing/polyline';
 
 /** The source and layers of the route lines, the free stops' marks and the other days' stops, and their features. */
 
@@ -93,16 +92,17 @@ export function routeFeatures(
   for (const { day, role } of days) {
     for (const route of day.routes) {
       const routeRole: RouteRole = route.id === editingRouteId ? 'edited' : role;
-      let line: { state: LegState; coordinates: LngLat[] } | undefined;
+      // The lines of consecutive legs in the same state; a run of one leg, such as a track, keeps its line as it is.
+      const runs: { state: LegState; parts: LngLat[][] }[] = [];
       for (const leg of routeLegs(route)) {
         const state = legState(route, leg, failed);
-        const coordinates = legCoordinates(route, leg, decodeCached);
-        if (line?.state === state) {
-          for (let i = 1; i < coordinates.length; i++) line.coordinates.push(coordinates[i]!);
-          continue;
-        }
-        line = { state, coordinates: [...coordinates] };
-        features.push({ type: 'Feature', properties: { state, role: routeRole }, geometry: { type: 'LineString', coordinates: line.coordinates } });
+        const last = runs.at(-1);
+        if (last?.state === state) last.parts.push(legCoordinates(route, leg));
+        else runs.push({ state, parts: [legCoordinates(route, leg)] });
+      }
+      for (const { state, parts } of runs) {
+        const coordinates = parts.length === 1 ? parts[0]! : parts.flatMap((part, i) => (i === 0 ? part : part.slice(1)));
+        features.push({ type: 'Feature', properties: { state, role: routeRole }, geometry: { type: 'LineString', coordinates } });
       }
     }
   }

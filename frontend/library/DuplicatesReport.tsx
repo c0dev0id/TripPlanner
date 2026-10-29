@@ -1,11 +1,12 @@
 import { createResource, For, Match, Show, Switch } from 'solid-js';
 import { errorMessage, listDuplicates, type DuplicateGroup, type DuplicateRoute } from '../api';
-import { counted, distanceText, shortDateText } from '../ui/format';
+import { dayLabel } from '../trip/labels';
+import { counted, distanceText } from '../ui/format';
 import { BackIcon } from '../ui/icons';
 
 /** Where a route of the report is: its trip, and its day by number, date and name, or its section. */
 function whereText(route: DuplicateRoute): string {
-  const day = route.tripKind === 'collection' ? route.dayName : [`Day ${route.dayIndex + 1}`, route.date && shortDateText(route.date), route.dayName].filter(Boolean).join(' · ');
+  const day = route.tripKind === 'collection' ? route.dayName : dayLabel({ date: route.date, name: route.dayName }, route.dayIndex);
   return `${route.tripName} › ${day}`;
 }
 

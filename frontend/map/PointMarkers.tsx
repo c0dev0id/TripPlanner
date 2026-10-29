@@ -1,7 +1,7 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, onCleanup, Show } from 'solid-js';
 import type { RoutePoint } from '../model/trip';
-import { boundPointIds } from '../routing/dayEdit';
+import { boundPointIds, routePoints } from '../routing/dayEdit';
 import { dragsMarkers, straightLegItem, tapAction } from '../state/drawing';
 import { convertPoint, editingRoute, movePoint, removePoint, selectedDay } from '../state/trip';
 import { ForById } from '../ui/ForById';
@@ -14,9 +14,9 @@ import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
 export function PointMarkers(props: { map: MapLibreMap }) {
   const plain = createMemo(() => {
     const route = editingRoute();
-    if (!route || route.kind === 'track') return [];
+    if (!route) return [];
     const taken = boundPointIds(selectedDay()!);
-    return route.points.filter((p) => !taken.has(p.id));
+    return routePoints(route).filter((p) => !taken.has(p.id));
   });
   return (
     <Show when={editingRoute()?.id} keyed>

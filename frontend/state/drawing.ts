@@ -1,5 +1,5 @@
 import { createSignal } from 'solid-js';
-import type { LngLat, RoutePoint } from '../model/trip';
+import type { LngLat, Route, RoutePoint } from '../model/trip';
 import type { MenuItem } from '../ui/menu';
 import { openJournal } from './journal';
 import { addFreeStop, appendPoint, editingRoute, openTrip, selectedDay, setStraight } from './trip';
@@ -17,8 +17,17 @@ export const TOOLS: Record<Tool, { label: string; hint: string }> = {
   delete: { label: 'Delete', hint: 'tap a point or a stop to delete it.' },
 };
 
-/** The hand to start with: a tap adds nothing until a tool is picked. */
+/** The tool picked; the hand to start with: a tap adds nothing until a tool is picked. */
 export const [tool, setTool] = createSignal<Tool>('hand');
+
+/** The tools a route offers: a track has no points to add. */
+export const toolsOf = (route: Route): Tool[] => (route.kind === 'track' ? ['hand', 'stop', 'delete'] : ['hand', 'point', 'stop', 'delete']);
+
+/** The tool at work: the one picked where the edited route offers it, else the hand. */
+export function currentTool(): Tool {
+  const route = editingRoute();
+  return route && !toolsOf(route).includes(tool()) ? 'hand' : tool();
+}
 
 /** Whether the days before and after the selected one are drawn, dimmed, for orientation. */
 export const [showNeighbours, setShowNeighbours] = createSignal(true);
@@ -49,11 +58,11 @@ export function showWhole(positions: LngLat[]): void {
 }
 
 /** Whether the selected route's points and stops can be dragged: with every tool but the hand. */
-export const dragsMarkers = (): boolean => tool() !== 'hand';
+export const dragsMarkers = (): boolean => currentTool() !== 'hand';
 
 /** What the next tap on the map does: the tool's work on the selected route; nothing while no route is selected. */
 export function tapAction(): Tool | undefined {
-  return editingRoute() ? tool() : undefined;
+  return editingRoute() ? currentTool() : undefined;
 }
 
 /** What a spot on the map offers: a point at the edited routed route's end, a free stop while a route is edited, a journal entry of the selected day of a trip there; nothing without a day. */

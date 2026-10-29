@@ -119,7 +119,4 @@ describe('thinning a track', () => {
     expect(routedLegs(made)).toHaveLength(2);
   });
 
-  it('leaves a motorway dial out of a track', () => {
-    expect(changeSettings(track, { name: 'Col', highways: 'avoid' })).toEqual({ ...track, name: 'Col' });
-  });
 });

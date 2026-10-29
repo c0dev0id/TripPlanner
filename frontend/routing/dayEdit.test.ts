@@ -3,6 +3,7 @@ import { withChanges, type Day, type RoutedLeg, type Trip } from '../model/trip'
 import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, pasteRoute, pasteStop, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop } from './dayEdit';
 import { changeSettings } from './routeEdit';
 import { pointCount, routedLegs } from './legs';
+import { encodePolyline } from './polyline';
 import { routedOf } from './testing';
 import * as routeEdit from './routeEdit';
 
@@ -73,6 +74,13 @@ describe('stops', () => {
     const trip = insertStop(fixture(), 'd', 'r', 1, [1.5, 1.5], 'x', 's3');
     expect(routedOf(day(trip).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'x', 'b', 'c']);
     expect(day(trip).stops[2]).toMatchObject({ id: 's3', pointId: 'x', lngLat: [1.5, 1.5] });
+  });
+
+  it('inserts a stop on a track as a free stop where it was asked for', () => {
+    const track = { id: 't', name: '', kind: 'track' as const, profile: 'motorcycle' as const, optional: false, line: encodePolyline([[1, 1], [2, 2]]) };
+    const trip = insertStop(addParts(fixture(), 'd', { routes: [track], stops: [] }), 'd', 't', 1, [1.5, 1.5], 'x', 's3');
+    expect(day(trip).routes[1]).toEqual(track);
+    expect(day(trip).stops[2]).toMatchObject({ id: 's3', pointId: null, lngLat: [1.5, 1.5] });
   });
 
   it('converts a point once', () => {
@@ -198,13 +206,12 @@ describe('reordering and copying', () => {
   });
 
   it('pastes a copied route with its bound stops under new ids, the stops bound to the new points', () => {
-    const copied = copiedRoute(twoDays(), 'r')!;
+    const copied = copiedRoute(day(twoDays()), day(twoDays()).routes[0]!);
     expect(copied.stops.map((s) => s.id)).toEqual(['s1']);
     const trip = pasteRoute(twoDays(), 'e', copied, ids('p'));
     const pasted = routedOf(trip.days[1]!.routes[0]!);
     expect([pasted.id, pasted.points.map((p) => p.id), pasted.legs]).toEqual(['p1', ['p2', 'p3', 'p4'], routedOf(day(trip).routes[0]!).legs]);
     expect(trip.days[1]!.stops.map((s) => [s.id, s.name, s.pointId])).toEqual([['p5', 'Stop 1', 'p3']]);
-    expect(copiedRoute(trip, 'nope')).toBeUndefined();
   });
 });
 
