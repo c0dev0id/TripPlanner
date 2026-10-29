@@ -4,9 +4,10 @@
 
 - Accounts: a waiting list on the landing page, invitations by mail from an admin page or
   the command line, sign-in, sign-out, password reset by mail.
-- A library of the user's trips in folders, one level deep: create, open, rename,
-  duplicate and delete trips, create, rename and delete folders, move a trip between
-  folders, create a trip in the open folder. Folders and trips are cards with the name
+- A library of the user's trips in folders, which may hold folders: create, open, rename,
+  duplicate and delete trips, create, rename and delete folders (what a deleted folder
+  holds moves up into its parent), move a trip between folders, create a trip or a folder
+  in the open folder; the arrow goes up one folder at a time. Folders and trips are cards with the name
   over a line of metadata; right-click or a long press on a card opens its menu. A
   search by name across trips and folders, listing at most twenty results.
 - Trips as a sequence of days; a day as one or more routes and its stops. A day is a

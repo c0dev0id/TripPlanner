@@ -131,6 +131,8 @@ export interface TripSummary {
 export interface Folder {
   id: number;
   name: string;
+  /** The folder it is in; null at the top of the library. */
+  parentId: number | null;
 }
 
 export const newId = (): string => crypto.randomUUID();

@@ -53,7 +53,7 @@ export const renameTrip = (id: number, name: string): Promise<void> => request('
 
 export const listFolders = (): Promise<Folder[]> => request('GET', '/api/folders');
 
-export const createFolder = (name: string): Promise<Folder> => request('POST', '/api/folders', { name });
+export const createFolder = (name: string, parentId: number | null): Promise<Folder> => request('POST', '/api/folders', { name, parentId });
 
 export const renameFolder = (id: number, name: string): Promise<void> => request('PATCH', `/api/folders/${id}`, { name });
 

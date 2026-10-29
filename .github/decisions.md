@@ -132,8 +132,13 @@ entries at the end of their section.
   level between a day and the trip list. The panel's arrow goes from a day to the trip,
   from the trip to the list; the list keeps its folder while a trip is open, so leaving
   the trip returns to the folder it was opened from rather than to the top.
-- **Folders are one level deep.** A trip is in one folder or in none. Trips sort by year
-  or region in practice; nesting would add paths and moves for a handful of trips.
+- **Folders hold folders.** A trip is in one folder or in none, and a folder is at the
+  top or inside another. A first version kept folders one level deep, since trips sort by
+  year or region; the import of a folder tree from disk made the library mirror deeper
+  trees. The library shows one folder at a time, its arrow goes up one level, and search
+  results and the move menu name a folder by its path. Deleting a folder moves what it
+  holds up into its parent rather than out of every folder. Folders themselves are not
+  moved; nothing asked for it, and a folder that cannot move cannot end up inside itself.
 - **The search runs in the browser.** The library loads all trip summaries and folders of
   the user (a few hundred small rows at most for a personal planner) and filters them by
   name; the results are capped at twenty. A server search would add an endpoint for

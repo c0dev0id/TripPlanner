@@ -2,6 +2,7 @@ import { createMemo, createResource, createSignal, For, Match, Show, Switch } fr
 import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder, renameTrip } from '../api';
 import type { Folder, TripSummary } from '../model/trip';
 import { listFolderId, setListFolderId } from '../state/library';
+import { counted, folderPath } from './folders';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { dateText } from '../ui/format';
@@ -15,7 +16,7 @@ const SEARCH_LIMIT = 20;
 /** The dialog the library has open: naming a new trip or folder, or a new name for one. */
 type LibraryDialog = { kind: 'new-trip' } | { kind: 'new-folder' } | { kind: 'rename-folder'; folder: Folder } | { kind: 'rename-trip'; trip: TripSummary };
 
-/** The user's trips in their folders, one level deep: open one, start one, move, delete; a search across all folders. */
+/** The user's trips in folders, which may hold folders: open one, start one, move, delete; a search across all folders. */
 export function Library(props: { onOpen: (id: number) => void; opening: boolean; error: string | undefined }) {
   const [trips, { refetch: refetchTrips }] = createResource(listTrips);
   const [folders, { refetch: refetchFolders }] = createResource(listFolders);
@@ -26,15 +27,22 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
 
   /** The open folder; none at the top, where the folders and the trips in no folder are. */
   const folder = () => folders()?.find((f) => f.id === listFolderId());
-  const folderId = () => folder()?.id;
-  const shownTrips = createMemo(() => (trips() ?? []).filter((t) => t.folderId === (folderId() ?? null)));
-  const tripCounts = createMemo(() => {
-    const counts = new Map<number | null, number>();
-    for (const trip of trips() ?? []) counts.set(trip.folderId, (counts.get(trip.folderId) ?? 0) + 1);
+  const folderId = () => folder()?.id ?? null;
+  const shownFolders = createMemo(() => (folders() ?? []).filter((f) => f.parentId === folderId()));
+  const shownTrips = createMemo(() => (trips() ?? []).filter((t) => t.folderId === folderId()));
+  /** How many trips and folders each folder holds itself. */
+  const held = createMemo(() => {
+    const counts = new Map<number | null, { trips: number; folders: number }>();
+    const of = (id: number | null) => counts.get(id) ?? counts.set(id, { trips: 0, folders: 0 }).get(id)!;
+    for (const trip of trips() ?? []) of(trip.folderId).trips++;
+    for (const f of folders() ?? []) of(f.parentId).folders++;
     return counts;
   });
-  const tripCount = (id: number) => tripCounts().get(id) ?? 0;
-  const tripCountText = (id: number) => (tripCount(id) === 1 ? '1 trip' : `${tripCount(id)} trips`);
+  const heldText = (id: number) => {
+    const { trips, folders } = held().get(id) ?? { trips: 0, folders: 0 };
+    return [folders > 0 && counted(folders, 'folder'), counted(trips, 'trip')].filter(Boolean).join(' · ');
+  };
+  const pathOf = (id: number | null) => folderPath(folders() ?? [], id);
 
   /** Runs a request; its error is shown, and `then` runs after success. */
   const run = async (work: () => Promise<unknown>, then?: () => void) => {
@@ -52,13 +60,18 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
     await run(() => deleteTrip(trip.id), refetchTrips);
   };
   const removeFolder = async (f: Folder) => {
-    const count = tripCount(f.id);
-    const trips = count === 0 ? '' : count === 1 ? ' Its trip stays, in no folder.' : ` Its ${count} trips stay, in no folder.`;
-    if (!(await askConfirmation(`Delete the folder “${f.name}”?${trips}`, 'Delete'))) return;
+    const { trips, folders } = held().get(f.id) ?? { trips: 0, folders: 0 };
+    const what = [folders > 0 && counted(folders, 'folder'), trips > 0 && counted(trips, 'trip')].filter(Boolean).join(' and ');
+    const where = f.parentId === null ? 'to the top' : `into “${pathOf(f.parentId)}”`;
+    if (!(await askConfirmation(`Delete the folder “${f.name}”?${what ? ` What it holds (${what}) moves ${where}.` : ''}`, 'Delete'))) return;
     await run(() => deleteFolder(f.id), () => {
       void refetchFolders();
       void refetchTrips();
     });
+  };
+  const emptyText = () => {
+    if (folder()) return shownFolders().length > 0 ? 'No trips in this folder.' : 'Nothing in this folder yet.';
+    return (folders() ?? []).length > 0 ? 'No trips outside the folders.' : 'No trips yet. Start one with New trip…';
   };
   const openFolder = (id: number | undefined) => {
     setListFolderId(id);
@@ -78,7 +91,10 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
   ];
   const tripItems = (trip: TripSummary): MenuItem[] => [
     { label: 'Rename…', run: () => setDialog({ kind: 'rename-trip', trip }) },
-    ...(folders() ?? []).filter((f) => f.id !== trip.folderId).map((f) => ({ label: `Move to ${f.name}`, run: () => void run(() => moveTrip(trip.id, f.id), refetchTrips) })),
+    ...(folders() ?? [])
+      .filter((f) => f.id !== trip.folderId)
+      .map((f) => ({ label: `Move to ${pathOf(f.id)}`, run: () => void run(() => moveTrip(trip.id, f.id), refetchTrips) }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
     ...(trip.folderId === null ? [] : [{ label: 'Move out of the folder', run: () => void run(() => moveTrip(trip.id, null), refetchTrips) }]),
     { label: 'Duplicate', run: () => void run(() => duplicateTrip(trip.id), refetchTrips) },
     { label: 'Delete', run: () => void removeTrip(trip) },
@@ -87,16 +103,19 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
   return (
     <section class="library">
       <Show when={folder()} fallback={<h2>Trips</h2>}>
-        {(f) => (
-          <div class="row">
-            <button class="icon" title="Back to all trips" aria-label="Back to all trips" onClick={() => openFolder(undefined)}>
-              <BackIcon />
-            </button>
-            <h2 class="grow name" title={f().name}>
-              {f().name}
-            </h2>
-          </div>
-        )}
+        {(f) => {
+          const back = () => (f().parentId === null ? 'Back to all trips' : `Back to ${pathOf(f().parentId)}`);
+          return (
+            <div class="row">
+              <button class="icon" title={back()} aria-label={back()} onClick={() => openFolder(f().parentId ?? undefined)}>
+                <BackIcon />
+              </button>
+              <h2 class="grow name" title={pathOf(f().id)}>
+                {f().name}
+              </h2>
+            </div>
+          );
+        }}
       </Show>
       <input class="search" type="search" placeholder="Search trips and folders" aria-label="Search trips and folders" value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
       <Show when={busy() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
@@ -112,16 +131,12 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
                 <button class="primary" disabled={props.opening} onClick={() => setDialog({ kind: 'new-trip' })}>
                   New trip…
                 </button>
-                <Show when={!folder()}>
-                  <button onClick={() => setDialog({ kind: 'new-folder' })}>New folder…</button>
-                </Show>
+                <button onClick={() => setDialog({ kind: 'new-folder' })}>New folder…</button>
               </div>
-              <Show when={!folder()}>
-                <ul class="folders">
-                  <For each={folders()}>{(f) => <FolderCard folder={f} note={tripCountText(f.id)} onOpen={openFolder} items={() => folderItems(f)} />}</For>
-                </ul>
-              </Show>
-              <Show when={shownTrips().length > 0} fallback={<p class="muted">{folder() ? 'No trips in this folder yet.' : folders()!.length > 0 ? 'No trips outside the folders.' : 'No trips yet. Start one with New trip…'}</p>}>
+              <ul class="folders">
+                <For each={shownFolders()}>{(f) => <FolderCard folder={f} note={heldText(f.id)} onOpen={openFolder} items={() => folderItems(f)} />}</For>
+              </ul>
+              <Show when={shownTrips().length > 0} fallback={<p class="muted">{emptyText()}</p>}>
                 <ul class="trips">
                   <For each={shownTrips()}>{(trip) => <TripCard trip={trip} onOpen={props.onOpen} disabled={props.opening} items={() => tripItems(trip)} />}</For>
                 </ul>
@@ -129,7 +144,20 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
             </>
           }
         >
-          {(q) => <SearchResults query={q()} folders={folders()!} trips={trips()!} onOpenFolder={openFolder} onOpenTrip={props.onOpen} disabled={props.opening} folderNote={tripCountText} folderItems={folderItems} tripItems={tripItems} />}
+          {(q) => (
+            <SearchResults
+              query={q()}
+              folders={folders()!}
+              trips={trips()!}
+              onOpenFolder={openFolder}
+              onOpenTrip={props.onOpen}
+              disabled={props.opening}
+              folderNote={(f) => [pathOf(f.parentId), heldText(f.id)].filter(Boolean).join(' · ')}
+              tripWhere={(trip) => pathOf(trip.folderId) || 'No folder'}
+              folderItems={folderItems}
+              tripItems={tripItems}
+            />
+          )}
         </Show>
         </Match>
       </Switch>
@@ -139,7 +167,7 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
         placeholder="Name of the trip"
         submit="Start"
         onClose={closeDialog}
-        onSubmit={(name) => void run(async () => props.onOpen((await createTrip(name, folderId() ?? null)).id))}
+        onSubmit={(name) => void run(async () => props.onOpen((await createTrip(name, folderId())).id))}
       />
       <NameDialog
         title="New folder"
@@ -147,7 +175,7 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
         placeholder="Name of the folder"
         submit="Create"
         onClose={closeDialog}
-        onSubmit={(name) => void run(() => createFolder(name), () => void refetchFolders())}
+        onSubmit={(name) => void run(() => createFolder(name, folderId()), () => void refetchFolders())}
       />
       <NameDialog
         title="Rename folder"
@@ -217,7 +245,10 @@ function SearchResults(props: {
   onOpenFolder: (id: number) => void;
   onOpenTrip: (id: number) => void;
   disabled: boolean;
-  folderNote: (id: number) => string;
+  /** What a found folder's card says: where it is and what it holds. */
+  folderNote: (f: Folder) => string;
+  /** Where a found trip is. */
+  tripWhere: (trip: TripSummary) => string;
   folderItems: (f: Folder) => MenuItem[];
   tripItems: (trip: TripSummary) => MenuItem[];
 }) {
@@ -225,15 +256,14 @@ function SearchResults(props: {
   const found = createMemo(() => ({ folders: props.folders.filter((f) => matches(f.name)), trips: props.trips.filter((t) => matches(t.name)) }));
   const total = () => found().folders.length + found().trips.length;
   const listedTrips = () => found().trips.slice(0, Math.max(0, SEARCH_LIMIT - found().folders.length));
-  const folderName = (id: number | null) => props.folders.find((f) => f.id === id)?.name;
   return (
     <Show when={total() > 0} fallback={<p class="muted">Nothing found.</p>}>
       <ul class="results">
         <For each={found().folders.slice(0, SEARCH_LIMIT)}>
-          {(f) => <FolderCard folder={f} note={props.folderNote(f.id)} onOpen={props.onOpenFolder} items={() => props.folderItems(f)} />}
+          {(f) => <FolderCard folder={f} note={props.folderNote(f)} onOpen={props.onOpenFolder} items={() => props.folderItems(f)} />}
         </For>
         <For each={listedTrips()}>
-          {(trip) => <TripCard trip={trip} onOpen={props.onOpenTrip} disabled={props.disabled} items={() => props.tripItems(trip)} where={folderName(trip.folderId) ?? 'No folder'} />}
+          {(trip) => <TripCard trip={trip} onOpen={props.onOpenTrip} disabled={props.disabled} items={() => props.tripItems(trip)} where={props.tripWhere(trip)} />}
         </For>
       </ul>
       <Show when={total() > SEARCH_LIMIT}>
