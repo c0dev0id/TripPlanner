@@ -17,10 +17,12 @@
   free stop.
 - Routes as geometry: points in order with routed legs between them, one profile (road,
   bike, foot) per route. A click on a route's row selects it and shows the tools over
-  the map. The hand, the default, moves the map and drags points and stops without
-  adding anything; with the point tool a tap adds a point at the route's end or, on the
-  line, inserts one there; points are dragged and deleted; the leg to any point can be
-  straight. The space bar holds the hand while another tool is picked. Routed along the roads by Valhalla's motorcycle, bicycle or pedestrian
+  the map. The hand, the default, moves the map and opens a stop's details, and neither
+  adds nor moves anything; with the point tool a tap adds a point at the route's end or,
+  on the line, inserts one there; with any tool but the hand points and stops are
+  dragged; points are deleted; the leg to any point can be straight. The space bar
+  holds the hand while another tool is picked. Routed along the roads by Valhalla's
+  motorcycle, bicycle or pedestrian
   costing, with a motorway dial per road route (avoid, allow, prefer), undo and redo, and
   a reroute of the route. Legs not routed yet are dashed, failed ones red with a retry.
 - Stops bound to a route point (a waypoint and a route point at once, dragged together)

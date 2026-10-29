@@ -1,10 +1,10 @@
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, For, onCleanup, Show } from 'solid-js';
-import { straightLegItem, tapAction } from '../state/drawing';
+import { dragsMarkers, straightLegItem, tapAction } from '../state/drawing';
 import { convertPoint, editingRoute, movePoint, removePoint, routeById, selectedDay } from '../state/trip';
 import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
 
-/** Draggable markers for the points of the route being edited, except those a stop stands on. */
+/** Markers for the points of the route being edited, except those a stop stands on; draggable with every tool but the hand. */
 export function PointMarkers(props: { map: MapLibreMap }) {
   const plain = createMemo(() => {
     const route = editingRoute();
@@ -25,6 +25,7 @@ function PointMarker(props: { map: MapLibreMap; routeId: string; pointId: string
   const content = (<div class="point" classList={{ straight: point()?.straight === true }} />) as HTMLElement;
   const handle = new MarkerHandle(map, content, 'point-marker');
   createEffect(() => handle.setPosition(point()?.lngLat));
+  createEffect(() => handle.setDraggable(dragsMarkers()));
   handle.marker.on('dragend', () => movePoint(routeId, pointId, toLngLat(handle.marker.getLngLat())));
   handle.root.addEventListener('click', () => {
     if (tapAction() === 'delete') removePoint(routeId, pointId);

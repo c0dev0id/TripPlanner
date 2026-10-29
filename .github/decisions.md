@@ -67,7 +67,8 @@ entries at the end of their section.
   the hand is picked. The routing pump serves the selected route's legs first.
 - **The hand is the default tool.** A tap on the map adds nothing until the point or the
   stop tool is picked: a click that was meant as a drag used to leave a point behind.
-  The hand still drags points and stops and opens a stop's details. While a drawing
+  The hand does not drag points and stops either, so a drag of the map that starts on a
+  marker cannot move it; it still opens a stop's details. While a drawing
   tool is picked, holding the space bar gives the hand and releasing it gives the tool
   back, the way image editors do it.
 

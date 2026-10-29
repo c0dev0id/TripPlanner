@@ -575,8 +575,14 @@ a {
   cursor: grab;
 }
 
-.map[data-tool='delete'] :is(.stop-marker, .point-marker) {
+.map[data-tool='delete'] :is(.stop-marker, .point-marker),
+.map[data-tool='hand'] .stop-marker {
   cursor: pointer;
+}
+
+/* The hand moves the map, not the points. */
+.map[data-tool='hand'] .point-marker {
+  cursor: default;
 }
 
 /* The toolbar floats over the map, above the scale bar and the attribution. */

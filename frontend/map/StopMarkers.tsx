@@ -2,7 +2,7 @@ import type { Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, For, onCleanup, Show } from 'solid-js';
 import type { Stop } from '../model/trip';
 import { pointOfDay } from '../routing/dayEdit';
-import { setEditTarget, showNeighbours, straightLegItem, tapAction } from '../state/drawing';
+import { dragsMarkers, setEditTarget, showNeighbours, straightLegItem, tapAction } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import { connectStop, disconnectStop, editingRouteId, moveStop, neighbourDays, openTrip, removeStop, selectedDay } from '../state/trip';
 import { stopContent } from './markerContent';
@@ -10,7 +10,7 @@ import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
 
 /**
  * The stops of the selected day, drawn by their kind and named, draggable while a route
- * of the day is edited; the neighbouring days' stops as small grey dots, and every day's
+ * of the day is edited with a tool other than the hand; the neighbouring days' stops as small grey dots, and every day's
  * while no day is selected.
  */
 export function StopMarkers(props: { map: MapLibreMap }) {
@@ -33,7 +33,10 @@ function StopMarker(props: { map: MapLibreMap; stop: Stop }) {
 
   const handle = new MarkerHandle(map, stopContent(stop), 'stop-marker', 'bottom');
   createEffect(() => handle.setPosition(stop.lngLat));
-  createEffect(() => handle.setInteractive(editing()));
+  createEffect(() => {
+    handle.setInteractive(editing());
+    handle.setDraggable(editing() && dragsMarkers());
+  });
   handle.marker.on('dragend', () => moveStop(stop.id, toLngLat(handle.marker.getLngLat())));
   handle.root.addEventListener('click', () => {
     if (tapAction() === 'delete') removeStop(stop.id);
@@ -64,6 +67,7 @@ function DimStopMarker(props: { map: MapLibreMap; stop: Stop }) {
   const content = (<div class="stop-dot" />) as HTMLElement;
   const handle = new MarkerHandle(props.map, content, 'stop-marker');
   handle.setInteractive(false);
+  handle.setDraggable(false);
   createEffect(() => handle.setPosition(props.stop.lngLat));
   onCleanup(() => handle.remove());
   return null;

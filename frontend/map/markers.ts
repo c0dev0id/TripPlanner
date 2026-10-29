@@ -54,11 +54,14 @@ export class MarkerHandle {
     }
   }
 
-  /** Whether the marker can be dragged and takes clicks; otherwise clicks go through to the map. */
+  /** Whether the marker takes clicks and its menu; otherwise clicks go through to the map. */
   setInteractive(interactive: boolean): void {
-    this.marker.setDraggable(interactive);
     // Inline, since MapLibre sets pointer-events on a marker after dragging it.
     this.root.style.pointerEvents = interactive ? 'auto' : 'none';
+  }
+
+  setDraggable(draggable: boolean): void {
+    this.marker.setDraggable(draggable);
   }
 
   remove(): void {

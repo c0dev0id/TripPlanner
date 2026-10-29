@@ -11,9 +11,9 @@ export type Tool = 'hand' | 'point' | 'stop' | 'delete';
 
 /** Each tool's caption and what it does, for the toolbar and the hint bar. */
 export const TOOLS: Record<Tool, { label: string; hint: string }> = {
-  hand: { label: 'Hand', hint: 'drag the map; drag points and stops to move them; tap a stop for its details. Hold Space for the hand with another tool.' },
+  hand: { label: 'Hand', hint: 'drag the map; tap a stop for its details; points and stops stay where they are. Hold Space for the hand with another tool.' },
   point: { label: 'Point', hint: 'tap the map to add a point at the end of the route, or tap the route to insert one there; drag points and stops to move them.' },
-  stop: { label: 'Stop', hint: 'tap a route point or the route to make a stop there; tap elsewhere for a stop beside the route.' },
+  stop: { label: 'Stop', hint: 'tap a route point or the route to make a stop there; tap elsewhere for a stop beside the route; drag points and stops to move them.' },
   delete: { label: 'Delete', hint: 'tap a point or a stop to delete it.' },
 };
 
@@ -39,6 +39,9 @@ export const [panTarget, setPanTarget] = createSignal<{ lngLat: LngLat }>();
 export function panTo(lngLat: LngLat): void {
   setPanTarget({ lngLat });
 }
+
+/** Whether the selected route's points and stops can be dragged: with every tool but the hand. */
+export const dragsMarkers = (): boolean => tool() !== 'hand';
 
 /** What the next tap on the map does: the tool's work on the selected route; nothing while no route is selected. */
 export function tapAction(): Tool | undefined {
