@@ -112,6 +112,28 @@ export async function saveTrip(trip: Trip, keepalive = false): Promise<number> {
 
 export const deleteTrip = (id: number): Promise<void> => request('DELETE', `/api/trips/${id}`);
 
+/** A route of the library as the duplicates report names it: where it is, and what it is. */
+export interface DuplicateRoute {
+  tripId: number;
+  tripName: string;
+  tripKind: TripKind;
+  dayId: string;
+  dayIndex: number;
+  dayName: string;
+  date: string | null;
+  routeId: string;
+  routeName: string;
+  distanceM: number;
+}
+
+/** Routes kept more than once: exact copies, or the same ride kept from two sources on one day. */
+export interface DuplicateGroup {
+  kind: 'copies' | 'same ride';
+  routes: DuplicateRoute[];
+}
+
+export const listDuplicates = (): Promise<DuplicateGroup[]> => request('GET', '/api/duplicates');
+
 /** How a trip is written as GPX; the server's ExportOptions, with the packaging. */
 export interface ExportOptions {
   /** One file for the whole scope, or one file per day in a zip. */

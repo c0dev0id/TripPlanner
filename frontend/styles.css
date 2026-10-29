@@ -222,6 +222,8 @@ a {
 .trips,
 .folders,
 .results,
+.duplicates,
+.duplicates ul,
 .days,
 .routes,
 .stops {
@@ -267,8 +269,18 @@ a {
 
 .trips .name,
 .folders .name,
-.results .name {
+.results .name,
+.duplicates .name {
   display: block;
+}
+
+.duplicates .card button.text {
+  width: 100%;
+}
+
+/* A file name kept as a day's name has no spaces to wrap at. */
+.duplicates .detail {
+  overflow-wrap: anywhere;
 }
 
 .library .new {

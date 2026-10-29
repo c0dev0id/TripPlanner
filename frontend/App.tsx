@@ -8,7 +8,7 @@ import { HintBar } from './map/HintBar';
 import { MapView } from './map/MapView';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState } from './state/autosave';
-import { closeTrip, loadTrip, openTrip } from './state/trip';
+import { closeTrip, loadTrip, openTrip, selectDay } from './state/trip';
 import { CollectionPanel } from './trip/CollectionPanel';
 import { DayDialog } from './trip/DayDialog';
 import { ExportDialog } from './trip/ExportDialog';
@@ -27,11 +27,13 @@ export function App() {
   const [opening, setOpening] = createSignal(false);
   const [error, setError] = createSignal<string>();
 
-  const open = async (id: number) => {
+  /** Opens a trip, at the day `dayId` where one is given. */
+  const open = async (id: number, dayId?: string) => {
     setOpening(true);
     setError(undefined);
     try {
       loadTrip(await fetchTrip(id));
+      if (dayId) selectDay(dayId);
       resetSaveState();
     } catch (e) {
       setError(errorMessage(e));
@@ -58,7 +60,7 @@ export function App() {
             Sign out
           </button>
         </header>
-        <Show when={openTrip()} fallback={<Library onOpen={(id) => void open(id)} opening={opening()} error={error()} />}>
+        <Show when={openTrip()} fallback={<Library onOpen={(id, dayId) => void open(id, dayId)} opening={opening()} error={error()} />}>
           <Show when={openTrip()?.kind === 'collection'} fallback={<TripPanel onLeave={() => void leave()} onReload={() => void open(openTrip()!.id)} />}>
             <CollectionPanel onLeave={() => void leave()} onReload={() => void open(openTrip()!.id)} />
           </Show>

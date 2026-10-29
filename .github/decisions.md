@@ -169,6 +169,17 @@ entries at the end of their section.
   import dialog asks how the picked tree is organized, one way for the whole tree, and
   shows what each way makes of it; a tree organized in several ways is imported folder by
   folder.
+- **Duplicates are found on demand, on the server, by the routes' lines.** The report
+  reads every route of the library, reduces each line to its ends, length, box and
+  points spread evenly along it, and compares those. Exact copies share their points
+  (a routed route) or their line (a track). The same ride kept twice runs the same way,
+  is about as long, and lies along the other line; the date is what tells a ride kept
+  twice from the same road ridden again, so routes on different dates are never the same
+  ride, while an undated day matches any date. Comparing raw geometry alone listed a
+  daily commute as dozens of duplicates. Groups join copies and same rides, so a route
+  appears once. Over an archive of 2.8 million points the report takes about 4 s, half of
+  it decoding lines in PHP; should libraries grow far beyond that, each route's shape
+  can be kept when it is saved instead of worked out for every report.
 - **Planning material is a trip of another kind, not a store of its own.** A collection
   is a trip whose days are its sections, one per file, without dates: it is stored,
   loaded, saved, drawn and searched as a trip is, and its panel leaves out what belongs

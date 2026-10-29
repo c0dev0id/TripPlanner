@@ -77,9 +77,9 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | Method and path | Does |
 |---|---|
 | `GET /me` | The user's e-mail address and admin flag. |
-| `GET /trips` | The user's trips, last changed first, with their folder, state, day count and first dated day. |
-| `POST /trips` | Creates a trip from `{name, folderId}`; the folder may be null. |
-| `GET /trips/{id}` | The trip document: name, description, state, version, days (each with its date) with routes and stops in riding order. |
+| `GET /trips` | The user's trips and collections, last changed first, with their kind, folder, state, day count and first dated day. |
+| `POST /trips` | Creates a trip from `{name, folderId, kind}`; the folder may be null, the kind is `trip` (the default) or `collection`. |
+| `GET /trips/{id}` | The trip document: kind, name, description, state, version, days (each with its date) with routes and stops in riding order. |
 | `PUT /trips/{id}` | Replaces the trip's content with the document sent, which carries the version it was loaded at; 409 when that is no longer the current version, 422 when the document is malformed or names parts of another trip. |
 | `POST /trips/{id}/copies` | A copy of the trip with all its days under new ids, named after it, in its folder; answers the copy's id. |
 | `PATCH /trips/{id}` | Renames the trip to `{name}`, counted as a change to it; or puts it into the folder of `{folderId}`, or into none for null. |
@@ -97,6 +97,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `GET /export-presets` | The user's export presets by name. |
 | `POST /export-presets` | Keeps `{name, options}` as a preset, replacing one of that name. |
 | `DELETE /export-presets/{id}` | Deletes the preset. |
+| `GET /duplicates` | The routes the user's library keeps more than once, in groups of exact copies or of the same ride, each route with its trip, day, name and length. |
 | `GET /folders` | The user's folders by name, each with the folder it is in (`parentId`, null at the top). |
 | `POST /folders` | Creates a folder from `{name, parentId}`; the parent may be null. |
 | `PATCH /folders/{id}` | Renames the folder from `{name}`. |

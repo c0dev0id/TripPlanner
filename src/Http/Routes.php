@@ -13,6 +13,7 @@ use Planner\Journal\JournalController;
 use Planner\Pages\AppController;
 use Planner\Pages\TripViewController;
 use Planner\Share\SharedTripController;
+use Planner\Trip\DuplicatesController;
 use Planner\Trip\FolderController;
 use Planner\Trip\TripController;
 use Planner\Signup\InvitationController;
@@ -69,6 +70,7 @@ final class Routes
             $api->get('/export-presets', [ExportPresetController::class, 'index']);
             $api->post('/export-presets', [ExportPresetController::class, 'save']);
             $api->delete('/export-presets/{id:[0-9]+}', [ExportPresetController::class, 'delete']);
+            $api->get('/duplicates', [DuplicatesController::class, 'index']);
             $api->get('/folders', [FolderController::class, 'index']);
             $api->post('/folders', [FolderController::class, 'create']);
             $api->patch('/folders/{id:[0-9]+}', [FolderController::class, 'rename']);

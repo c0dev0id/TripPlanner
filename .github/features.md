@@ -84,6 +84,12 @@
   named and dated by the file, in its folder. Planning material: each folder holding GPX
   files becomes a collection with a section per file. Files that are no GPX are reported
   and left out.
+- A duplicates report in the library: the routes kept more than once across all trips
+  and collections, grouped as exact copies (the same points or the same line, whatever
+  the date) or as the same ride kept twice (the same way within a kilometre at both
+  ends, lengths within a tenth, nine in ten of each line's points within 75 m of the
+  other, on the same date or an undated day). A route in it opens its trip at its day;
+  the report is made afresh each time it is shown.
 - Collections of planning material, such as a long-distance trail by country: listed in
   the library as planning material, opened like a trip but with sections instead of
   days and no dates, times, journal, tools or export. A section lists its routes and

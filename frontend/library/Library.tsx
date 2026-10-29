@@ -1,7 +1,8 @@
 import { createMemo, createResource, createSignal, For, Match, Show, Switch } from 'solid-js';
 import { createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, moveTrip, renameFolder, renameTrip } from '../api';
 import type { Folder, TripSummary } from '../model/trip';
-import { listFolderId, setListFolderId } from '../state/library';
+import { listFolderId, setListFolderId, setShowingDuplicates, showingDuplicates } from '../state/library';
+import { DuplicatesReport } from './DuplicatesReport';
 import { folderPath, heldCounts } from './folders';
 import { importFolder, pickedPath, planFolderImport, type PlannedTrip } from './folderImport';
 import { ImportDialog } from './ImportDialog';
@@ -18,8 +19,8 @@ const SEARCH_LIMIT = 20;
 /** The dialog the library has open: naming a new trip or folder, or a new name for one. */
 type LibraryDialog = { kind: 'new-trip' } | { kind: 'new-folder' } | { kind: 'rename-folder'; folder: Folder } | { kind: 'rename-trip'; trip: TripSummary };
 
-/** The user's trips in folders, which may hold folders: open one, start one, move, delete; a search across all folders. */
-export function Library(props: { onOpen: (id: number) => void; opening: boolean; error: string | undefined }) {
+/** The user's trips in folders, which may hold folders: open one, start one, move, delete; a search across all folders; the duplicates report. */
+export function Library(props: { onOpen: (id: number, dayId?: string) => void; opening: boolean; error: string | undefined }) {
   const [trips, { refetch: refetchTrips }] = createResource(listTrips);
   const [folders, { refetch: refetchFolders }] = createResource(listFolders);
 
@@ -127,85 +128,91 @@ export function Library(props: { onOpen: (id: number) => void; opening: boolean;
 
   return (
     <section class="library">
-      <Show when={folder()} fallback={<h2>Trips</h2>}>
-        {(f) => {
-          const back = () => (f().parentId === null ? 'Back to all trips' : `Back to ${pathOf(f().parentId)}`);
-          return (
-            <div class="row">
-              <button class="icon" title={back()} aria-label={back()} onClick={() => openFolder(f().parentId ?? undefined)}>
-                <BackIcon />
-              </button>
-              <h2 class="grow name" title={pathOf(f().id)}>
-                {f().name}
-              </h2>
-            </div>
-          );
-        }}
-      </Show>
-      <input class="search" type="search" placeholder="Search trips and folders" aria-label="Search trips and folders" value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
-      <Show when={busy() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
-      {/* Reading a resource that failed throws; its error is shown instead. */}
-      <Switch fallback={<p class="muted">Loading…</p>}>
-        <Match when={trips.error ?? folders.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
-        <Match when={trips() && folders()}>
-        <Show
-          when={query().trim()}
-          fallback={
-            <>
-              <div class="row new">
-                <button class="primary" disabled={props.opening} onClick={() => setDialog({ kind: 'new-trip' })}>
-                  New trip…
+      <Show
+        when={!showingDuplicates()}
+        fallback={<DuplicatesReport onOpen={(tripId, dayId) => props.onOpen(tripId, dayId)} onClose={() => setShowingDuplicates(false)} disabled={props.opening} />}
+      >
+        <Show when={folder()} fallback={<h2>Trips</h2>}>
+          {(f) => {
+            const back = () => (f().parentId === null ? 'Back to all trips' : `Back to ${pathOf(f().parentId)}`);
+            return (
+              <div class="row">
+                <button class="icon" title={back()} aria-label={back()} onClick={() => openFolder(f().parentId ?? undefined)}>
+                  <BackIcon />
                 </button>
-                <button onClick={() => setDialog({ kind: 'new-folder' })}>New folder…</button>
-                <button disabled={importing()} onClick={() => folderInput.click()}>
-                  Import folder…
-                </button>
-                <input
-                  ref={(el) => {
-                    folderInput = el;
-                    el.webkitdirectory = true;
-                  }}
-                  type="file"
-                  hidden
-                  onChange={(e) => pick(e.currentTarget.files)}
-                />
+                <h2 class="grow name" title={pathOf(f().id)}>
+                  {f().name}
+                </h2>
               </div>
-              <Show when={importNote()}>
-                {(note) => (
-                  <>
-                    <p class="muted hint">{note().text}</p>
-                    <For each={note().errors}>{(error) => <p class="error">{error}</p>}</For>
-                  </>
-                )}
-              </Show>
-              <ul class="folders">
-                <For each={shownFolders()}>{(f) => <FolderCard folder={f} note={heldText(f.id)} onOpen={openFolder} items={() => folderItems(f)} />}</For>
-              </ul>
-              <Show when={shownTrips().length > 0} fallback={<p class="muted">{emptyText()}</p>}>
-                <ul class="trips">
-                  <For each={shownTrips()}>{(trip) => <TripCard trip={trip} onOpen={props.onOpen} disabled={props.opening} items={() => tripItems(trip)} />}</For>
-                </ul>
-              </Show>
-            </>
-          }
-        >
-          {(q) => (
-            <SearchResults
-              query={q()}
-              folders={folders()!}
-              trips={trips()!}
-              onOpenFolder={openFolder}
-              onOpenTrip={props.onOpen}
-              disabled={props.opening}
-              folderNote={(f) => [pathOf(f.parentId), heldText(f.id)].filter(Boolean).join(' · ')}
-              tripWhere={(trip) => pathOf(trip.folderId) || 'No folder'}
-              folderItems={folderItems}
-              tripItems={tripItems}
-            />
-          )}
+            );
+          }}
         </Show>
-        </Match>
-      </Switch>
+        <input class="search" type="search" placeholder="Search trips and folders" aria-label="Search trips and folders" value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
+        <Show when={busy() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
+        {/* Reading a resource that failed throws; its error is shown instead. */}
+        <Switch fallback={<p class="muted">Loading…</p>}>
+          <Match when={trips.error ?? folders.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
+          <Match when={trips() && folders()}>
+          <Show
+            when={query().trim()}
+            fallback={
+              <>
+                <div class="row new">
+                  <button class="primary" disabled={props.opening} onClick={() => setDialog({ kind: 'new-trip' })}>
+                    New trip…
+                  </button>
+                  <button onClick={() => setDialog({ kind: 'new-folder' })}>New folder…</button>
+                  <button disabled={importing()} onClick={() => folderInput.click()}>
+                    Import folder…
+                  </button>
+                  <button onClick={() => setShowingDuplicates(true)}>Duplicates…</button>
+                  <input
+                    ref={(el) => {
+                      folderInput = el;
+                      el.webkitdirectory = true;
+                    }}
+                    type="file"
+                    hidden
+                    onChange={(e) => pick(e.currentTarget.files)}
+                  />
+                </div>
+                <Show when={importNote()}>
+                  {(note) => (
+                    <>
+                      <p class="muted hint">{note().text}</p>
+                      <For each={note().errors}>{(error) => <p class="error">{error}</p>}</For>
+                    </>
+                  )}
+                </Show>
+                <ul class="folders">
+                  <For each={shownFolders()}>{(f) => <FolderCard folder={f} note={heldText(f.id)} onOpen={openFolder} items={() => folderItems(f)} />}</For>
+                </ul>
+                <Show when={shownTrips().length > 0} fallback={<p class="muted">{emptyText()}</p>}>
+                  <ul class="trips">
+                    <For each={shownTrips()}>{(trip) => <TripCard trip={trip} onOpen={props.onOpen} disabled={props.opening} items={() => tripItems(trip)} />}</For>
+                  </ul>
+                </Show>
+              </>
+            }
+          >
+            {(q) => (
+              <SearchResults
+                query={q()}
+                folders={folders()!}
+                trips={trips()!}
+                onOpenFolder={openFolder}
+                onOpenTrip={props.onOpen}
+                disabled={props.opening}
+                folderNote={(f) => [pathOf(f.parentId), heldText(f.id)].filter(Boolean).join(' · ')}
+                tripWhere={(trip) => pathOf(trip.folderId) || 'No folder'}
+                folderItems={folderItems}
+                tripItems={tripItems}
+              />
+            )}
+          </Show>
+          </Match>
+        </Switch>
+      </Show>
       <ImportDialog
         paths={picked()?.paths}
         into={folder() ? pathOf(folderId()) : ''}
