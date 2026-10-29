@@ -31,14 +31,6 @@
 }
 
 /* The neighbouring days' stops: small grey dots that let taps through. */
-.stop-marker .stop-dot {
-  width: 10px;
-  height: 10px;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  background: #868e96;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
 
 .point-marker .point {
   width: 12px;

@@ -192,6 +192,11 @@ entries at the end of their section.
 
 ## Map and appearance
 
+- **Only the selected day's stops are markers; the others are dots on the map.** A
+  marker is an element of its own that the map moves on every frame; a trip of 5,000
+  waypoints, shown whole, took four seconds longer to show its days with a marker for
+  each. The other days' stops are circles in the route lines' source instead, drawn by
+  the map like the lines and not to be tapped, as the markers were not either.
 - **Base maps from public servers, chosen per browser.** OpenFreeMap's vector styles
   (Liberty as the default, Bright, Positron, Dark) need no key; OpenTopoMap for relief
   and contours, OpenStreetMap's standard tiles and CyclOSM as raster, for the looks

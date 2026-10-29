@@ -1,4 +1,4 @@
-import type { LineString } from 'geojson';
+import type { LineString, Point } from 'geojson';
 import { describe, expect, it } from 'vitest';
 import type { Day, LngLat, Route } from '../model/trip';
 import { encodePolyline } from '../routing/polyline';
@@ -28,6 +28,16 @@ describe('routeFeatures', () => {
       [11.2, 48.1],
     ];
     expect(lines([{ id: 't', name: '', kind: 'track', profile: 'motorcycle', optional: false, line: encodePolyline(line) }])).toEqual([['track', 3]]);
+  });
+
+  it('draws the other days\' stops as grey dots, apart from the free stops\' marks', () => {
+    const day: Day = { id: 'd', name: '', date: null, notes: '', routes: [], stops: [] };
+    const points = routeFeatures([{ day, role: 'selected' }], undefined, new Set(), [[11, 48]], [[12, 48], [12.1, 48]]).features;
+    expect(points.map((f) => [f.properties, (f.geometry as Point).coordinates])).toEqual([
+      [{}, [11, 48]],
+      [{ dim: true }, [12, 48]],
+      [{ dim: true }, [12.1, 48]],
+    ]);
   });
 
   it('starts a new line where the state changes', () => {

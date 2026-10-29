@@ -57,12 +57,25 @@ const sameLines = (a: ShownDay[], b: ShownDay[]): boolean => a.length === b.leng
 
 const samePlaces = (a: readonly LngLat[], b: readonly LngLat[]): boolean => a.length === b.length && a.every((p, i) => p[0] === b[i]![0] && p[1] === b[i]![1]);
 
+/**
+ * Where the stops drawn as grey dots stand: of a trip, those of the selected day's
+ * neighbours where shown, every day's while none is selected; none of a collection, whose
+ * sections are shown one at a time.
+ */
+function dimStops(): LngLat[] {
+  const trip = openTrip();
+  if (trip?.kind !== 'trip') return [];
+  const days = selectedDay() ? (showNeighbours() ? neighbourDays() : []) : trip.days;
+  return days.flatMap((day) => day.stops.map((stop) => stop.lngLat));
+}
+
 /** Keeps the route lines on the map, shows the selected day, or the whole trip, when it changes, and goes where the panel points. */
 function RouteLines(props: { map: MapLibreMap }) {
   // The trip changes as a whole; its lines are drawn again only when the routes drawn or the marks on them change.
   const days = createMemo(shownDays, [], { equals: sameLines });
   const marks = createMemo(() => selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : [])), [], { equals: samePlaces });
-  const features = createMemo(() => routeFeatures(days(), editingRouteId(), failedLegs(), marks()));
+  const dims = createMemo(dimStops, [], { equals: samePlaces });
+  const features = createMemo(() => routeFeatures(days(), editingRouteId(), failedLegs(), marks(), dims()));
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
     on([selectedDayId, openTripId], () => {

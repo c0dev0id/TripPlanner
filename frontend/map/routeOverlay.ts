@@ -4,7 +4,7 @@ import type { Day, LngLat } from '../model/trip';
 import { legCoordinates, legState, routeLegs, type LegState } from '../routing/legs';
 import { decodeCached } from '../routing/polyline';
 
-/** The source and layers of the route lines and the free stops' marks, and their features. */
+/** The source and layers of the route lines, the free stops' marks and the other days' stops, and their features. */
 
 export const ROUTES_SOURCE = 'routes';
 
@@ -15,6 +15,7 @@ export type RouteRole = 'edited' | 'selected' | 'neighbour';
 export const BOUND_COLOR = '#d9480f';
 export const FREE_COLOR = '#1971c2';
 const NEIGHBOUR_COLOR = '#adb5bd';
+const DIM_STOP_COLOR = '#868e96';
 
 /** Legs drawn as part of the route: routed, straight by choice, or a track's line. Pending and failed legs are dashed. */
 const DRAWN: FilterSpecification = ['all', ['==', ['geometry-type'], 'LineString'], ['in', ['get', 'state'], ['literal', ['routed', 'straight', 'track']]]];
@@ -59,20 +60,35 @@ export const ROUTE_LAYERS: LayerSpecification[] = [
     },
   },
   {
+    // Drawn on the map rather than as markers, which a trip of thousands of stops made slow.
+    id: `${ROUTES_SOURCE}-dim-stops`,
+    type: 'circle',
+    source: ROUTES_SOURCE,
+    filter: ['all', ['==', ['geometry-type'], 'Point'], ['has', 'dim']],
+    paint: { 'circle-radius': 3, 'circle-color': DIM_STOP_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
+  },
+  {
     id: `${ROUTES_SOURCE}-marks`,
     type: 'circle',
     source: ROUTES_SOURCE,
-    filter: ['==', ['geometry-type'], 'Point'],
+    filter: ['all', ['==', ['geometry-type'], 'Point'], ['!', ['has', 'dim']]],
     paint: { 'circle-radius': 5, 'circle-color': FREE_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
   },
 ];
 
 /**
  * The legs of the days shown as lines with their role and routing state, consecutive legs
- * of a route in the same state as one line, and a mark at each spot given (where a free
- * stop is nearest to the route).
+ * of a route in the same state as one line, a mark at each spot given (where a free stop
+ * is nearest to the route), and a grey dot at each of `dimStops` (the stops of the days
+ * shown that are not selected).
  */
-export function routeFeatures(days: readonly { day: Day; role: RouteRole }[], editingRouteId: string | undefined, failed: ReadonlySet<string>, marks: readonly LngLat[]): FeatureCollection<Geometry> {
+export function routeFeatures(
+  days: readonly { day: Day; role: RouteRole }[],
+  editingRouteId: string | undefined,
+  failed: ReadonlySet<string>,
+  marks: readonly LngLat[],
+  dimStops: readonly LngLat[] = [],
+): FeatureCollection<Geometry> {
   const features: Feature<Geometry>[] = [];
   for (const { day, role } of days) {
     for (const route of day.routes) {
@@ -91,5 +107,6 @@ export function routeFeatures(days: readonly { day: Day; role: RouteRole }[], ed
     }
   }
   for (const lngLat of marks) features.push({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: lngLat } });
+  for (const lngLat of dimStops) features.push({ type: 'Feature', properties: { dim: true }, geometry: { type: 'Point', coordinates: lngLat } });
   return { type: 'FeatureCollection', features };
 }
