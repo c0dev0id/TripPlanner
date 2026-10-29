@@ -8,7 +8,8 @@ import { askConfirmation } from '../ui/confirm';
 import { counted, distanceText } from '../ui/format';
 import { BackIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
-import { clickSelect, menuSelection, NOTHING_SELECTED, type Selection } from '../ui/selection';
+import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection } from '../ui/selection';
+import { SelectPad } from '../ui/SelectPad';
 
 /** Where a route of the report is: its trip, and its day by number, date and name, or its section. */
 function whereText(route: DuplicateRoute): string {
@@ -39,8 +40,9 @@ async function removeRoutes(routes: readonly DuplicateRoute[]): Promise<void> {
 /**
  * The routes the library keeps more than once, made afresh each time it is shown: exact
  * copies, and the same ride kept from two sources on one day. A click selects a route,
- * with Cmd or Ctrl one more, with Shift a run of them; the menu opens one, and copies or
- * deletes the selected ones.
+ * with Cmd or Ctrl one more, with Shift a run of them; its pad adds or takes it away. On a
+ * touch screen a tap opens the route instead. The menu opens one, and copies or deletes
+ * the selected ones.
  */
 export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void; onClose: () => void; disabled: boolean }) {
   const [groups, { refetch }] = createResource(listDuplicates);
@@ -50,6 +52,10 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   /** The routes in the order shown, by key; a route in a group of each kind is shown twice but listed once. */
   const shown = createMemo(() => new Map([...of('copies'), ...of('same ride')].flatMap((g) => g.routes).map((r) => [keyOf(r), r])));
   const select = (route: DuplicateRoute, e: MouseEvent) => setSelection((s) => clickSelect(s, [...shown().keys()], keyOf(route), e));
+  const toggle = (route: DuplicateRoute) => setSelection((s) => toggled(s, keyOf(route)));
+  const open = (route: DuplicateRoute) => {
+    if (!props.disabled) props.onOpen(route.tripId, route.dayId);
+  };
   /** Runs a job that reads and writes trips, saying what it is doing and then what it did or why it failed. */
   const work = async (doing: string, job: () => Promise<string>) => {
     setNote({ text: doing, error: false });
@@ -84,12 +90,12 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
     const one = chosen.length === 1 ? chosen[0] : undefined;
     const many = one ? '' : ` ${chosen.length} routes`;
     return [
-      ...(one ? [{ label: 'Open', disabled: props.disabled, run: () => props.onOpen(one.tripId, one.dayId) }] : []),
+      ...(one ? [{ label: 'Open', disabled: props.disabled, run: () => open(one) }] : []),
       { label: `Copy${many}`, run: () => void copy(chosen) },
       { label: `Delete${many}`, run: () => void remove(chosen) },
     ];
   };
-  const rows = { selected: (route: DuplicateRoute) => selection().keys.has(keyOf(route)), onClick: select, items };
+  const rows = { selected: (route: DuplicateRoute) => selection().keys.has(keyOf(route)), onClick: select, onToggle: toggle, onOpen: open, items };
   return (
     <>
       <div class="row">
@@ -104,7 +110,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
           <p class="muted">No route is kept more than once.</p>
         </Match>
         <Match when={groups()}>
-          <p class="muted hint">Click a route to select it, with Cmd or Ctrl one more, with Shift a run of them. Their menu opens, copies or deletes them.</p>
+          <p class="muted hint">Click a route or its pad to select it, with Cmd or Ctrl one more, with Shift a run of them; on a touch screen tap the pad. Their menu opens, copies or deletes them.</p>
           <Show when={note()}>{(n) => <p classList={{ error: n().error, muted: !n().error, hint: true }}>{n().text}</p>}</Show>
           <Section title={`Exact copies: ${counted(of('copies').length, 'group')}`} groups={of('copies')} {...rows} />
           <Section title={`The same ride kept twice: ${counted(of('same ride').length, 'group')}`} groups={of('same ride')} {...rows} />
@@ -120,6 +126,8 @@ function Section(props: {
   groups: DuplicateGroup[];
   selected: (route: DuplicateRoute) => boolean;
   onClick: (route: DuplicateRoute, e: MouseEvent) => void;
+  onToggle: (route: DuplicateRoute) => void;
+  onOpen: (route: DuplicateRoute) => void;
   items: (route: DuplicateRoute) => MenuItem[];
 }) {
   return (
@@ -131,18 +139,29 @@ function Section(props: {
             <li class="card">
               <ul>
                 <For each={group.routes}>
-                  {(route) => (
-                    <li classList={{ selected: props.selected(route) }} ref={(el) => cardMenu(el, () => props.items(route))}>
-                      <button class="text" aria-pressed={props.selected(route)} onClick={(e) => props.onClick(route, e)}>
-                        <span class="lines">
-                          <span class="name">
-                            {nameOf(route)} · {distanceText(route.distanceM)}
-                          </span>
-                          <span class="muted detail">{whereText(route)}</span>
-                        </span>
-                      </button>
-                    </li>
-                  )}
+                  {(route) => {
+                    /** What pressed the row last: a mouse click selects, a tap opens. */
+                    let pointer = 'mouse';
+                    return (
+                      <li classList={{ selected: props.selected(route) }} ref={(el) => cardMenu(el, () => props.items(route))}>
+                        <div class="row">
+                          <SelectPad selected={props.selected(route)} label={`Select ${nameOf(route)}`} onToggle={() => props.onToggle(route)} />
+                          <button
+                            class="text grow"
+                            onPointerDown={(e) => (pointer = e.pointerType)}
+                            onClick={(e) => (pointer === 'mouse' ? props.onClick(route, e) : props.onOpen(route))}
+                          >
+                            <span class="lines">
+                              <span class="name">
+                                {nameOf(route)} · {distanceText(route.distanceM)}
+                              </span>
+                              <span class="muted detail">{whereText(route)}</span>
+                            </span>
+                          </button>
+                        </div>
+                      </li>
+                    );
+                  }}
                 </For>
               </ul>
             </li>

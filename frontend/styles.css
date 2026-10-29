@@ -164,6 +164,16 @@ a {
   touch-action: none;
 }
 
+/* The pad a trip or a duplicate is selected by, where a day or a route has its grip. */
+.panel button.icon.select-pad {
+  padding: 2px 0;
+  color: var(--muted);
+}
+
+.panel button.icon.select-pad[aria-pressed='true'] {
+  color: var(--accent);
+}
+
 /* The row being dragged rises above the others, which make room for it. */
 .days > li,
 .routes > li {
@@ -278,8 +288,9 @@ a {
   width: 100%;
 }
 
-.duplicates li.selected > button.text {
+.duplicates li.selected > .row {
   background: var(--active);
+  border-radius: 7px;
 }
 
 /* A file name kept as a day's name has no spaces to wrap at. */

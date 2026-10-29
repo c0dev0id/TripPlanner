@@ -10,9 +10,10 @@
   in the open folder; the arrow goes up one folder at a time. Folders and trips are cards with the name
   over a line of metadata; right-click or a long press on a card opens its menu. A
   search by name across trips and folders, listing at most twenty results.
-- Merging trips: Cmd or Ctrl with a click selects trips of the open folder, Shift with a
-  click a run of them (a plain click still opens a trip); the menu of the selection merges
-  them into the one selected first. A day joins that trip's day of the same date or goes
+- Merging trips: a tap or click on a trip's round pad, or Cmd or Ctrl with a click,
+  selects trips of the open folder, Shift with a click a run of them (a plain click or tap
+  elsewhere still opens a trip); the menu of the selection merges them into the one
+  selected first. A day joins that trip's day of the same date or goes
   in among its days by date, an undated day at the end; a collection's sections go at its
   end. The journal moves along, and the merged trips are deleted. Trips and collections
   are not merged with each other.
@@ -98,8 +99,9 @@
   the date) or as the same ride kept twice (the same way within a kilometre at both
   ends, lengths within a tenth, nine in ten of each line's points within 75 m of the
   other, on the same date or an undated day). A click selects a route, Cmd or Ctrl one more,
-  Shift a run of them; the menu opens a single route at its day, and copies or deletes
-  the selected ones. The report is made afresh each time it is shown and after a delete.
+  Shift a run of them; a route's round pad adds it or takes it away. On a touch screen a
+  tap on the pad selects and a tap on the route opens it. The menu (right-click or long
+  press) opens a single route at its day, and copies or deletes the selected ones. The report is made afresh each time it is shown and after a delete.
 - Collections of planning material, such as a long-distance trail by country: listed in
   the library as planning material, opened like a trip but with sections instead of
   days and no dates, times, journal, tools or export. A section lists its routes and

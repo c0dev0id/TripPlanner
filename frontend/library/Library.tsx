@@ -14,7 +14,8 @@ import { counted, dateText } from '../ui/format';
 import { BackIcon, FolderIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
-import { clickSelect, menuSelection, NOTHING_SELECTED, type Selection } from '../ui/selection';
+import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection } from '../ui/selection';
+import { SelectPad } from '../ui/SelectPad';
 
 /** At most this many search results are listed. */
 const SEARCH_LIMIT = 20;
@@ -241,8 +242,11 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
                           onOpen={props.onOpen}
                           disabled={props.opening}
                           items={() => tripItems(trip)}
-                          selected={selectedTrips().keys.has(trip.id)}
-                          onSelect={(e) => selectTrip(trip, e)}
+                          select={{
+                            selected: selectedTrips().keys.has(trip.id),
+                            onToggle: () => setSelectedTrips((s) => toggled(s, trip.id)),
+                            onClick: (e) => selectTrip(trip, e),
+                          }}
                         />
                       )}
                     </For>
@@ -320,8 +324,8 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
 /**
  * A trip as a card: its name over its days, its start and whether it was ridden, or for a
  * collection its sections, after the folder it is in where `where` names it; its menu
- * renames, moves, copies and deletes it. A click opens it; with Cmd, Ctrl or Shift held it
- * goes to `onSelect` instead, where there is one.
+ * renames, moves, copies and deletes it. A click opens it. Where it can be selected, its
+ * pad selects it, and a click with Cmd, Ctrl or Shift held goes to `select.onClick`.
  */
 function TripCard(props: {
   trip: TripSummary;
@@ -329,8 +333,7 @@ function TripCard(props: {
   disabled: boolean;
   items: () => MenuItem[];
   where?: string;
-  selected?: boolean;
-  onSelect?: (e: MouseEvent) => void;
+  select?: { selected: boolean; onToggle: () => void; onClick: (e: MouseEvent) => void };
 }) {
   const meta = () =>
     (props.trip.kind === 'collection'
@@ -340,17 +343,20 @@ function TripCard(props: {
       .filter(Boolean)
       .join(' · ');
   return (
-    <li class="card" classList={{ selected: props.selected }} ref={(el) => cardMenu(el, props.items)}>
-      <button
-        class="text"
-        onClick={(e) => (props.onSelect && (e.metaKey || e.ctrlKey || e.shiftKey) ? props.onSelect(e) : props.onOpen(props.trip.id))}
-        disabled={props.disabled}
-      >
-        <span class="lines">
-          <span class="name">{props.trip.name}</span>
-          <span class="muted detail">{meta()}</span>
-        </span>
-      </button>
+    <li class="card" classList={{ selected: props.select?.selected }} ref={(el) => cardMenu(el, props.items)}>
+      <div class="row">
+        <Show when={props.select}>{(select) => <SelectPad selected={select().selected} label={`Select ${props.trip.name}`} onToggle={select().onToggle} />}</Show>
+        <button
+          class="text grow"
+          onClick={(e) => (props.select && (e.metaKey || e.ctrlKey || e.shiftKey) ? props.select.onClick(e) : props.onOpen(props.trip.id))}
+          disabled={props.disabled}
+        >
+          <span class="lines">
+            <span class="name">{props.trip.name}</span>
+            <span class="muted detail">{meta()}</span>
+          </span>
+        </button>
+      </div>
     </li>
   );
 }

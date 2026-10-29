@@ -80,7 +80,7 @@ share work; sharing between users is on the way.
 | Right-click or long press on a stop or point on the map | Make a stop, connect, disconnect, straight leg, remove |
 | Right-click or long press on the map | Add a point or a free stop here, or a journal entry |
 | Right-click or long press on a folder, trip, day, route or stop in the panel | Its menu: rename or edit, move, copy or paste, duplicate, delete |
-| Cmd/Ctrl-click, Shift-click on trips in a folder | Select several; their menu merges them into the first selected |
+| Tap or click the round pad of a trip or a duplicate; Cmd/Ctrl-click, Shift-click | Select several; their menu merges trips into the first selected, or copies or deletes duplicates |
 | Enter in the search box | Find a place; Esc closes the list |
 | Drag the panel's edge | Set the panel's width; double-click for the default |
 | Drag a day's or a route's grip | Put it in another place; the arrow keys on the grip move it one place |
