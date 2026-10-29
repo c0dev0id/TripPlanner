@@ -14,6 +14,11 @@
   20 MB or so from all three, although a photo arrives as a JPEG of at most 2560 px made
   in the browser (see the frontend). JPEG, PNG and WebP get a preview; a JPEG its EXIF
   placement.
+- A save sends the whole trip as one JSON body, so the same request body limits bound a
+  trip's size, and PHP's `memory_limit` must hold about fifteen times the body while it
+  decodes and checks it: an imported trip of 240,000 track points is a 23 MB body and
+  some 300 MB; one of 1.5 million points 139 MB and 2.2 GB, with about 30 s of work per
+  save.
 - SQLite in WAL mode with foreign keys on, one database file.
 - Mail over SMTP to the local smtpd at 127.0.0.1:25; PHP's `mail()` is not used (no
   sendmail inside the chroot).
