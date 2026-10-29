@@ -1,11 +1,11 @@
 import { createMemo, For, Show } from 'solid-js';
 import { HIGHWAYS, PROFILES, takesMotorwayDial, type Highways, type Profile, type Route } from '../model/trip';
 import { editTarget, setEditTarget } from '../state/drawing';
-import { openTrip, removeRoute, routeById, updateRoute } from '../state/trip';
-import { askConfirmation } from '../ui/confirm';
+import { openTrip, routeById, updateRoute } from '../state/trip';
 import { EditDialog } from '../ui/EditDialog';
 import { field } from '../ui/form';
 import { routeLabelOf } from './labels';
+import { removeRouteAsked } from './remove';
 
 /** A route: its name, profile, motorway dial and whether it is optional; and its removal. */
 export function RouteDialog() {
@@ -23,9 +23,7 @@ export function RouteDialog() {
       optional: form.get('optional') === 'on',
     });
   const remove = async (r: Route) => {
-    if (r.points.length > 0 && !(await askConfirmation(`Remove ${label(r)} with its ${r.points.length} points?`, 'Remove'))) return;
-    removeRoute(r.id);
-    close();
+    if (await removeRouteAsked(r)) close();
   };
   return (
     <EditDialog label="Route" value={route()} title={label} onClose={close} onSubmit={save} actions={(r) => [{ label: 'Remove', run: () => void remove(r), danger: true }]}>

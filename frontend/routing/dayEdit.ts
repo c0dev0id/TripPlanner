@@ -163,9 +163,9 @@ export function removeDay(trip: Trip, dayId: string): Trip {
   return { ...trip, days: trip.days.filter((d) => d.id !== dayId) };
 }
 
-/** Swaps the day with the one before (`by` -1) or after (`by` 1); nothing at the ends. */
-export function moveDay(trip: Trip, dayId: string, by: -1 | 1): Trip {
-  const days = swapped(trip.days, dayId, by);
+/** Moves the day to place `to` among the days. */
+export function moveDay(trip: Trip, dayId: string, to: number): Trip {
+  const days = movedTo(trip.days, dayId, to);
   return days === trip.days ? trip : { ...trip, days };
 }
 
@@ -181,12 +181,12 @@ export function duplicateDay(trip: Trip, dayId: string, id: string, newId: () =>
   return { ...trip, days: trip.days.toSpliced(index + 1, 0, copy) };
 }
 
-/** Swaps the route with the one before (`by` -1) or after (`by` 1) in its day; nothing at the ends. */
-export function moveRoute(trip: Trip, routeId: string, by: -1 | 1): Trip {
+/** Moves the route to place `to` among the routes of its day. */
+export function moveRoute(trip: Trip, routeId: string, to: number): Trip {
   const day = dayOfRoute(trip, routeId);
   return day
     ? updateDay(trip, day.id, (d) => {
-        const routes = swapped(d.routes, routeId, by);
+        const routes = movedTo(d.routes, routeId, to);
         return routes === d.routes ? d : { ...d, routes };
       })
     : trip;
@@ -240,13 +240,13 @@ function dayOfRoute(trip: Trip, routeId: string): Day | undefined {
   return trip.days.find((d) => d.routes.some((r) => r.id === routeId));
 }
 
-/** The list with the item swapped with its neighbour; the same list where that is not possible. */
-function swapped<T extends { id: string }>(items: readonly T[], id: string, by: -1 | 1): T[] {
-  const index = items.findIndex((item) => item.id === id);
-  const other = index + by;
-  if (index < 0 || other < 0 || other >= items.length) return items as T[];
-  const list = [...items];
-  [list[index], list[other]] = [list[other]!, list[index]!];
+/** The list with the item at place `to`, within the list's ends; the same list where it is there already or not in it. */
+function movedTo<T extends { id: string }>(items: readonly T[], id: string, to: number): T[] {
+  const from = items.findIndex((item) => item.id === id);
+  const place = Math.max(0, Math.min(to, items.length - 1));
+  if (from < 0 || from === place) return items as T[];
+  const list = items.filter((item) => item.id !== id);
+  list.splice(place, 0, items[from]!);
   return list;
 }
 

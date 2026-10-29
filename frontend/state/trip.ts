@@ -272,8 +272,9 @@ export function addDay(): void {
   selectDay(id);
 }
 
-export function moveDay(dayId: string, by: -1 | 1): void {
-  edit((trip) => dayEdit.moveDay(trip, dayId, by), by < 0 ? 'Move day up' : 'Move day down');
+/** Moves the day to place `to` among the days. */
+export function moveDay(dayId: string, to: number): void {
+  edit((trip) => dayEdit.moveDay(trip, dayId, to), 'Move day');
 }
 
 /** Copies the day right after itself and selects the copy. */
@@ -283,8 +284,9 @@ export function duplicateDay(dayId: string): void {
   if (state.trip?.days.some((d) => d.id === id)) selectDay(id);
 }
 
-export function moveRoute(routeId: string, by: -1 | 1): void {
-  edit((trip) => dayEdit.moveRoute(trip, routeId, by), by < 0 ? 'Move route up' : 'Move route down');
+/** Moves the route to place `to` among the routes of its day. */
+export function moveRoute(routeId: string, to: number): void {
+  edit((trip) => dayEdit.moveRoute(trip, routeId, to), 'Move route');
 }
 
 export function duplicateRoute(routeId: string): void {

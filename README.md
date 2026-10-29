@@ -29,7 +29,7 @@ share work; sharing between users is on the way.
   pause: the plan shows when it gets where, and right before a stop whether the ride is
   late or early for its time.
 - **Saved as you go** — every change is saved to your account moments later.
-- **Rearranged as plans change** — days and routes move up and down or get duplicated,
+- **Rearranged as plans change** — days and routes are dragged into place or duplicated,
   a route moves to another day, a stop is copied to one, a whole trip is duplicated.
 - **A library with folders** — trips sorted into folders, and a search across them.
 - **GPX in as well as out** — a file from the device or BaseCamp drops into a day: its
@@ -74,3 +74,4 @@ share work; sharing between users is on the way.
 | Right-click or long press on the map | Add a point or a free stop here, or a journal entry |
 | Enter in the search box | Find a place; Esc closes the list |
 | Drag the panel's edge | Set the panel's width; double-click for the default |
+| Drag a day's or a route's grip | Put it in another place; the arrow keys on the grip move it one place |

@@ -88,10 +88,16 @@ entries at the end of their section.
   motorway dial. This is a balance rather than a rule: the toggles for route points and
   neighbouring days stay in the panel, since they switch what is shown and change
   nothing in the trip.
-- **Rearranging is a menu per row, not drag and drop.** Each day, route and stop has a
-  dots menu with move up, move down, duplicate, move or copy to another day, and the
-  journal; a trip in the library is duplicated from its dialog. Drag and drop needs a library or a few hundred lines, fights the map's own
-  dragging on touch screens, and the lists are short. The row menus and the map's
+- **Days and routes are dragged by a grip; the rest is a menu per row.** A day or a route
+  is dragged into another place in its list by the grip at the left of its row, or moved
+  a place with the arrow keys on it; the menus' move up and move down were dropped.
+  Stops have no grip: their order is where they stand along the route. The drag runs
+  on pointer events from the grip alone, which works with touch where the browser's
+  own drag and drop does not and leaves the rest of the row to its click; about fifty
+  lines, no library. Each row's dots menu holds edit, remove, duplicate and moving or
+  copying to another day; its journal is an icon on the row that counts the entries,
+  and the pencil stays beside it. A trip in the library is duplicated from its dialog.
+  The row menus and the map's
   context menus and the base map list are one mechanism: one open menu at a time, at a
   viewport position, closed by a press or a scroll elsewhere or by Esc, and by nothing
   else (a first draft had the map close it on its own camera moves, which took a row's

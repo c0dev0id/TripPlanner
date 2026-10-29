@@ -9,10 +9,10 @@
   folders, create a trip in the open folder. A search by name across trips and folders,
   listing at most twenty results.
 - Trips as a sequence of days; a day as one or more routes and its stops. Days and routes
-  are added in the panel and named, set up and removed in their dialogs; the trip has a
+  are added in the panel and named, set up and removed in their dialogs or menus; the trip has a
   description and a day has notes, shown under the day's row and on the read-only page.
-  A day is moved up or down and duplicated
-  (with new ids, undated); a route is moved up or down within its day, duplicated, or
+  A day is dragged into another place by its grip and duplicated (with new ids,
+  undated); a route is dragged into another place within its day, duplicated, or
   moved to another day with the stops bound to it; a stop is copied to another day as a
   free stop.
 - Routes as geometry: points in order with routed legs between them, one profile (road,
@@ -72,8 +72,8 @@
   each route is named after its day and its own name. Named presets of these options are
   kept with the account.
 
-- A journal on the trip, on a day, on a stop and on a route, opened from their rows and
-  menus: entries of a note, a file (a photo, a receipt, a document) or both, edited and
+- A journal on the trip, on a day, on a stop and on a route, opened from the icon on
+  their rows, which counts their entries: entries of a note, a file (a photo, a receipt, a document) or both, edited and
   deleted in place; rows say how many entries a part has. The trip's own journal reads
   the whole trip top down: a heading per day, under it the day's entries, then those of
   its routes and its stops in riding order, with smaller photos; an entry that stands

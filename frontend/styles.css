@@ -156,6 +156,50 @@ a {
   color: inherit;
 }
 
+/* The handle a day or a route is dragged by into another place. */
+.panel button.icon.grip {
+  padding: 2px 0;
+  color: var(--muted);
+  cursor: grab;
+  touch-action: none;
+}
+
+/* The row being dragged rises above the others, which make room for it. */
+.days > li,
+.routes > li {
+  transition: transform 0.15s;
+}
+
+.days > li.dragged,
+.routes > li.dragged {
+  position: relative;
+  z-index: 2;
+  background: var(--panel);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: none;
+}
+
+/* A part's journal: its count of entries over the icon. */
+.panel button.icon.journal {
+  position: relative;
+}
+
+.journal .badge {
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  text-align: center;
+}
+
 .panel button.link {
   border: 0;
   background: none;
@@ -271,11 +315,9 @@ a {
   min-width: 0;
 }
 
+/* Detail lines wrap rather than lose their end, where a late stop or a distance stands. */
 .route .detail {
-  overflow: hidden;
   font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .sequence-item {
@@ -296,11 +338,8 @@ a {
 }
 
 .sequence-item .detail {
-  overflow: hidden;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .sequence-item.point .text {
