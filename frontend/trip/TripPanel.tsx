@@ -43,7 +43,7 @@ import { removeDayAsked, removeRouteAsked } from './remove';
 
 /** The journal of a part as an icon, with the number of its entries where it has any. */
 function JournalButton(props: { target: EntryTarget; of: string }) {
-  const count = () => entriesOn(props.target).length;
+  const count = createMemo(() => entriesOn(props.target).length);
   const label = () => `Journal of ${props.of}${count() === 0 ? '' : `: ${count()} ${count() === 1 ? 'entry' : 'entries'}`}`;
   return (
     <button class="icon journal" title={label()} aria-label={label()} onClick={() => setJournalTarget(props.target)}>
@@ -194,7 +194,7 @@ function DayDetails(props: { day: Day }) {
           <h4 class="grow">Stops beside no route</h4>
         </div>
         <ol class="stops">
-          <For each={unplaced()}>{(entry) => <SequenceItem entry={entry} time={selectedTimeline()?.times.get(entry.id)} />}</For>
+          <SequenceItems entries={unplaced()} />
         </ol>
       </Show>
     </div>
@@ -267,7 +267,7 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
       </div>
       <Show when={editing()}>
         <ol class="stops">
-          <For each={entries()}>{(entry) => <SequenceItem entry={entry} time={selectedTimeline()?.times.get(entry.id)} />}</For>
+          <SequenceItems entries={entries()} />
         </ol>
         <Show when={props.route.points.length === 0}>
           <p class="muted hint">Pick the Point tool and tap the map to draw the route.</p>
@@ -280,12 +280,19 @@ function RouteItem(props: { route: Route; index: number; day: Day }) {
   );
 }
 
+/** Rows of sequence entries, kept by id: an edit makes new entries, and their rows are updated rather than built anew. */
+function SequenceItems(props: { entries: SequenceEntry[] }) {
+  const byId = createMemo(() => new Map(props.entries.map((e) => [e.id, e])));
+  return <For each={[...byId().keys()]}>{(id) => <SequenceItem entry={byId().get(id)!} time={selectedTimeline()?.times.get(id)} />}</For>;
+}
+
 /**
  * A stop or a plain route point with its times and distance from the day's start; a click
  * pans the map there. Before a stop whose fixed time the ride misses stands a row of its
  * own that says by how much it is late or early, and when the ride gets there.
  */
 function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined }) {
+  const stop = () => props.entry.stop;
   return (
     <>
       <Show when={props.time && offTime(props.time)}>
@@ -301,51 +308,44 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
           </li>
         )}
       </Show>
-      <SequenceRow entry={props.entry} time={props.time} />
-    </>
-  );
-}
-
-function SequenceRow(props: { entry: SequenceEntry; time: EntryTime | undefined }) {
-  const stop = () => props.entry.stop;
-  return (
-    <li class="row sequence-item" classList={{ point: !stop(), stop: stop() !== undefined }}>
-      <button class="text grow" onClick={() => panTo(props.entry.lngLat)}>
-        <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
-          {(s) => <StopShape kind={s().kind} color={s().pointId === null ? FREE_COLOR : BOUND_COLOR} height={22} />}
+      <li class="row sequence-item" classList={{ point: !stop() }}>
+        <button class="text grow" onClick={() => panTo(props.entry.lngLat)}>
+          <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
+            {(s) => <StopShape kind={s().kind} color={s().pointId === null ? FREE_COLOR : BOUND_COLOR} height={22} />}
+          </Show>
+          <span class="lines">
+            <span class="name">
+              <Show when={stop()} fallback={<span class="muted">Route point</span>}>
+                {(s) => <>{s().name}</>}
+              </Show>
+            </span>
+            <span class="muted detail">
+              <Show when={props.time}>{(time) => <>{timesText(time())} · </>}</Show>
+              {distanceText(props.entry.distanceM)}
+              <Show when={stop()?.pointId === null}> · {distanceText(props.entry.near?.distanceM ?? 0)} beside the route</Show>
+              <Show when={stop()?.optional}> · optional</Show>
+            </span>
+          </span>
+        </button>
+        <Show when={stop()}>
+          {(s) => (
+            <>
+              <JournalButton target={{ stopId: s().id }} of={s().name} />
+              <button class="icon" title="Edit stop" aria-label={`Edit ${s().name}`} onClick={() => setEditTarget({ kind: 'stop', id: s().id })}>
+                <PencilIcon />
+              </button>
+              <MoreMenu
+                label={`More for ${s().name}`}
+                items={() => [
+                  { label: 'Edit…', run: () => setEditTarget({ kind: 'stop', id: s().id }) },
+                  ...otherDayItems(selectedDayId()!, 'Copy to', (dayId) => copyStopToDay(s().id, dayId)),
+                  { label: 'Remove', run: () => removeStop(s().id) },
+                ]}
+              />
+            </>
+          )}
         </Show>
-        <span class="lines">
-          <span class="name">
-            <Show when={stop()} fallback={<span class="muted">Route point</span>}>
-              {(s) => <>{s().name}</>}
-            </Show>
-          </span>
-          <span class="muted detail">
-            <Show when={props.time}>{(time) => <>{timesText(time())} · </>}</Show>
-            {distanceText(props.entry.distanceM)}
-            <Show when={stop()?.pointId === null}> · {distanceText(props.entry.near?.distanceM ?? 0)} beside the route</Show>
-            <Show when={stop()?.optional}> · optional</Show>
-          </span>
-        </span>
-      </button>
-      <Show when={stop()}>
-        {(s) => (
-          <>
-            <JournalButton target={{ stopId: s().id }} of={s().name} />
-            <button class="icon" title="Edit stop" aria-label={`Edit ${s().name}`} onClick={() => setEditTarget({ kind: 'stop', id: s().id })}>
-              <PencilIcon />
-            </button>
-            <MoreMenu
-              label={`More for ${s().name}`}
-              items={() => [
-                { label: 'Edit…', run: () => setEditTarget({ kind: 'stop', id: s().id }) },
-                ...otherDayItems(selectedDayId()!, 'Copy to', (dayId) => copyStopToDay(s().id, dayId)),
-                { label: 'Remove', run: () => removeStop(s().id) },
-              ]}
-            />
-          </>
-        )}
-      </Show>
-    </li>
+      </li>
+    </>
   );
 }
