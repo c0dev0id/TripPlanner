@@ -45,10 +45,13 @@
 - Stops bound to a route point (a waypoint and a route point at once, dragged together)
   or free beside the route. The stop tool makes a stop of a route point, inserts one on
   the line, or places a free stop elsewhere; a free stop within 500 m of the route is
-  connected to it where it passes closest, a bound one disconnected. A stop has a kind (start, end, meeting
-  point, hotel, restaurant, café, fuel, sight, info, photo spot, break, other) drawn on the
-  map, a name, address,
-  contact, booking reference and notes in a dialog.
+  connected to it where it passes closest, a bound one disconnected. A stop has a Garmin
+  waypoint symbol, a name, address, contact, booking reference and notes in a dialog.
+  Twelve symbols are drawn as our own icons (stop, start, end, meeting point, hotel,
+  restaurant, café, fuel, sight, info, photo spot, break), each standing for one Garmin
+  symbol; any other symbol is drawn as Garmin's picture on a sign, and a stop without
+  one as a plain pin. The dialog offers our icons and, behind *More Garmin symbols…*, all
+  of Garmin's with their pictures and a search.
 - A trip opens whole: every day's routes on the map with the stops as dots, no day open;
   a click on a day opens it, and another closes it. The panel's arrow goes up one level at a time: from a day to
   the trip, from the trip to the list, in the folder the trip was opened from.
@@ -77,8 +80,7 @@
   routed, except those the file carries the way a Garmin calculated for, which keep that
   way; its tracks keep their line with every point;
   its waypoints become stops, bound to a point of a GPX route they stand on, free otherwise, with
-  their type as the kind where it is one of ours, else the kind a Garmin symbol names
-  exactly (Information, Restaurant, Gas Station), else a plain stop, and with the
+  their Garmin symbol as the file names it, and with the
   address and phone numbers Garmin's waypoint extension gives as their address and
   contact. A track's row counts its points and
   lists only its stops, which are free along its line, and the map shows no marker for
@@ -113,7 +115,7 @@
 - GPX export from a dialog: the whole trip or the selected day; one file or one file per
   day in a zip; routes as tracks with their full line, or as routes of their points for
   the device to route between; with or without the optional routes and stops; free stops
-  within a chosen distance of a route. Stops become waypoints with their kind as type;
+  within a chosen distance of a route. Stops become waypoints with their Garmin symbol;
   each route is named after its day and its own name. Named presets of these options are
   kept with the account.
 

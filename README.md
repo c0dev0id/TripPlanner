@@ -19,9 +19,9 @@ share work; sharing between users is on the way.
   for the transfer days; undo and redo.
 - **Stops bound or free** — a route point becomes a stop with one tap; a stop beside the
   route is placed freely, listed where the rider passes closest within 500 m, connected
-  to the route when wanted. Start, end, meeting point, hotel, restaurant, café, fuel, sight,
-  info, photo spot or break, each drawn as what it is, with address, contact, booking reference
-  and notes.
+  to the route when wanted. Each stop keeps its Garmin symbol: twelve are drawn as our
+  own icons, every other one as Garmin's picture. Address, contact, booking reference and
+  notes go with it.
 - **The day at a glance** — the panel lists a day's routes and its stops in riding order
   with the distance from the start; a click shows the stop on the map. The days before
   and after are drawn dimmed for orientation.

@@ -415,9 +415,23 @@ entries at the end of their section.
   bytes, as the form fields do. Names from file paths and from GPX text are composed
   (NFC): macOS writes file names decomposed, and a decomposed "ö" looks right but matches
   neither a typed one in the search nor a folder of the same name on a second import.
+- **A stop keeps the Garmin symbol; our icons only draw it.** GPX defines `sym` and `type`
+  but no names for either; Garmin's symbol names are what devices, BaseCamp and other
+  apps read in `sym`, and `type` carries nothing anyone shares (Garmin writes "user").
+  So a stop stores the symbol a file gives it, unchanged, and an export writes it back.
+  Twelve of our icons each stand for one Garmin symbol, chosen for looking like it: a
+  stop with that symbol shows our icon, and choosing our icon gives the stop that symbol.
+  One to one, so the mapping needs no direction and a Garmin user sees the same symbol
+  the planner shows as ours. An earlier design kept kinds of our own beside the symbol,
+  with mappings in two directions; it needed decisions per mapping that the one-to-one
+  table does not. Any other symbol shows Garmin's picture, so every symbol a file brings
+  can be seen and chosen, but the dialog shows our icons first and Garmin's list only on
+  request. The pictures are Garmin's artwork, fetched from GPS Visualizer's copies by
+  `make garmin-icons` on the server rather than kept in the public repository; without
+  them, a stop with such a symbol is drawn as a pin.
 - **One track or route per route, one waypoint per stop.** A GPX file holds the stops in
   scope as waypoints, bound ones at their route point and free ones at their own position
-  when within the chosen reach of a route, with the stop's kind as the waypoint type, and
+  when within the chosen reach of a route, with the stop's Garmin symbol, and
   each route named after its day and its own name: as a track with its full line, or as
   a GPX route of its points for a device that routes itself (a Garmin takes `rte` and
   calculates the way; a track is driven as drawn). A leg not routed yet is written as the

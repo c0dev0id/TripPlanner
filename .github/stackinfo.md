@@ -37,6 +37,9 @@
 - Routing by the FOSSGIS Valhalla server (valhalla1.openstreetmap.de): at most one request
   per second, attribution shown. The profiles are Valhalla's motorcycle, bicycle and
   pedestrian costings by name; the motorcycle takes the `use_highways` option.
+- Garmin's waypoint symbol pictures from GPS Visualizer's copies
+  (gpsvisualizer.com/google_maps/icons/garmin/24x24/), fetched once on the server by
+  `make garmin-icons` into public/garmin-symbols, outside git: they are Garmin's artwork.
 - Place search by Nominatim (nominatim.openstreetmap.org): at most one request per second,
   no search as you type, attribution shown.
 - Base maps: OpenFreeMap's vector styles (Liberty, Bright, Positron, Dark) without an
@@ -58,4 +61,6 @@
 - The database, the file store and the local configuration live outside the checkout.
   `make init` applies the schema (new tables only); `make recreate` drops everything and
   applies it afresh, which is how a schema change is deployed before the first release.
+- `make garmin-icons` fetches Garmin's symbol pictures into `public/garmin-symbols` once
+  (with `php-8.4`; `PHP=` names another binary); a second run fetches only what is missing.
 - Node.js 22 with npm 10 and Composer 2 on the server and for development.
