@@ -8,6 +8,7 @@ use Planner\Database;
 use Planner\Journal\FileStore;
 use Planner\Kernel;
 use Planner\Signup\Inviter;
+use Planner\Symbols\GarminPictures;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
@@ -35,8 +36,15 @@ switch ($command) {
         $granted = $container->get(Users::class)->grantAdmin(require_argument($argument));
         echo $granted ? "$argument is an admin now.\n" : "No account for $argument.\n";
         exit($granted ? 0 : 1);
+    case 'garmin:icons':
+        $result = GarminPictures::fetch($root . '/frontend/symbols/garmin-symbols.json', $root . '/public/garmin-symbols');
+        echo "Garmin symbol pictures: {$result['fetched']} fetched, {$result['kept']} already there.\n";
+        if ($result['missing'] !== []) {
+            echo count($result['missing']) . ' symbols have no picture and show as a pin: ' . implode('; ', $result['missing']) . "\n";
+        }
+        break;
     default:
-        fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | admin:grant <email>\n");
+        fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | admin:grant <email> | garmin:icons\n");
         exit(1);
 }
 

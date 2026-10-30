@@ -2,6 +2,7 @@
 
 COMPOSER ?= composer
 NPM ?= npm
+PHP ?= php-8.4
 
 # Builds the application for deployment: PHP dependencies without development packages
 # and the frontend bundle in public/build. Run after git pull on the server.
@@ -25,6 +26,10 @@ invite:
 	doas -u www php-8.4 bin/planner invite $(EMAIL)
 admin:
 	doas -u www php-8.4 bin/planner admin:grant $(EMAIL)
+# Fetches Garmin's pictures of its waypoint symbols into public/garmin-symbols, which git
+# leaves alone: they are Garmin's artwork. Pictures already there are kept.
+garmin-icons:
+	$(PHP) bin/planner garmin:icons
 
 # Runs what CI runs: syntax checks, PHP tests, type check, frontend tests and the build.
 check:
@@ -35,4 +40,4 @@ check:
 	$(NPM) test
 	$(NPM) run build
 
-.PHONY: build install init recreate invite admin check
+.PHONY: build install init recreate invite admin garmin-icons check

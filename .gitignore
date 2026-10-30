@@ -1,6 +1,7 @@
 /vendor/
 node_modules/
 /public/build/
+/public/garmin-symbols/
 /var/
 /config/local.php
 /.phpunit.cache/
