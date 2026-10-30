@@ -55,10 +55,6 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
     }
   };
   const closeDialog = () => setDialog(undefined);
-  const removeTrip = async (trip: TripSummary) => {
-    if (!(await askConfirmation(`Delete the trip “${trip.name}” with all its days?`, 'Delete'))) return;
-    await run(() => deleteTrip(trip.id), refetchTrips);
-  };
   /** Asks to delete the folder and, when it holds anything, whether that moves up or goes with it; undefined when the user cancels. */
   const askFolderDeletion = async (f: Folder): Promise<'move' | 'delete' | undefined> => {
     const contentsText = ({ folders, trips }: { folders: number; trips: number }) =>
@@ -117,20 +113,46 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
   /** The trips of the open folder selected to be merged, by id, the first selected first. */
   const [selectedTrips, setSelectedTrips] = createSignal<Selection<number>>(NOTHING_SELECTED);
   const isSelectedTrip = createSelector(() => selectedTrips().keys, (id: number, keys) => keys.has(id));
+  /** Lists the trips afresh, none selected: after trips were moved, merged or deleted. */
+  const relistTrips = () => {
+    setSelectedTrips(NOTHING_SELECTED);
+    void refetchTrips();
+  };
+  const removeTrips = async (doomed: TripSummary[]) => {
+    const question = doomed.length === 1 ? `Delete the trip “${doomed[0]!.name}” with all its days?` : `Delete ${doomed.length} trips with all their days?`;
+    if (!(await askConfirmation(question, 'Delete'))) return;
+    await run(() => Promise.all(doomed.map((t) => deleteTrip(t.id))), relistTrips);
+  };
   const merge = async (into: TripSummary, others: TripSummary[]) => {
     const what = counted(others.length, into.kind);
     const where = into.kind === 'collection' ? 'Their sections move into it' : 'Their days and journal move into it, a day onto its day of the same date where it has one';
     if (!(await askConfirmation(`Merge ${what} into “${into.name}”? ${where}, and the merged ${others.length > 1 ? 'ones are' : 'one is'} deleted.`, 'Merge'))) return;
-    await run(() => mergeTrips(into.id, others.map((t) => t.id)), () => {
-      setSelectedTrips(NOTHING_SELECTED);
-      void refetchTrips();
-    });
+    await run(() => mergeTrips(into.id, others.map((t) => t.id)), relistTrips);
   };
-  /** The menu of several selected trips: merging the others into the first selected, where they are of one kind. */
-  const mergeItems = (into: TripSummary, others: TripSummary[]): MenuItem[] =>
-    others.every((t) => t.kind === into.kind)
-      ? [{ label: `Merge into “${into.name}”`, run: () => void merge(into, others) }]
-      : [{ label: 'Trips and planning material do not merge', disabled: true, run: () => undefined }];
+  /** The item that moves trips of one folder into another folder or into none, from a submenu; none where there is nowhere to go. */
+  const moveItem = (moved: TripSummary[], label: string): MenuItem[] => {
+    const from = moved[0]!.folderId;
+    const moveTo = (folderId: number | null) => () => void run(() => Promise.all(moved.map((t) => moveTrip(t.id, folderId))), relistTrips);
+    const places: MenuItem[] = [
+      ...(from === null ? [] : [{ label: 'No folder', run: moveTo(null) }]),
+      ...(folders() ?? [])
+        .filter((f) => f.id !== from)
+        .map((f) => ({ label: pathOf(f.id), run: moveTo(f.id) }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    ];
+    return places.length > 0 ? [{ label, items: places }] : [];
+  };
+  /** The menu of several selected trips: merging the others into the first selected where they are of one kind, moving and deleting them all. */
+  const selectionItems = (into: TripSummary, others: TripSummary[]): MenuItem[] => {
+    const all = [into, ...others];
+    return [
+      others.every((t) => t.kind === into.kind)
+        ? { label: `Merge into “${into.name}”`, run: () => void merge(into, others) }
+        : { label: 'Trips and planning material do not merge', disabled: true, run: () => undefined },
+      ...moveItem(all, `Move ${all.length} trips…`),
+      { label: `Delete ${all.length} trips`, run: () => void removeTrips(all) },
+    ];
+  };
   const renamedFolder = () => {
     const d = dialog();
     return d?.kind === 'rename-folder' ? d.folder : undefined;
@@ -154,21 +176,13 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
   const tripItems = (trip: TripSummary): MenuItem[] => {
     setSelectedTrips((s) => menuSelection(s, trip.id));
     const [first, ...others] = [...selectedTrips().keys].flatMap((id) => trips()?.find((t) => t.id === id) ?? []);
-    if (first && others.length > 0) return mergeItems(first, others);
-    const moveTo = (folderId: number | null) => () => void run(() => moveTrip(trip.id, folderId), refetchTrips);
-    const places: MenuItem[] = [
-      ...(trip.folderId === null ? [] : [{ label: 'No folder', run: moveTo(null) }]),
-      ...(folders() ?? [])
-        .filter((f) => f.id !== trip.folderId)
-        .map((f) => ({ label: pathOf(f.id), run: moveTo(f.id) }))
-        .sort((a, b) => a.label.localeCompare(b.label)),
-    ];
+    if (first && others.length > 0) return selectionItems(first, others);
     return [
       { label: 'Rename…', run: () => setDialog({ kind: 'rename-trip', trip }) },
-      ...(places.length > 0 ? [{ label: 'Move…', items: places }] : []),
+      ...moveItem([trip], 'Move…'),
       { label: 'Duplicate', run: () => void run(() => duplicateTrip(trip.id), refetchTrips) },
       ...routesPasteItem((routes) => void run(() => pasteInto(trip.id, routes), refetchTrips)),
-      { label: 'Delete', run: () => void removeTrip(trip) },
+      { label: 'Delete', run: () => void removeTrips([trip]) },
     ];
   };
 
