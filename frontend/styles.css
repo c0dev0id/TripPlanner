@@ -156,24 +156,15 @@ a {
   color: inherit;
 }
 
-/* The handle a day or a route is dragged by into another place. */
-.panel button.icon.grip {
+/* The handle a day or a route is dragged by into another place, and the pad a trip or a duplicate is selected by, drawn alike. */
+.panel button.icon:is(.grip, .select-pad) {
   padding: 2px 0;
   color: var(--muted);
+}
+
+.panel button.icon.grip {
   cursor: grab;
   touch-action: none;
-}
-
-/* The pad a trip or a duplicate is selected by, drawn as a day's or a route's grip. */
-.panel button.icon.select-pad {
-  padding: 2px 0;
-  color: var(--muted);
-}
-
-/* A selected trip is highlighted as a selected day is. */
-.trips > li.selected > .row {
-  background: var(--active);
-  border-radius: 7px;
 }
 
 /* The row being dragged rises above the others, which make room for it. */
@@ -286,15 +277,6 @@ a {
   display: block;
 }
 
-.duplicates .card button.text {
-  width: 100%;
-}
-
-.duplicates li.selected > .row {
-  background: var(--active);
-  border-radius: 7px;
-}
-
 /* A file name kept as a day's name has no spaces to wrap at. */
 .duplicates .detail {
   overflow-wrap: anywhere;
@@ -323,6 +305,13 @@ a {
 .day.selected > .row {
   background: var(--active);
   border-radius: 7px 7px 0 0;
+}
+
+/* A selected trip or duplicate is highlighted as a selected day is. */
+.trips > li.selected > .row,
+.duplicates li.selected > .row {
+  background: var(--active);
+  border-radius: 7px;
 }
 
 .day-details {

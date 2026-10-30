@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clickSelect, menuSelection, NOTHING_SELECTED, only, type Selection } from './selection';
+import { clickSelect, menuSelection, NOTHING_SELECTED, type Selection } from './selection';
 
 const order = ['a', 'b', 'c', 'd'];
 const plain = { metaKey: false, ctrlKey: false, shiftKey: false };
@@ -36,6 +36,6 @@ describe('menuSelection', () => {
   it('keeps a selection that holds the row, else takes the row alone', () => {
     const two: Selection<string> = { keys: new Set(['a', 'b']), anchor: 'a' };
     expect(menuSelection(two, 'b')).toBe(two);
-    expect(menuSelection(two, 'c')).toEqual(only('c'));
+    expect(menuSelection(two, 'c')).toEqual({ keys: new Set(['c']), anchor: 'c' });
   });
 });

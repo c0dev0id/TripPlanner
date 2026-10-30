@@ -1,4 +1,4 @@
-import { createMemo, createResource, createSignal, For, Match, Show, Switch } from 'solid-js';
+import { createMemo, createResource, createSelector, createSignal, For, Match, Show, Switch } from 'solid-js';
 import { changeTrip, createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, listFolders, listTrips, mergeTrips, moveTrip, renameFolder, renameTrip } from '../api';
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
@@ -116,7 +116,7 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
   };
   /** The trips of the open folder selected to be merged, by id, the first selected first. */
   const [selectedTrips, setSelectedTrips] = createSignal<Selection<number>>(NOTHING_SELECTED);
-  const selectTrip = (trip: TripSummary, e: MouseEvent) => setSelectedTrips((s) => clickSelect(s, shownTrips().map((t) => t.id), trip.id, e));
+  const isSelectedTrip = createSelector(() => selectedTrips().keys, (id: number, keys) => keys.has(id));
   const merge = async (into: TripSummary, others: TripSummary[]) => {
     const what = counted(others.length, into.kind);
     const where = into.kind === 'collection' ? 'Their sections move into it' : 'Their days and journal move into it, a day onto its day of the same date where it has one';
@@ -243,9 +243,9 @@ export function Library(props: { onOpen: (id: number, dayId?: string) => void; o
                           disabled={props.opening}
                           items={() => tripItems(trip)}
                           select={{
-                            selected: selectedTrips().keys.has(trip.id),
+                            selected: () => isSelectedTrip(trip.id),
                             onToggle: () => setSelectedTrips((s) => toggled(s, trip.id)),
-                            onClick: (e) => selectTrip(trip, e),
+                            onClick: (e) => setSelectedTrips((s) => clickSelect(s, shownTrips().map((t) => t.id), trip.id, e)),
                           }}
                         />
                       )}
@@ -333,7 +333,7 @@ function TripCard(props: {
   disabled: boolean;
   items: () => MenuItem[];
   where?: string;
-  select?: { selected: boolean; onToggle: () => void; onClick: (e: MouseEvent) => void };
+  select?: { selected: () => boolean; onToggle: () => void; onClick: (e: MouseEvent) => void };
 }) {
   const meta = () =>
     (props.trip.kind === 'collection'
@@ -343,9 +343,9 @@ function TripCard(props: {
       .filter(Boolean)
       .join(' · ');
   return (
-    <li class="card" classList={{ selected: props.select?.selected }} ref={(el) => cardMenu(el, props.items)}>
+    <li class="card" classList={{ selected: props.select?.selected() }} ref={(el) => cardMenu(el, props.items)}>
       <div class="row">
-        <Show when={props.select}>{(select) => <SelectPad selected={select().selected} label={`Select ${props.trip.name}`} onToggle={select().onToggle} />}</Show>
+        <Show when={props.select}>{(select) => <SelectPad selected={select().selected()} name={props.trip.name} onToggle={select().onToggle} />}</Show>
         <button
           class="text grow"
           onClick={(e) => (props.select && (e.metaKey || e.ctrlKey || e.shiftKey) ? props.select.onClick(e) : props.onOpen(props.trip.id))}

@@ -1,4 +1,4 @@
-import { createMemo, createResource, createSignal, For, Match, Show, Switch } from 'solid-js';
+import { createMemo, createResource, createSelector, createSignal, For, Match, Show, Switch } from 'solid-js';
 import { changeTrip, errorMessage, fetchTrip, listDuplicates, type DuplicateGroup, type DuplicateRoute } from '../api';
 import { copiedRoute, removeRoute, type CopiedRoute } from '../routing/dayEdit';
 import { copyRoutes } from '../state/clipboard';
@@ -51,8 +51,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   const [note, setNote] = createSignal<{ text: string; error: boolean }>();
   /** The routes in the order shown, by key; a route in a group of each kind is shown twice but listed once. */
   const shown = createMemo(() => new Map([...of('copies'), ...of('same ride')].flatMap((g) => g.routes).map((r) => [keyOf(r), r])));
-  const select = (route: DuplicateRoute, e: MouseEvent) => setSelection((s) => clickSelect(s, [...shown().keys()], keyOf(route), e));
-  const toggle = (route: DuplicateRoute) => setSelection((s) => toggled(s, keyOf(route)));
+  const isSelected = createSelector(() => selection().keys, (key: string, keys) => keys.has(key));
   const open = (route: DuplicateRoute) => {
     if (!props.disabled) props.onOpen(route.tripId, route.dayId);
   };
@@ -95,7 +94,13 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
       { label: `Delete${many}`, run: () => void remove(chosen) },
     ];
   };
-  const rows = { selected: (route: DuplicateRoute) => selection().keys.has(keyOf(route)), onClick: select, onToggle: toggle, onOpen: open, items };
+  const rows = {
+    selected: (route: DuplicateRoute) => isSelected(keyOf(route)),
+    onClick: (route: DuplicateRoute, e: MouseEvent) => setSelection((s) => clickSelect(s, [...shown().keys()], keyOf(route), e)),
+    onToggle: (route: DuplicateRoute) => setSelection((s) => toggled(s, keyOf(route))),
+    onOpen: open,
+    items,
+  };
   return (
     <>
       <div class="row">
@@ -130,6 +135,8 @@ function Section(props: {
   onOpen: (route: DuplicateRoute) => void;
   items: (route: DuplicateRoute) => MenuItem[];
 }) {
+  /** What pressed a row last: a mouse click selects, a tap opens. */
+  let pointer = 'mouse';
   return (
     <Show when={props.groups.length > 0}>
       <h3>{props.title}</h3>
@@ -139,29 +146,25 @@ function Section(props: {
             <li class="card">
               <ul>
                 <For each={group.routes}>
-                  {(route) => {
-                    /** What pressed the row last: a mouse click selects, a tap opens. */
-                    let pointer = 'mouse';
-                    return (
-                      <li classList={{ selected: props.selected(route) }} ref={(el) => cardMenu(el, () => props.items(route))}>
-                        <div class="row">
-                          <SelectPad selected={props.selected(route)} label={`Select ${nameOf(route)}`} onToggle={() => props.onToggle(route)} />
-                          <button
-                            class="text grow"
-                            onPointerDown={(e) => (pointer = e.pointerType)}
-                            onClick={(e) => (pointer === 'mouse' ? props.onClick(route, e) : props.onOpen(route))}
-                          >
-                            <span class="lines">
-                              <span class="name">
-                                {nameOf(route)} · {distanceText(route.distanceM)}
-                              </span>
-                              <span class="muted detail">{whereText(route)}</span>
+                  {(route) => (
+                    <li classList={{ selected: props.selected(route) }} ref={(el) => cardMenu(el, () => props.items(route))}>
+                      <div class="row">
+                        <SelectPad selected={props.selected(route)} name={nameOf(route)} onToggle={() => props.onToggle(route)} />
+                        <button
+                          class="text grow"
+                          onPointerDown={(e) => (pointer = e.pointerType)}
+                          onClick={(e) => (pointer === 'mouse' ? props.onClick(route, e) : props.onOpen(route))}
+                        >
+                          <span class="lines">
+                            <span class="name">
+                              {nameOf(route)} · {distanceText(route.distanceM)}
                             </span>
-                          </button>
-                        </div>
-                      </li>
-                    );
-                  }}
+                            <span class="muted detail">{whereText(route)}</span>
+                          </span>
+                        </button>
+                      </div>
+                    </li>
+                  )}
                 </For>
               </ul>
             </li>

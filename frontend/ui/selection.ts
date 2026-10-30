@@ -8,7 +8,7 @@ export interface Selection<K> {
 export const NOTHING_SELECTED: Selection<never> = { keys: new Set() };
 
 /** The row alone. */
-export const only = <K>(key: K): Selection<K> => ({ keys: new Set([key]), anchor: key });
+const only = <K>(key: K): Selection<K> => ({ keys: new Set([key]), anchor: key });
 
 /** The selection with the row added, or taken away where it was in it. */
 export function toggled<K>(selection: Selection<K>, key: K): Selection<K> {

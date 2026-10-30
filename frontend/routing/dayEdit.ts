@@ -166,10 +166,10 @@ export function updateStop(trip: Trip, dayId: string, stopId: string, change: Pa
   });
 }
 
-/** Adds a day at the end, dated the day after the last one where that has a date. */
 /** A day without routes, stops or notes. */
 const emptyDay = (id: string, name: string, date: string | null): Day => ({ id, name, date, notes: '', routes: [], stops: [] });
 
+/** Adds a day at the end, dated the day after the last one where that has a date. */
 export function addDay(trip: Trip, id: string): Trip {
   const last = trip.days.at(-1)?.date ?? null;
   return { ...trip, days: [...trip.days, emptyDay(id, '', last === null ? null : dayAfter(last))] };
