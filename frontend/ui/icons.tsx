@@ -115,14 +115,6 @@ export const GripIcon = () => (
   </Icon>
 );
 
-/** A ring, with a check in it for a selected row. */
-export const SelectIcon = (props: { selected: boolean }) => (
-  <Icon>
-    <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
-    {props.selected && <path d="M9 12l2 2l4 -4" />}
-  </Icon>
-);
-
 export const NotebookIcon = () => (
   <Icon>
     <path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-11a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1m3 0v16" />

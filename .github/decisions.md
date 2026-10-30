@@ -160,10 +160,11 @@ entries at the end of their section.
   Trips and collections do not merge, since a section has no date to place it by.
 - **Rows are selected by a pad on touch screens.** A touch screen has no Cmd or Shift, and
   its long press already opens the menu, so a selectable row (a trip of a folder, a route
-  of the duplicates report) has a round pad where a day or a route has its drag grip: a
-  tap on it selects or deselects the row, a tap elsewhere opens it. The pad is there for a
-  mouse too. In the duplicates report a mouse click on the row still selects it, as asked
-  for working through the report at a desk, while a tap opens it.
+  of the duplicates report) has a pad drawn as a day's or a route's drag grip: a tap on it
+  selects or deselects the row, a tap elsewhere opens it. The row's highlight is the only
+  mark of the selection; a checkbox in the pad looked dated. The pad works for a mouse
+  too. In the duplicates report a mouse click on the row still selects it, as asked for
+  working through the report at a desk, while a tap opens it.
 - **The search runs in the browser.** The library loads all trip summaries and folders of
   the user (a few hundred small rows at most for a personal planner) and filters them by
   name; the results are capped at twenty. A server search would add an endpoint for

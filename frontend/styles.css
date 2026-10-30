@@ -164,14 +164,16 @@ a {
   touch-action: none;
 }
 
-/* The pad a trip or a duplicate is selected by, where a day or a route has its grip. */
+/* The pad a trip or a duplicate is selected by, drawn as a day's or a route's grip. */
 .panel button.icon.select-pad {
   padding: 2px 0;
   color: var(--muted);
 }
 
-.panel button.icon.select-pad[aria-pressed='true'] {
-  color: var(--accent);
+/* A selected trip is highlighted as a selected day is. */
+.trips > li.selected > .row {
+  background: var(--active);
+  border-radius: 7px;
 }
 
 /* The row being dragged rises above the others, which make room for it. */
