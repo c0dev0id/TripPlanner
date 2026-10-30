@@ -1,4 +1,5 @@
 import { withChanges, type Day, type LngLat, type Profile, type Route, type RoutedRoute, type RoutePoint, type Stop, type Trip } from '../model/trip';
+import { PLAIN_SYMBOL } from '../symbols/symbols';
 import * as routeEdit from './routeEdit';
 
 /**
@@ -19,7 +20,7 @@ export function stopsBoundTo(route: Route, stops: readonly Stop[]): Stop[] {
 
 /** A stop with nothing said about it yet. */
 export function newStop(id: string, name: string, lngLat: LngLat, pointId: string | null): Stop {
-  return { id, name, kind: 'other', lngLat, pointId, address: '', contact: '', bookingReference: '', notes: '', arriveAt: null, pauseMinutes: null, optional: false };
+  return { id, name, symbol: PLAIN_SYMBOL, lngLat, pointId, address: '', contact: '', bookingReference: '', notes: '', arriveAt: null, pauseMinutes: null, optional: false };
 }
 
 /** The day's stops with every bound one at its route point, or free where its point no longer is. */

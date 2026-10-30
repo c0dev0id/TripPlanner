@@ -8,7 +8,7 @@ import { gpxToDayParts } from './import';
 
 const GPX_11 = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="test" xmlns="http://www.topografix.com/GPX/1/1">
-  <wpt lat="48.1" lon="11.5"><name>Café</name><desc>Good cake</desc><type>cafe</type></wpt>
+  <wpt lat="48.1" lon="11.5"><name>Café</name><desc>Good cake</desc><sym>Navaid, Black</sym><type>user</type></wpt>
   <wpt lat="48.2" lon="11.6"><cmt>No name</cmt><type>castle</type></wpt>
   <wpt lat="95" lon="11.6"><name>Broken</name></wpt>
   <rte><name>Planned</name><rtept lat="48.1" lon="11.5"/><rtept lat="48.3" lon="11.7"/></rte>
@@ -39,8 +39,8 @@ describe('parseGpx', () => {
   it('reads waypoints, routes and tracks, leaving out positions off the world', () => {
     const gpx = parseGpx(GPX_11);
     expect(gpx.waypoints).toEqual([
-      { lngLat: [11.5, 48.1], name: 'Café', description: 'Good cake', type: 'cafe' },
-      { lngLat: [11.6, 48.2], name: undefined, description: 'No name', type: 'castle' },
+      { lngLat: [11.5, 48.1], name: 'Café', description: 'Good cake', symbol: 'Navaid, Black' },
+      { lngLat: [11.6, 48.2], name: undefined, description: 'No name' },
     ]);
     expect(gpx.routes).toEqual([{ name: 'Planned', points: [[11.5, 48.1], [11.7, 48.3]], ways: [[], []] }]);
     expect(gpx.tracks).toEqual([{ name: undefined, segments: [[[12, 47], [12.1, 47.1]], [[12.2, 47.2]]] }]);
@@ -66,24 +66,18 @@ describe('gpxToDayParts', () => {
     expect([planned!.name, planned!.kind, planned!.profile, routedOf(planned!).points.map((p) => p.lngLat)]).toEqual(['Planned', 'routed', 'bicycle', [[11.5, 48.1], [11.7, 48.3]]]);
     expect(track).toMatchObject({ name: 'tour 2', kind: 'track', profile: 'bicycle' });
     expect(track!.kind === 'track' && decodePolyline(track!.line)).toEqual([[12, 47], [12.1, 47.1], [12.2, 47.2]]);
-    // The café stands on the route's first point and is bound to it; the castle is no kind of ours.
-    expect(parts.stops.map((s) => [s.name, s.kind, s.notes, s.pointId])).toEqual([
-      ['Café', 'cafe', 'Good cake', routedOf(planned!).points[0]!.id],
-      ['Waypoint 2', 'other', 'No name', null],
+    // The café stands on the route's first point and is bound to it; the castle has no symbol, only a type.
+    expect(parts.stops.map((s) => [s.name, s.symbol, s.notes, s.pointId])).toEqual([
+      ['Café', 'Navaid, Black', 'Good cake', routedOf(planned!).points[0]!.id],
+      ['Waypoint 2', null, 'No name', null],
     ]);
   });
 
-  it('takes a start, an end, a meeting point and an info point by their type, as the export writes them', () => {
-    const waypoint = (type: string) => `<wpt lat="48" lon="11"><type>${type}</type></wpt>`;
-    const gpx = `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">${waypoint('start')}${waypoint('meeting')}${waypoint('info')}${waypoint('end')}</gpx>`;
-    expect(gpxToDayParts(parseGpx(gpx), options).stops.map((s) => s.kind)).toEqual(['start', 'meeting', 'info', 'end']);
-  });
-
-  it("takes Garmin's symbols for information, a restaurant and a gas station as those kinds, any other as a plain stop", () => {
-    const waypoint = (symbol: string, type = 'user') => `<wpt lat="48" lon="11"><sym>${symbol}</sym><type>${type}</type></wpt>`;
-    const symbols = ['Information', 'Restaurant', 'Gas Station', 'Pizza', 'Lodging', 'information', 'constructor'].map((s) => waypoint(s)).join('');
-    const gpx = `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">${symbols}${waypoint('Restaurant', 'hotel')}</gpx>`;
-    expect(gpxToDayParts(parseGpx(gpx), options).stops.map((s) => s.kind)).toEqual(['info', 'restaurant', 'fuel', 'other', 'other', 'other', 'other', 'hotel']);
+  it("keeps a waypoint's Garmin symbol as the file names it, trimmed, and reads nothing from its type", () => {
+    const waypoint = (inner: string) => `<wpt lat="48" lon="11">${inner}</wpt>`;
+    const waypoints = ['<sym>Navaid, Green/Red</sym><type>user</type>', '<sym> Lodging </sym>', '<type>hotel</type>', '<sym>Custom 511</sym>', `<sym>${'x'.repeat(120)}</sym>`].map(waypoint).join('');
+    const gpx = `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">${waypoints}</gpx>`;
+    expect(gpxToDayParts(parseGpx(gpx), options).stops.map((s) => s.symbol)).toEqual(['Navaid, Green/Red', 'Lodging', null, 'Custom 511', 'x'.repeat(100)]);
   });
 
   it("takes the address and the phone numbers from Garmin's waypoint extension, read once", () => {
@@ -105,9 +99,9 @@ describe('gpxToDayParts', () => {
       <wpt lat="48" lon="11"><name>Winery</name><sym>Winery</sym><type>user</type><extensions>${extension('gpxx', 'http://www.garmin.com/xmlschemas/GpxExtensions/v3')}${extension('wptx1', 'http://www.garmin.com/xmlschemas/WaypointExtension/v1')}</extensions></wpt>
       <wpt lat="48" lon="11"><name>Plain</name></wpt>
     </gpx>`;
-    expect(gpxToDayParts(parseGpx(gpx), options).stops.map((s) => [s.name, s.kind, s.address, s.contact])).toEqual([
-      ['Winery', 'other', '58 Rue des Vignerons, Bâtiment B, 57420 Marieulles, Moselle, FRA', '+33 3 87 69 91 98, Mobile: +33 6 45 06 62 35'],
-      ['Plain', 'other', '', ''],
+    expect(gpxToDayParts(parseGpx(gpx), options).stops.map((s) => [s.name, s.symbol, s.address, s.contact])).toEqual([
+      ['Winery', 'Winery', '58 Rue des Vignerons, Bâtiment B, 57420 Marieulles, Moselle, FRA', '+33 3 87 69 91 98, Mobile: +33 6 45 06 62 35'],
+      ['Plain', null, '', ''],
     ]);
   });
 

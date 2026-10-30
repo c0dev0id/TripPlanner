@@ -1,11 +1,12 @@
-import { createMemo, For } from 'solid-js';
-import { STOP_KINDS, type Stop, type StopKind } from '../model/trip';
+import { createMemo } from 'solid-js';
+import type { Stop } from '../model/trip';
 import { editTarget, setEditTarget } from '../state/drawing';
 import { removeStop, selectedDay, updateStop } from '../state/trip';
 import { EditDialog } from '../ui/EditDialog';
 import { field } from '../ui/form';
+import { SymbolField } from './SymbolField';
 
-/** A stop of the selected day: name, kind, arrival time and pause, address, contact, booking, notes, whether it is optional; and its removal. */
+/** A stop of the selected day: name, symbol, arrival time and pause, address, contact, booking, notes, whether it is optional; and its removal. */
 export function StopDialog() {
   const stop = createMemo((): Stop | undefined => {
     const target = editTarget();
@@ -16,7 +17,7 @@ export function StopDialog() {
     const pause = field(form, 'pauseMinutes');
     updateStop(s.id, {
       name: field(form, 'name') || s.name,
-      kind: field(form, 'kind') as StopKind,
+      symbol: field(form, 'symbol') || null,
       arriveAt: field(form, 'arriveAt') || null,
       pauseMinutes: pause === '' ? null : Number(pause),
       optional: form.get('optional') === 'on',
@@ -38,12 +39,7 @@ export function StopDialog() {
             Name
             <input name="name" value={s.name} maxlength={200} required />
           </label>
-          <label>
-            Kind
-            <select name="kind" value={s.kind}>
-              <For each={STOP_KINDS}>{(kind) => <option value={kind.value}>{kind.label}</option>}</For>
-            </select>
-          </label>
+          <SymbolField initial={s.symbol} />
           <div class="row">
             <label class="grow">
               Arrive at

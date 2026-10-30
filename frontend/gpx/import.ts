@@ -1,5 +1,5 @@
 import { lineLength } from '../geo/measure';
-import { asName, asNotes, newId, STOP_KINDS, type LngLat, type Profile, type Route, type RoutedLeg, type Stop, type StopKind } from '../model/trip';
+import { asName, asNotes, asSymbol, newId, type LngLat, type Profile, type Route, type RoutedLeg, type Stop } from '../model/trip';
 import { newStop, routePoints } from '../routing/dayEdit';
 import { legKey, roundLngLat } from '../routing/legs';
 import { encodePolyline } from '../routing/polyline';
@@ -44,26 +44,13 @@ function calculatedLegs(points: readonly LngLat[], ways: readonly LngLat[][], pr
   return legs;
 }
 
-/** The Garmin symbols that name one of our kinds exactly. */
-const GARMIN_SYMBOLS = new Map<string, StopKind>([
-  ['Information', 'info'],
-  ['Restaurant', 'restaurant'],
-  ['Gas Station', 'fuel'],
-]);
-
-/** A waypoint's kind: its type where that is one of ours, else its Garmin symbol where that names one exactly, else a plain stop. */
-function kindOf(waypoint: GpxContent['waypoints'][number]): StopKind {
-  if (STOP_KINDS.some((k) => k.value === waypoint.type)) return waypoint.type as StopKind;
-  return GARMIN_SYMBOLS.get(waypoint.symbol ?? '') ?? 'other';
-}
-
 /**
  * Routes and stops from a GPX file. A GPX route keeps all its points and its legs are
  * routed with `profile`, except those it carries the way Garmin calculated for. A track
  * keeps its line with every point; condensing it or making a route of it is the user's
  * choice. Unnamed routes are named after the file. A waypoint becomes a stop, bound to a
- * point of a GPX route it stands on, free otherwise,
- * of the kind kindOf reads from it, with its address and phone numbers where Garmin gave them.
+ * point of a GPX route it stands on, free otherwise, with its Garmin symbol as the file
+ * names it and its address and phone numbers where Garmin gave them.
  * Names and notes are fitted to what a trip holds: composed, blank runs closed up, overlong text cut.
  */
 export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string }): DayParts {
@@ -81,7 +68,7 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
   const stops = gpx.waypoints.map((w, i) => {
     const lngLat = roundLngLat(w.lngLat);
     const stop = newStop(options.newId(), asName(w.name ?? `Waypoint ${i + 1}`), lngLat, pointAt.get(lngLat.join(',')) ?? null);
-    return { ...stop, kind: kindOf(w), address: asNotes(w.address ?? ''), contact: asNotes(w.phone ?? ''), notes: asNotes(w.description ?? '') };
+    return { ...stop, symbol: asSymbol(w.symbol), address: asNotes(w.address ?? ''), contact: asNotes(w.phone ?? ''), notes: asNotes(w.description ?? '') };
   });
   return { routes, stops };
 }

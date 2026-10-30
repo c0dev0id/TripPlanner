@@ -5,10 +5,11 @@ import type { Day, Route, Stop, Trip } from '../model/trip';
 import { routeDistance, routesDistance } from '../routing/legs';
 import { daySequence, standingAlone } from '../routing/sequence';
 import { dayTimeline, type EntryTime } from '../routing/timeline';
+import { symbolLabel } from '../symbols/symbols';
 import { EntryFile } from '../trip/EntryFile';
 import { ContextMenu } from '../ui/ContextMenu';
 import { Lightbox } from '../ui/Lightbox';
-import { dayLabel, offTime, routeKindLabel, routeLabel, stopKindLabel, timelineText, timesText } from '../trip/labels';
+import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from '../trip/labels';
 import { dateText, distanceText, takenAtText, timeText } from '../ui/format';
 import { StopShape } from '../ui/StopShape';
 import { ViewMap } from './ViewMap';
@@ -131,10 +132,10 @@ function StopItem(props: { stop: Stop; distanceM: number | undefined; time: Entr
     const off = offTime(t);
     return off ? `${timesText(t)} (${off.text}, arrives ${timeText(off.rideMin)})` : timesText(t);
   };
-  const detail = () => [times(), props.distanceM !== undefined && distanceText(props.distanceM), stopKindLabel(stop().kind), stop().optional && 'optional'].filter(Boolean).join(' · ');
+  const detail = () => [times(), props.distanceM !== undefined && distanceText(props.distanceM), symbolLabel(stop().symbol), stop().optional && 'optional'].filter(Boolean).join(' · ');
   return (
     <li class="stop-item">
-      <StopShape kind={stop().kind} color={stop().pointId === null ? '#1971c2' : '#d9480f'} height={24} />
+      <StopShape symbol={stop().symbol} color={stop().pointId === null ? '#1971c2' : '#d9480f'} height={24} />
       <div class="lines">
         <span class="name">{stop().name}</span>
         <span class="muted">{detail()}</span>

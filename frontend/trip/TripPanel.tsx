@@ -303,7 +303,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
       <li class="row sequence-item" classList={{ point: !stop() }} ref={(el) => props.entry.stop && cardMenu(el, () => stopItems(stop()!))}>
         <button class="text grow" onClick={() => panTo(props.entry.lngLat)}>
           <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
-            {(s) => <StopShape kind={s().kind} color={s().pointId === null ? FREE_COLOR : BOUND_COLOR} height={22} />}
+            {(s) => <StopShape symbol={s().symbol} color={s().pointId === null ? FREE_COLOR : BOUND_COLOR} height={22} />}
           </Show>
           <span class="lines">
             <span class="name">
@@ -330,7 +330,7 @@ function AloneStopItem(props: { stop: Stop }) {
   return (
     <li class="row sequence-item" ref={(el) => cardMenu(el, () => stopItems(props.stop))}>
       <button class="text grow" onClick={() => panTo(props.stop.lngLat)}>
-        <StopShape kind={props.stop.kind} color={FREE_COLOR} height={22} />
+        <StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />
         <span class="lines">
           <span class="name">{props.stop.name}</span>
           <Show when={props.stop.optional}>

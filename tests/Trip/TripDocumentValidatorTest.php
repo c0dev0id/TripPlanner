@@ -45,13 +45,12 @@ final class TripDocumentValidatorTest extends TestCase
         self::assertCount(1, TripDocumentValidator::validated($document)['days'][0]['stops']);
     }
 
-    public function testAcceptsEveryStopKind(): void
+    public function testKeepsAStopsSymbolAsGiven(): void
     {
         $document = TripFixture::document();
-        $document['days'][0]['stops'] = array_map(fn ($kind) => TripFixture::stop("s-$kind", $kind, [11.46, 47.81], null, $kind), TripDocumentValidator::STOP_KINDS);
-        $kinds = array_column(TripDocumentValidator::validated($document)['days'][0]['stops'], 'kind');
-        self::assertSame(TripDocumentValidator::STOP_KINDS, $kinds);
-        self::assertContains('info', $kinds);
+        $symbols = ['Navaid, Green/Red', 'A symbol no list knows', null];
+        $document['days'][0]['stops'] = array_map(fn ($symbol) => TripFixture::stop('s-' . md5((string) $symbol), 'Stop', [11.46, 47.81], null, $symbol), $symbols);
+        self::assertSame($symbols, array_column(TripDocumentValidator::validated($document)['days'][0]['stops'], 'symbol'));
     }
 
     public function testKeepsATrackAsItsLineAlone(): void
@@ -88,7 +87,8 @@ final class TripDocumentValidatorTest extends TestCase
         yield 'name too long' => [fn (array &$d) => $d['name'] = str_repeat('x', 201), 'document.name'];
         yield 'notes too long' => [fn (array &$d) => $d['days'][0]['stops'][0]['notes'] = str_repeat('ü', 20001), 'stops[0].notes'];
         yield 'bad date' => [fn (array &$d) => $d['days'][0]['date'] = '2027-02-30', 'days[0].date'];
-        yield 'unknown stop kind' => [fn (array &$d) => $d['days'][0]['stops'][0]['kind'] = 'castle', 'stops[0].kind'];
+        yield 'empty stop symbol' => [fn (array &$d) => $d['days'][0]['stops'][0]['symbol'] = '', 'stops[0].symbol'];
+        yield 'stop symbol too long' => [fn (array &$d) => $d['days'][0]['stops'][0]['symbol'] = str_repeat('x', 101), 'stops[0].symbol'];
         yield 'position outside the world' => [fn (array &$d) => $d['days'][0]['stops'][2]['lngLat'] = [200, 0], 'stops[2].lngLat'];
         yield 'duplicate stop id' => [fn (array &$d) => $d['days'][0]['stops'][1]['id'] = 's1', 'stops holds the same id twice'];
         yield 'duplicate point id across routes' => [function (array &$d): void {

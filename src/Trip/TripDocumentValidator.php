@@ -13,12 +13,12 @@ use Planner\Name;
  */
 final class TripDocumentValidator
 {
-    public const STOP_KINDS = ['start', 'end', 'meeting', 'hotel', 'restaurant', 'cafe', 'fuel', 'sight', 'info', 'photo', 'break', 'other'];
     public const ROUTE_KINDS = ['routed', 'track'];
     public const PROFILES = ['motorcycle', 'bicycle', 'pedestrian'];
     public const HIGHWAYS = ['avoid', 'allow', 'prefer'];
     public const STATES = ['planned', 'done'];
     public const MAX_TEXT = 20000;
+    private const MAX_SYMBOL = 100;
 
     public static function validated(mixed $body): array
     {
@@ -95,7 +95,7 @@ final class TripDocumentValidator
         return [
             'id' => self::id($stop, $at),
             'name' => self::text($stop, 'name', $at, 200),
-            'kind' => self::oneOf($stop, 'kind', self::STOP_KINDS, $at),
+            'symbol' => self::symbol($stop, $at),
             'lngLat' => $lngLat,
             'pointId' => $pointId,
             'address' => self::text($stop, 'address', $at),
@@ -176,6 +176,16 @@ final class TripDocumentValidator
         $value = $parent[$key] ?? '';
         if (!is_string($value) || mb_strlen($value) > $max) {
             throw new InvalidDocument("$at.$key must be text of up to $max characters.");
+        }
+        return $value;
+    }
+
+    /** A Garmin waypoint symbol's name, kept as given, or null for none. */
+    private static function symbol(array $stop, string $at): ?string
+    {
+        $value = $stop['symbol'] ?? null;
+        if ($value !== null && !(is_string($value) && $value !== '' && mb_strlen($value) <= self::MAX_SYMBOL)) {
+            throw new InvalidDocument("$at.symbol must be the name of a symbol, of up to " . self::MAX_SYMBOL . ' characters, or null.');
         }
         return $value;
     }

@@ -4,7 +4,7 @@ import { children, parseXml, text } from './xml';
 /** What a GPX 1.0 or 1.1 file holds: waypoints, routes (`rte`) and tracks (`trk`) with their segments. */
 export interface GpxContent {
   /** `symbol` is the icon a Garmin device shows for the waypoint (`sym`); `address` and `phone` come from Garmin's waypoint extension. */
-  waypoints: { lngLat: LngLat; name?: string; description?: string; type?: string; symbol?: string; address?: string; phone?: string }[];
+  waypoints: { lngLat: LngLat; name?: string; description?: string; symbol?: string; address?: string; phone?: string }[];
   /**
    * `ways` holds for each point the points of the way a Garmin device or BaseCamp
    * calculated from it on to the next, where the file has them; none otherwise.
@@ -59,7 +59,7 @@ export function parseGpx(xml: string): GpxContent {
   return {
     waypoints: children(root, 'wpt').flatMap((w) => {
       const lngLat = position(w);
-      return lngLat ? [{ lngLat, name: text(w, 'name'), description: text(w, 'desc') ?? text(w, 'cmt'), type: text(w, 'type'), symbol: text(w, 'sym'), ...garminContact(w) }] : [];
+      return lngLat ? [{ lngLat, name: text(w, 'name'), description: text(w, 'desc') ?? text(w, 'cmt'), symbol: text(w, 'sym'), ...garminContact(w) }] : [];
     }),
     routes: children(root, 'rte').map(route),
     tracks: children(root, 'trk').map((t) => ({ name: text(t, 'name'), segments: children(t, 'trkseg').map((segment) => positions(children(segment, 'trkpt'))) })),

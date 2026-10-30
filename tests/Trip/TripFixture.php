@@ -25,20 +25,20 @@ final class TripFixture
                     'routes' => [self::route('r1', [[11.5, 48.1], [11.45, 47.8], [11.4, 47.3]])],
                     'stops' => [
                         self::stop('s1', 'Home', [11.5, 48.1], 'r1-0'),
-                        self::stop('s2', 'Hotel Post', [11.4, 47.3], 'r1-2', 'hotel'),
-                        self::stop('s3', 'Café & Bar', [11.46, 47.81], null, 'cafe'),
+                        self::stop('s2', 'Hotel Post', [11.4, 47.3], 'r1-2', 'Hotel'),
+                        self::stop('s3', 'Café & Bar', [11.46, 47.81], null, 'Navaid, Black'),
                     ],
                 ],
             ],
         ];
     }
 
-    public static function stop(string $id, string $name, array $lngLat, ?string $pointId, string $kind = 'other'): array
+    public static function stop(string $id, string $name, array $lngLat, ?string $pointId, ?string $symbol = null): array
     {
         return [
             'id' => $id,
             'name' => $name,
-            'kind' => $kind,
+            'symbol' => $symbol,
             'lngLat' => $lngLat,
             'pointId' => $pointId,
             'address' => '',

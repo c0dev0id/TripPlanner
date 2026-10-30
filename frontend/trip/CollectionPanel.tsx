@@ -5,6 +5,7 @@ import { routeDistance, routePositions, routesDistance } from '../routing/legs';
 import { copyRoute, copyStop } from '../state/clipboard';
 import { panTo, showWhole } from '../state/drawing';
 import { openTrip, removeDay, removeStop, selectDay, selectedDayId, updateDay } from '../state/trip';
+import { symbolLabel } from '../symbols/symbols';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { ForById } from '../ui/ForById';
@@ -13,7 +14,7 @@ import { BackIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
 import { StopShape } from '../ui/StopShape';
-import { routeKindLabel, routeLabel, stopKindLabel } from './labels';
+import { routeKindLabel, routeLabel } from './labels';
 import { removeRouteAsked } from './remove';
 import { SaveStatus } from './SaveStatus';
 
@@ -128,7 +129,7 @@ function RouteItem(props: { route: Route; day: Day }) {
 
 /** A waypoint of a section: a click pans the map there; its menu copies and removes it. */
 function WaypointItem(props: { stop: Stop }) {
-  const kind = () => stopKindLabel(props.stop.kind);
+  const kind = () => symbolLabel(props.stop.symbol);
   const items = (): MenuItem[] => [
     { label: 'Copy', run: () => copyStop(props.stop) },
     { label: 'Remove', run: () => removeStop(props.stop.id) },
@@ -136,7 +137,7 @@ function WaypointItem(props: { stop: Stop }) {
   return (
     <li class="row sequence-item" ref={(el) => cardMenu(el, items)}>
       <button class="text grow" onClick={() => panTo(props.stop.lngLat)}>
-        <StopShape kind={props.stop.kind} color={FREE_COLOR} height={22} />
+        <StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />
         <span class="lines">
           <span class="name">{props.stop.name}</span>
           <Show when={kind()}>

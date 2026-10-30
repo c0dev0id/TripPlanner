@@ -68,7 +68,7 @@ final class TripGpx
             foreach ($day['stops'] as $stop) {
                 $bound = $stop['pointId'] !== null && in_array($stop['pointId'], $pointIds, true);
                 if ($included($stop) && ($bound || self::nearALine($stop['lngLat'], $linesOf(), $options->reachM))) {
-                    $waypoints[] = ['name' => $stop['name'], 'lngLat' => $stop['lngLat'], 'type' => $stop['kind']];
+                    $waypoints[] = ['name' => $stop['name'], 'lngLat' => $stop['lngLat'], 'symbol' => $stop['symbol']];
                 }
             }
         }

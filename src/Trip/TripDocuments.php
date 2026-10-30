@@ -49,13 +49,13 @@ final class TripDocuments
         foreach ($this->rows($routes, $tripId) as $row) {
             $days[$row['day_id']]['routes'][] = self::route($row);
         }
-        $stops = 'SELECT id, day_id, name, kind, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional
+        $stops = 'SELECT id, day_id, name, symbol, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional
                   FROM stops WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
         foreach ($this->rows($stops, $tripId) as $stop) {
             $days[$stop['day_id']]['stops'][] = [
                 'id' => $stop['id'],
                 'name' => $stop['name'],
-                'kind' => $stop['kind'],
+                'symbol' => $stop['symbol'],
                 'lngLat' => [(float) $stop['lng'], (float) $stop['lat']],
                 'pointId' => $stop['point_id'],
                 'address' => $stop['address'],
@@ -243,9 +243,9 @@ final class TripDocuments
                  line = excluded.line',
         );
         $upsertStop = $this->db->prepare(
-            'INSERT INTO stops (id, day_id, position, name, kind, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional)
+            'INSERT INTO stops (id, day_id, position, name, symbol, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-             ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, position = excluded.position, name = excluded.name, kind = excluded.kind, lng = excluded.lng, lat = excluded.lat,
+             ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, position = excluded.position, name = excluded.name, symbol = excluded.symbol, lng = excluded.lng, lat = excluded.lat,
                  point_id = excluded.point_id, address = excluded.address, contact = excluded.contact, booking_reference = excluded.booking_reference,
                  notes = excluded.notes, arrive_at = excluded.arrive_at, pause_minutes = excluded.pause_minutes, optional = excluded.optional',
         );
@@ -265,7 +265,7 @@ final class TripDocuments
             }
             foreach ($day['stops'] as $index => $stop) {
                 $upsertStop->execute([
-                    $stop['id'], $day['id'], $index, $stop['name'], $stop['kind'], $stop['lngLat'][0], $stop['lngLat'][1], $stop['pointId'],
+                    $stop['id'], $day['id'], $index, $stop['name'], $stop['symbol'], $stop['lngLat'][0], $stop['lngLat'][1], $stop['pointId'],
                     $stop['address'], $stop['contact'], $stop['bookingReference'], $stop['notes'], $stop['arriveAt'], $stop['pauseMinutes'], (int) $stop['optional'],
                 ]);
             }

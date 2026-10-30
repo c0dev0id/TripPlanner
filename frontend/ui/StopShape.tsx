@@ -1,6 +1,6 @@
 // The little objects are from Layer Slayer's waypoint shapes; the bed, the pin, the flags, the meeting and the info sign are new.
-import { createUniqueId, Show, type JSX } from 'solid-js';
-import type { StopKind } from '../model/trip';
+import { createSignal, createUniqueId, Show, type JSX } from 'solid-js';
+import { garminPictureUrl, ourIcon, type StopIcon } from '../symbols/symbols';
 
 /** Height of a stop's shape in CSS pixels. */
 const SHAPE_HEIGHT = 36;
@@ -37,8 +37,8 @@ function Pin(props: { color: string }) {
   );
 }
 
-/** The drawing of each kind, in a 32 × 36 box with its foot at (16, 35). */
-const DRAWINGS: Record<StopKind, (color: string) => JSX.Element> = {
+/** The drawing of each of our icons, in a 32 × 36 box with its foot at (16, 35). */
+const DRAWINGS: Record<StopIcon, (color: string) => JSX.Element> = {
   other: (color) => <Pin color={color} />,
   start: () => (
     <>
@@ -175,13 +175,26 @@ const DRAWINGS: Record<StopKind, (color: string) => JSX.Element> = {
   ),
 };
 
+/** Garmin's picture of a symbol on a sign, in the same box; a pin in `color` where the picture is missing (see `make garmin-icons`). */
+function GarminSign(props: { symbol: string; color: string }) {
+  const [missing, setMissing] = createSignal(false);
+  return (
+    <Show when={!missing()} fallback={<Pin color={props.color} />}>
+      <Post />
+      <rect x="3" y="1" width="26" height="26" rx="4" fill="#fff" stroke="#ced4da" stroke-width="0.9" />
+      <image href={garminPictureUrl(props.symbol)} x="4" y="2" width="24" height="24" onError={() => setMissing(true)} />
+    </Show>
+  );
+}
+
 /**
- * A stop drawn as the little object its kind stands for, its foot in the middle of its
- * bottom edge; a plain stop is a pin in `color`. A white outline around the drawing sets
- * it off from any map. With `foot`, a dot in `color` marks the exact spot on the bottom
+ * A stop drawn by its symbol: as the little object one of our icons draws where one stands
+ * for the symbol, else as Garmin's picture of it on a sign; a plain stop is a pin in
+ * `color`. The foot is in the middle of the bottom edge. A white outline around the drawing
+ * sets it off from any map. With `foot`, a dot in `color` marks the exact spot on the bottom
  * edge, drawn over it.
  */
-export function StopShape(props: { kind: StopKind; color: string; height?: number; foot?: boolean }) {
+export function StopShape(props: { symbol: string | null; color: string; height?: number; foot?: boolean }) {
   const id = createUniqueId();
   const height = () => props.height ?? SHAPE_HEIGHT;
   return (
@@ -195,7 +208,11 @@ export function StopShape(props: { kind: StopKind; color: string; height?: numbe
           <feMergeNode in="SourceGraphic" />
         </feMerge>
       </filter>
-      <g filter={`url(#outline-${id})`}>{DRAWINGS[props.kind](props.color)}</g>
+      <g filter={`url(#outline-${id})`}>
+        <Show when={ourIcon(props.symbol)} keyed fallback={<GarminSign symbol={props.symbol!} color={props.color} />}>
+          {(icon) => DRAWINGS[icon](props.color)}
+        </Show>
+      </g>
       <Show when={props.foot}>
         <circle cx="16" cy="35.5" r="3" fill={props.color} stroke="#fff" stroke-width="1.4" />
       </Show>

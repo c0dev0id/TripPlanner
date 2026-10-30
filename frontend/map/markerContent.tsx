@@ -20,7 +20,7 @@ export function markerElement(className: string, content: Node): HTMLDivElement 
 export function stopContent(stop: () => Stop): HTMLElement {
   return (
     <div class="stop" classList={{ free: stop().pointId === null }}>
-      <StopShape kind={stop().kind} color={stop().pointId === null ? FREE_COLOR : BOUND_COLOR} foot />
+      <StopShape symbol={stop().symbol} color={stop().pointId === null ? FREE_COLOR : BOUND_COLOR} foot />
       <span class="stop-name">{stop().name}</span>
     </div>
   ) as HTMLElement;

@@ -815,6 +815,93 @@ fieldset.choices legend {
   font-size: 1rem;
 }
 
+/* A stop's symbol: our icons, and all of Garmin's behind a toggle. */
+.dialog fieldset.symbols {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.dialog fieldset.symbols legend {
+  padding: 0;
+  margin-bottom: 2px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.our-symbols {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.garmin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 4px;
+}
+
+.dialog button.symbol {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.our-symbols button.symbol {
+  flex-direction: column;
+  text-align: center;
+}
+
+.dialog button.symbol[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--active);
+}
+
+.dialog button.symbol span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dialog button.more-symbols {
+  align-self: flex-start;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.garmin-symbols {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.garmin-symbols h4 {
+  margin: 8px 0 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.garmin-chosen {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+}
+
 /* Buttons that do not fit side by side, on a phone, go onto a second line. */
 .dialog .row.end {
   flex-wrap: wrap;

@@ -53,8 +53,8 @@ describe('the open trip', () => {
       ['Stop 1', true],
       ['Stop 2', false],
     ]);
-    updateStop(stops[0]!.id, { name: 'Lunch', kind: 'restaurant' });
-    expect(sent().days[0]!.stops[0]).toMatchObject({ name: 'Lunch', kind: 'restaurant' });
+    updateStop(stops[0]!.id, { name: 'Lunch', symbol: 'Restaurant' });
+    expect(sent().days[0]!.stops[0]).toMatchObject({ name: 'Lunch', symbol: 'Restaurant' });
   });
 
   it('undoes and redoes edits without losing the rest of the trip', () => {

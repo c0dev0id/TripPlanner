@@ -23,7 +23,7 @@ final class TripGpxTest extends TestCase
         $document['days'][] = TripFixture::day(
             'day2',
             [TripFixture::route('r2', [[11.4, 47.3], [11.5, 48.1]]), ['name' => 'Hike'] + TripFixture::route('r3', [[11.4, 47.3], [11.41, 47.31]])],
-            [TripFixture::stop('s4', 'Hotel Post', [11.4, 47.3], 'r2-0', 'hotel'), TripFixture::stop('s5', 'Far away', [12.5, 47.3], null)],
+            [TripFixture::stop('s4', 'Hotel Post', [11.4, 47.3], 'r2-0', 'Hotel'), TripFixture::stop('s5', 'Far away', [12.5, 47.3], null)],
         );
         return $document;
     }
@@ -42,7 +42,8 @@ final class TripGpxTest extends TestCase
         self::assertSame('2026-10-27T08:00:00Z', (string) $xml->xpath('/g:gpx/g:metadata/g:time')[0]);
         $waypoints = $xml->xpath('/g:gpx/g:wpt');
         self::assertSame(['Home', 'Hotel Post', 'Café & Bar', 'Hotel Post'], array_map(fn ($w) => (string) $w->name, $waypoints));
-        self::assertSame('cafe', (string) $waypoints[2]->type);
+        self::assertSame(['', 'Hotel', 'Navaid, Black', 'Hotel'], array_map(fn ($w) => (string) $w->sym, $waypoints));
+        self::assertCount(0, $xml->xpath('/g:gpx/g:wpt/g:type'));
         self::assertSame('47.810000', (string) $waypoints[2]['lat']);
         $tracks = $xml->xpath('/g:gpx/g:trk');
         self::assertSame(['Day 1 South', 'Day 2 – Route 1', 'Day 2 – Hike'], array_map(fn ($t) => (string) $t->name, $tracks));

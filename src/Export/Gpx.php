@@ -12,7 +12,7 @@ use XMLWriter;
 final class Gpx
 {
     /**
-     * @param list<array{name: string, lngLat: array{0: float, 1: float}, type?: string}> $waypoints
+     * @param list<array{name: string, lngLat: array{0: float, 1: float}, symbol?: ?string}> $waypoints
      * @param list<array{name: string, points: list<array{0: float, 1: float}>}> $routes
      * @param list<array{name: string, points: list<array{0: float, 1: float}>}> $tracks
      */
@@ -37,8 +37,8 @@ final class Gpx
             $xml->startElement('wpt');
             self::position($xml, $waypoint['lngLat']);
             $xml->writeElement('name', $waypoint['name']);
-            if (isset($waypoint['type'])) {
-                $xml->writeElement('type', $waypoint['type']);
+            if (isset($waypoint['symbol'])) {
+                $xml->writeElement('sym', $waypoint['symbol']);
             }
             $xml->endElement();
         }

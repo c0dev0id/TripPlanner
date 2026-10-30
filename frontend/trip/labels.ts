@@ -1,4 +1,4 @@
-import { PROFILES, STOP_KINDS, takesMotorwayDial, type Day, type Route, type StopKind, type Trip } from '../model/trip';
+import { PROFILES, takesMotorwayDial, type Day, type Route, type Trip } from '../model/trip';
 import { dayOfRoute } from '../routing/dayEdit';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { durationText, shortDateText, timeText } from '../ui/format';
@@ -21,9 +21,6 @@ export function dayLabel(day: Pick<Day, 'date' | 'name'>, index: number): string
 
 /** A day's label within its trip. */
 export const dayLabelOf = (trip: Trip, day: Day): string => dayLabel(day, trip.days.findIndex((d) => d.id === day.id));
-
-/** What a kind of stop is called; none for a plain stop. */
-export const stopKindLabel = (kind: StopKind): string | undefined => (kind === 'other' ? undefined : STOP_KINDS.find((k) => k.value === kind)?.label);
 
 /** "Track" for a track, else the route's profile (Motorcycle, Bicycle, On foot), and where the motorway dial is turned, how. */
 export function routeKindLabel(route: Route): string {

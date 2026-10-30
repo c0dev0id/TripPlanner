@@ -85,7 +85,7 @@ describe('stops', () => {
 
   it('converts a point once', () => {
     const trip = fixture();
-    expect(day(trip).stops[0]).toMatchObject({ id: 's1', name: 'Stop 1', kind: 'other', lngLat: [2, 2], pointId: 'b' });
+    expect(day(trip).stops[0]).toMatchObject({ id: 's1', name: 'Stop 1', symbol: 'Pin, Blue', lngLat: [2, 2], pointId: 'b' });
     expect(convertPoint(trip, 'd', 'b', 's9')).toBe(trip);
     expect(convertPoint(trip, 'd', 'nowhere', 's9')).toBe(trip);
   });
@@ -126,8 +126,8 @@ describe('stops', () => {
   });
 
   it('updates what a stop says and returns the same trip for no change', () => {
-    const trip = updateStop(fixture(), 'd', 's1', { name: 'Lunch', kind: 'restaurant' });
-    expect(day(trip).stops[0]).toMatchObject({ name: 'Lunch', kind: 'restaurant' });
+    const trip = updateStop(fixture(), 'd', 's1', { name: 'Lunch', symbol: 'Restaurant' });
+    expect(day(trip).stops[0]).toMatchObject({ name: 'Lunch', symbol: 'Restaurant' });
     expect(updateStop(trip, 'd', 's1', { name: 'Lunch' })).toBe(trip);
   });
 

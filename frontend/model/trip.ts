@@ -40,23 +40,11 @@ export const asName = (text: string): string => clipped(text.normalize('NFC').re
 /** Text from a file as notes: composed (NFC), no blanks at the ends of lines, no more than one empty line in a row, at most MAX_TEXT characters. */
 export const asNotes = (text: string): string => clipped(text.normalize('NFC').replace(/[^\S\n]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim(), MAX_TEXT);
 
-/** What a stop is, which decides its icon. */
-export type StopKind = 'start' | 'end' | 'meeting' | 'hotel' | 'restaurant' | 'cafe' | 'fuel' | 'sight' | 'info' | 'photo' | 'break' | 'other';
+/** The longest symbol name a stop keeps. */
+const MAX_SYMBOL = 100;
 
-export const STOP_KINDS: readonly { value: StopKind; label: string }[] = [
-  { value: 'other', label: 'Stop' },
-  { value: 'start', label: 'Start' },
-  { value: 'end', label: 'End' },
-  { value: 'meeting', label: 'Meeting point' },
-  { value: 'hotel', label: 'Hotel' },
-  { value: 'restaurant', label: 'Restaurant' },
-  { value: 'cafe', label: 'Café' },
-  { value: 'fuel', label: 'Fuel' },
-  { value: 'sight', label: 'Sight' },
-  { value: 'info', label: 'Info' },
-  { value: 'photo', label: 'Photo spot' },
-  { value: 'break', label: 'Break' },
-];
+/** A waypoint symbol's name from a file: trimmed, at most MAX_SYMBOL characters; null for none. */
+export const asSymbol = (text: string | undefined): string | null => text?.trim().slice(0, MAX_SYMBOL) || null;
 
 /**
  * A point to stop at. Bound to a point of a routed route of its day (`pointId`), it stands
@@ -66,7 +54,8 @@ export const STOP_KINDS: readonly { value: StopKind; label: string }[] = [
 export interface Stop {
   id: string;
   name: string;
-  kind: StopKind;
+  /** The Garmin waypoint symbol, as a GPX file names it; null for none. Our icons stand for some (see symbols). */
+  symbol: string | null;
   lngLat: LngLat;
   pointId: string | null;
   address: string;

@@ -135,7 +135,8 @@ CREATE TABLE IF NOT EXISTS stops (
     -- In riding order, as the client computes it from the routes.
     position INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL,
-    kind TEXT NOT NULL,
+    -- The Garmin waypoint symbol a GPX file names (<sym>), kept as given; none for a plain stop.
+    symbol TEXT,
     lng REAL NOT NULL,
     lat REAL NOT NULL,
     point_id TEXT,
