@@ -539,6 +539,25 @@ entries at the end of their section.
   schema is `db/schema.sql`; while nothing is released, a schema change recreates the
   database (`make recreate`, which also empties the file store, since `CREATE TABLE IF
   NOT EXISTS` adds tables but never columns). Migrations start with the first release.
+- **One explorer frames the panel at every level.** The library, a folder, a trip and its
+  opened day share one frame: the library's actions as icons and the search on top, a
+  path heading that names where the panel is, and under it a card leading one level up,
+  "All trips" at the top. The frame has the same height at every level, so the card is
+  always in the same place and stepping up or down never moves what the pointer is on.
+  The trip's own actions sit as icons on the path heading, and the actions of days,
+  routes and recordings as icons on their own headers; they were buttons that pushed the
+  panel wide. A day still opens in place in its trip's list, but counts as a level: the
+  path ends in it and the card above closes it. The library's actions stay at every
+  level; all but a new trip leave an open trip first.
+- **The path heading names the place, the card the way up.** Naming the parent on the
+  card says where a click and a drop go; the place itself is the last name of the path,
+  which shortens its earlier names first. A trip opened from the search stands in its own
+  folder, so that the path is its place and the way up leads there; one opened from the
+  duplicates report goes back to the report.
+- **A trip that arrives late is not opened.** Opening a trip waits for the server; a
+  click elsewhere meanwhile, another trip or a folder, would otherwise have the late
+  answer open the trip where the user no longer is. Each open counts, a leave counts
+  too, and an answer for an earlier count is dropped.
 - **Sign-up by invitation.** Open sign-up on a hobby server with photo uploads invites
   abuse. Visitors leave their e-mail on a waiting list; an admin sends an invitation link
   by mail; the link opens sign-up for that address. The address is verified by

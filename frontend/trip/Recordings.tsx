@@ -23,7 +23,7 @@ import { selectDay } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { counted, distanceText } from '../ui/format';
-import { RecordingIcon } from '../ui/icons';
+import { PlusIcon, RecordingIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
 import { pickFile } from '../ui/pickFile';
@@ -68,7 +68,9 @@ export function DayRecordings(props: { day: Day }) {
     <>
       <div class="row heading">
         <h4 class="grow">Recordings</h4>
-        <button onClick={() => addRecordingPicked(props.day.id)}>Add recording…</button>
+        <button class="icon" title="Add recording…" aria-label="Add recording…" onClick={() => addRecordingPicked(props.day.id)}>
+          <PlusIcon />
+        </button>
       </div>
       <Show
         when={recordingsShown(props.day.id)}

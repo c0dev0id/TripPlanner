@@ -186,3 +186,80 @@ export const PencilIcon = () => (
     <path d="M13.5 6.5l4 4" />
   </Icon>
 );
+
+export const PlusIcon = () => (
+  <Icon>
+    <path d="M12 5l0 14" />
+    <path d="M5 12l14 0" />
+  </Icon>
+);
+
+export const HomeIcon = () => (
+  <Icon>
+    <path d="M5 12l-2 0l9 -9l9 9l-2 0" />
+    <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" />
+    <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" />
+  </Icon>
+);
+
+export const MapPlusIcon = () => (
+  <Icon>
+    <path d="M12 19l-3 -2l-6 3v-13l6 -3l6 3l6 -3v7.5" />
+    <path d="M9 4v13" />
+    <path d="M15 7v5" />
+    <path d="M16 19h6" />
+    <path d="M19 16v6" />
+  </Icon>
+);
+
+export const FolderPlusIcon = () => (
+  <Icon>
+    <path d="M12 19h-7a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v3.5" />
+    <path d="M16 19h6" />
+    <path d="M19 16v6" />
+  </Icon>
+);
+
+export const FolderImportIcon = () => (
+  <Icon>
+    <path d="M12 19h-7a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v3.5" />
+    <path d="M19 16v6" />
+    <path d="M22 19l-3 3l-3 -3" />
+  </Icon>
+);
+
+export const FileImportIcon = () => (
+  <Icon>
+    <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+    <path d="M5 13v-8a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2h-5.5m-9.5 -2h7m-3 -3l3 3l-3 3" />
+  </Icon>
+);
+
+export const CopyIcon = () => (
+  <Icon>
+    <path d="M7 7m0 2.667a2.667 2.667 0 0 1 2.667 -2.667h8.666a2.667 2.667 0 0 1 2.667 2.667v8.666a2.667 2.667 0 0 1 -2.667 2.667h-8.666a2.667 2.667 0 0 1 -2.667 -2.667z" />
+    <path d="M4.012 16.737a2.005 2.005 0 0 1 -1.012 -1.737v-10c0 -1.1 .9 -2 2 -2h10c.75 0 1.158 .385 1.5 1" />
+  </Icon>
+);
+
+export const NeighboursIcon = () => (
+  <Icon>
+    <path d="M7 8l-4 4l4 4" />
+    <path d="M17 8l4 4l-4 4" />
+    <path d="M3 12l18 0" />
+  </Icon>
+);
+
+export const AlertIcon = () => (
+  <Icon>
+    <path d="M12 9v4" />
+    <path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z" />
+    <path d="M12 16h.01" />
+  </Icon>
+);
+
+export const DotIcon = () => (
+  <Icon>
+    <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+  </Icon>
+);

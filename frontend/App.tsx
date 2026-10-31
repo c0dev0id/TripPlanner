@@ -1,6 +1,6 @@
 import { createResource, createSignal, For, Show } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout } from './api';
-import { Library } from './library/Library';
+import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';
 import { PanelResizer } from './ui/PanelResizer';
@@ -9,8 +9,8 @@ import { MapView } from './map/MapView';
 import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState } from './state/autosave';
+import { relistTrips } from './state/library';
 import { closeTrip, loadTrip, openTrip } from './state/trip';
-import { CollectionPanel } from './trip/CollectionPanel';
 import { DayDialog } from './trip/DayDialog';
 import { ExportDialog } from './trip/ExportDialog';
 import { JournalDialog } from './trip/JournalDialog';
@@ -19,7 +19,6 @@ import { ShareDialog } from './trip/ShareDialog';
 import { StopDialog } from './trip/StopDialog';
 import { TrackDialog } from './trip/TrackDialog';
 import { TripDialog } from './trip/TripDialog';
-import { TripPanel } from './trip/TripPanel';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { chooseTheme, theme, THEMES, type Theme } from './ui/theme';
 
@@ -28,23 +27,36 @@ export function App() {
   const [opening, setOpening] = createSignal(false);
   const [error, setError] = createSignal<string>();
 
-  /** Opens a trip, at the day `dayId` where one is given. */
+  /** Counts the trips asked for and the leavings, so that a trip that arrives after the user went elsewhere is not opened. */
+  let latest = 0;
+  /** Opens a trip, at the day `dayId` where one is given; a trip open before is saved first. */
   const open = async (id: number, dayId?: string) => {
+    const ask = ++latest;
     setOpening(true);
     setError(undefined);
     try {
-      loadTrip(await fetchTrip(id), dayId);
+      await flushSave();
+      const trip = await fetchTrip(id);
+      if (ask !== latest) return;
+      loadTrip(trip, dayId);
       resetSaveState();
     } catch (e) {
-      setError(errorMessage(e));
+      if (ask === latest) setError(errorMessage(e));
     } finally {
-      setOpening(false);
+      if (ask === latest) setOpening(false);
     }
   };
+  /** Loads the open trip again from the server, after it was changed elsewhere. */
+  const reload = () => open(openTrip()!.id);
+  /** Leaves the open trip, saved, for the list it was opened from, which lists the trips afresh; nothing without one. */
   const leave = async () => {
+    latest++;
+    setOpening(false);
+    if (!openTrip()) return;
     await flushSave();
     closeTrip();
     resetSaveState();
+    relistTrips();
   };
 
   return (
@@ -60,11 +72,7 @@ export function App() {
             Sign out
           </button>
         </header>
-        <Show when={openTrip()} fallback={<Library onOpen={(id, dayId) => void open(id, dayId)} opening={opening()} error={error()} />}>
-          <Show when={openTrip()?.kind === 'collection'} fallback={<TripPanel onLeave={() => void leave()} onReload={() => void open(openTrip()!.id)} />}>
-            <CollectionPanel onLeave={() => void leave()} onReload={() => void open(openTrip()!.id)} />
-          </Show>
-        </Show>
+        <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} onReload={() => void reload()} opening={opening()} error={error()} />
       </aside>
       <div class="map-wrap">
         <PanelResizer />

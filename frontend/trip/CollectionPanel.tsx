@@ -10,34 +10,21 @@ import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { ForById } from '../ui/ForById';
 import { counted, distanceText } from '../ui/format';
-import { BackIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
 import { StopShape } from '../ui/StopShape';
 import { routeKindLabel, routeLabel } from './labels';
 import { removeRouteAsked } from './remove';
-import { SaveStatus } from './SaveStatus';
 
 /**
  * The open collection of planning material: its sections, a file each, with their routes
  * and waypoints to look through on the map and to copy into a day of a trip.
  */
-export function CollectionPanel(props: { onLeave: () => void; onReload: () => void }) {
+export function CollectionPanel() {
   const collection = () => openTrip()!;
-  /** One level up: from a section to the whole collection, from the collection to the list it was opened from. */
-  const back = () => (selectedDayId() ? { label: 'Back to the collection', run: () => selectDay(undefined) } : { label: 'Back to the trips', run: props.onLeave });
   const [renamed, setRenamed] = createSignal<Day>();
   return (
     <section class="trip">
-      <div class="row">
-        <button class="icon" title={back().label} aria-label={back().label} onClick={() => back().run()}>
-          <BackIcon />
-        </button>
-        <h2 class="grow name" title={collection().name}>
-          {collection().name}
-        </h2>
-      </div>
-      <SaveStatus onReload={props.onReload} />
       <p class="muted hint">Planning material: copy a route or a waypoint from its menu, then paste it into a day of a trip from the day's menu.</p>
       <ol class="days">
         <ForById each={collection().days}>{(day) => <SectionItem day={day()} onRename={setRenamed} />}</ForById>
