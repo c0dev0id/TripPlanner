@@ -33,16 +33,15 @@ import {
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { counted, distanceText, shortDateText, timeText } from '../ui/format';
-import { BackIcon, ClockIcon, DownloadIcon, NotebookIcon, PencilIcon, ShareIcon } from '../ui/icons';
+import { ClockIcon, DownloadIcon, FileImportIcon, NeighboursIcon, NotebookIcon, PencilIcon, PlusIcon, ShareIcon } from '../ui/icons';
 import { Grip } from '../ui/Grip';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 import { addRecordingPicked, DayRecordings, RecordingsToggle } from './Recordings';
 import { removeDayAsked, removeRouteAsked } from './remove';
-import { SaveStatus } from './SaveStatus';
 
 /** The journal of a part as an icon, with the number of its entries where it has any. */
-function JournalButton(props: { target: EntryTarget; of: string }) {
+export function JournalButton(props: { target: EntryTarget; of: string }) {
   const count = createMemo(() => entriesOn(props.target).length);
   const label = () => `Journal of ${props.of}${count() === 0 ? '' : `: ${count()} ${count() === 1 ? 'entry' : 'entries'}`}`;
   return (
@@ -61,46 +60,41 @@ function moveToDayItem(dayId: string, run: (dayId: string) => void): MenuItem[] 
   return items.length > 0 ? [{ label: 'Move…', items }] : [];
 }
 
-/** The open trip: its name, its days with their routes and stops, the export links and the saving state. */
-export function TripPanel(props: { onLeave: () => void; onReload: () => void }) {
-  const trip = () => openTrip()!;
-  /** One level up: from a day to the whole trip, from the trip to the list it was opened from. */
-  const back = () => (selectedDayId() ? { label: 'Back to the trip', run: () => selectDay(undefined) } : { label: 'Back to the trips', run: props.onLeave });
+/** The open trip's own actions, as icons on the explorer's heading: edit, export, journal, print and share. */
+export function TripIcons() {
+  return (
+    <>
+      <button class="icon" title="Edit trip" aria-label="Edit trip" onClick={() => setEditTarget({ kind: 'trip' })}>
+        <PencilIcon />
+      </button>
+      <button class="icon" title="Export GPX…" aria-label="Export GPX…" onClick={() => setExportOpen(true)}>
+        <DownloadIcon />
+      </button>
+      <JournalButton target={{}} of="the trip" />
+      <button class="icon" title="Print, share…" aria-label="Print, share…" onClick={() => setShareOpen(true)}>
+        <ShareIcon />
+      </button>
+    </>
+  );
+}
+
+/** The open trip's days with their routes and stops. */
+export function TripPanel() {
+  const neighboursLabel = () => (showNeighbours() ? 'Hide the neighbouring days on the map' : 'Show the neighbouring days on the map, dimmed');
   return (
     <section class="trip">
-      <div class="row">
-        <button class="icon" title={back().label} aria-label={back().label} onClick={() => back().run()}>
-          <BackIcon />
-        </button>
-        <h2 class="grow name" title={trip().name}>
-          {trip().name}
-        </h2>
-        <button class="icon" title="Edit trip" aria-label="Edit trip" onClick={() => setEditTarget({ kind: 'trip' })}>
-          <PencilIcon />
-        </button>
-      </div>
-      <SaveStatus onReload={props.onReload} />
-      <div class="row trip-actions">
-        <button class="link" onClick={() => setExportOpen(true)}>
-          <DownloadIcon /> Export GPX…
-        </button>
-        <button class="link" onClick={() => openJournal({})}>
-          <NotebookIcon /> Journal…
-        </button>
-        <button class="link" onClick={() => setShareOpen(true)}>
-          <ShareIcon /> Print, share…
-        </button>
-      </div>
       <div class="row heading">
         <h3 class="grow">Days</h3>
-        <label class="toggle">
-          <input type="checkbox" checked={showNeighbours()} onChange={(e) => setShowNeighbours(e.currentTarget.checked)} /> neighbouring days on the map
-        </label>
+        <button class="icon" title={neighboursLabel()} aria-label={neighboursLabel()} aria-pressed={showNeighbours()} onClick={() => setShowNeighbours(!showNeighbours())}>
+          <NeighboursIcon />
+        </button>
+        <button class="icon" title="Add day" aria-label="Add day" onClick={addDay}>
+          <PlusIcon />
+        </button>
       </div>
       <ol class="days">
-        <ForById each={trip().days}>{(day, index) => <DayItem day={day()} index={index()} />}</ForById>
+        <ForById each={openTrip()!.days}>{(day, index) => <DayItem day={day()} index={index()} />}</ForById>
       </ol>
-      <button onClick={addDay}>Add day</button>
     </section>
   );
 }
@@ -130,6 +124,11 @@ function DayItem(props: { day: Day; index: number }) {
             <span class="muted detail">{meta()}</span>
           </span>
         </button>
+        <Show when={selected()}>
+          <button class="icon" title={`Edit ${label()}`} aria-label={`Edit ${label()}`} onClick={() => setEditTarget({ kind: 'day', id: props.day.id })}>
+            <PencilIcon />
+          </button>
+        </Show>
         <RecordingsToggle dayId={props.day.id} />
         <JournalButton target={{ dayId: props.day.id }} of={label()} />
       </div>
@@ -174,8 +173,12 @@ function DayDetails(props: { day: Day }) {
       </Show>
       <div class="row heading">
         <h4 class="grow">Routes</h4>
-        <button onClick={addRoute}>Add route</button>
-        <button onClick={() => fileInput.click()}>Import GPX…</button>
+        <button class="icon" title="Add route" aria-label="Add route" onClick={addRoute}>
+          <PlusIcon />
+        </button>
+        <button class="icon" title="Import GPX…" aria-label="Import GPX…" onClick={() => fileInput.click()}>
+          <FileImportIcon />
+        </button>
         <input ref={fileInput} type="file" accept=".gpx,application/gpx+xml" hidden onChange={(e) => void importFile(e.currentTarget.files?.[0])} />
       </div>
       <ul class="routes">

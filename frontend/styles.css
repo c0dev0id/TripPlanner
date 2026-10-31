@@ -160,7 +160,7 @@ a {
 }
 
 /* The handle a day or a route is dragged by into another place, and the pad a trip or a duplicate is selected by, drawn alike. */
-.panel button.icon:is(.grip, .select-pad) {
+.panel button.icon:is(.grip, .pad) {
   padding: 2px 0;
   color: var(--muted);
 }
@@ -169,6 +169,7 @@ a {
   cursor: grab;
   touch-action: none;
 }
+
 
 /* The row being dragged rises above the others, which make room for it. */
 .days > li,
@@ -287,13 +288,85 @@ a {
   overflow-wrap: anywhere;
 }
 
-.library .new {
-  margin: 8px 0;
+/*
+ * The explorer: the library's actions and search on top, then the path to where it is and
+ * the card one level up, all of fixed height at every level, so that the card stays put.
+ */
+.library-actions {
+  gap: 2px;
+  margin-top: 8px;
 }
 
-.library .search {
+.panel .library-actions button.icon {
+  padding: 6px;
+  border-radius: 6px;
+}
+
+.panel .library-actions button.icon:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.explorer .search {
   width: 100%;
-  margin: 8px 0;
+  margin: 8px 0 4px;
+}
+
+.explorer-heading {
+  min-height: 30px;
+  gap: 0;
+  margin-bottom: 4px;
+}
+
+/* The path shortens its earlier names, so that the place it ends in stays readable up to most of its width. */
+.panel h2.path {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.path > span {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.path > .sep {
+  flex: none;
+}
+
+.path > .here {
+  flex: none;
+  max-width: 70%;
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.up-card > .row {
+  gap: 8px;
+  padding: 6px 8px;
+}
+
+.up-card .name {
+  display: block;
+}
+
+.save-state {
+  display: inline-grid;
+  place-items: center;
+  padding: 2px 4px;
+  color: var(--muted);
+}
+
+.save-state.failed {
+  color: var(--error);
 }
 
 .panel-header .theme {
@@ -320,7 +393,8 @@ a {
   border-radius: 2px;
 }
 
-.panel button.icon.recordings-toggle[aria-pressed='true'] {
+.panel button.icon.recordings-toggle[aria-pressed='true'],
+.panel .heading button.icon[aria-pressed='true'] {
   color: var(--accent);
 }
 
@@ -483,18 +557,6 @@ a {
   color: var(--error);
 }
 
-.trip-actions {
-  flex-wrap: wrap;
-  column-gap: 14px;
-  margin: 4px 0;
-  font-size: 13px;
-}
-
-.trip-actions button {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
 
 /* The export dialog: a row of choices per option. */
 .export-dialog fieldset {

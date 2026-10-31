@@ -6,10 +6,9 @@ import { dayLabel } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { counted, distanceText } from '../ui/format';
-import { BackIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection } from '../ui/selection';
-import { SelectPad } from '../ui/SelectPad';
+import { Pad } from '../ui/Pad';
 
 /** Where a route of the report is: its trip, and its day by number, date and name, or its section. */
 function whereText(route: DuplicateRoute): string {
@@ -44,7 +43,7 @@ async function removeRoutes(routes: readonly DuplicateRoute[]): Promise<void> {
  * touch screen a tap opens the route instead. The menu opens one, and copies or deletes
  * the selected ones.
  */
-export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void; onClose: () => void; disabled: boolean }) {
+export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void; disabled: boolean }) {
   const [groups, { refetch }] = createResource(listDuplicates);
   const of = (kind: DuplicateGroup['kind']) => (groups() ?? []).filter((g) => g.kind === kind);
   const [selection, setSelection] = createSignal<Selection<string>>(NOTHING_SELECTED);
@@ -103,12 +102,6 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   };
   return (
     <>
-      <div class="row">
-        <button class="icon" title="Back to the trips" aria-label="Back to the trips" onClick={props.onClose}>
-          <BackIcon />
-        </button>
-        <h2 class="grow">Duplicates</h2>
-      </div>
       <Switch fallback={<p class="muted">Looking for routes kept more than once…</p>}>
         <Match when={groups.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
         <Match when={groups()?.length === 0}>
@@ -149,7 +142,7 @@ function Section(props: {
                   {(route) => (
                     <li classList={{ selected: props.selected(route) }} ref={(el) => cardMenu(el, () => props.items(route))}>
                       <div class="row">
-                        <SelectPad selected={props.selected(route)} name={nameOf(route)} onToggle={() => props.onToggle(route)} />
+                        <Pad label={`Select ${nameOf(route)}`} selected={props.selected(route)} onToggle={() => props.onToggle(route)} />
                         <button
                           class="text grow"
                           onPointerDown={(e) => (pointer = e.pointerType)}

@@ -33,8 +33,10 @@ share work; sharing between users is on the way.
   a route moves to another day, routes and stops are copied and pasted into any day of any
   trip, a whole trip is duplicated, trips imported one file each are merged into one.
 - **A library with folders** — trips sorted into folders inside folders, and a search
-  across them. *Import folder…* turns a folder tree of GPX files into folders and trips:
-  a trip per folder or per file, or planning material.
+  across them. Importing a folder turns a tree of
+  GPX files into folders and trips: a trip per folder or per file, or planning material.
+- **One way back** — the card under the path leads one level up, from a day to its trip
+  to its folder to the top, and never moves.
 - **Duplicates found** — a report lists the routes kept more than once across the
   library, copies and the same ride from two apps; select some to copy or delete them.
 - **Planning material** — a trail or a tour collection, such as the TET by country, kept
@@ -64,17 +66,20 @@ share work; sharing between users is on the way.
 ## Getting started
 
 1. Join the waiting list on the landing page; the invitation comes by mail.
-2. Sign in, name a new trip, add a day, add a route.
+2. Sign in, name a new trip with the map icon on top, add a day and a route with the
+   plus on their headers.
 3. Pick the *Point* tool and tap the map for the route's points; the road between them
    is routed. Pick the *Stop* tool and tap a point to make it a stop, or tap beside the
    route for a free stop. *Done* or Esc leaves the route; a click on a route's row
    selects it again, with its stops listed under it.
 4. Open a stop's details for its arrival time and pause; the first stop's time starts
    the day's timeline.
-5. *Export GPX…* in the trip's panel: pick the scope and the form, download.
-6. After the ride, *Journal…* on a day, a stop or a route takes the notes and photos,
-   *Journal here…* in the map's menu puts one at a spot, and *Journal…* on the trip reads
-   it all top down; *Print, share…* opens the trip's page or shares it under a link.
+5. The download icon on the trip's path heading exports GPX: pick the scope and the
+   form, download.
+6. After the ride, the journal icon on a day, a stop or a route takes the notes and
+   photos, *Journal here…* in the map's menu puts one at a spot, and the trip's journal
+   icon reads it all top down; its share icon opens the trip's page or shares it under a
+   link.
 
 | Key or gesture | Does |
 |---|---|
