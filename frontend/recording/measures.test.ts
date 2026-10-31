@@ -43,6 +43,8 @@ describe('summaryOf', () => {
     const s = summaryOf(m);
     expect(Math.round(s.distanceM)).toBe(400);
     expect([s.durationS, s.movingS, s.maxSpeed]).toEqual([90, 30, 36]);
+    // 300 m in the 30 s moving; the 100 m while standing count for neither.
+    expect(Math.round(s.averageSpeed!)).toBe(36);
     expect([s.ascentM, s.descentM, s.minAltitude, s.maxAltitude]).toEqual([20, 20, 100, 120]);
     expect(s.leanRange).toEqual([-30, 25]);
   });

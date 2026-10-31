@@ -110,33 +110,37 @@ function climb(altitude: (number | null)[]): { ascent: number; descent: number }
   return { ascent, descent };
 }
 
-/** Moving time in seconds: the time between points where the rider went faster than STANDING_KMH on average of both ends. */
-function movingSeconds(m: Measures): number | undefined {
+/** The time and the distance moving: between points that took time, where the rider went faster than STANDING_KMH on average of both ends. */
+function moving(m: Measures): { seconds: number; metres: number } | undefined {
   if (!m.time || !m.speed) return undefined;
-  let moving = 0;
+  let seconds = 0;
+  let metres = 0;
   for (let i = 1; i < m.time.length; i++) {
     const [t0, t1, v0, v1] = [m.time[i - 1], m.time[i], m.speed[i - 1], m.speed[i]];
     if (t0 === null || t0 === undefined || t1 === null || t1 === undefined || v0 === null || v0 === undefined || v1 === null || v1 === undefined) continue;
-    if ((v0 + v1) / 2 > STANDING_KMH) moving += (t1 - t0) / 1000;
+    if (t1 > t0 && (v0 + v1) / 2 > STANDING_KMH) {
+      seconds += (t1 - t0) / 1000;
+      metres += m.distance[i]! - m.distance[i - 1]!;
+    }
   }
-  return moving;
+  return { seconds, metres };
 }
 
 export function summaryOf(m: Measures): Summary {
   const distanceM = m.distance.at(-1) ?? 0;
   const times = m.time ? numbers(m.time) : [];
   const durationS = times.length > 1 ? (times.at(-1)! - times[0]!) / 1000 : undefined;
-  const movingS = movingSeconds(m);
+  const motion = moving(m);
   const speeds = m.speed ? numbers(m.speed) : [];
-  const moving = speeds.filter((v) => v > STANDING_KMH);
-  const averageSpeed = movingS ? (distanceM / movingS) * 3.6 : moving.length > 0 ? moving.reduce((a, b) => a + b, 0) / moving.length : undefined;
+  const riding = speeds.filter((v) => v > STANDING_KMH);
+  const averageSpeed = motion?.seconds ? (motion.metres / motion.seconds) * 3.6 : riding.length > 0 ? riding.reduce((a, b) => a + b, 0) / riding.length : undefined;
   const heights = m.altitude ? numbers(m.altitude) : [];
   const leans = m.lean ? numbers(m.lean) : [];
   const { ascent, descent } = m.altitude ? climb(m.altitude) : { ascent: undefined, descent: undefined };
   return {
     distanceM,
     durationS,
-    movingS,
+    movingS: motion?.seconds,
     averageSpeed,
     maxSpeed: speeds.length > 0 ? Math.max(...speeds) : undefined,
     ascentM: ascent,
