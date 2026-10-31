@@ -3,7 +3,9 @@
 ## Available
 
 - Accounts: a waiting list on the landing page, invitations by mail from an admin page or
-  the command line, sign-in, sign-out, password reset by mail.
+  the command line, sign-in, sign-out, password reset by mail. `make user EMAIL=…` makes
+  an account without an invitation and prints a generated password; at the first
+  sign-in the user has to replace it before the planner opens.
 - A library of the user's trips in folders, which may hold folders: create, open, rename,
   duplicate and delete trips, create, rename and delete folders (for a folder that holds
   anything the confirmation asks whether that moves up into its parent or is deleted with it), move a trip between folders from Move… in its menu, create a trip or a folder

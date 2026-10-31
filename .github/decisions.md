@@ -544,6 +544,14 @@ entries at the end of their section.
   by mail; the link opens sign-up for that address. The address is verified by
   construction, so there is no separate verification step. Open sign-up can be switched
   on later.
+- **Accounts from the command line hand over a password to replace.** `make user` makes
+  an account without an invitation, for someone set up by hand or a server without
+  working mail, and prints a generated password of 16 letters and digits that cannot be
+  misread. That password has passed through the admin's terminal, so the account is not
+  yet the user's own: until a new password is chosen, every page leads to the change
+  page and the API answers 403, and the given password is refused as the new one. The
+  state is a column on the user, cleared by any change of the password, a reset by mail
+  included; a reset token mailed instead would need the mail this command does without.
 - **Export runs on the server, import in the browser.** The data is in SQLite; GPX writing
   and a zip of per-day files are a read of the database, and a download is a URL that can
   be bookmarked. Import needs the editor's context (which day, which gap) and the routing

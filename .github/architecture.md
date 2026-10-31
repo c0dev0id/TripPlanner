@@ -144,6 +144,7 @@ erDiagram
     string email
     string password_hash
     bool is_admin
+    bool must_change_password
     datetime created_at
   }
   WAITLIST_ENTRY {

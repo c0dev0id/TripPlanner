@@ -24,6 +24,10 @@ recreate:
 	doas -u www php-8.4 bin/planner db:recreate
 invite:
 	doas -u www php-8.4 bin/planner invite $(EMAIL)
+# Makes an account without an invitation and prints its generated password, which has to
+# be replaced at the first sign-in.
+user:
+	doas -u www php-8.4 bin/planner user:create $(EMAIL)
 admin:
 	doas -u www php-8.4 bin/planner admin:grant $(EMAIL)
 # Fetches Garmin's pictures of its waypoint symbols into public/garmin-symbols, which git
@@ -40,4 +44,4 @@ check:
 	$(NPM) test
 	$(NPM) run build
 
-.PHONY: build install init recreate invite admin garmin-icons check
+.PHONY: build install init recreate invite user admin garmin-icons check

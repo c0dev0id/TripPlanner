@@ -32,6 +32,20 @@ switch ($command) {
         $container->get(Inviter::class)->invite(require_argument($argument), null, new DateTimeImmutable());
         echo "Invitation sent to $argument.\n";
         break;
+    case 'user:create':
+        $email = require_argument($argument);
+        $users = $container->get(Users::class);
+        if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+            fwrite(STDERR, "$email is no e-mail address.\n");
+            exit(1);
+        }
+        if ($users->findByEmail($email) !== null) {
+            fwrite(STDERR, "There is an account for $email already.\n");
+            exit(1);
+        }
+        $password = $users->createWithInitialPassword($email, new DateTimeImmutable());
+        echo "Account made for $email with the password $password, to be replaced at the first sign-in.\n";
+        break;
     case 'admin:grant':
         $granted = $container->get(Users::class)->grantAdmin(require_argument($argument));
         echo $granted ? "$argument is an admin now.\n" : "No account for $argument.\n";
@@ -44,7 +58,7 @@ switch ($command) {
         }
         break;
     default:
-        fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | admin:grant <email> | garmin:icons\n");
+        fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | user:create <email> | admin:grant <email> | garmin:icons\n");
         exit(1);
 }
 
