@@ -64,6 +64,9 @@ export const createFolder = (name: string, parentId: number | null): Promise<Fol
 
 export const renameFolder = (id: number, name: string): Promise<void> => request('PATCH', `/api/folders/${id}`, { name });
 
+/** Puts a folder into another folder, or at the top. */
+export const moveFolder = (id: number, parentId: number | null): Promise<void> => request('PATCH', `/api/folders/${id}`, { parentId });
+
 /** Deletes the folder; what it holds moves up into its parent, or is deleted with it. */
 export const deleteFolder = (id: number, contents: 'move' | 'delete'): Promise<void> => request('DELETE', `/api/folders/${id}?contents=${contents}`);
 

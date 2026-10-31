@@ -9,6 +9,7 @@ use PDO;
 use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
 use Planner\Tests\TestDatabase;
+use Planner\Trip\FolderInsideItself;
 use Planner\Trip\Folders;
 use Planner\Trip\Trips;
 use Planner\Trip\UnknownFolder;
@@ -50,6 +51,40 @@ final class FoldersTest extends TestCase
         self::assertFalse($this->folders->delete($this->otherUserId, $folder->id));
         self::assertTrue($this->folders->delete($this->userId, $folder->id));
         self::assertSame([], $this->folders->listFor($this->userId));
+    }
+
+    public function testMovesAFolderIntoAnotherAndBackToTheTop(): void
+    {
+        $alps = $this->folders->create($this->userId, 'Alps', null, $this->now);
+        $year = $this->folders->create($this->userId, '2025', null, $this->now);
+        self::assertTrue($this->folders->move($this->userId, $year->id, $alps->id));
+        self::assertSame($alps->id, $this->parentOf($year->id));
+        self::assertTrue($this->folders->move($this->userId, $year->id, null));
+        self::assertNull($this->parentOf($year->id));
+        self::assertFalse($this->folders->move($this->otherUserId, $year->id, null));
+    }
+
+    public function testRefusesToMoveAFolderIntoItselfOrDeeper(): void
+    {
+        $alps = $this->folders->create($this->userId, 'Alps', null, $this->now);
+        $year = $this->folders->create($this->userId, '2025', $alps->id, $this->now);
+        $month = $this->folders->create($this->userId, 'July', $year->id, $this->now);
+        foreach ([$alps->id, $year->id, $month->id] as $inside) {
+            try {
+                $this->folders->move($this->userId, $alps->id, $inside);
+                self::fail('Moved a folder into itself or deeper.');
+            } catch (FolderInsideItself) {
+                self::assertNull($this->parentOf($alps->id));
+            }
+        }
+    }
+
+    public function testRefusesToMoveAFolderIntoSomeoneElsesFolder(): void
+    {
+        $mine = $this->folders->create($this->userId, 'Alps', null, $this->now);
+        $theirs = $this->folders->create($this->otherUserId, 'Elsewhere', null, $this->now);
+        $this->expectException(UnknownFolder::class);
+        $this->folders->move($this->userId, $mine->id, $theirs->id);
     }
 
     public function testTripsStayWhenTheirFolderGoes(): void
@@ -137,5 +172,15 @@ final class FoldersTest extends TestCase
         }
         $this->expectException(UnknownFolder::class);
         $this->trips->create($this->userId, 'Another', $this->now, $folder->id);
+    }
+
+    private function parentOf(int $folderId): ?int
+    {
+        foreach ($this->folders->listFor($this->userId) as $folder) {
+            if ($folder->id === $folderId) {
+                return $folder->parentId;
+            }
+        }
+        self::fail('No such folder.');
     }
 }

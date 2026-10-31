@@ -106,7 +106,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `GET /duplicates` | The routes the user's library keeps more than once, in groups of exact copies or of the same ride, each route with its trip, day, name and length. |
 | `GET /folders` | The user's folders by name, each with the folder it is in (`parentId`, null at the top). |
 | `POST /folders` | Creates a folder from `{name, parentId}`; the parent may be null. |
-| `PATCH /folders/{id}` | Renames the folder from `{name}`. |
+| `PATCH /folders/{id}` | Renames the folder from `{name}`, or moves it into the folder `{parentId}` (null for the top); a folder never goes into itself or a folder inside it. |
 | `DELETE /folders/{id}` | Deletes the folder; its trips and folders move up into the folder it was in, or to the top. With `?contents=delete` they are deleted with it instead, at any depth, the trips' journal files included. |
 
 A trip shared under a token is readable without sign-in under `/api/shared/{token}`:
