@@ -4,6 +4,7 @@ import { lineLength } from '../geo/measure';
 import type { Day } from '../model/trip';
 import { copyRecording } from '../state/clipboard';
 import { showWhole } from '../state/drawing';
+import { opened, openRecording } from '../state/recordingView';
 import {
   addRecording,
   recordingAction,
@@ -97,7 +98,7 @@ export function DayRecordings(props: { day: Day }) {
   );
 }
 
-/** A recording as a row: its colour, its name over its length; a click shows it whole on the map, its menu renames, copies or deletes it. */
+/** A recording as a row: its colour, its name over its length; a click shows it whole on the map with its figures, its menu renames, copies or deletes it. */
 function RecordingItem(props: { recording: Recording; onRename: (recording: Recording) => void }) {
   const track = () => trackOf(props.recording);
   const detail = () => {
@@ -126,13 +127,15 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
     },
     { label: 'Delete', run: () => void remove() },
   ];
-  const showIt = () => {
+  const openIt = () => {
+    // Opened first, so that it is shown whole beside its cards.
+    openRecording(props.recording.id);
     const t = track();
     if (t && !(t instanceof Error)) showWhole(t.points);
   };
   return (
-    <li class="recording" ref={(el) => cardMenu(el, items)}>
-      <button class="text row" onClick={showIt}>
+    <li class="recording" classList={{ opened: opened()?.recording.id === props.recording.id }} ref={(el) => cardMenu(el, items)}>
+      <button class="text row" onClick={openIt}>
         <span class="swatch" style={{ background: recordingColor(props.recording) }} />
         <span class="lines grow">
           <span class="name">{props.recording.name}</span>

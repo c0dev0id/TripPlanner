@@ -6,6 +6,7 @@ import { Lightbox } from './ui/Lightbox';
 import { PanelResizer } from './ui/PanelResizer';
 import { HintBar } from './map/HintBar';
 import { MapView } from './map/MapView';
+import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState } from './state/autosave';
 import { closeTrip, loadTrip, openTrip } from './state/trip';
@@ -68,6 +69,7 @@ export function App() {
       <div class="map-wrap">
         <PanelResizer />
         <MapView />
+        <RecordingCards />
         <HintBar />
         <Toolbar />
       </div>

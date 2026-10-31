@@ -28,6 +28,11 @@ export function takenAtText(local: string): string {
   return Number.isNaN(date.getTime()) ? local : TAKEN_AT.format(date);
 }
 
+const CLOCK = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+
+/** A moment in milliseconds since the epoch as the browser's local time of day: "14:30:05". */
+export const clockText = (ms: number): string => CLOCK.format(ms);
+
 /** Minutes since midnight as HH:MM; past midnight with the days after it, as "+1". */
 export function timeText(minutes: number): string {
   const whole = Math.round(minutes);

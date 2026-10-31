@@ -32,12 +32,15 @@
   (type checking), Vitest 5 with jsdom for unit tests of the pure modules. Two entries:
   the planner app and the read-only trip page.
 - MapLibre GL JS 6 (map rendering, Web Mercator).
+- uPlot 1.6 (MIT): the charts of a recording, drawn on a canvas.
 - libheif-js 1.23 (libheif compiled to WebAssembly, LGPL): decodes a HEIC in browsers that
   cannot, loaded on demand as a chunk of its own, about 2 MB.
 - Route tool, GPX reading, line simplification and polyline handling ported from Layer Slayer.
 - Routing by the FOSSGIS Valhalla server (valhalla1.openstreetmap.de): at most one request
   per second, attribution shown. The profiles are Valhalla's motorcycle, bicycle and
-  pedestrian costings by name; the motorcycle takes the `use_highways` option.
+  pedestrian costings by name; the motorcycle takes the `use_highways` option. The same
+  server matches a recording to the roads (`trace_attributes`) for their surfaces, within
+  the same limit.
 - Garmin's waypoint symbol pictures from GPS Visualizer's copies
   (gpsvisualizer.com/google_maps/icons/garmin/24x24/), fetched once on the server by
   `make garmin-icons` into public/garmin-symbols, outside git: they are Garmin's artwork.

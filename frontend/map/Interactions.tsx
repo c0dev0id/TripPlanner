@@ -3,15 +3,18 @@ import { createEffect, onCleanup } from 'solid-js';
 import { currentTool, setTool, spotItems, tapAction, tool, type Tool } from '../state/drawing';
 import { isTextField } from '../ui/form';
 import { menu, setMenu } from '../ui/menu';
+import { pickPoint, setPickedIndex } from '../state/recordingView';
 import { addFreeStop, appendPoint, editingRoute, editRoute, insertPoint, insertStop, redo, undo } from '../state/trip';
 import { fromMarker, toLngLat } from './markers';
+import { recordingPointAt } from './recordingPick';
 import { hitRouteLine } from './routeTools';
 import { TapFilter, tapReach, type PointerSample } from './tapFilter';
 
 /**
  * Taps on the map and keys while a route is selected: the tool's work on that route, undo
  * and redo, the hand while the space bar is held, and the menu of a spot on the map
- * (right-click or long press).
+ * (right-click or long press). A tap that does no tool's work picks the point of a
+ * recording's line it hits.
  */
 export function Interactions(props: { map: MapLibreMap }) {
   const map = props.map;
@@ -66,12 +69,19 @@ export function Interactions(props: { map: MapLibreMap }) {
     }
     taps.click(sample(e.originalEvent), () => onTap(e));
   };
-  /** A click that proved to be a tap: it does what the next tap does. */
+  /** A click that proved to be a tap: it does what the next tap does, or else picks the point of a recording tapped. */
   const onTap = (e: MapMouseEvent) => {
     const action = tapAction();
     const route = editingRoute();
-    // A delete tap acts on markers only.
-    if ((action !== 'point' && action !== 'stop') || !route || fromMarker(e.originalEvent)) return;
+    if (fromMarker(e.originalEvent)) return;
+    if ((action !== 'point' && action !== 'stop') || !route) {
+      // A delete tap acts on markers only.
+      if (action === 'delete') return;
+      const hit = recordingPointAt(map, e.point, tapReach(pointerType !== 'mouse'));
+      if (hit) pickPoint(hit.id, hit.index);
+      else setPickedIndex(undefined);
+      return;
+    }
     setMenu(undefined);
     const hit = hitRouteLine(map, route, [e.point.x, e.point.y], tapReach(pointerType !== 'mouse'));
     if (action === 'point') {

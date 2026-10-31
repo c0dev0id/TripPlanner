@@ -124,9 +124,19 @@
   aside); the file is kept as it is, with every value it measured per point. A day with
   recordings shows a recording symbol that shows or hides them: listed under the day,
   each in its own colour, and drawn on the map in that colour under the planned routes.
-  A recording is renamed, copied or deleted from its menu; a click shows it whole. A
-  copied recording pastes into any day as a recording or as a track route, and a single
-  copied track also as a recording.
+  A recording is renamed, copied or deleted from its menu. A copied recording pastes into
+  any day as a recording or as a track route, and a single copied track also as a
+  recording.
+- A recording's figures: a click on it shows it whole and opens a card over the map with
+  its distance, time and moving time, average and top speed, climb and descent, lowest
+  and highest point and furthest lean to either side, as far as its file has the values.
+  Its line can be coloured by speed, altitude, slope, lean angle or the road surface,
+  with a legend; the surfaces, matched once by the routing server, are listed with the
+  distance on each. A card along the bottom charts altitude and speed along the way, and
+  how far was ridden at each speed, slope and lean angle. Pointing in the chart marks the
+  place on the map; a click in the chart or on the line on the map shows everything known
+  of that point: the distance along, the time, the measures, the surface and the file's
+  other values. On a narrow screen the figures start folded.
 - A journal on the trip, on a day, on a stop and on a route, opened from the icon on
   their rows, which counts their entries: entries of a note, a file (a photo, a receipt, a document) or both, edited and
   deleted in place; rows say how many entries a part has. The trip's own journal reads

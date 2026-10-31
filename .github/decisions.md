@@ -442,6 +442,38 @@ entries at the end of their section.
   limit of 1 MB, and the server keeps and serves it compressed; the browser reads a
   day's recordings only once they are shown. A recording belongs to a day and goes with
   it, is copied with its trip, and follows a day that joins another in a merge.
+- **A recording's figures are worked out in the browser from its file.** The speed is the
+  file's own (metres per second in GPX and in Ridelink's extension), else distance over
+  time across two points to either side; the slope is measured over 100 m around a point,
+  so that a few metres of height noise do not read as a wall; climb and descent count a
+  change once it exceeds 3 m from the last turning point. Moving is where the speed at
+  both ends of a stretch averages above 3 km/h, and the average speed is the distance
+  moving over the time moving, both over stretches that took time: a file whose
+  timestamps repeat would otherwise divide the whole distance by a few seconds. Heights
+  or lean angles that are all zero count as missing, as apps write them when they did not
+  measure. Lean is shown signed as the file writes it: Ridelink's sign convention is not
+  known yet.
+- **Surfaces come from matching the track to the roads, only when asked.** The routing
+  server's `trace_attributes` gives each matched point its edge's surface. It is asked
+  once a line is coloured by surface, with points 50 m apart in pieces of 1,000; the points
+  between take the surface before them. Routing and matching share one gate, so the page
+  stays within one request per 1.1 s whatever asks. The surfaces are kept for the page's
+  life and not stored: matching a long ride takes a few requests, and storing them would
+  tie the recording to a state of OpenStreetMap.
+- **A coloured line is drawn in pieces of one colour.** MapLibre's `line-gradient` takes
+  no colours from feature data and needs line metrics on the whole source; a feature per
+  piece keeps the one line layer reading its `color` property. A scale spreads over the
+  values of the one recording between its 1st and 99th percentile, so that a GPS spike
+  does not squash every other colour; slope and lean are centred on zero.
+- **The figures float over the map as cards, and views keep clear of them.** The user
+  chose separate cards (a summary top left, charts along the bottom, a popup at the point
+  picked) over a panel section, so that the map, the figures and the line read together.
+  A view fitted to the map pads by how far the cards reach in. MapLibre's own camera
+  padding was not used: it shifts every camera move, and setting it stops a running
+  flight.
+- **Charts by uPlot.** It draws tens of thousands of points on a canvas at about 50 KB and
+  has no dependencies; the user chose it. A chart is made again when its data or the
+  page's light or dark changes, reading its colours from its box's styles.
 - **One track or route per route, one waypoint per stop.** A GPX file holds the stops in
   scope as waypoints, bound ones at their route point and free ones at their own position
   when within the chosen reach of a route, with the stop's Garmin symbol, and

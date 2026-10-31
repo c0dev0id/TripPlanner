@@ -3,21 +3,27 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { ROUTING_ATTRIBUTION } from '../routing/valhalla';
 import { BaseMapControl } from './BaseMapControl';
 import { chosenBaseMap } from './baseMaps';
-import { RECORDING_LAYERS, RECORDINGS_SOURCE } from './recordingOverlay';
+import { RECORDING_LAYERS, RECORDING_POINT_LAYERS, RECORDING_POINT_SOURCE, RECORDINGS_SOURCE } from './recordingOverlay';
 import { ROUTE_LAYERS, ROUTES_SOURCE } from './routeOverlay';
 
 // The worker is built as a file of its own; MapLibre's own lookup does not find it in a bundle.
 setWorkerUrl(workerUrl);
 
 /**
- * The base style with the overlays on top, the recordings under the routes: their sources
- * and layers are appended to every style the map loads, and the sources keep their data
- * across a change of base map, since MapLibre hands the transform the style it is leaving.
+ * The base style with the overlays on top, the recordings under the routes and the point
+ * picked on a recording over them: their sources and layers are appended to every style
+ * the map loads, and the sources keep their data across a change of base map, since
+ * MapLibre hands the transform the style it is leaving.
  */
 function withOverlays(previous: StyleSpecification | undefined, next: StyleSpecification): StyleSpecification {
   const routes = previous?.sources[ROUTES_SOURCE] ?? { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, attribution: ROUTING_ATTRIBUTION };
   const recordings = previous?.sources[RECORDINGS_SOURCE] ?? { type: 'geojson', data: { type: 'FeatureCollection', features: [] } };
-  return { ...next, sources: { ...next.sources, [RECORDINGS_SOURCE]: recordings, [ROUTES_SOURCE]: routes }, layers: [...next.layers, ...RECORDING_LAYERS, ...ROUTE_LAYERS] };
+  const point = previous?.sources[RECORDING_POINT_SOURCE] ?? { type: 'geojson', data: { type: 'FeatureCollection', features: [] } };
+  return {
+    ...next,
+    sources: { ...next.sources, [RECORDINGS_SOURCE]: recordings, [ROUTES_SOURCE]: routes, [RECORDING_POINT_SOURCE]: point },
+    layers: [...next.layers, ...RECORDING_LAYERS, ...ROUTE_LAYERS, ...RECORDING_POINT_LAYERS],
+  };
 }
 
 /**

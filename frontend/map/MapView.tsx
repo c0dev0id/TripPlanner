@@ -1,8 +1,10 @@
 import { GeoJSONSource, LngLatBounds, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
 import type { Day, LngLat } from '../model/trip';
-import { panTarget, showNeighbours } from '../state/drawing';
+import { mapCover, panTarget, showNeighbours } from '../state/drawing';
 import { routePositions } from '../routing/legs';
+import { colorRuns } from '../recording/lineColors';
+import { opened, openedLineColors } from '../state/recordingView';
 import { recordingColor, shownRecordings, trackOf } from '../state/recordings';
 import { failedLegs } from '../state/routing';
 import { editingRouteId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
@@ -11,6 +13,7 @@ import { Interactions } from './Interactions';
 import { EntryMarkers } from './EntryMarkers';
 import { PointMarkers } from './PointMarkers';
 import { RECORDINGS_SOURCE, recordingFeatures } from './recordingOverlay';
+import { RecordingPoint } from './RecordingPoint';
 import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { SearchBox } from './SearchBox';
 import { StopMarkers } from './StopMarkers';
@@ -33,6 +36,7 @@ export function MapView() {
           <>
             <RouteLines map={m()} />
             <RecordingLines map={m()} />
+            <RecordingPoint map={m()} />
             <StopMarkers map={m()} />
             <EntryMarkers map={m()} />
             <PointMarkers map={m()} />
@@ -70,18 +74,27 @@ function dimStops(): LngLat[] {
   return dim.flatMap(({ day }) => day.stops.map((stop) => stop.lngLat));
 }
 
-/** Keeps the recordings shown on the map, each in its colour, once its track is read. */
+/** Keeps the recordings shown on the map once their tracks are read, each in its colour or, opened, coloured by a measure. */
 function RecordingLines(props: { map: MapLibreMap }) {
   const features = createMemo(() =>
     recordingFeatures(
       shownRecordings().flatMap((recording) => {
         const track = trackOf(recording);
-        return track && !(track instanceof Error) ? [{ points: track.points, color: recordingColor(recording) }] : [];
+        if (!track || track instanceof Error) return [];
+        const colors = recording.id === opened()?.recording.id ? openedLineColors() : undefined;
+        if (colors) return colorRuns(track.points, colors).map((run) => ({ id: recording.id, ...run }));
+        return [{ id: recording.id, points: track.points, color: recordingColor(recording) }];
       }),
     ),
   );
   createEffect(() => props.map.getSource<GeoJSONSource>(RECORDINGS_SOURCE)?.setData(features()));
   return null;
+}
+
+/** The padding of a view fitted to the map: a margin around what it shows, beyond the cards over the map. */
+function clearOfCards() {
+  const { left, bottom } = mapCover();
+  return { top: 80, right: 80, bottom: 80 + bottom, left: 80 + left };
 }
 
 /** Keeps the route lines on the map, shows the selected day with its recordings shown, or the whole trip, when it changes, and goes where the panel points. */
@@ -103,14 +116,14 @@ function RouteLines(props: { map: MapLibreMap }) {
           if (track && !(track instanceof Error)) for (const position of track.points) bounds.extend(position);
         }
       }
-      if (!bounds.isEmpty()) props.map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 600 });
+      if (!bounds.isEmpty()) props.map.fitBounds(bounds, { padding: clearOfCards(), maxZoom: 13, duration: 600 });
     }),
   );
   createEffect(
     on(panTarget, (target) => {
       if (!target) return;
       if ('lngLat' in target) props.map.flyTo({ center: target.lngLat, zoom: Math.max(props.map.getZoom(), 12), duration: 500 });
-      else if (target.positions.length > 0) props.map.fitBounds(target.positions.reduce((b, p) => b.extend(p), new LngLatBounds()), { padding: 80, maxZoom: 15, duration: 500 });
+      else if (target.positions.length > 0) props.map.fitBounds(target.positions.reduce((b, p) => b.extend(p), new LngLatBounds()), { padding: clearOfCards(), maxZoom: 15, duration: 500 });
     }),
   );
   return null;
