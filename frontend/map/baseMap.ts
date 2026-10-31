@@ -3,19 +3,21 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { ROUTING_ATTRIBUTION } from '../routing/valhalla';
 import { BaseMapControl } from './BaseMapControl';
 import { chosenBaseMap } from './baseMaps';
+import { RECORDING_LAYERS, RECORDINGS_SOURCE } from './recordingOverlay';
 import { ROUTE_LAYERS, ROUTES_SOURCE } from './routeOverlay';
 
 // The worker is built as a file of its own; MapLibre's own lookup does not find it in a bundle.
 setWorkerUrl(workerUrl);
 
 /**
- * The base style with the route overlay on top: its source and layers are appended to
- * every style the map loads, and the source keeps its data across a change of base map,
- * since MapLibre hands the transform the style it is leaving.
+ * The base style with the overlays on top, the recordings under the routes: their sources
+ * and layers are appended to every style the map loads, and the sources keep their data
+ * across a change of base map, since MapLibre hands the transform the style it is leaving.
  */
-function withRouteOverlay(previous: StyleSpecification | undefined, next: StyleSpecification): StyleSpecification {
-  const source = previous?.sources[ROUTES_SOURCE] ?? { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, attribution: ROUTING_ATTRIBUTION };
-  return { ...next, sources: { ...next.sources, [ROUTES_SOURCE]: source }, layers: [...next.layers, ...ROUTE_LAYERS] };
+function withOverlays(previous: StyleSpecification | undefined, next: StyleSpecification): StyleSpecification {
+  const routes = previous?.sources[ROUTES_SOURCE] ?? { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, attribution: ROUTING_ATTRIBUTION };
+  const recordings = previous?.sources[RECORDINGS_SOURCE] ?? { type: 'geojson', data: { type: 'FeatureCollection', features: [] } };
+  return { ...next, sources: { ...next.sources, [RECORDINGS_SOURCE]: recordings, [ROUTES_SOURCE]: routes }, layers: [...next.layers, ...RECORDING_LAYERS, ...ROUTE_LAYERS] };
 }
 
 /**
@@ -24,7 +26,7 @@ function withRouteOverlay(previous: StyleSpecification | undefined, next: StyleS
  * loaded.
  */
 export function newBaseMap(container: HTMLElement, options: Partial<MapOptions>, ready: (map: MapLibreMap) => void): MapLibreMap {
-  const map = new MapLibreMap({ container, style: chosenBaseMap().style, transformStyle: withRouteOverlay, center: [10.5, 47.5], zoom: 5, attributionControl: { compact: true }, ...options });
+  const map = new MapLibreMap({ container, style: chosenBaseMap().style, transformStyle: withOverlays, center: [10.5, 47.5], zoom: 5, attributionControl: { compact: true }, ...options });
   map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
   map.addControl(new GeolocateControl({ positionOptions: { enableHighAccuracy: true }, fitBoundsOptions: { maxZoom: 13 } }), 'top-right');
   map.addControl(new BaseMapControl(), 'top-right');

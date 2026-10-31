@@ -4,10 +4,11 @@
 
 - OpenBSD with httpd and php-fpm. php-fpm runs chrooted to `/var/www`, so the application,
   its data and the SQLite file live below that directory.
-- PHP 8.4 with pdo_sqlite, sqlite3, zip, gd, intl, curl, xsl, and the core exif and
-  fileinfo extensions: gd makes the journal's image previews, fileinfo tells uploaded
-  files' types, exif reads when and where a photo was taken (without exif, photos are
-  kept but not placed).
+- PHP 8.4 with pdo_sqlite, sqlite3, zip, gd, intl, curl, xsl, and the core exif,
+  fileinfo and zlib extensions: gd makes the journal's image previews, fileinfo tells
+  uploaded files' types, exif reads when and where a photo was taken (without exif,
+  photos are kept but not placed), zlib checks that an uploaded recording is a
+  compressed GPX file.
 - The journal's files are uploads: httpd's `connection max request body` (1 MB by
   default, answered with 413 above it) and php-fpm's `upload_max_filesize` and
   `post_max_size` (2 MB and 8 MB by default) bound a photo's size; phone photos need

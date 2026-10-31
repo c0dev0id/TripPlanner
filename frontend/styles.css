@@ -307,6 +307,24 @@ a {
   border-radius: 7px 7px 0 0;
 }
 
+/* A day's recordings: a line in each one's colour on the map before its name. */
+.recordings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.recordings .swatch {
+  flex: none;
+  width: 16px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.panel button.icon.recordings-toggle[aria-pressed='true'] {
+  color: var(--accent);
+}
+
 /* A selected trip or duplicate is highlighted as a selected day is. */
 .trips > li.selected > .row,
 .duplicates li.selected > .row {

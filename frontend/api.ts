@@ -94,6 +94,35 @@ export const updateEntry = (tripId: number, entryId: number, text: string): Prom
 
 export const deleteEntry = (tripId: number, entryId: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/entries/${entryId}`);
 
+/** A ride as recorded, kept on a day; its GPX file is fetched apart. */
+export interface Recording {
+  id: number;
+  dayId: string;
+  name: string;
+}
+
+export const listRecordings = (tripId: number): Promise<Recording[]> => request('GET', `${tripApi(tripId)}/recordings`);
+
+/** Adds a recording to a day: the GPX file goes compressed with gzip, which keeps it within a server's request limits. */
+export async function addRecording(tripId: number, dayId: string, name: string, gpx: string): Promise<Recording> {
+  const form = new FormData();
+  form.set('dayId', dayId);
+  form.set('name', name);
+  form.set('file', await new Response(new Blob([gpx]).stream().pipeThrough(new CompressionStream('gzip'))).blob(), 'recording.gpx.gz');
+  return request('POST', `${tripApi(tripId)}/recordings`, form);
+}
+
+export const renameRecording = (tripId: number, id: number, name: string): Promise<void> => request('PATCH', `${tripApi(tripId)}/recordings/${id}`, { name });
+
+export const deleteRecording = (tripId: number, id: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/recordings/${id}`);
+
+/** A recording's GPX file; the browser undoes the compression it is sent with. */
+export async function fetchRecordingGpx(tripId: number, id: number): Promise<string> {
+  const response = await fetch(`${tripApi(tripId)}/recordings/${id}/gpx`);
+  if (!response.ok) throw new ApiError(response.status, `The recording could not be read (${response.status}).`);
+  return response.text();
+}
+
 /** The token the trip's read-only page is public under, or null. */
 export const shareToken = (tripId: number): Promise<{ token: string | null }> => request('GET', `${tripApi(tripId)}/share`);
 

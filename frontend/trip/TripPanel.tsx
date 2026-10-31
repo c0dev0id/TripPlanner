@@ -37,6 +37,7 @@ import { BackIcon, ClockIcon, DownloadIcon, NotebookIcon, PencilIcon, ShareIcon 
 import { Grip } from '../ui/Grip';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
+import { addRecordingPicked, DayRecordings, RecordingsToggle } from './Recordings';
 import { removeDayAsked, removeRouteAsked } from './remove';
 import { SaveStatus } from './SaveStatus';
 
@@ -115,6 +116,7 @@ function DayItem(props: { day: Day; index: number }) {
   const more = (): MenuItem[] => [
     { label: 'Edit…', run: () => setEditTarget({ kind: 'day', id: props.day.id }) },
     { label: 'Duplicate', run: () => duplicateDay(props.day.id) },
+    { label: 'Add recording…', run: () => addRecordingPicked(props.day.id) },
     ...pasteItem(props.day.id),
     { label: 'Remove', run: () => void removeDayAsked(props.day) },
   ];
@@ -128,6 +130,7 @@ function DayItem(props: { day: Day; index: number }) {
             <span class="muted detail">{meta()}</span>
           </span>
         </button>
+        <RecordingsToggle dayId={props.day.id} />
         <JournalButton target={{ dayId: props.day.id }} of={label()} />
       </div>
       <Show when={selected()}>
@@ -190,6 +193,7 @@ function DayDetails(props: { day: Day }) {
           <ForById each={unplaced()}>{(stop) => <AloneStopItem stop={stop()} />}</ForById>
         </ol>
       </Show>
+      <DayRecordings day={props.day} />
     </div>
   );
 }

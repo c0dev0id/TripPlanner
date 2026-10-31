@@ -432,6 +432,16 @@ entries at the end of their section.
   GPS Visualizer has no picture of, and a symbol outside the list has none either, so
   neither the fetch nor the browser asks for a picture that cannot be there: a closure
   file's 106 waypoints of symbol "default" would otherwise be 106 failed requests.
+- **A recording is its GPX file, kept beside the trip document.** A recording holds what
+  was ridden, with whatever its app measured per point (Ridelink's speed, lean angle and
+  acceleration), so the file is kept as uploaded rather than translated into a format
+  that would drop what it does not know. It is kept out of the trip document: a day with
+  a few rides of 6,000 points each would make every save and every opening of the trip
+  that much heavier, the lesson of the 8 MB collection. The browser compresses the file
+  with gzip before sending it, which keeps a long ride within httpd's default request
+  limit of 1 MB, and the server keeps and serves it compressed; the browser reads a
+  day's recordings only once they are shown. A recording belongs to a day and goes with
+  it, is copied with its trip, and follows a day that joins another in a merge.
 - **One track or route per route, one waypoint per stop.** A GPX file holds the stops in
   scope as waypoints, bound ones at their route point and free ones at their own position
   when within the chosen reach of a route, with the stop's Garmin symbol, and

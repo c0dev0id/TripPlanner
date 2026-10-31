@@ -119,6 +119,14 @@
   each route is named after its day and its own name. Named presets of these options are
   kept with the account.
 
+- Recordings on a day: *Add recording…* in the day's menu or under the opened day takes
+  a GPX file of one track, such as Ridelink's or Scenic's (waypoints in it are left
+  aside); the file is kept as it is, with every value it measured per point. A day with
+  recordings shows a recording symbol that shows or hides them: listed under the day,
+  each in its own colour, and drawn on the map in that colour under the planned routes.
+  A recording is renamed, copied or deleted from its menu; a click shows it whole. A
+  copied recording pastes into any day as a recording or as a track route, and a single
+  copied track also as a recording.
 - A journal on the trip, on a day, on a stop and on a route, opened from the icon on
   their rows, which counts their entries: entries of a note, a file (a photo, a receipt, a document) or both, edited and
   deleted in place; rows say how many entries a part has. The trip's own journal reads

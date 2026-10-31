@@ -115,6 +115,17 @@ export const GripIcon = () => (
   </Icon>
 );
 
+/** A recorded ride: a line through its points. */
+export const RecordingIcon = () => (
+  <Icon>
+    <path d="M4 16l6 -7l5 5l5 -6" />
+    <path d="M15 14m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+    <path d="M10 9m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+    <path d="M4 16m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+    <path d="M20 8m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+  </Icon>
+);
+
 export const NotebookIcon = () => (
   <Icon>
     <path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-11a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1m3 0v16" />

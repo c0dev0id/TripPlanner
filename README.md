@@ -45,6 +45,8 @@ share work; sharing between users is on the way.
 - **GPX export the way the device wants it** — the trip or a day, one file or one per
   day, routes as tracks or as points for the device to route, with or without the
   optional parts; the settings kept as named presets.
+- **Recordings beside the plan** — add a day's rides as recorded (Ridelink, Scenic or any
+  GPX track) and see them on the map in their own colours next to the planned route.
 - **A journal on everything** — notes, photos, receipts and documents on the trip, a
   day, a stop, a route, or a spot on the map. Photos shrink to a web size before they
   leave the phone, stand on the map where they were taken, land on the day they were

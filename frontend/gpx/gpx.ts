@@ -13,7 +13,8 @@ export interface GpxContent {
   tracks: { name?: string; segments: LngLat[][] }[];
 }
 
-function position(element: Element): LngLat | undefined {
+/** A point's position from its `lat` and `lon`; undefined where they are missing or off the world. */
+export function position(element: Element): LngLat | undefined {
   const lat = Number(element.getAttribute('lat'));
   const lng = Number(element.getAttribute('lon'));
   return element.hasAttribute('lat') && element.hasAttribute('lon') && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 ? [lng, lat] : undefined;

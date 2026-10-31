@@ -63,11 +63,11 @@ flowchart TB
 | Layer | Contents |
 |---|---|
 | Presentation (frontend) | The library with its folder import and its dialog (`library/`), the trip panel, the collection panel and their dialogs for the trip, a day, a route and a stop, the export, the journal and sharing (`trip/`), the map with its base maps and their control, the place search, route lines, stop, point and photo markers, interactions, toolbar and hint bar (`map/`), small controls, the dialog shell, the list that keeps its rows by id, the one menu, the long press and the pointer drags shared by the map and the panel, the lightbox, the theme, the colour tokens and the browser's preferences (`ui/`), and the read-only trip page with its own map (`view/`), a second entry (`view.tsx`). |
-| Application state (frontend) | The open trip as an immutable value, the selected day and the route being edited, undo and redo and the actions that edit the trip (`state/trip.ts`), the pull-based routing pump (`state/routing.ts`), the autosave, which sends the stops in riding order (`state/autosave.ts`), the open trip's journal (`state/journal.ts`), what was copied to be pasted into a day, a trip or a folder (`state/clipboard.ts`), the tool, the toggles, the open menu and dialogs (`state/drawing.ts`). |
-| Domain (frontend) | Pure edits of a route and of a day's stops and routes, the riding sequence of a day with distances and riding times, the day's timeline, leg keys and geometry, the polyline codec, the Valhalla client (`routing/`); reading GPX files into routes and stops (`gpx/`); our icons, each standing for one Garmin symbol, and Garmin's symbols by theme (`symbols/`); distances, nearest-line search and line simplification (`geo/`); the document types (`model/`). |
+| Application state (frontend) | The open trip as an immutable value, the selected day and the route being edited, undo and redo and the actions that edit the trip (`state/trip.ts`), the pull-based routing pump (`state/routing.ts`), the autosave, which sends the stops in riding order (`state/autosave.ts`), the open trip's journal (`state/journal.ts`), the open trip's recordings, which days show them and their tracks once read (`state/recordings.ts`), what was copied to be pasted into a day, a trip or a folder (`state/clipboard.ts`), the tool, the toggles, the open menu and dialogs (`state/drawing.ts`). |
+| Domain (frontend) | Pure edits of a route and of a day's stops and routes, the riding sequence of a day with distances and riding times, the day's timeline, leg keys and geometry, the polyline codec, the Valhalla client (`routing/`); reading GPX files into routes and stops (`gpx/`); reading and writing a recording's track with what it measured per point (`recording/`); our icons, each standing for one Garmin symbol, and Garmin's symbols by theme (`symbols/`); distances, nearest-line search and line simplification (`geo/`); the document types (`model/`). |
 | API client (frontend) | `api.ts`: requests to the JSON API, the one place that knows its URLs. |
 | HTTP (backend) | Slim routes and middleware (sessions, CSRF, body parsing, authentication), Plates templates for the public pages and the two bundle pages, JSON encoding of API answers (`Http/`, `Pages/`, `Api/`). |
-| Domain (backend) | Accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, trip documents with their validator and copies (`Trip/`), GPX writing with its options, the proximity of free stops and the export presets (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the read-only API of a shared trip (`Share/`), fetching Garmin's symbol pictures for `make garmin-icons` (`Symbols/`). |
+| Domain (backend) | Accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, trip documents with their validator and copies (`Trip/`), GPX writing with its options, the proximity of free stops and the export presets (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the recordings on the days (`Recording/`), the read-only API of a shared trip (`Share/`), fetching Garmin's symbol pictures for `make garmin-icons` (`Symbols/`). |
 | Storage (backend) | PDO repositories over SQLite, the file store on disk (`Journal/FileStore`), mail over SMTP (`Mail/`). |
 
 ## API
@@ -95,6 +95,11 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `DELETE /trips/{id}/entries/{entry}` | Deletes the entry with its file. |
 | `GET /trips/{id}/entries/{entry}/file` | The file as uploaded, shown in the browser where it can be, offered for download otherwise. |
 | `GET /trips/{id}/entries/{entry}/preview` | A small JPEG of an image entry. |
+| `GET /trips/{id}/recordings` | The trip's recordings in the order they were added: id, day, name. |
+| `POST /trips/{id}/recordings` | Adds a recording to a day from a multipart form: `dayId`, `name`, and `file`, a GPX file compressed with gzip. |
+| `PATCH /trips/{id}/recordings/{recording}` | Renames the recording from `{name}`. |
+| `DELETE /trips/{id}/recordings/{recording}` | Deletes the recording. |
+| `GET /trips/{id}/recordings/{recording}/gpx` | The recording's GPX file, sent compressed (`Content-Encoding: gzip`). |
 | `GET /export-presets` | The user's export presets by name. |
 | `POST /export-presets` | Keeps `{name, options}` as a preset, replacing one of that name. |
 | `DELETE /export-presets/{id}` | Deletes the preset. |
@@ -132,6 +137,7 @@ erDiagram
   DAY |o--o{ ENTRY : "on"
   STOP |o--o{ ENTRY : "on"
   ROUTE |o--o{ ENTRY : "on"
+  DAY ||--o{ RECORDING : "recordings"
 
   USER {
     int id PK
@@ -212,6 +218,12 @@ erDiagram
     time arrive_at
     int pause_minutes
     bool optional
+  }
+  RECORDING {
+    int id PK
+    string name
+    blob gpx "the GPX file as uploaded, compressed with gzip"
+    datetime created_at
   }
   ENTRY {
     int id PK

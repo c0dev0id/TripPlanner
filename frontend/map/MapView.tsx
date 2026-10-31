@@ -3,12 +3,14 @@ import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } 
 import type { Day, LngLat } from '../model/trip';
 import { panTarget, showNeighbours } from '../state/drawing';
 import { routePositions } from '../routing/legs';
+import { recordingColor, shownRecordings, trackOf } from '../state/recordings';
 import { failedLegs } from '../state/routing';
 import { editingRouteId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
 import { newBaseMap } from './baseMap';
 import { Interactions } from './Interactions';
 import { EntryMarkers } from './EntryMarkers';
 import { PointMarkers } from './PointMarkers';
+import { RECORDINGS_SOURCE, recordingFeatures } from './recordingOverlay';
 import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { SearchBox } from './SearchBox';
 import { StopMarkers } from './StopMarkers';
@@ -30,6 +32,7 @@ export function MapView() {
         {(m) => (
           <>
             <RouteLines map={m()} />
+            <RecordingLines map={m()} />
             <StopMarkers map={m()} />
             <EntryMarkers map={m()} />
             <PointMarkers map={m()} />
@@ -67,7 +70,21 @@ function dimStops(): LngLat[] {
   return dim.flatMap(({ day }) => day.stops.map((stop) => stop.lngLat));
 }
 
-/** Keeps the route lines on the map, shows the selected day, or the whole trip, when it changes, and goes where the panel points. */
+/** Keeps the recordings shown on the map, each in its colour, once its track is read. */
+function RecordingLines(props: { map: MapLibreMap }) {
+  const features = createMemo(() =>
+    recordingFeatures(
+      shownRecordings().flatMap((recording) => {
+        const track = trackOf(recording);
+        return track && !(track instanceof Error) ? [{ points: track.points, color: recordingColor(recording) }] : [];
+      }),
+    ),
+  );
+  createEffect(() => props.map.getSource<GeoJSONSource>(RECORDINGS_SOURCE)?.setData(features()));
+  return null;
+}
+
+/** Keeps the route lines on the map, shows the selected day with its recordings shown, or the whole trip, when it changes, and goes where the panel points. */
 function RouteLines(props: { map: MapLibreMap }) {
   // The trip changes as a whole; its lines are drawn again only when the routes drawn or the marks on them change.
   const days = createMemo(shownDays, [], { equals: sameLines });
@@ -81,6 +98,10 @@ function RouteLines(props: { map: MapLibreMap }) {
       for (const { day } of shownDays().filter((d) => d.role === 'selected')) {
         for (const route of day.routes) for (const position of routePositions(route)) bounds.extend(position);
         for (const stop of day.stops) bounds.extend(stop.lngLat);
+        for (const recording of shownRecordings().filter((r) => r.dayId === day.id)) {
+          const track = trackOf(recording);
+          if (track && !(track instanceof Error)) for (const position of track.points) bounds.extend(position);
+        }
       }
       if (!bounds.isEmpty()) props.map.fitBounds(bounds, { padding: 80, maxZoom: 13, duration: 600 });
     }),
