@@ -19,8 +19,8 @@ export class ApiError extends Error {
   }
 }
 
-/** A JSON body, or a form with a file in it, which the browser encodes itself. */
-async function request<T>(method: string, url: string, body?: unknown, keepalive = false): Promise<T> {
+/** Sends a JSON body, or a form with a file in it, which the browser encodes itself; throws with the server's message for an answer other than success. */
+async function send(method: string, url: string, body?: unknown, keepalive = false): Promise<Response> {
   const form = body instanceof FormData;
   const response = await fetch(url, {
     method,
@@ -35,6 +35,12 @@ async function request<T>(method: string, url: string, body?: unknown, keepalive
       .catch(() => undefined);
     throw new ApiError(response.status, message ?? `The server answered ${response.status}.`);
   }
+  return response;
+}
+
+/** A request whose answer is JSON, or nothing. */
+async function request<T>(method: string, url: string, body?: unknown, keepalive = false): Promise<T> {
+  const response = await send(method, url, body, keepalive);
   return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
 }
 
@@ -117,11 +123,7 @@ export const renameRecording = (tripId: number, id: number, name: string): Promi
 export const deleteRecording = (tripId: number, id: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/recordings/${id}`);
 
 /** A recording's GPX file; the browser undoes the compression it is sent with. */
-export async function fetchRecordingGpx(tripId: number, id: number): Promise<string> {
-  const response = await fetch(`${tripApi(tripId)}/recordings/${id}/gpx`);
-  if (!response.ok) throw new ApiError(response.status, `The recording could not be read (${response.status}).`);
-  return response.text();
-}
+export const fetchRecordingGpx = async (tripId: number, id: number): Promise<string> => (await send('GET', `${tripApi(tripId)}/recordings/${id}/gpx`)).text();
 
 /** The token the trip's read-only page is public under, or null. */
 export const shareToken = (tripId: number): Promise<{ token: string | null }> => request('GET', `${tripApi(tripId)}/share`);
