@@ -45,9 +45,6 @@ export const [exportOpen, setExportOpen] = createSignal(false);
 /** Whether the print-and-share dialog is open. */
 export const [shareOpen, setShareOpen] = createSignal(false);
 
-/** How far cards over the map reach in from its left and bottom edges, in CSS pixels: positions shown whole keep clear of them. */
-export const [mapCover, setMapCover] = createSignal({ left: 0, bottom: 0 });
-
 /** Where the map should go next: to a spot, or to show positions whole; every request is a new object, so the same one twice counts twice. */
 export const [panTarget, setPanTarget] = createSignal<{ lngLat: LngLat } | { positions: LngLat[] }>();
 

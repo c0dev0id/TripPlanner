@@ -1,9 +1,9 @@
-import { GeolocateControl, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl, type MapOptions, type StyleSpecification } from 'maplibre-gl';
+import { GeolocateControl, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl, type GeoJSONSourceSpecification, type MapOptions, type StyleSpecification } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { ROUTING_ATTRIBUTION } from '../routing/valhalla';
 import { BaseMapControl } from './BaseMapControl';
 import { chosenBaseMap } from './baseMaps';
-import { RECORDING_LAYERS, RECORDING_POINT_LAYERS, RECORDING_POINT_SOURCE, RECORDINGS_SOURCE } from './recordingOverlay';
+import { OPENED_RECORDING_SOURCE, RECORDING_LAYERS, RECORDING_POINT_LAYERS, RECORDING_POINT_SOURCE, RECORDINGS_SOURCE } from './recordingOverlay';
 import { ROUTE_LAYERS, ROUTES_SOURCE } from './routeOverlay';
 
 // The worker is built as a file of its own; MapLibre's own lookup does not find it in a bundle.
@@ -16,14 +16,10 @@ setWorkerUrl(workerUrl);
  * MapLibre hands the transform the style it is leaving.
  */
 function withOverlays(previous: StyleSpecification | undefined, next: StyleSpecification): StyleSpecification {
-  const routes = previous?.sources[ROUTES_SOURCE] ?? { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, attribution: ROUTING_ATTRIBUTION };
-  const recordings = previous?.sources[RECORDINGS_SOURCE] ?? { type: 'geojson', data: { type: 'FeatureCollection', features: [] } };
-  const point = previous?.sources[RECORDING_POINT_SOURCE] ?? { type: 'geojson', data: { type: 'FeatureCollection', features: [] } };
-  return {
-    ...next,
-    sources: { ...next.sources, [RECORDINGS_SOURCE]: recordings, [ROUTES_SOURCE]: routes, [RECORDING_POINT_SOURCE]: point },
-    layers: [...next.layers, ...RECORDING_LAYERS, ...ROUTE_LAYERS, ...RECORDING_POINT_LAYERS],
-  };
+  const empty = (): GeoJSONSourceSpecification => ({ type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  const sources: StyleSpecification['sources'] = { ...next.sources, [ROUTES_SOURCE]: previous?.sources[ROUTES_SOURCE] ?? { ...empty(), attribution: ROUTING_ATTRIBUTION } };
+  for (const id of [RECORDINGS_SOURCE, OPENED_RECORDING_SOURCE, RECORDING_POINT_SOURCE]) sources[id] = previous?.sources[id] ?? empty();
+  return { ...next, sources, layers: [...next.layers, ...RECORDING_LAYERS, ...ROUTE_LAYERS, ...RECORDING_POINT_LAYERS] };
 }
 
 /**

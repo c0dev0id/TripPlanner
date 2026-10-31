@@ -1,7 +1,7 @@
-import { createEffect, createMemo, createSignal, For, Match, onCleanup, onMount, Show, Switch } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, Match, Show, Switch } from 'solid-js';
 import uPlot from 'uplot';
 import { deltaSummaryOf, type Delta } from '../recording/delta';
-import { coloringFigure, DIFFERENCE_FIGURES, FIGURES, type Figure } from '../recording/figures';
+import { DIFFERENCE_FIGURES, FIGURES, type Figure } from '../recording/figures';
 import { kmBySurface, NO_VALUE, SURFACES, type Coloring } from '../recording/lineColors';
 import { histogram, summaryOf, type Measures, type Metric } from '../recording/measures';
 import {
@@ -22,21 +22,11 @@ import {
   type Comparison,
   type Opened,
 } from '../state/recordingView';
-import { mapCover, setMapCover } from '../state/drawing';
 import { recordingColor } from '../state/recordings';
 import { Chart, type ChartInk } from '../ui/Chart';
 import { distanceText, durationText } from '../ui/format';
 import { Figures } from '../ui/Figures';
 import { CloseIcon } from '../ui/icons';
-
-/** Keeps fitted views clear of a card while it is shown: its width from the left edge, or its height from the bottom. */
-function coverWith(card: HTMLElement, edge: 'left' | 'bottom') {
-  onMount(() => {
-    const map = card.parentElement!;
-    setMapCover({ ...mapCover(), [edge]: edge === 'left' ? card.offsetLeft + card.offsetWidth : map.clientHeight - card.offsetTop });
-  });
-  onCleanup(() => setMapCover({ ...mapCover(), [edge]: 0 }));
-}
 
 /** The opened recording's figures over the map: its summary with the colouring of its line, and its charts. */
 export function RecordingCards() {
@@ -73,10 +63,10 @@ const textOf = <T,>(value: T | undefined, text: (value: T) => string): string | 
 
 /** The recording in figures, what it is compared with, the colouring of its line with its legend; folded at first on a narrow screen. */
 function SummaryCard(props: { opened: Opened }) {
-  const rows = createMemo((): [string, string][] => {
+  const rows = createMemo((): [string, string | undefined][] => {
     const s = summaryOf(props.opened.measures);
     const { speed, altitude, lean } = FIGURES;
-    const rows: [string, string | undefined][] = [
+    return [
       ['Distance', distanceText(s.distanceM)],
       ['Time', textOf(s.durationS, durationText)],
       ['Moving', textOf(s.movingS, durationText)],
@@ -84,18 +74,16 @@ function SummaryCard(props: { opened: Opened }) {
       ['Top speed', textOf(s.maxSpeed, speed.text)],
       ['Climb', textOf(s.ascentM, altitude.text)],
       ['Descent', textOf(s.descentM, altitude.text)],
-      ['Altitude', s.minAltitude === undefined ? undefined : `${altitude.text(s.minAltitude)} – ${altitude.text(s.maxAltitude!)}`],
+      ['Altitude', textOf(s.altitudeRange, ([low, high]) => `${altitude.text(low)} – ${altitude.text(high)}`)],
       ['Lean', textOf(s.leanRange, ([left, right]) => `${lean.text(left)} to ${lean.text(right)}`)],
     ];
-    return rows.filter((row): row is [string, string] => row[1] !== undefined);
   });
-  // Beside the map's middle on a wide screen; on a narrow one it would cover half the map, and starts folded.
-  const beside = matchMedia('(min-width: 721px)').matches;
   return (
-    <details class="map-card summary-card" open={beside} ref={(card) => beside && coverWith(card, 'left')}>
+    // On a narrow screen the card would cover half the map: it starts folded there.
+    <details class="map-card summary-card" open={matchMedia('(min-width: 721px)').matches}>
       <summary class="row">
         <span class="swatch" style={{ background: recordingColor(props.opened.recording) }} />
-        <h3 class="grow">{props.opened.recording.name}</h3>
+        <h3 class="grow name">{props.opened.recording.name}</h3>
         <button class="icon" title="Close the figures" aria-label="Close the figures" onClick={() => openRecording(undefined)}>
           <CloseIcon />
         </button>
@@ -129,9 +117,7 @@ function SummaryCard(props: { opened: Opened }) {
         <Match when={shownColoring() === 'surface'}>
           <SurfaceLegend opened={props.opened} />
         </Match>
-        <Match when={shownScale()}>
-          <ScaleLegend />
-        </Match>
+        <Match when={shownScale()}>{(shown) => <ScaleLegend shown={shown()} />}</Match>
       </Switch>
     </details>
   );
@@ -139,39 +125,31 @@ function SummaryCard(props: { opened: Opened }) {
 
 /** How the opened recording differs from what it is compared with, in figures. */
 function ComparisonFigures(props: { opened: Opened; comparison: Comparison }) {
-  const rows = createMemo((): [string, string][] => {
+  const rows = createMemo((): [string, string | undefined][] => {
     const s = deltaSummaryOf(props.opened.measures, props.comparison.delta);
-    const { offset, time, speed } = DIFFERENCE_FIGURES;
-    const rows: [string, string | undefined][] = [
+    const { time, speed } = DIFFERENCE_FIGURES;
+    return [
       ['Off it', distanceText(s.offM)],
-      ['Farthest off', offset.text(s.furthestM)],
+      ['Farthest off', distanceText(s.furthestM)],
       ['At the end', textOf(s.timeS, time.text)],
       ['On average', textOf(s.speed, speed.text)],
     ];
-    return rows.filter((row): row is [string, string] => row[1] !== undefined);
   });
   return <Figures rows={rows()} />;
 }
 
 /** The colours of the line's scale from its low end to its high end. */
-function ScaleLegend() {
+function ScaleLegend(props: { shown: NonNullable<ReturnType<typeof shownScale>> }) {
   return (
-    <Show when={shownScale()}>
-      {(shown) => {
-        const text = (value: number) => coloringFigure(shown().coloring).text(value);
-        return (
-          <div class="legend">
-            <div class="legend-bar">
-              <For each={shown().scale.colors}>{(color) => <span style={{ background: color }} />}</For>
-            </div>
-            <div class="row legend-ends muted">
-              <span class="grow">{text(shown().scale.from)}</span>
-              <span>{text(shown().scale.to)}</span>
-            </div>
-          </div>
-        );
-      }}
-    </Show>
+    <div class="legend">
+      <div class="legend-bar">
+        <For each={props.shown.scale.colors}>{(color) => <span style={{ background: color }} />}</For>
+      </div>
+      <div class="row legend-ends muted">
+        <span class="grow">{props.shown.figure.text(props.shown.scale.from)}</span>
+        <span>{props.shown.figure.text(props.shown.scale.to)}</span>
+      </div>
+    </div>
   );
 }
 
@@ -244,11 +222,12 @@ function ChartCard(props: { opened: Opened }) {
     return [...(m.altitude || m.speed ? ['profile' as const] : []), ...(comparison() ? ['difference' as const] : []), ...spreads];
   });
   const [chosen, setChosen] = createSignal<ChartKind>('profile');
-  const kind = () => (kinds().includes(chosen()) ? chosen() : kinds()[0]);
+  // The chart is made again only when its kind or its own series change.
+  const kind = createMemo(() => (kinds().includes(chosen()) ? chosen() : kinds()[0]));
   const lines = createMemo(() => {
-    const c = comparison();
-    if (kind() === 'difference' && c) return differenceLines(c.delta);
-    return kind() === 'profile' ? profileLines(props.opened.measures) : [];
+    if (kind() === 'profile') return profileLines(props.opened.measures);
+    const c = kind() === 'difference' ? comparison() : undefined;
+    return c ? differenceLines(c.delta) : [];
   });
   const [spreadReadout, setSpreadReadout] = createSignal<string>();
   const alongReadout = () => {
@@ -261,7 +240,7 @@ function ChartCard(props: { opened: Opened }) {
   return (
     <Show when={kind()}>
       {(k) => (
-        <section class="map-card chart-card" aria-label="Charts of the recording" ref={(card) => coverWith(card, 'bottom')}>
+        <section class="map-card chart-card" aria-label="Charts of the recording">
           <div class="row">
             <div class="row tabs" role="tablist">
               <For each={kinds()}>
@@ -272,7 +251,7 @@ function ChartCard(props: { opened: Opened }) {
                 )}
               </For>
             </div>
-            <span class="grow muted readout">{lines().length > 0 ? alongReadout() : spreadReadout()}</span>
+            <span class="grow muted name readout">{lines().length > 0 ? alongReadout() : spreadReadout()}</span>
           </div>
           <Show when={lines().length > 0} fallback={<SpreadChart opened={props.opened} metric={k() as Metric} onHover={setSpreadReadout} />}>
             <AlongChart distance={props.opened.measures.distance} lines={lines()} />

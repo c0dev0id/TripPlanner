@@ -232,7 +232,9 @@ a {
 .duplicates ul,
 .days,
 .routes,
-.stops {
+.stops,
+.recordings,
+.legend {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -311,12 +313,6 @@ a {
 }
 
 /* A day's recordings: a line in each one's colour on the map before its name. */
-.recordings {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
 .swatch {
   flex: none;
   width: 16px;
@@ -324,18 +320,14 @@ a {
   border-radius: 2px;
 }
 
-.recording.opened > .row {
-  background: var(--active);
-  border-radius: 7px;
-}
-
 .panel button.icon.recordings-toggle[aria-pressed='true'] {
   color: var(--accent);
 }
 
-/* A selected trip or duplicate is highlighted as a selected day is. */
+/* A selected trip or duplicate, and the opened recording, are highlighted as a selected day is. */
 .trips > li.selected > .row,
-.duplicates li.selected > .row {
+.duplicates li.selected > .row,
+.recording.opened > .row {
   background: var(--active);
   border-radius: 7px;
 }
@@ -805,10 +797,7 @@ fieldset.choices legend {
 
 .map-card h3 {
   margin: 0;
-  overflow: hidden;
   font-size: 14px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .summary-card {
@@ -856,9 +845,7 @@ fieldset.choices legend {
 }
 
 .legend {
-  margin: 6px 0 0;
-  padding: 0;
-  list-style: none;
+  margin-top: 6px;
 }
 
 .legend-bar {
@@ -909,10 +896,7 @@ fieldset.choices legend {
 }
 
 .chart-card .readout {
-  overflow: hidden;
   text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 

@@ -12,7 +12,7 @@ import { openTripId } from './trip';
 const [list, { mutate }] = createRoot(() => createResource(openTripId, async (tripId) => ({ tripId, recordings: await listRecordings(tripId) })));
 
 /** The recordings of the open trip, in the order they were added; none until they are loaded. */
-export function allRecordings(): Recording[] {
+function allRecordings(): Recording[] {
   const loaded = list();
   return loaded && loaded.tripId === openTripId() ? loaded.recordings : [];
 }
@@ -32,6 +32,7 @@ const [shownDays, setShownDays] = createSignal<ReadonlySet<string>>(new Set());
 export const recordingsShown = (dayId: string): boolean => shownDays().has(dayId);
 
 export function showRecordings(dayId: string, shown: boolean): void {
+  if (shown === shownDays().has(dayId)) return;
   const next = new Set(shownDays());
   if (shown) next.add(dayId);
   else next.delete(dayId);
@@ -45,6 +46,12 @@ export const shownRecordings = (): Recording[] => allRecordings().filter((r) => 
 const [tracks, setTracks] = createSignal<ReadonlyMap<number, RecordedTrack | Error>>(new Map());
 
 export const trackOf = (recording: Recording): RecordedTrack | Error | undefined => tracks().get(recording.id);
+
+/** The recording's track once read; nothing while it is read or where it could not be. */
+export function loadedTrack(recording: Recording): RecordedTrack | undefined {
+  const track = trackOf(recording);
+  return track instanceof Error ? undefined : track;
+}
 
 const keep = (id: number, track: RecordedTrack | Error) => setTracks(new Map(tracks()).set(id, track));
 
@@ -103,7 +110,7 @@ const [note, setNote] = createSignal<{ dayId: string; text: string; error: boole
 export const recordingNote = (dayId: string) => (note()?.dayId === dayId ? note() : undefined);
 
 /** Runs an action on a day's recordings, then says under them what it did where it says something, or why it failed, and shows them. */
-export async function recordingAction(dayId: string, job: () => Promise<string | undefined>): Promise<void> {
+export async function recordingAction(dayId: string, job: () => Promise<string | void>): Promise<void> {
   try {
     const text = await job();
     setNote(text ? { dayId, text, error: false } : undefined);

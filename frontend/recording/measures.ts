@@ -81,8 +81,7 @@ export interface Summary {
   /** Metres climbed and descended, and the lowest and highest point. */
   ascentM?: number;
   descentM?: number;
-  minAltitude?: number;
-  maxAltitude?: number;
+  altitudeRange?: [number, number];
   /** The furthest lean to either side, in the file's signs. */
   leanRange?: [number, number];
 }
@@ -91,6 +90,10 @@ export interface Summary {
 const CLIMB_THRESHOLD_M = 3;
 
 const numbers = (values: (number | null)[]): number[] => values.filter((v): v is number => v !== null);
+
+/** The lowest and the highest of the values; undefined for none. */
+const extent = (values: number[]): [number, number] | undefined =>
+  values.length === 0 ? undefined : [values.reduce((a, b) => Math.min(a, b)), values.reduce((a, b) => Math.max(a, b))];
 
 /** Metres climbed and descended, a change counted once it exceeds CLIMB_THRESHOLD_M from the last turning point. */
 function climb(altitude: (number | null)[]): { ascent: number; descent: number } {
@@ -134,20 +137,17 @@ export function summaryOf(m: Measures): Summary {
   const speeds = m.speed ? numbers(m.speed) : [];
   const riding = speeds.filter((v) => v > STANDING_KMH);
   const averageSpeed = motion?.seconds ? (motion.metres / motion.seconds) * 3.6 : riding.length > 0 ? riding.reduce((a, b) => a + b, 0) / riding.length : undefined;
-  const heights = m.altitude ? numbers(m.altitude) : [];
-  const leans = m.lean ? numbers(m.lean) : [];
   const { ascent, descent } = m.altitude ? climb(m.altitude) : { ascent: undefined, descent: undefined };
   return {
     distanceM,
     durationS,
     movingS: motion?.seconds,
     averageSpeed,
-    maxSpeed: speeds.length > 0 ? Math.max(...speeds) : undefined,
+    maxSpeed: extent(speeds)?.[1],
     ascentM: ascent,
     descentM: descent,
-    minAltitude: heights.length > 0 ? Math.min(...heights) : undefined,
-    maxAltitude: heights.length > 0 ? Math.max(...heights) : undefined,
-    leanRange: leans.length > 0 ? [Math.min(...leans), Math.max(...leans)] : undefined,
+    altitudeRange: m.altitude && extent(numbers(m.altitude)),
+    leanRange: m.lean && extent(numbers(m.lean)),
   };
 }
 

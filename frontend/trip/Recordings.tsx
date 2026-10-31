@@ -7,6 +7,7 @@ import { showWhole } from '../state/drawing';
 import { opened, openRecording } from '../state/recordingView';
 import {
   addRecording,
+  loadedTrack,
   recordingAction,
   recordingColor,
   recordingGpx,
@@ -33,8 +34,8 @@ export function addRecordingPicked(dayId: string): void {
     if (!file) return;
     void recordingAction(dayId, async () => {
       const recording = await addRecording(dayId, await file.text(), { fallback: file.name.replace(/\.gpx$/i, '') });
-      const track = trackOf(recording);
-      if (track && !(track instanceof Error)) showWhole(track.points);
+      const track = loadedTrack(recording);
+      if (track) showWhole(track.points);
       return `${file.name} added as “${recording.name}”.`;
     });
   });
@@ -62,11 +63,7 @@ export function RecordingsToggle(props: { dayId: string }) {
 export function DayRecordings(props: { day: Day }) {
   const recordings = () => recordingsOf(props.day.id);
   const [renamed, setRenamed] = createSignal<Recording>();
-  const rename = (recording: Recording, name: string) =>
-    void recordingAction(recording.dayId, async () => {
-      await renameRecording(recording, name);
-      return undefined;
-    });
+  const rename = (recording: Recording, name: string) => void recordingAction(recording.dayId, () => renameRecording(recording, name));
   return (
     <>
       <div class="row heading">
@@ -110,28 +107,22 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
   const dayId = () => props.recording.dayId;
   const remove = async () => {
     if (!(await askConfirmation(`Delete the recording “${props.recording.name}”?`, 'Delete'))) return;
-    await recordingAction(dayId(), async () => {
-      await removeRecording(props.recording);
-      return undefined;
-    });
+    await recordingAction(dayId(), () => removeRecording(props.recording));
   };
   const items = (): MenuItem[] => [
     { label: 'Rename…', run: () => props.onRename(props.recording) },
     {
       label: 'Copy',
       run: () =>
-        void recordingAction(dayId(), async () => {
-          copyRecording(props.recording.name, await recordingGpx(props.recording));
-          return undefined;
-        }),
+        void recordingAction(dayId(), async () => copyRecording(props.recording.name, await recordingGpx(props.recording))),
     },
     { label: 'Delete', run: () => void remove() },
   ];
   const openIt = () => {
     // Opened first, so that it is shown whole beside its cards.
     openRecording(props.recording.id);
-    const t = track();
-    if (t && !(t instanceof Error)) showWhole(t.points);
+    const t = loadedTrack(props.recording);
+    if (t) showWhole(t.points);
   };
   return (
     <li class="recording" classList={{ opened: opened()?.recording.id === props.recording.id }} ref={(el) => cardMenu(el, items)}>

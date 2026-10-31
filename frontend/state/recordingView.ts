@@ -1,13 +1,13 @@
 import { createEffect, createMemo, createRoot, createSignal, on } from 'solid-js';
 import type { Recording } from '../api';
 import { deltaToTrack, offsetsFrom, type Delta } from '../recording/delta';
-import { METRICS } from '../recording/figures';
+import { DIFFERENCE_FIGURES, FIGURES, METRICS } from '../recording/figures';
 import { colorAt, DIFFERENCE_SERIES, isDifference, scaleOf, surfaceColor, type Coloring, type Difference } from '../recording/lineColors';
 import { measuresOf, type Measures } from '../recording/measures';
 import { trackSurfaces } from '../recording/surfaces';
 import type { RecordedTrack } from '../recording/track';
 import { legCoordinates, routeLegs } from '../routing/legs';
-import { shownRecordings, trackOf } from './recordings';
+import { loadedTrack, shownRecordings } from './recordings';
 import { openTrip, openTripId } from './trip';
 
 /**
@@ -76,16 +76,31 @@ export interface Comparison {
 }
 
 const view = createRoot(() => {
-  const opened = createMemo((): Opened | undefined => {
-    const recording = shownRecordings().find((r) => r.id === openedId());
-    const track = recording && trackOf(recording);
-    return recording && track && !(track instanceof Error) ? { recording, track, measures: measuresFor(track) } : undefined;
+  // Kept while its recording and track stay the same objects, as they do when other recordings change.
+  const opened = createMemo(
+    (): Opened | undefined => {
+      const recording = shownRecordings().find((r) => r.id === openedId());
+      const track = recording && loadedTrack(recording);
+      return recording && track ? { recording, track, measures: measuresFor(track) } : undefined;
+    },
+    undefined,
+    { equals: (a, b) => a?.recording === b?.recording && a?.track === b?.track },
+  );
+  /** The opened recording's day, the same object while other days are edited. */
+  const day = createMemo(() => {
+    const dayId = opened()?.recording.dayId;
+    return openTrip()?.days.find((d) => d.id === dayId);
   });
   /** The lines of the planned routes of the opened recording's day, as routed so far. */
-  const planLines = createMemo(() => {
-    const o = opened();
-    const day = o && openTrip()?.days.find((d) => d.id === o.recording.dayId);
-    return day ? day.routes.flatMap((route) => routeLegs(route).map((leg) => legCoordinates(route, leg))) : [];
+  const planLines = createMemo(() => day()?.routes.flatMap((route) => routeLegs(route).map((leg) => legCoordinates(route, leg))) ?? []);
+  /** The other recording compared with, while it is shown. */
+  const other = createMemo(() => {
+    const c = comparand();
+    return typeof c === 'number' ? shownRecordings().find((r) => r.id === c) : undefined;
+  });
+  const otherTrack = createMemo(() => {
+    const r = other();
+    return r && loadedTrack(r);
   });
   const comparands = createMemo((): { comparand: Comparand; label: string }[] => {
     const o = opened();
@@ -94,23 +109,25 @@ const view = createRoot(() => {
     const others = shownRecordings().filter((r) => r.id !== o.recording.id);
     return [...plan, ...others.map((r) => ({ comparand: r.id, label: r.name }))];
   });
-  const comparison = createMemo((): Comparison | undefined => {
-    const [o, c] = [opened(), comparand()];
-    if (!o || c === undefined) return undefined;
-    if (c === 'plan') {
+  const delta = createMemo((): Delta | undefined => {
+    const o = opened();
+    if (!o) return undefined;
+    if (comparand() === 'plan') {
       const lines = planLines();
-      return lines.length > 0 ? { comparand: c, name: 'the planned route', delta: { offset: offsetsFrom(o.track.points, lines) } } : undefined;
+      return lines.length > 0 ? { offset: offsetsFrom(o.track.points, lines) } : undefined;
     }
-    const other = shownRecordings().find((r) => r.id === c && r.id !== o.recording.id);
-    const track = other && trackOf(other);
-    if (!track || track instanceof Error) return undefined;
-    return { comparand: c, name: `“${other!.name}”`, delta: deltaToTrack({ points: o.track.points, measures: o.measures }, { points: track.points, measures: measuresFor(track) }) };
+    const track = otherTrack();
+    return track && track !== o.track ? deltaToTrack({ points: o.track.points, measures: o.measures }, { points: track.points, measures: measuresFor(track) }) : undefined;
+  });
+  const comparison = createMemo((): Comparison | undefined => {
+    const [d, c] = [delta(), comparand()];
+    return d && c !== undefined ? { comparand: c, name: c === 'plan' ? 'the planned route' : `“${other()!.name}”`, delta: d } : undefined;
   });
   const colorings = createMemo((): Coloring[] => {
     const o = opened();
     if (!o) return [];
-    const delta = comparison()?.delta;
-    const differences = delta ? (Object.keys(DIFFERENCE_SERIES) as Difference[]).filter((d) => delta[DIFFERENCE_SERIES[d]] !== undefined) : [];
+    const d = delta();
+    const differences = d ? (Object.keys(DIFFERENCE_SERIES) as Difference[]).filter((difference) => d[DIFFERENCE_SERIES[difference]] !== undefined) : [];
     return [...METRICS.filter((metric) => o.measures[metric] !== undefined), 'surface', ...differences];
   });
   /** The colouring chosen where the opened recording allows it. */
@@ -125,9 +142,9 @@ const view = createRoot(() => {
   const shownScale = createMemo(() => {
     const [o, c] = [opened(), shownColoring()];
     if (!o || !c || c === 'surface') return undefined;
-    const values = isDifference(c) ? comparison()?.delta[DIFFERENCE_SERIES[c]] : o.measures[c];
+    const values = isDifference(c) ? delta()?.[DIFFERENCE_SERIES[c]] : o.measures[c];
     const scale = values && scaleOf(c, values);
-    return scale && { coloring: c, values, scale };
+    return scale && { values, scale, figure: isDifference(c) ? DIFFERENCE_FIGURES[DIFFERENCE_SERIES[c]] : FIGURES[c] };
   });
   const colors = createMemo(() => {
     if (shownColoring() === 'surface') {
@@ -177,7 +194,7 @@ export const shownColoring = view.shownColoring;
 /** The surfaces under the opened recording's points: being matched, matched, or why they could not be. */
 export const openedSurfaces = view.openedSurfaces;
 
-/** The values the opened recording's line is coloured by with their scale, while it is coloured by a measure or a difference. */
+/** The values the opened recording's line is coloured by, with their scale and how they are written, while it is coloured by a measure or a difference. */
 export const shownScale = view.shownScale;
 
 /** The colour of each point of the opened recording's line, while it is coloured. */

@@ -4,7 +4,7 @@ import type { LngLat } from '../model/trip';
 import type { Measures } from './measures';
 
 /** A point farther than this from the other line is off it: within it, GPS and the road's width keep to the same way. */
-export const ON_LINE_M = 50;
+const ON_LINE_M = 50;
 
 /**
  * How far along the other track a point's place is looked for first: ahead of the

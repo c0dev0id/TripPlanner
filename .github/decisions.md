@@ -456,8 +456,9 @@ entries at the end of their section.
 - **Surfaces come from matching the track to the roads, only when asked.** The routing
   server's `trace_attributes` gives each matched point its edge's surface. It is asked
   once a line is coloured by surface, with points 50 m apart in pieces of 1,000; the points
-  between take the surface before them. Routing and matching share one gate, so the page
-  stays within one request per 1.1 s whatever asks. The surfaces are kept for the page's
+  between take the surface before them. Every request to the server takes its turn where
+  it is posted (`routing/valhalla.ts`), so the page stays within one request per 1.1 s
+  whatever asks, and the routing pump has no pause of its own. The surfaces are kept for the page's
   life and not stored: matching a long ride takes a few requests, and storing them would
   tie the recording to a state of OpenStreetMap.
 - **Recordings are compared by place, not by time.** Two rides of the same road start at
@@ -476,14 +477,16 @@ entries at the end of their section.
   piece keeps the one line layer reading its `color` property. A scale spreads over the
   values of the one recording up to their 99th percentile (98th for the signed ones),
   not their extremes, so that a GPS spike does not squash every other colour; slope,
-  lean and the differences in speed and lean are centred on zero. The opened recording is drawn over the others, which often ran
-  the same roads.
+  lean and the differences in speed and lean are centred on zero. The opened recording has
+  a map source of its own, drawn over the others, which often ran the same roads, and
+  set again alone when its colouring changes.
 - **The figures float over the map as cards, and views keep clear of them.** The user
   chose separate cards (a summary top left, charts along the bottom, a popup at the point
   picked) over a panel section, so that the map, the figures and the line read together.
-  A view fitted to the map pads by how far the cards reach in. MapLibre's own camera
-  padding was not used: it shifts every camera move, and setting it stops a running
-  flight.
+  A view fitted to the map pads by how far the cards reach in, measured as the view is
+  fitted, each card from the edge it covers least of the map from, so that a folded card
+  or a narrow screen counts as it stands. MapLibre's own camera padding was not used: it
+  shifts every camera move, and setting it stops a running flight.
 - **Charts by uPlot.** It draws tens of thousands of points on a canvas at about 50 KB and
   has no dependencies; the user chose it. A chart is made again when its data or the
   page's light or dark changes, reading its colours from its box's styles.
