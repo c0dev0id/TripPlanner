@@ -83,7 +83,7 @@ final class Routes
             $api->get('/duplicates', [DuplicatesController::class, 'index']);
             $api->get('/folders', [FolderController::class, 'index']);
             $api->post('/folders', [FolderController::class, 'create']);
-            $api->patch('/folders/{id:[0-9]+}', [FolderController::class, 'rename']);
+            $api->patch('/folders/{id:[0-9]+}', [FolderController::class, 'change']);
             $api->delete('/folders/{id:[0-9]+}', [FolderController::class, 'delete']);
         })->add(RequireUser::class);
 

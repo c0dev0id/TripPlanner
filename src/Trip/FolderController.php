@@ -45,14 +45,28 @@ final class FolderController
         return Json::of($response->withStatus(201), $folder);
     }
 
-    public function rename(Request $request, Response $response, array $args): Response
+    /** Renames the folder from `{name}`, or else moves it into the folder `{parentId}`, null for the top. */
+    public function change(Request $request, Response $response, array $args): Response
     {
-        $name = Name::of(Json::field($request, 'name'));
-        if ($name === null) {
-            return Json::error($response, 422, 'A folder needs a name of up to 200 characters.');
+        $body = (array) $request->getParsedBody();
+        if (array_key_exists('name', $body)) {
+            $name = Name::of($body['name']);
+            if ($name === null) {
+                return Json::error($response, 422, 'A folder needs a name of up to 200 characters.');
+            }
+            $renamed = $this->folders->rename($this->currentUser->get()->id, (int) $args['id'], $name);
+            return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'No such folder.');
         }
-        $renamed = $this->folders->rename($this->currentUser->get()->id, (int) $args['id'], $name);
-        return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'No such folder.');
+        $parentId = $body['parentId'] ?? null;
+        if ($parentId !== null && !is_int($parentId)) {
+            return Json::error($response, 422, 'parentId must be a number or null.');
+        }
+        try {
+            $moved = $this->folders->move($this->currentUser->get()->id, (int) $args['id'], $parentId);
+        } catch (UnknownFolder | FolderInsideItself $refused) {
+            return Json::error($response, 422, $refused->getMessage());
+        }
+        return $moved ? $response->withStatus(204) : Json::error($response, 404, 'No such folder.');
     }
 
     /** Deletes the folder; with `contents=delete` everything in it goes too, journal files included, otherwise it moves up. */

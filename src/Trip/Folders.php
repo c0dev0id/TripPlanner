@@ -62,6 +62,24 @@ final class Folders
         return $statement->rowCount() === 1;
     }
 
+    /**
+     * Moves a folder to the top or into another of the user's folders. False when the user
+     * has no such folder.
+     *
+     * @throws UnknownFolder for a parent the user does not have
+     * @throws FolderInsideItself for a parent that is the folder or inside it
+     */
+    public function move(int $userId, int $folderId, ?int $parentId): bool
+    {
+        $this->assertOwned($userId, $parentId);
+        if ($parentId !== null && in_array($parentId, $this->withInside($userId, $folderId), true)) {
+            throw new FolderInsideItself();
+        }
+        $statement = $this->db->prepare('UPDATE folders SET parent_id = ? WHERE id = ? AND user_id = ?');
+        $statement->execute([$parentId, $folderId, $userId]);
+        return $statement->rowCount() === 1;
+    }
+
     /** Deletes a folder; its trips and folders move up into the folder it was in, or to the top. False when the user has no such folder. */
     public function delete(int $userId, int $folderId): bool
     {
@@ -94,11 +112,7 @@ final class Folders
     {
         $this->db->beginTransaction();
         try {
-            $statement = $this->db->prepare(
-                'WITH RECURSIVE inside(id) AS (SELECT id FROM folders WHERE id = ? AND user_id = ? UNION ALL SELECT f.id FROM folders f JOIN inside ON f.parent_id = inside.id) SELECT id FROM inside',
-            );
-            $statement->execute([$folderId, $userId]);
-            $folderIds = $statement->fetchAll(PDO::FETCH_COLUMN);
+            $folderIds = $this->withInside($userId, $folderId);
             if ($folderIds === []) {
                 $this->db->rollBack();
                 return null;
@@ -114,5 +128,15 @@ final class Folders
             $this->db->rollBack();
             throw $error;
         }
+    }
+
+    /** @return int[] the user's folder and the folders inside it at any depth; none when the user has no such folder */
+    private function withInside(int $userId, int $folderId): array
+    {
+        $statement = $this->db->prepare(
+            'WITH RECURSIVE inside(id) AS (SELECT id FROM folders WHERE id = ? AND user_id = ? UNION ALL SELECT f.id FROM folders f JOIN inside ON f.parent_id = inside.id) SELECT id FROM inside',
+        );
+        $statement->execute([$folderId, $userId]);
+        return array_map('intval', $statement->fetchAll(PDO::FETCH_COLUMN));
     }
 }
