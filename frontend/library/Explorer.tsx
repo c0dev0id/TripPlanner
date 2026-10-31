@@ -22,11 +22,12 @@ import { Library } from './Library';
 import { LibraryActions } from './LibraryActions';
 import { ALL_TRIPS, EXPLORER, pathOf, upName, type Place } from './place';
 
-/** The way one level up: its name and what is there, and where a click goes. */
+/** The way one level up: its name and what is there, where a click goes, and for a folder the folder an item dropped on it moves into. */
 interface Up {
   name: string;
   detail: string;
   go: () => void;
+  dropFolder?: number | null;
 }
 
 /**
@@ -57,7 +58,7 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
     if (p.trip) return { name, detail: p.duplicates ? 'Routes kept more than once' : heldText(held()(p.folderId)), go: () => void props.onLeave() };
     if (p.duplicates) return { name, detail: heldText(held()(p.folderId)), go: () => setShowingDuplicates(false) };
     const parent = folders().find((f) => f.id === p.folderId)?.parentId ?? null;
-    return { name, detail: heldText(held()(parent)), go: () => showFolder(parent ?? undefined) };
+    return { name, detail: heldText(held()(parent)), go: () => showFolder(parent ?? undefined), dropFolder: parent };
   });
   /** Opens a trip from the list or the search where it is: the explorer goes to its folder. */
   const openFound = (id: number) => {
@@ -124,7 +125,7 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
         }
       >
         {(u) => (
-          <div class="card up-card">
+          <div class="card up-card" data-drop-folder={u().dropFolder === undefined ? undefined : String(u().dropFolder ?? 'top')}>
             <button class="text" title={`Back to ${u().name}`} onClick={() => u().go()}>
               <BackIcon />
               <span class="lines">

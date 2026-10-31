@@ -554,6 +554,11 @@ entries at the end of their section.
   which shortens its earlier names first. A trip opened from the search stands in its own
   folder, so that the path is its place and the way up leads there; one opened from the
   duplicates report goes back to the report.
+- **Trips and folders are dragged by their pad.** The pad that selects a trip also drags
+  it, a press that moves rather than a tap, and selected trips go together; folders got
+  the same pad. A folder's card and the card one level up take the drop. Dragging the
+  whole card was not chosen: on a touch screen a long press opens a card's menu. A
+  folder moved into itself or into a folder inside it is refused by the server.
 - **A trip that arrives late is not opened.** Opening a trip waits for the server; a
   click elsewhere meanwhile, another trip or a folder, would otherwise have the late
   answer open the trip where the user no longer is. Each open counts, a leave counts

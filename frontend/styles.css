@@ -159,17 +159,40 @@ a {
   color: inherit;
 }
 
-/* The handle a day or a route is dragged by into another place, and the pad a trip or a duplicate is selected by, drawn alike. */
+/* The handle a day or a route is dragged by into another place, and the pad a trip, a folder or a duplicate is selected or dragged by, drawn alike. */
 .panel button.icon:is(.grip, .pad) {
   padding: 2px 0;
   color: var(--muted);
 }
 
-.panel button.icon.grip {
+.panel button.icon:is(.grip, .pad.drags) {
   cursor: grab;
   touch-action: none;
 }
 
+/* A trip or folder dragged onto a folder: the label that follows the pointer, the rows it came from, and the card it would go into. */
+.drag-label {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--fg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+:is(.trips, .folders) > li.dragged {
+  opacity: 0.5;
+}
+
+.card.drop-target {
+  border-color: var(--accent);
+  background: var(--active);
+}
 
 /* The row being dragged rises above the others, which make room for it. */
 .days > li,

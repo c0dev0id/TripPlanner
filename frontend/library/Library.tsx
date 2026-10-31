@@ -1,5 +1,5 @@
 import { createEffect, createMemo, createSelector, createSignal, For, Match, on, Show, Switch } from 'solid-js';
-import { changeTrip, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, mergeTrips, moveTrip, renameFolder, renameTrip } from '../api';
+import { changeTrip, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip } from '../api';
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { routesPasteItem } from '../state/clipboard';
@@ -13,6 +13,7 @@ import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
 import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection } from '../ui/selection';
 import { Pad } from '../ui/Pad';
+import { dragToFolder } from './dragToFolder';
 
 /** At most this many search results are listed. */
 const SEARCH_LIMIT = 20;
@@ -81,10 +82,22 @@ export function Library(props: { onOpen: (id: number) => void; onOpenFolder: (id
     if (!(await askConfirmation(`Merge ${what} into “${into.name}”? ${where}, and the merged ${others.length > 1 ? 'ones are' : 'one is'} deleted.`, 'Merge'))) return;
     await runLibrary(() => mergeTrips(into.id, others.map((t) => t.id)), relist);
   };
+  /** Moves trips into a folder, none for the top, those not in it already. */
+  const moveTripsInto = (moved: TripSummary[], folderId: number | null) => {
+    const going = moved.filter((t) => t.folderId !== folderId);
+    if (going.length > 0) void runLibrary(() => Promise.all(going.map((t) => moveTrip(t.id, folderId))), relist);
+  };
+  /** Moves a folder into another, none for the top; the server refuses one inside itself. */
+  const moveFolderInto = (f: Folder, parentId: number | null) => {
+    if (parentId !== f.id && parentId !== f.parentId) void runLibrary(() => moveFolder(f.id, parentId), relistFolders);
+  };
+  /** The trips a press on a trip's pad drags: the selected ones where it is one of them, else it alone. */
+  const draggedWith = (trip: TripSummary): TripSummary[] =>
+    isSelectedTrip(trip.id) ? [...selectedTrips().keys].flatMap((id) => trips().find((t) => t.id === id) ?? []) : [trip];
   /** The item that moves trips of one folder into another folder or into none, from a submenu; none where there is nowhere to go. */
   const moveItem = (moved: TripSummary[], label: string): MenuItem[] => {
     const from = moved[0]!.folderId;
-    const moveTo = (folderId: number | null) => () => void runLibrary(() => Promise.all(moved.map((t) => moveTrip(t.id, folderId))), relist);
+    const moveTo = (folderId: number | null) => () => moveTripsInto(moved, folderId);
     const places: MenuItem[] = [
       ...(from === null ? [] : [{ label: 'No folder', run: moveTo(null) }]),
       ...folders()
@@ -157,7 +170,17 @@ export function Library(props: { onOpen: (id: number) => void; onOpenFolder: (id
             fallback={
               <>
                 <ul class="folders">
-                  <For each={shownFolders()}>{(f) => <FolderCard folder={f} note={heldTextOf(f.id)} onOpen={props.onOpenFolder} items={() => folderItems(f)} />}</For>
+                  <For each={shownFolders()}>
+                    {(f) => (
+                      <FolderCard
+                        folder={f}
+                        note={heldTextOf(f.id)}
+                        onOpen={props.onOpenFolder}
+                        items={() => folderItems(f)}
+                        onDrag={(e) => dragToFolder(e, () => f.name, (into) => moveFolderInto(f, into))}
+                      />
+                    )}
+                  </For>
                 </ul>
                 <Show when={shownTrips().length > 0} fallback={<p class="muted">{emptyText()}</p>}>
                   <ul class="trips">
@@ -172,6 +195,10 @@ export function Library(props: { onOpen: (id: number) => void; onOpenFolder: (id
                             selected: () => isSelectedTrip(trip.id),
                             onToggle: () => setSelectedTrips((s) => toggled(s, trip.id)),
                             onClick: (e) => setSelectedTrips((s) => clickSelect(s, shownTrips().map((t) => t.id), trip.id, e)),
+                            onDrag: (e) => {
+                              const moved = draggedWith(trip);
+                              dragToFolder(e, () => (moved.length === 1 ? trip.name : counted(moved.length, 'trip')), (into) => moveTripsInto(moved, into));
+                            },
                           }}
                         />
                       )}
@@ -227,8 +254,9 @@ export function Library(props: { onOpen: (id: number) => void; onOpenFolder: (id
 /**
  * A trip as a card: its name over its days, its start and whether it was ridden, or for a
  * collection its sections, after the folder it is in where `where` names it; its menu
- * renames, moves, copies and deletes it. A click opens it. Where it can be selected, its
- * pad selects it, and a click with Cmd, Ctrl or Shift held goes to `select.onClick`.
+ * renames, moves, copies and deletes it. A click opens it. Where it can be selected, a tap
+ * on its pad selects it, a press drags it, and a click with Cmd, Ctrl or Shift held goes
+ * to `select.onClick`.
  */
 function TripCard(props: {
   trip: TripSummary;
@@ -236,7 +264,7 @@ function TripCard(props: {
   disabled: boolean;
   items: () => MenuItem[];
   where?: string;
-  select?: { selected: () => boolean; onToggle: () => void; onClick: (e: MouseEvent) => void };
+  select?: { selected: () => boolean; onToggle: () => void; onClick: (e: MouseEvent) => void; onDrag: (e: PointerEvent) => void };
 }) {
   const meta = () =>
     (props.trip.kind === 'collection'
@@ -250,7 +278,7 @@ function TripCard(props: {
       <div class="row">
         <Show when={props.select}>
           {(select) => (
-            <Pad label={`Select ${props.trip.name}`} selected={select().selected()} onToggle={select().onToggle} />
+            <Pad label={`Select ${props.trip.name}, or drag it into a folder`} selected={select().selected()} onToggle={select().onToggle} onPress={select().onDrag} />
           )}
         </Show>
         <button
@@ -268,17 +296,24 @@ function TripCard(props: {
   );
 }
 
-/** A folder as a card: its name over `note`, what it holds and in search results where it is; its menu renames and deletes it. */
-function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[] }) {
+/**
+ * A folder as a card: its name over `note`, what it holds and in search results where it
+ * is; its menu renames and deletes it. Trips and folders dragged onto it move into it;
+ * where `onDrag` is given, its pad drags it into another.
+ */
+function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[]; onDrag?: (e: PointerEvent) => void }) {
   return (
-    <li class="card" ref={(el) => cardMenu(el, props.items)}>
-      <button class="text" onClick={() => props.onOpen(props.folder.id)}>
-        <FolderIcon />
-        <span class="lines">
-          <span class="name">{props.folder.name}</span>
-          <span class="muted detail">{props.note}</span>
-        </span>
-      </button>
+    <li class="card" data-drop-folder={String(props.folder.id)} ref={(el) => cardMenu(el, props.items)}>
+      <div class="row">
+        <Show when={props.onDrag}>{(onDrag) => <Pad label={`Drag ${props.folder.name} into another folder`} onPress={onDrag()} />}</Show>
+        <button class="text grow" onClick={() => props.onOpen(props.folder.id)}>
+          <FolderIcon />
+          <span class="lines">
+            <span class="name">{props.folder.name}</span>
+            <span class="muted detail">{props.note}</span>
+          </span>
+        </button>
+      </div>
     </li>
   );
 }

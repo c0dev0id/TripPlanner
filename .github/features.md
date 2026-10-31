@@ -16,7 +16,9 @@
 - A library of the user's trips in folders, which may hold folders: create, open, rename,
   duplicate and delete trips, create, rename and delete folders (for a folder that holds
   anything the confirmation asks whether that moves up into its parent or is deleted with it), move a trip between folders from Move… in its menu, create a trip or a folder
-  in the folder shown. Folders and trips are cards with the name over a line
+  in the folder shown. Trips and folders are dragged by their pad onto a folder's card,
+  or onto the card one level up, to move them there; selected trips go together, and a
+  folder never goes into itself. Folders and trips are cards with the name over a line
   of metadata; right-click or a long press on a card opens its menu. A search by name
   across trips and folders, listing at most twenty results; a trip opened from it stands
   in its own folder.
