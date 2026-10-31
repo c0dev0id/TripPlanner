@@ -38,10 +38,11 @@ describe('parseRouteResponse', () => {
 
 describe('fetchLeg', () => {
   const leg: LegRequest = { profile: 'motorcycle', highways: 'allow', from: [1, 1], to: [2, 2] };
+  const now = async () => {};
 
   it('reports a non-JSON answer by its status', async () => {
     const fetchFn = (async () => new Response('gateway timeout', { status: 504 })) as typeof fetch;
-    await expect(fetchLeg(leg, fetchFn)).rejects.toThrow('status 504');
+    await expect(fetchLeg(leg, fetchFn, now)).rejects.toThrow('status 504');
   });
 
   it('posts the request as JSON and returns the routed leg', async () => {
@@ -50,7 +51,7 @@ describe('fetchLeg', () => {
       sent = init;
       return Response.json({ trip: { summary: { length: 0.01, time: 2 }, legs: [{ shape: 'xyz' }] } });
     }) as typeof fetch;
-    await expect(fetchLeg(leg, fetchFn)).resolves.toEqual({ geometry: 'xyz', distanceM: 10, durationS: 2 });
+    await expect(fetchLeg(leg, fetchFn, now)).resolves.toEqual({ geometry: 'xyz', distanceM: 10, durationS: 2 });
     expect(sent?.method).toBe('POST');
     expect(JSON.parse(sent?.body as string)).toMatchObject({ costing: 'motorcycle', costing_options: { motorcycle: { use_highways: 0.5 } } });
   });

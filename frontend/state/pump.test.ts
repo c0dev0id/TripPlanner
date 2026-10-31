@@ -7,7 +7,6 @@ describe('createPump', () => {
     const done = new Map<string, string>();
     const failed = new Set<string>();
     const requests: string[] = [];
-    const waits: number[] = [];
     const pump = createPump<string, string>({
       next: () => missing.find((job) => !done.has(job) && !failed.has(job)),
       run: async (job) => {
@@ -17,20 +16,15 @@ describe('createPump', () => {
       },
       onResult: (job, result) => done.set(job, result),
       onFailure: (job) => failed.add(job),
-      wait: async (ms) => {
-        waits.push(ms);
-      },
-      interval: 1100,
     });
-    return { pump, done, failed, requests, waits, missing };
+    return { pump, done, failed, requests, missing };
   }
 
-  it('fetches every missing job once and pauses after each request', async () => {
+  it('fetches every missing job once', async () => {
     const s = setup(['a', 'b', 'c']);
     await s.pump();
     expect(s.requests).toEqual(['a', 'b', 'c']);
     expect([...s.done.keys()]).toEqual(['a', 'b', 'c']);
-    expect(s.waits).toEqual([1100, 1100, 1100]);
   });
 
   it('marks failures instead of retrying them forever', async () => {

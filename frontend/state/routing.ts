@@ -2,7 +2,7 @@ import { batch, createEffect, createMemo, createRoot, createSignal } from 'solid
 import type { Route, RoutedLeg } from '../model/trip';
 import { errorMessage } from '../api';
 import { legState, nextMissingLeg, routedLegs, routeLegs, type LegJob } from '../routing/legs';
-import { fetchLeg, ROUTING_MIN_INTERVAL_MS, valhallaTurn } from '../routing/valhalla';
+import { fetchLeg } from '../routing/valhalla';
 import { createPump } from './pump';
 import { clearLegs, editingRouteId, openTrip, routeById, selectedDay, setRouteLeg } from './trip';
 
@@ -39,17 +39,12 @@ const pump = createPump<LegJob, RoutedLeg>({
     const preferred = new Set(edited ? [edited] : selectedDay()?.routes.map((r) => r.id));
     return nextMissingLeg(allRoutes(), failedLegs(), preferred);
   },
-  run: async (job) => {
-    await valhallaTurn();
-    return fetchLeg(job);
-  },
+  run: (job) => fetchLeg(job),
   onResult: (job, leg) => setRouteLeg(job.routeId, job.key, leg),
   onFailure: (job, error) => {
     setLastError(errorMessage(error));
     setFailedLegs((failed) => new Set(failed).add(job.key));
   },
-  wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-  interval: ROUTING_MIN_INTERVAL_MS,
 });
 
 const service = createRoot(() => {

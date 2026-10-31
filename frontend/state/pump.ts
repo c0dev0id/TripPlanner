@@ -4,15 +4,12 @@ export interface PumpDeps<Job, Result> {
   run(job: Job): Promise<Result>;
   onResult(job: Job, result: Result): void;
   onFailure(job: Job, error: unknown): void;
-  wait(ms: number): Promise<void>;
-  /** Pause after every run, in milliseconds. */
-  interval: number;
 }
 
 /**
  * A pull-based request loop: each iteration asks the current state for the next missing
  * job, so nothing stale is ever queued. Calling the pump while it runs does nothing; the
- * running loop picks up new work after its pause.
+ * running loop picks up new work once its job is done; the jobs pace themselves.
  */
 export function createPump<Job, Result>(deps: PumpDeps<Job, Result>): () => Promise<void> {
   let running = false;
@@ -26,7 +23,6 @@ export function createPump<Job, Result>(deps: PumpDeps<Job, Result>): () => Prom
         } catch (error) {
           deps.onFailure(job, error);
         }
-        await deps.wait(deps.interval);
       }
     } finally {
       running = false;
