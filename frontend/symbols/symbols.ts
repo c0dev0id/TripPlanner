@@ -1,4 +1,4 @@
-import garminGroups from './garmin-symbols.json';
+import garmin from './garmin-symbols.json';
 
 /** The drawings of our own stop icons (see StopShape). */
 export type StopIcon = 'other' | 'start' | 'end' | 'meeting' | 'hotel' | 'restaurant' | 'cafe' | 'fuel' | 'sight' | 'info' | 'photo' | 'break';
@@ -26,16 +26,20 @@ export const OUR_ICONS: readonly { icon: StopIcon; label: string; symbol: string
 export const PLAIN_SYMBOL = OUR_ICONS[0]!.symbol;
 
 /** Garmin's waypoint symbols by theme, as the stop dialog offers them. */
-export const GARMIN_GROUPS: readonly { title: string; names: readonly string[] }[] = garminGroups;
+export const GARMIN_GROUPS: readonly { title: string; names: readonly string[] }[] = garmin.groups;
+
+const WITH_PICTURE = new Set(garmin.groups.flatMap((g) => g.names).filter((n) => !garmin.withoutPicture.includes(n)));
+
+/** Whether `make garmin-icons` fetches a picture of the symbol: one of Garmin's listed symbols that has one. */
+export const hasPicture = (symbol: string): boolean => WITH_PICTURE.has(symbol);
 
 /** Our icon for a symbol; a stop without a symbol is a plain stop. Undefined where Garmin's own picture stands for the symbol. */
 export const ourIcon = (symbol: string | null): StopIcon | undefined => (symbol === null ? 'other' : OUR_ICONS.find((o) => o.symbol === symbol)?.icon);
 
 /** What a stop's symbol is called: our icon's label or Garmin's name; nothing for a plain stop. */
 export function symbolLabel(symbol: string | null): string | undefined {
-  const icon = ourIcon(symbol);
-  if (icon === 'other') return undefined;
-  return icon ? OUR_ICONS.find((o) => o.icon === icon)!.label : symbol!;
+  if (symbol === null || symbol === PLAIN_SYMBOL) return undefined;
+  return OUR_ICONS.find((o) => o.symbol === symbol)?.label ?? symbol;
 }
 
 /** Where Garmin's picture of a symbol is served once `make garmin-icons` has fetched it: the name, a slash made a dash, as a PNG file. */

@@ -11,23 +11,24 @@ namespace Planner\Symbols;
  */
 final class GarminPictures
 {
-    public const SOURCE = 'https://www.gpsvisualizer.com/google_maps/icons/garmin/24x24/';
+    private const SOURCE = 'https://www.gpsvisualizer.com/google_maps/icons/garmin/24x24/';
 
     /**
      * Fetches the picture of every symbol the list names into `dir`, as the symbol's name with
-     * a slash made a dash and ".png"; pictures already there are kept.
+     * a slash made a dash and ".png", except those the list marks as having none; pictures
+     * already there are kept.
      *
-     * @return array{fetched: int, kept: int, missing: list<string>} the symbols without a picture at the source
+     * @return array{fetched: int, kept: int, missing: list<string>} the symbols the source had no picture of, though the list expects one
      */
     public static function fetch(string $listFile, string $dir, string $source = self::SOURCE): array
     {
-        $groups = json_decode((string) file_get_contents($listFile), true, flags: JSON_THROW_ON_ERROR);
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
         $context = stream_context_create(['http' => ['timeout' => 20, 'user_agent' => 'Trip Planner (make garmin-icons)']]);
         $result = ['fetched' => 0, 'kept' => 0, 'missing' => []];
-        foreach (array_merge(...array_column($groups, 'names')) as $name) {
+        $list = json_decode((string) file_get_contents($listFile), true, flags: JSON_THROW_ON_ERROR);
+        foreach (array_diff(array_merge(...array_column($list['groups'], 'names')), $list['withoutPicture']) as $name) {
             $file = str_replace('/', '-', $name) . '.png';
             if (is_file("$dir/$file")) {
                 $result['kept']++;

@@ -1,6 +1,6 @@
 import { createMemo, createSignal, For, Show } from 'solid-js';
 import { FREE_COLOR } from '../map/routeOverlay';
-import { GARMIN_GROUPS, garminPictureUrl, ourIcon, OUR_ICONS } from '../symbols/symbols';
+import { GARMIN_GROUPS, garminPictureUrl, hasPicture, ourIcon, OUR_ICONS } from '../symbols/symbols';
 import { StopShape } from '../ui/StopShape';
 
 /**
@@ -11,54 +11,58 @@ export function SymbolField(props: { initial: string | null }) {
   const [chosen, setChosen] = createSignal(props.initial);
   const [open, setOpen] = createSignal(false);
   const [query, setQuery] = createSignal('');
-  /** Garmin's groups with the symbols whose names hold the query. */
-  const shown = createMemo(() => {
-    const q = query().trim().toLowerCase();
-    return GARMIN_GROUPS.map((g) => ({ title: g.title, names: g.names.filter((n) => n.toLowerCase().includes(q)) })).filter((g) => g.names.length > 0);
-  });
+  const matches = (name: string) => name.toLowerCase().includes(query().trim().toLowerCase());
   return (
-    <fieldset class="symbols">
+    <fieldset class="choices symbols">
       <legend>Symbol</legend>
       <input type="hidden" name="symbol" value={chosen() ?? ''} />
       <div class="our-symbols">
         <For each={OUR_ICONS}>
           {(o) => (
-            <button type="button" class="symbol" aria-pressed={chosen() === o.symbol} title={`${o.label} (Garmin: ${o.symbol})`} onClick={() => setChosen(o.symbol)}>
+            <button type="button" class="row symbol" aria-pressed={chosen() === o.symbol} title={`${o.label} (Garmin: ${o.symbol})`} onClick={() => setChosen(o.symbol)}>
               <StopShape symbol={o.symbol} color={FREE_COLOR} height={30} />
               <span>{o.label}</span>
             </button>
           )}
         </For>
       </div>
-      <Show when={chosen() !== null && ourIcon(chosen()) === undefined}>
-        <p class="garmin-chosen">
-          <img src={garminPictureUrl(chosen()!)} alt="" width="24" height="24" />
+      <Show when={ourIcon(chosen()) === undefined}>
+        <p class="row garmin-chosen">
+          <StopShape symbol={chosen()} color={FREE_COLOR} height={24} />
           Garmin: {chosen()}
         </p>
       </Show>
-      <button type="button" class="more-symbols" aria-expanded={open()} onClick={() => setOpen(!open())}>
+      <button type="button" class="link more-symbols" aria-expanded={open()} onClick={() => setOpen(!open())}>
         {open() ? 'Fewer symbols' : 'More Garmin symbols…'}
       </button>
       <Show when={open()}>
         <input type="search" placeholder="Search Garmin symbols" aria-label="Search Garmin symbols" value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
         <div class="garmin-symbols">
-          <For each={shown()} fallback={<p class="muted">No Garmin symbol matches.</p>}>
-            {(g) => (
-              <>
-                <h4>{g.title}</h4>
-                <div class="garmin-grid">
-                  <For each={g.names}>
-                    {(name) => (
-                      <button type="button" class="symbol" aria-pressed={chosen() === name} onClick={() => setChosen(name)}>
-                        <img src={garminPictureUrl(name)} alt="" width="24" height="24" loading="lazy" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
-                        <span>{name}</span>
-                      </button>
-                    )}
-                  </For>
-                </div>
-              </>
-            )}
+          <For each={GARMIN_GROUPS}>
+            {(g) => {
+              const names = createMemo(() => g.names.filter(matches));
+              return (
+                <Show when={names().length > 0}>
+                  <h4>{g.title}</h4>
+                  <div class="garmin-grid">
+                    <For each={names()}>
+                      {(name) => (
+                        <button type="button" class="row symbol" aria-pressed={chosen() === name} onClick={() => setChosen(name)}>
+                          <Show when={hasPicture(name)} fallback={<span class="no-picture" />}>
+                            <img src={garminPictureUrl(name)} alt="" width="24" height="24" loading="lazy" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
+                          </Show>
+                          <span>{name}</span>
+                        </button>
+                      )}
+                    </For>
+                  </div>
+                </Show>
+              );
+            }}
           </For>
+          <Show when={!GARMIN_GROUPS.some((g) => g.names.some(matches))}>
+            <p class="muted">No Garmin symbol matches.</p>
+          </Show>
         </div>
       </Show>
     </fieldset>

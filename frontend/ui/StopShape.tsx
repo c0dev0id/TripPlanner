@@ -1,6 +1,6 @@
 // The little objects are from Layer Slayer's waypoint shapes; the bed, the pin, the flags, the meeting and the info sign are new.
 import { createSignal, createUniqueId, Show, type JSX } from 'solid-js';
-import { garminPictureUrl, ourIcon, type StopIcon } from '../symbols/symbols';
+import { garminPictureUrl, hasPicture, ourIcon, type StopIcon } from '../symbols/symbols';
 
 /** Height of a stop's shape in CSS pixels. */
 const SHAPE_HEIGHT = 36;
@@ -175,14 +175,16 @@ const DRAWINGS: Record<StopIcon, (color: string) => JSX.Element> = {
   ),
 };
 
-/** Garmin's picture of a symbol on a sign, in the same box; a pin in `color` where the picture is missing (see `make garmin-icons`). */
+/** The symbols whose picture failed to load, as where `make garmin-icons` was not run: asked for once a page. */
+const [failed, setFailed] = createSignal<ReadonlySet<string>>(new Set());
+
+/** Garmin's picture of a symbol on a sign, in the same box; a pin in `color` for a symbol without a picture. */
 function GarminSign(props: { symbol: string; color: string }) {
-  const [missing, setMissing] = createSignal(false);
   return (
-    <Show when={!missing()} fallback={<Pin color={props.color} />}>
+    <Show when={hasPicture(props.symbol) && !failed().has(props.symbol)} fallback={<Pin color={props.color} />}>
       <Post />
       <rect x="3" y="1" width="26" height="26" rx="4" fill="#fff" stroke="#ced4da" stroke-width="0.9" />
-      <image href={garminPictureUrl(props.symbol)} x="4" y="2" width="24" height="24" onError={() => setMissing(true)} />
+      <image href={garminPictureUrl(props.symbol)} x="4" y="2" width="24" height="24" onError={() => setFailed(new Set([...failed(), props.symbol]))} />
     </Show>
   );
 }

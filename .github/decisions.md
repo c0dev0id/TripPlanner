@@ -428,7 +428,10 @@ entries at the end of their section.
   can be seen and chosen, but the dialog shows our icons first and Garmin's list only on
   request. The pictures are Garmin's artwork, fetched from GPS Visualizer's copies by
   `make garmin-icons` on the server rather than kept in the public repository; without
-  them, a stop with such a symbol is drawn as a pin.
+  them, a stop with such a symbol is drawn as a pin. The symbol list marks the 40 symbols
+  GPS Visualizer has no picture of, and a symbol outside the list has none either, so
+  neither the fetch nor the browser asks for a picture that cannot be there: a closure
+  file's 106 waypoints of symbol "default" would otherwise be 106 failed requests.
 - **One track or route per route, one waypoint per stop.** A GPX file holds the stops in
   scope as waypoints, bound ones at their route point and free ones at their own position
   when within the chosen reach of a route, with the stop's Garmin symbol, and

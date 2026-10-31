@@ -15,7 +15,7 @@ final class GarminPicturesTest extends TestCase
     {
         $this->dir = sys_get_temp_dir() . '/planner-symbols-' . bin2hex(random_bytes(4));
         mkdir("$this->dir/source", 0755, true);
-        file_put_contents("$this->dir/list.json", json_encode([['title' => 'Markers', 'names' => ['Flag, Blue', 'Navaid, Green/Red', 'Gambling/casino']]]));
+        file_put_contents("$this->dir/list.json", json_encode(['groups' => [['title' => 'Markers', 'names' => ['Flag, Blue', 'Navaid, Green/Red', 'Gambling/casino', 'Custom 0']]], 'withoutPicture' => ['Custom 0']]));
         file_put_contents("$this->dir/source/Flag%2C%20Blue.png", "\x89PNG flag");
         file_put_contents("$this->dir/source/Navaid%2C%20Green-Red.png", "\x89PNG navaid");
     }
@@ -30,7 +30,7 @@ final class GarminPicturesTest extends TestCase
         rmdir($this->dir);
     }
 
-    public function testFetchesEachSymbolsPictureOnceUnderItsNameASlashMadeADash(): void
+    public function testFetchesEachExpectedPictureOnceUnderItsNameASlashMadeADash(): void
     {
         $out = "$this->dir/out";
         $first = GarminPictures::fetch("$this->dir/list.json", $out, "$this->dir/source/");

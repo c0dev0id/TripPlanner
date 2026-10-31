@@ -203,7 +203,7 @@ a {
   text-align: center;
 }
 
-.panel button.link {
+:is(.panel, .dialog) button.link {
   border: 0;
   background: none;
   padding: 0;
@@ -816,46 +816,32 @@ fieldset.choices legend {
 }
 
 /* A stop's symbol: our icons, and all of Garmin's behind a toggle. */
-.dialog fieldset.symbols {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  border: 0;
+fieldset.symbols {
   min-width: 0;
 }
 
-.dialog fieldset.symbols legend {
-  padding: 0;
-  margin-bottom: 2px;
-  font-size: 13px;
-  color: var(--muted);
+.our-symbols,
+.garmin-grid {
+  display: grid;
+  gap: 4px;
 }
 
 .our-symbols {
-  display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 4px;
 }
 
 .garmin-grid {
-  display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 4px;
 }
 
 .dialog button.symbol {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
   padding: 4px;
   border: 1px solid transparent;
   border-radius: 6px;
   background: none;
   font-size: 12px;
   line-height: 1.2;
+  white-space: normal;
   text-align: left;
 }
 
@@ -874,12 +860,13 @@ fieldset.choices legend {
   overflow-wrap: anywhere;
 }
 
+.no-picture {
+  flex: none;
+  width: 24px;
+}
+
 .dialog button.more-symbols {
   align-self: flex-start;
-  padding: 2px 0;
-  border: 0;
-  background: none;
-  color: var(--accent);
   font-size: 13px;
 }
 
@@ -895,9 +882,6 @@ fieldset.choices legend {
 }
 
 .garmin-chosen {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   margin: 0;
   font-size: 13px;
 }

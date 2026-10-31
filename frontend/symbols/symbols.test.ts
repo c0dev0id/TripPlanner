@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GARMIN_GROUPS, garminPictureUrl, ourIcon, OUR_ICONS, symbolLabel } from './symbols';
+import { GARMIN_GROUPS, garminPictureUrl, hasPicture, ourIcon, OUR_ICONS, symbolLabel } from './symbols';
 
 describe('our icons and Garmin symbols', () => {
   it('map one to one, each of ours to a Garmin symbol of the list', () => {
@@ -16,6 +16,10 @@ describe('our icons and Garmin symbols', () => {
 
   it('name a symbol by our label or Garmin\'s name, a plain stop not at all', () => {
     expect([symbolLabel('Gas Station'), symbolLabel('Campground'), symbolLabel('Pin, Blue'), symbolLabel(null)]).toEqual(['Fuel', 'Campground', undefined, undefined]);
+  });
+
+  it('have a picture only where the list expects one', () => {
+    expect([hasPicture('Campground'), hasPicture('Hotel'), hasPicture('default')]).toEqual([true, false, false]);
   });
 
   it("find Garmin's picture under the symbol's name, a slash made a dash", () => {

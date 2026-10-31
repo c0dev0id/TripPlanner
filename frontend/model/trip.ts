@@ -44,7 +44,7 @@ export const asNotes = (text: string): string => clipped(text.normalize('NFC').r
 const MAX_SYMBOL = 100;
 
 /** A waypoint symbol's name from a file: trimmed, at most MAX_SYMBOL characters; null for none. */
-export const asSymbol = (text: string | undefined): string | null => text?.trim().slice(0, MAX_SYMBOL) || null;
+export const asSymbol = (text: string | undefined): string | null => clipped(text?.trim() ?? '', MAX_SYMBOL) || null;
 
 /**
  * A point to stop at. Bound to a point of a routed route of its day (`pointId`), it stands

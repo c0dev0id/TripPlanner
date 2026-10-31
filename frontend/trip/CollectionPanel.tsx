@@ -129,7 +129,7 @@ function RouteItem(props: { route: Route; day: Day }) {
 
 /** A waypoint of a section: a click pans the map there; its menu copies and removes it. */
 function WaypointItem(props: { stop: Stop }) {
-  const kind = () => symbolLabel(props.stop.symbol);
+  const label = () => symbolLabel(props.stop.symbol);
   const items = (): MenuItem[] => [
     { label: 'Copy', run: () => copyStop(props.stop) },
     { label: 'Remove', run: () => removeStop(props.stop.id) },
@@ -140,8 +140,8 @@ function WaypointItem(props: { stop: Stop }) {
         <StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />
         <span class="lines">
           <span class="name">{props.stop.name}</span>
-          <Show when={kind()}>
-            <span class="muted detail">{kind()}</span>
+          <Show when={label()}>
+            <span class="muted detail">{label()}</span>
           </Show>
         </span>
       </button>

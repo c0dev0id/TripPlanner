@@ -40,7 +40,7 @@ switch ($command) {
         $result = GarminPictures::fetch($root . '/frontend/symbols/garmin-symbols.json', $root . '/public/garmin-symbols');
         echo "Garmin symbol pictures: {$result['fetched']} fetched, {$result['kept']} already there.\n";
         if ($result['missing'] !== []) {
-            echo count($result['missing']) . ' symbols have no picture and show as a pin: ' . implode('; ', $result['missing']) . "\n";
+            echo 'No picture at the source for ' . implode('; ', $result['missing']) . "; the list's withoutPicture should name them.\n";
         }
         break;
     default:
