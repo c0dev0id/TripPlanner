@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Planner\Http;
 
 use Planner\Account\LoginController;
+use Planner\Account\PasswordChangeController;
 use Planner\Account\PasswordResetController;
 use Planner\Api\MeController;
 use Planner\Export\ExportPresetController;
@@ -38,6 +39,8 @@ final class Routes
             $pages->post('/password/forgot', [PasswordResetController::class, 'sendReset']);
             $pages->get('/password/reset/{token}', [PasswordResetController::class, 'showReset']);
             $pages->post('/password/reset/{token}', [PasswordResetController::class, 'reset']);
+            $pages->get('/password/change', [PasswordChangeController::class, 'show']);
+            $pages->post('/password/change', [PasswordChangeController::class, 'change']);
             $pages->get('/signup/{token}', [SignupController::class, 'show']);
             $pages->post('/signup/{token}', [SignupController::class, 'signup']);
             $pages->get('/app', [AppController::class, 'show'])->add(RequireUser::class);

@@ -35,7 +35,7 @@ final class LoginController
             return $this->view->render($response, 'login', ['email' => $email, 'error' => 'Unknown e-mail address or wrong password.']);
         }
         $this->currentUser->login($user);
-        return Redirect::to($response, '/app');
+        return Redirect::to($response, $user->mustChangePassword ? '/password/change' : '/app');
     }
 
     public function logout(Request $request, Response $response): Response
