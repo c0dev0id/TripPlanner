@@ -2,7 +2,7 @@ import { batch, createEffect, createMemo, createRoot, createSignal } from 'solid
 import type { Route, RoutedLeg } from '../model/trip';
 import { errorMessage } from '../api';
 import { legState, nextMissingLeg, routedLegs, routeLegs, type LegJob } from '../routing/legs';
-import { fetchLeg, ROUTING_MIN_INTERVAL_MS } from '../routing/valhalla';
+import { fetchLeg, ROUTING_MIN_INTERVAL_MS, valhallaTurn } from '../routing/valhalla';
 import { createPump } from './pump';
 import { clearLegs, editingRouteId, openTrip, routeById, selectedDay, setRouteLeg } from './trip';
 
@@ -39,7 +39,10 @@ const pump = createPump<LegJob, RoutedLeg>({
     const preferred = new Set(edited ? [edited] : selectedDay()?.routes.map((r) => r.id));
     return nextMissingLeg(allRoutes(), failedLegs(), preferred);
   },
-  run: (job) => fetchLeg(job),
+  run: async (job) => {
+    await valhallaTurn();
+    return fetchLeg(job);
+  },
   onResult: (job, leg) => setRouteLeg(job.routeId, job.key, leg),
   onFailure: (job, error) => {
     setLastError(errorMessage(error));

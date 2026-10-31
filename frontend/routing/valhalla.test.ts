@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fetchLeg, parseRouteResponse, routeRequest, type LegRequest } from './valhalla';
+import { fetchLeg, fetchSurfaces, parseRouteResponse, routeRequest, type LegRequest } from './valhalla';
 
 describe('routeRequest', () => {
   it('asks for one leg with the motorcycle costing and the motorway dial for the road profile', () => {
@@ -53,5 +53,25 @@ describe('fetchLeg', () => {
     await expect(fetchLeg(leg, fetchFn)).resolves.toEqual({ geometry: 'xyz', distanceM: 10, durationS: 2 });
     expect(sent?.method).toBe('POST');
     expect(JSON.parse(sent?.body as string)).toMatchObject({ costing: 'motorcycle', costing_options: { motorcycle: { use_highways: 0.5 } } });
+  });
+});
+
+describe('fetchSurfaces', () => {
+  it('asks in pieces and reads each point\'s road surface, none where a point or a piece matched no road', async () => {
+    const bodies: { shape: unknown[] }[] = [];
+    const answers = [
+      { edges: [{ surface: 'paved_smooth' }, { surface: 'gravel' }], matched_points: [{ edge_index: 0, type: 'matched' }, { edge_index: 1, type: 'interpolated' }, { edge_index: 4294967295, type: 'unmatched' }] },
+      { error_code: 444, error: 'Map Match algorithm failed' },
+    ];
+    const fetchFn = (async (_url: string, init: RequestInit) => {
+      bodies.push(JSON.parse(String(init.body)));
+      return new Response(JSON.stringify(answers[bodies.length - 1]));
+    }) as unknown as typeof fetch;
+    const points = Array.from({ length: 1003 }, (_, i): [number, number] => [11 + i / 1e4, 47]);
+    const surfaces = await fetchSurfaces(points, fetchFn, async () => {});
+    expect(bodies.map((b) => b.shape.length)).toEqual([1000, 3]);
+    expect(surfaces.slice(0, 3)).toEqual(['paved_smooth', 'gravel', null]);
+    expect(surfaces.length).toBe(1003);
+    expect(surfaces.slice(1000)).toEqual([null, null, null]);
   });
 });
