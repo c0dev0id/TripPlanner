@@ -10,6 +10,8 @@ final readonly class User
         public int $id,
         public string $email,
         public bool $isAdmin,
+        /** Whether the account still has the password it was handed over with, which must be replaced before anything else. */
+        public bool $mustChangePassword = false,
     ) {
     }
 }

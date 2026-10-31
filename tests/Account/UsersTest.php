@@ -31,6 +31,28 @@ final class UsersTest extends TestCase
         self::assertFalse($found->isAdmin);
     }
 
+    public function testMakesAnAccountWithAGeneratedPasswordToReplace(): void
+    {
+        $password = $this->users->createWithInitialPassword('rider@example.com', $this->now);
+        self::assertMatchesRegularExpression('/^[a-hjkmnp-zA-HJ-NP-Z2-9]{16}$/', $password);
+        self::assertTrue($this->users->authenticate('rider@example.com', $password)?->mustChangePassword);
+        self::assertNotSame($password, $this->users->createWithInitialPassword('other@example.com', $this->now));
+    }
+
+    public function testChangingThePasswordEndsTheNeedToChangeIt(): void
+    {
+        $this->users->createWithInitialPassword('rider@example.com', $this->now);
+        $user = $this->users->findByEmail('rider@example.com');
+        $this->users->changePassword($user->id, 'a password of my own');
+        self::assertFalse($this->users->findById($user->id)?->mustChangePassword);
+    }
+
+    public function testAnInvitedAccountHasItsOwnPasswordFromTheStart(): void
+    {
+        $this->users->create('rider@example.com', 'correct horse battery', $this->now);
+        self::assertFalse($this->users->findByEmail('rider@example.com')?->mustChangePassword);
+    }
+
     public function testFindsById(): void
     {
         $created = $this->users->create('rider@example.com', 'correct horse battery', $this->now);
