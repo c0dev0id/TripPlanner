@@ -12,7 +12,8 @@
   "dependencies": {
     "libheif-js": "^1.23.5",
     "maplibre-gl": "^6.16.0",
-    "solid-js": "^1.9.17"
+    "solid-js": "^1.9.17",
+    "uplot": "^1.6.32"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
