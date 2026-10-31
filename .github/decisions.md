@@ -460,11 +460,24 @@ entries at the end of their section.
   stays within one request per 1.1 s whatever asks. The surfaces are kept for the page's
   life and not stored: matching a long ride takes a few requests, and storing them would
   tie the recording to a state of OpenStreetMap.
+- **Recordings are compared by place, not by time.** Two rides of the same road start at
+  different times and differ in pace, so each point of the opened recording is set at
+  the place on the other where it lies within 50 m, and the values there are compared:
+  the time since the first place both passed (behind where positive), the speed, and the
+  lean to either side, since the sign of a lean says the side of the bend, not how far.
+  The place is looked for from 30 m behind to 1 km ahead of the farthest place reached,
+  so that the way back on the same road, a loop or the next lap is not taken for the way
+  on; anywhere only where the ride left the other and comes back. Against the planned
+  route only the distance is measured: the plan's routed times are estimates, and the
+  question there is where the ride left the route. That comparison is worked out again
+  with every edit of the day's routes.
 - **A coloured line is drawn in pieces of one colour.** MapLibre's `line-gradient` takes
   no colours from feature data and needs line metrics on the whole source; a feature per
   piece keeps the one line layer reading its `color` property. A scale spreads over the
-  values of the one recording between its 1st and 99th percentile, so that a GPS spike
-  does not squash every other colour; slope and lean are centred on zero.
+  values of the one recording up to their 99th percentile (98th for the signed ones),
+  not their extremes, so that a GPS spike does not squash every other colour; slope,
+  lean and the differences in speed and lean are centred on zero. The opened recording is drawn over the others, which often ran
+  the same roads.
 - **The figures float over the map as cards, and views keep clear of them.** The user
   chose separate cards (a summary top left, charts along the bottom, a popup at the point
   picked) over a panel section, so that the map, the figures and the line read together.

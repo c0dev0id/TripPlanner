@@ -137,6 +137,14 @@
   place on the map; a click in the chart or on the line on the map shows everything known
   of that point: the distance along, the time, the measures, the surface and the file's
   other values. On a narrow screen the figures start folded.
+- Comparing a recording: its card compares it with its day's planned route or another
+  recording shown on the map. Against the plan it says how far it went off the route
+  and how far at most, and follows the route as it is edited. Against another recording
+  it also says the time ahead or behind at the end and the speed difference on average,
+  at the same places along the way. The line can be coloured by the distance from the
+  other, and by speed and lean against the other recording; a Difference chart shows
+  the time and speed against it along the way, or the distance from the plan. The point
+  picked says how it differs there.
 - A journal on the trip, on a day, on a stop and on a route, opened from the icon on
   their rows, which counts their entries: entries of a note, a file (a photo, a receipt, a document) or both, edited and
   deleted in place; rows say how many entries a part has. The trip's own journal reads

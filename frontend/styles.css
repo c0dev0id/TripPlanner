@@ -850,7 +850,7 @@ fieldset.choices legend {
   font-variant-numeric: tabular-nums;
 }
 
-.coloring select {
+.map-card select {
   min-width: 0;
   font: inherit;
 }

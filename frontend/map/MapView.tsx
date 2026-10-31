@@ -74,19 +74,21 @@ function dimStops(): LngLat[] {
   return dim.flatMap(({ day }) => day.stops.map((stop) => stop.lngLat));
 }
 
-/** Keeps the recordings shown on the map once their tracks are read, each in its colour or, opened, coloured by a measure. */
+/** Keeps the recordings shown on the map once their tracks are read, each in its colour or, opened, coloured by a measure and over the others, which often ran the same roads. */
 function RecordingLines(props: { map: MapLibreMap }) {
-  const features = createMemo(() =>
-    recordingFeatures(
-      shownRecordings().flatMap((recording) => {
+  const features = createMemo(() => {
+    const openedId = opened()?.recording.id;
+    const lastOpened = shownRecordings().toSorted((a, b) => Number(a.id === openedId) - Number(b.id === openedId));
+    return recordingFeatures(
+      lastOpened.flatMap((recording) => {
         const track = trackOf(recording);
         if (!track || track instanceof Error) return [];
-        const colors = recording.id === opened()?.recording.id ? openedLineColors() : undefined;
+        const colors = recording.id === openedId ? openedLineColors() : undefined;
         if (colors) return colorRuns(track.points, colors).map((run) => ({ id: recording.id, ...run }));
         return [{ id: recording.id, points: track.points, color: recordingColor(recording) }];
       }),
-    ),
-  );
+    );
+  });
   createEffect(() => props.map.getSource<GeoJSONSource>(RECORDINGS_SOURCE)?.setData(features()));
   return null;
 }

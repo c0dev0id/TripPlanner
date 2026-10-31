@@ -48,6 +48,7 @@ share work; sharing between users is on the way.
 - **Recordings beside the plan** — add a day's rides as recorded (Ridelink, Scenic or any
   GPX track) and see them on the map next to the planned route. Open one for its
   figures: speed, climb, lean and road surface, charted and coloured on the line.
+  Compare it with the plan or another ride.
 - **A journal on everything** — notes, photos, receipts and documents on the trip, a
   day, a stop, a route, or a spot on the map. Photos shrink to a web size before they
   leave the phone, stand on the map where they were taken, land on the day they were

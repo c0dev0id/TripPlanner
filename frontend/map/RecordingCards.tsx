@@ -1,13 +1,32 @@
 import { createEffect, createMemo, createSignal, For, Match, onCleanup, onMount, Show, Switch } from 'solid-js';
 import uPlot from 'uplot';
-import { FIGURES } from '../recording/figures';
-import { kmBySurface, scaleOf, SURFACES, NO_VALUE, type Coloring } from '../recording/lineColors';
-import { histogram, summaryOf, type Metric } from '../recording/measures';
-import { hoverIndex, opened, openedSurfaces, openRecording, pickedIndex, setColoring, setHoverIndex, setPickedIndex, shownColoring, type Opened } from '../state/recordingView';
+import { deltaSummaryOf, type Delta } from '../recording/delta';
+import { coloringFigure, DIFFERENCE_FIGURES, FIGURES, type Figure } from '../recording/figures';
+import { kmBySurface, NO_VALUE, SURFACES, type Coloring } from '../recording/lineColors';
+import { histogram, summaryOf, type Measures, type Metric } from '../recording/measures';
+import {
+  colorings,
+  comparands,
+  comparison,
+  hoverIndex,
+  opened,
+  openedSurfaces,
+  openRecording,
+  pickedIndex,
+  setColoring,
+  setComparand,
+  setHoverIndex,
+  setPickedIndex,
+  shownColoring,
+  shownScale,
+  type Comparison,
+  type Opened,
+} from '../state/recordingView';
 import { mapCover, setMapCover } from '../state/drawing';
 import { recordingColor } from '../state/recordings';
 import { Chart, type ChartInk } from '../ui/Chart';
 import { distanceText, durationText } from '../ui/format';
+import { Figures } from '../ui/Figures';
 import { CloseIcon } from '../ui/icons';
 
 /** Keeps fitted views clear of a card while it is shown: its width from the left edge, or its height from the bottom. */
@@ -33,11 +52,26 @@ export function RecordingCards() {
   );
 }
 
-const coloringLabel = (c: Coloring): string => (c === 'surface' ? 'Surface' : FIGURES[c].label);
+/** What a colouring is called in its list: a difference with what it is against. */
+function coloringLabel(c: Coloring): string {
+  const against = comparison()?.name;
+  switch (c) {
+    case 'surface':
+      return 'Surface';
+    case 'offset':
+      return `Distance from ${against}`;
+    case 'speedDifference':
+      return `Speed against ${against}`;
+    case 'leanDifference':
+      return `Lean against ${against}`;
+    default:
+      return FIGURES[c].label;
+  }
+}
 
 const textOf = <T,>(value: T | undefined, text: (value: T) => string): string | undefined => (value === undefined ? undefined : text(value));
 
-/** The recording in figures, the colouring of its line with its legend; folded at first on a narrow screen. */
+/** The recording in figures, what it is compared with, the colouring of its line with its legend; folded at first on a narrow screen. */
 function SummaryCard(props: { opened: Opened }) {
   const rows = createMemo((): [string, string][] => {
     const s = summaryOf(props.opened.measures);
@@ -66,47 +100,78 @@ function SummaryCard(props: { opened: Opened }) {
           <CloseIcon />
         </button>
       </summary>
-      <dl class="figures">
-        <For each={rows()}>
-          {([label, value]) => (
-            <>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
-            </>
-          )}
-        </For>
-      </dl>
-      <label class="row coloring">
+      <Figures rows={rows()} />
+      <Show when={comparands().length > 0}>
+        <label class="row">
+          <span>Compare</span>
+          <select
+            class="grow"
+            value={String(comparison()?.comparand ?? '')}
+            onChange={(e) => {
+              const value = e.currentTarget.value;
+              setComparand(value === '' ? undefined : value === 'plan' ? 'plan' : Number(value));
+            }}
+          >
+            <option value="">With nothing</option>
+            <For each={comparands()}>{(c) => <option value={String(c.comparand)}>{c.label}</option>}</For>
+          </select>
+        </label>
+      </Show>
+      <Show when={comparison()}>{(c) => <ComparisonFigures opened={props.opened} comparison={c()} />}</Show>
+      <label class="row">
         <span>Colour</span>
         <select class="grow" value={shownColoring() ?? ''} onChange={(e) => setColoring((e.currentTarget.value || undefined) as Coloring | undefined)}>
           <option value="">The recording's own</option>
-          <For each={props.opened.colorings}>{(c) => <option value={c}>{coloringLabel(c)}</option>}</For>
+          <For each={colorings()}>{(c) => <option value={c}>{coloringLabel(c)}</option>}</For>
         </select>
       </label>
       <Switch>
         <Match when={shownColoring() === 'surface'}>
           <SurfaceLegend opened={props.opened} />
         </Match>
-        <Match when={shownColoring()}>{(c) => <ScaleLegend opened={props.opened} metric={c() as Metric} />}</Match>
+        <Match when={shownScale()}>
+          <ScaleLegend />
+        </Match>
       </Switch>
     </details>
   );
 }
 
-/** The colours of a measure's scale from its low end to its high end. */
-function ScaleLegend(props: { opened: Opened; metric: Metric }) {
-  const scale = createMemo(() => scaleOf(props.metric, props.opened.measures[props.metric]!)!);
-  const text = (value: number) => FIGURES[props.metric].text(value);
+/** How the opened recording differs from what it is compared with, in figures. */
+function ComparisonFigures(props: { opened: Opened; comparison: Comparison }) {
+  const rows = createMemo((): [string, string][] => {
+    const s = deltaSummaryOf(props.opened.measures, props.comparison.delta);
+    const { offset, time, speed } = DIFFERENCE_FIGURES;
+    const rows: [string, string | undefined][] = [
+      ['Off it', distanceText(s.offM)],
+      ['Farthest off', offset.text(s.furthestM)],
+      ['At the end', textOf(s.timeS, time.text)],
+      ['On average', textOf(s.speed, speed.text)],
+    ];
+    return rows.filter((row): row is [string, string] => row[1] !== undefined);
+  });
+  return <Figures rows={rows()} />;
+}
+
+/** The colours of the line's scale from its low end to its high end. */
+function ScaleLegend() {
   return (
-    <div class="legend">
-      <div class="legend-bar">
-        <For each={scale().colors}>{(color) => <span style={{ background: color }} />}</For>
-      </div>
-      <div class="row legend-ends muted">
-        <span class="grow">{text(scale().from)}</span>
-        <span>{text(scale().to)}</span>
-      </div>
-    </div>
+    <Show when={shownScale()}>
+      {(shown) => {
+        const text = (value: number) => coloringFigure(shown().coloring).text(value);
+        return (
+          <div class="legend">
+            <div class="legend-bar">
+              <For each={shown().scale.colors}>{(color) => <span style={{ background: color }} />}</For>
+            </div>
+            <div class="row legend-ends muted">
+              <span class="grow">{text(shown().scale.from)}</span>
+              <span>{text(shown().scale.to)}</span>
+            </div>
+          </div>
+        );
+      }}
+    </Show>
   );
 }
 
@@ -144,28 +209,55 @@ function SurfaceLegend(props: { opened: Opened }) {
   );
 }
 
-type ChartKind = 'profile' | Metric;
+type ChartKind = 'profile' | 'difference' | Metric;
 
 /** The measures charted as a spread of the distance over their values, in bins of this width. */
 const BIN_WIDTH: Partial<Record<Metric, number>> = { speed: 10, slope: 2, lean: 5 };
 
-/** The profile of altitude and speed along the track, and the spread of each measure over the distance; with the values under the pointer. */
+/** A series charted along the track. */
+interface AlongLine {
+  values: readonly (number | null)[];
+  figure: Figure;
+  color: string;
+  fill?: string;
+}
+
+const profileLines = (m: Measures): AlongLine[] => [
+  ...(m.altitude ? [{ values: m.altitude, figure: FIGURES.altitude, color: '#868e96', fill: 'rgba(134, 142, 150, 0.25)' }] : []),
+  ...(m.speed ? [{ values: m.speed, figure: FIGURES.speed, color: '#1971c2' }] : []),
+];
+
+/** Time and speed against the other recording where both have them, else the distance from what the track is compared with. */
+function differenceLines(d: Delta): AlongLine[] {
+  const lines = [
+    ...(d.time ? [{ values: d.time, figure: DIFFERENCE_FIGURES.time, color: '#c2255c' }] : []),
+    ...(d.speed ? [{ values: d.speed, figure: DIFFERENCE_FIGURES.speed, color: '#1971c2' }] : []),
+  ];
+  return lines.length > 0 ? lines : [{ values: d.offset.map((v) => (Number.isFinite(v) ? v : null)), figure: DIFFERENCE_FIGURES.offset, color: '#e8590c' }];
+}
+
+/** The profile and the difference along the track, and the spread of each measure over the distance; with the values under the pointer. */
 function ChartCard(props: { opened: Opened }) {
   const kinds = createMemo((): ChartKind[] => {
     const m = props.opened.measures;
     const spreads = (Object.keys(BIN_WIDTH) as Metric[]).filter((metric) => m[metric] !== undefined);
-    return m.altitude || m.speed ? ['profile', ...spreads] : spreads;
+    return [...(m.altitude || m.speed ? ['profile' as const] : []), ...(comparison() ? ['difference' as const] : []), ...spreads];
   });
   const [chosen, setChosen] = createSignal<ChartKind>('profile');
   const kind = () => (kinds().includes(chosen()) ? chosen() : kinds()[0]);
+  const lines = createMemo(() => {
+    const c = comparison();
+    if (kind() === 'difference' && c) return differenceLines(c.delta);
+    return kind() === 'profile' ? profileLines(props.opened.measures) : [];
+  });
   const [spreadReadout, setSpreadReadout] = createSignal<string>();
-  const profileReadout = () => {
+  const alongReadout = () => {
     const i = hoverIndex();
     if (i === undefined) return undefined;
-    const m = props.opened.measures;
-    const parts = [distanceText(m.distance[i]!), textOf(m.altitude?.[i] ?? undefined, FIGURES.altitude.text), textOf(m.speed?.[i] ?? undefined, FIGURES.speed.text)];
+    const parts = [distanceText(props.opened.measures.distance[i]!), ...lines().map((line) => textOf(line.values[i] ?? undefined, line.figure.text))];
     return parts.filter((p) => p !== undefined).join(' · ');
   };
+  const tabLabel = (k: ChartKind) => (k === 'profile' ? 'Profile' : k === 'difference' ? 'Difference' : `${FIGURES[k].label}s`);
   return (
     <Show when={kind()}>
       {(k) => (
@@ -175,23 +267,21 @@ function ChartCard(props: { opened: Opened }) {
               <For each={kinds()}>
                 {(each) => (
                   <button role="tab" aria-selected={each === k()} onClick={() => setChosen(each)}>
-                    {each === 'profile' ? 'Profile' : `${FIGURES[each].label}s`}
+                    {tabLabel(each)}
                   </button>
                 )}
               </For>
             </div>
-            <span class="grow muted readout">{k() === 'profile' ? profileReadout() : spreadReadout()}</span>
+            <span class="grow muted readout">{lines().length > 0 ? alongReadout() : spreadReadout()}</span>
           </div>
-          <Show when={k() === 'profile'} fallback={<SpreadChart opened={props.opened} metric={k() as Metric} onHover={setSpreadReadout} />}>
-            <ProfileChart opened={props.opened} />
+          <Show when={lines().length > 0} fallback={<SpreadChart opened={props.opened} metric={k() as Metric} onHover={setSpreadReadout} />}>
+            <AlongChart distance={props.opened.measures.distance} lines={lines()} />
           </Show>
         </section>
       )}
     </Show>
   );
 }
-
-const PROFILE_COLORS = { altitude: '#868e96', altitudeFill: 'rgba(134, 142, 150, 0.25)', speed: '#1971c2' };
 
 /** Axes in the chart's ink, labelled with their unit; an upright one as wide as its longest label. */
 const axis = (ink: ChartInk, unit: string, more: uPlot.Axis = {}): uPlot.Axis => ({
@@ -206,28 +296,21 @@ const axis = (ink: ChartInk, unit: string, more: uPlot.Axis = {}): uPlot.Axis =>
 /** Where the pointer is in a chart, as the index of the value under it; undefined once it has left. */
 const cursorIndex = (u: uPlot): number | undefined => ((u.cursor.left ?? -1) < 0 ? undefined : (u.cursor.idx ?? undefined));
 
-/** Altitude and speed along the track: the pointer marks its point on the map, a click picks it, and the point picked is marked here. */
-function ProfileChart(props: { opened: Opened }) {
+/** Up to two series along the track, the second on an axis of its own on the right: the pointer marks its point on the map, a click picks it, and the point picked is marked here. */
+function AlongChart(props: { distance: Float64Array; lines: AlongLine[] }) {
   let chart: uPlot | undefined;
   createEffect(() => {
     pickedIndex();
     chart?.redraw(false, false);
   });
   const make = (ink: ChartInk) => {
-    const m = props.opened.measures;
     const series: uPlot.Series[] = [{}];
     const axes: uPlot.Axis[] = [axis(ink, 'km', { space: 60 })];
-    const data: (number | null)[][] = [];
-    if (m.altitude) {
-      series.push({ label: 'Altitude', scale: 'm', stroke: PROFILE_COLORS.altitude, fill: PROFILE_COLORS.altitudeFill, width: 1, points: { show: false } });
-      axes.push(axis(ink, 'm', { scale: 'm' }));
-      data.push(m.altitude);
-    }
-    if (m.speed) {
-      series.push({ label: 'Speed', scale: 'km/h', stroke: PROFILE_COLORS.speed, width: 1, points: { show: false } });
-      axes.push(axis(ink, 'km/h', m.altitude ? { scale: 'km/h', side: 1, grid: { show: false } } : { scale: 'km/h' }));
-      data.push(m.speed);
-    }
+    props.lines.forEach((line, i) => {
+      const scale = `y${i}`;
+      series.push({ label: line.figure.label, scale, stroke: line.color, fill: line.fill, width: 1, points: { show: false } });
+      axes.push(axis(ink, line.figure.unit, i === 0 ? { scale } : { scale, side: 1, grid: { show: false } }));
+    });
     const markPicked = (u: uPlot) => {
       const i = pickedIndex();
       if (i === undefined) return;
@@ -261,7 +344,7 @@ function ProfileChart(props: { opened: Opened }) {
         ],
       },
     };
-    return { options, data: [Array.from(m.distance, (d) => d / 1000), ...data] as uPlot.AlignedData };
+    return { options, data: [Array.from(props.distance, (d) => d / 1000), ...props.lines.map((line) => line.values)] as uPlot.AlignedData };
   };
   return <Chart make={make} ready={(c) => (chart = c)} />;
 }
@@ -275,7 +358,7 @@ function SpreadChart(props: { opened: Opened; metric: Metric; onHover: (text: st
     const say = (i: number | undefined) =>
       i === undefined ? undefined : `${text(bins.from[i]!)} to ${text(bins.from[i]! + width)}: ${distanceText(bins.km[i]! * 1000)}`;
     const options: Omit<uPlot.Options, 'width' | 'height'> = {
-      series: [{}, { label: 'km', stroke: PROFILE_COLORS.speed, fill: 'rgba(25, 113, 194, 0.5)', width: 1, paths: uPlot.paths.bars!({ size: [0.9, Infinity] }), points: { show: false } }],
+      series: [{}, { label: 'km', stroke: '#1971c2', fill: 'rgba(25, 113, 194, 0.5)', width: 1, paths: uPlot.paths.bars!({ size: [0.9, Infinity] }), points: { show: false } }],
       axes: [axis(ink, unit, { space: 60 }), axis(ink, 'km')],
       scales: { x: { time: false, range: [bins.from[0]!, bins.from.at(-1)! + width] } },
       legend: { show: false },
