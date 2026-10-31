@@ -149,3 +149,14 @@ CREATE TABLE IF NOT EXISTS stops (
     optional INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS stops_day ON stops(day_id);
+
+-- A ride as recorded, kept on a day: the GPX file as uploaded, compressed with gzip; the
+-- browser reads its points. A removed day takes its recordings with it.
+CREATE TABLE IF NOT EXISTS recordings (
+    id INTEGER PRIMARY KEY,
+    day_id TEXT NOT NULL REFERENCES days(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    gpx BLOB NOT NULL,
+    created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS recordings_day ON recordings(day_id);

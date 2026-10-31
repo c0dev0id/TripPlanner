@@ -124,8 +124,8 @@ final class TripDocuments
 
     /**
      * A copy of the user's trip, named after it, in its folder, planned again, every part
-     * under a new id, as one transaction. Returns the copy's id, or null when the user has
-     * no such trip.
+     * under a new id and each day with its recordings, as one transaction. Returns the
+     * copy's id, or null when the user has no such trip.
      */
     public function copy(int $userId, int $tripId, DateTimeImmutable $now): ?int
     {
@@ -140,7 +140,12 @@ final class TripDocuments
                  SELECT user_id, folder_id, kind, substr(name, 1, 195) || ' copy', description, ?, ? FROM trips WHERE id = ?",
             )->execute([Timestamp::of($now), Timestamp::of($now), $tripId]);
             $copyId = (int) $this->db->lastInsertId();
-            $this->saveDays($copyId, TripCopy::withNewIds($document)['days']);
+            $days = TripCopy::withNewIds($document)['days'];
+            $this->saveDays($copyId, $days);
+            $copyRecordings = $this->db->prepare('INSERT INTO recordings (day_id, name, gpx, created_at) SELECT ?, name, gpx, created_at FROM recordings WHERE day_id = ? ORDER BY id');
+            foreach ($document['days'] as $i => $day) {
+                $copyRecordings->execute([$days[$i]['id'], $day['id']]);
+            }
             $this->db->commit();
         } catch (\Throwable $error) {
             $this->db->rollBack();
@@ -151,7 +156,7 @@ final class TripDocuments
 
     /**
      * Merges the user's trips `fromIds` into the trip `intoId`, their days placed as
-     * TripMerge says, every part and journal entry kept under its id, and deletes them; one
+     * TripMerge says, every part, journal entry and recording kept under its id, and deletes them; one
      * transaction. Returns the trip's new version, or null when the user lacks one of them.
      *
      * @param int[] $fromIds
@@ -181,8 +186,10 @@ final class TripDocuments
             $this->saveDays($intoId, $days);
             $this->db->prepare("UPDATE entries SET trip_id = ? WHERE trip_id IN ($in)")->execute([$intoId, ...$fromIds]);
             $joinEntries = $this->db->prepare('UPDATE entries SET day_id = ? WHERE day_id = ?');
+            $joinRecordings = $this->db->prepare('UPDATE recordings SET day_id = ? WHERE day_id = ?');
             foreach ($joined as $dayId => $intoDayId) {
                 $joinEntries->execute([$intoDayId, $dayId]);
+                $joinRecordings->execute([$intoDayId, $dayId]);
             }
             $this->db->prepare("DELETE FROM trips WHERE id IN ($in)")->execute($fromIds);
             $this->db->prepare('UPDATE trips SET version = ?, updated_at = ? WHERE id = ?')->execute([$into['version'] + 1, Timestamp::of($now), $intoId]);
