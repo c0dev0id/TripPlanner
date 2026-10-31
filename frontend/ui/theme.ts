@@ -1,4 +1,4 @@
-import { createSignal } from 'solid-js';
+import { createSignal, type Accessor } from 'solid-js';
 import { readPreference, writePreference } from './preferences';
 
 /**
@@ -21,7 +21,22 @@ const [theme, setTheme] = createSignal<Theme>(stored === 'light' || stored === '
 export { theme };
 
 export function chooseTheme(choice: Theme): void {
-  setTheme(choice);
-  writePreference('theme', choice === 'system' ? undefined : choice);
+  // The document first, so that whatever follows the choice finds its colours turned.
   document.documentElement.style.colorScheme = choice === 'system' ? '' : choice;
+  writePreference('theme', choice === 'system' ? undefined : choice);
+  setTheme(choice);
+}
+
+/** Whether the browser asks for dark colours, followed from the first question on. */
+let browserDark: Accessor<boolean> | undefined;
+
+/** Whether the page shows dark colours: chosen by hand, or as the browser says, which can change while the page is open. */
+export function showsDark(): boolean {
+  if (!browserDark) {
+    const query = matchMedia('(prefers-color-scheme: dark)');
+    const [dark, setDark] = createSignal(query.matches);
+    query.addEventListener('change', (e) => setDark(e.matches));
+    browserDark = dark;
+  }
+  return theme() === 'dark' || (theme() === 'system' && browserDark());
 }
