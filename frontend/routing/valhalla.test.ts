@@ -74,4 +74,9 @@ describe('fetchSurfaces', () => {
     expect(surfaces.length).toBe(1003);
     expect(surfaces.slice(1000)).toEqual([null, null, null]);
   });
+
+  it('fails with the server\'s message where no piece matched', async () => {
+    const fetchFn = (async () => new Response(JSON.stringify({ error_code: 444, error: 'Map Match algorithm failed' }))) as unknown as typeof fetch;
+    await expect(fetchSurfaces([[11, 47], [11.001, 47]], fetchFn, async () => {})).rejects.toThrow('Map Match algorithm failed');
+  });
 });

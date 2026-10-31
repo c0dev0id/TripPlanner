@@ -87,9 +87,9 @@ async function matchSurfaces(points: readonly LngLat[], fetchFn: typeof fetch): 
     }),
     signal: AbortSignal.timeout(ROUTING_TIMEOUT_MS * 2),
   });
-  const data = (await response.json()) as { edges?: { surface?: string }[]; matched_points?: { edge_index?: number; type?: string }[] };
+  const data = (await response.json()) as { error?: unknown; edges?: { surface?: string }[]; matched_points?: { edge_index?: number; type?: string }[] };
   const matched = data.matched_points;
-  if (!matched) throw new Error('No road matched.');
+  if (!matched) throw new Error(typeof data.error === 'string' ? data.error : 'No road matched.');
   return points.map((_, i) => {
     const point = matched[i];
     return !point || point.type === 'unmatched' || point.edge_index === undefined ? null : (data.edges?.[point.edge_index]?.surface ?? null);
@@ -100,14 +100,23 @@ async function matchSurfaces(points: readonly LngLat[], fetchFn: typeof fetch): 
  * The surface of the road under each point of a track, as the server matches the track to
  * OpenStreetMap's roads (paved_smooth, paved, paved_rough, compacted, dirt, gravel, path,
  * impassable): asked in pieces of MATCHING_CHUNK points, each on its turn; a piece that
- * matches no road leaves its points without a surface (null).
+ * fails leaves its points without a surface (null). Throws where every piece failed.
  */
 export async function fetchSurfaces(points: readonly LngLat[], fetchFn: typeof fetch = fetch, turn = valhallaTurn): Promise<(string | null)[]> {
   const surfaces: (string | null)[] = [];
+  let failure: unknown;
+  let matchedAny = false;
   for (let start = 0; start < points.length; start += MATCHING_CHUNK) {
     const piece = points.slice(start, start + MATCHING_CHUNK);
     await turn();
-    surfaces.push(...(await matchSurfaces(piece, fetchFn).catch(() => piece.map(() => null))));
+    try {
+      surfaces.push(...(await matchSurfaces(piece, fetchFn)));
+      matchedAny = true;
+    } catch (fault) {
+      failure ??= fault;
+      surfaces.push(...piece.map(() => null));
+    }
   }
+  if (!matchedAny && failure !== undefined) throw failure;
   return surfaces;
 }
