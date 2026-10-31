@@ -1,8 +1,17 @@
 import type { LngLat } from '../model/trip';
-import type { Measures, Metric } from './measures';
+import type { Delta } from './delta';
+import type { Metric } from './measures';
 
-/** What a recording's line can be coloured by: one of its measures, or the surface of the roads under it. */
-export type Coloring = Metric | 'surface';
+/** What a recording's line can be coloured by: one of its measures, the surface of the roads under it, or a difference to what it is compared with. */
+export type Coloring = Metric | 'surface' | Difference;
+
+/** The differences to another line a line can be coloured by: the distance from it, and speed and lean against the other recording's. */
+export type Difference = 'offset' | 'speedDifference' | 'leanDifference';
+
+/** The series of a comparison each difference colours by. */
+export const DIFFERENCE_SERIES: Record<Difference, keyof Delta> = { offset: 'offset', speedDifference: 'speed', leanDifference: 'lean' };
+
+export const isDifference = (coloring: Coloring): coloring is Difference => coloring in DIFFERENCE_SERIES;
 
 /** From low to high: blue over yellow to red. */
 const RISING = ['#2c7bb6', '#00a6ca', '#00ccbc', '#90eb9d', '#f9d057', '#f29e2e', '#e76818', '#d7191c'];
@@ -27,12 +36,12 @@ function percentile(values: number[], p: number): number {
 const up = (value: number, step: number) => Math.ceil(value / step) * step;
 const down = (value: number, step: number) => Math.floor(value / step) * step;
 
-/** The scale of a measure over the values of one recording; undefined where it has none. */
-export function scaleOf(metric: Metric, values: readonly (number | null)[]): Scale | undefined {
-  const present = values.filter((v): v is number => v !== null);
+/** The scale of a measure or a difference over the values of one recording; undefined where it has none. */
+export function scaleOf(coloring: Exclude<Coloring, 'surface'>, values: readonly (number | null)[]): Scale | undefined {
+  const present = values.filter((v): v is number => v !== null && Number.isFinite(v));
   if (present.length === 0) return undefined;
   const widest = (step: number, least: number) => Math.max(least, up(percentile(present.map(Math.abs), 0.98), step));
-  switch (metric) {
+  switch (coloring) {
     case 'speed':
       return { from: 0, to: Math.max(10, up(percentile(present, 0.99), 10)), colors: RISING };
     case 'altitude': {
@@ -43,10 +52,14 @@ export function scaleOf(metric: Metric, values: readonly (number | null)[]): Sca
       const reach = widest(2, 4);
       return { from: -reach, to: reach, colors: SIGNED };
     }
-    case 'lean': {
+    case 'lean':
+    case 'leanDifference':
+    case 'speedDifference': {
       const reach = widest(5, 10);
       return { from: -reach, to: reach, colors: SIGNED };
     }
+    case 'offset':
+      return { from: 0, to: Math.max(100, up(percentile(present, 0.98), 50)), colors: RISING };
   }
 }
 
@@ -79,14 +92,6 @@ export function kmBySurface(distance: Float64Array, surfaces: readonly (string |
     km.set(surface, (km.get(surface) ?? 0) + (distance[i]! - distance[i - 1]!) / 1000);
   }
   return km;
-}
-
-/** The colour of each point of a line coloured by a measure or, given them, by the surfaces under its points; undefined where it lacks the measure. */
-export function lineColors(coloring: Coloring, m: Measures, surfaces?: readonly (string | null)[]): string[] | undefined {
-  if (coloring === 'surface') return surfaces?.map(surfaceColor);
-  const values = m[coloring];
-  const scale = values && scaleOf(coloring, values);
-  return scale && values.map((v) => colorAt(scale, v));
 }
 
 /** The line in pieces of one colour each, each piece starting where the one before it ends. */
