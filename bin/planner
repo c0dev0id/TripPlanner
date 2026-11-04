@@ -46,6 +46,22 @@ switch ($command) {
         $password = $users->createWithInitialPassword($email, new DateTimeImmutable());
         echo "Account made for $email with the password $password, to be replaced at the first sign-in.\n";
         break;
+    case 'user:password':
+        $email = require_argument($argument);
+        $password = $argv[3] ?? '';
+        if ($password === '') {
+            fwrite(STDERR, "A password is needed.\n");
+            exit(1);
+        }
+        $users = $container->get(Users::class);
+        $user = $users->findByEmail($email);
+        if ($user === null) {
+            fwrite(STDERR, "No account for $email.\n");
+            exit(1);
+        }
+        $users->changePassword($user->id, $password);
+        echo "Password set for $email.\n";
+        break;
     case 'admin:grant':
         $granted = $container->get(Users::class)->grantAdmin(require_argument($argument));
         echo $granted ? "$argument is an admin now.\n" : "No account for $argument.\n";
@@ -58,7 +74,7 @@ switch ($command) {
         }
         break;
     default:
-        fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | user:create <email> | admin:grant <email> | garmin:icons\n");
+        fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | user:create <email> | user:password <email> <password> | admin:grant <email> | garmin:icons\n");
         exit(1);
 }
 

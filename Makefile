@@ -3,6 +3,8 @@
 COMPOSER ?= composer
 NPM ?= npm
 PHP ?= php-8.5
+EMAIL ?= sh@codevoid.de
+PASS != pass Internet/planner.codevoid.de | head -1
 
 # Builds the application for deployment: PHP dependencies without development packages
 # and the frontend bundle in public/build. Run after git pull on the server.
@@ -18,18 +20,31 @@ install:
 
 init:
 	doas -u www $(PHP) bin/planner db:init
+
 # A fresh start while nothing is released: drops every table, applies the schema again
 # and removes the journal's files. Every account, trip and file is lost.
 recreate:
 	doas -u www $(PHP) bin/planner db:recreate
+	make user
+	make admin
+	make password
+
 invite:
 	doas -u www $(PHP) bin/planner invite $(EMAIL)
+
 # Makes an account without an invitation and prints its generated password, which has to
 # be replaced at the first sign-in.
 user:
 	doas -u www $(PHP) bin/planner user:create $(EMAIL)
+
+# Sets a new password on an existing account; the user keeps using the application without
+# being asked to change it.
+password:
+	@doas -u www $(PHP) bin/planner user:password $(EMAIL) $(PASS)
+
 admin:
 	doas -u www $(PHP) bin/planner admin:grant $(EMAIL)
+
 # Fetches Garmin's pictures of its waypoint symbols into public/garmin-symbols, which git
 # leaves alone: they are Garmin's artwork. Pictures already there are kept.
 garmin-icons:
@@ -44,4 +59,4 @@ check:
 	$(NPM) test
 	$(NPM) run build
 
-.PHONY: build install init recreate invite user admin garmin-icons check
+.PHONY: build install init recreate invite user password admin garmin-icons check
