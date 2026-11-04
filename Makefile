@@ -2,7 +2,7 @@
 
 COMPOSER ?= composer
 NPM ?= npm
-PHP ?= php-8.4
+PHP ?= php-8.5
 
 # Builds the application for deployment: PHP dependencies without development packages
 # and the frontend bundle in public/build. Run after git pull on the server.
@@ -17,19 +17,19 @@ install:
 	$(NPM) ci
 
 init:
-	doas -u www php-8.4 bin/planner db:init
+	doas -u www $(PHP) bin/planner db:init
 # A fresh start while nothing is released: drops every table, applies the schema again
 # and removes the journal's files. Every account, trip and file is lost.
 recreate:
-	doas -u www php-8.4 bin/planner db:recreate
+	doas -u www $(PHP) bin/planner db:recreate
 invite:
-	doas -u www php-8.4 bin/planner invite $(EMAIL)
+	doas -u www $(PHP) bin/planner invite $(EMAIL)
 # Makes an account without an invitation and prints its generated password, which has to
 # be replaced at the first sign-in.
 user:
-	doas -u www php-8.4 bin/planner user:create $(EMAIL)
+	doas -u www $(PHP) bin/planner user:create $(EMAIL)
 admin:
-	doas -u www php-8.4 bin/planner admin:grant $(EMAIL)
+	doas -u www $(PHP) bin/planner admin:grant $(EMAIL)
 # Fetches Garmin's pictures of its waypoint symbols into public/garmin-symbols, which git
 # leaves alone: they are Garmin's artwork. Pictures already there are kept.
 garmin-icons:
