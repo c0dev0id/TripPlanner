@@ -113,7 +113,7 @@ a {
 
 .panel button,
 .dialog button,
-.hint-bar button,
+.routing-bar button,
 .map-card button {
   padding: 4px 10px;
   border: 1px solid var(--line);
@@ -150,7 +150,6 @@ a {
 }
 
 .panel button.icon,
-.hint-bar button.icon,
 .map-card button.icon,
 .save-state {
   display: inline-grid;
@@ -825,9 +824,10 @@ fieldset.choices legend {
   cursor: default;
 }
 
-.hint-bar {
+/* The routing's state floats over the map above the scale bar, or above the toolbar while there is one. */
+.routing-bar {
   position: absolute;
-  bottom: calc(108px + var(--chart-room, 0px));
+  bottom: calc(40px + var(--chart-room, 0px));
   left: 50%;
   z-index: 5;
   display: flex;
@@ -842,15 +842,19 @@ fieldset.choices legend {
   font-size: 13px;
 }
 
-.hint-bar .routing {
+.map-wrap:has(.toolbar) .routing-bar {
+  bottom: calc(108px + var(--chart-room, 0px));
+}
+
+.routing-bar .routing {
   white-space: nowrap;
 }
 
-.hint-bar .failed {
+.routing-bar .failed {
   color: #ffa8a8;
 }
 
-.hint-bar button {
+.routing-bar button {
   padding: 2px 8px;
   border-color: rgba(255, 255, 255, 0.5);
   background: none;
@@ -1238,8 +1242,49 @@ fieldset.symbols {
     display: none;
   }
 
-  .hint-bar {
+  .routing-bar {
     max-width: calc(100% - 16px);
+  }
+
+  /* The tools in one row: icons alone, close together, in one bar. */
+  .toolbar {
+    flex-wrap: nowrap;
+    gap: 0;
+  }
+
+  .toolbar-group {
+    gap: 0;
+    padding: 3px 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .toolbar-group:first-child {
+    padding-left: 3px;
+    border-radius: 10px 0 0 10px;
+  }
+
+  .toolbar-group:last-child {
+    padding-right: 3px;
+    border-radius: 0 10px 10px 0;
+  }
+
+  .toolbar-group + .toolbar-group {
+    border-left: 1px solid var(--line);
+  }
+
+  .toolbar {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+    border-radius: 10px;
+  }
+
+  .tool {
+    min-width: 34px;
+    padding: 7px 6px;
+  }
+
+  .tool-label {
+    display: none;
   }
 
   .map-wrap:has(.chart-card) {

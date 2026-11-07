@@ -232,8 +232,9 @@ entries at the end of their section.
   type, so the box searches when Enter is pressed and keeps a second between requests.
   The search prefers the view without being limited to it. The place found is a pin, not
   a stop: the rider decides what it becomes from the pin's menu while editing a route.
-  The hint bar moved from the top of the map to just above the toolbar it describes,
-  since the search box took the top left.
+  The tool hints that once floated over the map are gone: they repeated what a tool's
+  tooltip says and covered the map on a phone; what remains over the map is the routing's
+  state, while legs are being routed or failed to route, above the toolbar where there is one.
 - **The route overlay is appended by a style transform.** MapLibre's `setStyle` replaces
   every source and layer. A transform given when the map is made is applied to every
   style it loads afterwards, so the overlay's source and layers are added in one place

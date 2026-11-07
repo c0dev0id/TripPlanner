@@ -9,7 +9,7 @@ import { addFreeStop, appendPoint, editingRoute, openTrip, selectedDay, setStrai
 /** Tools while a route is selected: the hand moves about, the others add or insert a point, make a stop, delete. */
 export type Tool = 'hand' | 'point' | 'stop' | 'delete';
 
-/** Each tool's caption and what it does, for the toolbar and the hint bar. */
+/** Each tool's caption and what it does, for the toolbar's buttons and their tooltips. */
 export const TOOLS: Record<Tool, { label: string; hint: string }> = {
   hand: { label: 'Hand', hint: 'drag the map; tap a stop for its details; points and stops stay where they are. Hold Space for the hand with another tool.' },
   point: { label: 'Point', hint: 'tap the map to add a point at the end of the route, or tap the route to insert one there; drag points and stops to move them.' },

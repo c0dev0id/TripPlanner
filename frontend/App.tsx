@@ -4,7 +4,7 @@ import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';
 import { PanelResizer } from './ui/PanelResizer';
-import { HintBar } from './map/HintBar';
+import { RoutingBar } from './map/RoutingBar';
 import { MapView } from './map/MapView';
 import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
@@ -79,7 +79,7 @@ export function App() {
         <PanelResizer />
         <MapView />
         <RecordingCards />
-        <HintBar />
+        <RoutingBar />
         <Toolbar />
       </div>
       <ContextMenu />
