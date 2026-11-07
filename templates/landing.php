@@ -6,13 +6,18 @@
   export in the shape your device needs.</p>
 </section>
 <section class="card">
-  <h2>Get an invitation</h2>
-  <p>Sign-up is by invitation. Leave your e-mail address and one comes when a place is free.</p>
+  <?php if ($open): ?>
+    <h2>Create your account</h2>
+    <p>Enter your e-mail address; a link to set your password comes by mail.</p>
+  <?php else: ?>
+    <h2>Get an invitation</h2>
+    <p>Sign-up is by invitation. Leave your e-mail address and one comes when a place is free.</p>
+  <?php endif ?>
   <?php if (isset($notice)): ?><p class="notice"><?= $this->e($notice) ?></p><?php endif ?>
   <?php if (isset($error)): ?><p class="error"><?= $this->e($error) ?></p><?php endif ?>
-  <form method="post" action="/waitlist">
+  <form method="post" action="<?= $open ? '/signup' : '/waitlist' ?>">
     <?= $this->csrf() ?>
     <label>E-mail <input type="email" name="email" required autocomplete="email" value="<?= $this->e($email ?? '') ?>"></label>
-    <button type="submit">Join the waiting list</button>
+    <button type="submit"><?= $open ? 'Send me the link' : 'Join the waiting list' ?></button>
   </form>
 </section>

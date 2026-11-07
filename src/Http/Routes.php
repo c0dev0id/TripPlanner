@@ -32,6 +32,7 @@ final class Routes
         $app->group('', function (RouteCollectorProxy $pages): void {
             $pages->get('/', [LandingController::class, 'show']);
             $pages->post('/waitlist', [LandingController::class, 'joinWaitlist']);
+            $pages->post('/signup', [LandingController::class, 'requestSignup']);
             $pages->get('/login', [LoginController::class, 'show']);
             $pages->post('/login', [LoginController::class, 'login']);
             $pages->post('/logout', [LoginController::class, 'logout']);

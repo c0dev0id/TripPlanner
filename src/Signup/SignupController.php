@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use Planner\Account\CurrentUser;
 use Planner\Account\PasswordResetController;
 use Planner\Account\Users;
+use Planner\Config;
 use Planner\Http\Redirect;
 use Planner\Http\View;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -19,6 +20,7 @@ final class SignupController
         private readonly Invitations $invitations,
         private readonly Users $users,
         private readonly CurrentUser $currentUser,
+        private readonly Config $config,
         private readonly View $view,
     ) {
     }
@@ -26,7 +28,7 @@ final class SignupController
     public function show(Request $request, Response $response, array $args): Response
     {
         $invitation = $this->invitations->findValid($args['token'], new DateTimeImmutable());
-        return $this->view->render($response, 'signup', ['email' => $invitation?->email]);
+        return $this->render($response, ['email' => $invitation?->email]);
     }
 
     public function signup(Request $request, Response $response, array $args): Response
@@ -34,19 +36,24 @@ final class SignupController
         $now = new DateTimeImmutable();
         $invitation = $this->invitations->findValid($args['token'], $now);
         if ($invitation === null) {
-            return $this->view->render($response, 'signup', ['email' => null]);
+            return $this->render($response, ['email' => null]);
         }
         if ($this->users->findByEmail($invitation->email) !== null) {
-            return $this->view->render($response, 'signup', ['email' => $invitation->email, 'error' => 'There is an account for this address already. Sign in instead.']);
+            return $this->render($response, ['email' => $invitation->email, 'error' => 'There is an account for this address already. Sign in instead.']);
         }
         $form = (array) $request->getParsedBody();
         $error = PasswordResetController::passwordError((string) ($form['password'] ?? ''), (string) ($form['password_repeat'] ?? ''));
         if ($error !== null) {
-            return $this->view->render($response, 'signup', ['email' => $invitation->email, 'error' => $error]);
+            return $this->render($response, ['email' => $invitation->email, 'error' => $error]);
         }
         $user = $this->users->create($invitation->email, $form['password'], $now);
         $this->invitations->markUsed($invitation->id, $now);
         $this->currentUser->login($user);
         return Redirect::to($response, '/app');
+    }
+
+    private function render(Response $response, array $data): Response
+    {
+        return $this->view->render($response, 'signup', ['open' => $this->config->openSignup, ...$data]);
     }
 }

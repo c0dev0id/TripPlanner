@@ -2,7 +2,7 @@
 <section class="card">
   <h1>Create your account</h1>
   <?php if ($email === null): ?>
-    <p class="error">This invitation is not valid any more. Ask for a new one from the <a href="/">waiting list</a>.</p>
+    <p class="error">This link is not valid any more. <?php if ($open): ?>Ask for a new one on the <a href="/">start page</a>.<?php else: ?>Ask for a new invitation from the <a href="/">waiting list</a>.<?php endif ?></p>
   <?php else: ?>
     <?php if (isset($error)): ?><p class="error"><?= $this->e($error) ?></p><?php endif ?>
     <form method="post">
