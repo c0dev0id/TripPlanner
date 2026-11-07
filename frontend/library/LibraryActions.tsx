@@ -1,29 +1,13 @@
-import { createSignal, type JSX } from 'solid-js';
+import { createSignal } from 'solid-js';
 import { createFolder, createTrip } from '../api';
 import { folderPath } from './folders';
 import { importFolder, pickedPath, planFolderImport, type PlannedTrip } from './folderImport';
 import { ImportDialog } from './ImportDialog';
-import {
-  libraryFolders,
-  listFolderId,
-  relistFolders,
-  relistTrips,
-  runLibrary,
-  setImportNote,
-  setQuery,
-  setShowingDuplicates,
-} from '../state/library';
+import { libraryFolders, relistFolders, relistTrips, runLibrary, setImportNote, showDuplicates, shownFolderId } from '../state/library';
 import { counted } from '../ui/format';
+import { IconButton } from '../ui/IconButton';
 import { CopyIcon, FolderImportIcon, FolderPlusIcon, MapPlusIcon } from '../ui/icons';
 import { NameDialog } from '../ui/NameDialog';
-
-function ActionButton(props: { label: string; onClick: () => void; disabled?: boolean; children: JSX.Element }) {
-  return (
-    <button class="icon" title={props.label} aria-label={props.label} disabled={props.disabled} onClick={() => props.onClick()}>
-      {props.children}
-    </button>
-  );
-}
 
 /**
  * The library's actions as icons, the same at every level of the explorer: a new trip or
@@ -35,7 +19,6 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
   const [importing, setImporting] = createSignal(false);
   /** The folder tree picked for import, while the dialog asks how it is organized. */
   const [picked, setPicked] = createSignal<{ files: File[]; paths: string[] }>();
-  const folderId = () => listFolderId() ?? null;
   let folderInput!: HTMLInputElement;
   const pick = (list: FileList | null) => {
     const files = [...(list ?? [])];
@@ -49,32 +32,28 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
     await props.onLeave();
     setImporting(true);
     await runLibrary(async () => {
-      const result = await importFolder(files, plan, folderId(), (text) => setImportNote({ text, errors: [] }));
+      const result = await importFolder(files, plan, shownFolderId(), (text) => setImportNote({ text, errors: [] }));
       setImportNote({ text: `${counted(result.trips, plan[0]!.kind)} imported.`, errors: result.errors });
     });
     setImporting(false);
     relistFolders();
     relistTrips();
   };
-  const showDuplicates = async () => {
-    await props.onLeave();
-    setQuery('');
-    setShowingDuplicates(true);
-  };
+  const openDuplicates = () => void props.onLeave().then(showDuplicates);
   return (
     <div class="row library-actions" role="toolbar" aria-label="Library">
-      <ActionButton label="New trip…" disabled={props.opening} onClick={() => setDialog('trip')}>
+      <IconButton label="New trip…" disabled={props.opening} onClick={() => setDialog('trip')}>
         <MapPlusIcon />
-      </ActionButton>
-      <ActionButton label="New folder…" onClick={() => setDialog('folder')}>
+      </IconButton>
+      <IconButton label="New folder…" onClick={() => setDialog('folder')}>
         <FolderPlusIcon />
-      </ActionButton>
-      <ActionButton label="Import a folder of GPX files…" disabled={importing()} onClick={() => folderInput.click()}>
+      </IconButton>
+      <IconButton label="Import a folder of GPX files…" disabled={importing()} onClick={() => folderInput.click()}>
         <FolderImportIcon />
-      </ActionButton>
-      <ActionButton label="Duplicates…" onClick={() => void showDuplicates()}>
+      </IconButton>
+      <IconButton label="Duplicates…" onClick={openDuplicates}>
         <CopyIcon />
-      </ActionButton>
+      </IconButton>
       <input
         ref={(el) => {
           folderInput = el;
@@ -86,7 +65,7 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
       />
       <ImportDialog
         paths={picked()?.paths}
-        into={folderPath(libraryFolders() ?? [], folderId())}
+        into={folderPath(libraryFolders() ?? [], shownFolderId())}
         onClose={() => setPicked(undefined)}
         onImport={(plan) => void importPicked(picked()!.files, plan)}
       />
@@ -96,7 +75,7 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
         placeholder="Name of the trip"
         submit="Start"
         onClose={() => setDialog(undefined)}
-        onSubmit={(name) => void runLibrary(async () => props.onOpen((await createTrip(name, folderId())).id), relistTrips)}
+        onSubmit={(name) => void runLibrary(async () => props.onOpen((await createTrip(name, shownFolderId())).id), relistTrips)}
       />
       <NameDialog
         title="New folder"
@@ -107,7 +86,7 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
         onSubmit={(name) =>
           void runLibrary(async () => {
             await props.onLeave();
-            await createFolder(name, folderId());
+            await createFolder(name, shownFolderId());
           }, relistFolders)
         }
       />

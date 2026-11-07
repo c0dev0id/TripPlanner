@@ -9,9 +9,6 @@ export interface Place {
   day?: { day: Day; index: number };
 }
 
-/** The explorer's own name, its heading at the top of the library. */
-export const EXPLORER = 'Trip Explorer';
-
 /** The top of the library as a place to go back to. */
 export const ALL_TRIPS = 'All trips';
 

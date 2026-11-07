@@ -3,19 +3,16 @@ import { followPointer } from '../ui/followPointer';
 /** How far a pressed pad moves, in CSS pixels, before the press is a drag rather than a tap. */
 const DRAG_FROM_PX = 6;
 
-/** How long after a drag ends the click its release makes is still taken for part of it. */
-const RELEASE_CLICK_MS = 500;
-
 /**
  * Drags what a pressed pad stands for onto a folder: once the pointer moves, a label saying
  * `what` follows it and the folder under it is marked: a card with `data-drop-folder`, the
  * folder's id or "top". Released over one, `onDrop` gets that folder, null for the top. A
- * press that does not move stays a tap.
+ * press that does not move stays a tap; one that moved tells `onDrag`, so that the click
+ * its release makes is no tap.
  */
-export function dragToFolder(e: PointerEvent, what: () => string, onDrop: (folderId: number | null) => void): void {
+export function dragToFolder(e: PointerEvent, what: string, onDrop: (folderId: number | null) => void, onDrag: () => void): void {
   if (e.button !== 0) return;
-  const pad = e.currentTarget as HTMLElement;
-  const row = pad.closest('li');
+  const row = (e.currentTarget as HTMLElement).closest('li');
   const start = { x: e.clientX, y: e.clientY };
   let label: HTMLElement | undefined;
   let target: HTMLElement | undefined;
@@ -24,7 +21,8 @@ export function dragToFolder(e: PointerEvent, what: () => string, onDrop: (folde
     if (!label) {
       label = document.createElement('div');
       label.className = 'drag-label';
-      label.textContent = what();
+      label.textContent = what;
+      onDrag();
       document.body.append(label);
       row?.classList.add('dragged');
     }
@@ -42,12 +40,6 @@ export function dragToFolder(e: PointerEvent, what: () => string, onDrop: (folde
     label.remove();
     row?.classList.remove('dragged');
     target?.classList.remove('drop-target');
-    const swallow = (c: MouseEvent) => {
-      c.stopPropagation();
-      c.preventDefault();
-    };
-    pad.addEventListener('click', swallow, { capture: true, once: true });
-    setTimeout(() => pad.removeEventListener('click', swallow, { capture: true }), RELEASE_CLICK_MS);
     const folder = target?.dataset.dropFolder;
     if (folder !== undefined) onDrop(folder === 'top' ? null : Number(folder));
   });
