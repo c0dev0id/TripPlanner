@@ -60,7 +60,7 @@ final class TripGpx
             $dayLabel = self::dayLabel($day, $index);
             $several = count($routes) > 1;
             foreach ($routes as $i => $route) {
-                $label = $several ? $dayLabel . ' – ' . ($route['name'] === '' ? 'Route ' . ($i + 1) : $route['name']) : $dayLabel;
+                $label = $several ? $dayLabel . ' – ' . ($route['name'] === '' ? t('Route {n}', ['n' => $i + 1]) : $route['name']) : $dayLabel;
                 $points = $options->form === 'routes' && $route['kind'] === 'routed' ? array_column($route['points'], 'lngLat') : $linesOf()[$i];
                 $lines[] = ['name' => $label, 'points' => $points];
             }
@@ -87,7 +87,7 @@ final class TripGpx
 
     private static function dayLabel(array $day, int $index): string
     {
-        $label = 'Day ' . ($index + 1);
+        $label = t('Day {n}', ['n' => $index + 1]);
         return $day['name'] === '' ? $label : "$label $day[name]";
     }
 }

@@ -195,7 +195,7 @@ export const DEFAULT_EXPORT: ExportOptions = { per: 'trip', form: 'tracks', opti
 
 /** The GPX download of a trip as the options say, or of one of its days. */
 export function gpxUrl(tripId: number, options: ExportOptions, dayId?: string): string {
-  const query = new URLSearchParams({ per: options.per, form: options.form, optional: options.optional ? '1' : '0', reachM: String(options.reachM) });
+  const query = new URLSearchParams({ per: options.per, form: options.form, optional: options.optional ? '1' : '0', reachM: String(options.reachM), lang: language });
   if (dayId) query.set('day', dayId);
   return `/api/trips/${tripId}/gpx?${query}`;
 }

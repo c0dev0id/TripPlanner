@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Planner\Export\ExportOptions;
 use Planner\Export\Proximity;
 use Planner\Export\TripGpx;
+use Planner\I18n\Language;
 use Planner\Tests\Trip\TripFixture;
 use SimpleXMLElement;
 
@@ -127,5 +128,17 @@ final class TripGpxTest extends TestCase
         self::assertSame('Alps-Day-2', TripGpx::dayFileName($this->document(), 1));
         self::assertSame('Südtirol-2027', TripGpx::fileName('Südtirol / 2027!'));
         self::assertSame('trip', TripGpx::fileName('???'));
+    }
+
+    public function testNamesDaysAndRoutesInTheLanguageAskedFor(): void
+    {
+        Language::set('de');
+        try {
+            $xml = $this->parse(TripGpx::trip($this->document(), new DateTimeImmutable('2026-10-27T10:00:00+02:00')));
+            self::assertSame(['Tag 1 South', 'Tag 2 – Route 1', 'Tag 2 – Hike'], array_map(fn ($t) => (string) $t->name, $xml->xpath('/g:gpx/g:trk')));
+            self::assertSame('Alps-Tag-2', TripGpx::dayFileName($this->document(), 1));
+        } finally {
+            Language::set('en');
+        }
     }
 }
