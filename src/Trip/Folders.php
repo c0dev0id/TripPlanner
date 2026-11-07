@@ -71,13 +71,20 @@ final class Folders
      */
     public function move(int $userId, int $folderId, ?int $parentId): bool
     {
-        $this->assertOwned($userId, $parentId);
-        if ($parentId !== null && in_array($parentId, $this->withInside($userId, $folderId), true)) {
-            throw new FolderInsideItself();
+        $this->db->beginTransaction();
+        try {
+            $this->assertOwned($userId, $parentId);
+            if ($parentId !== null && in_array($parentId, $this->withInside($userId, $folderId), true)) {
+                throw new FolderInsideItself();
+            }
+            $statement = $this->db->prepare('UPDATE folders SET parent_id = ? WHERE id = ? AND user_id = ?');
+            $statement->execute([$parentId, $folderId, $userId]);
+            $this->db->commit();
+            return $statement->rowCount() === 1;
+        } catch (\Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
         }
-        $statement = $this->db->prepare('UPDATE folders SET parent_id = ? WHERE id = ? AND user_id = ?');
-        $statement->execute([$parentId, $folderId, $userId]);
-        return $statement->rowCount() === 1;
     }
 
     /** Deletes a folder; its trips and folders move up into the folder it was in, or to the top. False when the user has no such folder. */
