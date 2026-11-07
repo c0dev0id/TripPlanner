@@ -13,6 +13,10 @@ export type SaveState = 'saved' | 'dirty' | 'saving' | 'failed' | 'conflict';
 const [saveState, setSaveState] = createSignal<SaveState>('saved');
 export { saveState };
 
+/** Whether a save went to the server since the trip was loaded: the library's listing of it is then out of date. */
+const [savedSinceLoad, setSavedSinceLoad] = createSignal(false);
+export { savedSinceLoad };
+
 const DEBOUNCE_MS = 1500;
 const RETRY_MS = 10_000;
 
@@ -26,6 +30,7 @@ async function save(keepalive = false): Promise<void> {
   setSaveState('saving');
   try {
     markSaved(await saveTrip(trip, keepalive));
+    setSavedSinceLoad(true);
     if (changeCount() === count) setSaveState('saved');
     else {
       setSaveState('dirty');
@@ -55,6 +60,7 @@ export async function flushSave(keepalive = false): Promise<void> {
 export function resetSaveState(): void {
   clearTimeout(timer);
   setSaveState('saved');
+  setSavedSinceLoad(false);
 }
 
 createRoot(() => {

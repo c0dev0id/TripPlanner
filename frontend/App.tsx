@@ -8,7 +8,7 @@ import { HintBar } from './map/HintBar';
 import { MapView } from './map/MapView';
 import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
-import { flushSave, resetSaveState } from './state/autosave';
+import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { relistTrips } from './state/library';
 import { closeTrip, loadTrip, openTrip } from './state/trip';
 import { DayDialog } from './trip/DayDialog';
@@ -48,15 +48,16 @@ export function App() {
   };
   /** Loads the open trip again from the server, after it was changed elsewhere. */
   const reload = () => open(openTrip()!.id);
-  /** Leaves the open trip, saved, for the list it was opened from, which lists the trips afresh; nothing without one. */
+  /** Leaves the open trip, saved, for the list it was opened from, which lists the trips afresh where a save changed one; nothing without one. */
   const leave = async () => {
     latest++;
     setOpening(false);
     if (!openTrip()) return;
     await flushSave();
+    const changed = savedSinceLoad();
     closeTrip();
     resetSaveState();
-    relistTrips();
+    if (changed) relistTrips();
   };
 
   return (
