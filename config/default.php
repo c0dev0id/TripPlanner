@@ -19,4 +19,7 @@ return [
     ],
     'invitation_ttl' => 14 * 86400,
     'password_reset_ttl' => 3600,
+    // Anyone may sign up from the landing page, by a link mailed to their address; false
+    // keeps sign-up to invitations from the admin page or `make invite`.
+    'open_signup' => true,
 ];

@@ -18,6 +18,8 @@ final class Config
         public readonly int $smtpPort,
         public readonly int $invitationTtl,
         public readonly int $passwordResetTtl,
+        /** Whether anyone may sign up from the landing page, by a link mailed to their address; else sign-up is by invitation. */
+        public readonly bool $openSignup,
     ) {
     }
 
@@ -40,6 +42,7 @@ final class Config
             smtpPort: $values['mail']['smtp_port'],
             invitationTtl: $values['invitation_ttl'],
             passwordResetTtl: $values['password_reset_ttl'],
+            openSignup: $values['open_signup'],
         );
     }
 }

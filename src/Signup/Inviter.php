@@ -6,10 +6,11 @@ namespace Planner\Signup;
 
 use DateTimeImmutable;
 use League\Plates\Engine;
+use Planner\Account\Users;
 use Planner\Config;
 use Planner\Mail\Mailer;
 
-/** Issues an invitation, takes the address off the waiting list and mails the link. */
+/** Issues a sign-up link for an address and mails it: as an invitation, or as asked for by the visitor where sign-up is open. */
 final class Inviter
 {
     public function __construct(
@@ -21,14 +22,27 @@ final class Inviter
     ) {
     }
 
+    /** Invites the address: it comes off the waiting list and gets the link. */
     public function invite(string $email, ?int $invitedBy, DateTimeImmutable $now): void
     {
-        $token = $this->invitations->issue($email, $invitedBy, $now);
         $this->waitlist->markInvited($email, $now);
-        $body = $this->templates->render('mail::invitation', [
+        $this->send($email, $invitedBy, $now, 'mail::invitation', 'Your invitation to Trip Planner');
+    }
+
+    /** Sends the address the link it asked for on the landing page. */
+    public function sendSignupLink(string $email, DateTimeImmutable $now): void
+    {
+        $this->send($email, null, $now, 'mail::signup-link', 'Your Trip Planner sign-up link');
+    }
+
+    private function send(string $email, ?int $invitedBy, DateTimeImmutable $now, string $template, string $subject): void
+    {
+        $email = Users::normalize($email);
+        $token = $this->invitations->issue($email, $invitedBy, $now);
+        $body = $this->templates->render($template, [
             'link' => $this->config->baseUrl . '/signup/' . $token,
             'days' => intdiv($this->config->invitationTtl, 86400),
         ]);
-        $this->mailer->send($email, 'Your invitation to Trip Planner', $body);
+        $this->mailer->send($email, $subject, $body);
     }
 }
