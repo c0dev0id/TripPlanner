@@ -37,20 +37,24 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
 
   /** Asks to delete the folder and, when it holds anything, whether that moves up or goes with it; undefined when the user cancels. */
   const askFolderDeletion = async (f: Folder): Promise<'move' | 'delete' | undefined> => {
-    const contentsText = ({ folders, trips }: { folders: number; trips: number }) =>
-      [folders > 0 && counted(folders, 'folder'), trips > 0 && counted(trips, 'trip')].filter(Boolean).join(t(' and '));
+    const contentsText = ({ folders, trips }: { folders: number; trips: number }) => {
+      const folderText = folders > 0 ? counted(folders, 'folder') : '';
+      const tripText = trips > 0 ? counted(trips, 'trip') : '';
+      return folderText && tripText ? t('{folders} and {trips}', { folders: folderText, trips: tripText }) : folderText || tripText;
+    };
     const own = contentsText(heldOf(f.id));
     if (!own) return (await askConfirmation(t('Delete the folder “{name}”?', { name: f.name }), t('Delete'))) ? 'move' : undefined;
     const all = contentsText(heldInAll(folders(), heldOf, f.id));
     const where = f.parentId === null ? t('to the top') : t('into “{path}”', { path: pathOf(f.parentId) });
-    const question = t('The folder “{name}” holds {own}{all}. Move them {where} and delete the folder, or delete it with everything in it?', {
-      name: f.name,
-      own,
-      all: all === own ? '' : t(' ({all} in all)', { all }),
-      where,
-    });
-    const choice = await askChoice(question, [t('Delete all'), t('Move contents')]);
-    return choice === undefined ? undefined : choice === t('Delete all') ? 'delete' : 'move';
+    const question = t(
+      all === own
+        ? 'The folder “{name}” holds {own}. Move them {where} and delete the folder, or delete it with everything in it?'
+        : 'The folder “{name}” holds {own} ({all} in all). Move them {where} and delete the folder, or delete it with everything in it?',
+      { name: f.name, own, all, where },
+    );
+    const deleteAll = t('Delete all');
+    const choice = await askChoice(question, [deleteAll, t('Move contents')]);
+    return choice === undefined ? undefined : choice === deleteAll ? 'delete' : 'move';
   };
   const removeFolder = async (f: Folder) => {
     const contents = await askFolderDeletion(f);

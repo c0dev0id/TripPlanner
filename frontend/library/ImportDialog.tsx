@@ -52,7 +52,7 @@ export function ImportDialog(props: { paths: string[] | undefined; into: string;
             </For>
           </fieldset>
           <p>
-            {t('Makes {what}{into}.', { what: planText(plan()), into: props.into ? t(' in “{into}”', { into: props.into }) : '' })}
+            {props.into ? t('Makes {what} in “{into}”.', { what: planText(plan()), into: props.into }) : t('Makes {what}.', { what: planText(plan()) })}
           </p>
         </>
       )}

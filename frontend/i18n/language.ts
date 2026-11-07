@@ -19,9 +19,8 @@ const stored = readPreference('language');
 /** The language chosen by hand, if any. */
 export const languageChoice: Language | 'auto' = stored === 'de' || stored === 'en' ? stored : 'auto';
 
-const browserLanguages = (): readonly string[] => (typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]));
-
-export const language: Language = languageChoice === 'auto' ? (browserLanguages().some((l) => l.toLowerCase().startsWith('de')) ? 'de' : 'en') : languageChoice;
+export const language: Language = languageChoice === 'auto' ? (navigator.languages.some((l) => l.toLowerCase().startsWith('de')) ? 'de' : 'en') : languageChoice;
+document.documentElement.lang = language;
 
 /** The locale dates and numbers are written in: the browser's own while it picks the language, else the language chosen. */
 export const locale: string | undefined = languageChoice === 'auto' ? undefined : languageChoice;

@@ -85,6 +85,8 @@ export const SURFACES: readonly { key: string; label: string; color: string }[] 
 
 export const surfaceColor = (surface: string | null): string => SURFACES.find((s) => s.key === surface)?.color ?? NO_VALUE;
 
+export const surfaceLabel = (surface: string | null): string => SURFACES.find((s) => s.key === surface)?.label ?? t('No road matched');
+
 /** Kilometres ridden on each surface, a stretch between two points counting for the surface of the first; null for no road matched. */
 export function kmBySurface(distance: Float64Array, surfaces: readonly (string | null)[]): Map<string | null, number> {
   const km = new Map<string | null, number>();

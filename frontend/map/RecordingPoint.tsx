@@ -3,7 +3,7 @@ import { Popup, type GeoJSONSource, type Map as MapLibreMap } from 'maplibre-gl'
 import { createEffect, onCleanup } from 'solid-js';
 import { render } from 'solid-js/web';
 import { DIFFERENCE_FIGURES, FIGURES, METRICS } from '../recording/figures';
-import { SURFACES } from '../recording/lineColors';
+import { surfaceLabel } from '../recording/lineColors';
 import { comparison, hoverIndex, opened, openedSurfaces, pickedIndex, setPickedIndex } from '../state/recordingView';
 import { Figures } from '../ui/Figures';
 import { clockText, distanceText } from '../ui/format';
@@ -27,7 +27,7 @@ function PointDetails() {
       if (value !== null && value !== undefined) rows.push([FIGURES[metric].label, FIGURES[metric].text(value)]);
     }
     const surfaces = openedSurfaces();
-    if (Array.isArray(surfaces)) rows.push([t('Surface'), SURFACES.find((s) => s.key === surfaces[i])?.label ?? t('No road matched')]);
+    if (Array.isArray(surfaces)) rows.push([t('Surface'), surfaceLabel(surfaces[i]!)]);
     for (const [name, values] of Object.entries(o.track.series)) {
       const value = values[i];
       if (!MEASURED.has(name) && value !== null && value !== undefined) rows.push([name, String(Math.round(value * 100) / 100)]);

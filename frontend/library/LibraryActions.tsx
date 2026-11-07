@@ -34,7 +34,7 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
     setImporting(true);
     await runLibrary(async () => {
       const result = await importFolder(files, plan, shownFolderId(), (text) => setImportNote({ text, errors: [] }));
-      setImportNote({ text: `${counted(result.trips, plan[0]!.kind)} imported.`, errors: result.errors });
+      setImportNote({ text: t('{trips} imported.', { trips: counted(result.trips, plan[0]!.kind) }), errors: result.errors });
     });
     setImporting(false);
     relistFolders();

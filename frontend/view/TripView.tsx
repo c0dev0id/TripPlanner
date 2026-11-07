@@ -1,4 +1,4 @@
-import { counted, t, t as translate } from '../i18n/t';
+import { t } from '../i18n/t';
 import { createEffect, createMemo, createResource, For, Match, Show, Switch } from 'solid-js';
 import { errorMessage, fetchTripAt, listEntriesAt } from '../api';
 import { entriesOn, type Entry, type EntryTarget } from '../model/journal';
@@ -11,7 +11,7 @@ import { EntryFile } from '../trip/EntryFile';
 import { ContextMenu } from '../ui/ContextMenu';
 import { Lightbox } from '../ui/Lightbox';
 import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from '../trip/labels';
-import { dateText, distanceText, takenAtText, timeText } from '../ui/format';
+import { counted, dateText, distanceText, takenAtText, timeText } from '../ui/format';
 import { StopShape } from '../ui/StopShape';
 import { ViewMap } from './ViewMap';
 
@@ -86,8 +86,8 @@ function DaySection(props: { day: Day; index: number; entriesOn: (target: EntryT
   ];
   const distance = () => routesDistance(props.day.routes);
   const summary = () => {
-    const t = timeline();
-    return [distance() > 0 && distanceText(distance()), t && timelineText(t)].filter(Boolean).join(' · ');
+    const line = timeline();
+    return [distance() > 0 && distanceText(distance()), line && timelineText(line)].filter(Boolean).join(' · ');
   };
   return (
     <section class="day">
@@ -128,10 +128,10 @@ function RouteItem(props: { route: Route; day: Day; entries: Entry[]; api: strin
 function StopItem(props: { stop: Stop; distanceM: number | undefined; time: EntryTime | undefined; entries: Entry[]; api: string }) {
   const stop = () => props.stop;
   const times = () => {
-    const t = props.time;
-    if (!t) return '';
-    const off = offTime(t);
-    return off ? `${timesText(t)} (${translate('{off}, arrives {time}', { off: off.text, time: timeText(off.rideMin) })})` : timesText(t);
+    const time = props.time;
+    if (!time) return '';
+    const off = offTime(time);
+    return off ? `${timesText(time)} (${t('{off}, arrives {time}', { off: off.text, time: timeText(off.rideMin) })})` : timesText(time);
   };
   const detail = () => [times(), props.distanceM !== undefined && distanceText(props.distanceM), symbolLabel(stop().symbol), stop().optional && t('optional')].filter(Boolean).join(' · ');
   return (

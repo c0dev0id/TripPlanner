@@ -12,10 +12,10 @@ export type Tool = 'hand' | 'point' | 'stop' | 'delete';
 
 /** Each tool's caption and what it does, for the toolbar's buttons and their tooltips. */
 export const TOOLS: Record<Tool, { label: string; hint: string }> = {
-  hand: { label: t('Hand'), hint: t('drag the map; tap a stop for its details; points and stops stay where they are. Hold Space for the hand with another tool.') },
-  point: { label: t('Point'), hint: t('tap the map to add a point at the end of the route, or tap the route to insert one there; drag points and stops to move them.') },
-  stop: { label: t('Stop'), hint: t('tap a route point or the route to make a stop there; tap elsewhere for a stop beside the route; drag points and stops to move them.') },
-  delete: { label: t('Delete'), hint: t('tap a point or a stop to delete it.') },
+  hand: { label: t('Hand'), hint: t('Drag the map; tap a stop for its details; points and stops stay where they are. Hold Space for the hand with another tool.') },
+  point: { label: t('Point'), hint: t('Tap the map to add a point at the end of the route, or tap the route to insert one there; drag points and stops to move them.') },
+  stop: { label: t('Stop'), hint: t('Tap a route point or the route to make a stop there; tap elsewhere for a stop beside the route; drag points and stops to move them.') },
+  delete: { label: t('Delete'), hint: t('Tap a point or a stop to delete it.') },
 };
 
 /** The tool picked; the hand to start with: a tap adds nothing until a tool is picked. */

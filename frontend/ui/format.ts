@@ -1,14 +1,23 @@
 import { locale } from '../i18n/language';
-import { t } from '../i18n/t';
+import { plural, t } from '../i18n/t';
 
-export { counted } from '../i18n/t';
+const ONE_DECIMAL = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+/** A number with one decimal, "12.5" or "12,5" as the locale writes it. */
+export const decimalText = (n: number): string => ONE_DECIMAL.format(n);
 
 /** A distance in metres as text: metres below a kilometre, a decimal below 100 km, whole kilometres above. */
 export function distanceText(metres: number): string {
   if (metres < 1000) return `${Math.round(metres)} m`;
   const km = metres / 1000;
-  return km < 100 ? `${km.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km` : `${Math.round(km)} km`;
+  return km < 100 ? `${decimalText(km)} km` : `${Math.round(km)} km`;
 }
+
+/** The English plural of a noun as counted() writes it. */
+const englishPlural = (noun: string): string => (/[^aeiou]y$/.test(noun) ? `${noun.slice(0, -1)}ies` : `${noun}s`);
+
+/** A count with its noun in the right number: "1 trip", "1,234 trips"; the noun in English, as "trip|trips" in de.json. */
+export const counted = (n: number, noun: string): string => `${n.toLocaleString(locale)} ${plural(n, `${noun}|${englishPlural(noun)}`)}`;
 
 const LONG_DATE = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 const SHORT_DATE = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' });

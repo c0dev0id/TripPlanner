@@ -253,7 +253,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
             <span class="muted detail">
               {routeKindLabel(props.route)}
               {distance() > 0 ? ` · ${distanceText(distance())}` : ''}
-              {props.route.kind === 'track' ? ` · ${pointCount(props.route).toLocaleString()} points` : ''}
+              {props.route.kind === 'track' ? ` · ${counted(pointCount(props.route), 'point')}` : ''}
               {stopCount() > 0 ? ` · ${counted(stopCount(), 'stop')}` : ''}
               <Show when={lateCount() > 0}>
                 <span class="late"> · {lateText(lateCount())}</span>
@@ -283,6 +283,9 @@ function SequenceItems(props: { entries: SequenceEntry[] }) {
  * pans the map there. Before a stop whose fixed time the ride misses stands a row of its
  * own that says by how much it is late or early, and when the ride gets there.
  */
+/** The name of a sequence row that is a route point, not a stop. */
+const ROUTE_POINT = t('Route point');
+
 function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined }) {
   const stop = () => props.entry.stop;
   return (
@@ -307,7 +310,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
           </Show>
           <span class="lines">
             <span class="name">
-              <Show when={stop()} fallback={<span class="muted">{t('Route point')}</span>}>
+              <Show when={stop()} fallback={<span class="muted">{ROUTE_POINT}</span>}>
                 {(s) => <>{s().name}</>}
               </Show>
             </span>

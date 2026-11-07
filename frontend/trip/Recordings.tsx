@@ -1,5 +1,5 @@
 import { createSignal, For, Show } from 'solid-js';
-import { t, t as translate } from '../i18n/t';
+import { t } from '../i18n/t';
 import type { Recording } from '../api';
 import { lineLength } from '../geo/measure';
 import type { Day } from '../model/trip';
@@ -103,30 +103,30 @@ export function DayRecordings(props: { day: Day }) {
 function RecordingItem(props: { recording: Recording; onRename: (recording: Recording) => void }) {
   const track = () => trackOf(props.recording);
   const detail = () => {
-    const t = track();
-    if (t === undefined) return translate('Reading…');
-    if (t instanceof Error) return t.message;
-    return `${distanceText(lineLength(t.points))} · ${counted(t.points.length, 'point')}`;
+    const loaded = track();
+    if (loaded === undefined) return t('Reading…');
+    if (loaded instanceof Error) return loaded.message;
+    return `${distanceText(lineLength(loaded.points))} · ${counted(loaded.points.length, 'point')}`;
   };
   const dayId = () => props.recording.dayId;
   const remove = async () => {
-    if (!(await askConfirmation(translate('Delete the recording “{name}”?', { name: props.recording.name }), translate('Delete')))) return;
+    if (!(await askConfirmation(t('Delete the recording “{name}”?', { name: props.recording.name }), t('Delete')))) return;
     await recordingAction(dayId(), () => removeRecording(props.recording));
   };
   const items = (): MenuItem[] => [
-    { label: translate('Rename…'), run: () => props.onRename(props.recording) },
+    { label: t('Rename…'), run: () => props.onRename(props.recording) },
     {
-      label: translate('Copy'),
+      label: t('Copy'),
       run: () =>
         void recordingAction(dayId(), async () => copyRecording(props.recording.name, await recordingGpx(props.recording))),
     },
-    { label: translate('Delete'), run: () => void remove() },
+    { label: t('Delete'), run: () => void remove() },
   ];
   const openIt = () => {
     // Opened first, so that it is shown whole beside its cards.
     openRecording(props.recording.id);
-    const t = loadedTrack(props.recording);
-    if (t) showWhole(t.points);
+    const loaded = loadedTrack(props.recording);
+    if (loaded) showWhole(loaded.points);
   };
   return (
     <li class="recording" classList={{ opened: opened()?.recording.id === props.recording.id }} ref={(el) => cardMenu(el, items)}>

@@ -1,5 +1,4 @@
-import { locale } from '../i18n/language';
-import { plural, t } from '../i18n/t';
+import { t } from '../i18n/t';
 import { createMemo, For } from 'solid-js';
 import type { Track } from '../model/trip';
 import { thinningTolerances } from '../routing/routeEdit';
@@ -8,7 +7,7 @@ import { setTrackAction, trackAction } from '../state/drawing';
 import { condenseTrack, convertTrackToRoute, openTrip, routeById } from '../state/trip';
 import { EditDialog } from '../ui/EditDialog';
 import { field } from '../ui/form';
-import { durationText } from '../ui/format';
+import { counted, durationText } from '../ui/format';
 import { routeLabelOf } from './labels';
 
 /** The two things the dialog does with a track; `tolerances` are how far the line may move, in metres. */
@@ -49,8 +48,8 @@ export function TrackDialog() {
   });
   const option = (toleranceM: number) => {
     const points = tolerances().filter((t) => t > toleranceM).length;
-    const routing = action() === ACTIONS.convert ? t(', about {time} of routing', { time: durationText(Math.max(60, ((points - 1) * ROUTING_MIN_INTERVAL_MS) / 1000)) }) : '';
-    return `${distance(toleranceM)}: ${points.toLocaleString(locale)} ${plural(points, 'point|points')}${routing}`;
+    const summary = `${distance(toleranceM)}: ${counted(points, 'point')}`;
+    return action() === ACTIONS.convert ? t('{summary}, about {time} of routing', { summary, time: durationText(Math.max(60, ((points - 1) * ROUTING_MIN_INTERVAL_MS) / 1000)) }) : summary;
   };
   return (
     <EditDialog
@@ -64,7 +63,7 @@ export function TrackDialog() {
       {() => (
         <>
           <p class="muted">
-            {action().intro} The track has {tolerances().length.toLocaleString()} points now.
+            {action().intro} {t('The track has {points} now.', { points: counted(tolerances().length, 'point') })}
           </p>
           <label>
             {action().field}

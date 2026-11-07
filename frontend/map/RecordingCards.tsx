@@ -3,7 +3,7 @@ import { createEffect, createMemo, createSignal, For, Match, Show, Switch } from
 import uPlot from 'uplot';
 import { deltaSummaryOf, type Delta } from '../recording/delta';
 import { DIFFERENCE_FIGURES, FIGURES, type Figure } from '../recording/figures';
-import { kmBySurface, NO_VALUE, SURFACES, type Coloring } from '../recording/lineColors';
+import { kmBySurface, NO_VALUE, SURFACES, surfaceLabel, type Coloring } from '../recording/lineColors';
 import { histogram, summaryOf, type Measures, type Metric } from '../recording/measures';
 import {
   colorings,
@@ -161,7 +161,7 @@ function SurfaceLegend(props: { opened: Opened }) {
     if (!Array.isArray(surfaces)) return [];
     const km = kmBySurface(props.opened.measures.distance, surfaces);
     const known = SURFACES.filter((s) => km.has(s.key)).map((s) => ({ ...s, km: km.get(s.key)! }));
-    return km.has(null) ? [...known, { key: 'none', label: t('No road matched'), color: NO_VALUE, km: km.get(null)! }] : known;
+    return km.has(null) ? [...known, { key: 'none', label: surfaceLabel(null), color: NO_VALUE, km: km.get(null)! }] : known;
   });
   return (
     <Switch>

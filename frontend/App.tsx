@@ -72,7 +72,7 @@ export function App() {
             <For each={LANGUAGES}>{(l) => <option value={l.value}>{l.label}</option>}</For>
           </select>
           <select class="theme" aria-label={t('Theme')} title={t('Light or dark, or as the browser says')} value={theme()} onChange={(e) => chooseTheme(e.currentTarget.value as Theme)}>
-            <For each={THEMES}>{(x) => <option value={x.value}>{x.label}</option>}</For>
+            <For each={THEMES}>{(choice) => <option value={choice.value}>{choice.label}</option>}</For>
           </select>
           <button type="button" class="link" onClick={logout}>
             {t('Sign out')}

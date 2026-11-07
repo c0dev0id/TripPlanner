@@ -28,7 +28,7 @@ const TOOL_ICONS: Record<Tool, () => JSX.Element> = { hand: HandIcon, point: Ins
 /** The tools of the selected route, over the map: what a tap does, the route's settings, undo and redo, reroute, done. */
 export function Toolbar() {
   const button = (t: Tool) => (
-    <ToolButton label={TOOLS[t].label} title={`${TOOLS[t].hint[0]!.toUpperCase()}${TOOLS[t].hint.slice(1)}`} active={currentTool() === t} onClick={() => setTool(t)}>
+    <ToolButton label={TOOLS[t].label} title={TOOLS[t].hint} active={currentTool() === t} onClick={() => setTool(t)}>
       {TOOL_ICONS[t]()}
     </ToolButton>
   );

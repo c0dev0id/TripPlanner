@@ -170,6 +170,11 @@ function EntryList(props: { entries: Entry[]; run: Runner }) {
 }
 
 /** An entry: its file, when a photo was taken, its text, editable, where it stands, and its deletion; its requests run through the dialog's runner. */
+/** The labels of each entry's buttons. */
+const SHOW_ON_MAP = t('Show on the map');
+const EDIT_NOTE = t('Edit the note');
+const DELETE_ENTRY = t('Delete the entry');
+
 function EntryItem(props: { entry: Entry; run: Runner }) {
   const [editing, setEditing] = createSignal(false);
   const remove = async () => {
@@ -193,15 +198,15 @@ function EntryItem(props: { entry: Entry; run: Runner }) {
       </div>
       <Show when={props.entry.lngLat}>
         {(spot) => (
-          <button type="button" class="icon" title={t('Show on the map')} aria-label={t('Show on the map')} onClick={() => showOnMap(props.entry, spot())}>
+          <button type="button" class="icon" title={SHOW_ON_MAP} aria-label={SHOW_ON_MAP} onClick={() => showOnMap(props.entry, spot())}>
             <PinIcon />
           </button>
         )}
       </Show>
-      <button type="button" class="icon" title={t('Edit the note')} aria-label={t('Edit the note')} onClick={() => setEditing(true)}>
+      <button type="button" class="icon" title={EDIT_NOTE} aria-label={EDIT_NOTE} onClick={() => setEditing(true)}>
         <PencilIcon />
       </button>
-      <button type="button" class="icon" title={t('Delete the entry')} aria-label={t('Delete the entry')} onClick={() => void remove()}>
+      <button type="button" class="icon" title={DELETE_ENTRY} aria-label={DELETE_ENTRY} onClick={() => void remove()}>
         <DeleteIcon />
       </button>
     </li>
