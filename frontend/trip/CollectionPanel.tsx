@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createMemo, createSignal, Show } from 'solid-js';
 import { FREE_COLOR } from '../map/routeOverlay';
 import type { Day, Route, Stop } from '../model/trip';
@@ -29,9 +30,9 @@ export function CollectionPanel() {
         <ForById each={collection().days}>{(day) => <SectionItem day={day()} onRename={setRenamed} />}</ForById>
       </ol>
       <NameDialog
-        title="Rename section"
+        title={t('Rename section')}
         open={renamed() !== undefined}
-        placeholder="Name of the section"
+        placeholder={t('Name of the section')}
         initial={renamed()?.name}
         onClose={() => setRenamed(undefined)}
         onSubmit={(name) => {
@@ -52,11 +53,11 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
   const meta = () =>
     [counted(routes().length, 'route'), props.day.stops.length > 0 && counted(props.day.stops.length, 'waypoint'), distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
   const remove = async () => {
-    if (await askConfirmation(`Remove the section “${props.day.name}” with its routes and waypoints?`, 'Remove')) removeDay(props.day.id);
+    if (await askConfirmation(t('Remove the section “{name}” with its routes and waypoints?', { name: props.day.name }), t('Remove'))) removeDay(props.day.id);
   };
   const items = (): MenuItem[] => [
-    { label: 'Rename…', run: () => props.onRename(props.day) },
-    { label: 'Remove', run: () => void remove() },
+    { label: t('Rename…'), run: () => props.onRename(props.day) },
+    { label: t('Remove'), run: () => void remove() },
   ];
   return (
     <li class="day card" classList={{ selected: selected() }}>
@@ -75,7 +76,7 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
           </ul>
           <Show when={props.day.stops.length > 0}>
             <div class="row heading">
-              <h4 class="grow">Waypoints</h4>
+              <h4 class="grow">{t('Waypoints')}</h4>
             </div>
             <ol class="stops">
               <ForById each={props.day.stops}>{(stop) => <WaypointItem stop={stop()} />}</ForById>
@@ -92,8 +93,8 @@ function RouteItem(props: { route: Route; day: Day }) {
   const label = createMemo(() => routeLabel(props.route, props.day));
   const distance = createMemo(() => routeDistance(props.route));
   const items = (): MenuItem[] => [
-    { label: 'Copy', run: () => copyRoute(props.day, props.route) },
-    { label: 'Remove', run: () => void removeRouteAsked(props.route) },
+    { label: t('Copy'), run: () => copyRoute(props.day, props.route) },
+    { label: t('Remove'), run: () => void removeRouteAsked(props.route) },
   ];
   return (
     <li class="route">
@@ -117,8 +118,8 @@ function RouteItem(props: { route: Route; day: Day }) {
 function WaypointItem(props: { stop: Stop }) {
   const label = () => symbolLabel(props.stop.symbol);
   const items = (): MenuItem[] => [
-    { label: 'Copy', run: () => copyStop(props.stop) },
-    { label: 'Remove', run: () => removeStop(props.stop.id) },
+    { label: t('Copy'), run: () => copyStop(props.stop) },
+    { label: t('Remove'), run: () => removeStop(props.stop.id) },
   ];
   return (
     <li class="row sequence-item" ref={(el) => cardMenu(el, items)}>

@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import type { LngLat } from '../model/trip';
 import type { Delta } from './delta';
 import type { Metric } from './measures';
@@ -72,14 +73,14 @@ export function colorAt(scale: Scale, value: number | null): string {
 
 /** The road surfaces the routing server tells apart, from smooth asphalt to impassable. */
 export const SURFACES: readonly { key: string; label: string; color: string }[] = [
-  { key: 'paved_smooth', label: 'Smooth asphalt', color: '#1971c2' },
-  { key: 'paved', label: 'Paved', color: '#4dabf7' },
-  { key: 'paved_rough', label: 'Rough paved', color: '#9775fa' },
-  { key: 'compacted', label: 'Compacted', color: '#f59f00' },
-  { key: 'gravel', label: 'Gravel', color: '#e8590c' },
-  { key: 'dirt', label: 'Dirt', color: '#a0522d' },
-  { key: 'path', label: 'Path', color: '#2f9e44' },
-  { key: 'impassable', label: 'Impassable', color: '#e03131' },
+  { key: 'paved_smooth', label: t('Smooth asphalt'), color: '#1971c2' },
+  { key: 'paved', label: t('Paved'), color: '#4dabf7' },
+  { key: 'paved_rough', label: t('Rough paved'), color: '#9775fa' },
+  { key: 'compacted', label: t('Compacted'), color: '#f59f00' },
+  { key: 'gravel', label: t('Gravel'), color: '#e8590c' },
+  { key: 'dirt', label: t('Dirt'), color: '#a0522d' },
+  { key: 'path', label: t('Path'), color: '#2f9e44' },
+  { key: 'impassable', label: t('Impassable'), color: '#e03131' },
 ];
 
 export const surfaceColor = (surface: string | null): string => SURFACES.find((s) => s.key === surface)?.color ?? NO_VALUE;

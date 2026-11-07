@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import type { LngLat } from '../model/trip';
 import { children, parseXml, text } from './xml';
 
@@ -56,7 +57,7 @@ function route(rte: Element): GpxContent['routes'][number] {
 /** Reads a GPX document; throws for anything else. */
 export function parseGpx(xml: string): GpxContent {
   const root = parseXml(xml);
-  if (root?.localName !== 'gpx') throw new Error('This is not a GPX file.');
+  if (root?.localName !== 'gpx') throw new Error(t('This is not a GPX file.'));
   return {
     waypoints: children(root, 'wpt').flatMap((w) => {
       const lngLat = position(w);

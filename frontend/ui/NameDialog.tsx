@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { EditDialog } from './EditDialog';
 import { field } from './form';
 
@@ -11,7 +12,7 @@ export function NameDialog(props: { title: string; open: boolean; placeholder: s
     <EditDialog label={props.title} value={props.open || undefined} title={() => props.title} onClose={props.onClose} onSubmit={submit} submit={props.submit}>
       {() => (
         <label>
-          Name
+          {t('Name')}
           <input name="name" value={props.initial ?? ''} placeholder={props.placeholder} maxlength={200} required />
         </label>
       )}

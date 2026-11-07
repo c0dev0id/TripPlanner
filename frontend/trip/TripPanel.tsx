@@ -1,3 +1,4 @@
+import { plural, t } from '../i18n/t';
 import { createMemo, createSignal, Show } from 'solid-js';
 import { errorMessage } from '../api';
 import { readGpxFile } from '../gpx/import';
@@ -44,7 +45,7 @@ import { removeDayAsked, removeRouteAsked } from './remove';
 /** The journal of a part as an icon, with the number of its entries where it has any. */
 function JournalButton(props: { target: EntryTarget; of: string }) {
   const count = createMemo(() => entriesOn(props.target).length);
-  const label = () => `Journal of ${props.of}${count() === 0 ? '' : `: ${count()} ${count() === 1 ? 'entry' : 'entries'}`}`;
+  const label = () => `${t('Journal of {of}', { of: props.of })}${count() === 0 ? '' : `: ${counted(count(), 'entry')}`}`;
   return (
     <button class="icon journal" title={label()} aria-label={label()} onClick={() => openJournal(props.target)}>
       <NotebookIcon />
@@ -58,21 +59,21 @@ function JournalButton(props: { target: EntryTarget; of: string }) {
 /** Move… with the trip's other days as its submenu, to move something there; none in a trip of one day. */
 function moveToDayItem(dayId: string, run: (dayId: string) => void): MenuItem[] {
   const items = openTrip()!.days.flatMap((day, index) => (day.id === dayId ? [] : [{ label: dayLabel(day, index), run: () => run(day.id) }]));
-  return items.length > 0 ? [{ label: 'Move…', items }] : [];
+  return items.length > 0 ? [{ label: t('Move…'), items }] : [];
 }
 
 /** The open trip's own actions, as icons on the explorer's heading: edit, export, journal, print and share. */
 export function TripIcons() {
   return (
     <>
-      <IconButton label="Edit trip" onClick={() => setEditTarget({ kind: 'trip' })}>
+      <IconButton label={t('Edit trip')} onClick={() => setEditTarget({ kind: 'trip' })}>
         <PencilIcon />
       </IconButton>
-      <IconButton label="Export GPX…" onClick={() => setExportOpen(true)}>
+      <IconButton label={t('Export GPX…')} onClick={() => setExportOpen(true)}>
         <DownloadIcon />
       </IconButton>
-      <JournalButton target={{}} of="the trip" />
-      <IconButton label="Print, share…" onClick={() => setShareOpen(true)}>
+      <JournalButton target={{}} of={t('the trip')} />
+      <IconButton label={t('Print, share…')} onClick={() => setShareOpen(true)}>
         <ShareIcon />
       </IconButton>
     </>
@@ -81,15 +82,15 @@ export function TripIcons() {
 
 /** The open trip's days with their routes and stops. */
 export function TripPanel() {
-  const neighboursLabel = () => (showNeighbours() ? 'Hide the neighbouring days on the map' : 'Show the neighbouring days on the map, dimmed');
+  const neighboursLabel = () => t(showNeighbours() ? 'Hide the neighbouring days on the map' : 'Show the neighbouring days on the map, dimmed');
   return (
     <section class="trip">
       <div class="row heading">
-        <h3 class="grow">Days</h3>
+        <h3 class="grow">{t('Days')}</h3>
         <IconButton label={neighboursLabel()} pressed={showNeighbours()} onClick={() => setShowNeighbours(!showNeighbours())}>
           <NeighboursIcon />
         </IconButton>
-        <IconButton label="Add day" onClick={addDay}>
+        <IconButton label={t('Add day')} onClick={addDay}>
           <PlusIcon />
         </IconButton>
       </div>
@@ -107,26 +108,26 @@ function DayItem(props: { day: Day; index: number }) {
   // The day's routes change less often than the day.
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
-  const meta = () => [props.day.date ? shortDateText(props.day.date) : 'No date', distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
+  const meta = () => [props.day.date ? shortDateText(props.day.date) : t('No date'), distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
   const more = (): MenuItem[] => [
-    { label: 'Edit…', run: () => setEditTarget({ kind: 'day', id: props.day.id }) },
-    { label: 'Duplicate', run: () => duplicateDay(props.day.id) },
-    { label: 'Add recording…', run: () => addRecordingPicked(props.day.id) },
+    { label: t('Edit…'), run: () => setEditTarget({ kind: 'day', id: props.day.id }) },
+    { label: t('Duplicate'), run: () => duplicateDay(props.day.id) },
+    { label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) },
     ...pasteItem(props.day.id),
-    { label: 'Remove', run: () => void removeDayAsked(props.day) },
+    { label: t('Remove'), run: () => void removeDayAsked(props.day) },
   ];
   return (
     <li class="day card" classList={{ selected: selected() }}>
       <div class="row" ref={(el) => cardMenu(el, more)}>
-        <Grip label={`Drag ${label()} to another place`} index={props.index} onMove={(to) => moveDay(props.day.id, to)} />
+        <Grip label={t('Drag {what} to another place', { what: label() })} index={props.index} onMove={(to) => moveDay(props.day.id, to)} />
         <button class="text grow" onClick={() => selectDay(selected() ? undefined : props.day.id)} aria-pressed={selected()}>
           <span class="lines">
-            <span class="name">{[`Day ${props.index + 1}`, props.day.name].filter(Boolean).join(' · ')}</span>
+            <span class="name">{[t('Day {n}', { n: props.index + 1 }), props.day.name].filter(Boolean).join(' · ')}</span>
             <span class="muted detail">{meta()}</span>
           </span>
         </button>
         <Show when={selected()}>
-          <IconButton label={`Edit ${label()}`} onClick={() => setEditTarget({ kind: 'day', id: props.day.id })}>
+          <IconButton label={t('Edit {what}', { what: label() })} onClick={() => setEditTarget({ kind: 'day', id: props.day.id })}>
             <PencilIcon />
           </IconButton>
         </Show>
@@ -157,7 +158,7 @@ function DayDetails(props: { day: Day }) {
     try {
       const parts = await readGpxFile(file, defaultProfile(props.day));
       addParts(parts);
-      setImportNote({ text: `${file.name}: ${counted(parts.routes.length, 'route')}, ${counted(parts.stops.length, 'stop')} added.`, error: false });
+      setImportNote({ text: t('{file}: {routes}, {stops} added.', { file: file.name, routes: counted(parts.routes.length, 'route'), stops: counted(parts.stops.length, 'stop') }), error: false });
     } catch (fault) {
       setImportNote({ text: `${file.name}: ${errorMessage(fault)}`, error: true });
     }
@@ -168,16 +169,16 @@ function DayDetails(props: { day: Day }) {
         <p class="muted notes">{props.day.notes}</p>
       </Show>
       <Show when={selectedSequence().some((e) => e.stop)}>
-        <Show when={selectedTimeline()} fallback={<p class="day-summary muted">Give the first stop a time for the day's times.</p>}>
+        <Show when={selectedTimeline()} fallback={<p class="day-summary muted">{t("Give the first stop a time for the day's times.")}</p>}>
           {(timeline) => <DaySummary timeline={timeline()} />}
         </Show>
       </Show>
       <div class="row heading">
-        <h4 class="grow">Routes</h4>
-        <IconButton label="Add route" onClick={addRoute}>
+        <h4 class="grow">{t('Routes')}</h4>
+        <IconButton label={t('Add route')} onClick={addRoute}>
           <PlusIcon />
         </IconButton>
-        <IconButton label="Import GPX…" onClick={() => fileInput.click()}>
+        <IconButton label={t('Import GPX…')} onClick={() => fileInput.click()}>
           <FileImportIcon />
         </IconButton>
         <input ref={fileInput} type="file" accept=".gpx,application/gpx+xml" hidden onChange={(e) => void importFile(e.currentTarget.files?.[0])} />
@@ -188,7 +189,7 @@ function DayDetails(props: { day: Day }) {
       <Show when={importNote()}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
       <Show when={unplaced().length > 0}>
         <div class="row heading">
-          <h4 class="grow">Stops beside no route</h4>
+          <h4 class="grow">{t('Stops beside no route')}</h4>
         </div>
         <ol class="stops">
           <ForById each={unplaced()}>{(stop) => <AloneStopItem stop={stop()} />}</ForById>
@@ -199,7 +200,7 @@ function DayDetails(props: { day: Day }) {
   );
 }
 
-const lateText = (stops: number): string => (stops === 1 ? 'late at 1 stop' : `late at ${stops} stops`);
+const lateText = (stops: number): string => plural(stops, 'late at {n} stop|late at {n} stops');
 
 /** The day's timeline in one line, and at how many stops the ride gets there after the fixed time. */
 function DaySummary(props: { timeline: DayTimeline }) {
@@ -228,22 +229,22 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
   const stopCount = createMemo(() => entries().filter((e) => e.stop).length);
   const lateCount = createMemo(() => entries().filter((e) => (selectedTimeline()?.times.get(e.id)?.slackMin ?? 0) < 0).length);
   const items = (): MenuItem[] => [
-    { label: 'Edit…', run: () => setEditTarget({ kind: 'route', id: props.route.id }) },
-    { label: 'Duplicate', run: () => duplicateRoute(props.route.id) },
-    { label: 'Copy', run: () => copyRoute(props.day, props.route) },
+    { label: t('Edit…'), run: () => setEditTarget({ kind: 'route', id: props.route.id }) },
+    { label: t('Duplicate'), run: () => duplicateRoute(props.route.id) },
+    { label: t('Copy'), run: () => copyRoute(props.day, props.route) },
     ...moveToDayItem(props.day.id, (dayId) => moveRouteToDay(props.route.id, dayId)),
     ...(props.route.kind === 'track'
       ? [
-          { label: 'Condense points…', run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) },
-          { label: 'Convert to route…', run: () => setTrackAction({ routeId: props.route.id, action: 'convert' }) },
+          { label: t('Condense points…'), run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) },
+          { label: t('Convert to route…'), run: () => setTrackAction({ routeId: props.route.id, action: 'convert' }) },
         ]
       : []),
-    { label: 'Remove', run: () => void removeRouteAsked(props.route) },
+    { label: t('Remove'), run: () => void removeRouteAsked(props.route) },
   ];
   return (
     <li class="route" classList={{ editing: editing() }}>
       <div class="row" ref={(el) => cardMenu(el, items)}>
-        <Grip label={`Drag ${label()} to another place`} index={props.index} onMove={(to) => moveRoute(props.route.id, to)} />
+        <Grip label={t('Drag {what} to another place', { what: label() })} index={props.index} onMove={(to) => moveRoute(props.route.id, to)} />
         <button class="text grow" aria-expanded={editing()} onClick={() => editRoute(editing() ? undefined : props.route.id)}>
           <span class="lines">
             <span class="name" title={label()}>
@@ -253,7 +254,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
               {routeKindLabel(props.route)}
               {distance() > 0 ? ` · ${distanceText(distance())}` : ''}
               {props.route.kind === 'track' ? ` · ${pointCount(props.route).toLocaleString()} points` : ''}
-              {stopCount() > 0 ? ` · ${stopCount()} ${stopCount() === 1 ? 'stop' : 'stops'}` : ''}
+              {stopCount() > 0 ? ` · ${counted(stopCount(), 'stop')}` : ''}
               <Show when={lateCount() > 0}>
                 <span class="late"> · {lateText(lateCount())}</span>
               </Show>
@@ -294,7 +295,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
             </span>
             <span class="lines">
               <span>{off().text}</span>
-              <span class="muted">arrives {timeText(off().rideMin)}</span>
+              <span class="muted">{t('arrives {time}', { time: timeText(off().rideMin) })}</span>
             </span>
           </li>
         )}
@@ -306,7 +307,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
           </Show>
           <span class="lines">
             <span class="name">
-              <Show when={stop()} fallback={<span class="muted">Route point</span>}>
+              <Show when={stop()} fallback={<span class="muted">{t('Route point')}</span>}>
                 {(s) => <>{s().name}</>}
               </Show>
             </span>
@@ -345,8 +346,8 @@ function AloneStopItem(props: { stop: Stop }) {
 /** A stop's menu, opened from its row by right-click or a long press: edit, copy to paste into a day, remove. */
 function stopItems(stop: Stop): MenuItem[] {
   return [
-    { label: 'Edit…', run: () => setEditTarget({ kind: 'stop', id: stop.id }) },
-    { label: 'Copy', run: () => copyStop(stop) },
-    { label: 'Remove', run: () => removeStop(stop.id) },
+    { label: t('Edit…'), run: () => setEditTarget({ kind: 'stop', id: stop.id }) },
+    { label: t('Copy'), run: () => copyStop(stop) },
+    { label: t('Remove'), run: () => removeStop(stop.id) },
   ];
 }

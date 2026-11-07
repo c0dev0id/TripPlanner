@@ -1,4 +1,5 @@
 import { For, Show, type JSX } from 'solid-js';
+import { t } from '../i18n/t';
 import { currentTool, setEditTarget, setTool, toolsOf, TOOLS, type Tool } from '../state/drawing';
 import { routedLegs } from '../routing/legs';
 import { recalculateRoute } from '../state/routing';
@@ -34,28 +35,28 @@ export function Toolbar() {
   return (
     <Show when={editingRoute()}>
       {(route) => (
-        <div class="toolbar" role="toolbar" aria-label="Route tools">
-          <div class="toolbar-group" role="group" aria-label="Tool">
+        <div class="toolbar" role="toolbar" aria-label={t('Route tools')}>
+          <div class="toolbar-group" role="group" aria-label={t('Tool')}>
             <For each={toolsOf(route())}>{button}</For>
           </div>
-          <div class="toolbar-group" role="group" aria-label="Route">
-            <ToolButton label="Route" title="The route's name, profile, motorways and more" onClick={() => setEditTarget({ kind: 'route', id: route().id })}>
+          <div class="toolbar-group" role="group" aria-label={t('Route')}>
+            <ToolButton label={t('Route')} title={t("The route's name, profile, motorways and more")} onClick={() => setEditTarget({ kind: 'route', id: route().id })}>
               <SettingsIcon />
             </ToolButton>
           </div>
-          <div class="toolbar-group" role="group" aria-label="History">
-            <ToolButton label="Undo" title={undoLabel() ? `Undo: ${undoLabel()} (Ctrl+Z)` : 'Nothing to undo'} disabled={!undoLabel()} onClick={undo}>
+          <div class="toolbar-group" role="group" aria-label={t('History')}>
+            <ToolButton label={t('Undo')} title={undoLabel() ? t('Undo: {what} (Ctrl+Z)', { what: undoLabel()! }) : t('Nothing to undo')} disabled={!undoLabel()} onClick={undo}>
               <UndoIcon />
             </ToolButton>
-            <ToolButton label="Redo" title={redoLabel() ? `Redo: ${redoLabel()} (Ctrl+Shift+Z)` : 'Nothing to redo'} disabled={!redoLabel()} onClick={redo}>
+            <ToolButton label={t('Redo')} title={redoLabel() ? t('Redo: {what} (Ctrl+Shift+Z)', { what: redoLabel()! }) : t('Nothing to redo')} disabled={!redoLabel()} onClick={redo}>
               <RedoIcon />
             </ToolButton>
-            <ToolButton label="Reroute" title="Route every leg of the route again" disabled={routedLegs(route()).length === 0} onClick={() => recalculateRoute(route().id)}>
+            <ToolButton label={t('Reroute')} title={t('Route every leg of the route again')} disabled={routedLegs(route()).length === 0} onClick={() => recalculateRoute(route().id)}>
               <RefreshIcon />
             </ToolButton>
           </div>
-          <div class="toolbar-group" role="group" aria-label="Editing">
-            <ToolButton label="Done" title="Leave the route (Esc)" onClick={() => editRoute(undefined)}>
+          <div class="toolbar-group" role="group" aria-label={t('Editing')}>
+            <ToolButton label={t('Done')} title={t('Leave the route (Esc)')} onClick={() => editRoute(undefined)}>
               <CheckIcon />
             </ToolButton>
           </div>

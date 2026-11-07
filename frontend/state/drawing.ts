@@ -1,4 +1,5 @@
 import { createSignal } from 'solid-js';
+import { t } from '../i18n/t';
 import type { LngLat, Route, RoutePoint } from '../model/trip';
 import type { MenuItem } from '../ui/menu';
 import { openJournal } from './journal';
@@ -11,10 +12,10 @@ export type Tool = 'hand' | 'point' | 'stop' | 'delete';
 
 /** Each tool's caption and what it does, for the toolbar's buttons and their tooltips. */
 export const TOOLS: Record<Tool, { label: string; hint: string }> = {
-  hand: { label: 'Hand', hint: 'drag the map; tap a stop for its details; points and stops stay where they are. Hold Space for the hand with another tool.' },
-  point: { label: 'Point', hint: 'tap the map to add a point at the end of the route, or tap the route to insert one there; drag points and stops to move them.' },
-  stop: { label: 'Stop', hint: 'tap a route point or the route to make a stop there; tap elsewhere for a stop beside the route; drag points and stops to move them.' },
-  delete: { label: 'Delete', hint: 'tap a point or a stop to delete it.' },
+  hand: { label: t('Hand'), hint: t('drag the map; tap a stop for its details; points and stops stay where they are. Hold Space for the hand with another tool.') },
+  point: { label: t('Point'), hint: t('tap the map to add a point at the end of the route, or tap the route to insert one there; drag points and stops to move them.') },
+  stop: { label: t('Stop'), hint: t('tap a route point or the route to make a stop there; tap elsewhere for a stop beside the route; drag points and stops to move them.') },
+  delete: { label: t('Delete'), hint: t('tap a point or a stop to delete it.') },
 };
 
 /** The tool picked; the hand to start with: a tap adds nothing until a tool is picked. */
@@ -70,14 +71,14 @@ export function spotItems(spot: LngLat): MenuItem[] | undefined {
   const route = editingRoute();
   const day = selectedDay();
   const items: MenuItem[] = [];
-  if (route?.kind === 'routed') items.push({ label: 'Add a point here', run: () => appendPoint(route.id, spot) });
-  if (route) items.push({ label: 'Add a stop here, beside the route', run: () => addFreeStop(spot) });
-  if (day && openTrip()?.kind === 'trip') items.push({ label: 'Journal here…', run: () => openJournal({ dayId: day.id }, spot) });
+  if (route?.kind === 'routed') items.push({ label: t('Add a point here'), run: () => appendPoint(route.id, spot) });
+  if (route) items.push({ label: t('Add a stop here, beside the route'), run: () => addFreeStop(spot) });
+  if (day && openTrip()?.kind === 'trip') items.push({ label: t('Journal here…'), run: () => openJournal({ dayId: day.id }, spot) });
   return items.length > 0 ? items : undefined;
 }
 
 /** The menu item that makes the leg to a point of a route straight, or routed again. */
 export function straightLegItem(routeId: string, point: RoutePoint): MenuItem {
   const straight = point.straight === true;
-  return { label: straight ? 'Route the leg to here' : 'Straight leg to here', run: () => setStraight(routeId, point.id, !straight) };
+  return { label: t(straight ? 'Route the leg to here' : 'Straight leg to here'), run: () => setStraight(routeId, point.id, !straight) };
 }

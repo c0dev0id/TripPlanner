@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createEffect, createMemo, createRoot, createSignal, on } from 'solid-js';
 import type { Recording } from '../api';
 import { deltaToTrack, offsetsFrom, type Delta } from '../recording/delta';
@@ -105,7 +106,7 @@ const view = createRoot(() => {
   const comparands = createMemo((): { comparand: Comparand; label: string }[] => {
     const o = opened();
     if (!o) return [];
-    const plan = planLines().length > 0 ? [{ comparand: 'plan' as const, label: 'The planned route' }] : [];
+    const plan = planLines().length > 0 ? [{ comparand: 'plan' as const, label: t('The planned route') }] : [];
     const others = shownRecordings().filter((r) => r.id !== o.recording.id);
     return [...plan, ...others.map((r) => ({ comparand: r.id, label: r.name }))];
   });
@@ -121,7 +122,7 @@ const view = createRoot(() => {
   });
   const comparison = createMemo((): Comparison | undefined => {
     const [d, c] = [delta(), comparand()];
-    return d && c !== undefined ? { comparand: c, name: c === 'plan' ? 'the planned route' : `“${other()!.name}”`, delta: d } : undefined;
+    return d && c !== undefined ? { comparand: c, name: c === 'plan' ? t('the planned route') : `“${other()!.name}”`, delta: d } : undefined;
   });
   const colorings = createMemo((): Coloring[] => {
     const o = opened();

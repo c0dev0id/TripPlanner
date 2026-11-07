@@ -1,3 +1,5 @@
+import { locale } from '../i18n/language';
+import { plural, t } from '../i18n/t';
 import { createMemo, For } from 'solid-js';
 import type { Track } from '../model/trip';
 import { thinningTolerances } from '../routing/routeEdit';
@@ -12,19 +14,19 @@ import { routeLabelOf } from './labels';
 /** The two things the dialog does with a track; `tolerances` are how far the line may move, in metres. */
 const ACTIONS = {
   condense: {
-    title: 'Condense points',
-    submit: 'Condense',
-    intro: 'The track keeps the points that hold its line within the distance chosen.',
-    field: 'Keep the line within',
+    title: t('Condense points'),
+    submit: t('Condense'),
+    intro: t('The track keeps the points that hold its line within the distance chosen.'),
+    field: t('Keep the line within'),
     tolerances: [5, 10, 25, 50, 100],
     initial: 10,
     run: condenseTrack,
   },
   convert: {
-    title: 'Convert to route',
-    submit: 'Convert',
-    intro: 'The route keeps a point where the track bends away by more than the distance chosen, and the routing follows the roads between them: the more points, the closer to the track.',
-    field: 'Keep a point where the track bends away by',
+    title: t('Convert to route'),
+    submit: t('Convert'),
+    intro: t('The route keeps a point where the track bends away by more than the distance chosen, and the routing follows the roads between them: the more points, the closer to the track.'),
+    field: t('Keep a point where the track bends away by'),
     tolerances: [50, 100, 250, 500, 1000],
     initial: 250,
     run: convertTrackToRoute,
@@ -47,8 +49,8 @@ export function TrackDialog() {
   });
   const option = (toleranceM: number) => {
     const points = tolerances().filter((t) => t > toleranceM).length;
-    const routing = action() === ACTIONS.convert ? `, about ${durationText(Math.max(60, ((points - 1) * ROUTING_MIN_INTERVAL_MS) / 1000))} of routing` : '';
-    return `${distance(toleranceM)}: ${points.toLocaleString()} points${routing}`;
+    const routing = action() === ACTIONS.convert ? t(', about {time} of routing', { time: durationText(Math.max(60, ((points - 1) * ROUTING_MIN_INTERVAL_MS) / 1000)) }) : '';
+    return `${distance(toleranceM)}: ${points.toLocaleString(locale)} ${plural(points, 'point|points')}${routing}`;
   };
   return (
     <EditDialog

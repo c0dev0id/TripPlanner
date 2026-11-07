@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { lineLength } from '../geo/measure';
 import { asName, asNotes, asSymbol, newId, type LngLat, type Profile, type Route, type RoutedLeg, type Stop } from '../model/trip';
 import { newStop, routePoints } from '../routing/dayEdit';
@@ -67,7 +68,7 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
   const pointAt = new Map(routes.flatMap((r) => routePoints(r).map((p) => [p.lngLat.join(','), p.id] as const)));
   const stops = gpx.waypoints.map((w, i) => {
     const lngLat = roundLngLat(w.lngLat);
-    const stop = newStop(options.newId(), asName(w.name ?? `Waypoint ${i + 1}`), lngLat, pointAt.get(lngLat.join(',')) ?? null);
+    const stop = newStop(options.newId(), asName(w.name ?? t('Waypoint {n}', { n: i + 1 })), lngLat, pointAt.get(lngLat.join(',')) ?? null);
     return { ...stop, symbol: asSymbol(w.symbol), address: asNotes(w.address ?? ''), contact: asNotes(w.phone ?? ''), notes: asNotes(w.description ?? '') };
   });
   return { routes, stops };

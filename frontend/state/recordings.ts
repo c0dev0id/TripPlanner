@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createEffect, createResource, createRoot, createSignal, on } from 'solid-js';
 import { addRecording as postRecording, deleteRecording, errorMessage, fetchRecordingGpx, listRecordings, renameRecording as patchRecording, type Recording } from '../api';
 import { asName } from '../model/trip';
@@ -86,7 +87,7 @@ createRoot(() => {
 export async function addRecording(dayId: string, gpx: string, naming: { name: string } | { fallback: string }): Promise<Recording> {
   const track = readRecording(gpx);
   const name = 'name' in naming ? naming.name : (track.name ?? naming.fallback);
-  const recording = await postRecording(openTripId()!, dayId, asName(name) || 'Recording', gpx);
+  const recording = await postRecording(openTripId()!, dayId, asName(name) || t('Recording'), gpx);
   // Kept before it is listed, so that it is not read again from the file just sent.
   keep(recording.id, track);
   mutate((loaded) => loaded && { ...loaded, recordings: [...loaded.recordings, recording] });

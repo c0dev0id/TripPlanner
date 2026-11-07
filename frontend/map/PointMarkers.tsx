@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, onCleanup, Show } from 'solid-js';
 import type { RoutePoint } from '../model/trip';
@@ -40,9 +41,9 @@ function PointMarker(props: { map: MapLibreMap; routeId: string; point: RoutePoi
     else if (tapAction() === 'stop') convertPoint(pointId);
   });
   const stopMenu = onMarkerMenu(handle, () => [
-    { label: 'Make a stop here', run: () => convertPoint(pointId) },
+    { label: t('Make a stop here'), run: () => convertPoint(pointId) },
     straightLegItem(routeId, point()),
-    { label: 'Remove point', run: () => removePoint(routeId, pointId) },
+    { label: t('Remove point'), run: () => removePoint(routeId, pointId) },
   ]);
   onCleanup(() => {
     stopMenu();

@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createMemo } from 'solid-js';
 import type { Day } from '../model/trip';
 import { editTarget, setEditTarget } from '../state/drawing';
@@ -19,19 +20,19 @@ export function DayDialog() {
     if (await removeDayAsked(d)) close();
   };
   return (
-    <EditDialog label="Day" value={day()} title={(d) => dayLabelOf(openTrip()!, d)} onClose={close} onSubmit={save} actions={(d) => [{ label: 'Remove', run: () => void remove(d), danger: true }]}>
+    <EditDialog label={t('Day')} value={day()} title={(d) => dayLabelOf(openTrip()!, d)} onClose={close} onSubmit={save} actions={(d) => [{ label: t('Remove'), run: () => void remove(d), danger: true }]}>
       {(d) => (
         <>
           <label>
-            Name
-            <input name="name" value={d.name} maxlength={200} placeholder="Where the day goes" />
+            {t('Name')}
+            <input name="name" value={d.name} maxlength={200} placeholder={t('Where the day goes')} />
           </label>
           <label>
-            Date
+            {t('Date')}
             <input type="date" name="date" value={d.date ?? ''} />
           </label>
           <label>
-            Notes
+            {t('Notes')}
             <textarea name="notes" rows={4}>
               {d.notes}
             </textarea>

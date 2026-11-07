@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import type { LngLat } from '../model/trip';
 
 /**
@@ -7,7 +8,7 @@ import type { LngLat } from '../model/trip';
  */
 
 const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
-export const NOMINATIM_ATTRIBUTION = 'Search: Nominatim, © OpenStreetMap contributors';
+export const NOMINATIM_ATTRIBUTION = t('Search: Nominatim, © OpenStreetMap contributors');
 export const NOMINATIM_MIN_INTERVAL_MS = 1000;
 const RESULT_LIMIT = 5;
 
@@ -39,7 +40,7 @@ interface NominatimPlace {
 
 /** The places in a Nominatim answer; entries without a position are left out. */
 export function parsePlaces(json: unknown): Place[] {
-  if (!Array.isArray(json)) throw new Error('The search did not answer with a list of places.');
+  if (!Array.isArray(json)) throw new Error(t('The search did not answer with a list of places.'));
   return (json as NominatimPlace[]).flatMap((p): Place[] => {
     const lng = Number(p.lon);
     const lat = Number(p.lat);

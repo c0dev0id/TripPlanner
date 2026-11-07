@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { batch, createMemo, For, Show, type JSX } from 'solid-js';
 import { Portal } from 'solid-js/web';
 import { showModalWhile } from './modal';
@@ -54,10 +55,10 @@ export function EditDialog<T extends { id: unknown } | true>(props: {
                   </For>
                   <span class="grow" />
                   <button type="button" onClick={props.onClose}>
-                    Cancel
+                    {t('Cancel')}
                   </button>
                   <button type="submit" class="primary">
-                    {props.submit ?? 'Save'}
+                    {props.submit ?? t('Save')}
                   </button>
                 </div>
               </form>

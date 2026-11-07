@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import type { StyleSpecification } from 'maplibre-gl';
 import { createSignal } from 'solid-js';
 import { readPreference, writePreference } from '../ui/preferences';
@@ -24,8 +25,8 @@ function raster(tiles: string, attribution: string, maxzoom: number): StyleSpeci
 export const BASE_MAPS: readonly BaseMap[] = [
   { id: 'liberty', label: 'Liberty', style: 'https://tiles.openfreemap.org/styles/liberty' },
   { id: 'bright', label: 'Bright', style: 'https://tiles.openfreemap.org/styles/bright' },
-  { id: 'positron', label: 'Positron, light', style: 'https://tiles.openfreemap.org/styles/positron' },
-  { id: 'dark', label: 'Dark', style: 'https://tiles.openfreemap.org/styles/dark' },
+  { id: 'positron', label: t('Positron, light'), style: 'https://tiles.openfreemap.org/styles/positron' },
+  { id: 'dark', label: t('Dark'), style: 'https://tiles.openfreemap.org/styles/dark' },
   { id: 'opentopomap', label: 'OpenTopoMap', style: raster('https://tile.opentopomap.org/{z}/{x}/{y}.png', `Map data: ${OSM_ATTRIBUTION}, SRTM · Map style: © <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)`, 17) },
   { id: 'osm', label: 'OpenStreetMap', style: raster('https://tile.openstreetmap.org/{z}/{x}/{y}.png', OSM_ATTRIBUTION, 19) },
   { id: 'cyclosm', label: 'CyclOSM', style: raster('https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', `Map style: <a href="https://www.cyclosm.org">CyclOSM</a>, hosted by OpenStreetMap France · Map data: ${OSM_ATTRIBUTION}`, 20) },

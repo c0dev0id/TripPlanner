@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { For, Show } from 'solid-js';
 import { answerQuestion, question } from './confirm';
 import { showModalWhile } from './modal';
@@ -7,7 +8,7 @@ export function ConfirmDialog() {
   let dialog!: HTMLDialogElement;
   showModalWhile(() => dialog, () => question() !== undefined);
   return (
-    <dialog ref={dialog} class="dialog" aria-label="Confirm" onClose={() => answerQuestion()}>
+    <dialog ref={dialog} class="dialog" aria-label={t('Confirm')} onClose={() => answerQuestion()}>
       <Show when={question()}>
         {(open) => (
           <form
@@ -19,7 +20,7 @@ export function ConfirmDialog() {
             <p>{open().message}</p>
             <div class="row end">
               <button type="button" onClick={() => answerQuestion()}>
-                Cancel
+                {t('Cancel')}
               </button>
               <For each={open().actions.slice(0, -1)}>
                 {(action) => (

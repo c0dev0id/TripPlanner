@@ -1,4 +1,5 @@
 import { createSignal } from 'solid-js';
+import { t } from '../i18n/t';
 import { createFolder, createTrip } from '../api';
 import { folderPath } from './folders';
 import { importFolder, pickedPath, planFolderImport, type PlannedTrip } from './folderImport';
@@ -24,7 +25,7 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
     const files = [...(list ?? [])];
     folderInput.value = '';
     const paths = files.map(pickedPath);
-    if (planFolderImport(paths, 'trip-per-folder').length === 0) setImportNote({ text: 'No GPX files in that folder.', errors: [] });
+    if (planFolderImport(paths, 'trip-per-folder').length === 0) setImportNote({ text: t('No GPX files in that folder.'), errors: [] });
     else setPicked({ files, paths });
   };
   /** Imports the picked folder tree into the folder shown as planned. */
@@ -41,17 +42,17 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
   };
   const openDuplicates = () => void props.onLeave().then(showDuplicates);
   return (
-    <div class="row library-actions" role="toolbar" aria-label="Library">
-      <IconButton label="New trip…" disabled={props.opening} onClick={() => setDialog('trip')}>
+    <div class="row library-actions" role="toolbar" aria-label={t('Library')}>
+      <IconButton label={t('New trip…')} disabled={props.opening} onClick={() => setDialog('trip')}>
         <MapPlusIcon />
       </IconButton>
-      <IconButton label="New folder…" onClick={() => setDialog('folder')}>
+      <IconButton label={t('New folder…')} onClick={() => setDialog('folder')}>
         <FolderPlusIcon />
       </IconButton>
-      <IconButton label="Import a folder of GPX files…" disabled={importing()} onClick={() => folderInput.click()}>
+      <IconButton label={t('Import a folder of GPX files…')} disabled={importing()} onClick={() => folderInput.click()}>
         <FolderImportIcon />
       </IconButton>
-      <IconButton label="Duplicates…" onClick={openDuplicates}>
+      <IconButton label={t('Duplicates…')} onClick={openDuplicates}>
         <CopyIcon />
       </IconButton>
       <input
@@ -70,18 +71,18 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
         onImport={(plan) => void importPicked(picked()!.files, plan)}
       />
       <NameDialog
-        title="New trip"
+        title={t('New trip')}
         open={dialog() === 'trip'}
-        placeholder="Name of the trip"
-        submit="Start"
+        placeholder={t('Name of the trip')}
+        submit={t('Start')}
         onClose={() => setDialog(undefined)}
         onSubmit={(name) => void runLibrary(async () => props.onOpen((await createTrip(name, shownFolderId())).id), relistTrips)}
       />
       <NameDialog
-        title="New folder"
+        title={t('New folder')}
         open={dialog() === 'folder'}
-        placeholder="Name of the folder"
-        submit="Create"
+        placeholder={t('Name of the folder')}
+        submit={t('Create')}
         onClose={() => setDialog(undefined)}
         onSubmit={(name) =>
           void runLibrary(async () => {

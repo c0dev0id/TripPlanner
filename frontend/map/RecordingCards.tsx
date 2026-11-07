@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createEffect, createMemo, createSignal, For, Match, Show, Switch } from 'solid-js';
 import uPlot from 'uplot';
 import { deltaSummaryOf, type Delta } from '../recording/delta';
@@ -44,16 +45,16 @@ export function RecordingCards() {
 
 /** What a colouring is called in its list: a difference with what it is against. */
 function coloringLabel(c: Coloring): string {
-  const against = comparison()?.name;
+  const against = comparison()?.name ?? '';
   switch (c) {
     case 'surface':
-      return 'Surface';
+      return t('Surface');
     case 'offset':
-      return `Distance from ${against}`;
+      return t('Distance from {against}', { against });
     case 'speedDifference':
-      return `Speed against ${against}`;
+      return t('Speed against {against}', { against });
     case 'leanDifference':
-      return `Lean against ${against}`;
+      return t('Lean against {against}', { against });
     default:
       return FIGURES[c].label;
   }
@@ -67,15 +68,15 @@ function SummaryCard(props: { opened: Opened }) {
     const s = summaryOf(props.opened.measures);
     const { speed, altitude, lean } = FIGURES;
     return [
-      ['Distance', distanceText(s.distanceM)],
-      ['Time', textOf(s.durationS, durationText)],
-      ['Moving', textOf(s.movingS, durationText)],
-      ['Average speed', textOf(s.averageSpeed, speed.text)],
-      ['Top speed', textOf(s.maxSpeed, speed.text)],
-      ['Climb', textOf(s.ascentM, altitude.text)],
-      ['Descent', textOf(s.descentM, altitude.text)],
-      ['Altitude', textOf(s.altitudeRange, ([low, high]) => `${altitude.text(low)} – ${altitude.text(high)}`)],
-      ['Lean', textOf(s.leanRange, ([left, right]) => `${lean.text(left)} to ${lean.text(right)}`)],
+      [t('Distance'), distanceText(s.distanceM)],
+      [t('Time'), textOf(s.durationS, durationText)],
+      [t('Moving'), textOf(s.movingS, durationText)],
+      [t('Average speed'), textOf(s.averageSpeed, speed.text)],
+      [t('Top speed'), textOf(s.maxSpeed, speed.text)],
+      [t('Climb'), textOf(s.ascentM, altitude.text)],
+      [t('Descent'), textOf(s.descentM, altitude.text)],
+      [t('Altitude'), textOf(s.altitudeRange, ([low, high]) => `${altitude.text(low)} – ${altitude.text(high)}`)],
+      [t('Lean'), textOf(s.leanRange, ([left, right]) => t('{left} to {right}', { left: lean.text(left), right: lean.text(right) }))],
     ];
   });
   return (
@@ -84,14 +85,14 @@ function SummaryCard(props: { opened: Opened }) {
       <summary class="row">
         <span class="swatch" style={{ background: recordingColor(props.opened.recording) }} />
         <h3 class="grow name">{props.opened.recording.name}</h3>
-        <button class="icon" title="Close the figures" aria-label="Close the figures" onClick={() => openRecording(undefined)}>
+        <button class="icon" title={t('Close the figures')} aria-label={t('Close the figures')} onClick={() => openRecording(undefined)}>
           <CloseIcon />
         </button>
       </summary>
       <Figures rows={rows()} />
       <Show when={comparands().length > 0}>
         <label class="row">
-          <span>Compare</span>
+          <span>{t('Compare')}</span>
           <select
             class="grow"
             value={String(comparison()?.comparand ?? '')}
@@ -100,16 +101,16 @@ function SummaryCard(props: { opened: Opened }) {
               setComparand(value === '' ? undefined : value === 'plan' ? 'plan' : Number(value));
             }}
           >
-            <option value="">With nothing</option>
+            <option value="">{t('With nothing')}</option>
             <For each={comparands()}>{(c) => <option value={String(c.comparand)}>{c.label}</option>}</For>
           </select>
         </label>
       </Show>
       <Show when={comparison()}>{(c) => <ComparisonFigures opened={props.opened} comparison={c()} />}</Show>
       <label class="row">
-        <span>Colour</span>
+        <span>{t('Colour')}</span>
         <select class="grow" value={shownColoring() ?? ''} onChange={(e) => setColoring((e.currentTarget.value || undefined) as Coloring | undefined)}>
-          <option value="">The recording's own</option>
+          <option value="">{t("The recording's own")}</option>
           <For each={colorings()}>{(c) => <option value={c}>{coloringLabel(c)}</option>}</For>
         </select>
       </label>
@@ -129,10 +130,10 @@ function ComparisonFigures(props: { opened: Opened; comparison: Comparison }) {
     const s = deltaSummaryOf(props.opened.measures, props.comparison.delta);
     const { time, speed } = DIFFERENCE_FIGURES;
     return [
-      ['Off it', distanceText(s.offM)],
-      ['Farthest off', distanceText(s.furthestM)],
-      ['At the end', textOf(s.timeS, time.text)],
-      ['On average', textOf(s.speed, speed.text)],
+      [t('Off it'), distanceText(s.offM)],
+      [t('Farthest off'), distanceText(s.furthestM)],
+      [t('At the end'), textOf(s.timeS, time.text)],
+      [t('On average'), textOf(s.speed, speed.text)],
     ];
   });
   return <Figures rows={rows()} />;
@@ -160,15 +161,15 @@ function SurfaceLegend(props: { opened: Opened }) {
     if (!Array.isArray(surfaces)) return [];
     const km = kmBySurface(props.opened.measures.distance, surfaces);
     const known = SURFACES.filter((s) => km.has(s.key)).map((s) => ({ ...s, km: km.get(s.key)! }));
-    return km.has(null) ? [...known, { key: 'none', label: 'No road matched', color: NO_VALUE, km: km.get(null)! }] : known;
+    return km.has(null) ? [...known, { key: 'none', label: t('No road matched'), color: NO_VALUE, km: km.get(null)! }] : known;
   });
   return (
     <Switch>
       <Match when={openedSurfaces() === 'matching'}>
-        <p class="muted hint">Matching the track to the roads…</p>
+        <p class="muted hint">{t('Matching the track to the roads…')}</p>
       </Match>
       <Match when={openedSurfaces() instanceof Error}>
-        <p class="error hint">The roads could not be matched: {(openedSurfaces() as Error).message}</p>
+        <p class="error hint">{t('The roads could not be matched: {error}', { error: (openedSurfaces() as Error).message })}</p>
       </Match>
       <Match when={rows().length > 0}>
         <ul class="legend surfaces">
@@ -191,6 +192,9 @@ type ChartKind = 'profile' | 'difference' | Metric;
 
 /** The measures charted as a spread of the distance over their values, in bins of this width. */
 const BIN_WIDTH: Partial<Record<Metric, number>> = { speed: 10, slope: 2, lean: 5 };
+
+/** What the spreads' tabs say. */
+const SPREADS: Record<Metric, string> = { speed: 'Speeds', altitude: 'Altitudes', slope: 'Slopes', lean: 'Lean angles' };
 
 /** A series charted along the track. */
 interface AlongLine {
@@ -236,11 +240,11 @@ function ChartCard(props: { opened: Opened }) {
     const parts = [distanceText(props.opened.measures.distance[i]!), ...lines().map((line) => textOf(line.values[i] ?? undefined, line.figure.text))];
     return parts.filter((p) => p !== undefined).join(' · ');
   };
-  const tabLabel = (k: ChartKind) => (k === 'profile' ? 'Profile' : k === 'difference' ? 'Difference' : `${FIGURES[k].label}s`);
+  const tabLabel = (k: ChartKind) => t(k === 'profile' ? 'Profile' : k === 'difference' ? 'Difference' : SPREADS[k]);
   return (
     <Show when={kind()}>
       {(k) => (
-        <section class="map-card chart-card" aria-label="Charts of the recording">
+        <section class="map-card chart-card" aria-label={t('Charts of the recording')}>
           <div class="row">
             <div class="row tabs" role="tablist">
               <For each={kinds()}>

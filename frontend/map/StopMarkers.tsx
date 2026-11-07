@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, onCleanup } from 'solid-js';
 import type { Stop } from '../model/trip';
@@ -36,16 +37,16 @@ function StopMarker(props: { map: MapLibreMap; stop: Stop }) {
   });
   const stopMenu = onMarkerMenu(handle, () => {
     const day = selectedDay()!;
-    const items: MenuItem[] = [{ label: 'Edit stop…', run: () => setEditTarget({ kind: 'stop', id }) }];
+    const items: MenuItem[] = [{ label: t('Edit stop…'), run: () => setEditTarget({ kind: 'stop', id }) }];
     const pointId = stop().pointId;
     if (pointId !== null) {
       const at = pointOfDay(day, pointId);
       if (at && at.route.points[0] !== at.point) items.push(straightLegItem(at.route.id, at.point));
-      items.push({ label: 'Disconnect from the route', run: () => disconnectStop(id) });
+      items.push({ label: t('Disconnect from the route'), run: () => disconnectStop(id) });
     } else if (canConnect(id)) {
-      items.push({ label: 'Connect to the route', run: () => connectStop(id) });
+      items.push({ label: t('Connect to the route'), run: () => connectStop(id) });
     }
-    items.push({ label: 'Remove stop', run: () => removeStop(id) });
+    items.push({ label: t('Remove stop'), run: () => removeStop(id) });
     return items;
   });
   onCleanup(() => {

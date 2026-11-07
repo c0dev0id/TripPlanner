@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createFolder, createTrip, errorMessage, fetchTrip, listFolders, saveTrip } from '../api';
 import { readGpxFile, type DayParts } from '../gpx/import';
 import { asName, newId, type TripKind } from '../model/trip';
@@ -113,7 +114,7 @@ function tripOfFolder(segments: string[], files: number[], stem: (i: number) => 
     days.push(dayOf(next ?? null, [i]));
     if (next) next = dayAfter(next);
   }
-  return { kind: 'trip', folders: segments.slice(0, -1), name: withoutDate(folderName) || folderName || 'Imported trip', days };
+  return { kind: 'trip', folders: segments.slice(0, -1), name: withoutDate(folderName) || folderName || t('Imported trip'), days };
 }
 
 /** A GPX file as a trip of one day, named after the file without its date, dated by it; in the folders it is in. */
@@ -123,7 +124,7 @@ function tripOfFile(folders: string[], stem: string, file: number): PlannedTrip 
 
 /** A folder of GPX files as a collection named after it, inside the folders above it, with a section per file named after it. */
 function collectionOfFolder(segments: string[], files: number[], stem: (i: number) => string): PlannedTrip {
-  return { kind: 'collection', folders: segments.slice(0, -1), name: segments.at(-1) || 'Imported collection', days: files.map((i) => ({ date: null, name: stem(i), files: [i] })) };
+  return { kind: 'collection', folders: segments.slice(0, -1), name: segments.at(-1) || t('Imported collection'), days: files.map((i) => ({ date: null, name: stem(i), files: [i] })) };
 }
 
 /** What an import did: how many trips or collections it made, and what it could not read or save. */
@@ -149,7 +150,7 @@ export async function importFolder(files: readonly File[], plan: readonly Planne
   };
   const result: ImportResult = { trips: 0, errors: [] };
   for (const [n, planned] of plan.entries()) {
-    onProgress(`Importing ${n + 1} of ${plan.length}: ${planned.name}`);
+    onProgress(t('Importing {i} of {n}: {name}', { i: n + 1, n: plan.length, name: planned.name }));
     const days: { day: PlannedDay; parts: DayParts[] }[] = [];
     for (const day of planned.days) {
       const parts: DayParts[] = [];

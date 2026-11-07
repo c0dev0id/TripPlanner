@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createResource, createSignal, For, Show } from 'solid-js';
 import { DEFAULT_EXPORT, deleteExportPreset, gpxUrl, listExportPresets, saveExportPreset, type ExportOptions } from '../api';
 import { exportOpen, setExportOpen } from '../state/drawing';
@@ -38,13 +39,13 @@ export function ExportDialog() {
       mutate((list) => list?.filter((p) => p.id !== id));
     });
   return (
-    <dialog ref={dialog} class="dialog export-dialog" aria-label="Export GPX" onClose={() => setExportOpen(false)}>
+    <dialog ref={dialog} class="dialog export-dialog" aria-label={t('Export GPX')} onClose={() => setExportOpen(false)}>
       <Show when={exportOpen() && openTrip()}>
         <div class="dialog-body">
           <fieldset>
-            <legend>Scope</legend>
+            <legend>{t('Scope')}</legend>
             <label>
-              <input type="radio" name="scope" checked={scope() === 'trip'} onChange={() => setScope('trip')} /> The whole trip
+              <input type="radio" name="scope" checked={scope() === 'trip'} onChange={() => setScope('trip')} /> {t('The whole trip')}
             </label>
             <Show when={day()}>
               {(d) => (
@@ -55,54 +56,54 @@ export function ExportDialog() {
             </Show>
           </fieldset>
           <fieldset disabled={scope() === 'day'}>
-            <legend>Files</legend>
+            <legend>{t('Files')}</legend>
             <label>
-              <input type="radio" name="per" checked={options().per === 'trip'} onChange={() => set('per', 'trip')} /> One file
+              <input type="radio" name="per" checked={options().per === 'trip'} onChange={() => set('per', 'trip')} /> {t('One file')}
             </label>
             <label>
-              <input type="radio" name="per" checked={options().per === 'day'} onChange={() => set('per', 'day')} /> One file per day, zipped
+              <input type="radio" name="per" checked={options().per === 'day'} onChange={() => set('per', 'day')} /> {t('One file per day, zipped')}
             </label>
           </fieldset>
           <fieldset>
-            <legend>Routes as</legend>
+            <legend>{t('Routes as')}</legend>
             <label>
-              <input type="radio" name="form" checked={options().form === 'tracks'} onChange={() => set('form', 'tracks')} /> Tracks, the line as planned
+              <input type="radio" name="form" checked={options().form === 'tracks'} onChange={() => set('form', 'tracks')} /> {t('Tracks, the line as planned')}
             </label>
             <label>
-              <input type="radio" name="form" checked={options().form === 'routes'} onChange={() => set('form', 'routes')} /> Routes of the points, for the device to route
+              <input type="radio" name="form" checked={options().form === 'routes'} onChange={() => set('form', 'routes')} /> {t('Routes of the points, for the device to route')}
             </label>
           </fieldset>
           <label class="toggle">
-            <input type="checkbox" checked={options().optional} onChange={(e) => set('optional', e.currentTarget.checked)} /> Include optional routes and stops
+            <input type="checkbox" checked={options().optional} onChange={(e) => set('optional', e.currentTarget.checked)} /> {t('Include optional routes and stops')}
           </label>
           <label class="field reach">
-            Free stops within <input type="number" min={0} max={100000} step={100} value={options().reachM} onChange={(e) => set('reachM', Math.max(0, Math.min(100000, Number(e.currentTarget.value) || 0)))} /> m of a route
+            {t('Free stops within')} <input type="number" min={0} max={100000} step={100} value={options().reachM} onChange={(e) => set('reachM', Math.max(0, Math.min(100000, Number(e.currentTarget.value) || 0)))} /> {t('m of a route')}
           </label>
           <div class="row">
             <label class="field grow">
-              Preset
+              {t('Preset')}
               <select class="grow" value={presetId() ?? ''} onChange={(e) => setOptions(presets()?.find((p) => p.id === Number(e.currentTarget.value))?.options ?? options())}>
-                <option value="">none</option>
+                <option value="">{t('none')}</option>
                 <For each={presets() ?? []}>{(preset) => <option value={preset.id}>{preset.name}</option>}</For>
               </select>
             </label>
             <button type="button" onClick={() => setNaming(true)} disabled={naming()}>
-              Save as…
+              {t('Save as…')}
             </button>
             <button type="button" onClick={() => void removePreset(presetId()!)} disabled={presetId() === undefined}>
-              Delete
+              {t('Delete')}
             </button>
           </div>
           <Show when={naming()}>
-            <NameForm placeholder="Name of the preset" button="Save" onSubmit={savePreset} onCancel={() => setNaming(false)} />
+            <NameForm placeholder={t('Name of the preset')} button={t('Save')} onSubmit={savePreset} onCancel={() => setNaming(false)} />
           </Show>
           <Show when={error()}>{(message) => <p class="error">{message()}</p>}</Show>
           <div class="row end">
             <button type="button" onClick={() => setExportOpen(false)}>
-              Close
+              {t('Close')}
             </button>
             <a class="button primary" href={url()} download="">
-              Download
+              {t('Download')}
             </a>
           </div>
         </div>

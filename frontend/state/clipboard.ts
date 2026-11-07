@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createSignal } from 'solid-js';
 import { parseGpx } from '../gpx/gpx';
 import { gpxToDayParts } from '../gpx/import';
@@ -39,7 +40,7 @@ export function copyRecording(name: string, gpx: string): void {
 const pasteAsRecording = (dayId: string, name: string, gpx: string) =>
   void recordingAction(dayId, async () => {
     await addRecording(dayId, gpx, { name });
-    return `“${name}” added as a recording.`;
+    return t('“{name}” added as a recording.', { name });
   });
 
 /** A recording's track as a route of the day under the recording's name, with every point; its waypoints are left aside. */
@@ -51,11 +52,11 @@ function recordingAsRoute(dayId: string, name: string, gpx: string): CopiedRoute
 
 /** What a paste menu item says it pastes: Paste route “Loop”, Paste 3 routes, Paste stop “Café”. */
 function pasteLabel(copied: Clip): string {
-  if ('stop' in copied) return copied.stop.name ? `Paste stop “${copied.stop.name}”` : 'Paste stop';
-  if ('recording' in copied) return `Paste recording “${copied.recording.name}”`;
-  if (copied.routes.length > 1) return `Paste ${copied.routes.length} routes`;
+  if ('stop' in copied) return copied.stop.name ? t('Paste stop “{name}”', { name: copied.stop.name }) : t('Paste stop');
+  if ('recording' in copied) return t('Paste recording “{name}”', { name: copied.recording.name });
+  if (copied.routes.length > 1) return t('Paste {n} routes', { n: copied.routes.length });
   const name = copied.routes[0]!.route.name;
-  return name ? `Paste route “${name}”` : 'Paste route';
+  return name ? t('Paste route “{name}”', { name }) : t('Paste route');
 }
 
 /**
@@ -75,14 +76,14 @@ export function pasteItem(dayId: string): MenuItem[] {
     const { name, gpx } = copied.recording;
     return [
       { label: pasteLabel(copied), run: shown(() => pasteAsRecording(dayId, name, gpx)) },
-      { label: `Paste “${name}” as a route`, run: shown(() => pasteRoutes(dayId, recordingAsRoute(dayId, name, gpx))) },
+      { label: t('Paste “{name}” as a route', { name }), run: shown(() => pasteRoutes(dayId, recordingAsRoute(dayId, name, gpx))) },
     ];
   }
   const [only, ...more] = copied.routes;
   const track = more.length === 0 && only?.route.kind === 'track' ? only.route : undefined;
   return [
     { label: pasteLabel(copied), run: shown(() => pasteRoutes(dayId, copied.routes)) },
-    ...(track ? [{ label: `Paste “${track.name || 'track'}” as a recording`, run: shown(() => pasteAsRecording(dayId, track.name || 'Track', trackGpx(track.name, decodeCached(track.line)))) }] : []),
+    ...(track ? [{ label: t('Paste “{name}” as a recording', { name: track.name || t('track') }), run: shown(() => pasteAsRecording(dayId, track.name || t('Track'), trackGpx(track.name, decodeCached(track.line)))) }] : []),
   ];
 }
 

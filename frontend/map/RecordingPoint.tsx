@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { Popup, type GeoJSONSource, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, onCleanup } from 'solid-js';
 import { render } from 'solid-js/web';
@@ -18,22 +19,22 @@ function PointDetails() {
     const i = pickedIndex();
     if (!o || i === undefined) return [];
     const m = o.measures;
-    const rows: [string, string][] = [['Along', distanceText(m.distance[i]!)]];
+    const rows: [string, string][] = [[t('Along'), distanceText(m.distance[i]!)]];
     const time = m.time?.[i];
-    if (time !== null && time !== undefined) rows.push(['Time', clockText(time)]);
+    if (time !== null && time !== undefined) rows.push([t('Time'), clockText(time)]);
     for (const metric of METRICS) {
       const value = m[metric]?.[i];
       if (value !== null && value !== undefined) rows.push([FIGURES[metric].label, FIGURES[metric].text(value)]);
     }
     const surfaces = openedSurfaces();
-    if (Array.isArray(surfaces)) rows.push(['Surface', SURFACES.find((s) => s.key === surfaces[i])?.label ?? 'No road matched']);
+    if (Array.isArray(surfaces)) rows.push([t('Surface'), SURFACES.find((s) => s.key === surfaces[i])?.label ?? t('No road matched')]);
     for (const [name, values] of Object.entries(o.track.series)) {
       const value = values[i];
       if (!MEASURED.has(name) && value !== null && value !== undefined) rows.push([name, String(Math.round(value * 100) / 100)]);
     }
     const c = comparison();
     if (c) {
-      rows.push(['Against', c.name]);
+      rows.push([t('Against'), c.name]);
       for (const key of ['offset', 'time', 'speed', 'lean'] as const) {
         const value = c.delta[key]?.[i];
         if (value !== null && value !== undefined && Number.isFinite(value)) rows.push([DIFFERENCE_FIGURES[key].label, DIFFERENCE_FIGURES[key].text(value)]);

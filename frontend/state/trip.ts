@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { batch, createMemo, createRoot, createSignal } from 'solid-js';
 import { newId, withChanges, type Day, type LngLat, type Route, type RoutedLeg, type RoutedRoute, type Stop, type Trip } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
@@ -165,17 +166,17 @@ function editDay(change: (trip: Trip, dayId: string) => Trip, label: string): vo
 /** Adds a route to the selected day and starts editing it. */
 export function addRoute(): void {
   const id = newId();
-  editDay((trip, dayId) => dayEdit.addRoute(trip, dayId, id), 'Add route');
+  editDay((trip, dayId) => dayEdit.addRoute(trip, dayId, id), t('Add route'));
   if (routeById(id)) setEditingRouteId(id);
 }
 
 /** Adds routes and stops read from a file to the selected day, as one step. */
 export function addParts(parts: { routes: Route[]; stops: Stop[] }): void {
-  editDay((trip, dayId) => dayEdit.addParts(trip, dayId, parts), 'Import GPX');
+  editDay((trip, dayId) => dayEdit.addParts(trip, dayId, parts), t('Import GPX'));
 }
 
 export function removeRoute(routeId: string): void {
-  editDay((trip, dayId) => dayEdit.removeRoute(trip, dayId, routeId), 'Remove route');
+  editDay((trip, dayId) => dayEdit.removeRoute(trip, dayId, routeId), t('Remove route'));
   if (editingRouteId() === routeId) setEditingRouteId(undefined);
 }
 
@@ -191,39 +192,39 @@ function changeRoutedRoute(routeId: string, change: (route: RoutedRoute) => Rout
 
 /** Leaves out the track's points that keep its line within `toleranceM`. */
 export function condenseTrack(routeId: string, toleranceM: number): void {
-  changeRoute(routeId, (r) => (r.kind === 'track' ? routeEdit.condenseTrack(r, toleranceM) : r), 'Condense points');
+  changeRoute(routeId, (r) => (r.kind === 'track' ? routeEdit.condenseTrack(r, toleranceM) : r), t('Condense points'));
 }
 
 /** Makes a route of the track: its points thinned at `toleranceM`, the legs between them routed along the roads. */
 export function convertTrackToRoute(routeId: string, toleranceM: number): void {
-  changeRoute(routeId, (r) => (r.kind === 'track' ? routeEdit.trackToRoute(r, toleranceM, newId) : r), 'Convert to route');
+  changeRoute(routeId, (r) => (r.kind === 'track' ? routeEdit.trackToRoute(r, toleranceM, newId) : r), t('Convert to route'));
 }
 
 /** Changes what a route says about itself; a new profile or motorway dial routes its legs again. */
 export function updateRoute(routeId: string, settings: Partial<routeEdit.RouteSettings>): void {
-  changeRoute(routeId, (r) => routeEdit.changeSettings(r, settings), 'Edit route');
+  changeRoute(routeId, (r) => routeEdit.changeSettings(r, settings), t('Edit route'));
 }
 
 export function appendPoint(routeId: string, lngLat: LngLat): void {
-  changeRoutedRoute(routeId, (r) => routeEdit.appendPoint(r, { id: newId(), lngLat: roundLngLat(lngLat) }), 'Add point');
+  changeRoutedRoute(routeId, (r) => routeEdit.appendPoint(r, { id: newId(), lngLat: roundLngLat(lngLat) }), t('Add point'));
 }
 
 /** Inserts a point of a route before the one at `index`. */
 export function insertPoint(routeId: string, index: number, lngLat: LngLat): void {
-  changeRoutedRoute(routeId, (r) => routeEdit.insertPoint(r, index, { id: newId(), lngLat: roundLngLat(lngLat) }), 'Insert point');
+  changeRoutedRoute(routeId, (r) => routeEdit.insertPoint(r, index, { id: newId(), lngLat: roundLngLat(lngLat) }), t('Insert point'));
 }
 
 export function movePoint(routeId: string, pointId: string, lngLat: LngLat): void {
-  changeRoutedRoute(routeId, (r) => routeEdit.movePoint(r, pointId, roundLngLat(lngLat)), 'Move point');
+  changeRoutedRoute(routeId, (r) => routeEdit.movePoint(r, pointId, roundLngLat(lngLat)), t('Move point'));
 }
 
 export function removePoint(routeId: string, pointId: string): void {
-  changeRoutedRoute(routeId, (r) => routeEdit.removePoint(r, pointId), 'Remove point');
+  changeRoutedRoute(routeId, (r) => routeEdit.removePoint(r, pointId), t('Remove point'));
 }
 
 /** Makes the leg that leads to the point straight, or routed again. */
 export function setStraight(routeId: string, pointId: string, straight: boolean): void {
-  changeRoutedRoute(routeId, (r) => routeEdit.setStraight(r, pointId, straight), straight ? 'Straight leg' : 'Routed leg');
+  changeRoutedRoute(routeId, (r) => routeEdit.setStraight(r, pointId, straight), t(straight ? 'Straight leg' : 'Routed leg'));
 }
 
 /** Stores a routed leg; routing results are no undo steps. */
@@ -238,17 +239,17 @@ export function clearLegs(routeId: string): void {
 
 /** Makes a stop of a route point of the selected day. */
 export function convertPoint(pointId: string): void {
-  editDay((trip, dayId) => dayEdit.convertPoint(trip, dayId, pointId, newId()), 'Add stop');
+  editDay((trip, dayId) => dayEdit.convertPoint(trip, dayId, pointId, newId()), t('Add stop'));
 }
 
 /** Inserts a point of a route before the one at `index` and makes a stop of it, as one step. */
 export function insertStop(routeId: string, index: number, lngLat: LngLat): void {
-  editDay((trip, dayId) => dayEdit.insertStop(trip, dayId, routeId, index, roundLngLat(lngLat), newId(), newId()), 'Add stop');
+  editDay((trip, dayId) => dayEdit.insertStop(trip, dayId, routeId, index, roundLngLat(lngLat), newId(), newId()), t('Add stop'));
 }
 
 /** Adds a free stop to the selected day. */
 export function addFreeStop(lngLat: LngLat): void {
-  editDay((trip, dayId) => dayEdit.addFreeStop(trip, dayId, roundLngLat(lngLat), newId()), 'Add stop');
+  editDay((trip, dayId) => dayEdit.addFreeStop(trip, dayId, roundLngLat(lngLat), newId()), t('Add stop'));
 }
 
 /** Where the routes of the selected day pass closest to a free stop of it, within reach; none for a stop that stands alone or is bound. */
@@ -263,67 +264,67 @@ export function canConnect(stopId: string): boolean {
 /** Binds a free stop of the selected day to its routes where they pass closest. */
 export function connectStop(stopId: string): void {
   const near = nearOf(stopId);
-  if (near) editDay((trip, dayId) => dayEdit.connectStop(trip, dayId, stopId, near.routeId, near.legIndex + 1, newId()), 'Connect stop');
+  if (near) editDay((trip, dayId) => dayEdit.connectStop(trip, dayId, stopId, near.routeId, near.legIndex + 1, newId()), t('Connect stop'));
 }
 
 export function disconnectStop(stopId: string): void {
-  editDay((trip, dayId) => dayEdit.disconnectStop(trip, dayId, stopId), 'Disconnect stop');
+  editDay((trip, dayId) => dayEdit.disconnectStop(trip, dayId, stopId), t('Disconnect stop'));
 }
 
 export function moveStop(stopId: string, lngLat: LngLat): void {
-  editDay((trip, dayId) => dayEdit.moveStop(trip, dayId, stopId, roundLngLat(lngLat)), 'Move stop');
+  editDay((trip, dayId) => dayEdit.moveStop(trip, dayId, stopId, roundLngLat(lngLat)), t('Move stop'));
 }
 
 export function removeStop(stopId: string): void {
-  editDay((trip, dayId) => dayEdit.removeStop(trip, dayId, stopId), 'Remove stop');
+  editDay((trip, dayId) => dayEdit.removeStop(trip, dayId, stopId), t('Remove stop'));
 }
 
 /** Changes what a stop of the selected day says about itself. */
-export function updateStop(stopId: string, change: Partial<Omit<Stop, 'id' | 'pointId'>>, label = 'Edit stop'): void {
+export function updateStop(stopId: string, change: Partial<Omit<Stop, 'id' | 'pointId'>>, label = t('Edit stop')): void {
   editDay((trip, dayId) => dayEdit.updateStop(trip, dayId, stopId, change), label);
 }
 
 export function addDay(): void {
   const id = newId();
-  edit((trip) => dayEdit.addDay(trip, id), 'Add day');
+  edit((trip) => dayEdit.addDay(trip, id), t('Add day'));
   selectDay(id);
 }
 
 /** Moves the day to place `to` among the days. */
 export function moveDay(dayId: string, to: number): void {
-  edit((trip) => dayEdit.moveDay(trip, dayId, to), 'Move day');
+  edit((trip) => dayEdit.moveDay(trip, dayId, to), t('Move day'));
 }
 
 /** Copies the day right after itself and selects the copy. */
 export function duplicateDay(dayId: string): void {
   const id = newId();
-  edit((trip) => dayEdit.duplicateDay(trip, dayId, id, newId), 'Duplicate day');
+  edit((trip) => dayEdit.duplicateDay(trip, dayId, id, newId), t('Duplicate day'));
   if (openTrip()?.days.some((d) => d.id === id)) selectDay(id);
 }
 
 /** Moves the route to place `to` among the routes of its day. */
 export function moveRoute(routeId: string, to: number): void {
-  edit((trip) => dayEdit.moveRoute(trip, routeId, to), 'Move route');
+  edit((trip) => dayEdit.moveRoute(trip, routeId, to), t('Move route'));
 }
 
 export function duplicateRoute(routeId: string): void {
-  edit((trip) => dayEdit.duplicateRoute(trip, routeId, newId), 'Duplicate route');
+  edit((trip) => dayEdit.duplicateRoute(trip, routeId, newId), t('Duplicate route'));
 }
 
 /** Moves the route and the stops bound to it to another day. */
 export function moveRouteToDay(routeId: string, dayId: string): void {
-  edit((trip) => dayEdit.moveRouteToDay(trip, routeId, dayId), 'Move route');
+  edit((trip) => dayEdit.moveRouteToDay(trip, routeId, dayId), t('Move route'));
   if (editingRouteId() === routeId) setEditingRouteId(undefined);
 }
 
 /** Adds copied routes, with their bound stops, at the end of a day, as one step to undo. */
 export function pasteRoutes(dayId: string, copied: readonly dayEdit.CopiedRoute[]): void {
-  edit((trip) => copied.reduce((t, c) => dayEdit.pasteRoute(t, dayId, c, newId), trip), copied.length > 1 ? 'Paste routes' : 'Paste route');
+  edit((trip) => copied.reduce((t, c) => dayEdit.pasteRoute(t, dayId, c, newId), trip), t(copied.length > 1 ? 'Paste routes' : 'Paste route'));
 }
 
 /** Adds a copied stop to a day, free where it stands. */
 export function pasteStop(dayId: string, stop: Stop): void {
-  edit((trip) => dayEdit.pasteStop(trip, dayId, stop, newId()), 'Paste stop');
+  edit((trip) => dayEdit.pasteStop(trip, dayId, stop, newId()), t('Paste stop'));
 }
 
 /** Removes a day; the day before it, or the first, is selected instead. */
@@ -331,16 +332,16 @@ export function removeDay(dayId: string): void {
   const days = openTrip()?.days ?? [];
   const index = days.findIndex((d) => d.id === dayId);
   if (index < 0) return;
-  edit((trip) => dayEdit.removeDay(trip, dayId), 'Remove day');
+  edit((trip) => dayEdit.removeDay(trip, dayId), t('Remove day'));
   if (selectedDayId() === dayId) selectDay((days[index - 1] ?? days[index + 1])?.id);
 }
 
 /** Changes what a day says about itself: its name, date and notes. */
 export function updateDay(dayId: string, change: Pick<Day, 'name' | 'date' | 'notes'>): void {
-  edit((trip) => dayEdit.updateDay(trip, dayId, (day) => withChanges(day, change)), 'Edit day');
+  edit((trip) => dayEdit.updateDay(trip, dayId, (day) => withChanges(day, change)), t('Edit day'));
 }
 
 /** Changes what the trip says about itself: its name, description, and whether it has been ridden. */
 export function updateTrip(change: Pick<Trip, 'name' | 'description' | 'state'>): void {
-  edit((trip) => withChanges(trip, change), 'Edit trip');
+  edit((trip) => withChanges(trip, change), t('Edit trip'));
 }

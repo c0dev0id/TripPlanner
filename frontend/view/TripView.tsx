@@ -1,3 +1,4 @@
+import { counted, t, t as translate } from '../i18n/t';
 import { createEffect, createMemo, createResource, For, Match, Show, Switch } from 'solid-js';
 import { errorMessage, fetchTripAt, listEntriesAt } from '../api';
 import { entriesOn, type Entry, type EntryTarget } from '../model/journal';
@@ -29,7 +30,7 @@ export function TripView(props: { api: string }) {
   });
   // Reading a resource that failed throws; its error is shown instead.
   return (
-    <Switch fallback={<p class="notice">Loading…</p>}>
+    <Switch fallback={<p class="notice">{t('Loading…')}</p>}>
       <Match when={page.error}>{(error) => <p class="notice">{errorMessage(error())}</p>}</Match>
       <Match when={page()}>
         {(p) => {
@@ -54,7 +55,7 @@ export function TripView(props: { api: string }) {
 function Header(props: { trip: Trip }) {
   const dates = createMemo(() => props.trip.days.flatMap((d) => (d.date ? [d.date] : [])).sort());
   const distance = () => routesDistance(props.trip.days.flatMap((d) => d.routes));
-  const days = () => `${props.trip.days.length} ${props.trip.days.length === 1 ? 'day' : 'days'}`;
+  const days = () => counted(props.trip.days.length, 'day');
   const span = () => {
     const [first, last] = [dates()[0], dates().at(-1)];
     return !first ? '' : first === last ? dateText(first) : `${dateText(first)} – ${dateText(last!)}`;
@@ -64,10 +65,10 @@ function Header(props: { trip: Trip }) {
       <div class="row">
         <h1>{props.trip.name}</h1>
         <button class="print" onClick={() => window.print()}>
-          Print
+          {t('Print')}
         </button>
       </div>
-      <p class="muted">{[days(), distance() > 0 && distanceText(distance()), span(), props.trip.state === 'done' && 'ridden'].filter(Boolean).join(' · ')}</p>
+      <p class="muted">{[days(), distance() > 0 && distanceText(distance()), span(), props.trip.state === 'done' && t('ridden')].filter(Boolean).join(' · ')}</p>
       <Show when={props.trip.description}>
         <p class="text">{props.trip.description}</p>
       </Show>
@@ -117,7 +118,7 @@ function RouteItem(props: { route: Route; day: Day; entries: Entry[]; api: strin
   return (
     <li>
       <span>{routeLabel(props.route, props.day)}</span>
-      <span class="muted"> · {[routeKindLabel(props.route), distance() > 0 && distanceText(distance()), props.route.optional && 'optional'].filter(Boolean).join(' · ')}</span>
+      <span class="muted"> · {[routeKindLabel(props.route), distance() > 0 && distanceText(distance()), props.route.optional && t('optional')].filter(Boolean).join(' · ')}</span>
       <EntryList entries={props.entries} api={props.api} />
     </li>
   );
@@ -130,9 +131,9 @@ function StopItem(props: { stop: Stop; distanceM: number | undefined; time: Entr
     const t = props.time;
     if (!t) return '';
     const off = offTime(t);
-    return off ? `${timesText(t)} (${off.text}, arrives ${timeText(off.rideMin)})` : timesText(t);
+    return off ? `${timesText(t)} (${translate('{off}, arrives {time}', { off: off.text, time: timeText(off.rideMin) })})` : timesText(t);
   };
-  const detail = () => [times(), props.distanceM !== undefined && distanceText(props.distanceM), symbolLabel(stop().symbol), stop().optional && 'optional'].filter(Boolean).join(' · ');
+  const detail = () => [times(), props.distanceM !== undefined && distanceText(props.distanceM), symbolLabel(stop().symbol), stop().optional && t('optional')].filter(Boolean).join(' · ');
   return (
     <li class="stop-item">
       <StopShape symbol={stop().symbol} color={stop().pointId === null ? '#1971c2' : '#d9480f'} height={24} />
@@ -146,7 +147,7 @@ function StopItem(props: { stop: Stop; distanceM: number | undefined; time: Entr
           <span>{stop().contact}</span>
         </Show>
         <Show when={stop().bookingReference}>
-          <span>Booking {stop().bookingReference}</span>
+          <span>{t('Booking {ref}', { ref: stop().bookingReference })}</span>
         </Show>
         <Show when={stop().notes}>
           <span class="text">{stop().notes}</span>

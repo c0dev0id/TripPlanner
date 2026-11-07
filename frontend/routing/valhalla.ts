@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { takesMotorwayDial, type Highways, type LngLat, type RoutedLeg } from '../model/trip';
 import type { Costing, RoadLeg } from './legs';
 
@@ -32,7 +33,7 @@ async function post(url: string, body: unknown, timeoutMs: number, fetchFn: type
   try {
     return await response.json();
   } catch {
-    throw new Error(`The routing server answered with status ${response.status}.`);
+    throw new Error(t('The routing server answered with status {status}.', { status: response.status }));
   }
 }
 
@@ -56,7 +57,7 @@ export function routeRequest(leg: LegRequest) {
 
 /** The trip's polyline6 shape, length and riding time, or throws with the server's message. */
 export function parseRouteResponse(data: unknown): RoutedLeg {
-  if (typeof data !== 'object' || data === null) throw new Error('Unexpected answer from the routing server.');
+  if (typeof data !== 'object' || data === null) throw new Error(t('Unexpected answer from the routing server.'));
   const response = data as { error?: unknown; error_code?: unknown; trip?: { summary?: { length?: unknown; time?: unknown }; legs?: { shape?: unknown }[] } };
   const shape = response.trip?.legs?.[0]?.shape;
   if (typeof shape === 'string') {
@@ -67,7 +68,7 @@ export function parseRouteResponse(data: unknown): RoutedLeg {
       durationS: Math.round(typeof summary?.time === 'number' ? summary.time : 0),
     };
   }
-  throw new Error(typeof response.error === 'string' ? response.error : `Routing failed (${String(response.error_code ?? 'no route')}).`);
+  throw new Error(typeof response.error === 'string' ? response.error : t('Routing failed ({code}).', { code: String(response.error_code ?? t('no route')) }));
 }
 
 /** Routes one leg on the page's next turn; rejects on network errors, timeouts and routing errors. */
@@ -88,7 +89,7 @@ async function matchSurfaces(points: readonly LngLat[], fetchFn: typeof fetch, t
   };
   const data = (await post(MATCHING_URL, request, ROUTING_TIMEOUT_MS * 2, fetchFn, turn)) as { error?: unknown; edges?: { surface?: string }[]; matched_points?: { edge_index?: number; type?: string }[] };
   const matched = data.matched_points;
-  if (!matched) throw new Error(typeof data.error === 'string' ? data.error : 'No road matched.');
+  if (!matched) throw new Error(typeof data.error === 'string' ? data.error : t('No road matched.'));
   return points.map((_, i) => {
     const point = matched[i];
     return !point || point.type === 'unmatched' || point.edge_index === undefined ? null : (data.edges?.[point.edge_index]?.surface ?? null);

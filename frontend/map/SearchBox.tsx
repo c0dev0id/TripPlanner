@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { Marker, type Map as MapLibreMap } from 'maplibre-gl';
 import { createSignal, For, onCleanup, Show } from 'solid-js';
 import { errorMessage } from '../api';
@@ -94,8 +95,8 @@ export function SearchBox(props: { map: MapLibreMap }) {
       <button
         type="button"
         class="search-toggle"
-        title="Search a place or address"
-        aria-label="Search a place or address"
+        title={t('Search a place or address')}
+        aria-label={t('Search a place or address')}
         onClick={() => {
           setOpen(true);
           input.focus();
@@ -115,8 +116,8 @@ export function SearchBox(props: { map: MapLibreMap }) {
           ref={input}
           type="text"
           enterkeyhint="search"
-          placeholder="Search a place or address"
-          aria-label="Search a place or address"
+          placeholder={t('Search a place or address')}
+          aria-label={t('Search a place or address')}
           value={query()}
           onInput={(e) => setQuery(e.currentTarget.value)}
           onKeyDown={(e) => {
@@ -126,11 +127,11 @@ export function SearchBox(props: { map: MapLibreMap }) {
           }}
         />
         <Show when={query() || shown()}>
-          <button type="button" class="icon" title="Clear the search and its pin" aria-label="Clear the search" onClick={clear}>
+          <button type="button" class="icon" title={t('Clear the search and its pin')} aria-label={t('Clear the search')} onClick={clear}>
             <CloseIcon />
           </button>
         </Show>
-        <button type="submit" class="icon" title="Search" aria-label="Search" disabled={busy()}>
+        <button type="submit" class="icon" title={t('Search')} aria-label={t('Search')} disabled={busy()}>
           <SearchIcon />
         </button>
       </form>

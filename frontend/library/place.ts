@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import type { Day, Folder, Trip } from '../model/trip';
 import { folderNames } from './folders';
 
@@ -10,14 +11,14 @@ export interface Place {
 }
 
 /** The top of the library as a place to go back to. */
-export const ALL_TRIPS = 'All trips';
+export const ALL_TRIPS = t('All trips');
 
 /** The names of the places from the top of the library down to this one; none at the top. */
 export function pathOf(place: Place, folders: readonly Folder[]): string[] {
   const names = folderNames(folders, place.folderId);
-  if (place.duplicates) names.push('Duplicates');
+  if (place.duplicates) names.push(t('Duplicates'));
   if (place.trip) names.push(place.trip.name);
-  if (place.trip && place.day) names.push(place.trip.kind === 'collection' ? place.day.day.name || 'Section' : `Day ${place.day.index + 1}`);
+  if (place.trip && place.day) names.push(place.trip.kind === 'collection' ? place.day.day.name || t('Section') : t('Day {n}', { n: place.day.index + 1 }));
   return names;
 }
 

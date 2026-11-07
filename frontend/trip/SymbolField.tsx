@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createMemo, createSignal, For, Show } from 'solid-js';
 import { FREE_COLOR } from '../map/routeOverlay';
 import { GARMIN_GROUPS, garminPictureUrl, hasPicture, ourIcon, OUR_ICONS } from '../symbols/symbols';
@@ -14,7 +15,7 @@ export function SymbolField(props: { initial: string | null }) {
   const matches = (name: string) => name.toLowerCase().includes(query().trim().toLowerCase());
   return (
     <fieldset class="choices symbols">
-      <legend>Symbol</legend>
+      <legend>{t('Symbol')}</legend>
       <input type="hidden" name="symbol" value={chosen() ?? ''} />
       <div class="our-symbols">
         <For each={OUR_ICONS}>
@@ -33,10 +34,10 @@ export function SymbolField(props: { initial: string | null }) {
         </p>
       </Show>
       <button type="button" class="link more-symbols" aria-expanded={open()} onClick={() => setOpen(!open())}>
-        {open() ? 'Fewer symbols' : 'More Garmin symbols…'}
+        {t(open() ? 'Fewer symbols' : 'More Garmin symbols…')}
       </button>
       <Show when={open()}>
-        <input type="search" placeholder="Search Garmin symbols" aria-label="Search Garmin symbols" value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
+        <input type="search" placeholder={t('Search Garmin symbols')} aria-label={t('Search Garmin symbols')} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
         <div class="garmin-symbols">
           <For each={GARMIN_GROUPS}>
             {(g) => {
@@ -61,7 +62,7 @@ export function SymbolField(props: { initial: string | null }) {
             }}
           </For>
           <Show when={!GARMIN_GROUPS.some((g) => g.names.some(matches))}>
-            <p class="muted">No Garmin symbol matches.</p>
+            <p class="muted">{t('No Garmin symbol matches.')}</p>
           </Show>
         </div>
       </Show>

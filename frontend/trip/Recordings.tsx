@@ -1,4 +1,5 @@
 import { createSignal, For, Show } from 'solid-js';
+import { t, t as translate } from '../i18n/t';
 import type { Recording } from '../api';
 import { lineLength } from '../geo/measure';
 import type { Day } from '../model/trip';
@@ -37,7 +38,7 @@ export function addRecordingPicked(dayId: string): void {
       const recording = await addRecording(dayId, await file.text(), { fallback: file.name.replace(/\.gpx$/i, '') });
       const track = loadedTrack(recording);
       if (track) showWhole(track.points);
-      return `${file.name} added as “${recording.name}”.`;
+      return t('{file} added as “{name}”.', { file: file.name, name: recording.name });
     });
   });
 }
@@ -46,7 +47,7 @@ export function addRecordingPicked(dayId: string): void {
 export function RecordingsToggle(props: { dayId: string }) {
   const count = () => recordingsOf(props.dayId).length;
   const shown = () => recordingsShown(props.dayId);
-  const label = () => (shown() ? 'Hide the recordings' : `Show ${counted(count(), 'recording')}`);
+  const label = () => (shown() ? t('Hide the recordings') : t('Show {what}', { what: counted(count(), 'recording') }));
   const toggle = () => {
     if (!shown()) selectDay(props.dayId);
     showRecordings(props.dayId, !shown());
@@ -68,8 +69,8 @@ export function DayRecordings(props: { day: Day }) {
   return (
     <>
       <div class="row heading">
-        <h4 class="grow">Recordings</h4>
-        <IconButton label="Add recording…" onClick={() => addRecordingPicked(props.day.id)}>
+        <h4 class="grow">{t('Recordings')}</h4>
+        <IconButton label={t('Add recording…')} onClick={() => addRecordingPicked(props.day.id)}>
           <PlusIcon />
         </IconButton>
       </div>
@@ -77,7 +78,7 @@ export function DayRecordings(props: { day: Day }) {
         when={recordingsShown(props.day.id)}
         fallback={
           <Show when={recordings().length > 0}>
-            <p class="muted hint">{counted(recordings().length, 'recording')}, hidden: the recording symbol on the day shows them.</p>
+            <p class="muted hint">{t('{what}, hidden: the recording symbol on the day shows them.', { what: counted(recordings().length, 'recording') })}</p>
           </Show>
         }
       >
@@ -87,9 +88,9 @@ export function DayRecordings(props: { day: Day }) {
       </Show>
       <Show when={recordingNote(props.day.id)}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
       <NameDialog
-        title="Rename recording"
+        title={t('Rename recording')}
         open={renamed() !== undefined}
-        placeholder="Name of the recording"
+        placeholder={t('Name of the recording')}
         initial={renamed()?.name}
         onClose={() => setRenamed(undefined)}
         onSubmit={(name) => rename(renamed()!, name)}
@@ -103,23 +104,23 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
   const track = () => trackOf(props.recording);
   const detail = () => {
     const t = track();
-    if (t === undefined) return 'Reading…';
+    if (t === undefined) return translate('Reading…');
     if (t instanceof Error) return t.message;
     return `${distanceText(lineLength(t.points))} · ${counted(t.points.length, 'point')}`;
   };
   const dayId = () => props.recording.dayId;
   const remove = async () => {
-    if (!(await askConfirmation(`Delete the recording “${props.recording.name}”?`, 'Delete'))) return;
+    if (!(await askConfirmation(translate('Delete the recording “{name}”?', { name: props.recording.name }), translate('Delete')))) return;
     await recordingAction(dayId(), () => removeRecording(props.recording));
   };
   const items = (): MenuItem[] => [
-    { label: 'Rename…', run: () => props.onRename(props.recording) },
+    { label: translate('Rename…'), run: () => props.onRename(props.recording) },
     {
-      label: 'Copy',
+      label: translate('Copy'),
       run: () =>
         void recordingAction(dayId(), async () => copyRecording(props.recording.name, await recordingGpx(props.recording))),
     },
-    { label: 'Delete', run: () => void remove() },
+    { label: translate('Delete'), run: () => void remove() },
   ];
   const openIt = () => {
     // Opened first, so that it is shown whole beside its cards.

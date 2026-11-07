@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 /** The trip document as the server stores it and the editor works with it. */
 
 /** A position as longitude and latitude in degrees. */
@@ -7,18 +8,18 @@ export type LngLat = [number, number];
 export type Profile = 'motorcycle' | 'bicycle' | 'pedestrian';
 
 export const PROFILES: readonly { value: Profile; label: string }[] = [
-  { value: 'motorcycle', label: 'Motorcycle' },
-  { value: 'bicycle', label: 'Bicycle' },
-  { value: 'pedestrian', label: 'On foot' },
+  { value: 'motorcycle', label: t('Motorcycle') },
+  { value: 'bicycle', label: t('Bicycle') },
+  { value: 'pedestrian', label: t('On foot') },
 ];
 
 /** How much a road route takes to motorways: a transfer day prefers them, a loop day avoids them. */
 export type Highways = 'avoid' | 'allow' | 'prefer';
 
 export const HIGHWAYS: readonly { value: Highways; label: string }[] = [
-  { value: 'avoid', label: 'Avoid' },
-  { value: 'allow', label: 'Allow' },
-  { value: 'prefer', label: 'Prefer' },
+  { value: 'avoid', label: t('Avoid') },
+  { value: 'allow', label: t('Allow') },
+  { value: 'prefer', label: t('Prefer') },
 ];
 
 /** Whether the motorway dial counts for a profile: the motorcycle costing takes it, the others do not. */

@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { exifOf, jpegName, upright, withExif } from './exif';
 
 /**
@@ -41,11 +42,11 @@ async function decode(file: File, bytes: Uint8Array): Promise<ImageBitmap> {
 async function decodeHeif(bytes: Uint8Array): Promise<ImageBitmap> {
   const libheif = await (await import('libheif-js/libheif-wasm/libheif-bundle.mjs')).default();
   const [image] = new libheif.HeifDecoder().decode(bytes);
-  if (!image) throw new Error('The file holds no image.');
+  if (!image) throw new Error(t('The file holds no image.'));
   const width = image.get_width();
   const height = image.get_height();
   const pixels = await new Promise<Uint8ClampedArray<ArrayBuffer>>((resolve, reject) => {
-    image.display({ data: new Uint8ClampedArray(width * height * 4), width, height }, (shown) => (shown ? resolve(shown.data) : reject(new Error('The HEIC could not be decoded.'))));
+    image.display({ data: new Uint8ClampedArray(width * height * 4), width, height }, (shown) => (shown ? resolve(shown.data) : reject(new Error(t('The HEIC could not be decoded.')))));
   });
   return createImageBitmap(new ImageData(pixels, width, height));
 }

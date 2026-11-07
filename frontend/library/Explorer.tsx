@@ -1,4 +1,5 @@
 import { createMemo, For, Match, Show, Switch } from 'solid-js';
+import { t } from '../i18n/t';
 import { heldOf, libraryFolders, libraryProblem, query, setQuery, showFolder, shownFolderId, showingDuplicates } from '../state/library';
 import { openTrip, selectDay, selectedDay } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
@@ -13,7 +14,7 @@ import { LibraryActions } from './LibraryActions';
 import { ALL_TRIPS, pathOf, upName, type Place } from './place';
 
 /** The explorer's own name, its heading at the top of the library. */
-const EXPLORER = 'Trip Explorer';
+const EXPLORER = t('Trip Explorer');
 
 /** The way one level up: its name and what is there, where a click goes, and for a folder the one an item dropped on it moves into, as the card's `data-drop-folder`. */
 interface Up {
@@ -41,7 +42,7 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
     if (path().length === 0) return undefined;
     const name = upName(path());
     if (p.trip && p.day) return { name, detail: counted(p.trip.days.length, p.trip.kind === 'collection' ? 'section' : 'day'), go: () => selectDay(undefined) };
-    if (p.trip) return { name, detail: p.duplicates ? 'Routes kept more than once' : heldText(heldOf(p.folderId)), go: () => void props.onLeave() };
+    if (p.trip) return { name, detail: p.duplicates ? t('Routes kept more than once') : heldText(heldOf(p.folderId)), go: () => void props.onLeave() };
     if (p.duplicates) return { name, detail: heldText(heldOf(p.folderId)), go: () => showFolder(p.folderId) };
     const parent = folders().find((f) => f.id === p.folderId)?.parentId ?? null;
     return { name, detail: heldText(heldOf(parent)), go: () => showFolder(parent), dropFolder: parent === null ? 'top' : String(parent) };
@@ -56,7 +57,7 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
   return (
     <section class="explorer">
       <LibraryActions onOpen={(id) => openIn(id, shownFolderId())} onLeave={props.onLeave} opening={props.opening} />
-      <input class="search" type="search" placeholder="Search trips and folders" aria-label="Search trips and folders" value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
+      <input class="search" type="search" placeholder={t('Search trips and folders')} aria-label={t('Search trips and folders')} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
       <div class="row explorer-heading">
         <h2 class="path grow" title={path().join(' › ') || EXPLORER}>
           <Show when={path().length > 0} fallback={<span class="here">{EXPLORER}</span>}>
@@ -101,7 +102,7 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
       >
         {(u) => (
           <div class="card up-card" data-drop-folder={u().dropFolder}>
-            <button class="text" title={`Back to ${u().name}`} onClick={() => u().go()}>
+            <button class="text" title={t('Back to {name}', { name: u().name })} onClick={() => u().go()}>
               <BackIcon />
               <span class="lines">
                 <span class="name">{u().name}</span>

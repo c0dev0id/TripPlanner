@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import type { IControl, Map as MapLibreMap } from 'maplibre-gl';
 import { LayersIcon } from '../ui/icons';
 import { setMenu } from '../ui/menu';
@@ -19,7 +20,7 @@ export class BaseMapControl implements IControl {
     };
     this.root = (
       <div class="maplibregl-ctrl maplibregl-ctrl-group base-maps">
-        <button type="button" title="Base map" aria-label="Base map" onClick={open}>
+        <button type="button" title={t('Base map')} aria-label={t('Base map')} onClick={open}>
           <LayersIcon />
         </button>
       </div>

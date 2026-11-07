@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { withChanges, type Day, type LngLat, type Profile, type Route, type RoutedRoute, type RoutePoint, type Stop, type Trip } from '../model/trip';
 import { PLAIN_SYMBOL } from '../symbols/symbols';
 import * as routeEdit from './routeEdit';
@@ -104,7 +105,7 @@ export function convertPoint(trip: Trip, dayId: string, pointId: string, id: str
     if (day.stops.some((s) => s.pointId === pointId)) return day;
     const point = pointOfDay(day, pointId)?.point;
     if (!point) return day;
-    return { ...day, stops: [...day.stops, newStop(id, `Stop ${day.stops.length + 1}`, point.lngLat, pointId)] };
+    return { ...day, stops: [...day.stops, newStop(id, t('Stop {n}', { n: day.stops.length + 1 }), point.lngLat, pointId)] };
   });
 }
 
@@ -116,7 +117,7 @@ export function insertStop(trip: Trip, dayId: string, routeId: string, index: nu
 
 /** Adds a free stop at a position. */
 export function addFreeStop(trip: Trip, dayId: string, lngLat: LngLat, id: string): Trip {
-  return updateDay(trip, dayId, (day) => ({ ...day, stops: [...day.stops, newStop(id, `Stop ${day.stops.length + 1}`, lngLat, null)] }));
+  return updateDay(trip, dayId, (day) => ({ ...day, stops: [...day.stops, newStop(id, t('Stop {n}', { n: day.stops.length + 1 }), lngLat, null)] }));
 }
 
 /** Binds a free stop to a new point of the routed route, inserted before the point at `index` at the stop's position. */

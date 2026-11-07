@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createSignal } from 'solid-js';
 
 /**
@@ -21,7 +22,7 @@ export function NameForm(props: { placeholder: string; button: string; primary?:
       </button>
       {props.onCancel && (
         <button type="button" onClick={props.onCancel}>
-          Cancel
+          {t('Cancel')}
         </button>
       )}
     </form>

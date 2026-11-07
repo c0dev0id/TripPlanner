@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { position } from '../gpx/gpx';
 import { children, parseXml, text } from '../gpx/xml';
 import type { LngLat } from '../model/trip';
@@ -24,9 +25,9 @@ const leaves = (element: Element): Element[] => Array.from(element.getElementsBy
  */
 export function readRecording(xml: string): RecordedTrack {
   const root = parseXml(xml);
-  if (root?.localName !== 'gpx') throw new Error('This is not a GPX file.');
+  if (root?.localName !== 'gpx') throw new Error(t('This is not a GPX file.'));
   const tracks = children(root, 'trk');
-  if (tracks.length !== 1 || children(root, 'rte').length > 0) throw new Error('A recording is a GPX file of one track.');
+  if (tracks.length !== 1 || children(root, 'rte').length > 0) throw new Error(t('A recording is a GPX file of one track.'));
   const trackpoints = children(tracks[0]!, 'trkseg')
     .flatMap((segment) => children(segment, 'trkpt'))
     .filter((p) => position(p) !== undefined);

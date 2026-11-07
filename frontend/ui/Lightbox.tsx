@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createEffect, createSignal, Show } from 'solid-js';
 import { CloseIcon } from './icons';
 import { showModalWhile } from './modal';
@@ -33,7 +34,7 @@ export function Lightbox() {
   });
   const close = () => setImage(undefined);
   return (
-    <dialog ref={dialog} class="lightbox" aria-label="Photo" onClose={close} onClick={(e) => e.target === e.currentTarget && close()}>
+    <dialog ref={dialog} class="lightbox" aria-label={t('Photo')} onClose={close} onClick={(e) => e.target === e.currentTarget && close()}>
       <Show when={image()} keyed>
         {(shown) => (
           <figure>
@@ -43,9 +44,9 @@ export function Lightbox() {
                 {shown.name}
               </span>
               <a href={shown.src} target="_blank" rel="noopener">
-                Open the file
+                {t('Open the file')}
               </a>
-              <button type="button" title="Close" aria-label="Close" onClick={close}>
+              <button type="button" title={t('Close')} aria-label={t('Close')} onClick={close}>
                 <CloseIcon />
               </button>
             </figcaption>

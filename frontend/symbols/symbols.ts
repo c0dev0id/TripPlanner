@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import garmin from './garmin-symbols.json';
 
 /** The drawings of our own stop icons (see StopShape). */
@@ -8,18 +9,18 @@ export type StopIcon = 'other' | 'start' | 'end' | 'meeting' | 'hotel' | 'restau
  * and choosing the icon gives a stop that symbol, which is what a GPX file carries.
  */
 export const OUR_ICONS: readonly { icon: StopIcon; label: string; symbol: string }[] = [
-  { icon: 'other', label: 'Stop', symbol: 'Pin, Blue' },
-  { icon: 'start', label: 'Start', symbol: 'Flag, Green' },
-  { icon: 'end', label: 'End', symbol: 'Flag, Blue' },
-  { icon: 'meeting', label: 'Meeting point', symbol: 'Navaid, Violet' },
-  { icon: 'hotel', label: 'Hotel', symbol: 'Hotel' },
-  { icon: 'restaurant', label: 'Restaurant', symbol: 'Restaurant' },
-  { icon: 'cafe', label: 'Café', symbol: 'Navaid, Black' },
-  { icon: 'fuel', label: 'Fuel', symbol: 'Gas Station' },
-  { icon: 'sight', label: 'Sight', symbol: 'Navaid, White' },
-  { icon: 'info', label: 'Info', symbol: 'Information' },
-  { icon: 'photo', label: 'Photo spot', symbol: 'Scenic Area' },
-  { icon: 'break', label: 'Break', symbol: 'Navaid, Blue' },
+  { icon: 'other', label: t('Stop'), symbol: 'Pin, Blue' },
+  { icon: 'start', label: t('Start'), symbol: 'Flag, Green' },
+  { icon: 'end', label: t('End'), symbol: 'Flag, Blue' },
+  { icon: 'meeting', label: t('Meeting point'), symbol: 'Navaid, Violet' },
+  { icon: 'hotel', label: t('Hotel'), symbol: 'Hotel' },
+  { icon: 'restaurant', label: t('Restaurant'), symbol: 'Restaurant' },
+  { icon: 'cafe', label: t('Café'), symbol: 'Navaid, Black' },
+  { icon: 'fuel', label: t('Fuel'), symbol: 'Gas Station' },
+  { icon: 'sight', label: t('Sight'), symbol: 'Navaid, White' },
+  { icon: 'info', label: t('Info'), symbol: 'Information' },
+  { icon: 'photo', label: t('Photo spot'), symbol: 'Scenic Area' },
+  { icon: 'break', label: t('Break'), symbol: 'Navaid, Blue' },
 ];
 
 /** The symbol a new stop gets: our plain Stop's. */

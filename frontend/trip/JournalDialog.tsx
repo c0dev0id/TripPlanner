@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createMemo, createSignal, For, Show } from 'solid-js';
 import { tripApi } from '../api';
 import { dayOfEntry, onTarget, type Entry, type EntryTarget } from '../model/journal';
@@ -23,12 +24,12 @@ function targetLabel(target: EntryTarget): string {
   const trip = openTrip()!;
   if ('dayId' in target) {
     const day = trip.days.find((d) => d.id === target.dayId);
-    return day ? dayLabelOf(trip, day) : 'a removed day';
+    return day ? dayLabelOf(trip, day) : t('a removed day');
   }
-  if ('stopId' in target) return trip.days.flatMap((d) => d.stops).find((s) => s.id === target.stopId)?.name ?? 'a removed stop';
+  if ('stopId' in target) return trip.days.flatMap((d) => d.stops).find((s) => s.id === target.stopId)?.name ?? t('a removed stop');
   if ('routeId' in target) {
     const route = routeById(target.routeId);
-    return route ? routeLabelOf(trip, route) : 'a removed route';
+    return route ? routeLabelOf(trip, route) : t('a removed route');
   }
   return trip.name;
 }
@@ -68,7 +69,7 @@ export function JournalDialog() {
       const target = journalTarget()!;
       const entry = await addEntry(target, text, chosen && (await prepareUpload(chosen)), journalSpot());
       form.reset();
-      if (!onTarget(entry, target) && entry.dayId) setPlaced(`${entry.file!.name} was placed on ${targetLabel({ dayId: entry.dayId })} by the time it was taken.`);
+      if (!onTarget(entry, target) && entry.dayId) setPlaced(t('{file} was placed on {day} by the time it was taken.', { file: entry.file!.name, day: targetLabel({ dayId: entry.dayId }) }));
     });
   };
   const close = () => {
@@ -95,7 +96,7 @@ export function JournalDialog() {
       class="dialog journal-dialog"
       classList={{ placed: journalAt() !== undefined }}
       style={journalAt() && { left: `${journalAt()!.x}px`, top: `${journalAt()!.y}px` }}
-      aria-label="Journal"
+      aria-label={t('Journal')}
       onClose={close}
       on:keydown={escape}
     >
@@ -108,7 +109,7 @@ export function JournalDialog() {
           return (
             <div class="dialog-body">
               <h3 class="name grip" title={label()} onPointerDown={drag}>
-                Journal · {label()}
+                {t('Journal')} · {label()}
               </h3>
               <div class="journal-list" classList={{ overview: wholeTrip() }}>
                 <Show when={wholeTrip()} fallback={<EntryList entries={list()} run={run} />}>
@@ -117,7 +118,7 @@ export function JournalDialog() {
                       <section class="journal-part" classList={{ day: part().kind === 'day' }}>
                         <h4>
                           <Show when={part().kind === 'route' || part().kind === 'stop'}>
-                            <span class="kind">{part().kind === 'route' ? 'Route' : 'Stop'} · </span>
+                            <span class="kind">{t(part().kind === 'route' ? 'Route' : 'Stop')} · </span>
                           </Show>
                           {part().label}
                         </h4>
@@ -127,26 +128,26 @@ export function JournalDialog() {
                   </ForById>
                 </Show>
                 <Show when={(wholeTrip() ? overview() : list()).length === 0}>
-                  <p class="muted">Nothing noted yet.</p>
+                  <p class="muted">{t('Nothing noted yet.')}</p>
                 </Show>
               </div>
             <form ref={form} onSubmit={add}>
               <label>
-                Note
-                <textarea name="text" rows={3} maxlength={20000} placeholder="What to remember" />
+                {t('Note')}
+                <textarea name="text" rows={3} maxlength={20000} placeholder={t('What to remember')} />
               </label>
               <label>
-                File or photo
+                {t('File or photo')}
                 <input type="file" name="file" />
               </label>
               <Show when={error()}>{(message) => <p class="error">{message()}</p>}</Show>
               <Show when={placed()}>{(note) => <p class="muted hint">{note()}</p>}</Show>
               <div class="row end">
                 <button type="button" onClick={close}>
-                  Close
+                  {t('Close')}
                 </button>
                 <button type="submit" class="primary" disabled={busy()}>
-                  Add
+                  {t('Add')}
                 </button>
               </div>
             </form>
@@ -172,7 +173,7 @@ function EntryList(props: { entries: Entry[]; run: Runner }) {
 function EntryItem(props: { entry: Entry; run: Runner }) {
   const [editing, setEditing] = createSignal(false);
   const remove = async () => {
-    if (!(await askConfirmation('Delete this journal entry?', 'Delete'))) return;
+    if (!(await askConfirmation(t('Delete this journal entry?'), t('Delete')))) return;
     void props.run(() => removeEntry(props.entry));
   };
   const save = (text: string) => {
@@ -192,15 +193,15 @@ function EntryItem(props: { entry: Entry; run: Runner }) {
       </div>
       <Show when={props.entry.lngLat}>
         {(spot) => (
-          <button type="button" class="icon" title="Show on the map" aria-label="Show on the map" onClick={() => showOnMap(props.entry, spot())}>
+          <button type="button" class="icon" title={t('Show on the map')} aria-label={t('Show on the map')} onClick={() => showOnMap(props.entry, spot())}>
             <PinIcon />
           </button>
         )}
       </Show>
-      <button type="button" class="icon" title="Edit the note" aria-label="Edit the note" onClick={() => setEditing(true)}>
+      <button type="button" class="icon" title={t('Edit the note')} aria-label={t('Edit the note')} onClick={() => setEditing(true)}>
         <PencilIcon />
       </button>
-      <button type="button" class="icon" title="Delete the entry" aria-label="Delete the entry" onClick={() => void remove()}>
+      <button type="button" class="icon" title={t('Delete the entry')} aria-label={t('Delete the entry')} onClick={() => void remove()}>
         <DeleteIcon />
       </button>
     </li>

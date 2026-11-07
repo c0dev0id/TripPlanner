@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createMemo } from 'solid-js';
 import type { Stop } from '../model/trip';
 import { editTarget, setEditTarget } from '../state/drawing';
@@ -32,46 +33,46 @@ export function StopDialog() {
     close();
   };
   return (
-    <EditDialog label="Stop" value={stop()} title={(s) => s.name} onClose={close} onSubmit={save} actions={(s) => [{ label: 'Remove', run: () => remove(s), danger: true }]}>
+    <EditDialog label={t('Stop')} value={stop()} title={(s) => s.name} onClose={close} onSubmit={save} actions={(s) => [{ label: t('Remove'), run: () => remove(s), danger: true }]}>
       {(s) => (
         <>
           <label>
-            Name
+            {t('Name')}
             <input name="name" value={s.name} maxlength={200} required />
           </label>
           <SymbolField initial={s.symbol} />
           <div class="row">
             <label class="grow">
-              Arrive at
+              {t('Arrive at')}
               <input type="time" name="arriveAt" value={s.arriveAt ?? ''} />
             </label>
             <label class="grow">
-              Pause (minutes)
+              {t('Pause (minutes)')}
               <input type="number" name="pauseMinutes" min={0} max={1440} step={5} value={s.pauseMinutes ?? ''} />
             </label>
           </div>
           <label>
-            Address
+            {t('Address')}
             <textarea name="address" rows={2}>
               {s.address}
             </textarea>
           </label>
           <label>
-            Contact
+            {t('Contact')}
             <input name="contact" value={s.contact} />
           </label>
           <label>
-            Booking reference
+            {t('Booking reference')}
             <input name="bookingReference" value={s.bookingReference} />
           </label>
           <label>
-            Notes
+            {t('Notes')}
             <textarea name="notes" rows={3}>
               {s.notes}
             </textarea>
           </label>
           <label class="toggle">
-            <input type="checkbox" name="optional" checked={s.optional} /> Optional: a stop to decide on the day, left out of an export on request
+            <input type="checkbox" name="optional" checked={s.optional} /> {t('Optional: a stop to decide on the day, left out of an export on request')}
           </label>
         </>
       )}

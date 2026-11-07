@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createMemo, For, Show } from 'solid-js';
 import { HIGHWAYS, PROFILES, takesMotorwayDial, type Highways, type Profile, type Route } from '../model/trip';
 import { editTarget, setEditTarget } from '../state/drawing';
@@ -26,15 +27,15 @@ export function RouteDialog() {
     if (await removeRouteAsked(r)) close();
   };
   return (
-    <EditDialog label="Route" value={route()} title={label} onClose={close} onSubmit={save} actions={(r) => [{ label: 'Remove', run: () => void remove(r), danger: true }]}>
+    <EditDialog label={t('Route')} value={route()} title={label} onClose={close} onSubmit={save} actions={(r) => [{ label: t('Remove'), run: () => void remove(r), danger: true }]}>
       {(r) => (
         <>
           <label>
-            Name
+            {t('Name')}
             <input name="name" value={r.name} maxlength={200} placeholder={label({ ...r, name: '' })} />
           </label>
           <label>
-            Travelled as
+            {t('Travelled as')}
             <select name="profile" value={r.profile}>
               <For each={PROFILES}>{(profile) => <option value={profile.value}>{profile.label}</option>}</For>
             </select>
@@ -42,7 +43,7 @@ export function RouteDialog() {
           <Show when={r.kind === 'routed' && takesMotorwayDial(r.profile) && r}>
             {(routed) => (
               <label>
-                Motorways
+                {t('Motorways')}
                 <select name="highways" value={routed().highways}>
                   <For each={HIGHWAYS}>{(choice) => <option value={choice.value}>{choice.label}</option>}</For>
                 </select>
@@ -50,7 +51,7 @@ export function RouteDialog() {
             )}
           </Show>
           <label class="toggle">
-            <input type="checkbox" name="optional" checked={r.optional} /> Optional: a route to decide on the day, left out of an export on request
+            <input type="checkbox" name="optional" checked={r.optional} /> {t('Optional: a route to decide on the day, left out of an export on request')}
           </label>
         </>
       )}

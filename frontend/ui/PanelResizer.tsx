@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { followPointer } from './followPointer';
 import { readPreference, writePreference } from './preferences';
 
@@ -31,5 +32,5 @@ export function PanelResizer() {
     writePreference(PREFERENCE, undefined);
     applyWidth(undefined);
   };
-  return <div class="panel-resizer" role="separator" aria-orientation="vertical" aria-label="Width of the panel" title="Drag to set the panel's width; double-click for the default" onPointerDown={drag} onDblClick={reset} />;
+  return <div class="panel-resizer" role="separator" aria-orientation="vertical" aria-label={t('Width of the panel')} title={t("Drag to set the panel's width; double-click for the default")} onPointerDown={drag} onDblClick={reset} />;
 }

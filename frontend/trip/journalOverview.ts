@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { entriesOn, type Entry } from '../model/journal';
 import type { Trip } from '../model/trip';
 import { withStopsInRidingOrder } from '../routing/sequence';
@@ -20,7 +21,7 @@ export interface JournalPart {
 export function journalOverview(trip: Trip, entries: readonly Entry[]): JournalPart[] {
   const parts: JournalPart[] = [];
   const onTrip = entriesOn(entries, {});
-  if (onTrip.length > 0) parts.push({ id: 'trip', kind: 'trip', label: 'On the trip', entries: onTrip });
+  if (onTrip.length > 0) parts.push({ id: 'trip', kind: 'trip', label: t('On the trip'), entries: onTrip });
   withStopsInRidingOrder(trip).days.forEach((day, index) => {
     const ofDay: JournalPart[] = [];
     for (const route of day.routes) {

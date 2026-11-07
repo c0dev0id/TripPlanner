@@ -1,3 +1,4 @@
+import { t } from '../i18n/t';
 import { createMemo, createResource, createSelector, createSignal, For, Match, Show, Switch } from 'solid-js';
 import { changeTrip, errorMessage, fetchTrip, listDuplicates, type DuplicateGroup, type DuplicateRoute } from '../api';
 import { copiedRoute, removeRoute, type CopiedRoute } from '../routing/dayEdit';
@@ -17,7 +18,7 @@ function whereText(route: DuplicateRoute): string {
 }
 
 const keyOf = (route: DuplicateRoute): string => `${route.tripId}/${route.routeId}`;
-const nameOf = (route: DuplicateRoute): string => route.routeName || 'Unnamed route';
+const nameOf = (route: DuplicateRoute): string => route.routeName || t('Unnamed route');
 
 const tripIdsOf = (routes: readonly DuplicateRoute[]): number[] => [...new Set(routes.map((r) => r.tripId))];
 
@@ -64,21 +65,24 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
     }
   };
   const copy = (chosen: DuplicateRoute[]) =>
-    work('Copying…', async () => {
+    work(t('Copying…'), async () => {
       const copies = await copiesOf(chosen);
-      if (copies.length === 0) return 'Those routes are no longer there.';
+      if (copies.length === 0) return t('Those routes are no longer there.');
       copyRoutes(copies);
-      return `Copied ${counted(copies.length, 'route')}: paste from the menu of a day, a trip or a folder.`;
+      return t('Copied {what}: paste from the menu of a day, a trip or a folder.', { what: counted(copies.length, 'route') });
     });
   const remove = async (chosen: DuplicateRoute[]) => {
     const trips = new Set(chosen.map((r) => r.tripId)).size;
-    const question = chosen.length === 1 ? `Delete the route “${nameOf(chosen[0]!)}” from ${whereText(chosen[0]!)}?` : `Delete ${chosen.length} routes from ${counted(trips, 'trip')}?`;
-    if (!(await askConfirmation(question, 'Delete'))) return;
-    await work('Deleting…', async () => {
+    const question =
+      chosen.length === 1
+        ? t('Delete the route “{name}” from {where}?', { name: nameOf(chosen[0]!), where: whereText(chosen[0]!) })
+        : t('Delete {n} routes from {trips}?', { n: chosen.length, trips: counted(trips, 'trip') });
+    if (!(await askConfirmation(question, t('Delete')))) return;
+    await work(t('Deleting…'), async () => {
       await removeRoutes(chosen);
       setSelection(NOTHING_SELECTED);
       void refetch();
-      return `Deleted ${counted(chosen.length, 'route')}.`;
+      return t('Deleted {what}.', { what: counted(chosen.length, 'route') });
     });
   };
   /** The menu of a route: for the selected routes, or for it alone where it is not selected. */
@@ -86,11 +90,11 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
     setSelection((s) => menuSelection(s, keyOf(route)));
     const chosen = [...shown().values()].filter((r) => selection().keys.has(keyOf(r)));
     const one = chosen.length === 1 ? chosen[0] : undefined;
-    const many = one ? '' : ` ${chosen.length} routes`;
+    const n = chosen.length;
     return [
-      ...(one ? [{ label: 'Open', disabled: props.disabled, run: () => open(one) }] : []),
-      { label: `Copy${many}`, run: () => void copy(chosen) },
-      { label: `Delete${many}`, run: () => void remove(chosen) },
+      ...(one ? [{ label: t('Open'), disabled: props.disabled, run: () => open(one) }] : []),
+      { label: one ? t('Copy') : t('Copy {n} routes', { n }), run: () => void copy(chosen) },
+      { label: one ? t('Delete') : t('Delete {n} routes', { n }), run: () => void remove(chosen) },
     ];
   };
   const rows = {
@@ -102,15 +106,15 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   };
   return (
     <>
-      <Switch fallback={<p class="muted">Looking for routes kept more than once…</p>}>
+      <Switch fallback={<p class="muted">{t('Looking for routes kept more than once…')}</p>}>
         <Match when={groups.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
         <Match when={groups()?.length === 0}>
-          <p class="muted">No route is kept more than once.</p>
+          <p class="muted">{t('No route is kept more than once.')}</p>
         </Match>
         <Match when={groups()}>
           <Show when={note()}>{(n) => <p classList={{ error: n().error, muted: !n().error, hint: true }}>{n().text}</p>}</Show>
-          <Section title={`Exact copies: ${counted(of('copies').length, 'group')}`} groups={of('copies')} {...rows} />
-          <Section title={`The same ride kept twice: ${counted(of('same ride').length, 'group')}`} groups={of('same ride')} {...rows} />
+          <Section title={t('Exact copies: {what}', { what: counted(of('copies').length, 'group') })} groups={of('copies')} {...rows} />
+          <Section title={t('The same ride kept twice: {what}', { what: counted(of('same ride').length, 'group') })} groups={of('same ride')} {...rows} />
         </Match>
       </Switch>
     </>
@@ -141,7 +145,7 @@ function Section(props: {
                   {(route) => (
                     <li classList={{ selected: props.selected(route) }} ref={(el) => cardMenu(el, () => props.items(route))}>
                       <div class="row">
-                        <Pad label={`Select ${nameOf(route)}`} selected={props.selected(route)} onToggle={() => props.onToggle(route)} />
+                        <Pad label={t('Select {name}', { name: nameOf(route) })} selected={props.selected(route)} onToggle={() => props.onToggle(route)} />
                         <button
                           class="text grow"
                           onPointerDown={(e) => (pointer = e.pointerType)}

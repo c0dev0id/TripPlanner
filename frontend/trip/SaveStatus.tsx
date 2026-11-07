@@ -1,14 +1,15 @@
 import { Show, type JSX } from 'solid-js';
+import { t } from '../i18n/t';
 import { saveState, type SaveState as State } from '../state/autosave';
 import { AlertIcon, CheckIcon, DotIcon, RefreshIcon } from '../ui/icons';
 
 /** Each save state's words and icon. */
 const SHOWN: Record<State, [string, () => JSX.Element]> = {
-  saved: ['Saved', CheckIcon],
-  dirty: ['Unsaved changes', DotIcon],
-  saving: ['Saving…', RefreshIcon],
-  failed: ['Saving failed', AlertIcon],
-  conflict: ['Changed elsewhere', AlertIcon],
+  saved: [t('Saved'), CheckIcon],
+  dirty: [t('Unsaved changes'), DotIcon],
+  saving: [t('Saving…'), RefreshIcon],
+  failed: [t('Saving failed'), AlertIcon],
+  conflict: [t('Changed elsewhere'), AlertIcon],
 };
 
 const trouble = () => saveState() === 'failed' || saveState() === 'conflict';
@@ -27,8 +28,8 @@ export function SaveProblem(props: { onReload: () => void }) {
   return (
     <Show when={trouble()}>
       <p class="save-status failed">
-        <Show when={saveState() === 'conflict'} fallback="Saving failed; trying again shortly.">
-          The trip was changed elsewhere. <button onClick={props.onReload}>Reload it</button> to go on; the changes made here since are lost.
+        <Show when={saveState() === 'conflict'} fallback={t('Saving failed; trying again shortly.')}>
+          {t('The trip was changed elsewhere.')} <button onClick={props.onReload}>{t('Reload it')}</button> {t('to go on; the changes made here since are lost.')}
         </Show>
       </p>
     </Show>
