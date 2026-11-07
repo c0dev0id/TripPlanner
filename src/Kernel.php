@@ -11,6 +11,7 @@ use Planner\Account\CurrentUser;
 use Planner\Account\PasswordResets;
 use Planner\Http\Routes;
 use Planner\Http\SessionMiddleware;
+use Planner\I18n\Language;
 use Planner\I18n\LanguageMiddleware;
 use Planner\Journal\FileStore;
 use Planner\Mail\LogMailer;
@@ -60,7 +61,7 @@ final class Kernel
         return $app;
     }
 
-    /** Plates with the mail folder and the functions templates call: csrf(), csrfToken(), currentUser(). */
+    /** Plates with the mail folder and the functions templates call: csrf(), csrfToken(), currentUser(), t() escaped for HTML, language(). */
     private static function templates(string $dir, ContainerInterface $c): Engine
     {
         $engine = new Engine($dir);
@@ -85,6 +86,8 @@ final class Kernel
             );
         });
         $engine->registerFunction('currentUser', fn () => $c->get(CurrentUser::class)->get());
+        $engine->registerFunction('t', fn (string $text, array $params = []): string => htmlspecialchars(t($text, $params), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'));
+        $engine->registerFunction('language', Language::current(...));
         return $engine;
     }
 }

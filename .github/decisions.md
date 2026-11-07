@@ -249,7 +249,9 @@ entries at the end of their section.
 - **Texts are English in the code and German in one dictionary, read by both sides.**
   The code says `t('Search trips and folders')`; `frontend/i18n/de.json` maps that English
   text to its German, and the server's `t()` reads the same file, so a message the server
-  sends and a label the planner shows are translated in one place. The English text as
+  sends and a label the planner shows are translated in one place. The API's controllers
+  and exceptions speak the English keys; `Json::error` translates every message on its
+  way out, the page templates translate through `$this->t()`. The English text as
   the key keeps the code readable, needs no English resource file, and makes a missing
   entry harmless: the English shows, and a development build lists it in
   `window.i18nMissing`. Plural forms are one entry of forms separated by `|`, picked by
