@@ -11,6 +11,7 @@ use Planner\Account\CurrentUser;
 use Planner\Account\PasswordResets;
 use Planner\Http\Routes;
 use Planner\Http\SessionMiddleware;
+use Planner\I18n\LanguageMiddleware;
 use Planner\Journal\FileStore;
 use Planner\Mail\LogMailer;
 use Planner\Mail\Mailer;
@@ -54,6 +55,7 @@ final class Kernel
         $app->addBodyParsingMiddleware();
         $app->addRoutingMiddleware();
         $app->add(SessionMiddleware::class);
+        $app->add(LanguageMiddleware::class);
         $app->addErrorMiddleware($container->get(Config::class)->debug, true, true);
         return $app;
     }

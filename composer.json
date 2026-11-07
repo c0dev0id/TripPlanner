@@ -19,7 +19,10 @@
     "autoload": {
         "psr-4": {
             "Planner\\": "src/"
-        }
+        },
+        "files": [
+            "src/I18n/functions.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
