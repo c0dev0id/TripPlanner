@@ -1,8 +1,10 @@
-You are invited to Trip Planner.
+<?= t('You are invited to Trip Planner.') ?>
 
-Create your account with this link; it is valid for <?= $days ?> days:
+
+<?= t('Create your account with this link; it is valid for {days} days:', ['days' => $days]) ?>
+
 
 <?= $link ?>
 
 
-If you did not ask for this, ignore this mail.
+<?= t('If you did not ask for this, ignore this mail.') ?>

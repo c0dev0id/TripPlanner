@@ -1,16 +1,16 @@
-<?php $this->layout('layout', ['title' => 'Create your account']) ?>
+<?php $this->layout('layout', ['title' => t('Create your account')]) ?>
 <section class="card">
-  <h1>Create your account</h1>
+  <h1><?= $this->e(t('Create your account')) ?></h1>
   <?php if ($email === null): ?>
-    <p class="error">This link is not valid any more. <?php if ($open): ?>Ask for a new one on the <a href="/">start page</a>.<?php else: ?>Ask for a new invitation from the <a href="/">waiting list</a>.<?php endif ?></p>
+    <p class="error"><?= $this->e(t('This link is not valid any more.')) ?> <a href="/"><?= $this->e($open ? t('Ask for a new one on the start page.') : t('Ask for a new invitation from the waiting list.')) ?></a></p>
   <?php else: ?>
     <?php if (isset($error)): ?><p class="error"><?= $this->e($error) ?></p><?php endif ?>
     <form method="post">
       <?= $this->csrf() ?>
-      <label>E-mail <input type="email" value="<?= $this->e($email) ?>" disabled></label>
-      <label>Password <input type="password" name="password" required minlength="10" autocomplete="new-password"></label>
-      <label>Password again <input type="password" name="password_repeat" required minlength="10" autocomplete="new-password"></label>
-      <button type="submit">Create account</button>
+      <label><?= $this->e(t('E-mail')) ?> <input type="email" value="<?= $this->e($email) ?>" disabled></label>
+      <label><?= $this->e(t('Password')) ?> <input type="password" name="password" required minlength="10" autocomplete="new-password"></label>
+      <label><?= $this->e(t('Password again')) ?> <input type="password" name="password_repeat" required minlength="10" autocomplete="new-password"></label>
+      <button type="submit"><?= $this->e(t('Create account')) ?></button>
     </form>
   <?php endif ?>
 </section>

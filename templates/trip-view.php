@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="<?= \Planner\I18n\Language::current() ?>">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
