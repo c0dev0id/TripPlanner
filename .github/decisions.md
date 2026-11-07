@@ -246,6 +246,30 @@ entries at the end of their section.
   overrides them all at once, with no rule in any stylesheet. The pages set it from the
   preference in one line of inline script before the first paint, so a dark choice never
   flashes light. The pairs themselves live in one stylesheet both bundles load.
+- **Texts are English in the code and German in one dictionary, read by both sides.**
+  The code says `t('Search trips and folders')`; `frontend/i18n/de.json` maps that English
+  text to its German, and the server's `t()` reads the same file, so a message the server
+  sends and a label the planner shows are translated in one place. The English text as
+  the key keeps the code readable, needs no English resource file, and makes a missing
+  entry harmless: the English shows, and a development build lists it in
+  `window.i18nMissing`. Plural forms are one entry of forms separated by `|`, picked by
+  `Intl.PluralRules`; `counted()` builds the English forms from a noun. Rejected: message
+  ids in a file per language, which hide the text from the reader of the code; an i18n
+  library, since the need is one function and one JSON file.
+- **The language is the browser's, or chosen, and set once per page load.** The planner
+  takes the first of `navigator.languages` it speaks, unless a choice is kept in the
+  browser as the theme is. A change of choice reloads the page: tool names, figures and
+  surfaces are translated when their modules load, and threading a reactive language
+  through all of them would serve a switch made once. The planner sends its language in
+  `Accept-Language` on every API request; the public pages get the browser's own header,
+  which the planner's choice cannot reach. A download is a navigation, which sends the
+  browser's header too, so the export link carries `lang` in its query, and the language
+  middleware takes a `lang` parameter before the header.
+- **German says du.** The server's pages and mails address the user; the planner itself
+  rarely does. The German uses du: a personal tool, and the English copy is informal.
+- **Not translated.** The validator's messages about a malformed trip document, which a
+  client bug causes, not a user; the command line; the Garmin symbol names in a GPX file,
+  which the device matches; and "Trip Planner" itself.
 
 ## Saving
 

@@ -191,3 +191,8 @@
   styles, or the OpenTopoMap, OpenStreetMap and CyclOSM raster tiles; the route lines
   and markers stay. A locate-me button shows where the browser is. The interface light
   or dark by hand, or as the browser says. Both choices are kept in the browser.
+- English and German. The planner follows the browser's language, or the one chosen in
+  its header (Auto, Deutsch, English), kept in the browser; numbers, dates and distances
+  are written the language's way. The server's pages, messages and mails follow the
+  browser's language, and the GPX export names unnamed days and routes ("Tag 1",
+  "Route 2") in the planner's.

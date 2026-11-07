@@ -55,6 +55,10 @@
 - Desktop and phone browsers with WebGL 2, which MapLibre GL JS 6 requires; the build
   targets ES2022. Screens down to 360 px wide.
 - The public pages work without JavaScript.
+- English and German, by the browser's language or a choice in the planner's header. The
+  texts are English in the code; `frontend/i18n/de.json` holds the German for the planner
+  and the server alike. No i18n library: the browser's `Intl` writes numbers, dates and
+  plural forms, PHP's `t()` is one function over the same file.
 
 ## Build and deployment
 
