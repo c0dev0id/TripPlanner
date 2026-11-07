@@ -26,7 +26,7 @@ final class RequireAdmin implements MiddlewareInterface
             return $handler->handle($request);
         }
         $response = $this->responseFactory->createResponse(403)->withHeader('Content-Type', 'text/plain');
-        $response->getBody()->write('Admins only.');
+        $response->getBody()->write(t('Admins only.'));
         return $response;
     }
 }

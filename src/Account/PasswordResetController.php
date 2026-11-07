@@ -42,10 +42,10 @@ final class PasswordResetController
                 'link' => $this->config->baseUrl . '/password/reset/' . $token,
                 'minutes' => intdiv($this->config->passwordResetTtl, 60),
             ]);
-            $this->mailer->send($user->email, 'Reset your Trip Planner password', $body);
+            $this->mailer->send($user->email, t('Reset your Trip Planner password'), $body);
         }
         return $this->view->render($response, 'password-forgot', [
-            'notice' => 'If the address belongs to an account, a mail with a reset link is on its way.',
+            'notice' => t('If the address belongs to an account, a mail with a reset link is on its way.'),
         ]);
     }
 
@@ -69,17 +69,17 @@ final class PasswordResetController
         }
         $this->users->changePassword($reset->userId, $form['password']);
         $this->resets->markUsed($reset->id, $now);
-        return $this->view->render($response, 'login', ['notice' => 'Password changed. Sign in with the new one.']);
+        return $this->view->render($response, 'login', ['notice' => t('Password changed. Sign in with the new one.')]);
     }
 
     /** Why a chosen password is not accepted, or null. */
     public static function passwordError(string $password, string $repeat): ?string
     {
         if (mb_strlen($password) < self::MIN_PASSWORD_LENGTH) {
-            return sprintf('The password needs at least %d characters.', self::MIN_PASSWORD_LENGTH);
+            return t('The password needs at least {n} characters.', ['n' => self::MIN_PASSWORD_LENGTH]);
         }
         if ($password !== $repeat) {
-            return 'The two passwords differ.';
+            return t('The two passwords differ.');
         }
         return null;
     }

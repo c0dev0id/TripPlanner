@@ -30,11 +30,11 @@ final class ExportPresetController
     {
         $name = Name::of(Json::field($request, 'name'));
         if ($name === null) {
-            return Json::error($response, 422, 'A preset needs a name of up to 200 characters.');
+            return Json::error($response, 422, t('A preset needs a name of up to 200 characters.'));
         }
         $options = ExportOptions::from(Json::field($request, 'options'));
         if ($options === null) {
-            return Json::error($response, 422, 'The preset\'s options are malformed.');
+            return Json::error($response, 422, t('The preset\'s options are malformed.'));
         }
         $preset = $this->presets->save($this->currentUser->get()->id, $name, $options, new DateTimeImmutable());
         return Json::of($response->withStatus(201), $preset);
@@ -43,6 +43,6 @@ final class ExportPresetController
     public function delete(Request $request, Response $response, array $args): Response
     {
         $deleted = $this->presets->delete($this->currentUser->get()->id, (int) $args['id']);
-        return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'No such preset.');
+        return $deleted ? $response->withStatus(204) : Json::error($response, 404, t('No such preset.'));
     }
 }

@@ -35,7 +35,7 @@ final class PasswordChangeController
         $password = (string) ($form['password'] ?? '');
         $error = PasswordResetController::passwordError($password, (string) ($form['password_repeat'] ?? ''));
         if ($error === null && $this->users->authenticate($user->email, $password) !== null) {
-            $error = 'Choose a password other than the one you were given.';
+            $error = t('Choose a password other than the one you were given.');
         }
         if ($error !== null) {
             return $this->view->render($response, 'password-change', ['email' => $user->email, 'error' => $error]);

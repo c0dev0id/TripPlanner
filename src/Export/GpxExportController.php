@@ -27,12 +27,12 @@ final class GpxExportController
     {
         $document = $this->documents->load($this->currentUser->get()->id, (int) $args['id']);
         if ($document === null) {
-            return Json::error($response, 404, 'No such trip.');
+            return Json::error($response, 404, t('No such trip.'));
         }
         $query = $request->getQueryParams();
         $options = ExportOptions::from($query);
         if ($options === null) {
-            return Json::error($response, 422, 'The export options are malformed.');
+            return Json::error($response, 422, t('The export options are malformed.'));
         }
         $dayId = $query['day'] ?? null;
         if ($dayId === null && $options->per === 'day') {
@@ -43,7 +43,7 @@ final class GpxExportController
         }
         $index = array_search($dayId, array_column($document['days'], 'id'), true);
         if ($index === false) {
-            return Json::error($response, 404, 'No such day.');
+            return Json::error($response, 404, t('No such day.'));
         }
         return self::download($response, TripGpx::dayFileName($document, $index) . '.gpx', 'application/gpx+xml', TripGpx::day($document, $index, new DateTimeImmutable(), $options));
     }

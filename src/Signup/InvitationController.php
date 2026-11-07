@@ -34,7 +34,7 @@ final class InvitationController
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
             return $this->view->render($response, 'admin/waitlist', [
                 'pending' => $this->waitlist->pending(),
-                'error' => 'That is not an e-mail address.',
+                'error' => t('That is not an e-mail address.'),
             ]);
         }
         $this->inviter->invite($email, $this->currentUser->get()->id, new DateTimeImmutable());

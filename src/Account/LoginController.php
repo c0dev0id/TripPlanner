@@ -32,7 +32,7 @@ final class LoginController
         $email = (string) ($form['email'] ?? '');
         $user = $this->users->authenticate($email, (string) ($form['password'] ?? ''));
         if ($user === null) {
-            return $this->view->render($response, 'login', ['email' => $email, 'error' => 'Unknown e-mail address or wrong password.']);
+            return $this->view->render($response, 'login', ['email' => $email, 'error' => t('Unknown e-mail address or wrong password.')]);
         }
         $this->currentUser->login($user);
         return Redirect::to($response, $user->mustChangePassword ? '/password/change' : '/app');

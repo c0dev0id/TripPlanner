@@ -24,13 +24,13 @@ final class SharedTripController
     public function document(Request $request, Response $response, array $args): Response
     {
         $document = $this->documents->loadShared($args['token']);
-        return $document === null ? Json::error($response, 404, 'This trip is not shared.') : Json::of($response, $document);
+        return $document === null ? Json::error($response, 404, t('This trip is not shared.')) : Json::of($response, $document);
     }
 
     public function entries(Request $request, Response $response, array $args): Response
     {
         $entries = $this->entries->listShared($args['token']);
-        return $entries === null ? Json::error($response, 404, 'This trip is not shared.') : Json::of($response, $entries);
+        return $entries === null ? Json::error($response, 404, t('This trip is not shared.')) : Json::of($response, $entries);
     }
 
     public function file(Request $request, Response $response, array $args): Response

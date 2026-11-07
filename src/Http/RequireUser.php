@@ -32,7 +32,7 @@ final class RequireUser implements MiddlewareInterface
         }
         $response = $this->responseFactory->createResponse();
         if (str_starts_with($request->getUri()->getPath(), '/api/')) {
-            return $user === null ? Json::error($response, 401, 'Sign in required.') : Json::error($response, 403, 'Choose your own password first.');
+            return $user === null ? Json::error($response, 401, t('Sign in required.')) : Json::error($response, 403, t('Choose your own password first.'));
         }
         return Redirect::to($response, $user === null ? '/login' : '/password/change');
     }

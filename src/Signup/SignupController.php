@@ -39,7 +39,7 @@ final class SignupController
             return $this->render($response, ['email' => null]);
         }
         if ($this->users->findByEmail($invitation->email) !== null) {
-            return $this->render($response, ['email' => $invitation->email, 'error' => 'There is an account for this address already. Sign in instead.']);
+            return $this->render($response, ['email' => $invitation->email, 'error' => t('There is an account for this address already. Sign in instead.')]);
         }
         $form = (array) $request->getParsedBody();
         $error = PasswordResetController::passwordError((string) ($form['password'] ?? ''), (string) ($form['password_repeat'] ?? ''));

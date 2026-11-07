@@ -25,11 +25,11 @@ final class EntryFiles
     public function file(Response $response, ?Entry $entry): Response
     {
         if ($entry === null || $entry->file === null) {
-            return Json::error($response, 404, 'No such file.');
+            return Json::error($response, 404, t('No such file.'));
         }
         $path = $this->files->path($entry->tripId, $entry->id);
         if (!is_file($path)) {
-            return Json::error($response, 404, 'The file is gone.');
+            return Json::error($response, 404, t('The file is gone.'));
         }
         $disposition = in_array($entry->file['mediaType'], self::INLINE_TYPES, true) ? 'inline' : 'attachment';
         return $response
@@ -43,11 +43,11 @@ final class EntryFiles
     public function preview(Response $response, ?Entry $entry): Response
     {
         if ($entry === null || $entry->file === null || !$entry->file['image']) {
-            return Json::error($response, 404, 'No such image.');
+            return Json::error($response, 404, t('No such image.'));
         }
         $preview = $this->files->preview($entry->tripId, $entry->id, $entry->file['mediaType']);
         if ($preview === null) {
-            return Json::error($response, 404, 'The image cannot be read.');
+            return Json::error($response, 404, t('The image cannot be read.'));
         }
         return $response
             ->withBody((new StreamFactory())->createStreamFromFile($preview))

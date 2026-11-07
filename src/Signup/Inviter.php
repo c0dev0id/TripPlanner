@@ -26,13 +26,13 @@ final class Inviter
     public function invite(string $email, ?int $invitedBy, DateTimeImmutable $now): void
     {
         $this->waitlist->markInvited($email, $now);
-        $this->send($email, $invitedBy, $now, 'mail::invitation', 'Your invitation to Trip Planner');
+        $this->send($email, $invitedBy, $now, 'mail::invitation', t('Your invitation to Trip Planner'));
     }
 
     /** Sends the address the link it asked for on the landing page. */
     public function sendSignupLink(string $email, DateTimeImmutable $now): void
     {
-        $this->send($email, null, $now, 'mail::signup-link', 'Your Trip Planner sign-up link');
+        $this->send($email, null, $now, 'mail::signup-link', t('Your Trip Planner sign-up link'));
     }
 
     private function send(string $email, ?int $invitedBy, DateTimeImmutable $now, string $template, string $subject): void

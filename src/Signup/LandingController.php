@@ -38,12 +38,12 @@ final class LandingController
         $form = (array) $request->getParsedBody();
         $email = trim((string) ($form['email'] ?? ''));
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-            return $this->render($response, ['email' => $email, 'error' => 'That is not an e-mail address.']);
+            return $this->render($response, ['email' => $email, 'error' => t('That is not an e-mail address.')]);
         }
         if ($this->users->findByEmail($email) === null) {
             $this->inviter->sendSignupLink($email, new DateTimeImmutable());
         }
-        return $this->render($response, ['notice' => 'If the address is new here, a mail with your sign-up link is on its way. Otherwise sign in.']);
+        return $this->render($response, ['notice' => t('If the address is new here, a mail with your sign-up link is on its way. Otherwise sign in.')]);
     }
 
     public function joinWaitlist(Request $request, Response $response): Response
@@ -51,10 +51,10 @@ final class LandingController
         $form = (array) $request->getParsedBody();
         $email = trim((string) ($form['email'] ?? ''));
         if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-            return $this->render($response, ['email' => $email, 'error' => 'That is not an e-mail address.']);
+            return $this->render($response, ['email' => $email, 'error' => t('That is not an e-mail address.')]);
         }
         $this->waitlist->join($email, new DateTimeImmutable());
-        return $this->render($response, ['notice' => 'You are on the list. The invitation comes by mail.']);
+        return $this->render($response, ['notice' => t('You are on the list. The invitation comes by mail.')]);
     }
 
     private function render(Response $response, array $data = []): Response
