@@ -3,7 +3,7 @@
 Plans whole motorcycle trips, not single routes: days of routes drawn along the roads,
 stops on them or beside them, exported as GPX in the shape a device needs.
 
-Runs at <https://planner.codevoid.de>, by invitation. In development: planning a trip on
+Runs at <https://planner.codevoid.de>; sign up with your e-mail address. In development: planning a trip on
 the map with its times, GPX in and out, a journal with photos, and a page to print or
 share work; sharing between users is on the way.
 
@@ -65,7 +65,8 @@ share work; sharing between users is on the way.
 
 ## Getting started
 
-1. Join the waiting list on the landing page; the invitation comes by mail.
+1. Enter your e-mail address on the landing page; the link to set your password comes
+   by mail.
 2. Sign in, name a new trip with the map icon on top, add a day and a route with the
    plus on their headers.
 3. Pick the *Point* tool and tap the map for the route's points; the road between them

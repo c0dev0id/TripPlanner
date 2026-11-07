@@ -563,11 +563,14 @@ entries at the end of their section.
   click elsewhere meanwhile, another trip or a folder, would otherwise have the late
   answer open the trip where the user no longer is. Each open counts, a leave counts
   too, and an answer for an earlier count is dropped.
-- **Sign-up by invitation.** Open sign-up on a hobby server with photo uploads invites
-  abuse. Visitors leave their e-mail on a waiting list; an admin sends an invitation link
-  by mail; the link opens sign-up for that address. The address is verified by
-  construction, so there is no separate verification step. Open sign-up can be switched
-  on later.
+- **Sign-up by a mailed link, open or by invitation.** A visitor who enters an address on
+  the landing page gets a link by mail that opens sign-up for that address, the same link
+  an invitation carries: the address is verified by construction, so there is no separate
+  verification step, and password resets reach a real inbox. Sign-up started by
+  invitation only, for fear of abuse on a hobby server with photo uploads, and `open_signup`
+  (on by default) still turns the landing page back into a waiting list, from which an
+  admin invites. An address with an account gets the same answer as a new one and no
+  mail, so the form tells nobody who has an account.
 - **Accounts from the command line hand over a password to replace.** `make user` makes
   an account without an invitation, for someone set up by hand or a server without
   working mail, and prints a generated password of 16 letters and digits that cannot be

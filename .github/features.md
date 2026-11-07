@@ -2,8 +2,9 @@
 
 ## Available
 
-- Accounts: a waiting list on the landing page, invitations by mail from an admin page or
-  the command line, sign-in, sign-out, password reset by mail. `make user EMAIL=…` makes
+- Accounts: sign-up from the landing page by a link mailed to the address, or, with
+  `open_signup` off, a waiting list there and invitations by mail from an admin page or
+  the command line; sign-in, sign-out, password reset by mail. `make user EMAIL=…` makes
   an account without an invitation and prints a generated password; at the first
   sign-in the user has to replace it before the planner opens.
 - The panel's explorer, the same from the top of the library down to a trip's day: the

@@ -12,4 +12,6 @@ return [
         'transport' => 'smtp',
         'from' => 'planner@codevoid.de',
     ],
+    // false for sign-up by invitation only.
+    'open_signup' => true,
 ];
