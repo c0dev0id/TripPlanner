@@ -11,6 +11,6 @@ final class VersionConflict extends RuntimeException
 {
     public function __construct(public readonly int $currentVersion)
     {
-        parent::__construct(t('The trip was changed elsewhere since it was loaded.'));
+        parent::__construct('The trip was changed elsewhere since it was loaded.');
     }
 }

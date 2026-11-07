@@ -29,9 +29,9 @@ final class Json
         return is_array($body) ? $body[$name] ?? null : null;
     }
 
-    /** An error answer: the status, and the message under `error`. */
+    /** An error answer: the status, and the message, in the request's language, under `error`. */
     public static function error(Response $response, int $status, string $message): Response
     {
-        return self::of($response->withStatus($status), ['error' => $message]);
+        return self::of($response->withStatus($status), ['error' => t($message)]);
     }
 }

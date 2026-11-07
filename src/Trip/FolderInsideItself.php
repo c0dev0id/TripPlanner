@@ -11,6 +11,6 @@ final class FolderInsideItself extends RuntimeException
 {
     public function __construct()
     {
-        parent::__construct(t('A folder cannot go into itself or into a folder inside it.'));
+        parent::__construct('A folder cannot go into itself or into a folder inside it.');
     }
 }

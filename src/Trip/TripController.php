@@ -32,7 +32,7 @@ final class TripController
     {
         $name = Name::of(Json::field($request, 'name'));
         if ($name === null) {
-            return Json::error($response, 422, t('A trip needs a name of up to 200 characters.'));
+            return Json::error($response, 422, 'A trip needs a name of up to 200 characters.');
         }
         $folderId = Json::field($request, 'folderId');
         if ($folderId !== null && !is_int($folderId)) {
@@ -54,7 +54,7 @@ final class TripController
     public function duplicate(Request $request, Response $response, array $args): Response
     {
         $copyId = $this->documents->copy($this->currentUser->get()->id, (int) $args['id'], new DateTimeImmutable());
-        return $copyId === null ? Json::error($response, 404, t('No such trip.')) : Json::of($response->withStatus(201), ['id' => $copyId]);
+        return $copyId === null ? Json::error($response, 404, 'No such trip.') : Json::of($response->withStatus(201), ['id' => $copyId]);
     }
 
     /** Merges the trips `tripIds` lists into this one (see TripDocuments::merge) and moves their journal files; the answer is its new version. */
@@ -73,7 +73,7 @@ final class TripController
             return Json::error($response, 422, $error->getMessage());
         }
         if ($version === null) {
-            return Json::error($response, 404, t('No such trip.'));
+            return Json::error($response, 404, 'No such trip.');
         }
         foreach ($fromIds as $fromId) {
             $this->files->moveAll($fromId, $intoId);
@@ -88,10 +88,10 @@ final class TripController
         if (array_key_exists('name', $body)) {
             $name = Name::of($body['name']);
             if ($name === null) {
-                return Json::error($response, 422, t('A trip needs a name of up to 200 characters.'));
+                return Json::error($response, 422, 'A trip needs a name of up to 200 characters.');
             }
             $renamed = $this->trips->rename($this->currentUser->get()->id, (int) $args['id'], $name, new DateTimeImmutable());
-            return $renamed ? $response->withStatus(204) : Json::error($response, 404, t('No such trip.'));
+            return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'No such trip.');
         }
         $folderId = $body['folderId'] ?? null;
         if ($folderId !== null && !is_int($folderId)) {
@@ -102,7 +102,7 @@ final class TripController
         } catch (UnknownFolder $unknown) {
             return Json::error($response, 422, $unknown->getMessage());
         }
-        return $moved ? $response->withStatus(204) : Json::error($response, 404, t('No such trip.'));
+        return $moved ? $response->withStatus(204) : Json::error($response, 404, 'No such trip.');
     }
 
     /** The token the trip is shared under, or null. */
@@ -115,19 +115,19 @@ final class TripController
     public function share(Request $request, Response $response, array $args): Response
     {
         $token = $this->trips->share($this->currentUser->get()->id, (int) $args['id']);
-        return $token === null ? Json::error($response, 404, t('No such trip.')) : Json::of($response, ['token' => $token]);
+        return $token === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, ['token' => $token]);
     }
 
     public function unshare(Request $request, Response $response, array $args): Response
     {
         $unshared = $this->trips->unshare($this->currentUser->get()->id, (int) $args['id']);
-        return $unshared ? $response->withStatus(204) : Json::error($response, 404, t('No such trip.'));
+        return $unshared ? $response->withStatus(204) : Json::error($response, 404, 'No such trip.');
     }
 
     public function show(Request $request, Response $response, array $args): Response
     {
         $document = $this->documents->load($this->currentUser->get()->id, (int) $args['id']);
-        return $document === null ? Json::error($response, 404, t('No such trip.')) : Json::of($response, $document);
+        return $document === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $document);
     }
 
     /** Replaces the trip's content with the document sent, if it was loaded at the current version. */
@@ -136,7 +136,7 @@ final class TripController
         $body = $request->getParsedBody();
         $version = Json::field($request, 'version');
         if (!is_int($version)) {
-            return Json::error($response, 422, t('The document must carry the version it was loaded at.'));
+            return Json::error($response, 422, 'The document must carry the version it was loaded at.');
         }
         try {
             $document = TripDocumentValidator::validated($body);
@@ -144,9 +144,9 @@ final class TripController
         } catch (InvalidDocument $error) {
             return Json::error($response, 422, $error->getMessage());
         } catch (VersionConflict $conflict) {
-            return Json::of($response->withStatus(409), ['error' => $conflict->getMessage(), 'version' => $conflict->currentVersion]);
+            return Json::of($response->withStatus(409), ['error' => t($conflict->getMessage()), 'version' => $conflict->currentVersion]);
         }
-        return $saved === null ? Json::error($response, 404, t('No such trip.')) : Json::of($response, ['version' => $saved]);
+        return $saved === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, ['version' => $saved]);
     }
 
     /** Deletes the trip with everything in it, its journal's files included. */
@@ -154,7 +154,7 @@ final class TripController
     {
         $deleted = $this->trips->delete($this->currentUser->get()->id, (int) $args['id']);
         if (!$deleted) {
-            return Json::error($response, 404, t('No such trip.'));
+            return Json::error($response, 404, 'No such trip.');
         }
         $this->files->deleteAll((int) $args['id']);
         return $response->withStatus(204);

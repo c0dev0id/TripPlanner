@@ -28,7 +28,7 @@ final class RecordingController
     public function index(Request $request, Response $response, array $args): Response
     {
         $recordings = $this->recordings->listFor($this->currentUser->get()->id, (int) $args['id']);
-        return $recordings === null ? Json::error($response, 404, t('No such trip.')) : Json::of($response, $recordings);
+        return $recordings === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $recordings);
     }
 
     /** Adds a recording from a multipart form: `dayId`, `name`, and the GPX `file` compressed with gzip. */
@@ -37,35 +37,35 @@ final class RecordingController
         $body = (array) $request->getParsedBody();
         $name = Name::of($body['name'] ?? null);
         if ($name === null) {
-            return Json::error($response, 422, t('A recording needs a name of up to 200 characters.'));
+            return Json::error($response, 422, 'A recording needs a name of up to 200 characters.');
         }
         $upload = $request->getUploadedFiles()['file'] ?? null;
         if (!$upload instanceof UploadedFileInterface || $upload->getError() !== UPLOAD_ERR_OK || $upload->getSize() > self::MAX_COMPRESSED) {
-            return Json::error($response, 422, t('The recording did not arrive, or is too large.'));
+            return Json::error($response, 422, 'The recording did not arrive, or is too large.');
         }
         $gzip = (string) $upload->getStream();
         $gpx = @gzdecode($gzip, self::MAX_GPX);
         if ($gpx === false || preg_match('/<gpx[\s>]/', substr($gpx, 0, 4096)) !== 1) {
-            return Json::error($response, 422, t('A recording is a GPX file compressed with gzip.'));
+            return Json::error($response, 422, 'A recording is a GPX file compressed with gzip.');
         }
         $recording = $this->recordings->add($this->currentUser->get()->id, (int) $args['id'], (string) ($body['dayId'] ?? ''), $name, $gzip, new DateTimeImmutable());
-        return $recording === null ? Json::error($response, 404, t('No such trip or day.')) : Json::of($response->withStatus(201), $recording);
+        return $recording === null ? Json::error($response, 404, 'No such trip or day.') : Json::of($response->withStatus(201), $recording);
     }
 
     public function rename(Request $request, Response $response, array $args): Response
     {
         $name = Name::of(Json::field($request, 'name'));
         if ($name === null) {
-            return Json::error($response, 422, t('A recording needs a name of up to 200 characters.'));
+            return Json::error($response, 422, 'A recording needs a name of up to 200 characters.');
         }
         $renamed = $this->recordings->rename($this->currentUser->get()->id, (int) $args['id'], (int) $args['recording'], $name);
-        return $renamed ? $response->withStatus(204) : Json::error($response, 404, t('No such recording.'));
+        return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'No such recording.');
     }
 
     public function delete(Request $request, Response $response, array $args): Response
     {
         $deleted = $this->recordings->delete($this->currentUser->get()->id, (int) $args['id'], (int) $args['recording']);
-        return $deleted ? $response->withStatus(204) : Json::error($response, 404, t('No such recording.'));
+        return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'No such recording.');
     }
 
     /** The GPX file as kept: compressed, which the browser undoes. It never changes under its id. */
@@ -73,7 +73,7 @@ final class RecordingController
     {
         $gzip = $this->recordings->gzip($this->currentUser->get()->id, (int) $args['id'], (int) $args['recording']);
         if ($gzip === null) {
-            return Json::error($response, 404, t('No such recording.'));
+            return Json::error($response, 404, 'No such recording.');
         }
         $response->getBody()->write($gzip);
         return $response

@@ -11,6 +11,6 @@ final class UnknownFolder extends RuntimeException
 {
     public function __construct()
     {
-        parent::__construct(t('No such folder.'));
+        parent::__construct('No such folder.');
     }
 }
