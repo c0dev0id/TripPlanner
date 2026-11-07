@@ -139,9 +139,6 @@ export function JournalDialog() {
                 File or photo
                 <input type="file" name="file" />
               </label>
-              <Show when={journalSpot()}>
-                <p class="muted hint">A new entry stands where you pressed the map; a photo that knows where it was taken stands there instead.</p>
-              </Show>
               <Show when={error()}>{(message) => <p class="error">{message()}</p>}</Show>
               <Show when={placed()}>{(note) => <p class="muted hint">{note()}</p>}</Show>
               <div class="row end">

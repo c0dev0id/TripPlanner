@@ -25,7 +25,6 @@ export function CollectionPanel() {
   const [renamed, setRenamed] = createSignal<Day>();
   return (
     <section class="trip">
-      <p class="muted hint">Planning material: copy a route or a waypoint from its menu, then paste it into a day of a trip from the day's menu.</p>
       <ol class="days">
         <ForById each={collection().days}>{(day) => <SectionItem day={day()} onRename={setRenamed} />}</ForById>
       </ol>

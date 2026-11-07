@@ -185,9 +185,6 @@ function DayDetails(props: { day: Day }) {
       <ul class="routes">
         <ForById each={props.day.routes}>{(route, index) => <RouteItem route={route()} index={index()} day={props.day} sequence={byRoute()[index()] ?? []} />}</ForById>
       </ul>
-      <Show when={props.day.routes.length === 0}>
-        <p class="muted hint">Add a route, pick the Point tool and tap the map to draw it, or import a GPX file.</p>
-      </Show>
       <Show when={importNote()}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
       <Show when={unplaced().length > 0}>
         <div class="row heading">
@@ -270,12 +267,6 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
         <ol class="stops">
           <SequenceItems entries={entries()} />
         </ol>
-        <Show when={pointCount(props.route) === 0}>
-          <p class="muted hint">Pick the Point tool and tap the map to draw the route.</p>
-        </Show>
-        <Show when={props.route.kind === 'routed' && pointCount(props.route) > 0 && stopCount() === 0}>
-          <p class="muted hint">Make stops of route points with the Stop tool, or tap beside the route.</p>
-        </Show>
       </Show>
     </li>
   );

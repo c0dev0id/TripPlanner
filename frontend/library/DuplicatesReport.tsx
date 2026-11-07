@@ -108,7 +108,6 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
           <p class="muted">No route is kept more than once.</p>
         </Match>
         <Match when={groups()}>
-          <p class="muted hint">Click a route or its pad to select it, with Cmd or Ctrl one more, with Shift a run of them; on a touch screen tap the pad. Their menu opens, copies or deletes them.</p>
           <Show when={note()}>{(n) => <p classList={{ error: n().error, muted: !n().error, hint: true }}>{n().text}</p>}</Show>
           <Section title={`Exact copies: ${counted(of('copies').length, 'group')}`} groups={of('copies')} {...rows} />
           <Section title={`The same ride kept twice: ${counted(of('same ride').length, 'group')}`} groups={of('same ride')} {...rows} />
