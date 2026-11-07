@@ -20,6 +20,8 @@ import { StopDialog } from './trip/StopDialog';
 import { TrackDialog } from './trip/TrackDialog';
 import { TripDialog } from './trip/TripDialog';
 import { ConfirmDialog } from './ui/ConfirmDialog';
+import { chooseLanguage, LANGUAGES, languageChoice, type Language } from './i18n/language';
+import { t } from './i18n/t';
 import { chooseTheme, theme, THEMES, type Theme } from './ui/theme';
 
 export function App() {
@@ -66,11 +68,14 @@ export function App() {
         <header class="panel-header">
           <h1>Trip Planner</h1>
           <Show when={me()}>{(user) => <span class="user">{user().email}</span>}</Show>
-          <select class="theme" aria-label="Theme" title="Light or dark, or as the browser says" value={theme()} onChange={(e) => chooseTheme(e.currentTarget.value as Theme)}>
-            <For each={THEMES}>{(t) => <option value={t.value}>{t.label}</option>}</For>
+          <select class="language" aria-label={t('Language')} title={t('German or English, or as the browser says')} value={languageChoice} onChange={(e) => chooseLanguage(e.currentTarget.value as Language | 'auto')}>
+            <For each={LANGUAGES}>{(l) => <option value={l.value}>{l.label}</option>}</For>
+          </select>
+          <select class="theme" aria-label={t('Theme')} title={t('Light or dark, or as the browser says')} value={theme()} onChange={(e) => chooseTheme(e.currentTarget.value as Theme)}>
+            <For each={THEMES}>{(x) => <option value={x.value}>{x.label}</option>}</For>
           </select>
           <button type="button" class="link" onClick={logout}>
-            Sign out
+            {t('Sign out')}
           </button>
         </header>
         <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} onReload={() => void reload()} opening={opening()} error={error()} />

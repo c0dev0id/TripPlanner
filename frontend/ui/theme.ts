@@ -1,4 +1,5 @@
 import { createSignal, type Accessor } from 'solid-js';
+import { t } from '../i18n/t';
 import { readPreference, writePreference } from './preferences';
 
 /**
@@ -11,9 +12,9 @@ import { readPreference, writePreference } from './preferences';
 export type Theme = 'system' | 'light' | 'dark';
 
 export const THEMES: readonly { value: Theme; label: string }[] = [
-  { value: 'system', label: 'Auto' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
+  { value: 'system', label: t('Auto') },
+  { value: 'light', label: t('Light') },
+  { value: 'dark', label: t('Dark') },
 ];
 
 const stored = readPreference('theme');

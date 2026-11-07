@@ -1,12 +1,17 @@
+import { locale } from '../i18n/language';
+import { t } from '../i18n/t';
+
+export { counted } from '../i18n/t';
+
 /** A distance in metres as text: metres below a kilometre, a decimal below 100 km, whole kilometres above. */
 export function distanceText(metres: number): string {
   if (metres < 1000) return `${Math.round(metres)} m`;
   const km = metres / 1000;
-  return km < 100 ? `${km.toFixed(1)} km` : `${Math.round(km)} km`;
+  return km < 100 ? `${km.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km` : `${Math.round(km)} km`;
 }
 
-const LONG_DATE = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-const SHORT_DATE = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+const LONG_DATE = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const SHORT_DATE = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' });
 
 /** A date as YYYY-MM-DD, read as the browser's local midnight; the text itself where it is no date. */
 function formatDate(iso: string, format: Intl.DateTimeFormat): string {
@@ -20,7 +25,7 @@ export const dateText = (iso: string): string => formatDate(iso, LONG_DATE);
 /** A date in the browser's language as weekday, day and month: "Sat, 13 Jun". */
 export const shortDateText = (iso: string): string => formatDate(iso, SHORT_DATE);
 
-const TAKEN_AT = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+const TAKEN_AT = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 
 /** When a photo was taken, as the camera wrote it (YYYY-MM-DDTHH:MM:SS, no zone): "Sat, 13 Jun, 14:30". */
 export function takenAtText(local: string): string {
@@ -28,7 +33,7 @@ export function takenAtText(local: string): string {
   return Number.isNaN(date.getTime()) ? local : TAKEN_AT.format(date);
 }
 
-const CLOCK = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+const CLOCK = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
 
 /** A moment in milliseconds since the epoch as the browser's local time of day: "14:30:05". */
 export const clockText = (ms: number): string => CLOCK.format(ms);
@@ -46,9 +51,6 @@ export function timeText(minutes: number): string {
 export function durationText(seconds: number): string {
   const minutes = Math.round(seconds / 60);
   const hours = Math.floor(minutes / 60);
-  if (hours === 0) return `${minutes} min`;
-  return minutes % 60 === 0 ? `${hours} h` : `${hours} h ${minutes % 60} min`;
+  if (hours === 0) return t('{n} min', { n: minutes });
+  return minutes % 60 === 0 ? t('{n} h', { n: hours }) : t('{h} h {m} min', { h: hours, m: minutes % 60 });
 }
-
-/** A count with its noun, plural where it is not one: "1 trip", "3 trips". */
-export const counted = (count: number, noun: string): string => `${count} ${noun}${count === 1 ? '' : 's'}`;

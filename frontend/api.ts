@@ -1,3 +1,5 @@
+import { language } from './i18n/language';
+import { t } from './i18n/t';
 import type { Entry, EntryTarget } from './model/journal';
 import type { Folder, LngLat, Trip, TripKind, TripSummary } from './model/trip';
 import { withStopsInRidingOrder } from './routing/sequence';
@@ -24,7 +26,8 @@ async function send(method: string, url: string, body?: unknown, keepalive = fal
   const form = body instanceof FormData;
   const response = await fetch(url, {
     method,
-    headers: body === undefined || form ? {} : { 'Content-Type': 'application/json' },
+    // The server answers, names and exports in the page's language.
+    headers: { 'Accept-Language': language, ...(body === undefined || form ? {} : { 'Content-Type': 'application/json' }) },
     body: body === undefined || form ? body : JSON.stringify(body),
     keepalive,
   });
@@ -33,7 +36,7 @@ async function send(method: string, url: string, body?: unknown, keepalive = fal
       .json()
       .then((data: { error?: unknown }) => (typeof data.error === 'string' ? data.error : undefined))
       .catch(() => undefined);
-    throw new ApiError(response.status, message ?? `The server answered ${response.status}.`);
+    throw new ApiError(response.status, message ?? t('The server answered {status}.', { status: response.status }));
   }
   return response;
 }

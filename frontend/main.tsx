@@ -8,5 +8,7 @@ import './map/markers.css';
 import './trip/journal.css';
 import './styles.css';
 import { App } from './App';
+import { language } from './i18n/language';
 
+document.documentElement.lang = language;
 render(() => <App />, document.getElementById('root')!);
