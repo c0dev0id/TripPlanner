@@ -1,4 +1,4 @@
-import { createResource, createRoot, createSignal } from 'solid-js';
+import { createEffect, createResource, createRoot, createSignal, on } from 'solid-js';
 import { addEntry as postEntry, deleteEntry, listEntriesAt, tripApi, updateEntry } from '../api';
 import { entriesOn as entriesOf, type Entry, type EntryTarget } from '../model/journal';
 import type { LngLat } from '../model/trip';
@@ -21,6 +21,9 @@ export const entriesOn = (target: EntryTarget): Entry[] => entriesOf(allEntries(
  * its new entries stand on where it was opened from there; none while it is closed.
  */
 const [journal, setJournal] = createSignal<{ target: EntryTarget; spot?: LngLat }>();
+
+// The journal is of the open trip: it closes with it, and with it a trip that another is opened over.
+createRoot(() => createEffect(on(openTripId, () => setJournal(undefined), { defer: true })));
 
 export const journalTarget = (): EntryTarget | undefined => journal()?.target;
 export const journalSpot = (): LngLat | undefined => journal()?.spot;
