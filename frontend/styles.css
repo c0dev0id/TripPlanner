@@ -57,7 +57,8 @@ a {
   font-size: 1rem;
 }
 
-.panel h3 {
+.panel h3,
+.panel h2.path {
   margin: 14px 0 6px;
   font-size: 0.8rem;
   text-transform: uppercase;
@@ -150,7 +151,8 @@ a {
 
 .panel button.icon,
 .hint-bar button.icon,
-.map-card button.icon {
+.map-card button.icon,
+.save-state {
   display: inline-grid;
   place-items: center;
   padding: 2px 4px;
@@ -302,7 +304,8 @@ a {
 .trips .name,
 .folders .name,
 .results .name,
-.duplicates .name {
+.duplicates .name,
+.up-card .name {
   display: block;
 }
 
@@ -346,11 +349,7 @@ a {
   align-items: baseline;
   gap: 4px;
   margin: 0;
-  font-size: 0.8rem;
   font-weight: normal;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
 }
 
 .path > span {
@@ -377,19 +376,8 @@ a {
   padding: 6px 8px;
 }
 
-.up-card .name {
-  display: block;
-}
-
 .save-state {
-  display: inline-grid;
-  place-items: center;
-  padding: 2px 4px;
   color: var(--muted);
-}
-
-.save-state.failed {
-  color: var(--error);
 }
 
 .panel-header .theme {

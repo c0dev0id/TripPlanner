@@ -35,13 +35,14 @@ import { ForById } from '../ui/ForById';
 import { counted, distanceText, shortDateText, timeText } from '../ui/format';
 import { ClockIcon, DownloadIcon, FileImportIcon, NeighboursIcon, NotebookIcon, PencilIcon, PlusIcon, ShareIcon } from '../ui/icons';
 import { Grip } from '../ui/Grip';
+import { IconButton } from '../ui/IconButton';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 import { addRecordingPicked, DayRecordings, RecordingsToggle } from './Recordings';
 import { removeDayAsked, removeRouteAsked } from './remove';
 
 /** The journal of a part as an icon, with the number of its entries where it has any. */
-export function JournalButton(props: { target: EntryTarget; of: string }) {
+function JournalButton(props: { target: EntryTarget; of: string }) {
   const count = createMemo(() => entriesOn(props.target).length);
   const label = () => `Journal of ${props.of}${count() === 0 ? '' : `: ${count()} ${count() === 1 ? 'entry' : 'entries'}`}`;
   return (
@@ -64,16 +65,16 @@ function moveToDayItem(dayId: string, run: (dayId: string) => void): MenuItem[] 
 export function TripIcons() {
   return (
     <>
-      <button class="icon" title="Edit trip" aria-label="Edit trip" onClick={() => setEditTarget({ kind: 'trip' })}>
+      <IconButton label="Edit trip" onClick={() => setEditTarget({ kind: 'trip' })}>
         <PencilIcon />
-      </button>
-      <button class="icon" title="Export GPX…" aria-label="Export GPX…" onClick={() => setExportOpen(true)}>
+      </IconButton>
+      <IconButton label="Export GPX…" onClick={() => setExportOpen(true)}>
         <DownloadIcon />
-      </button>
+      </IconButton>
       <JournalButton target={{}} of="the trip" />
-      <button class="icon" title="Print, share…" aria-label="Print, share…" onClick={() => setShareOpen(true)}>
+      <IconButton label="Print, share…" onClick={() => setShareOpen(true)}>
         <ShareIcon />
-      </button>
+      </IconButton>
     </>
   );
 }
@@ -85,12 +86,12 @@ export function TripPanel() {
     <section class="trip">
       <div class="row heading">
         <h3 class="grow">Days</h3>
-        <button class="icon" title={neighboursLabel()} aria-label={neighboursLabel()} aria-pressed={showNeighbours()} onClick={() => setShowNeighbours(!showNeighbours())}>
+        <IconButton label={neighboursLabel()} pressed={showNeighbours()} onClick={() => setShowNeighbours(!showNeighbours())}>
           <NeighboursIcon />
-        </button>
-        <button class="icon" title="Add day" aria-label="Add day" onClick={addDay}>
+        </IconButton>
+        <IconButton label="Add day" onClick={addDay}>
           <PlusIcon />
-        </button>
+        </IconButton>
       </div>
       <ol class="days">
         <ForById each={openTrip()!.days}>{(day, index) => <DayItem day={day()} index={index()} />}</ForById>
@@ -125,9 +126,9 @@ function DayItem(props: { day: Day; index: number }) {
           </span>
         </button>
         <Show when={selected()}>
-          <button class="icon" title={`Edit ${label()}`} aria-label={`Edit ${label()}`} onClick={() => setEditTarget({ kind: 'day', id: props.day.id })}>
+          <IconButton label={`Edit ${label()}`} onClick={() => setEditTarget({ kind: 'day', id: props.day.id })}>
             <PencilIcon />
-          </button>
+          </IconButton>
         </Show>
         <RecordingsToggle dayId={props.day.id} />
         <JournalButton target={{ dayId: props.day.id }} of={label()} />
@@ -173,12 +174,12 @@ function DayDetails(props: { day: Day }) {
       </Show>
       <div class="row heading">
         <h4 class="grow">Routes</h4>
-        <button class="icon" title="Add route" aria-label="Add route" onClick={addRoute}>
+        <IconButton label="Add route" onClick={addRoute}>
           <PlusIcon />
-        </button>
-        <button class="icon" title="Import GPX…" aria-label="Import GPX…" onClick={() => fileInput.click()}>
+        </IconButton>
+        <IconButton label="Import GPX…" onClick={() => fileInput.click()}>
           <FileImportIcon />
-        </button>
+        </IconButton>
         <input ref={fileInput} type="file" accept=".gpx,application/gpx+xml" hidden onChange={(e) => void importFile(e.currentTarget.files?.[0])} />
       </div>
       <ul class="routes">
