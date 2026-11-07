@@ -23,7 +23,7 @@ final class Language
     public static function fromHeader(?string $header): string
     {
         $choices = [];
-        foreach (explode(',', (string) $header) as $i => $entry) {
+        foreach (explode(',', (string) $header) as $entry) {
             $parts = array_map('trim', explode(';', $entry));
             $tag = strtolower(array_shift($parts));
             $q = 1.0;
@@ -33,10 +33,10 @@ final class Language
                 }
             }
             if ($tag !== '' && $q > 0) {
-                $choices[] = [$tag, $q, $i];
+                $choices[] = [$tag, $q];
             }
         }
-        usort($choices, fn (array $a, array $b) => $b[1] <=> $a[1] ?: $a[2] <=> $b[2]);
+        usort($choices, fn (array $a, array $b) => $b[1] <=> $a[1]);
         foreach ($choices as [$tag]) {
             $primary = explode('-', $tag)[0];
             if ($primary === 'de' || $primary === 'en') {
