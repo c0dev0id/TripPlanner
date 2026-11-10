@@ -554,7 +554,7 @@ entries at the end of their section.
 ## Server and stack
 
 - **PHP on the user's OpenBSD box, a SolidJS app in the browser.** The deployment target
-  is given: OpenBSD, httpd, php-fpm, PHP 8.4, deployed with `git pull`. The public pages
+  is given: OpenBSD, httpd, php-fpm, PHP 8.5, deployed with `git pull`. The public pages
   (landing, sign-up, sign-in) are server-rendered so that they need no JavaScript; the
   planner itself is a single-page app because a map editor is one.
 - **Slim 4, PHP-DI, Plates, PHPMailer.** Each does one job and is small: routing with

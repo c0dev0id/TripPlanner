@@ -4,7 +4,7 @@
 
 - OpenBSD with httpd and php-fpm. php-fpm runs chrooted to `/var/www`, so the application,
   its data and the SQLite file live below that directory.
-- PHP 8.4 with pdo_sqlite, sqlite3, zip, gd, intl, curl, xsl, and the core exif,
+- PHP 8.5 with pdo_sqlite, sqlite3, zip, gd, intl, curl, xsl, and the core exif,
   fileinfo and zlib extensions: gd makes the journal's image previews, fileinfo tells
   uploaded files' types, exif reads when and where a photo was taken (without exif,
   photos are kept but not placed), zlib checks that an uploaded recording is a
@@ -70,7 +70,7 @@
   `make init` applies the schema (new tables only); `make recreate` drops everything and
   applies it afresh, which is how a schema change is deployed before the first release.
 - `make garmin-icons` fetches Garmin's symbol pictures into `public/garmin-symbols` once
-  (with `php-8.4`; `PHP=` names another binary); a second run fetches only what is missing.
+  (with `php-8.5`; `PHP=` names another binary); a second run fetches only what is missing.
   httpd serves that directory as static files, as it serves `public/build`
   (`deploy/httpd.conf.example`).
 - Node.js 22 with npm 10 and Composer 2 on the server and for development.
