@@ -18,7 +18,7 @@ final class Config
         public readonly int $smtpPort,
         public readonly int $invitationTtl,
         public readonly int $passwordResetTtl,
-        /** Seconds a sign-in lasts without a visit, and at most. */
+        /** Seconds a sign-in lasts from the last request. */
         public readonly int $sessionTtl,
         /** Whether anyone may sign up from the landing page, by a link mailed to their address; else sign-up is by invitation. */
         public readonly bool $openSignup,
