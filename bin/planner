@@ -4,6 +4,7 @@
 declare(strict_types=1);
 
 use Planner\Account\Users;
+use Planner\Closures\MotorcycleClosures;
 use Planner\Database;
 use Planner\Journal\FileStore;
 use Planner\Kernel;
@@ -73,8 +74,12 @@ switch ($command) {
             echo 'No picture at the source for ' . implode('; ', $result['missing']) . "; the list's withoutPicture should name them.\n";
         }
         break;
+    case 'closures:fetch':
+        $features = MotorcycleClosures::fetch($root . '/public/closures.geojson');
+        echo "Motorcycle closures: $features places and stretches.\n";
+        break;
     default:
-        fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | user:create <email> | user:password <email> <password> | admin:grant <email> | garmin:icons\n");
+        fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | user:create <email> | user:password <email> <password> | admin:grant <email> | garmin:icons | closures:fetch\n");
         exit(1);
 }
 

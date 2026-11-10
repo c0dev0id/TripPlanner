@@ -5,6 +5,7 @@
     "require": {
         "php": "^8.3",
         "ext-pdo_sqlite": "*",
+        "ext-simplexml": "*",
         "ext-zip": "*",
         "league/plates": "^3.6",
         "php-di/php-di": "^7.1",

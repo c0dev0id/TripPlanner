@@ -50,6 +50,12 @@ admin:
 garmin-icons:
 	$(PHP) bin/planner garmin:icons
 
+# Fetches the roads closed to motorcycles from mintelonline.de into public/closures.geojson,
+# which git leaves alone: the map's closures overlay. The source changes every few weeks;
+# run it from cron.
+closures:
+	$(PHP) bin/planner closures:fetch
+
 # Runs what CI runs: syntax checks, PHP tests, type check, frontend tests and the build.
 check:
 	$(COMPOSER) validate
@@ -59,4 +65,4 @@ check:
 	$(NPM) test
 	$(NPM) run build
 
-.PHONY: build install init recreate invite user password admin garmin-icons check
+.PHONY: build install init recreate invite user password admin garmin-icons closures check

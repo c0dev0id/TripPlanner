@@ -2,6 +2,7 @@
 node_modules/
 /public/build/
 /public/garmin-symbols/
+/public/closures.geojson
 /var/
 /config/local.php
 /.phpunit.cache/

@@ -16,12 +16,15 @@ server "planner.codevoid.de" {
 		directory auto index
 	}
 
-	# Static files: the built frontend, Garmin's symbol pictures (make garmin-icons) and the
-	# stylesheet of the public pages.
+	# Static files: the built frontend, Garmin's symbol pictures (make garmin-icons), the
+	# motorcycle closures (make closures) and the stylesheet of the public pages.
 	location "/build/*" {
 		root "/planner/public"
 	}
 	location "/garmin-symbols/*" {
+		root "/planner/public"
+	}
+	location "/closures.geojson" {
 		root "/planner/public"
 	}
 	location "/site.css" {
