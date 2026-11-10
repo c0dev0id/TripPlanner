@@ -3,7 +3,7 @@ import type { StyleSpecification } from 'maplibre-gl';
 import { createSignal } from 'solid-js';
 import { readPreference, writePreference } from '../ui/preferences';
 
-/** The base maps to choose from: OpenFreeMap's vector styles, and raster tiles for the topographic and the classic looks. */
+/** The base maps to choose from: OpenFreeMap's vector styles, and raster tiles for the topographic and the classic looks and for satellite imagery. */
 
 export interface BaseMap {
   id: string;
@@ -30,6 +30,8 @@ export const BASE_MAPS: readonly BaseMap[] = [
   { id: 'opentopomap', label: 'OpenTopoMap', style: raster('https://tile.opentopomap.org/{z}/{x}/{y}.png', `Map data: ${OSM_ATTRIBUTION}, SRTM · Map style: © <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)`, 17) },
   { id: 'osm', label: 'OpenStreetMap', style: raster('https://tile.openstreetmap.org/{z}/{x}/{y}.png', OSM_ATTRIBUTION, 19) },
   { id: 'cyclosm', label: 'CyclOSM', style: raster('https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', `Map style: <a href="https://www.cyclosm.org">CyclOSM</a>, hosted by OpenStreetMap France · Map data: ${OSM_ATTRIBUTION}`, 20) },
+  { id: 'topplusopen', label: 'TopPlusOpen', style: raster('https://sgx.geodatenzentrum.de/wmts_topplus_open/tile/1.0.0/web/default/WEBMERCATOR/{z}/{y}/{x}.png', '© <a href="https://www.bkg.bund.de">BKG</a> (<a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a>) · <a href="https://sgx.geodatenzentrum.de/web_public/Datenquellen_TopPlus_Open.pdf">Data sources</a>', 18) },
+  { id: 'satellite', label: t('Satellite'), style: raster('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', 'Tiles © <a href="https://www.esri.com">Esri</a> · Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community', 19) },
 ];
 
 const stored = readPreference('baseMap');

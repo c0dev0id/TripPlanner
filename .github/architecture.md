@@ -22,7 +22,7 @@ flowchart LR
   subgraph remote["Remote services"]
     valhalla["Valhalla<br/>valhalla1.openstreetmap.de<br/>routing, road surfaces"]
     nominatim["Nominatim<br/>place search"]
-    tiles["OpenFreeMap<br/>base map tiles"]
+    tiles["OpenFreeMap, OpenTopoMap, OpenStreetMap,<br/>CyclOSM, BKG, Esri<br/>base map tiles"]
   end
   pages --> httpd
   app -->|JSON API| httpd

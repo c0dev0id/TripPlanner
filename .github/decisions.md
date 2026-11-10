@@ -222,7 +222,8 @@ entries at the end of their section.
 - **Base maps from public servers, chosen per browser.** OpenFreeMap's vector styles
   (Liberty as the default, Bright, Positron, Dark) need no key; OpenTopoMap for relief
   and contours, OpenStreetMap's standard tiles and CyclOSM as raster, for the looks
-  riders know from other tools. Each server's attribution rides with its source. The
+  riders know from other tools; the BKG's TopPlusOpen, the German federal topographic
+  map, and Esri's World Imagery for a look at the ground itself. Each server's attribution rides with its source. The
   choice is a preference of the browser, in localStorage, as the theme is: a matter of
   the device, not of the trip, and it costs no table. The list is fixed in code; adding
   a service of one's own is Layer Slayer's business, not this planner's. The panel's

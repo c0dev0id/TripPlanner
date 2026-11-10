@@ -331,6 +331,7 @@
   "Routes of the points, for the device to route": "Routen aus den Punkten, das Gerät berechnet den Weg",
   "Routing failed ({code}).": "Routing fehlgeschlagen ({code}).",
   "Routing {n} leg…|Routing {n} legs…": "{n} Teilstück wird berechnet…|{n} Teilstücke werden berechnet…",
+  "Satellite": "Satellit",
   "Save": "Speichern",
   "Save as…": "Speichern als…",
   "Saved": "Gespeichert",

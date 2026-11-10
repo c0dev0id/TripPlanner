@@ -60,8 +60,8 @@ share work; sharing between users is on the way.
   and the journal, for printing, or shared under a link that needs no account.
 - **Find the place** — search a town, a pass or an address; the map flies there and pins
   it, ready to become a point or a stop.
-- **Your map, your colours** — OpenFreeMap styles or OpenTopoMap, OpenStreetMap and
-  CyclOSM tiles under the routes; the interface light or dark by hand.
+- **Your map, your colours** — OpenFreeMap styles, OpenTopoMap, OpenStreetMap,
+  CyclOSM or TopPlusOpen tiles, or satellite imagery under the routes; the interface light or dark by hand.
 - **English or German** — the planner, its pages and mails follow the browser's language,
   or the one picked in the header; the GPX export names its days along.
 

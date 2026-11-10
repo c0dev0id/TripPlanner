@@ -47,8 +47,8 @@
 - Place search by Nominatim (nominatim.openstreetmap.org): at most one request per second,
   no search as you type, attribution shown.
 - Base maps: OpenFreeMap's vector styles (Liberty, Bright, Positron, Dark) without an
-  API key, and raster tiles from OpenTopoMap, OpenStreetMap and CyclOSM, each with its
-  attribution; the choice is kept in the browser.
+  API key, and raster tiles from OpenTopoMap, OpenStreetMap, CyclOSM, the BKG's TopPlusOpen
+  and Esri's World Imagery, each with its attribution; the choice is kept in the browser.
 
 ## Targets
 

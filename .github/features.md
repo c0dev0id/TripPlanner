@@ -189,7 +189,8 @@
   until the search is cleared; while a route is edited, its menu adds a point or a stop
   there.
 - A base map to choose on the map: OpenFreeMap's Liberty, Bright, Positron and Dark
-  styles, or the OpenTopoMap, OpenStreetMap and CyclOSM raster tiles; the route lines
+  styles, or the OpenTopoMap, OpenStreetMap, CyclOSM, TopPlusOpen and Esri
+  satellite raster tiles; the route lines
   and markers stay. A locate-me button shows where the browser is. The interface light
   or dark by hand, or as the browser says. Both choices are kept in the browser.
 - English and German. The planner follows the browser's language, or the one chosen in
