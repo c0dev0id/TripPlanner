@@ -52,6 +52,7 @@ final class InviterTest extends TestCase
             smtpPort: 25,
             invitationTtl: 14 * 86400,
             passwordResetTtl: 3600,
+            sessionTtl: 30 * 86400,
             openSignup: true,
         );
         $this->inviter = new Inviter($this->invitations, $this->waitlist, $mailer, $templates, $config);

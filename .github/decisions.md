@@ -606,6 +606,15 @@ entries at the end of their section.
   page and the API answers 403, and the given password is refused as the new one. The
   state is a column on the user, cleared by any change of the password, a reset by mail
   included; a reset token mailed instead would need the mail this command does without.
+- **A sign-in lasts 30 days, as a longer PHP session.** The session cookie had no
+  lifetime, so it went with the browser, and PHP's default of 24 minutes removed an idle
+  session on the server. Both now take `session_ttl`: the cookie expires that long after
+  the sign-in, and the session's data is kept that long after the last request. The
+  sessions lie in the data directory, not in PHP's shared directory, where another
+  application's shorter lifetime would clean them up. The cookie is set at sign-in and not
+  renewed, so a user signs in again after 30 days at the latest. Rejected: a separate
+  remember-me token with its own table, which pays off with a choice per device or a list
+  of sign-ins to withdraw, neither of which is asked for.
 - **Export runs on the server, import in the browser.** The data is in SQLite; GPX writing
   and a zip of per-day files are a read of the database, and a download is a URL that can
   be bookmarked. Import needs the editor's context (which day, which gap) and the routing

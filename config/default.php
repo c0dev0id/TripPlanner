@@ -6,7 +6,7 @@ declare(strict_types=1);
 return [
     'debug' => false,
     'base_url' => 'http://localhost:8080',
-    // The SQLite database, uploaded files and the mail log live here.
+    // The SQLite database, uploaded files, the sessions and the mail log live here.
     'data_dir' => dirname(__DIR__) . '/var',
     // Address of a running `npm run dev`; null serves the built frontend from public/build.
     'vite_dev_server' => null,
@@ -19,6 +19,8 @@ return [
     ],
     'invitation_ttl' => 14 * 86400,
     'password_reset_ttl' => 3600,
+    // A sign-in lasts this long, in the browser and on the server.
+    'session_ttl' => 30 * 86400,
     // Anyone may sign up from the landing page, by a link mailed to their address; false
     // keeps sign-up to invitations from the admin page or `make invite`.
     'open_signup' => true,

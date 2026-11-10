@@ -66,7 +66,7 @@
   type check, tests and build; GitHub Actions runs it on every push.
 - The server deploys with `git pull` and `make build`: Composer dependencies without
   development packages, `npm ci` and the Vite build into `public/build`.
-- The database, the file store and the local configuration live outside the checkout.
+- The database, the file store, the sessions and the local configuration live outside the checkout.
   `make init` applies the schema (new tables only); `make recreate` drops everything and
   applies it afresh, which is how a schema change is deployed before the first release.
 - `make garmin-icons` fetches Garmin's symbol pictures into `public/garmin-symbols` once
