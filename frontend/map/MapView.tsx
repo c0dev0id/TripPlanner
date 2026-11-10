@@ -13,6 +13,7 @@ import { ClosureInfo } from './ClosureInfo';
 import { Interactions } from './Interactions';
 import { EntryMarkers } from './EntryMarkers';
 import { PointMarkers } from './PointMarkers';
+import { PoiMarkers } from './PoiMarkers';
 import { OPENED_RECORDING_SOURCE, RECORDINGS_SOURCE, recordingFeatures } from './recordingOverlay';
 import { RecordingPoint } from './RecordingPoint';
 import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
@@ -43,6 +44,7 @@ export function MapView() {
             <PointMarkers map={m()} />
             <Interactions map={m()} />
             <ClosureInfo map={m()} />
+            <PoiMarkers map={m()} />
             <SearchBox map={m()} />
           </>
         )}

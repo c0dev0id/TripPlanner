@@ -70,8 +70,8 @@ Layers, each depending only on the ones below:
 - Presentation: `library/`, `trip/`, `map/`, `ui/`, `view/`.
 - Application state: `state/` (the open trip, undo and redo, the routing pump, autosave,
   journal, recordings, clipboard, library).
-- Domain, pure and unit-tested: `routing/`, `gpx/`, `recording/`, `geo/`, `symbols/`,
-  `model/`.
+- Domain, pure and unit-tested: `routing/`, `gpx/`, `recording/`, `poi/`, `geo/`,
+  `symbols/`, `model/`.
 - `api.ts` is the only module that knows the API's URLs.
 
 ### The trip document
@@ -92,8 +92,8 @@ Layers, each depending only on the ones below:
 - Coordinates are rounded to six decimals in the edit actions of `state/trip.ts`. Leg keys
   are built from coordinates as text in both TypeScript and PHP and only agree under that
   invariant.
-- Routing (Valhalla), place search (Nominatim) and map tiles are fetched by the browser
-  directly, at most one request per second to Valhalla and Nominatim. GPX import runs in
+- Routing (Valhalla), place search (Nominatim), POI search (Overpass) and map tiles are
+  fetched by the browser directly, at most one request per second to Valhalla and Nominatim. GPX import runs in
   the browser, GPX export on the server.
 
 ### Language

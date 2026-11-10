@@ -4,6 +4,8 @@ import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';
 import { PanelResizer } from './ui/PanelResizer';
+import { PoiBar } from './map/PoiBar';
+import { PoiDialog } from './map/PoiDialog';
 import { RoutingBar } from './map/RoutingBar';
 import { MapView } from './map/MapView';
 import { RecordingCards } from './map/RecordingCards';
@@ -85,6 +87,7 @@ export function App() {
         <MapView />
         <RecordingCards />
         <RoutingBar />
+        <PoiBar />
         <Toolbar />
       </div>
       <ContextMenu />
@@ -96,6 +99,7 @@ export function App() {
       <TrackDialog />
       <StopDialog />
       <ExportDialog />
+      <PoiDialog />
       <JournalDialog />
       <ShareDialog />
     </>

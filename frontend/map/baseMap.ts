@@ -3,7 +3,9 @@ import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { ROUTING_ATTRIBUTION } from '../routing/valhalla';
 import { BaseMapControl } from './BaseMapControl';
 import { chosenBaseMap } from './baseMaps';
+import { OVERPASS_ATTRIBUTION } from '../poi/overpass';
 import { shownOverlays } from './overlays';
+import { POI_LAYERS, POI_SOURCE } from './poiOverlay';
 import { OPENED_RECORDING_SOURCE, RECORDING_LAYERS, RECORDING_POINT_LAYERS, RECORDING_POINT_SOURCE, RECORDINGS_SOURCE } from './recordingOverlay';
 import { ROUTE_LAYERS, ROUTES_SOURCE } from './routeOverlay';
 
@@ -11,8 +13,8 @@ import { ROUTE_LAYERS, ROUTES_SOURCE } from './routeOverlay';
 setWorkerUrl(workerUrl);
 
 /**
- * The base style with the trip's lines on top, the recordings under the routes and the point
- * picked on a recording over them, and under all of these the overlays switched on: their
+ * The base style with the trip's lines on top, the recordings under the routes, the places
+ * a POI search found and the point picked on a recording over them, and under all of these the overlays switched on: their
  * sources and layers are appended to every style the map loads, and the trip's sources
  * keep their data across a change of base map, since MapLibre hands the transform the
  * style it is leaving.
@@ -21,9 +23,10 @@ function withOverlays(previous: StyleSpecification | undefined, next: StyleSpeci
   const empty = (): GeoJSONSourceSpecification => ({ type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
   const sources: StyleSpecification['sources'] = { ...next.sources, [ROUTES_SOURCE]: previous?.sources[ROUTES_SOURCE] ?? { ...empty(), attribution: ROUTING_ATTRIBUTION } };
   for (const id of [RECORDINGS_SOURCE, OPENED_RECORDING_SOURCE, RECORDING_POINT_SOURCE]) sources[id] = previous?.sources[id] ?? empty();
+  sources[POI_SOURCE] = previous?.sources[POI_SOURCE] ?? { ...empty(), attribution: OVERPASS_ATTRIBUTION };
   const overlays = shownOverlays();
   for (const overlay of overlays) Object.assign(sources, overlay.sources);
-  return { ...next, sources, layers: [...next.layers, ...overlays.flatMap((o) => o.layers), ...RECORDING_LAYERS, ...ROUTE_LAYERS, ...RECORDING_POINT_LAYERS] };
+  return { ...next, sources, layers: [...next.layers, ...overlays.flatMap((o) => o.layers), ...RECORDING_LAYERS, ...ROUTE_LAYERS, ...POI_LAYERS, ...RECORDING_POINT_LAYERS] };
 }
 
 /**

@@ -3,6 +3,7 @@ import { t } from '../i18n/t';
 import type { LngLat, Route, RoutePoint } from '../model/trip';
 import type { MenuItem } from '../ui/menu';
 import { openJournal } from './journal';
+import { setPoiSearchSpot } from './poi';
 import { addFreeStop, appendPoint, editingRoute, openTrip, selectedDay, setStraight } from './trip';
 
 /** Transient state of editing on the map; never kept. */
@@ -66,15 +67,16 @@ export function tapAction(): Tool | undefined {
   return editingRoute() ? currentTool() : undefined;
 }
 
-/** What a spot on the map offers: a point at the edited routed route's end, a free stop while a route is edited, a journal entry of the selected day of a trip there; nothing without a day. */
-export function spotItems(spot: LngLat): MenuItem[] | undefined {
+/** What a spot on the map offers: a point at the edited routed route's end, a free stop while a route is edited, a journal entry of the selected day of a trip there, and the POI search. */
+export function spotItems(spot: LngLat): MenuItem[] {
   const route = editingRoute();
   const day = selectedDay();
   const items: MenuItem[] = [];
   if (route?.kind === 'routed') items.push({ label: t('Add a point here'), run: () => appendPoint(route.id, spot) });
   if (route) items.push({ label: t('Add a stop here, beside the route'), run: () => addFreeStop(spot) });
   if (day && openTrip()?.kind === 'trip') items.push({ label: t('Journal here…'), run: () => openJournal({ dayId: day.id }, spot) });
-  return items.length > 0 ? items : undefined;
+  items.push({ label: t('Find POI…'), run: () => setPoiSearchSpot(spot) });
+  return items;
 }
 
 /** The menu item that makes the leg to a point of a route straight, or routed again. */

@@ -862,6 +862,66 @@ fieldset.choices legend {
   color: #fff;
 }
 
+/* How the POI search went, over the routing's state at the bottom of the map. */
+.poi-bar {
+  position: absolute;
+  bottom: calc(76px + var(--chart-room, 0px));
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  max-width: min(720px, calc(100% - 120px));
+  transform: translateX(-50%);
+  padding: 6px 10px 6px 12px;
+  border-radius: 6px;
+  background: rgba(33, 37, 41, 0.85);
+  color: #fff;
+  font-size: 13px;
+}
+
+.map-wrap:has(.toolbar) .poi-bar {
+  bottom: calc(144px + var(--chart-room, 0px));
+}
+
+.poi-bar .failed {
+  color: #ffa8a8;
+}
+
+.poi-bar button {
+  padding: 2px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 4px;
+  background: none;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* A POI category's colour, as on the map. */
+.poi-dot {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.poi-dialog fieldset.choices label {
+  align-items: center;
+}
+
+.poi-dialog input[type='number'] {
+  width: 5em;
+}
+
+.map-info .muted {
+  color: var(--muted);
+}
+
 /* An opened recording's figures float over the map: its summary top left under the place search, its charts along the bottom. */
 
 .map-card {
@@ -1023,13 +1083,13 @@ fieldset.choices legend {
   margin: 0;
 }
 
-/* What a closure tapped on the map is. */
-.closure-info h4 {
+/* What a closure or a place tapped on the map is. */
+.map-info h4 {
   margin: 0 16px 0 0;
   font-size: 13px;
 }
 
-.closure-info p {
+.map-info p {
   margin: 4px 0 0;
 }
 

@@ -248,6 +248,18 @@ entries at the end of their section.
   another server or fails with it. The file is not in git: it is
   the collector's work. KML styles are dropped; a closure's name says when and in which
   direction it holds, and a tap shows it with the description.
+- **The POI search asks Overpass by a fixed list of kinds.** Layer Slayer's OSM query
+  tool takes any tag filter within a drawn area; the planner asks one question, what is
+  there to stop at, so its kinds are a fixed list of one tag each and the area is a
+  distance: around a spot, or along the day's routes with Overpass's `around` filter over
+  a line. A distance per kind along a route is the point: a fuel station counts within
+  200 m, a hotel within 10 km. A route's line is thinned to a quarter of the distance
+  first, which keeps the query of a day's ride at a few kilobytes. One query asks for
+  `out center`, so that areas and relations answer as one position.
+- **Found places are shown, not kept.** They are dots in a layer of the map, as the other
+  days' stops are, since a search can answer with two thousand; they belong to the page,
+  not to the trip, and go with *Clear* or the next search. Making a stop of one is left
+  to the stop tool: the user decided against a button for it.
 - **Place search by Nominatim, on Enter, ported from Layer Slayer.** OpenStreetMap's own
   geocoder needs no key; its policy allows one request per second and no search as you
   type, so the box searches when Enter is pressed and keeps a second between requests.
