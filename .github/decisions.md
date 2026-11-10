@@ -228,6 +228,26 @@ entries at the end of their section.
   the device, not of the trip, and it costs no table. The list is fixed in code; adding
   a service of one's own is Layer Slayer's business, not this planner's. The panel's
   width, dragged at its edge, is kept the same way: it depends on the screen.
+- **Overlays are a fixed list, switched on per browser.** Roadworks and motorcycle
+  closures lie between the base map and the trip. An overlay's sources and layers are in
+  the style only while it is switched on, put there by the same style transform as the
+  route overlay: switching sets the base style again, which MapLibre diffs, so nothing is
+  fetched for an overlay that is off and there is one way into the style. As with the base
+  maps, the list is fixed in code; any other layer is Layer Slayer's business.
+- **Roadworks are the states' WMS pictures, not features.** The Rhineland-Palatinate
+  service's three layers (sites, stretches, diversions) are asked for in one request and
+  Baden-Württemberg's in a second, each only within its state's bounds, as 512 px tiles
+  in the services' own symbols. Nothing is known about a single site, so there is nothing
+  to tap; reading them as features (WFS, GetFeatureInfo) would be a second feature.
+- **The motorcycle closures are fetched and converted on the server.** mintelonline.de
+  publishes them as a KMZ file its server does not let a web page read, so Layer Slayer
+  has the user download and choose it. The planner has a server: `make closures` fetches
+  the file, reads the KML in it and writes its placemarks to `public/closures.geojson`,
+  which httpd serves and the map reads; cron repeats it, as the source changes every few
+  weeks. It is a command, as `make garmin-icons` is, so that no user's request waits for
+  another server or fails with it. The file is not in git: it is
+  the collector's work. KML styles are dropped; a closure's name says when and in which
+  direction it holds, and a tap shows it with the description.
 - **Place search by Nominatim, on Enter, ported from Layer Slayer.** OpenStreetMap's own
   geocoder needs no key; its policy allows one request per second and no search as you
   type, so the box searches when Enter is pressed and keeps a second between requests.

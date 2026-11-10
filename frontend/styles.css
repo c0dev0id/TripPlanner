@@ -986,14 +986,35 @@ fieldset.choices legend {
   color: var(--muted);
 }
 
-/* The details of a point picked on a recording. */
-.recording-point .maplibregl-popup-content {
+/* The map's popups in the theme's colours. */
+.maplibregl-popup-content {
   padding: 8px 12px;
   background: var(--panel);
   color: var(--fg);
   font-size: 13px;
 }
 
+:is(.maplibregl-popup-anchor-top, .maplibregl-popup-anchor-top-left, .maplibregl-popup-anchor-top-right) .maplibregl-popup-tip {
+  border-bottom-color: var(--panel);
+}
+
+:is(.maplibregl-popup-anchor-bottom, .maplibregl-popup-anchor-bottom-left, .maplibregl-popup-anchor-bottom-right) .maplibregl-popup-tip {
+  border-top-color: var(--panel);
+}
+
+.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--panel);
+}
+
+.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--panel);
+}
+
+.maplibregl-popup-close-button {
+  color: var(--muted);
+}
+
+/* The details of a point picked on a recording. */
 .recording-point h4 {
   margin: 0 16px 4px 0;
 }
@@ -1002,24 +1023,14 @@ fieldset.choices legend {
   margin: 0;
 }
 
-.recording-point:is(.maplibregl-popup-anchor-top, .maplibregl-popup-anchor-top-left, .maplibregl-popup-anchor-top-right) .maplibregl-popup-tip {
-  border-bottom-color: var(--panel);
+/* What a closure tapped on the map is. */
+.closure-info h4 {
+  margin: 0 16px 0 0;
+  font-size: 13px;
 }
 
-.recording-point:is(.maplibregl-popup-anchor-bottom, .maplibregl-popup-anchor-bottom-left, .maplibregl-popup-anchor-bottom-right) .maplibregl-popup-tip {
-  border-top-color: var(--panel);
-}
-
-.recording-point.maplibregl-popup-anchor-left .maplibregl-popup-tip {
-  border-right-color: var(--panel);
-}
-
-.recording-point.maplibregl-popup-anchor-right .maplibregl-popup-tip {
-  border-left-color: var(--panel);
-}
-
-.recording-point .maplibregl-popup-close-button {
-  color: var(--muted);
+.closure-info p {
+  margin: 4px 0 0;
 }
 
 .dialog {

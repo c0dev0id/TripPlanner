@@ -18,7 +18,7 @@ is the planner itself.
 | `npx vitest run frontend/routing/legs.test.ts` | One frontend test file; `-t <name>` for one test. |
 | `npm run typecheck` | TypeScript check alone. |
 | `npm run dev` | Vite dev server on port 5173; set `vite_dev_server` in `config/local.php` so the PHP templates load from it. |
-| `php bin/planner <command>` | `db:init`, `db:recreate`, `invite`, `user:create`, `user:password`, `admin:grant`, `garmin:icons`. |
+| `php bin/planner <command>` | `db:init`, `db:recreate`, `invite`, `user:create`, `user:password`, `admin:grant`, `garmin:icons`, `closures:fetch`. |
 
 The Makefile targets `init`, `recreate`, `invite`, `user`, `password` and `admin` wrap
 `bin/planner` with `doas -u www` and `pass` for the production OpenBSD box; in
@@ -119,4 +119,5 @@ hand with Playwright against `php -S`, not in CI.
   has no native binding.
 - `vendor/`, `node_modules/` and `public/build/` are never committed; the server builds
   with `make build` after `git pull`, CI only checks.
-- `public/garmin-symbols/` is fetched by `garmin:icons` and stays out of git.
+- `public/garmin-symbols/` is fetched by `garmin:icons` and `public/closures.geojson` by
+  `closures:fetch`; both stay out of git.

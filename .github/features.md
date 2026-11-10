@@ -193,6 +193,11 @@
   satellite raster tiles; the route lines
   and markers stay. A locate-me button shows where the browser is. The interface light
   or dark by hand, or as the browser says. Both choices are kept in the browser.
+- Overlays to switch on over the base map, from the same control, kept in the browser:
+  the roadworks of Rhineland-Palatinate (sites, their stretches and diversions) and of
+  Baden-Württemberg, as their map services draw them; and the roads closed to
+  motorcycles in Germany, Austria, Switzerland, the Netherlands and Belgium as
+  mintelonline.de collects them, where a tap on a closure says when and for whom it holds.
 - English and German. The planner follows the browser's language, or the one chosen in
   its header (Auto, Deutsch, English), kept in the browser; numbers, dates and distances
   are written the language's way. The server's pages, messages and mails follow the

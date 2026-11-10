@@ -58,6 +58,9 @@ share work; sharing between users is on the way.
 - **Planned, then ridden** — mark a trip done; the library shows it.
 - **Print it, share it** — a read-only page with the map, every day's stops and times
   and the journal, for printing, or shared under a link that needs no account.
+- **Roadworks and closures** — switch on the roadworks of Rhineland-Palatinate and
+  Baden-Württemberg, or the roads closed to motorcycles; tap a closure for its days and
+  hours.
 - **Find the place** — search a town, a pass or an address; the map flies there and pins
   it, ready to become a point or a stop.
 - **Your map, your colours** — OpenFreeMap styles, OpenTopoMap, OpenStreetMap,

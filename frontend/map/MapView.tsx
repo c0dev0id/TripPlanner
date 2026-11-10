@@ -9,6 +9,7 @@ import { loadedTrack, recordingColor, shownRecordings } from '../state/recording
 import { failedLegs } from '../state/routing';
 import { editingRouteId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
 import { newBaseMap } from './baseMap';
+import { ClosureInfo } from './ClosureInfo';
 import { Interactions } from './Interactions';
 import { EntryMarkers } from './EntryMarkers';
 import { PointMarkers } from './PointMarkers';
@@ -41,6 +42,7 @@ export function MapView() {
             <EntryMarkers map={m()} />
             <PointMarkers map={m()} />
             <Interactions map={m()} />
+            <ClosureInfo map={m()} />
             <SearchBox map={m()} />
           </>
         )}
