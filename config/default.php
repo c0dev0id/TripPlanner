@@ -8,7 +8,7 @@ return [
     'base_url' => 'http://localhost:8080',
     // The SQLite database, uploaded files and the mail log live here.
     'data_dir' => dirname(__DIR__) . '/var',
-    // Address of a running `npm run dev`; null serves the built frontend from public/app.
+    // Address of a running `npm run dev`; null serves the built frontend from public/build.
     'vite_dev_server' => null,
     'mail' => [
         'transport' => 'log', // 'smtp' or 'log'
