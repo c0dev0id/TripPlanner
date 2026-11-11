@@ -5,15 +5,17 @@ import { folderPath } from './folders';
 import { importFolder, pickedPath, planFolderImport, type PlannedTrip } from './folderImport';
 import { ImportDialog } from './ImportDialog';
 import { libraryFolders, relistFolders, relistTrips, runLibrary, setImportNote, showDuplicates, shownFolderId } from '../state/library';
+import { placesListOpen, setPlacesListOpen } from '../state/places';
 import { counted } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
-import { CopyIcon, FolderImportIcon, FolderPlusIcon, MapPlusIcon } from '../ui/icons';
+import { CopyIcon, FolderImportIcon, FolderPlusIcon, MapPlusIcon, PinIcon } from '../ui/icons';
 import { NameDialog } from '../ui/NameDialog';
 
 /**
- * The library's actions as icons, the same at every level of the explorer: a new trip or
+ * The panel's actions as icons, the same at every level of the explorer: a new trip or
  * folder in the folder shown, a folder of GPX files imported into it, the duplicates
- * report. All but a new trip leave an open trip first.
+ * report, and the list of places to show on the map. The library's but a new trip leave an
+ * open trip first.
  */
 export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: () => Promise<void>; opening: boolean }) {
   const [dialog, setDialog] = createSignal<'trip' | 'folder'>();
@@ -54,6 +56,9 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
       </IconButton>
       <IconButton label={t('Duplicates…')} onClick={openDuplicates}>
         <CopyIcon />
+      </IconButton>
+      <IconButton label={t('Places')} pressed={placesListOpen()} onClick={() => setPlacesListOpen(!placesListOpen())}>
+        <PinIcon />
       </IconButton>
       <input
         ref={(el) => {

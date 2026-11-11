@@ -87,7 +87,8 @@
   (`deploy/httpd.conf.example`).
 - A new table reaches a deployed database with `make init`; `places`, `place_areas` and
   `user_preferences` were added that way.
-- `make places AREA=<code>` fetches the places of one area, in place of what was kept for
+- `make places` lists the areas to pick from with what is kept of each;
+  `make places AREA=<code>` fetches the places of one area, in place of what was kept for
   it: `AREA` is an ISO 3166-2 code of a region (`DE-RP`, `AT-7`, `FR-ARA`, `IT-25`) or an
   ISO 3166-1 code of a whole country (`CH`, `NL`, `BE`). One cron job per area, spread
   over the months; a large region takes minutes and tens of megabytes of answer. The

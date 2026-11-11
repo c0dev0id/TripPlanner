@@ -870,6 +870,33 @@ fieldset.choices legend {
   vertical-align: -4px;
 }
 
+/* The kinds of places as layers, a list in the panel under its row of icons. */
+.places-list {
+  gap: 4px;
+  padding: 6px 8px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.panel .places-list label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg);
+}
+
+.panel .places-list .along {
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.places-list p {
+  margin: 2px 0 0;
+  font-size: 13px;
+}
+
 .place-reaches label {
   align-items: center;
 }

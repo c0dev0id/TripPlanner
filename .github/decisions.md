@@ -289,8 +289,9 @@ entries at the end of their section.
   AREA=DE-RP` asks for every kind of place in a region (ISO 3166-2) or a whole country
   (ISO 3166-1) at once, and kind by kind where the server does not get through with that.
   One cron job per area, spread over months, is the gentlest use a public server can be
-  put to: a handful of questions a year per region. There is no list of areas in the
-  code; the cron table is the list. A fetch replaces its area's places in one
+  put to: a handful of questions a year per region. `make places` without an area lists
+  the codes of the user's travel countries to pick from, with what is kept of each; any
+  other code is fetched as well, so the list limits nothing. A fetch replaces its area's places in one
   transaction, so the map never shows half an area.
 - **An answer is tab-separated values with a mark at its end.** A region's places are tens
   of megabytes as JSON, which PHP would hold whole; as CSV with only the columns kept
@@ -312,6 +313,10 @@ entries at the end of their section.
   points, which leave a winding road by kilometres. The distances are a preference of the
   account, 200 m for every kind to begin with: narrow, so that a route stays readable,
   and changed in a moment, since nothing is fetched for it.
+- **The kinds of places are a list in the panel, not a menu on the map.** Several kinds
+  are switched at a time, and the app's menu closes with each pick; a list of checkboxes
+  that stays open under the panel's icons takes as many ticks as wanted. The map's own
+  controls stay for what belongs to the map alone: the base map and the two overlays.
 - **Preferences are an object the planner owns.** What a user sets for the planner as a
   whole is kept with the account as JSON the server stores and returns without reading
   it: a new preference needs no change on the server. What depends on the device (base

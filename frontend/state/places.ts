@@ -23,6 +23,11 @@ export const isKindShown = (category: PoiCategory): boolean => shownIds().includ
 
 const shownKinds = createRoot(() => createMemo(() => POI_CATEGORIES.filter(isKindShown)));
 
+export const shownKindCount = (): number => shownKinds().length;
+
+/** Whether the list of kinds is open in the panel. */
+export const [placesListOpen, setPlacesListOpen] = createSignal(false);
+
 export function toggleKind(category: PoiCategory): void {
   const ids = isKindShown(category) ? shownIds().filter((id) => id !== category.id) : [...shownIds(), category.id];
   setShownIds(ids);

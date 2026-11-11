@@ -3,7 +3,6 @@ import { createEffect, For, onCleanup, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { poiDetails } from '../poi/details';
 import { placesOnMap, setMapView } from '../state/places';
-import { PlacesControl } from './PlacesControl';
 import { POI_LAYERS, POI_SOURCE, poiFeatures } from './poiOverlay';
 import { popupOnTap } from './tapPopup';
 
@@ -15,12 +14,7 @@ export function PlaceMarkers(props: { map: MapLibreMap }) {
   };
   tellView();
   props.map.on('moveend', tellView);
-  const control = new PlacesControl();
-  props.map.addControl(control, 'top-right');
-  onCleanup(() => {
-    props.map.off('moveend', tellView);
-    props.map.removeControl(control);
-  });
+  onCleanup(() => props.map.off('moveend', tellView));
   const popup = popupOnTap(
     props.map,
     POI_LAYERS.map((layer) => layer.id),

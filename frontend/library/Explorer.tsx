@@ -1,5 +1,6 @@
 import { createMemo, For, Match, Show, Switch } from 'solid-js';
 import { t } from '../i18n/t';
+import { PlacesList } from '../map/PlacesList';
 import { heldOf, libraryFolders, libraryProblem, query, setQuery, showFolder, shownFolderId, showingDuplicates } from '../state/library';
 import { openTrip, selectDay, selectedDay } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
@@ -57,6 +58,7 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
   return (
     <section class="explorer">
       <LibraryActions onOpen={(id) => openIn(id, shownFolderId())} onLeave={props.onLeave} opening={props.opening} />
+      <PlacesList />
       <input class="search" type="search" placeholder={t('Search trips and folders')} aria-label={t('Search trips and folders')} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
       <div class="row explorer-heading">
         <h2 class="path grow" title={path().join(' › ') || EXPLORER}>

@@ -58,8 +58,9 @@ closures:
 
 # Fetches the places of an area (fuel stations, hotels and the like) from OpenStreetMap into
 # the planner's store, in place of what was kept for the area: make places AREA=DE-RP.
-# AREA is the ISO 3166-2 code of a region, or the ISO 3166-1 code of a whole country. Run
-# it from cron, an area at a time and far apart; the planner asks only its store.
+# AREA is the ISO 3166-2 code of a region, or the ISO 3166-1 code of a whole country;
+# without AREA, the areas to pick from are listed, with what is kept of each. Run it from
+# cron, an area at a time and far apart; the planner asks only its store.
 places:
 	doas -u www $(PHP) bin/planner places:fetch $(AREA)
 

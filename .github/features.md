@@ -203,11 +203,12 @@
   in a red ring where one begins, where a tap says when and for whom it holds. Signs and
   lines of both grow with the zoom, so that they stay wider than the road under them.
 - Places on the map from the planner's own store of OpenStreetMap data: fuel stations,
-  hotels, restaurants, cafes, viewpoints and parking, each kind switched on from the
-  places button among the map's controls. Shown are those along the selected day's routes,
+  hotels, restaurants, cafes, viewpoints and parking, each kind a layer to tick in the
+  list the places icon of the panel opens. Shown are those along the selected day's routes,
   each kind within its own distance, or, with that switched off, all in view from zoom 10
   on. A tap on a place shows name, address, cuisine, opening hours, phone and links to
-  its homepage and OpenStreetMap. The store is filled area by area by `make places`.
+  its homepage and OpenStreetMap. The store is filled area by area by `make places`, which lists
+  the areas to pick from when run without one.
 - Preferences, kept with the account: how far from a route a place of each kind is still
   shown along it, 200 m to begin with.
 - A spot of the map opened in Google Maps or Google Street View, from the map's menu.
