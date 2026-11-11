@@ -194,12 +194,13 @@
   and markers stay. A locate-me button shows where the browser is. The interface light
   or dark by hand, or as the browser says. Both choices are kept in the browser.
 - Overlays to switch on over the base map, from the same control, kept in the browser:
-  the roadworks of Rhineland-Palatinate (sites, their stretches and diversions) and of
-  Baden-Württemberg, as their map services draw them; and the roads closed to
-  motorcycles in Germany, Austria, Switzerland, the Netherlands and Belgium as
-  mintelonline.de collects them, a motorcycle in a red ring where one begins, where a tap
-  on a closure says when and for whom it holds. Signs and lines of both grow with the
-  zoom, so that they stay wider than the road under them.
+  the roadworks Rhineland-Palatinate's and Baden-Württemberg's services list, as a line
+  with a warning sign, a red ring where the road is closed, diversions in blue and works
+  yet to begin fainter, where a tap on a site says the road, the kind of work, its dates
+  and who reports it; and the roads closed to motorcycles in Germany, Austria,
+  Switzerland, the Netherlands and Belgium as mintelonline.de collects them, a motorcycle
+  in a red ring where one begins, where a tap says when and for whom it holds. Signs and
+  lines of both grow with the zoom, so that they stay wider than the road under them.
 - A POI search from the map's menu (*Find POI…*): fuel stations, hotels, restaurants,
   cafes, viewpoints and parking from OpenStreetMap, around the spot within 1 to 20 km,
   or along the selected day's routes within a distance per kind (200 m for fuel and

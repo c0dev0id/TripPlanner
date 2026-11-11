@@ -24,7 +24,7 @@ flowchart LR
     nominatim["Nominatim<br/>place search"]
     overpass["Overpass API<br/>POI search"]
     tiles["OpenFreeMap, OpenTopoMap, OpenStreetMap,<br/>CyclOSM, BKG, Esri<br/>base map tiles"]
-    wms["Mobilitätsatlas RLP, MobiData BW<br/>roadworks (WMS)"]
+    wms["Mobilitätsatlas RLP, MobiData BW<br/>roadworks (WFS)"]
     closures["mintelonline.de<br/>motorcycle closures (KMZ)"]
   end
   pages --> httpd

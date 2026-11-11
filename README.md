@@ -59,7 +59,7 @@ share work; sharing between users is on the way.
 - **Print it, share it** — a read-only page with the map, every day's stops and times
   and the journal, for printing, or shared under a link that needs no account.
 - **Roadworks and closures** — switch on the roadworks of Rhineland-Palatinate and
-  Baden-Württemberg, or the roads closed to motorcycles.
+  Baden-Württemberg, or the roads closed to motorcycles; tap one for what and until when.
 - **Fuel, beds and food** — find fuel stations, hotels, restaurants, cafes, viewpoints
   and parking around a spot or along the day's routes, each within its own distance.
 - **Find the place** — search a town, a pass or an address; the map flies there and pins

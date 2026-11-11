@@ -239,17 +239,23 @@ entries at the end of their section.
   map is sharp up to its last tiles and blown up beyond: a road doubles with every zoom,
   to 160 px and more, and a sign of one size ends up a speck on it. So an overlay's layers
   are made for the base map shown: from the zoom it is blown up at, lines and signs take
-  their size from the road's. A closure's line and sign are style expressions; a map
-  service draws its own signs, so the roadworks are asked for in steps of GeoServer's
-  `dpi` option, a source and a layer per step, each shown in its zooms.
-- **A closure's sign is the road sign.** A motorcycle in a red ring, as on the road, with
-  Temaki's motorcycle (CC0, the companion set to Maki), drawn into a map image as the POI
-  badges are.
-- **Roadworks are the states' WMS pictures, not features.** The Rhineland-Palatinate
-  service's three layers (sites, stretches, diversions) are asked for in one request and
-  Baden-Württemberg's in a second, each only within its state's bounds, as 512 px tiles
-  in the services' own symbols. Nothing is known about a single site, so there is nothing
-  to tap; reading them as features (WFS, GetFeatureInfo) would be a second feature.
+  their size from the road's, as style expressions.
+- **The overlays' signs are road signs.** A closure is a motorcycle in a red ring, with
+  Temaki's motorcycle (CC0, the companion set to Maki); roadworks are a warning triangle
+  with Maki's traffic cone, a closed road the empty red ring. They are drawn into map
+  images as the POI badges are.
+- **Roadworks are the states' features, drawn by the planner.** Both services are
+  GeoServers that hand out their roadworks as GeoJSON (WFS) to any page: Rhineland-
+  Palatinate's sites as points with their stretches and diversions as lines,
+  Baden-Württemberg's sites as lines. All of it is some 11 MB, 1.5 MB compressed, read
+  when the overlay is switched on. A first version showed the services' own pictures
+  (WMS): their signs have one size, which a road blown up on a raster base map outgrows,
+  and asking for larger pictures in steps (GeoServer's `dpi` option) ended at eight times
+  the size with nothing to tap. As features, lines and signs are sized like the closures',
+  a site says what it is on a tap, and works yet to begin are drawn fainter. The
+  Rhineland-Palatinate service also lists Baden-Württemberg's sites, which are left to
+  that state's own service. A stretch or a diversion carries nothing but its site's id,
+  so only sites answer a tap.
 - **The motorcycle closures are fetched and converted on the server.** mintelonline.de
   publishes them as a KMZ file its server does not let a web page read, so Layer Slayer
   has the user download and choose it. The planner has a server: `make closures` fetches

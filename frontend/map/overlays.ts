@@ -1,5 +1,6 @@
+import cone from '@mapbox/maki/icons/construction.svg?raw';
 import motorcycle from '@rapideditor/temaki/icons/motorcycle.svg?raw';
-import type { ExpressionSpecification, LayerSpecification, RasterSourceSpecification, SourceSpecification } from 'maplibre-gl';
+import type { ExpressionSpecification, GeoJSONSourceSpecification, LayerSpecification, SourceSpecification } from 'maplibre-gl';
 import { createSignal } from 'solid-js';
 import { t } from '../i18n/t';
 import { readPreference, writePreference } from '../ui/preferences';
@@ -7,7 +8,7 @@ import { svgContent, svgUrl, type MapImage } from './mapImages';
 
 /**
  * What the map draws between the base map and the trip while switched on: the roadworks
- * of two German states' map services, and the roads closed to motorcycles.
+ * two German states' services list, and the roads closed to motorcycles.
  */
 
 /** What an overlay puts into the map's style. */
@@ -50,59 +51,85 @@ function byZoom(far: number, mid: number, near: number, ofRoad: number, sharpUnt
   return ['interpolate', ['linear'], ['zoom'], ...ZOOMS.flatMap((zoom) => [zoom, Math.max(own(zoom), ofRoad * blownUpRoad(zoom, sharpUntil))])];
 }
 
-/** The side of a map service's signs as it draws them, in CSS pixels. */
-const WMS_SIGN_PX = 20;
-/** The most a map service is asked to enlarge its signs. */
-const WMS_MAX_SCALE = 8;
-
-/**
- * How much larger than its own size a WMS draws its signs and lines from each zoom on, so
- * that a sign stays wider than the road it stands on: somewhat larger as the roads widen,
- * and in step with a base map that is blown up.
- */
-function wmsScales(sharpUntil: number | undefined): { fromZoom: number; scale: number }[] {
-  const scales = [
-    { fromZoom: 0, scale: 1 },
-    { fromZoom: 12, scale: 1.5 },
-    { fromZoom: 14, scale: 2 },
-  ];
-  for (const zoom of ZOOMS) {
-    const scale = Math.min(WMS_MAX_SCALE, Math.round((1.3 * blownUpRoad(zoom, sharpUntil)) / WMS_SIGN_PX));
-    if (scale > scales.at(-1)!.scale) scales.push({ fromZoom: zoom, scale });
-  }
-  return scales;
-}
-
-/**
- * The layers of a WMS as tiles of 512 px, asked for only within `bounds` (west, south,
- * east, north): a source and a layer for each scale, shown in its zooms. The scale is
- * GeoServer's `dpi` option, 90 being its own size.
- */
-function wms(id: string, url: string, layers: string, bounds: [number, number, number, number], attribution: string, sharpUntil: number | undefined): OverlayParts {
-  const query = `SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=${layers}&STYLES=&FORMAT=image/png&TRANSPARENT=true&SRS=EPSG:3857&WIDTH=512&HEIGHT=512`;
-  const scales = wmsScales(sharpUntil);
-  const parts: OverlayParts = { sources: {}, layers: [] };
-  for (const [i, { fromZoom, scale }] of scales.entries()) {
-    const part = `${id}-${fromZoom}`;
-    parts.sources[part] = { type: 'raster', tiles: [`${url}?${query}&FORMAT_OPTIONS=dpi:${90 * scale}&BBOX={bbox-epsg-3857}`], tileSize: 512, bounds, attribution } satisfies RasterSourceSpecification;
-    parts.layers.push({ id: part, type: 'raster', source: part, minzoom: fromZoom, maxzoom: scales[i + 1]?.fromZoom ?? 24 });
-  }
-  return parts;
-}
-
-const CLOSURES_SOURCE = 'closures';
-const CLOSURE_COLOR = '#d0021b';
-const CLOSURE_SIGN = 'closure-sign';
-/** The sign's side in CSS pixels at icon size 1, and the pixels it is drawn with for each: it is shown several times that size over a base map blown up. */
+/** A sign's side in CSS pixels at icon size 1, and the pixels it is drawn with for each: it is shown several times that size over a base map blown up. */
 const SIGN_SIZE = 28;
 const SIGN_PIXEL_RATIO = 6;
 
-/** Closed to motorcycles, as the road sign says it: a motorcycle in a red ring. Temaki's motorcycle (CC0). */
-const closureSign = svgUrl(
-  `<svg xmlns="http://www.w3.org/2000/svg" width="${SIGN_SIZE * SIGN_PIXEL_RATIO}" height="${SIGN_SIZE * SIGN_PIXEL_RATIO}" viewBox="0 0 28 28">` +
-    `<circle cx="14" cy="14" r="11.5" fill="#fff" stroke="${CLOSURE_COLOR}" stroke-width="4"/>` +
-    `<g transform="translate(6 5.6) scale(1.0667)" fill="#111">${svgContent(motorcycle)}</g></svg>`,
-);
+/** A sign of 28 × 28 as a map image. */
+const sign = (drawing: string): MapImage => ({
+  url: svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" width="${SIGN_SIZE * SIGN_PIXEL_RATIO}" height="${SIGN_SIZE * SIGN_PIXEL_RATIO}" viewBox="0 0 28 28">${drawing}</svg>`),
+  size: SIGN_SIZE,
+  pixelRatio: SIGN_PIXEL_RATIO,
+});
+
+/** A sign that grows as `byZoom` has it, 1.3 times as wide as a road blown up. */
+const signSize = (sharpUntil: number | undefined): ExpressionSpecification => byZoom(0.7, 1, 1.4, 1.3 / SIGN_SIZE, sharpUntil);
+
+const SIGN_RED = '#d0021b';
+const RING = `<circle cx="14" cy="14" r="11.5" fill="#fff" stroke="${SIGN_RED}" stroke-width="4"/>`;
+
+const CLOSURES_SOURCE = 'closures';
+const CLOSURE_SIGN = 'closure-sign';
+
+const ROADWORKS_SIGN = 'roadworks-sign';
+const ROAD_CLOSED_SIGN = 'road-closed-sign';
+const ROADWORKS_COLOR = '#e03131';
+const DIVERSION_COLOR = '#1971c2';
+
+/** The roadworks of Rhineland-Palatinate's service: sites as points, their stretches and their diversions as lines. */
+const RLP = 'https://maps.mobilitaetsatlas.de/geoserver/ows';
+const RLP_ATTRIBUTION = `${t('Roadworks')}: <a href="https://www.mobilitaetsatlas.de">Mobilitätsatlas Rheinland-Pfalz</a>`;
+/** Baden-Württemberg's: each site a line. */
+const BW = 'https://api.mobidata-bw.de/geoserver/ows';
+const BW_ATTRIBUTION = `${t('Roadworks')}: <a href="https://www.mobidata-bw.de">MobiData BW</a>`;
+
+/** All features of a type of a WFS, as GeoJSON. */
+const wfs = (url: string, type: string, attribution: string): GeoJSONSourceSpecification => ({
+  type: 'geojson',
+  data: `${url}?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=${type}&OUTPUTFORMAT=application/json&SRSNAME=EPSG:4326`,
+  attribution,
+});
+
+/** The Rhineland-Palatinate service also carries Baden-Württemberg's sites, which that state's own service has. */
+const NOT_BW: ExpressionSpecification = ['!=', ['get', 'quelle'], 'Verkehrsministerium Baden-Württemberg'];
+
+/** The layers of roadworks: a line, and a sign that says whether the road is closed, both fainter for works yet to begin. */
+function roadworksLayers(sharpUntil: number | undefined): LayerSpecification[] {
+  const now = new Date().toISOString();
+  const faintBefore = (start: string): ExpressionSpecification => ['case', ['>', ['to-string', ['get', start]], now], 0.45, 1];
+  const signOf = (closed: ExpressionSpecification): ExpressionSpecification => ['case', closed, ROAD_CLOSED_SIGN, ROADWORKS_SIGN];
+  const line = (id: string, color: string, filter?: ExpressionSpecification, start?: string): LayerSpecification => ({
+    id,
+    type: 'line',
+    source: id,
+    ...(filter && { filter }),
+    layout: { 'line-join': 'round', 'line-cap': 'round' },
+    paint: { 'line-color': color, 'line-width': byZoom(2.5, 4, 8, 0.5, sharpUntil), ...(start && { 'line-opacity': faintBefore(start) }) },
+  });
+  return [
+    line('roadworks-rlp-diversions', DIVERSION_COLOR),
+    line('roadworks-rlp-stretches', ROADWORKS_COLOR, NOT_BW),
+    line('roadworks-bw', ROADWORKS_COLOR, undefined, 'starttime'),
+    {
+      id: 'roadworks-bw-signs',
+      type: 'symbol',
+      source: 'roadworks-bw',
+      layout: { 'symbol-placement': 'line-center', 'icon-image': signOf(['==', ['get', 'type'], 'ROAD_CLOSED']), 'icon-size': signSize(sharpUntil), 'icon-rotation-alignment': 'viewport' },
+      paint: { 'icon-opacity': faintBefore('starttime') },
+    },
+    {
+      id: 'roadworks-rlp-sites',
+      type: 'symbol',
+      source: 'roadworks-rlp-sites',
+      filter: NOT_BW,
+      layout: { 'icon-image': signOf(['==', ['get', 'art_der_arbeiten'], 'Vollsperrung']), 'icon-size': signSize(sharpUntil) },
+      paint: { 'icon-opacity': faintBefore('von') },
+    },
+  ];
+}
+
+/** The layers a tap looks for roadworks in: those whose features say what they are. */
+export const ROADWORKS_LAYERS = ['roadworks-rlp-sites', 'roadworks-bw-signs', 'roadworks-bw'];
 
 /** The layers a tap looks for a closure in. */
 export const CLOSURE_LAYERS = [`${CLOSURES_SOURCE}-line`, `${CLOSURES_SOURCE}-point`];
@@ -111,18 +138,19 @@ export const OVERLAYS: readonly Overlay[] = [
   {
     id: 'roadworks',
     label: t('Roadworks'),
-    parts: (sharpUntil) => {
-      const rlp = wms(
-        'roadworks-rlp',
-        'https://maps.mobilitaetsatlas.de/geoserver/ows',
-        // Drawn in this order: the diversions lowest, the sites' signs on top.
-        'mwvlw:umleitung,mwvlw:verlauf,mwvlw:baustelle',
-        [6.1, 48.3, 9.4, 51.7],
-        `${t('Roadworks')}: <a href="https://www.mobilitaetsatlas.de">Mobilitätsatlas Rheinland-Pfalz</a>`,
-        sharpUntil,
-      );
-      const bw = wms('roadworks-bw', 'https://api.mobidata-bw.de/geoserver/ows', 'MobiData-BW:roadworks', [7.4, 47.4, 10.6, 49.9], `${t('Roadworks')}: <a href="https://www.mobidata-bw.de">MobiData BW</a>`, sharpUntil);
-      return { sources: { ...rlp.sources, ...bw.sources }, layers: [...rlp.layers, ...bw.layers] };
+    parts: (sharpUntil) => ({
+      sources: {
+        'roadworks-rlp-diversions': wfs(RLP, 'mwvlw:umleitung', RLP_ATTRIBUTION),
+        'roadworks-rlp-stretches': wfs(RLP, 'mwvlw:verlauf', RLP_ATTRIBUTION),
+        'roadworks-rlp-sites': wfs(RLP, 'mwvlw:baustelle', RLP_ATTRIBUTION),
+        'roadworks-bw': wfs(BW, 'MobiData-BW:roadworks', BW_ATTRIBUTION),
+      },
+      layers: roadworksLayers(sharpUntil),
+    }),
+    images: {
+      // A traffic cone in a warning triangle, Maki's (CC0); a red ring, the sign for a road closed to all vehicles.
+      [ROADWORKS_SIGN]: sign(`<path d="M14 3.5 25.5 24h-23Z" fill="#fff" stroke="${SIGN_RED}" stroke-width="3" stroke-linejoin="round"/><g transform="translate(9.1 10.4) scale(0.65)" fill="#111">${svgContent(cone)}</g>`),
+      [ROAD_CLOSED_SIGN]: sign(RING),
     },
   },
   {
@@ -151,18 +179,19 @@ export const OVERLAYS: readonly Overlay[] = [
           type: 'line',
           source: CLOSURES_SOURCE,
           filter: ['==', ['geometry-type'], 'LineString'],
-          paint: { 'line-color': CLOSURE_COLOR, 'line-width': byZoom(4, 6, 12, 0.8, sharpUntil), 'line-dasharray': [1.5, 1] },
+          paint: { 'line-color': SIGN_RED, 'line-width': byZoom(4, 6, 12, 0.8, sharpUntil), 'line-dasharray': [1.5, 1] },
         },
         {
           id: `${CLOSURES_SOURCE}-point`,
           type: 'symbol',
           source: CLOSURES_SOURCE,
           filter: ['==', ['geometry-type'], 'Point'],
-          layout: { 'icon-image': CLOSURE_SIGN, 'icon-size': byZoom(0.7, 1, 1.4, 1.3 / SIGN_SIZE, sharpUntil), 'icon-allow-overlap': true },
+          layout: { 'icon-image': CLOSURE_SIGN, 'icon-size': signSize(sharpUntil), 'icon-allow-overlap': true },
         },
       ],
     }),
-    images: { [CLOSURE_SIGN]: { url: closureSign, size: SIGN_SIZE, pixelRatio: SIGN_PIXEL_RATIO } },
+    // Closed to motorcycles, as the road sign says it: a motorcycle in a red ring. Temaki's motorcycle (CC0).
+    images: { [CLOSURE_SIGN]: sign(`${RING}<g transform="translate(6 5.6) scale(1.0667)" fill="#111">${svgContent(motorcycle)}</g>`) },
   },
 ];
 

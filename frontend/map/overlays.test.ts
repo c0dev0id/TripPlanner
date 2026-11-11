@@ -26,26 +26,10 @@ describe('the overlays', () => {
     }
   });
 
-  it('enlarge the roadworks in steps, further over a base map that is blown up', () => {
-    const zooms = (sharpUntil: number | undefined) =>
-      OVERLAYS[0]!.parts(sharpUntil)
-        .layers.filter((layer) => layer.id.startsWith('roadworks-rlp'))
-        .map((layer) => [layer.minzoom, layer.maxzoom]);
-    expect(zooms(undefined)).toEqual([
-      [0, 12],
-      [12, 14],
-      [14, 24],
-    ]);
-    // Beyond zoom 16 a road doubles with each zoom: 24, 48, 96, 192 px.
-    expect(zooms(16)).toEqual([
-      [0, 12],
-      [12, 14],
-      [14, 18],
-      [18, 19],
-      [19, 20],
-      [20, 24],
-    ]);
-    expect(Object.keys(OVERLAYS[0]!.parts(16).sources).filter((id) => id.startsWith('roadworks-rlp')).length).toBe(6);
+  it('ask each service for its roadworks as features, and leave Baden-Württemberg to its own', () => {
+    const { sources, layers } = OVERLAYS[0]!.parts(undefined);
+    expect(Object.values(sources).map((source) => (source as { data: string }).data.replace(/.*TYPENAMES=([^&]*).*/, '$1'))).toEqual(['mwvlw:umleitung', 'mwvlw:verlauf', 'mwvlw:baustelle', 'MobiData-BW:roadworks']);
+    expect(layers.find((layer) => layer.id === 'roadworks-rlp-sites')).toMatchObject({ filter: ['!=', ['get', 'quelle'], 'Verkehrsministerium Baden-Württemberg'] });
   });
 
   it('draw a closure at least as wide as the road a blown-up base map shows', () => {

@@ -34,7 +34,8 @@
 - MapLibre GL JS 6 (map rendering, Web Mercator).
 - uPlot 1.6 (MIT): the charts of a recording, drawn on a canvas.
 - Maki 8 and Temaki 5 (CC0), development dependencies: six of Maki's icons are bundled
-  for the POI search's places, Temaki's motorcycle for the closures' sign.
+  for the POI search's places and its traffic cone for the roadworks' sign, Temaki's
+  motorcycle for the closures' sign.
 - libheif-js 1.23 (libheif compiled to WebAssembly, LGPL): decodes a HEIC in browsers that
   cannot, loaded on demand as a chunk of its own, about 2 MB.
 - Route tool, GPX reading, line simplification and polyline handling ported from Layer Slayer.
@@ -48,7 +49,7 @@
   `make garmin-icons` into public/garmin-symbols, outside git: they are Garmin's artwork.
 - Place search by Nominatim (nominatim.openstreetmap.org): at most one request per second,
   no search as you type, attribution shown.
-- Overlays: roadworks as WMS tiles from Rhineland-Palatinate's Mobilitätsatlas
+- Overlays: roadworks as GeoJSON features (WFS) from Rhineland-Palatinate's Mobilitätsatlas
   (maps.mobilitaetsatlas.de, layers `mwvlw:baustelle`, `mwvlw:verlauf`, `mwvlw:umleitung`)
   and MobiData BW (api.mobidata-bw.de, `MobiData-BW:roadworks`), fetched by the browser;
   the motorcycle closures of mintelonline.de, a KMZ file fetched on the server by
