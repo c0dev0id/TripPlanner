@@ -9,6 +9,7 @@ use Planner\Account\PasswordChangeController;
 use Planner\Account\PasswordResetController;
 use Planner\Api\MeController;
 use Planner\Api\PreferencesController;
+use Planner\Export\ArchiveController;
 use Planner\Export\ExportPresetController;
 use Planner\Export\GpxExportController;
 use Planner\Journal\JournalController;
@@ -62,6 +63,7 @@ final class Routes
             $api->get('/places/{x:[0-9]{1,4}}/{y:[0-9]{1,4}}', [PlacesController::class, 'tile']);
             $api->get('/trips', [TripController::class, 'index']);
             $api->post('/trips', [TripController::class, 'create']);
+            $api->get('/trips/archive', [ArchiveController::class, 'zip']);
             $api->get('/trips/{id:[0-9]+}', [TripController::class, 'show']);
             $api->put('/trips/{id:[0-9]+}', [TripController::class, 'update']);
             $api->post('/trips/{id:[0-9]+}/copies', [TripController::class, 'duplicate']);
