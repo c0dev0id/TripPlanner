@@ -258,10 +258,12 @@ entries at the end of their section.
   relations answer as one position.
 - **A route is searched in stretches of 50 km, one query after another.** One query along
   a whole day's ride ran out of the server's time. The queries are sent a second apart,
-  as a public server asks; one the server ran out of time on, or answered busy (429,
-  504), is sent again after five seconds, three times at most before the search fails.
-  A place two stretches both find is kept once. The search can be stopped at any moment:
-  clearing it or starting another aborts the request and the waits.
+  as a public server asks; one the server ran out of time on, or answered busy (429, 502,
+  503, 504), is sent again after five seconds, three times at most. A place two stretches
+  both find is kept once. Each stretch's places go on the map as it is answered, since a
+  stretch can take a minute; a stretch that fails for good ends the search with what the
+  others found still shown, and *Stop* ends it the same way. Each query names the box
+  its stretch and reach lie in, so that the server looks at nothing outside it.
 - **Found places are shown, not kept.** They are icons in a layer of the map, not
   markers, since a search can answer with two thousand; they belong to the page,
   not to the trip, and go with *Clear* or the next search. Making a stop of one is left

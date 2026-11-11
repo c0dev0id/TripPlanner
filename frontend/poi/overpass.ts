@@ -1,4 +1,4 @@
-import { stretchesOf } from '../geo/measure';
+import { METRES_PER_DEGREE, stretchesOf } from '../geo/measure';
 import { keepTolerances } from '../geo/simplify';
 import { t } from '../i18n/t';
 import type { LngLat } from '../model/trip';
@@ -43,9 +43,25 @@ export interface Poi {
 const latLng = ([lng, lat]: LngLat): string => `${lat.toFixed(5)},${lng.toFixed(5)}`;
 
 /**
+ * The box around the positions and everything within `metres` of them, as Overpass names
+ * one: south, west, north, east.
+ */
+function boxAround(positions: readonly LngLat[], metres: number): string {
+  const lngs = positions.map((p) => p[0]);
+  const lats = positions.map((p) => p[1]);
+  const south = Math.min(...lats);
+  const north = Math.max(...lats);
+  const dLat = metres / METRES_PER_DEGREE;
+  // A degree of longitude is shortest at the box's edge nearest a pole.
+  const dLng = dLat / Math.cos(((Math.max(Math.abs(south), Math.abs(north)) + dLat) * Math.PI) / 180);
+  return [south - dLat, Math.min(...lngs) - dLng, north + dLat, Math.max(...lngs) + dLng].map((degrees) => degrees.toFixed(5)).join(',');
+}
+
+/**
  * The query for the places of each category within its reach of the area, answered as JSON
  * with a position for each. A line is asked for without the points that lie within a
- * quarter of the reach of what remains, which keeps the query of a long route short.
+ * quarter of the reach of what remains, which keeps the query of a long route short. The
+ * query names the box all of it lies in, so that the server looks at nothing outside it.
  */
 export function poiQuery(reaches: readonly PoiReach[], area: PoiArea): string {
   const lines = 'spot' in area ? [] : area.lines.map((line) => ({ line, keptUpTo: keepTolerances(line) }));
@@ -63,7 +79,8 @@ export function poiQuery(reaches: readonly PoiReach[], area: PoiArea): string {
           );
     return around.filter((positions) => positions !== '').map((positions) => `nwr["${category.key}"${value}]${access}(around:${Math.round(metres)},${positions});`);
   });
-  return `[out:json][timeout:${TIMEOUT_S}];(${statements.join('')});out center ${QUERY_LIMIT};`;
+  const box = boxAround('spot' in area ? [area.spot] : area.lines.flat(), Math.max(...reaches.map((r) => r.metres)));
+  return `[out:json][timeout:${TIMEOUT_S}][bbox:${box}];(${statements.join('')});out center ${QUERY_LIMIT};`;
 }
 
 interface OverpassElement {
@@ -111,7 +128,7 @@ function pause(ms: number, signal: AbortSignal): Promise<void> {
 /** Sends one query; the statuses of a server that is busy or took too long are thrown as such. */
 async function ask(query: string, signal: AbortSignal): Promise<Poi[]> {
   const response = await fetch(OVERPASS_URL, { method: 'POST', body: new URLSearchParams({ data: query }), signal });
-  if (response.status === 429 || response.status === 504) throw new OverpassBusy(t('The POI search is not available right now ({status}).', { status: response.status }));
+  if ([429, 502, 503, 504].includes(response.status)) throw new OverpassBusy(t('The POI search is not available right now ({status}).', { status: response.status }));
   if (!response.ok) throw new Error(t('The POI search is not available right now ({status}).', { status: response.status }));
   return parsePois(await response.json());
 }
@@ -123,16 +140,18 @@ export interface FoundPois {
 }
 
 /**
- * The places of each category within its reach of the area. Lines are asked for stretch by
- * stretch with a pause between the queries, and a query the server ran out of time on is
- * sent again after a wait, a few times; `progress` hears how many of the queries are done.
+ * Looks for the places of each category within its reach of the area. Lines are asked for
+ * stretch by stretch with a pause between the queries, and a query the server ran out of
+ * time on is sent again after a wait, a few times. Before each query `progress` hears what
+ * was found so far and how many of the queries are done, and once more at the end; a
+ * query that fails for good is thrown, after what the others found was handed over.
  */
-export async function findPois(reaches: readonly PoiReach[], area: PoiArea, signal: AbortSignal, progress: (done: number, total: number) => void): Promise<FoundPois> {
+export async function findPois(reaches: readonly PoiReach[], area: PoiArea, signal: AbortSignal, progress: (found: FoundPois, done: number, total: number) => void): Promise<void> {
   const areas: PoiArea[] = 'spot' in area ? [area] : area.lines.flatMap((line) => stretchesOf(line, STRETCH_M)).map((stretch) => ({ lines: [stretch] }));
   const pois = new Map<string, Poi>();
   let truncated = false;
   for (const [done, part] of areas.entries()) {
-    progress(done, areas.length);
+    progress({ pois: [...pois.values()], truncated }, done, areas.length);
     if (done > 0) await pause(PAUSE_MS, signal);
     const query = poiQuery(reaches, part);
     for (let attempt = 0; ; attempt++) {
@@ -147,5 +166,5 @@ export async function findPois(reaches: readonly PoiReach[], area: PoiArea, sign
       }
     }
   }
-  return { pois: [...pois.values()], truncated };
+  progress({ pois: [...pois.values()], truncated }, areas.length, areas.length);
 }

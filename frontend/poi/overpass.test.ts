@@ -15,7 +15,7 @@ describe('poiQuery', () => {
       { spot: [8.123456789, 49.5] },
     );
     expect(query).toBe(
-      '[out:json][timeout:60];(nwr["amenity"="fuel"](around:5000,49.50000,8.12346);nwr["tourism"~"^(hotel|guest_house|motel)$"](around:20000,49.50000,8.12346););out center 2000;',
+      '[out:json][timeout:60][bbox:49.32014,7.84548,49.67986,8.40143];(nwr["amenity"="fuel"](around:5000,49.50000,8.12346);nwr["tourism"~"^(hotel|guest_house|motel)$"](around:20000,49.50000,8.12346););out center 2000;',
     );
   });
 
@@ -69,8 +69,12 @@ describe('findPois', () => {
   // One degree of longitude on the equator is some 111 km: three stretches of at most 50 km.
   const line: LngLat[] = [0, 0.4, 0.8, 1].map((lng) => [lng, 0]);
   const fetched = vi.fn<typeof fetch>();
+  /** What `progress` heard: the ids found so far, and how many queries of how many were done. */
+  let heard: [string[], number, number][];
+  const find = (area: Parameters<typeof findPois>[1], signal = new AbortController().signal) => findPois(fuel, area, signal, (found, done, total) => heard.push([found.pois.map((p) => p.id), done, total]));
 
   beforeEach(() => {
+    heard = [];
     vi.useFakeTimers();
     vi.stubGlobal('fetch', fetched);
   });
@@ -80,55 +84,55 @@ describe('findPois', () => {
     fetched.mockReset();
   });
 
-  it('asks along a line stretch by stretch, a second apart, and finds each place once', async () => {
+  it('asks along a line stretch by stretch, a second apart, and hands over what it found so far, each place once', async () => {
     fetched
       .mockResolvedValueOnce(answer({ elements: [node(1), node(2)] }))
       .mockResolvedValueOnce(answer({ elements: [node(2), node(3)] }))
       .mockResolvedValueOnce(answer({ elements: [] }));
-    const progress = vi.fn();
-    const search = findPois(fuel, { lines: [line] }, new AbortController().signal, progress);
+    const search = find({ lines: [line] });
     await vi.advanceTimersByTimeAsync(999);
     expect(fetched).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(1001);
-    const found = await search;
+    await search;
     expect(fetched).toHaveBeenCalledTimes(3);
-    expect(found.pois.map((p) => p.id)).toEqual(['node/1', 'node/2', 'node/3']);
-    expect(found.truncated).toBe(false);
-    expect(progress.mock.calls).toEqual([
-      [0, 3],
-      [1, 3],
-      [2, 3],
+    expect(heard).toEqual([
+      [[], 0, 3],
+      [['node/1', 'node/2'], 1, 3],
+      [['node/1', 'node/2', 'node/3'], 2, 3],
+      [['node/1', 'node/2', 'node/3'], 3, 3],
     ]);
   });
 
-  it('sends a query the server ran out of time on again after five seconds', async () => {
+  it('sends a query the server ran out of time on or was too busy for again after five seconds', async () => {
     fetched
       .mockResolvedValueOnce(answer({ elements: [], remark: 'runtime error: Query timed out' }))
-      .mockResolvedValueOnce(answer({}, 504))
+      .mockResolvedValueOnce(answer({}, 502))
       .mockResolvedValueOnce(answer({ elements: [node(1)] }));
-    const search = findPois(fuel, { spot: [8, 49] }, new AbortController().signal, () => {});
+    const search = find({ spot: [8, 49] });
     await vi.advanceTimersByTimeAsync(4999);
     expect(fetched).toHaveBeenCalledTimes(1);
     await vi.advanceTimersByTimeAsync(5001);
-    expect((await search).pois).toHaveLength(1);
+    await search;
     expect(fetched).toHaveBeenCalledTimes(3);
+    expect(heard.at(-1)).toEqual([['node/1'], 1, 1]);
   });
 
-  it('gives up after three more tries, and at once on any other failure', async () => {
-    fetched.mockImplementation(async () => answer({}, 429));
-    const busy = expect(findPois(fuel, { spot: [8, 49] }, new AbortController().signal, () => {})).rejects.toThrow();
-    await vi.advanceTimersByTimeAsync(15_000);
+  it('gives up after three more tries, with what the stretches before found handed over, and at once on any other failure', async () => {
+    fetched.mockResolvedValueOnce(answer({ elements: [node(1)] })).mockImplementation(async () => answer({}, 504));
+    const busy = expect(find({ lines: [line] })).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(20_000);
     await busy;
-    expect(fetched).toHaveBeenCalledTimes(4);
+    expect(fetched).toHaveBeenCalledTimes(5);
+    expect(heard.at(-1)).toEqual([['node/1'], 1, 3]);
     fetched.mockReset().mockResolvedValueOnce(answer({}, 400));
-    await expect(findPois(fuel, { spot: [8, 49] }, new AbortController().signal, () => {})).rejects.toThrow();
+    await expect(find({ spot: [8, 49] })).rejects.toThrow();
     expect(fetched).toHaveBeenCalledTimes(1);
   });
 
   it('stops waiting when the search is aborted', async () => {
     fetched.mockResolvedValue(answer({ elements: [] }));
     const stop = new AbortController();
-    const search = expect(findPois(fuel, { lines: [line] }, stop.signal, () => {})).rejects.toBeDefined();
+    const search = expect(find({ lines: [line] }, stop.signal)).rejects.toBeDefined();
     await vi.advanceTimersByTimeAsync(500);
     stop.abort();
     await search;

@@ -3,20 +3,20 @@ import { errorMessage } from '../api';
 import type { LngLat } from '../model/trip';
 import { findPois, type FoundPois, type Poi, type PoiArea, type PoiReach } from '../poi/overpass';
 
-/** The POI search: the spot its dialog is open for, and how the last search went. Never kept. */
+/** The POI search: the spot its dialog is open for, and how the last search goes or went. Never kept. */
 
 export const [poiSearchSpot, setPoiSearchSpot] = createSignal<LngLat>();
 
-type PoiSearch = { state: 'searching'; done: number; total: number } | ({ state: 'found' } & FoundPois) | { state: 'failed'; message: string };
+/** What a search found so far; while it runs, how many of its queries are done; why it ended early, if it did. */
+type PoiSearch = FoundPois & { searching?: { done: number; total: number }; failure?: string };
 
 const [poiSearch, setPoiSearch] = createSignal<PoiSearch>();
 export { poiSearch };
 
-/** The places the last search found. */
-export function foundPois(): Poi[] {
-  const search = poiSearch();
-  return search?.state === 'found' ? search.pois : [];
-}
+const NONE: Poi[] = [];
+
+/** The places the search found, so far while it runs. */
+export const foundPois = (): Poi[] => poiSearch()?.pois ?? NONE;
 
 /** Stops the search that is running, if one is. */
 let running = new AbortController();
@@ -25,13 +25,21 @@ let running = new AbortController();
 export async function searchPois(reaches: readonly PoiReach[], area: PoiArea): Promise<void> {
   running.abort();
   const { signal } = (running = new AbortController());
-  let result: PoiSearch;
+  let found: FoundPois = { pois: NONE, truncated: false };
   try {
-    result = { state: 'found', ...(await findPois(reaches, area, signal, (done, total) => setPoiSearch({ state: 'searching', done, total }))) };
+    await findPois(reaches, area, signal, (soFar, done, total) => {
+      found = soFar;
+      setPoiSearch({ ...found, ...(done < total && { searching: { done, total } }) });
+    });
   } catch (fault) {
-    result = { state: 'failed', message: errorMessage(fault) };
+    if (!signal.aborted) setPoiSearch({ ...found, failure: errorMessage(fault) });
   }
-  if (!signal.aborted) setPoiSearch(result);
+}
+
+/** Ends the running search; what it found so far stays. */
+export function stopPoiSearch(): void {
+  running.abort();
+  setPoiSearch((search) => search && { pois: search.pois, truncated: search.truncated });
 }
 
 export function clearPois(): void {

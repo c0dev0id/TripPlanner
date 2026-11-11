@@ -46,7 +46,8 @@ export function PoiMarkers(props: { map: MapLibreMap }) {
   );
   createEffect(() => {
     props.map.getSource<GeoJSONSource>(POI_SOURCE)?.setData(poiFeatures(foundPois()));
-    popup.remove();
+    // A search that still runs adds places; the popup goes when they do.
+    if (foundPois().length === 0) popup.remove();
   });
   return null;
 }
