@@ -5,12 +5,20 @@ export interface PoiDetails {
   name?: string;
   /** Address, cuisine, opening hours and phone number, a line each, as far as tagged. */
   lines: string[];
-  website?: string;
+  /** The place's homepage as a web address. */
+  homepage?: string;
+}
+
+/** A tagged address as one a link can take: many are written without "https://"; anything of another scheme is none. */
+function webAddress(tagged: string): string | undefined {
+  const address = tagged.split(';')[0]!.trim();
+  if (/^https?:\/\//i.test(address)) return address;
+  return /^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(address) ? `https://${address}` : undefined;
 }
 
 export function poiDetails(tags: Readonly<Record<string, string>>): PoiDetails {
   const joined = (...keys: string[]) => keys.flatMap((key) => (tags[key] ? [tags[key]] : [])).join(' ');
-  const website = tags['website'] ?? tags['contact:website'];
+  const homepage = webAddress(tags['website'] ?? tags['contact:website'] ?? tags['url'] ?? '');
   const lines = [
     joined('addr:street', 'addr:housenumber'),
     joined('addr:postcode', 'addr:city'),
@@ -19,5 +27,5 @@ export function poiDetails(tags: Readonly<Record<string, string>>): PoiDetails {
     tags['phone'] ?? tags['contact:phone'] ?? '',
   ];
   const name = tags['name'] ?? tags['brand'] ?? tags['operator'];
-  return { ...(name && { name }), lines: lines.filter((line) => line !== ''), ...(website && /^https?:\/\//i.test(website) && { website }) };
+  return { ...(name && { name }), lines: lines.filter((line) => line !== ''), ...(homepage && { homepage }) };
 }

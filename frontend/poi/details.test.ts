@@ -16,7 +16,13 @@ describe('poiDetails', () => {
         'contact:phone': '+49 7673 1234',
         website: 'https://hirsch.example',
       }),
-    ).toEqual({ name: 'Zum Hirsch', lines: ['Hauptstraße 12', '79677 Schönau', 'german, regional food', 'Tu-Su 11:00-22:00', '+49 7673 1234'], website: 'https://hirsch.example' });
+    ).toEqual({ name: 'Zum Hirsch', lines: ['Hauptstraße 12', '79677 Schönau', 'german, regional food', 'Tu-Su 11:00-22:00', '+49 7673 1234'], homepage: 'https://hirsch.example' });
+  });
+
+  it('takes a homepage written without its scheme, the first of several, from any of the tags for it', () => {
+    expect(poiDetails({ website: 'www.adler.example/zimmer' }).homepage).toBe('https://www.adler.example/zimmer');
+    expect(poiDetails({ 'contact:website': 'http://a.example; http://b.example' }).homepage).toBe('http://a.example');
+    expect(poiDetails({ url: 'https://c.example' }).homepage).toBe('https://c.example');
   });
 
   it('names a place without a name by its brand, and keeps no website that is not a web address', () => {

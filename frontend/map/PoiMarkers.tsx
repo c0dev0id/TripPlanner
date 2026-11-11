@@ -28,11 +28,11 @@ export function PoiMarkers(props: { map: MapLibreMap }) {
           </Show>
           <For each={details.lines}>{(line) => <p>{line}</p>}</For>
           <p>
-            <Show when={details.website}>
-              {(website) => (
+            <Show when={details.homepage}>
+              {(homepage) => (
                 <>
-                  <a href={website()} target="_blank" rel="noopener noreferrer">
-                    {t('Website')}
+                  <a href={homepage()} target="_blank" rel="noopener noreferrer">
+                    {t('Homepage')}
                   </a>
                   {' · '}
                 </>
