@@ -208,6 +208,10 @@
   parking, 2 km for restaurants, cafes and viewpoints, 5 km for hotels, each to change); a
   route is searched in stretches of 50 km: the places of each stretch appear as it is
   answered, the search can be stopped, and what was found stays if a stretch fails.
+  What a search along a route found is kept with the route, a button per kind under its
+  row: it puts the places on the map or takes them off without another search, says how
+  many, how far and when, marks them when the route has changed since, and searches
+  again or forgets them from its menu.
   The places found stand on the map as their kind's icon until cleared; a tap shows name,
   address, cuisine, opening hours, phone and links to the homepage and OpenStreetMap.
 - A spot of the map opened in Google Maps or Google Street View, from the map's menu.

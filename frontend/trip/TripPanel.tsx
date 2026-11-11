@@ -40,6 +40,7 @@ import { IconButton } from '../ui/IconButton';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 import { addRecordingPicked, DayRecordings, RecordingsToggle } from './Recordings';
+import { RoutePlaces } from './RoutePlaces';
 import { removeDayAsked, removeRouteAsked } from './remove';
 
 /** The journal of a part as an icon, with the number of its entries where it has any. */
@@ -264,6 +265,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
         </button>
         <JournalButton target={{ routeId: props.route.id }} of={label()} />
       </div>
+      <RoutePlaces route={props.route} />
       <Show when={editing()}>
         <ol class="stops">
           <SequenceItems entries={entries()} />

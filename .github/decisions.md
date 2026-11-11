@@ -306,7 +306,17 @@ entries at the end of their section.
 - **Each kind has its own limit in a query.** A query answers kind by kind, each with at
   most 500 places per stretch: under one limit for all, the parking of a town used it up
   and left no room for its fuel stations.
-- **Found places are shown, not kept.** They are icons in a layer of the map, not
+- **What a search along a route found is kept, one answer per route and kind.** A query
+  costs the user half a minute and more on a public server at capacity, so the answer is
+  asked for once: it is kept beside the trip, as recordings are, not in the trip document,
+  which is sent whole with every save. A button per kind under the route shows the places
+  again from the planner's server. The route's line may change afterwards; the places
+  stay, since a moved waypoint does not make an expensive answer worthless, and are
+  marked by comparing a mark of the line (its points and length) with the one kept. Of a
+  place only the tags its details are made of are kept. A search around a spot is not
+  kept, and the read-only page does not show kept places: both as the user decided by
+  not objecting to the proposal.
+- **What a search around a spot found is shown, not kept.** The places are icons in a layer of the map, not
   markers, since a search can answer with two thousand; they belong to the page,
   not to the trip, and go with *Clear* or the next search. Making a stop of one is left
   to the stop tool: the user decided against a button for it.

@@ -19,7 +19,7 @@ const ANSWER_LIMIT_MS = 75_000;
 const KIND_LIMIT = 500;
 /** Lines are asked for in stretches of this length, a query each: one query along a day's ride runs out of time. */
 const STRETCH_M = 50_000;
-/** The pause between two queries of a search, and the wait before a query that ran out of time is sent again. */
+/** The pause between two queries of a search, and the wait before a query the server was too busy for is sent again, doubled with each further try as the server asks. */
 const PAUSE_MS = 1000;
 const RETRY_AFTER_MS = 5000;
 /** How often a query that ran out of time is sent again before the search gives up. */
@@ -180,7 +180,7 @@ export async function findPois(reaches: readonly PoiReach[], area: PoiArea, sign
         break;
       } catch (fault) {
         if (!(fault instanceof OverpassBusy) || attempt === RETRIES) throw fault;
-        await pause(RETRY_AFTER_MS, signal);
+        await pause(RETRY_AFTER_MS * 2 ** attempt, signal);
       }
     }
   }

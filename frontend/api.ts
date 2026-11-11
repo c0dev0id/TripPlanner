@@ -106,6 +106,35 @@ export const updateEntry = (tripId: number, entryId: number, text: string): Prom
 
 export const deleteEntry = (tripId: number, entryId: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/entries/${entryId}`);
 
+/** A place a POI search found, as it is kept: its OpenStreetMap id ("node/123"), position and the tags its details are made of. */
+export interface KeptPlace {
+  id: string;
+  lngLat: LngLat;
+  tags: Record<string, string>;
+}
+
+/** What a POI search found along a route for one kind of place, kept with the trip. */
+export interface RoutePois {
+  routeId: string;
+  category: string;
+  /** How far from the route was searched, in metres. */
+  reachM: number;
+  /** The mark of the line the route had then. */
+  lineMark: string;
+  places: KeptPlace[];
+  /** When, as an ISO 8601 time. */
+  foundAt: string;
+}
+
+export const listRoutePois = (tripId: number): Promise<RoutePois[]> => request('GET', `${tripApi(tripId)}/pois`);
+
+const routePoisApi = (tripId: number, routeId: string, category: string) => `${tripApi(tripId)}/routes/${encodeURIComponent(routeId)}/pois/${category}`;
+
+export const keepRoutePois = (tripId: number, found: Omit<RoutePois, 'foundAt'>): Promise<void> =>
+  request('PUT', routePoisApi(tripId, found.routeId, found.category), { reachM: found.reachM, lineMark: found.lineMark, places: found.places });
+
+export const forgetRoutePois = (tripId: number, routeId: string, category: string): Promise<void> => request('DELETE', routePoisApi(tripId, routeId, category));
+
 /** A ride as recorded, kept on a day; its GPX file is fetched apart. */
 export interface Recording {
   id: number;

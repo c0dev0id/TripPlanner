@@ -2,17 +2,22 @@ import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, For, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { poiDetails } from '../poi/details';
+import type { Poi } from '../poi/overpass';
 import { foundPois } from '../state/poi';
+import { keptPoisOnMap } from '../state/routePois';
 import { POI_LAYERS, POI_SOURCE, poiFeatures } from './poiOverlay';
 import { popupOnTap } from './tapPopup';
 
-/** Keeps the places a POI search found on the map, and says what one tapped is. */
+/** The places on the map: those kept for the routes and switched on, and what the running or last search found; each once. */
+const placesOnMap = (): Poi[] => [...new Map([...keptPoisOnMap(), ...foundPois()].map((poi) => [poi.id, poi])).values()];
+
+/** Keeps the places of POI searches on the map, and says what one tapped is. */
 export function PoiMarkers(props: { map: MapLibreMap }) {
   const popup = popupOnTap(
     props.map,
     POI_LAYERS.map((layer) => layer.id),
     ({ id }) => {
-      const poi = foundPois().find((p) => p.id === id);
+      const poi = placesOnMap().find((p) => p.id === id);
       if (!poi) return undefined;
       const category = poi.category.label;
       const details = poiDetails(poi.tags);
@@ -43,9 +48,10 @@ export function PoiMarkers(props: { map: MapLibreMap }) {
     },
   );
   createEffect(() => {
-    props.map.getSource<GeoJSONSource>(POI_SOURCE)?.setData(poiFeatures(foundPois()));
+    const places = placesOnMap();
+    props.map.getSource<GeoJSONSource>(POI_SOURCE)?.setData(poiFeatures(places));
     // A search that still runs adds places; the popup goes when they do.
-    if (foundPois().length === 0) popup.remove();
+    if (places.length === 0) popup.remove();
   });
   return null;
 }

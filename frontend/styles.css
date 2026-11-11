@@ -873,6 +873,35 @@ fieldset.choices legend {
   bottom: calc(144px + var(--chart-room, 0px));
 }
 
+/* The places kept for a route, a button per kind under its row: pressed while on the map. */
+.route-places {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 8px 6px 32px;
+}
+
+.panel .route-places button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px 1px 3px;
+  border-radius: 12px;
+  font-size: 12px;
+  opacity: 0.55;
+}
+
+.panel .route-places button[aria-pressed='true'] {
+  border-color: var(--accent);
+  opacity: 1;
+}
+
+.route-places button.outdated::after {
+  content: '!';
+  font-weight: 700;
+  color: var(--danger, #e03131);
+}
+
 /* A POI category's badge, as on the map. */
 .poi-badge {
   flex: none;

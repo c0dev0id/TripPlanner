@@ -111,7 +111,9 @@ describe('findPois', () => {
     const search = find({ spot: [8, 49] });
     await vi.advanceTimersByTimeAsync(4999);
     expect(fetched).toHaveBeenCalledTimes(1);
-    await vi.advanceTimersByTimeAsync(5001);
+    await vi.advanceTimersByTimeAsync(2);
+    expect(fetched).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(10_000);
     await search;
     expect(fetched).toHaveBeenCalledTimes(3);
     expect(heard.at(-1)).toEqual([['node/1'], 1, 1]);
@@ -120,6 +122,9 @@ describe('findPois', () => {
   it('gives up after three more tries, with what the stretches before found handed over, and at once on any other failure', async () => {
     fetched.mockResolvedValueOnce(answer({ elements: [node(1)] })).mockImplementation(async () => answer({}, 504));
     const busy = expect(find({ lines: [line] })).rejects.toThrow();
+    // A second's pause, then waits of 5, 10 and 20 seconds between the four tries.
+    await vi.advanceTimersByTimeAsync(16_500);
+    expect(fetched).toHaveBeenCalledTimes(4);
     await vi.advanceTimersByTimeAsync(20_000);
     await busy;
     expect(fetched).toHaveBeenCalledTimes(5);
