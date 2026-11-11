@@ -361,6 +361,17 @@ entries at the end of their section.
   that the base map draws ever wider; the line grows to 1.8 times its width by zoom 18
   and, over raster tiles blown up, stays at half a road's width, by the sizing the
   overlays use.
+- **The map's credits stay MapLibre's, and the tools step aside.** On a small map
+  MapLibre shows its credits spread out until the map is first dragged, as
+  OpenStreetMap's attribution guidelines ask, and offers no way to start them folded.
+  They are several lines on a phone and lay under the route tools; rather than fold
+  them through the control's inner workings, the tools stand above them while they are
+  spread out.
+- **Small and touch screens by stylesheet rules alone.** Between 721 and 1023 px, a
+  tablet held upright, the panel takes at most 42 % of the width; on a touch screen
+  every field's text is 16 px, below which Safari zooms into the page on focus and
+  stays there; heights that follow the screen use `dvh`, which leaves out what the
+  browser's own bars cover.
 - **Preferences are an object the planner owns.** What a user sets for the planner as a
   whole is kept with the account as JSON the server stores and returns without reading
   it: a new preference needs no change on the server. What depends on the device (base

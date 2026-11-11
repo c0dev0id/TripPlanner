@@ -294,6 +294,7 @@ a {
 /* Detail lines wrap rather than lose their end, where a late stop or a distance stands. */
 .detail {
   font-size: 12px;
+  white-space: normal;
 }
 
 .card.selected {
@@ -1228,7 +1229,7 @@ fieldset.symbols {
   left: 50%;
   z-index: 20;
   width: min(520px, calc(100vw - 32px));
-  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   margin: 0;
   overflow: auto;
   transform: translate(-50%, -50%);
@@ -1285,6 +1286,25 @@ fieldset.symbols {
   margin: 0;
 }
 
+/* A narrow screen that still has the panel beside the map, such as a tablet held upright: the map keeps the larger part. */
+@media (min-width: 721px) and (max-width: 1023px) {
+  #root {
+    grid-template-columns: min(var(--panel-width), 42vw) 1fr;
+  }
+}
+
+/* While the map's credits are spread out, which they are until the map is first dragged, the tools stand above them. */
+.map-wrap:has(.maplibregl-ctrl-attrib.maplibregl-compact-show) .toolbar {
+  bottom: calc(96px + var(--chart-room, 0px));
+}
+
+/* On a touch screen a field's text is 16px: Safari zooms into the page for a smaller one and stays there. */
+@media (pointer: coarse) {
+  :is(.panel, .dialog, .map-wrap) :is(input:not([type='checkbox'], [type='radio']), select, textarea) {
+    font-size: 16px;
+  }
+}
+
 @media (max-width: 720px) {
   #root {
     grid-template-columns: 1fr;
@@ -1297,7 +1317,7 @@ fieldset.symbols {
 
   .panel {
     grid-row: 2;
-    max-height: 45vh;
+    max-height: 45dvh;
     border-right: 0;
     border-top: 1px solid var(--line);
   }

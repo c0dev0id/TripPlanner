@@ -2,7 +2,7 @@
 
 .lightbox {
   max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
   padding: 0;
   border: none;
   border-radius: 8px;
@@ -22,7 +22,7 @@
 .lightbox img {
   display: block;
   max-width: calc(100vw - 32px);
-  max-height: calc(100vh - 76px);
+  max-height: calc(100dvh - 76px);
   object-fit: contain;
 }
 
