@@ -84,6 +84,8 @@
   (with `php-8.5`; `PHP=` names another binary); a second run fetches only what is missing.
   httpd serves that directory as static files, as it serves `public/build`
   (`deploy/httpd.conf.example`).
+- A new table reaches a deployed database with `make init`; `route_pois`, the places kept
+  per route, was added that way.
 - `make closures` fetches the motorcycle closures into `public/closures.geojson`; a cron
   job repeats it, weekly is enough. httpd serves the file as it serves `public/build`.
 - Node.js 22 with npm 10 and Composer 2 on the server and for development.

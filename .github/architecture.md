@@ -73,12 +73,12 @@ flowchart TB
 | Layer | Contents |
 |---|---|
 | Presentation (frontend) | The explorer that frames the panel at every level (its actions, search, path heading and the card one level up), the library's folders and trips with their dragging onto folders, the folder import and its dialog (`library/`), the trip panel, the collection panel and their dialogs for the trip, a day, a route and a stop, the export, the journal and sharing (`trip/`), the map with its base maps, its overlays (the roadworks, the motorcycle closures, the sizes and signs they draw with) and their controls, the place search, the POI search's dialog, its places and its state, route lines, stop, point and photo markers, interactions, toolbar and the routing's state, the opened recording's cards of figures and charts and the details of a point picked on it (`map/`), small controls, the chart, the dialog shell, the list that keeps its rows by id, the one menu, the long press and the pointer drags shared by the map and the panel, the lightbox, the theme, the colour tokens and the browser's preferences (`ui/`), and the read-only trip page with its own map (`view/`), a second entry (`view.tsx`). |
-| Application state (frontend) | The open trip as an immutable value, the selected day and the route being edited, undo and redo and the actions that edit the trip (`state/trip.ts`), the pull-based routing pump (`state/routing.ts`), the autosave, which sends the stops in riding order (`state/autosave.ts`), the open trip's journal (`state/journal.ts`), the open trip's recordings, which days show them and their tracks once read (`state/recordings.ts`), the recording opened for its figures with its line's colouring, what it is compared with, the point picked on it and the surfaces under it once matched (`state/recordingView.ts`), what was copied to be pasted into a day, a trip or a folder (`state/clipboard.ts`), the POI search and what it found (`state/poi.ts`), the library's trips and folders, the folder shown, the search and the duplicates report (`state/library.ts`), the tool, the toggles, the open menu and dialogs (`state/drawing.ts`). |
+| Application state (frontend) | The open trip as an immutable value, the selected day and the route being edited, undo and redo and the actions that edit the trip (`state/trip.ts`), the pull-based routing pump (`state/routing.ts`), the autosave, which sends the stops in riding order (`state/autosave.ts`), the open trip's journal (`state/journal.ts`), the open trip's recordings, which days show them and their tracks once read (`state/recordings.ts`), the recording opened for its figures with its line's colouring, what it is compared with, the point picked on it and the surfaces under it once matched (`state/recordingView.ts`), what was copied to be pasted into a day, a trip or a folder (`state/clipboard.ts`), the POI search and what it found (`state/poi.ts`), what searches found along the open trip's routes, kept with it, and which of it is on the map (`state/routePois.ts`), the library's trips and folders, the folder shown, the search and the duplicates report (`state/library.ts`), the tool, the toggles, the open menu and dialogs (`state/drawing.ts`). |
 | Domain (frontend) | Pure edits of a route and of a day's stops and routes, the riding sequence of a day with distances and riding times, the day's timeline, leg keys and geometry, the polyline codec, the Valhalla client for routing and for the surfaces under a track (`routing/`); reading GPX files into routes and stops (`gpx/`); reading and writing a recording's track with what it measured per point, its measures, summary and spreads, its comparison with another line by place, the colours of its line and the surfaces under it (`recording/`); the POI kinds, their Overpass query around a spot or along lines and what a place's tags say (`poi/`); our icons, each standing for one Garmin symbol, and Garmin's symbols by theme (`symbols/`); distances, nearest-line search and line simplification (`geo/`); the document types (`model/`). |
 | API client (frontend) | `api.ts`: requests to the JSON API, the one place that knows its URLs; every request names the page's language. |
 | Language (both) | `frontend/i18n/`: the page's language, from the browser or the kept choice, `t()` with plurals, and the German dictionary `de.json` by English text, which the server's `t()` reads too (`src/I18n/`); a middleware sets the request's language from a `lang` query parameter or `Accept-Language`, `Json::error` translates the API's messages, the templates their texts. |
 | HTTP (backend) | Slim routes and middleware (sessions, CSRF, body parsing, authentication, the request's language), Plates templates for the public pages and the two bundle pages, JSON encoding of API answers (`Http/`, `Pages/`, `Api/`). |
-| Domain (backend) | Accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, trip documents with their validator and copies (`Trip/`), GPX writing with its options, the proximity of free stops and the export presets (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the recordings on the days (`Recording/`), the read-only API of a shared trip (`Share/`), fetching Garmin's symbol pictures for `make garmin-icons` (`Symbols/`), fetching the motorcycle closures and converting their KML to GeoJSON for `make closures` (`Closures/`). |
+| Domain (backend) | Accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, trip documents with their validator and copies (`Trip/`), GPX writing with its options, the proximity of free stops and the export presets (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the recordings on the days (`Recording/`), the places POI searches found along the routes (`Poi/`), the read-only API of a shared trip (`Share/`), fetching Garmin's symbol pictures for `make garmin-icons` (`Symbols/`), fetching the motorcycle closures and converting their KML to GeoJSON for `make closures` (`Closures/`). |
 | Storage (backend) | PDO repositories over SQLite, the file store on disk (`Journal/FileStore`), mail over SMTP (`Mail/`). |
 
 ## API
@@ -106,6 +106,9 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `DELETE /trips/{id}/entries/{entry}` | Deletes the entry with its file. |
 | `GET /trips/{id}/entries/{entry}/file` | The file as uploaded, shown in the browser where it can be, offered for download otherwise. |
 | `GET /trips/{id}/entries/{entry}/preview` | A small JPEG of an image entry. |
+| `GET /trips/{id}/pois` | What POI searches found along the trip's routes: per route and kind the distance searched, the mark of the route's line then, the time and the places (id, position, tags). |
+| `PUT /trips/{id}/routes/{route}/pois/{category}` | Keeps `{reachM, lineMark, places}` for the route and kind, in place of what was kept. |
+| `DELETE /trips/{id}/routes/{route}/pois/{category}` | Forgets what is kept for the route and kind. |
 | `GET /trips/{id}/recordings` | The trip's recordings in the order they were added: id, day, name. |
 | `POST /trips/{id}/recordings` | Adds a recording to a day from a multipart form: `dayId`, `name`, and `file`, a GPX file compressed with gzip. |
 | `PATCH /trips/{id}/recordings/{recording}` | Renames the recording from `{name}`. |
@@ -149,6 +152,7 @@ erDiagram
   STOP |o--o{ ENTRY : "on"
   ROUTE |o--o{ ENTRY : "on"
   DAY ||--o{ RECORDING : "recordings"
+  ROUTE ||--o{ ROUTE_POIS : "places found along"
 
   USER {
     int id PK
@@ -236,6 +240,13 @@ erDiagram
     string name
     blob gpx "the GPX file as uploaded, compressed with gzip"
     datetime created_at
+  }
+  ROUTE_POIS {
+    string category PK "the kind of place, one answer per route and kind"
+    int reach_m "how far from the route was searched"
+    string line_mark "the route's line then: its points and length"
+    json places "id, position and tags of each"
+    datetime found_at
   }
   ENTRY {
     int id PK

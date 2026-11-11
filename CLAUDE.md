@@ -48,7 +48,7 @@ There is no linter beyond `php -l` and `tsc`. PHPUnit fails on warnings and depr
   (autowiring; explicit definitions only for what needs configuration) and the Slim app.
   `Http/Routes.php` is the one list of routes: a pages group behind the CSRF guard and an
   `/api` group answering JSON.
-- Folders are features (`Trip/`, `Journal/`, `Export/`, `Recording/`, `Signup/`,
+- Folders are features (`Trip/`, `Journal/`, `Export/`, `Recording/`, `Poi/`, `Signup/`,
   `Account/`, `Share/`). Each holds its controllers, value objects and PDO repositories
   (plural class names: `Trips`, `Folders`, `Entries`).
 - Public pages (landing, sign-up, sign-in) are Plates templates in `templates/` and work
