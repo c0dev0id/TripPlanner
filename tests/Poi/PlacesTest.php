@@ -50,7 +50,7 @@ final class PlacesTest extends TestCase
 
     public function testKeepsAnAreasPlacesAndGivesThemByTileAndKind(): void
     {
-        $kept = $this->places->replaceArea('CH-LU', [$this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Agip'], ['way', 2, 47.03, 8.30, 'hotel', 'Adler'], ['node', 3, 46.0, 7.0, 'fuel', 'Far']])], $this->now);
+        $kept = $this->places->replaceKinds('CH-LU', ['fuel', 'hotel'], $this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Agip'], ['way', 2, 47.03, 8.30, 'hotel', 'Adler'], ['node', 3, 46.0, 7.0, 'fuel', 'Far']]), $this->now);
         self::assertSame(3, $kept);
         [$x, $y] = Tile::of(8.29, 47.02);
         self::assertSame([$x, $y], Tile::of(8.30, 47.03));
@@ -60,28 +60,47 @@ final class PlacesTest extends TestCase
         self::assertSame('Agip', $fuel[0]['tags']->name);
         self::assertSame(['node/1', 'way/2'], array_column($this->places->inTile($x, $y, ['fuel', 'hotel', 'cafe']), 'id'));
         self::assertSame([], $this->places->inTile($x, $y, []));
-        self::assertSame([['area' => 'CH-LU', 'places' => 3, 'fetchedAt' => '2026-11-11T10:00:00Z']], $this->places->areas());
+        self::assertSame(
+            [['area' => 'CH-LU', 'kind' => 'fuel', 'places' => 2, 'fetchedAt' => '2026-11-11T10:00:00Z'], ['area' => 'CH-LU', 'kind' => 'hotel', 'places' => 1, 'fetchedAt' => '2026-11-11T10:00:00Z']],
+            $this->places->fetches(),
+        );
     }
 
     public function testAFetchAgainReplacesItsAreaAndNoOther(): void
     {
-        $this->places->replaceArea('CH-LU', [$this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Agip'], ['node', 2, 47.02, 8.29, 'cafe', 'Gone']])], $this->now);
-        $this->places->replaceArea('CH-ZG', [$this->answer([['node', 9, 47.02, 8.29, 'fuel', 'Zug']])], $this->now);
-        $this->places->replaceArea('CH-LU', [$this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Eni']])], $this->now->modify('+1 day'));
+        $kinds = $this->kinds->ids();
+        $this->places->replaceKinds('CH-LU', $kinds, $this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Agip'], ['node', 2, 47.02, 8.29, 'cafe', 'Gone']]), $this->now);
+        $this->places->replaceKinds('CH-ZG', $kinds, $this->answer([['node', 9, 47.02, 8.29, 'fuel', 'Zug']]), $this->now);
+        $this->places->replaceKinds('CH-LU', $kinds, $this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Eni']]), $this->now->modify('+1 day'));
         [$x, $y] = Tile::of(8.29, 47.02);
-        $all = $this->places->inTile($x, $y, $this->kinds->ids());
+        $all = $this->places->inTile($x, $y, $kinds);
         self::assertSame(['node/1', 'node/9'], array_column($all, 'id'));
         self::assertSame('Eni', $all[0]['tags']->name);
     }
 
-    public function testAnIncompleteOrEmptyAnswerChangesNothing(): void
+    public function testAFetchOfOneKindLeavesTheOthersAsTheyWere(): void
     {
-        $this->places->replaceArea('CH-LU', [$this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Agip']])], $this->now);
-        self::assertNull($this->places->replaceArea('CH-LU', [$this->answer([['node', 2, 47.02, 8.29, 'fuel', 'Half']], false)], $this->now));
-        self::assertNull($this->places->replaceArea('CH-LU', [$this->answer([['node', 3, 47.02, 8.29, 'fuel', 'One']]), $this->answer([], false)], $this->now));
-        self::assertNull($this->places->replaceArea('CH-LU', [$this->answer([])], $this->now));
+        $this->places->replaceKinds('CH-LU', ['fuel', 'cafe'], $this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Agip'], ['node', 2, 47.02, 8.29, 'cafe', 'Stays']]), $this->now);
+        $later = $this->now->modify('+1 day');
+        self::assertSame(1, $this->places->replaceKinds('CH-LU', ['fuel'], $this->answer([['node', 5, 47.02, 8.29, 'fuel', 'Eni']]), $later));
+        self::assertSame(0, $this->places->replaceKinds('CH-LU', ['hotel'], $this->answer([]), $later));
+        [$x, $y] = Tile::of(8.29, 47.02);
+        self::assertSame(['node/2', 'node/5'], array_column($this->places->inTile($x, $y, $this->kinds->ids()), 'id'));
+        self::assertSame(
+            ['cafe' => '2026-11-11T10:00:00Z', 'fuel' => '2026-11-12T10:00:00Z', 'hotel' => '2026-11-12T10:00:00Z'],
+            array_column($this->places->fetches(), 'fetchedAt', 'kind'),
+        );
+    }
+
+    public function testAnIncompleteAnswerOrOneThatLeavesNoPlaceChangesNothing(): void
+    {
+        $this->places->replaceKinds('CH-LU', ['fuel'], $this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Agip']]), $this->now);
+        self::assertNull($this->places->replaceKinds('CH-LU', ['fuel'], $this->answer([['node', 2, 47.02, 8.29, 'fuel', 'Half']], false), $this->now));
+        self::assertNull($this->places->replaceKinds('CH-LU', ['fuel'], $this->answer([]), $this->now));
+        self::assertNull($this->places->replaceKinds('XX', ['fuel'], $this->answer([]), $this->now));
         [$x, $y] = Tile::of(8.29, 47.02);
         self::assertSame(['node/1'], array_column($this->places->inTile($x, $y, ['fuel']), 'id'));
+        self::assertSame(['CH-LU'], array_column($this->places->fetches(), 'area'));
     }
 
     public function testTilesAreThoseOfTheWebsMapsAtZoomTen(): void

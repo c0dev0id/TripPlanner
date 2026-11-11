@@ -183,11 +183,13 @@ CREATE TABLE IF NOT EXISTS places (
 CREATE INDEX IF NOT EXISTS places_tile ON places(tile_x, tile_y, kind);
 CREATE INDEX IF NOT EXISTS places_area ON places(area);
 
--- The areas places are kept of, by their ISO 3166 code, with when they were last fetched.
-CREATE TABLE IF NOT EXISTS place_areas (
-    area TEXT PRIMARY KEY,
+-- The last fetch of each kind of place in each area (by its ISO 3166 code): how many it brought, and when.
+CREATE TABLE IF NOT EXISTS place_fetches (
+    area TEXT NOT NULL,
+    kind TEXT NOT NULL,
     places INTEGER NOT NULL,
-    fetched_at TEXT NOT NULL
+    fetched_at TEXT NOT NULL,
+    PRIMARY KEY (area, kind)
 );
 
 -- What a user set for the planner as a whole, as JSON the planner itself reads and writes.

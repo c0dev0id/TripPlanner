@@ -208,7 +208,8 @@
   each kind within its own distance, or, with that switched off, all in view from zoom 10
   on. A tap on a place shows name, address, cuisine, opening hours, phone and links to
   its homepage and OpenStreetMap. The store is filled area by area by `make places`, which lists
-  the areas to pick from when run without one.
+  the areas to pick from when run without one, and names those of which a kind of place
+  is behind the others or missing.
 - Preferences, kept with the account: how wide route lines are drawn, how routes get
   their colours, and how far from a route a place of each kind is still shown along it,
   200 m to begin with.

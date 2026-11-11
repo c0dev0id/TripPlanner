@@ -85,14 +85,15 @@
   (with `php-8.5`; `PHP=` names another binary); a second run fetches only what is missing.
   httpd serves that directory as static files, as it serves `public/build`
   (`deploy/httpd.conf.example`).
-- A new table reaches a deployed database with `make init`; `places`, `place_areas` and
+- A new table reaches a deployed database with `make init`; `places`, `place_fetches` and
   `user_preferences` were added that way.
 - `make places` lists the areas to pick from with what is kept of each;
   `make places AREA=<code>` fetches the places of one area, in place of what was kept for
   it: `AREA` is an ISO 3166-2 code of a region (`DE-RP`, `AT-7`, `FR-ARA`, `IT-25`) or an
   ISO 3166-1 code of a whole country (`CH`, `NL`, `BE`). One cron job per area, spread
   over the months; a large region takes minutes and tens of megabytes of answer. The
-  areas kept are listed in the table `place_areas` with the time of their last fetch.
+  table `place_fetches` holds the time of the last fetch per area and kind; `make places`
+  ends its list with the areas fetched in part, to run again.
 - `make closures` fetches the motorcycle closures into `public/closures.geojson`; a cron
   job repeats it, weekly is enough. httpd serves the file as it serves `public/build`.
 - Node.js 22 with npm 10 and Composer 2 on the server and for development.

@@ -27,34 +27,43 @@ final class PlaceFetch
 
     /**
      * Fetches every kind of place in the area with one question, or, where the server does
-     * not get through with that, kind by kind, and puts them in place of what was kept for
-     * the area.
+     * not get through with that, kind by kind, and puts each kind answered in full in place
+     * of what was kept of it for the area; a kind not answered stays as it was.
      *
-     * @return int the number of places kept
-     * @throws RuntimeException where the server does not answer in full, or knows no such area; what was kept stays
+     * @return array{places: int, missed: list<string>} the places fetched, and the kinds that were not answered
+     * @throws RuntimeException where no kind was answered: the server did not get through, or knows no such area
      */
-    public function fetch(string $area, DateTimeImmutable $now): int
+    public function fetch(string $area, DateTimeImmutable $now): array
     {
-        $files = [];
+        $ids = $this->kinds->ids();
+        $places = $this->fetchKinds($area, $this->kinds->kinds, $now);
+        if ($places !== null) {
+            return ['places' => $places, 'missed' => []];
+        }
+        $places = 0;
+        $missed = [];
+        foreach ($this->kinds->kinds as $kind) {
+            sleep(self::PAUSE_S);
+            $kept = $this->fetchKinds($area, [$kind], $now);
+            $places += $kept ?? 0;
+            if ($kept === null) {
+                $missed[] = $kind['id'];
+            }
+        }
+        if ($missed === $ids) {
+            throw new RuntimeException("The Overpass API gave no places for $area: it did not answer in full, or knows no area of that code. Nothing was changed.");
+        }
+        return ['places' => $places, 'missed' => $missed];
+    }
+
+    /** Asks for the kinds in the area and keeps the answer; null where it was not in full. */
+    private function fetchKinds(string $area, array $kinds, DateTimeImmutable $now): ?int
+    {
+        $file = $this->ask($area, $kinds);
         try {
-            $files[] = $this->ask($area, $this->kinds->kinds);
-            $all = new OverpassAnswer($files[0], $this->kinds);
-            $kept = $this->places->replaceArea($area, [$all], $now);
-            if ($kept !== null) {
-                return $kept;
-            }
-            if ($all->isComplete()) {
-                throw new RuntimeException("The Overpass API knows no place in an area of the code $area; nothing was changed.");
-            }
-            foreach ($this->kinds->kinds as $kind) {
-                sleep(self::PAUSE_S);
-                $files[] = $this->ask($area, [$kind]);
-            }
-            $answers = array_map(fn (string $file) => new OverpassAnswer($file, $this->kinds), array_slice($files, 1));
-            return $this->places->replaceArea($area, $answers, $now)
-                ?? throw new RuntimeException("The Overpass API did not answer in full for $area; nothing was changed.");
+            return $this->places->replaceKinds($area, array_column($kinds, 'id'), new OverpassAnswer($file, $this->kinds), $now);
         } finally {
-            array_map('unlink', $files);
+            unlink($file);
         }
     }
 

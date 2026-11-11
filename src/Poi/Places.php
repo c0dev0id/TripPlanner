@@ -17,37 +17,38 @@ final class Places
     }
 
     /**
-     * Puts the places of the answers in place of those kept for the area. Nothing changes
-     * where an answer proves incomplete or the answers hold no place at all.
+     * Puts the places of the answer in place of those kept for the area of the kinds given,
+     * and notes the fetch for each of them. Nothing changes where the answer proves
+     * incomplete or the area would be left without any place.
      *
-     * @param list<OverpassAnswer> $answers
+     * @param list<string> $kinds
      * @return ?int the number of places kept; null where nothing was changed
      */
-    public function replaceArea(string $area, array $answers, DateTimeImmutable $now): ?int
+    public function replaceKinds(string $area, array $kinds, OverpassAnswer $answer, DateTimeImmutable $now): ?int
     {
+        $marks = implode(',', array_fill(0, count($kinds), '?'));
         $this->db->beginTransaction();
-        $this->db->prepare('DELETE FROM places WHERE area = ?')->execute([$area]);
+        $this->db->prepare("DELETE FROM places WHERE area = ? AND kind IN ($marks)")->execute([$area, ...$kinds]);
         // A place on a border is in the answers of both sides; the area fetched last has it.
         $insert = $this->db->prepare('INSERT OR REPLACE INTO places (id, kind, lng, lat, tile_x, tile_y, tags, area) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-        $count = 0;
-        foreach ($answers as $answer) {
-            foreach ($answer->places() as $place) {
-                [$x, $y] = Tile::of($place['lng'], $place['lat']);
-                $insert->execute([$place['id'], $place['kind'], $place['lng'], $place['lat'], $x, $y, Json::encode((object) $place['tags']), $area]);
-                $count++;
-            }
-            if (!$answer->isComplete()) {
-                $this->db->rollBack();
-                return null;
-            }
+        $counts = array_fill_keys($kinds, 0);
+        foreach ($answer->places() as $place) {
+            [$x, $y] = Tile::of($place['lng'], $place['lat']);
+            $insert->execute([$place['id'], $place['kind'], $place['lng'], $place['lat'], $x, $y, Json::encode((object) $place['tags']), $area]);
+            $counts[$place['kind']]++;
         }
-        if ($count === 0) {
+        $any = $this->db->prepare('SELECT 1 FROM places WHERE area = ? LIMIT 1');
+        $any->execute([$area]);
+        if (!$answer->isComplete() || $any->fetchColumn() === false) {
             $this->db->rollBack();
             return null;
         }
-        $this->db->prepare('INSERT OR REPLACE INTO place_areas (area, places, fetched_at) VALUES (?, ?, ?)')->execute([$area, $count, Timestamp::of($now)]);
+        $note = $this->db->prepare('INSERT OR REPLACE INTO place_fetches (area, kind, places, fetched_at) VALUES (?, ?, ?, ?)');
+        foreach ($counts as $kind => $count) {
+            $note->execute([$area, $kind, $count, Timestamp::of($now)]);
+        }
         $this->db->commit();
-        return $count;
+        return array_sum($counts);
     }
 
     /**
@@ -69,12 +70,12 @@ final class Places
         );
     }
 
-    /** @return list<array{area: string, places: int, fetchedAt: string}> the areas places are kept of, by their code */
-    public function areas(): array
+    /** @return list<array{area: string, kind: string, places: int, fetchedAt: string}> the last fetch of each kind in each area, by area and kind */
+    public function fetches(): array
     {
         return array_map(
-            fn (array $row) => ['area' => $row['area'], 'places' => (int) $row['places'], 'fetchedAt' => $row['fetched_at']],
-            $this->db->query('SELECT area, places, fetched_at FROM place_areas ORDER BY area')->fetchAll(),
+            fn (array $row) => ['area' => $row['area'], 'kind' => $row['kind'], 'places' => (int) $row['places'], 'fetchedAt' => $row['fetched_at']],
+            $this->db->query('SELECT area, kind, places, fetched_at FROM place_fetches ORDER BY area, kind')->fetchAll(),
         );
     }
 }

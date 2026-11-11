@@ -65,17 +65,41 @@ final class Areas
 
     /**
      * The list as lines of text: each area's code and name, and for those kept how many
-     * places and when they were fetched last; areas kept that are not on the list come last.
+     * places and when they were fetched last. An area of which a kind was never fetched, or
+     * last fetched before the others, says so, and such areas are named again at the end
+     * as the ones to fetch again. Areas kept that are not on the list come last.
      *
-     * @param list<array{area: string, places: int, fetchedAt: string}> $kept
+     * @param list<array{area: string, kind: string, places: int, fetchedAt: string}> $fetches
+     * @param list<string> $kinds every kind the planner knows
      */
-    public static function listing(array $kept): string
+    public static function listing(array $fetches, array $kinds): string
     {
-        $kept = array_column($kept, null, 'area');
+        $byArea = [];
+        foreach ($fetches as $fetch) {
+            $byArea[$fetch['area']][$fetch['kind']] = $fetch;
+        }
         $lines = [];
-        foreach (self::NAMES + array_fill_keys(array_keys($kept), '') as $code => $name) {
-            $fetched = isset($kept[$code]) ? sprintf('%d places, fetched %s', $kept[$code]['places'], substr($kept[$code]['fetchedAt'], 0, 10)) : '';
-            $lines[] = sprintf('%-7s %s', $code, implode(' — ', array_filter([$name, $fetched])));
+        $again = [];
+        foreach (self::NAMES + array_fill_keys(array_keys($byArea), '') as $code => $name) {
+            $kept = $byArea[$code] ?? [];
+            $state = '';
+            if ($kept !== []) {
+                $last = max(array_column($kept, 'fetchedAt'));
+                $behind = [];
+                foreach ($kinds as $kind) {
+                    if (($kept[$kind]['fetchedAt'] ?? null) !== $last) {
+                        $behind[] = $kind . ' ' . (isset($kept[$kind]) ? substr($kept[$kind]['fetchedAt'], 0, 10) : 'never');
+                    }
+                }
+                $state = sprintf('%d places, fetched %s', array_sum(array_column($kept, 'places')), substr($last, 0, 10)) . ($behind === [] ? '' : ', but ' . implode(', ', $behind));
+                if ($behind !== []) {
+                    $again[] = $code;
+                }
+            }
+            $lines[] = sprintf('%-7s %s', $code, implode(' — ', array_filter([$name, $state])));
+        }
+        if ($again !== []) {
+            $lines[] = "\nFetched in part, to fetch again: " . implode(', ', $again);
         }
         return implode("\n", $lines) . "\n";
     }

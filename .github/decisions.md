@@ -291,8 +291,15 @@ entries at the end of their section.
   One cron job per area, spread over months, is the gentlest use a public server can be
   put to: a handful of questions a year per region. `make places` without an area lists
   the codes of the user's travel countries to pick from, with what is kept of each; any
-  other code is fetched as well, so the list limits nothing. A fetch replaces its area's places in one
-  transaction, so the map never shows half an area.
+  other code is fetched as well, so the list limits nothing.
+- **A fetch replaces what it was answered, kind by kind, and says what it was not.** Where
+  the one question fails and the kinds are asked one by one, each kind answered in full
+  replaces what was kept of it in a transaction of its own, and a kind not answered stays
+  as it was: old places of one kind beside new ones of the others are better than none
+  of the new. The time of the last fetch is kept per area and kind, so `make places`
+  names the areas where a kind is behind the others or was never fetched, the ones to
+  run again before their turn; the fetch itself ends with an error then, which a cron
+  job mails.
 - **An answer is tab-separated values with a mark at its end.** A region's places are tens
   of megabytes as JSON, which PHP would hold whole; as CSV with only the columns kept
   they are a tenth of that and read row by row. Overpass says nothing in a CSV answer it

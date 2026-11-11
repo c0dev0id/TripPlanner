@@ -9,6 +9,7 @@ use Planner\Database;
 use Planner\Journal\FileStore;
 use Planner\Kernel;
 use Planner\Poi\Areas;
+use Planner\Poi\Kinds;
 use Planner\Poi\PlaceFetch;
 use Planner\Poi\Places;
 use Planner\Signup\Inviter;
@@ -88,16 +89,20 @@ switch ($command) {
         break;
     case 'places:fetch':
         if ($argument === null || $argument === '') {
-            echo "The areas to fetch places of, one at a time: make places AREA=<code>\n\n", Areas::listing($container->get(Places::class)->areas());
+            echo "The areas to fetch places of, one at a time: make places AREA=<code>\n\n", Areas::listing($container->get(Places::class)->fetches(), $container->get(Kinds::class)->ids());
             break;
         }
         try {
-            $kept = $container->get(PlaceFetch::class)->fetch((string) $argument, new DateTimeImmutable());
+            $fetched = $container->get(PlaceFetch::class)->fetch((string) $argument, new DateTimeImmutable());
         } catch (RuntimeException | InvalidArgumentException $failure) {
             fwrite(STDERR, $failure->getMessage() . "\n");
             exit(1);
         }
-        echo "Places of $argument: $kept kept.\n";
+        echo "Places of $argument: {$fetched['places']} fetched.\n";
+        if ($fetched['missed'] !== []) {
+            fwrite(STDERR, "Not answered for $argument and left as they were: " . implode(', ', $fetched['missed']) . ". Fetch the area again.\n");
+            exit(1);
+        }
         break;
     default:
         fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | user:create <email> | user:password <email> <password> | admin:grant <email> | garmin:icons | closures:fetch | places:fetch [<area>]\n");
