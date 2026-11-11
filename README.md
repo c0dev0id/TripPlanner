@@ -94,7 +94,7 @@ share work; sharing between users is on the way.
 | Esc | Closes a menu; back to the Hand; leaves the route |
 | Space, held | The Hand while a drawing tool is picked |
 | Right-click or long press on a stop or point on the map | Make a stop, connect, disconnect, straight leg, remove |
-| Right-click or long press on the map | Add a point or a free stop here, a journal entry, or find POI |
+| Right-click or long press on the map | Add a point or a free stop here, a journal entry, find POI, or open the spot in Google Maps or Street View |
 | Right-click or long press on a folder, trip, day, route or stop in the panel | Its menu: rename or edit, move, copy or paste, duplicate, delete |
 | Tap or click the grip pad of a trip or a duplicate; Cmd/Ctrl-click, Shift-click | Select several; their menu moves, deletes or merges trips, or copies or deletes duplicates |
 | Drag a trip's or a folder's pad onto a folder or the card one level up | Move it, or the selected trips, there |

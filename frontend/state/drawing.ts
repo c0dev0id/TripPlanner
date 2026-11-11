@@ -1,4 +1,5 @@
 import { createSignal } from 'solid-js';
+import { googleMapsUrl, streetViewUrl } from '../geo/googleMaps';
 import { t } from '../i18n/t';
 import type { LngLat, Route, RoutePoint } from '../model/trip';
 import type { MenuItem } from '../ui/menu';
@@ -67,7 +68,7 @@ export function tapAction(): Tool | undefined {
   return editingRoute() ? currentTool() : undefined;
 }
 
-/** What a spot on the map offers: a point at the edited routed route's end, a free stop while a route is edited, a journal entry of the selected day of a trip there, and the POI search. */
+/** What a spot on the map offers: a point at the edited routed route's end, a free stop while a route is edited, a journal entry of the selected day of a trip there, the POI search, and the spot in Google Maps and Street View. */
 export function spotItems(spot: LngLat): MenuItem[] {
   const route = editingRoute();
   const day = selectedDay();
@@ -76,6 +77,8 @@ export function spotItems(spot: LngLat): MenuItem[] {
   if (route) items.push({ label: t('Add a stop here, beside the route'), run: () => addFreeStop(spot) });
   if (day && openTrip()?.kind === 'trip') items.push({ label: t('Journal here…'), run: () => openJournal({ dayId: day.id }, spot) });
   items.push({ label: t('Find POI…'), run: () => setPoiSearchSpot(spot) });
+  items.push({ label: t('Open in Google Maps'), run: () => window.open(googleMapsUrl(spot), '_blank', 'noopener') });
+  items.push({ label: t('Open in Street View'), run: () => window.open(streetViewUrl(spot), '_blank', 'noopener') });
   return items;
 }
 

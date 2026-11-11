@@ -203,7 +203,8 @@
   or along the selected day's routes within a distance per kind (200 m for fuel and
   parking, 2 km for restaurants, cafes and viewpoints, 10 km for hotels, each to change).
   The places found stand on the map as their kind's icon until cleared; a tap shows name,
-  address, cuisine, opening hours, phone and links to the website and OpenStreetMap.
+  address, cuisine, opening hours, phone and links to the homepage and OpenStreetMap.
+- A spot of the map opened in Google Maps or Google Street View, from the map's menu.
 - English and German. The planner follows the browser's language, or the one chosen in
   its header (Auto, Deutsch, English), kept in the browser; numbers, dates and distances
   are written the language's way. The server's pages, messages and mails follow the
