@@ -396,6 +396,15 @@ a {
   border-radius: 7px 7px 0 0;
 }
 
+/* A route's colour, before its details in the panel and before a colour's name in the menu. */
+.color-dot {
+  display: inline-block;
+  flex: none;
+  width: 0.8em;
+  height: 0.8em;
+  border-radius: 50%;
+}
+
 /* A day's recordings: a line in each one's colour on the map before its name. */
 .swatch {
   flex: none;

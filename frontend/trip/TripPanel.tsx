@@ -262,7 +262,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
               {label()}
             </span>
             <span class="muted detail">
-              <span class="swatch" style={{ background: openRouteColors().get(props.route.id) }} /> {routeKindLabel(props.route)}
+              <span class="color-dot" style={{ background: openRouteColors().get(props.route.id) }} /> {routeKindLabel(props.route)}
               {distance() > 0 ? ` · ${distanceText(distance())}` : ''}
               {props.route.kind === 'track' ? ` · ${counted(pointCount(props.route), 'point')}` : ''}
               {stopCount() > 0 ? ` · ${counted(stopCount(), 'stop')}` : ''}

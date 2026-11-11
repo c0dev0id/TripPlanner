@@ -58,15 +58,6 @@
   background: var(--active);
 }
 
-.context-menu .swatch,
-.route .swatch {
-  display: inline-block;
-  flex: none;
-  width: 0.8em;
-  height: 0.8em;
-  border-radius: 50%;
-}
-
-.context-menu .swatch {
+.context-menu .color-dot {
   margin-right: 0.5em;
 }

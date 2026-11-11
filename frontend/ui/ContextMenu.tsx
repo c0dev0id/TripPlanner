@@ -95,7 +95,7 @@ function MenuList(props: {
                   if ('run' in item) item.run();
                 }}
               >
-                <Show when={item.swatch}>{(color) => <span class="swatch" style={{ background: color() }} />}</Show>
+                <Show when={item.swatch}>{(color) => <span class="color-dot" style={{ background: color() }} />}</Show>
                 {item.label}
               </button>
               <Show when={submenu && open()?.index === index() && open()}>{(at) => <MenuList items={submenu!} at={at()} armed={props.armed} />}</Show>

@@ -1,4 +1,4 @@
-import { createResource, createRoot } from 'solid-js';
+import { createMemo, createResource, createRoot } from 'solid-js';
 import { fetchPreferences, savePreferences, type Preferences } from '../api';
 import { DEFAULT_ROUTE_COLORING, DEFAULT_ROUTE_WIDTH, type RouteColoring } from '../model/routeLook';
 import type { PoiCategoryId } from '../poi/categories';
@@ -10,16 +10,16 @@ const [loaded, { mutate }] = createRoot(() => createResource(fetchPreferences));
 const preferences = (): Preferences => loaded() ?? {};
 
 /** How far from a route a place is shown along it where the user set nothing: narrow, so that a route stays readable. */
-export const DEFAULT_PLACE_REACH_M = 200;
+const DEFAULT_PLACE_REACH_M = 200;
 
 /** How far from a route a place of the kind is still shown along it, in metres. */
 export const placeReachM = (kind: PoiCategoryId): number => preferences().placeReachM?.[kind] ?? DEFAULT_PLACE_REACH_M;
 
 /** The width of a route's line in pixels. */
-export const routeWidth = (): number => preferences().routeWidth ?? DEFAULT_ROUTE_WIDTH;
+export const routeWidth = createRoot(() => createMemo((): number => preferences().routeWidth ?? DEFAULT_ROUTE_WIDTH));
 
 /** How routes without a colour of their own get one. */
-export const routeColoring = (): RouteColoring => preferences().routeColoring ?? DEFAULT_ROUTE_COLORING;
+export const routeColoring = createRoot(() => createMemo((): RouteColoring => preferences().routeColoring ?? DEFAULT_ROUTE_COLORING));
 
 /** Sets the preferences given and keeps them with the account. */
 export async function changePreferences(change: Preferences): Promise<void> {
