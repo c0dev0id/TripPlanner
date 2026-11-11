@@ -53,7 +53,7 @@
   and MobiData BW (api.mobidata-bw.de, `MobiData-BW:roadworks`), fetched by the browser;
   the motorcycle closures of mintelonline.de, a KMZ file fetched on the server by
   `make closures` and kept as GeoJSON in `public/closures.geojson`, outside git.
-- POI search by the Overpass API (overpass-api.de), asked by the browser: one query
+- POI search by the Overpass API (the public instance overpass.private.coffee), asked by the browser: one query
   around a spot, one per 50 km along a route with a second between them, attribution
   shown.
 - Base maps: OpenFreeMap's vector styles (Liberty, Bright, Positron, Dark) without an

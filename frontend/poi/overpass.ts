@@ -9,7 +9,7 @@ import { categoryOf, type PoiCategory } from './categories';
  * (wiki.openstreetmap.org/wiki/Overpass_API) around a spot or along lines.
  */
 
-const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const OVERPASS_URL = 'https://overpass.private.coffee/api/interpreter';
 export const OVERPASS_ATTRIBUTION = t('POI: Overpass API, © OpenStreetMap contributors');
 /** Seconds the server may take before it gives up on a query. */
 const TIMEOUT_S = 60;

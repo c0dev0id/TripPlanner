@@ -264,6 +264,11 @@ entries at the end of their section.
   stretch can take a minute; a stretch that fails for good ends the search with what the
   others found still shown, and *Stop* ends it the same way. Each query names the box
   its stretch and reach lie in.
+- **The Overpass instance is private.coffee's.** The main instance, overpass-api.de, gives
+  an address two slots and made each query of a search wait some thirty seconds, whatever
+  its size; the same queries took one to five seconds elsewhere. overpass.private.coffee
+  is a public instance with the same data and no such limit. The address is one constant
+  in `poi/overpass.ts`.
 - **Along a route means along the road.** The search follows the routed legs' geometry,
   not the route's points: the straight lines between waypoints leave a winding road by
   kilometres, and a search within 200 m of them finds what happens to stand at a
