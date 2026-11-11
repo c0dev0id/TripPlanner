@@ -11,7 +11,7 @@ use ZipArchive;
 
 final class MotorcycleClosuresTest extends TestCase
 {
-    private const PLACEMARK = '<kml xmlns="http://www.opengis.net/kml/2.2"><Placemark><name>%s</name><Point><coordinates>8,49,0</coordinates></Point></Placemark></kml>';
+    private const PLACEMARK = '<kml xmlns="http://www.opengis.net/kml/2.2"><Placemark><name>%s</name><Point><coordinates>8.5,49.25,0</coordinates></Point></Placemark></kml>';
 
     private string $dir;
 
@@ -45,7 +45,7 @@ final class MotorcycleClosuresTest extends TestCase
         self::assertSame(1, MotorcycleClosures::fetch("$this->dir/closures.geojson", $source));
         $geoJson = json_decode(file_get_contents("$this->dir/closures.geojson"), true);
         self::assertSame('Präg', $geoJson['features'][0]['properties']['name']);
-        self::assertSame([8.0, 49.0], $geoJson['features'][0]['geometry']['coordinates']);
+        self::assertSame([8.5, 49.25], $geoJson['features'][0]['geometry']['coordinates']);
     }
 
     public function testTakesTheFirstKmlFileWhereThereIsNoDocKml(): void
