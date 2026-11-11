@@ -197,7 +197,9 @@
   the roadworks of Rhineland-Palatinate (sites, their stretches and diversions) and of
   Baden-Württemberg, as their map services draw them; and the roads closed to
   motorcycles in Germany, Austria, Switzerland, the Netherlands and Belgium as
-  mintelonline.de collects them, where a tap on a closure says when and for whom it holds.
+  mintelonline.de collects them, a motorcycle in a red ring where one begins, where a tap
+  on a closure says when and for whom it holds. Signs and lines of both grow with the
+  zoom, so that they stay wider than the road under them.
 - A POI search from the map's menu (*Find POI…*): fuel stations, hotels, restaurants,
   cafes, viewpoints and parking from OpenStreetMap, around the spot within 1 to 20 km,
   or along the selected day's routes within a distance per kind (200 m for fuel and

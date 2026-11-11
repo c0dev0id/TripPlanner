@@ -34,6 +34,19 @@ export const BASE_MAPS: readonly BaseMap[] = [
   { id: 'satellite', label: t('Satellite'), style: raster('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', 'Tiles © <a href="https://www.esri.com">Esri</a> · Source: Esri, Vantor, Earthstar Geographics, and the GIS User Community', 19) },
 ];
 
+/**
+ * The zoom up to which a base style of raster tiles alone is drawn sharp, beyond which its
+ * picture is blown up; undefined for a style with vector tiles, sharp at every zoom, also
+ * where it has a raster source for its relief. A tile of 256 px at its zoom covers what
+ * the map shows a zoom lower.
+ */
+export function sharpUntil(style: Pick<StyleSpecification, 'sources'>): number | undefined {
+  const sources = Object.values(style.sources);
+  if (sources.some((source) => source.type === 'vector')) return undefined;
+  const sharp = sources.flatMap((source) => (source.type === 'raster' && source.maxzoom !== undefined ? [source.maxzoom - Math.log2(512 / (source.tileSize ?? 512))] : []));
+  return sharp.length > 0 ? Math.max(...sharp) : undefined;
+}
+
 const stored = readPreference('baseMap');
 /** The base map this browser chose last, or the first. */
 const [chosenBaseMap, setChosenBaseMap] = createSignal(BASE_MAPS.find((b) => b.id === stored) ?? BASE_MAPS[0]!);

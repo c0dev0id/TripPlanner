@@ -2,9 +2,10 @@ import { GeolocateControl, Map as MapLibreMap, NavigationControl, ScaleControl, 
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { ROUTING_ATTRIBUTION } from '../routing/valhalla';
 import { BaseMapControl } from './BaseMapControl';
-import { chosenBaseMap } from './baseMaps';
+import { chosenBaseMap, sharpUntil } from './baseMaps';
 import { OVERPASS_ATTRIBUTION } from '../poi/overpass';
-import { shownOverlays } from './overlays';
+import { provideImages } from './mapImages';
+import { OVERLAYS, shownOverlays } from './overlays';
 import { POI_LAYERS, POI_SOURCE } from './poiOverlay';
 import { OPENED_RECORDING_SOURCE, RECORDING_LAYERS, RECORDING_POINT_LAYERS, RECORDING_POINT_SOURCE, RECORDINGS_SOURCE } from './recordingOverlay';
 import { ROUTE_LAYERS, ROUTES_SOURCE } from './routeOverlay';
@@ -24,7 +25,7 @@ function withOverlays(previous: StyleSpecification | undefined, next: StyleSpeci
   const sources: StyleSpecification['sources'] = { ...next.sources, [ROUTES_SOURCE]: previous?.sources[ROUTES_SOURCE] ?? { ...empty(), attribution: ROUTING_ATTRIBUTION } };
   for (const id of [RECORDINGS_SOURCE, OPENED_RECORDING_SOURCE, RECORDING_POINT_SOURCE]) sources[id] = previous?.sources[id] ?? empty();
   sources[POI_SOURCE] = previous?.sources[POI_SOURCE] ?? { ...empty(), attribution: OVERPASS_ATTRIBUTION };
-  const overlays = shownOverlays();
+  const overlays = shownOverlays().map((overlay) => overlay.parts(sharpUntil(next)));
   for (const overlay of overlays) Object.assign(sources, overlay.sources);
   return { ...next, sources, layers: [...next.layers, ...overlays.flatMap((o) => o.layers), ...RECORDING_LAYERS, ...ROUTE_LAYERS, ...POI_LAYERS, ...RECORDING_POINT_LAYERS] };
 }
@@ -40,6 +41,7 @@ export function newBaseMap(container: HTMLElement, options: Partial<MapOptions>,
   map.addControl(new GeolocateControl({ positionOptions: { enableHighAccuracy: true }, fitBoundsOptions: { maxZoom: 13 } }), 'top-right');
   map.addControl(new BaseMapControl(), 'top-right');
   map.addControl(new ScaleControl(), 'bottom-left');
+  provideImages(map, new Map(OVERLAYS.flatMap((overlay) => Object.entries(overlay.images ?? {}))));
   map.once('load', () => ready(map));
   return map;
 }

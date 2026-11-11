@@ -234,6 +234,17 @@ entries at the end of their section.
   route overlay: switching sets the base style again, which MapLibre diffs, so nothing is
   fetched for an overlay that is off and there is one way into the style. As with the base
   maps, the list is fixed in code; any other layer is Layer Slayer's business.
+- **An overlay's signs stay wider than the road under them.** A vector base map keeps its
+  roads to a few pixels at any zoom, and the overlays grow a little with it. A raster base
+  map is sharp up to its last tiles and blown up beyond: a road doubles with every zoom,
+  to 160 px and more, and a sign of one size ends up a speck on it. So an overlay's layers
+  are made for the base map shown: from the zoom it is blown up at, lines and signs take
+  their size from the road's. A closure's line and sign are style expressions; a map
+  service draws its own signs, so the roadworks are asked for in steps of GeoServer's
+  `dpi` option, a source and a layer per step, each shown in its zooms.
+- **A closure's sign is the road sign.** A motorcycle in a red ring, as on the road, with
+  Temaki's motorcycle (CC0, the companion set to Maki), drawn into a map image as the POI
+  badges are.
 - **Roadworks are the states' WMS pictures, not features.** The Rhineland-Palatinate
   service's three layers (sites, stretches, diversions) are asked for in one request and
   Baden-Württemberg's in a second, each only within its state's bounds, as 512 px tiles
