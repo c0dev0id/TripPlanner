@@ -193,7 +193,8 @@
   satellite raster tiles; the route lines
   and markers stay. A locate-me button shows where the browser is. The interface light
   or dark by hand, or as the browser says. Both choices are kept in the browser.
-- Overlays to switch on over the base map, from the same control, kept in the browser:
+- Overlays to switch on over the base map, each with a button of its sign among the
+  map's controls, kept in the browser:
   the roadworks Rhineland-Palatinate's and Baden-Württemberg's services list, as a line
   with a warning sign, a red ring where the road is closed, diversions in blue and works
   yet to begin fainter, where a tap on a site says the road, the kind of work, its dates

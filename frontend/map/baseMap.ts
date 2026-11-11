@@ -2,6 +2,7 @@ import { GeolocateControl, Map as MapLibreMap, NavigationControl, ScaleControl, 
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { ROUTING_ATTRIBUTION } from '../routing/valhalla';
 import { BaseMapControl } from './BaseMapControl';
+import { OverlayControl } from './OverlayControl';
 import { chosenBaseMap, sharpUntil } from './baseMaps';
 import { OVERPASS_ATTRIBUTION } from '../poi/overpass';
 import { provideImages } from './mapImages';
@@ -32,7 +33,7 @@ function withOverlays(previous: StyleSpecification | undefined, next: StyleSpeci
 
 /**
  * A map over Europe on the base map this browser chose, with the navigation, locate-me,
- * base map and scale controls and the route overlay; `ready` gets the map once it has
+ * base map, overlay and scale controls and the route overlay; `ready` gets the map once it has
  * loaded.
  */
 export function newBaseMap(container: HTMLElement, options: Partial<MapOptions>, ready: (map: MapLibreMap) => void): MapLibreMap {
@@ -40,8 +41,9 @@ export function newBaseMap(container: HTMLElement, options: Partial<MapOptions>,
   map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
   map.addControl(new GeolocateControl({ positionOptions: { enableHighAccuracy: true }, fitBoundsOptions: { maxZoom: 13 } }), 'top-right');
   map.addControl(new BaseMapControl(), 'top-right');
+  map.addControl(new OverlayControl(), 'top-right');
   map.addControl(new ScaleControl(), 'bottom-left');
-  provideImages(map, new Map(OVERLAYS.flatMap((overlay) => Object.entries(overlay.images ?? {}))));
+  provideImages(map, new Map(OVERLAYS.flatMap((overlay) => Object.entries(overlay.images))));
   map.once('load', () => ready(map));
   return map;
 }

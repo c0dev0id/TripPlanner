@@ -26,7 +26,9 @@ export interface Overlay {
    */
   parts: (sharpUntil: number | undefined) => OverlayParts;
   /** The pictures its layers draw, by the id they ask for them. */
-  images?: Record<string, MapImage>;
+  images: Record<string, MapImage>;
+  /** The one of them that stands for the overlay on its button. */
+  sign: string;
 }
 
 /** The zooms sizes are worked out for; between them they are interpolated. */
@@ -152,6 +154,7 @@ export const OVERLAYS: readonly Overlay[] = [
       [ROADWORKS_SIGN]: sign(`<path d="M14 3.5 25.5 24h-23Z" fill="#fff" stroke="${SIGN_RED}" stroke-width="3" stroke-linejoin="round"/><g transform="translate(9.1 10.4) scale(0.65)" fill="#111">${svgContent(cone)}</g>`),
       [ROAD_CLOSED_SIGN]: sign(RING),
     },
+    sign: ROADWORKS_SIGN,
   },
   {
     id: 'closures',
@@ -192,6 +195,7 @@ export const OVERLAYS: readonly Overlay[] = [
     }),
     // Closed to motorcycles, as the road sign says it: a motorcycle in a red ring. Temaki's motorcycle (CC0).
     images: { [CLOSURE_SIGN]: sign(`${RING}<g transform="translate(6 5.6) scale(1.0667)" fill="#111">${svgContent(motorcycle)}</g>`) },
+    sign: CLOSURE_SIGN,
   },
 ];
 

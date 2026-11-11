@@ -12,8 +12,6 @@ export type MenuItem = { label: string; disabled?: boolean } & (
       run: () => void;
       /** Set on the items of a choice, true on the one chosen. */
       checked?: boolean;
-      /** Set on an item that switches something on and off by itself, true while it is on. */
-      switched?: boolean;
     }
   | { items: MenuItem[] }
 );

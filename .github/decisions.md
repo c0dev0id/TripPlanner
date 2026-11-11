@@ -233,7 +233,10 @@ entries at the end of their section.
   the style only while it is switched on, put there by the same style transform as the
   route overlay: switching sets the base style again, which MapLibre diffs, so nothing is
   fetched for an overlay that is off and there is one way into the style. As with the base
-  maps, the list is fixed in code; any other layer is Layer Slayer's business.
+  maps, the list is fixed in code; any other layer is Layer Slayer's business. Each has
+  a button of its own among the map's controls, its sign, greyed while it is off: two
+  switches used while looking at the map are one tap each, where a submenu of the base
+  map's menu took three.
 - **An overlay's signs stay wider than the road under them.** A vector base map keeps its
   roads to a few pixels at any zoom, and the overlays grow a little with it. A raster base
   map is sharp up to its last tiles and blown up beyond: a road doubles with every zoom,

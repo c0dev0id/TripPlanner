@@ -4,3 +4,20 @@
   display: grid;
   place-items: center;
 }
+
+/* The overlays' buttons among the map's controls: an overlay's sign, greyed while it is off. */
+
+.overlay-toggles > button {
+  display: grid;
+  place-items: center;
+}
+
+.overlay-toggles img {
+  width: 21px;
+  height: 21px;
+}
+
+.overlay-toggles > button[aria-pressed='false'] img {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
