@@ -1,0 +1,11 @@
+{
+  "kinds": [
+    { "id": "fuel", "key": "amenity", "values": ["fuel"], "color": "#2b8a3e" },
+    { "id": "hotel", "key": "tourism", "values": ["hotel", "guest_house", "motel"], "color": "#5f3dc4" },
+    { "id": "restaurant", "key": "amenity", "values": ["restaurant"], "color": "#e67700" },
+    { "id": "cafe", "key": "amenity", "values": ["cafe"], "color": "#7b4a2d" },
+    { "id": "viewpoint", "key": "tourism", "values": ["viewpoint"], "color": "#0b7285" },
+    { "id": "parking", "key": "amenity", "values": ["parking", "motorcycle_parking"], "noAccess": ["private", "no"], "color": "#495057" }
+  ],
+  "detailTags": ["name", "brand", "operator", "addr:street", "addr:housenumber", "addr:postcode", "addr:city", "cuisine", "opening_hours", "phone", "contact:phone", "website", "contact:website", "url"]
+}

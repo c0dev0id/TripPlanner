@@ -1,32 +1,35 @@
 import { t } from '../i18n/t';
+import type { LngLat } from '../model/trip';
+import list from './places.json';
 
-/** The kinds of places the POI search finds, each by the values of one OpenStreetMap tag. */
+/**
+ * The kinds of places the map shows, each by the values of one OpenStreetMap tag: the list
+ * in places.json, which the server fetches by, with a name for each.
+ */
 
 export type PoiCategoryId = 'fuel' | 'hotel' | 'restaurant' | 'cafe' | 'viewpoint' | 'parking';
 
 export interface PoiCategory {
   id: PoiCategoryId;
   label: string;
-  /** The tag key and the values of it that make a place one of this kind. */
-  key: string;
-  values: readonly string[];
-  /** Values of `access` that leave a place out. */
-  noAccess?: readonly string[];
-  /** How far from the route a place of this kind is still worth the detour, in metres. */
-  alongM: number;
   color: string;
 }
 
-export const POI_CATEGORIES: readonly PoiCategory[] = [
-  { id: 'fuel', label: t('Fuel stations'), key: 'amenity', values: ['fuel'], alongM: 200, color: '#2b8a3e' },
-  { id: 'hotel', label: t('Hotels'), key: 'tourism', values: ['hotel', 'guest_house', 'motel'], alongM: 5000, color: '#5f3dc4' },
-  { id: 'restaurant', label: t('Restaurants'), key: 'amenity', values: ['restaurant'], alongM: 2000, color: '#e67700' },
-  { id: 'cafe', label: t('Cafes'), key: 'amenity', values: ['cafe'], alongM: 2000, color: '#7b4a2d' },
-  { id: 'viewpoint', label: t('Viewpoints'), key: 'tourism', values: ['viewpoint'], alongM: 2000, color: '#0b7285' },
-  { id: 'parking', label: t('Parking'), key: 'amenity', values: ['parking', 'motorcycle_parking'], noAccess: ['private', 'no'], alongM: 200, color: '#495057' },
-];
+const LABELS: Record<PoiCategoryId, string> = {
+  fuel: t('Fuel stations'),
+  hotel: t('Hotels'),
+  restaurant: t('Restaurants'),
+  cafe: t('Cafes'),
+  viewpoint: t('Viewpoints'),
+  parking: t('Parking'),
+};
 
-/** The category a place with these tags belongs to. */
-export function categoryOf(tags: Readonly<Record<string, string>>): PoiCategory | undefined {
-  return POI_CATEGORIES.find((c) => c.values.includes(tags[c.key] ?? ''));
+export const POI_CATEGORIES: readonly PoiCategory[] = list.kinds.map((kind) => ({ id: kind.id as PoiCategoryId, label: LABELS[kind.id as PoiCategoryId], color: kind.color }));
+
+/** A place of one of the kinds: the OpenStreetMap object ("node/123"), where it is, and the tags its details are made of. */
+export interface Place {
+  id: string;
+  category: PoiCategory;
+  lngLat: LngLat;
+  tags: Readonly<Record<string, string>>;
 }

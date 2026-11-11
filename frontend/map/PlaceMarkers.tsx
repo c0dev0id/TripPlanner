@@ -1,18 +1,26 @@
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
-import { createEffect, For, Show } from 'solid-js';
+import { createEffect, For, onCleanup, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { poiDetails } from '../poi/details';
-import type { Poi } from '../poi/overpass';
-import { foundPois } from '../state/poi';
-import { keptPoisOnMap } from '../state/routePois';
+import { placesOnMap, setMapView } from '../state/places';
+import { PlacesControl } from './PlacesControl';
 import { POI_LAYERS, POI_SOURCE, poiFeatures } from './poiOverlay';
 import { popupOnTap } from './tapPopup';
 
-/** The places on the map: those kept for the routes and switched on, and what the running or last search found; each once. */
-const placesOnMap = (): Poi[] => [...new Map([...keptPoisOnMap(), ...foundPois()].map((poi) => [poi.id, poi])).values()];
-
-/** Keeps the places of POI searches on the map, and says what one tapped is. */
-export function PoiMarkers(props: { map: MapLibreMap }) {
+/** Keeps the places of the kinds switched on on the map, tells the map's view to what reads them, and says what one tapped is. */
+export function PlaceMarkers(props: { map: MapLibreMap }) {
+  const tellView = () => {
+    const bounds = props.map.getBounds();
+    setMapView({ bounds: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()], zoom: props.map.getZoom() });
+  };
+  tellView();
+  props.map.on('moveend', tellView);
+  const control = new PlacesControl();
+  props.map.addControl(control, 'top-right');
+  onCleanup(() => {
+    props.map.off('moveend', tellView);
+    props.map.removeControl(control);
+  });
   const popup = popupOnTap(
     props.map,
     POI_LAYERS.map((layer) => layer.id),
@@ -50,7 +58,6 @@ export function PoiMarkers(props: { map: MapLibreMap }) {
   createEffect(() => {
     const places = placesOnMap();
     props.map.getSource<GeoJSONSource>(POI_SOURCE)?.setData(poiFeatures(places));
-    // A search that still runs adds places; the popup goes when they do.
     if (places.length === 0) popup.remove();
   });
   return null;

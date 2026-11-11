@@ -5,6 +5,13 @@
   color: #333;
 }
 
+.places-control svg {
+  display: block;
+  width: 19px;
+  height: 19px;
+  fill: #333;
+}
+
 /* The overlays' buttons among the map's controls: an overlay's sign, greyed while it is off. */
 
 .overlay-toggles img {

@@ -163,17 +163,33 @@ CREATE TABLE IF NOT EXISTS recordings (
 );
 CREATE INDEX IF NOT EXISTS recordings_day ON recordings(day_id);
 
--- What a POI search found along a route, one row per kind of place: asking again is slow
--- and counted against the user by the server asked, so the answer is kept. The places are
--- JSON as the planner holds them (id, lngLat, tags). line_mark says which line the route
--- had when it was searched, for the planner to tell when it has changed since. A removed
--- route takes its places with it.
-CREATE TABLE IF NOT EXISTS route_pois (
-    route_id TEXT NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
-    category TEXT NOT NULL,
-    reach_m INTEGER NOT NULL,
-    line_mark TEXT NOT NULL,
-    places TEXT NOT NULL,
-    found_at TEXT NOT NULL,
-    PRIMARY KEY (route_id, category)
+-- The places the map shows of the kinds the planner knows (frontend/poi/places.json),
+-- fetched from OpenStreetMap area by area by `make places` and asked for by the planner
+-- tile by tile: the tiles of the web's maps at zoom 10. id is the OpenStreetMap object,
+-- as "node/123"; tags are the ones a place's details are made of, as JSON; area is the
+-- code of the area whose fetch brought the place, which replaces its places as a whole.
+CREATE TABLE IF NOT EXISTS places (
+    id TEXT PRIMARY KEY,
+    kind TEXT NOT NULL,
+    lng REAL NOT NULL,
+    lat REAL NOT NULL,
+    tile_x INTEGER NOT NULL,
+    tile_y INTEGER NOT NULL,
+    tags TEXT NOT NULL,
+    area TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS places_tile ON places(tile_x, tile_y, kind);
+CREATE INDEX IF NOT EXISTS places_area ON places(area);
+
+-- The areas places are kept of, by their ISO 3166 code, with when they were last fetched.
+CREATE TABLE IF NOT EXISTS place_areas (
+    area TEXT PRIMARY KEY,
+    places INTEGER NOT NULL,
+    fetched_at TEXT NOT NULL
+);
+
+-- What a user set for the planner as a whole, as JSON the planner itself reads and writes.
+CREATE TABLE IF NOT EXISTS user_preferences (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    preferences TEXT NOT NULL
 );

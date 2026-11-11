@@ -16,11 +16,6 @@ function webAddress(tagged: string): string | undefined {
   return /^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(address) ? `https://${address}` : undefined;
 }
 
-/** The tags the details are made of: what is worth keeping of a place. */
-const DETAIL_TAGS = ['name', 'brand', 'operator', 'addr:street', 'addr:housenumber', 'addr:postcode', 'addr:city', 'cuisine', 'opening_hours', 'phone', 'contact:phone', 'website', 'contact:website', 'url'];
-
-export const detailTags = (tags: Readonly<Record<string, string>>): Record<string, string> => Object.fromEntries(DETAIL_TAGS.flatMap((key) => (tags[key] ? [[key, tags[key]]] : [])));
-
 export function poiDetails(tags: Readonly<Record<string, string>>): PoiDetails {
   const joined = (...keys: string[]) => keys.flatMap((key) => (tags[key] ? [tags[key]] : [])).join(' ');
   const homepage = webAddress(tags['website'] ?? tags['contact:website'] ?? tags['url'] ?? '');

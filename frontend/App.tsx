@@ -4,16 +4,16 @@ import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';
 import { PanelResizer } from './ui/PanelResizer';
-import { PoiBar } from './map/PoiBar';
-import { PoiDialog } from './map/PoiDialog';
 import { RoutingBar } from './map/RoutingBar';
 import { MapView } from './map/MapView';
 import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
+import { setPreferencesOpen } from './state/drawing';
 import { libraryFolders, relistTrips, showFolder, shownFolderId } from './state/library';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, editRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
+import { PreferencesDialog } from './preferences/PreferencesDialog';
 import { DayDialog } from './trip/DayDialog';
 import { ExportDialog } from './trip/ExportDialog';
 import { JournalDialog } from './trip/JournalDialog';
@@ -96,6 +96,9 @@ export function App() {
           <select class="theme" aria-label={t('Theme')} title={t('Light or dark, or as the browser says')} value={theme()} onChange={(e) => chooseTheme(e.currentTarget.value as Theme)}>
             <For each={THEMES}>{(choice) => <option value={choice.value}>{choice.label}</option>}</For>
           </select>
+          <button type="button" class="link" onClick={() => setPreferencesOpen(true)}>
+            {t('Preferences')}
+          </button>
           <button type="button" class="link" onClick={logout}>
             {t('Sign out')}
           </button>
@@ -107,7 +110,6 @@ export function App() {
         <MapView />
         <RecordingCards />
         <RoutingBar />
-        <PoiBar />
         <Toolbar />
       </div>
       <ContextMenu />
@@ -119,7 +121,7 @@ export function App() {
       <TrackDialog />
       <StopDialog />
       <ExportDialog />
-      <PoiDialog />
+      <PreferencesDialog />
       <JournalDialog />
       <ShareDialog />
     </>

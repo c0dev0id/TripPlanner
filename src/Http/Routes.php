@@ -8,11 +8,12 @@ use Planner\Account\LoginController;
 use Planner\Account\PasswordChangeController;
 use Planner\Account\PasswordResetController;
 use Planner\Api\MeController;
+use Planner\Api\PreferencesController;
 use Planner\Export\ExportPresetController;
 use Planner\Export\GpxExportController;
 use Planner\Journal\JournalController;
 use Planner\Pages\AppController;
-use Planner\Poi\RoutePoisController;
+use Planner\Poi\PlacesController;
 use Planner\Pages\TripViewController;
 use Planner\Recording\RecordingController;
 use Planner\Share\SharedTripController;
@@ -56,6 +57,9 @@ final class Routes
 
         $app->group('/api', function (RouteCollectorProxy $api): void {
             $api->get('/me', [MeController::class, 'show']);
+            $api->get('/preferences', [PreferencesController::class, 'show']);
+            $api->put('/preferences', [PreferencesController::class, 'replace']);
+            $api->get('/places/{x:[0-9]{1,4}}/{y:[0-9]{1,4}}', [PlacesController::class, 'tile']);
             $api->get('/trips', [TripController::class, 'index']);
             $api->post('/trips', [TripController::class, 'create']);
             $api->get('/trips/{id:[0-9]+}', [TripController::class, 'show']);
@@ -74,9 +78,6 @@ final class Routes
             $api->delete('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}', [JournalController::class, 'delete']);
             $api->get('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}/file', [JournalController::class, 'file']);
             $api->get('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}/preview', [JournalController::class, 'preview']);
-            $api->get('/trips/{id:[0-9]+}/pois', [RoutePoisController::class, 'index']);
-            $api->put('/trips/{id:[0-9]+}/routes/{route}/pois/{category:[a-z_]{1,40}}', [RoutePoisController::class, 'keep']);
-            $api->delete('/trips/{id:[0-9]+}/routes/{route}/pois/{category:[a-z_]{1,40}}', [RoutePoisController::class, 'forget']);
             $api->get('/trips/{id:[0-9]+}/recordings', [RecordingController::class, 'index']);
             $api->post('/trips/{id:[0-9]+}/recordings', [RecordingController::class, 'add']);
             $api->patch('/trips/{id:[0-9]+}/recordings/{recording:[0-9]+}', [RecordingController::class, 'rename']);

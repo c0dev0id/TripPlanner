@@ -5,11 +5,10 @@ import { ROUTING_ATTRIBUTION } from '../routing/valhalla';
 import { BaseMapControl } from './BaseMapControl';
 import { OverlayControl } from './OverlayControl';
 import { chosenBaseMap, sharpUntil } from './baseMaps';
-import { OVERPASS_ATTRIBUTION } from '../poi/overpass';
 import { provideImages } from './mapImages';
 import { OVERLAYS, shownOverlays } from './overlays';
 import { POI_IMAGES } from './poiImages';
-import { POI_LAYERS, POI_SOURCE } from './poiOverlay';
+import { PLACES_ATTRIBUTION, POI_LAYERS, POI_SOURCE } from './poiOverlay';
 import { OPENED_RECORDING_SOURCE, RECORDING_LAYERS, RECORDING_POINT_LAYERS, RECORDING_POINT_SOURCE, RECORDINGS_SOURCE } from './recordingOverlay';
 import { ROUTE_LAYERS, ROUTES_SOURCE } from './routeOverlay';
 
@@ -27,7 +26,7 @@ function withOverlays(previous: StyleSpecification | undefined, next: StyleSpeci
   const empty = (): GeoJSONSourceSpecification => ({ type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
   const sources: StyleSpecification['sources'] = { ...next.sources, [ROUTES_SOURCE]: previous?.sources[ROUTES_SOURCE] ?? { ...empty(), attribution: ROUTING_ATTRIBUTION } };
   for (const id of [RECORDINGS_SOURCE, OPENED_RECORDING_SOURCE, RECORDING_POINT_SOURCE]) sources[id] = previous?.sources[id] ?? empty();
-  sources[POI_SOURCE] = previous?.sources[POI_SOURCE] ?? { ...empty(), attribution: OVERPASS_ATTRIBUTION };
+  sources[POI_SOURCE] = previous?.sources[POI_SOURCE] ?? { ...empty(), attribution: PLACES_ATTRIBUTION };
   const overlays = shownOverlays().map((overlay) => overlay.parts(sharpUntil(next)));
   // An overlay's data read once stays: a source written anew would be fetched again.
   for (const overlay of overlays) for (const [id, source] of Object.entries(overlay.sources)) sources[id] = previous?.sources[id] ?? source;

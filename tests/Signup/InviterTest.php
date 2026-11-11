@@ -50,6 +50,7 @@ final class InviterTest extends TestCase
             mailFromName: 'Trip Planner',
             smtpHost: '127.0.0.1',
             smtpPort: 25,
+            overpassUrl: 'https://overpass.example/api/interpreter',
             invitationTtl: 14 * 86400,
             passwordResetTtl: 3600,
             sessionTtl: 30 * 86400,

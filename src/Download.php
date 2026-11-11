@@ -32,4 +32,29 @@ final class Download
         }
         return $content;
     }
+
+    /**
+     * Posts the form fields to the address and saves the answer to the file.
+     *
+     * @param string $task what asks, named to the server
+     * @throws RuntimeException with curl's reason where the address does not answer with content
+     */
+    public static function post(string $url, array $fields, string $file, string $task, int $timeoutS): void
+    {
+        $answer = fopen($file, 'w');
+        $curl = curl_init($url);
+        curl_setopt_array($curl, [
+            CURLOPT_POSTFIELDS => http_build_query($fields),
+            CURLOPT_FILE => $answer,
+            CURLOPT_FAILONERROR => true,
+            CURLOPT_TIMEOUT => $timeoutS,
+            CURLOPT_ENCODING => '',
+            CURLOPT_USERAGENT => "Trip Planner ($task)",
+        ]);
+        $done = curl_exec($curl);
+        fclose($answer);
+        if ($done === false) {
+            throw new RuntimeException("$url could not be asked: " . curl_error($curl));
+        }
+    }
 }

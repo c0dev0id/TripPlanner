@@ -16,6 +16,7 @@ final class Config
         public readonly string $mailFromName,
         public readonly string $smtpHost,
         public readonly int $smtpPort,
+        public readonly string $overpassUrl,
         public readonly int $invitationTtl,
         public readonly int $passwordResetTtl,
         /** Seconds a sign-in lasts from the last request. */
@@ -42,6 +43,7 @@ final class Config
             mailFromName: $values['mail']['from_name'],
             smtpHost: $values['mail']['smtp_host'],
             smtpPort: $values['mail']['smtp_port'],
+            overpassUrl: $values['overpass_url'],
             invitationTtl: $values['invitation_ttl'],
             passwordResetTtl: $values['password_reset_ttl'],
             sessionTtl: $values['session_ttl'],

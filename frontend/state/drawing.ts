@@ -4,7 +4,6 @@ import { t } from '../i18n/t';
 import type { LngLat, Route, RoutePoint } from '../model/trip';
 import type { MenuItem } from '../ui/menu';
 import { openJournal } from './journal';
-import { setPoiSearchSpot } from './poi';
 import { addFreeStop, appendPoint, editingRoute, openTrip, selectedDay, setStraight } from './trip';
 
 /** Transient state of editing on the map; never kept. */
@@ -45,6 +44,9 @@ export const [trackAction, setTrackAction] = createSignal<{ routeId: string; act
 /** Whether the export dialog is open. */
 export const [exportOpen, setExportOpen] = createSignal(false);
 
+/** Whether the preferences dialog is open. */
+export const [preferencesOpen, setPreferencesOpen] = createSignal(false);
+
 /** Whether the print-and-share dialog is open. */
 export const [shareOpen, setShareOpen] = createSignal(false);
 
@@ -68,7 +70,7 @@ export function tapAction(): Tool | undefined {
   return editingRoute() ? currentTool() : undefined;
 }
 
-/** What a spot on the map offers: a point at the edited routed route's end, a free stop while a route is edited, a journal entry of the selected day of a trip there, the POI search, and the spot in Google Maps and Street View. */
+/** What a spot on the map offers: a point at the edited routed route's end, a free stop while a route is edited, a journal entry of the selected day of a trip there, and the spot in Google Maps and Street View. */
 export function spotItems(spot: LngLat): MenuItem[] {
   const route = editingRoute();
   const day = selectedDay();
@@ -76,7 +78,6 @@ export function spotItems(spot: LngLat): MenuItem[] {
   if (route?.kind === 'routed') items.push({ label: t('Add a point here'), run: () => appendPoint(route.id, spot) });
   if (route) items.push({ label: t('Add a stop here, beside the route'), run: () => addFreeStop(spot) });
   if (day && openTrip()?.kind === 'trip') items.push({ label: t('Journal here…'), run: () => openJournal({ dayId: day.id }, spot) });
-  items.push({ label: t('Find POI…'), run: () => setPoiSearchSpot(spot) });
   items.push({ label: t('Open in Google Maps'), run: () => window.open(googleMapsUrl(spot), '_blank', 'noopener') });
   items.push({ label: t('Open in Street View'), run: () => window.open(streetViewUrl(spot), '_blank', 'noopener') });
   return items;

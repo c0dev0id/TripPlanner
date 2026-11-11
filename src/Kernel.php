@@ -18,6 +18,7 @@ use Planner\Mail\LogMailer;
 use Planner\Mail\Mailer;
 use Planner\Mail\SmtpMailer;
 use Planner\Pages\ViteAssets;
+use Planner\Poi\Kinds;
 use Planner\Signup\Invitations;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -43,6 +44,7 @@ final class Kernel
                 : new LogMailer($config->dataDir . '/mail.log'),
             Invitations::class => fn (PDO $db, Config $config) => new Invitations($db, $config->invitationTtl),
             PasswordResets::class => fn (PDO $db, Config $config) => new PasswordResets($db, $config->passwordResetTtl),
+            Kinds::class => fn () => Kinds::load($root . '/frontend/poi/places.json'),
             ViteAssets::class => fn (Config $config) => new ViteAssets($config, $root . '/public/build/.vite/manifest.json'),
             Engine::class => fn (ContainerInterface $c) => self::templates($root . '/templates', $c),
         ]);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { detailTags, poiDetails } from './details';
+import { poiDetails } from './details';
 
 describe('poiDetails', () => {
   it('lists address, cuisine, opening hours and phone as far as tagged', () => {
@@ -28,13 +28,5 @@ describe('poiDetails', () => {
   it('names a place without a name by its brand, and keeps no website that is not a web address', () => {
     expect(poiDetails({ amenity: 'fuel', brand: 'Aral', 'addr:city': 'Todtnau', website: 'javascript:alert(1)' })).toEqual({ name: 'Aral', lines: ['Todtnau'] });
     expect(poiDetails({ tourism: 'viewpoint' })).toEqual({ lines: [] });
-  });
-});
-
-describe('detailTags', () => {
-  it('keeps the tags the details are made of and no others', () => {
-    const tags = { amenity: 'fuel', brand: 'Aral', 'addr:city': 'Todtnau', 'fuel:diesel': 'yes', website: 'aral.example', name: '' };
-    expect(detailTags(tags)).toEqual({ brand: 'Aral', 'addr:city': 'Todtnau', website: 'aral.example' });
-    expect(poiDetails(detailTags(tags))).toEqual(poiDetails(tags));
   });
 });

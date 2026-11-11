@@ -34,7 +34,7 @@
 - MapLibre GL JS 6 (map rendering, Web Mercator).
 - uPlot 1.6 (MIT): the charts of a recording, drawn on a canvas.
 - Maki 8 and Temaki 5 (CC0), development dependencies: six of Maki's icons are bundled
-  for the POI search's places and its traffic cone for the roadworks' sign, Temaki's
+  for the places' badges and its traffic cone for the roadworks' sign, Temaki's
   motorcycle for the closures' sign.
 - libheif-js 1.23 (libheif compiled to WebAssembly, LGPL): decodes a HEIC in browsers that
   cannot, loaded on demand as a chunk of its own, about 2 MB.
@@ -54,9 +54,10 @@
   and MobiData BW (api.mobidata-bw.de, `MobiData-BW:roadworks`), fetched by the browser;
   the motorcycle closures of mintelonline.de, a KMZ file fetched on the server by
   `make closures` and kept as GeoJSON in `public/closures.geojson`, outside git.
-- POI search by the Overpass API (overpass-api.de), asked by the browser: one query
-  around a spot, one per 50 km along a route with a second between them, attribution
-  shown.
+- Places (fuel stations, hotels and the like) from OpenStreetMap by the Overpass API
+  (overpass-api.de, `overpass_url` in the configuration), asked by the server alone:
+  `make places AREA=<code>` fetches a region or a country into the database, from cron.
+  The planner reads the database.
 - Base maps: OpenFreeMap's vector styles (Liberty, Bright, Positron, Dark) without an
   API key, and raster tiles from OpenTopoMap, OpenStreetMap, CyclOSM, the BKG's TopPlusOpen
   and Esri's World Imagery, each with its attribution; the choice is kept in the browser.
@@ -84,8 +85,13 @@
   (with `php-8.5`; `PHP=` names another binary); a second run fetches only what is missing.
   httpd serves that directory as static files, as it serves `public/build`
   (`deploy/httpd.conf.example`).
-- A new table reaches a deployed database with `make init`; `route_pois`, the places kept
-  per route, was added that way.
+- A new table reaches a deployed database with `make init`; `places`, `place_areas` and
+  `user_preferences` were added that way.
+- `make places AREA=<code>` fetches the places of one area, in place of what was kept for
+  it: `AREA` is an ISO 3166-2 code of a region (`DE-RP`, `AT-7`, `FR-ARA`, `IT-25`) or an
+  ISO 3166-1 code of a whole country (`CH`, `NL`, `BE`). One cron job per area, spread
+  over the months; a large region takes minutes and tens of megabytes of answer. The
+  areas kept are listed in the table `place_areas` with the time of their last fetch.
 - `make closures` fetches the motorcycle closures into `public/closures.geojson`; a cron
   job repeats it, weekly is enough. httpd serves the file as it serves `public/build`.
 - Node.js 22 with npm 10 and Composer 2 on the server and for development.

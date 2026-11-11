@@ -277,58 +277,53 @@ entries at the end of their section.
   (`Download`): PHP's own streams need `allow_url_fopen`, which OpenBSD's PHP switches
   off, and a certificate file of their own. KML styles are dropped; a closure's name says when and in which
   direction it holds, and a tap shows it with the description.
-- **The POI search asks Overpass by a fixed list of kinds.** Layer Slayer's OSM query
-  tool takes any tag filter within a drawn area; the planner asks one question, what is
-  there to stop at, so its kinds are a fixed list of one tag each and the area is a
-  distance: around a spot, or along the day's routes with Overpass's `around` filter over
-  a line. A distance per kind along a route is the point: a fuel station counts within
-  200 m, a hotel within 5 km. A route's line is thinned to a quarter of the distance
-  first, which keeps a query short. A query asks for `out center`, so that areas and
-  relations answer as one position.
-- **A route is searched in stretches of 50 km, one query after another.** One query along
-  a whole day's ride ran out of the server's time. The queries are sent a second apart,
-  as a public server asks; one the server ran out of time on, or answered busy (429, 502,
-  503, 504), is sent again after five seconds, then ten, then twenty, as the server asks of
-  its clients, three times at most. A place two stretches
-  both find is kept once. Each stretch's places go on the map as it is answered, since a
-  stretch can take a minute; a stretch that fails for good ends the search with what the
-  others found still shown, and *Stop* ends it the same way. Each query names the box
-  its stretch and reach lie in.
-- **The Overpass instance is the main one, and a query is waited for 75 seconds.** For a
-  day the planner asked overpass.private.coffee, which made each query wait less in
-  tests; from the user's network it did not answer even the cheapest query, and a request
-  without a limit of its own then waits for good. The planner is back at overpass-api.de,
-  and a query not answered within 75 seconds counts as one the server was too busy for:
-  it is sent again like the others. The address is one constant in `poi/overpass.ts`.
-- **Along a route means along the road.** The search follows the routed legs' geometry,
-  not the route's points: the straight lines between waypoints leave a winding road by
-  kilometres, and a search within 200 m of them finds what happens to stand at a
-  waypoint. A leg not routed yet is searched along its straight line.
-- **Each kind has its own limit in a query.** A query answers kind by kind, each with at
-  most 500 places per stretch: under one limit for all, the parking of a town used it up
-  and left no room for its fuel stations.
-- **What a search along a route found is kept, one answer per route and kind.** A query
-  costs the user half a minute and more on a public server at capacity, so the answer is
-  asked for once: it is kept beside the trip, as recordings are, not in the trip document,
-  which is sent whole with every save. A button per kind under the route shows the places
-  again from the planner's server. The route's line may change afterwards; the places
-  stay, since a moved waypoint does not make an expensive answer worthless, and are
-  marked by comparing a mark of the line (its points and length) with the one kept. Of a
-  place only the tags its details are made of are kept. A search around a spot is not
-  kept, and the read-only page does not show kept places: both as the user decided by
-  not objecting to the proposal.
-- **What a search around a spot found is shown, not kept.** The places are icons in a layer of the map, not
-  markers, since a search can answer with two thousand; they belong to the page,
-  not to the trip, and go with *Clear* or the next search. Making a stop of one is left
-  to the stop tool: the user decided against a button for it.
-- **A found place is Maki's icon on a disc, not one of our stop drawings.** Maki is the
+- **Places come from the planner's own store, never from Overpass while planning.** The
+  first versions asked the Overpass API from the browser: around a spot, then along a
+  route in stretches, then kept per route. Each question cost half a minute and more on a
+  public server at capacity, failed often, and a store keyed by route fetched the same
+  area for every route through it. The data belongs to the area: so the server fetches
+  the places of whole regions into a table, from cron, and the planner reads only that.
+  Nothing is slow or fails while planning, places are a layer to switch on like the
+  roadworks, and "along the route" is a distance filter over data already there.
+- **An area is fetched whole, with one question, by its ISO 3166 code.** `make places
+  AREA=DE-RP` asks for every kind of place in a region (ISO 3166-2) or a whole country
+  (ISO 3166-1) at once, and kind by kind where the server does not get through with that.
+  One cron job per area, spread over months, is the gentlest use a public server can be
+  put to: a handful of questions a year per region. There is no list of areas in the
+  code; the cron table is the list. A fetch replaces its area's places in one
+  transaction, so the map never shows half an area.
+- **An answer is tab-separated values with a mark at its end.** A region's places are tens
+  of megabytes as JSON, which PHP would hold whole; as CSV with only the columns kept
+  they are a tenth of that and read row by row. Overpass says nothing in a CSV answer it
+  ran out of time for: it sends what it had, or nothing, with status 200. So the query
+  ends with an element of its own (`make complete`), and an answer without that last row
+  changes nothing.
+- **Places are kept and asked for by tile.** A place carries the tile of the web's maps at
+  zoom 10 it lies in, some 25 km wide; the planner asks for the tiles in view, or those a
+  day's routes pass within reach, and keeps what it read. An index on the tile serves
+  that without a spatial extension, which a system's SQLite may lack, and a tile's answer
+  can be cached by the browser for a day.
+- **The kinds of places are one file, read by both sides.** `frontend/poi/places.json`
+  lists each kind's tag and values, its colour, and the tags a place's details are made
+  of; the server builds its question and decides a place's kind from it, the planner
+  draws from it. Of a place only those tags are kept.
+- **Along a route means along the road, within a distance per kind the user sets.** The
+  filter follows the routed legs' geometry, not the straight lines between a route's
+  points, which leave a winding road by kilometres. The distances are a preference of the
+  account, 200 m for every kind to begin with: narrow, so that a route stays readable,
+  and changed in a moment, since nothing is fetched for it.
+- **Preferences are an object the planner owns.** What a user sets for the planner as a
+  whole is kept with the account as JSON the server stores and returns without reading
+  it: a new preference needs no change on the server. What depends on the device (base
+  map, overlays, which kinds of places are shown) stays in the browser.
+- **A place is Maki's icon on a disc, not one of our stop drawings.** Maki is the
   icon set made for maps and named after OpenStreetMap's features, which Layer Slayer
   draws its layers with: white on a disc of the kind's colour, small enough for hundreds
   and not to be taken for a stop of the trip. The six icons are bundled as SVG text and
   drawn into map images in the browser when a style first needs one, which every change
   of base map does again: through MapLibre's resolver for missing images, which it waits
   for. Its `styleimagemissing` event comes after the request is answered, too late for
-  the first drawing. The same picture stands in the dialog and the result bar.
+  the first drawing. The same picture stands in the preferences.
 - **One place decides what a tap on the map is.** `Interactions` filters clicks into taps
   and gives a tap that does no tool's work to the popups of the places and the closures
   first, then to the recording's line: one popup opens, any other closes. A popup listening

@@ -17,6 +17,8 @@ return [
         'smtp_host' => '127.0.0.1',
         'smtp_port' => 25,
     ],
+    // The Overpass API `make places` asks for the places of an area.
+    'overpass_url' => 'https://overpass-api.de/api/interpreter',
     'invitation_ttl' => 14 * 86400,
     'password_reset_ttl' => 3600,
     // A sign-in lasts this long from the last request, in the browser and on the server.

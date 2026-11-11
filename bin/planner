@@ -8,6 +8,7 @@ use Planner\Closures\MotorcycleClosures;
 use Planner\Database;
 use Planner\Journal\FileStore;
 use Planner\Kernel;
+use Planner\Poi\PlaceFetch;
 use Planner\Signup\Inviter;
 use Planner\Symbols\GarminPictures;
 
@@ -83,8 +84,17 @@ switch ($command) {
         }
         echo "Motorcycle closures: $features places and stretches.\n";
         break;
+    case 'places:fetch':
+        try {
+            $kept = $container->get(PlaceFetch::class)->fetch((string) $argument, new DateTimeImmutable());
+        } catch (RuntimeException | InvalidArgumentException $failure) {
+            fwrite(STDERR, $failure->getMessage() . "\n");
+            exit(1);
+        }
+        echo "Places of $argument: $kept kept.\n";
+        break;
     default:
-        fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | user:create <email> | user:password <email> <password> | admin:grant <email> | garmin:icons | closures:fetch\n");
+        fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | user:create <email> | user:password <email> <password> | admin:grant <email> | garmin:icons | closures:fetch | places:fetch <area>\n");
         exit(1);
 }
 

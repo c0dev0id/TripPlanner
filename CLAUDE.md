@@ -18,7 +18,7 @@ is the planner itself.
 | `npx vitest run frontend/routing/legs.test.ts` | One frontend test file; `-t <name>` for one test. |
 | `npm run typecheck` | TypeScript check alone. |
 | `npm run dev` | Vite dev server on port 5173; set `vite_dev_server` in `config/local.php` so the PHP templates load from it. |
-| `php bin/planner <command>` | `db:init`, `db:recreate`, `invite`, `user:create`, `user:password`, `admin:grant`, `garmin:icons`, `closures:fetch`. |
+| `php bin/planner <command>` | `db:init`, `db:recreate`, `invite`, `user:create`, `user:password`, `admin:grant`, `garmin:icons`, `closures:fetch`, `places:fetch <area>`. |
 
 The Makefile targets `init`, `recreate`, `invite`, `user`, `password` and `admin` wrap
 `bin/planner` with `doas -u www` and `pass` for the production OpenBSD box; in
@@ -92,8 +92,8 @@ Layers, each depending only on the ones below:
 - Coordinates are rounded to six decimals in the edit actions of `state/trip.ts`. Leg keys
   are built from coordinates as text in both TypeScript and PHP and only agree under that
   invariant.
-- Routing (Valhalla), place search (Nominatim), POI search (Overpass) and map tiles are
-  fetched by the browser directly, at most one request per second to Valhalla and Nominatim. GPX import runs in
+- Routing (Valhalla), place search (Nominatim), roadworks (WFS) and map tiles are fetched
+  by the browser directly, at most one request per second to Valhalla and Nominatim. GPX import runs in
   the browser, GPX export on the server.
 
 ### Language
@@ -121,3 +121,8 @@ hand with Playwright against `php -S`, not in CI.
   with `make build` after `git pull`, CI only checks.
 - `public/garmin-symbols/` is fetched by `garmin:icons` and `public/closures.geojson` by
   `closures:fetch`; both stay out of git.
+- Places (fuel, hotels and the like) are never fetched by the browser: `places:fetch`
+  fills the `places` table from the Overpass API, from cron, and the planner reads it by
+  tile. `frontend/poi/places.json` lists the kinds for both sides.
+- A new table is deployed with `db:init`, which adds what is missing; only a changed
+  table needs `db:recreate`.

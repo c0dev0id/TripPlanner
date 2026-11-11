@@ -202,18 +202,14 @@
   Switzerland, the Netherlands and Belgium as mintelonline.de collects them, a motorcycle
   in a red ring where one begins, where a tap says when and for whom it holds. Signs and
   lines of both grow with the zoom, so that they stay wider than the road under them.
-- A POI search from the map's menu (*Find POI…*): fuel stations, hotels, restaurants,
-  cafes, viewpoints and parking from OpenStreetMap, around the spot within 1 to 20 km,
-  or along the selected day's routes within a distance per kind (200 m for fuel and
-  parking, 2 km for restaurants, cafes and viewpoints, 5 km for hotels, each to change); a
-  route is searched in stretches of 50 km: the places of each stretch appear as it is
-  answered, the search can be stopped, and what was found stays if a stretch fails.
-  What a search along a route found is kept with the route, a button per kind under its
-  row: it puts the places on the map or takes them off without another search, says how
-  many, how far and when, marks them when the route has changed since, and searches
-  again or forgets them from its menu.
-  The places found stand on the map as their kind's icon until cleared; a tap shows name,
-  address, cuisine, opening hours, phone and links to the homepage and OpenStreetMap.
+- Places on the map from the planner's own store of OpenStreetMap data: fuel stations,
+  hotels, restaurants, cafes, viewpoints and parking, each kind switched on from the
+  places button among the map's controls. Shown are those along the selected day's routes,
+  each kind within its own distance, or, with that switched off, all in view from zoom 10
+  on. A tap on a place shows name, address, cuisine, opening hours, phone and links to
+  its homepage and OpenStreetMap. The store is filled area by area by `make places`.
+- Preferences, kept with the account: how far from a route a place of each kind is still
+  shown along it, 200 m to begin with.
 - A spot of the map opened in Google Maps or Google Street View, from the map's menu.
 - Loading the page again comes back to where it was: the folder shown, the open trip, its
   selected day, the route being edited and the map's view are kept in the address, which

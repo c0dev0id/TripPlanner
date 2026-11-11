@@ -14,7 +14,7 @@ import { OverlayInfo } from './OverlayInfo';
 import { Interactions } from './Interactions';
 import { EntryMarkers } from './EntryMarkers';
 import { PointMarkers } from './PointMarkers';
-import { PoiMarkers } from './PoiMarkers';
+import { PlaceMarkers } from './PlaceMarkers';
 import { OPENED_RECORDING_SOURCE, RECORDINGS_SOURCE, recordingFeatures } from './recordingOverlay';
 import { RecordingPoint } from './RecordingPoint';
 import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
@@ -45,7 +45,7 @@ export function MapView() {
             <EntryMarkers map={m()} />
             <PointMarkers map={m()} />
             <Interactions map={m()} />
-            <PoiMarkers map={m()} />
+            <PlaceMarkers map={m()} />
             <OverlayInfo map={m()} />
             <SearchBox map={m()} />
           </>
