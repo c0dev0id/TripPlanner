@@ -93,7 +93,7 @@ switch ($command) {
             break;
         }
         try {
-            $fetched = $container->get(PlaceFetch::class)->fetch((string) $argument, new DateTimeImmutable());
+            $fetched = $container->get(PlaceFetch::class)->fetch($argument, new DateTimeImmutable());
         } catch (RuntimeException | InvalidArgumentException $failure) {
             fwrite(STDERR, $failure->getMessage() . "\n");
             exit(1);

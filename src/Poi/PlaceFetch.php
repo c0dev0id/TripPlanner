@@ -35,10 +35,9 @@ final class PlaceFetch
      */
     public function fetch(string $area, DateTimeImmutable $now): array
     {
-        $ids = $this->kinds->ids();
-        $places = $this->fetchKinds($area, $this->kinds->kinds, $now);
-        if ($places !== null) {
-            return ['places' => $places, 'missed' => []];
+        $all = $this->fetchKinds($area, $this->kinds->kinds, $now);
+        if ($all !== null) {
+            return ['places' => $all, 'missed' => []];
         }
         $places = 0;
         $missed = [];
@@ -50,7 +49,7 @@ final class PlaceFetch
                 $missed[] = $kind['id'];
             }
         }
-        if ($missed === $ids) {
+        if (count($missed) === count($this->kinds->kinds)) {
             throw new RuntimeException("The Overpass API gave no places for $area: it did not answer in full, or knows no area of that code. Nothing was changed.");
         }
         return ['places' => $places, 'missed' => $missed];

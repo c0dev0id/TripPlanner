@@ -91,8 +91,9 @@ final class Areas
                         $behind[] = $kind . ' ' . (isset($kept[$kind]) ? substr($kept[$kind]['fetchedAt'], 0, 10) : 'never');
                     }
                 }
-                $state = sprintf('%d places, fetched %s', array_sum(array_column($kept, 'places')), substr($last, 0, 10)) . ($behind === [] ? '' : ', but ' . implode(', ', $behind));
+                $state = sprintf('%d places, fetched %s', array_sum(array_column($kept, 'places')), substr($last, 0, 10));
                 if ($behind !== []) {
+                    $state .= ', but ' . implode(', ', $behind);
                     $again[] = $code;
                 }
             }

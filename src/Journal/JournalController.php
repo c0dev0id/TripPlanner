@@ -7,6 +7,7 @@ namespace Planner\Journal;
 use DateTimeImmutable;
 use Planner\Account\CurrentUser;
 use Planner\Http\Json;
+use Planner\Timestamp;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\UploadedFileInterface;
@@ -57,8 +58,8 @@ final class JournalController
         if ($spot === false) {
             return Json::error($response, 422, 'The spot is not a position.');
         }
-        $createdAt = isset($body['createdAt']) ? DateTimeImmutable::createFromFormat('Y-m-d\TH:i:sp', (string) $body['createdAt']) : new DateTimeImmutable();
-        if ($createdAt === false) {
+        $createdAt = isset($body['createdAt']) ? Timestamp::parse((string) $body['createdAt']) : new DateTimeImmutable();
+        if ($createdAt === null) {
             return Json::error($response, 422, 'createdAt is not a time.');
         }
         $tripId = (int) $args['id'];

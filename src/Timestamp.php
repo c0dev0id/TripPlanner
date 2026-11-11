@@ -14,4 +14,10 @@ final class Timestamp
     {
         return $time->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z');
     }
+
+    /** The time a text in that form names; null where it is none. */
+    public static function parse(string $text): ?DateTimeImmutable
+    {
+        return DateTimeImmutable::createFromFormat('Y-m-d\TH:i:sp', $text) ?: null;
+    }
 }

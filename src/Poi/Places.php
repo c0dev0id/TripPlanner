@@ -44,8 +44,9 @@ final class Places
             return null;
         }
         $note = $this->db->prepare('INSERT OR REPLACE INTO place_fetches (area, kind, places, fetched_at) VALUES (?, ?, ?, ?)');
+        $at = Timestamp::of($now);
         foreach ($counts as $kind => $count) {
-            $note->execute([$area, $kind, $count, Timestamp::of($now)]);
+            $note->execute([$area, $kind, $count, $at]);
         }
         $this->db->commit();
         return array_sum($counts);
