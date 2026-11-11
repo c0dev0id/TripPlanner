@@ -2,14 +2,14 @@ import cone from '@mapbox/maki/icons/construction.svg?raw';
 import type { ExpressionSpecification, GeoJSONSourceSpecification, LayerSpecification } from 'maplibre-gl';
 import { t } from '../i18n/t';
 import { dateText } from '../ui/format';
-import { svgInlay } from './mapImages';
+import { svgInlay, type MapImage } from './mapImages';
 import type { Overlay, TapInfo } from './overlays';
-import { byZoom, RING, sign, SIGN_RED, signSize } from './overlaySigns';
+import { byZoom, ring, sign, SIGN_GREY, SIGN_RED, signSize } from './overlaySigns';
 
 /**
  * The roadworks two German states' services list, read as features (WFS) and drawn by the
  * planner: a line with a warning sign, a red ring where the road is closed, diversions in
- * blue, works yet to begin fainter.
+ * blue, works yet to begin in grey.
  */
 
 /** A service's address, and the fields its sites say what they are with. */
@@ -67,42 +67,54 @@ function wfs(service: Service, type: string, filter?: string): GeoJSONSourceSpec
   return { type: 'geojson', data: `${service.url}?${query}`, maxzoom: 14, attribution: service.attribution };
 }
 
-const SIGN = 'roadworks-sign';
-const CLOSED_SIGN = 'road-closed-sign';
 const COLOR = '#e03131';
 const DIVERSION_COLOR = '#1971c2';
+
+/** A traffic cone in a warning triangle, Maki's (CC0). */
+const warningSign = (color: string): MapImage =>
+  sign(`<path d="M14 3.5 25.5 24h-23Z" fill="#fff" stroke="${color}" stroke-width="3" stroke-linejoin="round"/>${svgInlay(cone, 9.1, 10.4, 0.65, '#111')}`);
+
+/** The signs by the id the layers ask for them: for works and for a closed road, each in grey while yet to begin. */
+const SIGNS = {
+  'roadworks-sign': warningSign(SIGN_RED),
+  'roadworks-sign-planned': warningSign(SIGN_GREY),
+  'road-closed-sign': sign(ring(SIGN_RED)),
+  'road-closed-sign-planned': sign(ring(SIGN_GREY)),
+};
 
 /** The hour it is: works that begin later are yet to begin. By the hour, so that the layers stay the same from one style to the next. */
 const thisHour = (): string => new Date().toISOString().slice(0, 13);
 
 function layers(sharpUntil: number): LayerSpecification[] {
   const hour = thisHour();
-  const faintBeforeStart = (service: Service): ExpressionSpecification => ['case', ['>', ['to-string', ['get', service.start]], hour], 0.45, 1];
-  const signOf = (service: Service): ExpressionSpecification => ['case', ['==', ['get', service.closed[0]], service.closed[1]], CLOSED_SIGN, SIGN];
-  const line = (id: string, color: string, startOf?: Service): LayerSpecification => ({
+  const planned = (service: Service): ExpressionSpecification => ['>', ['to-string', ['get', service.start]], hour];
+  const signOf = (service: Service): ExpressionSpecification => [
+    'concat',
+    ['case', ['==', ['get', service.closed[0]], service.closed[1]], 'road-closed-sign', 'roadworks-sign'],
+    ['case', planned(service), '-planned', ''],
+  ];
+  const line = (id: string, color: string | ExpressionSpecification): LayerSpecification => ({
     id,
     type: 'line',
     source: id,
     layout: { 'line-join': 'round', 'line-cap': 'round' },
-    paint: { 'line-color': color, 'line-width': byZoom(2.5, 4, 8, 0.5, sharpUntil), ...(startOf && { 'line-opacity': faintBeforeStart(startOf) }) },
+    paint: { 'line-color': color, 'line-width': byZoom(2.5, 4, 8, 0.5, sharpUntil) },
   });
   return [
     line('roadworks-rlp-diversions', DIVERSION_COLOR),
     line('roadworks-rlp-stretches', COLOR),
-    line('roadworks-bw', COLOR, BW),
+    line('roadworks-bw', ['case', planned(BW), SIGN_GREY, COLOR]),
     {
       id: 'roadworks-bw-signs',
       type: 'symbol',
       source: 'roadworks-bw',
       layout: { 'symbol-placement': 'line-center', 'icon-image': signOf(BW), 'icon-size': signSize(sharpUntil), 'icon-rotation-alignment': 'viewport' },
-      paint: { 'icon-opacity': faintBeforeStart(BW) },
     },
     {
       id: 'roadworks-rlp-sites',
       type: 'symbol',
       source: 'roadworks-rlp-sites',
       layout: { 'icon-image': signOf(RLP), 'icon-size': signSize(sharpUntil) },
-      paint: { 'icon-opacity': faintBeforeStart(RLP) },
     },
   ];
 }
@@ -125,9 +137,6 @@ export function siteInfo(service: Service, site: Record<string, unknown>): TapIn
   return { title: text(service.street) ?? t('Roadworks'), lines: lines.filter((line): line is string => typeof line === 'string'), note: text(service.reporter) };
 }
 
-// A traffic cone in a warning triangle, Maki's (CC0).
-const WARNING_SIGN = sign(`<path d="M14 3.5 25.5 24h-23Z" fill="#fff" stroke="${SIGN_RED}" stroke-width="3" stroke-linejoin="round"/>${svgInlay(cone, 9.1, 10.4, 0.65, '#111')}`);
-
 export const ROADWORKS: Overlay = {
   id: 'roadworks',
   label: t('Roadworks'),
@@ -140,11 +149,8 @@ export const ROADWORKS: Overlay = {
     },
     layers: layers(sharpUntil),
   }),
-  sign: WARNING_SIGN,
-  images: new Map([
-    [SIGN, WARNING_SIGN],
-    [CLOSED_SIGN, sign(RING)],
-  ]),
+  sign: SIGNS['roadworks-sign'],
+  images: new Map(Object.entries(SIGNS)),
   // A stretch or a diversion carries nothing but its site's id: only sites say what they are.
   taps: [
     { layers: ['roadworks-rlp-sites'], info: (site) => siteInfo(RLP, site) },

@@ -197,7 +197,7 @@
   map's controls, kept in the browser:
   the roadworks Rhineland-Palatinate's and Baden-Württemberg's services list, as a line
   with a warning sign, a red ring where the road is closed, diversions in blue and works
-  yet to begin fainter, where a tap on a site says the road, the kind of work, its dates
+  yet to begin in grey, where a tap on a site says the road, the kind of work, its dates
   and who reports it; and the roads closed to motorcycles in Germany, Austria,
   Switzerland, the Netherlands and Belgium as mintelonline.de collects them, a motorcycle
   in a red ring where one begins, where a tap says when and for whom it holds. Signs and

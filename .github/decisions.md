@@ -259,7 +259,8 @@ entries at the end of their section.
   (WMS): their signs have one size, which a road blown up on a raster base map outgrows,
   and asking for larger pictures in steps (GeoServer's `dpi` option) ended at eight times
   the size with nothing to tap. As features, lines and signs are sized like the closures',
-  a site says what it is on a tap, and works yet to begin are drawn fainter. The
+  a site says what it is on a tap, and works yet to begin are drawn in grey. Grey, not
+  fainter: a sign half transparent over its own line reads as a fault. The
   Rhineland-Palatinate service also lists Baden-Württemberg's sites, which are left to
   that state's own service by a filter in the request. What each service calls its
   fields is one table per service, which the layers' expressions and the tap's text are

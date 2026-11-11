@@ -2,13 +2,13 @@ import motorcycle from '@rapideditor/temaki/icons/motorcycle.svg?raw';
 import { t } from '../i18n/t';
 import { svgInlay } from './mapImages';
 import type { Overlay } from './overlays';
-import { byZoom, RING, sign, SIGN_RED, signSize } from './overlaySigns';
+import { byZoom, ring, sign, SIGN_RED, signSize } from './overlaySigns';
 
 /** The roads closed to motorcycles as mintelonline.de collects them: a dashed line, and the road sign where one begins. */
 
 const SIGN = 'closure-sign';
 // Closed to motorcycles, as the road sign says it: a motorcycle in a red ring. Temaki's motorcycle (CC0).
-const MOTORCYCLE_SIGN = sign(RING + svgInlay(motorcycle, 6, 5.6, 1.0667, '#111'));
+const MOTORCYCLE_SIGN = sign(ring(SIGN_RED) + svgInlay(motorcycle, 6, 5.6, 1.0667, '#111'));
 
 export const CLOSURES: Overlay = {
   id: 'closures',

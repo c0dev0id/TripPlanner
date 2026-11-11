@@ -39,10 +39,12 @@ const SIGN_PIXEL_RATIO = 6;
 /** A sign drawn in a box of 28 × 28, as a map image. */
 export const sign = (drawing: string): MapImage => svgImage(SIGN_SIZE, SIGN_PIXEL_RATIO, drawing);
 
-/** A sign's icon size: growing a little with the zoom, and 1.3 times as wide as a road blown up. */
-export const signSize = (sharpUntil: number): ExpressionSpecification => byZoom(0.7, 1, 1.4, 1.3 / SIGN_SIZE, sharpUntil);
+/** A sign's icon size: growing a little with the zoom, and a good two times as wide as a road blown up, so that it stands clear of the line drawn along that road. */
+export const signSize = (sharpUntil: number): ExpressionSpecification => byZoom(0.7, 1, 1.4, 2.2 / SIGN_SIZE, sharpUntil);
 
 export const SIGN_RED = '#d0021b';
+/** The colour of a sign and a line for what is yet to begin. */
+export const SIGN_GREY = '#868e96';
 
-/** The red ring of a prohibition sign; alone, the sign for a road closed to all vehicles. */
-export const RING = `<circle cx="14" cy="14" r="11.5" fill="#fff" stroke="${SIGN_RED}" stroke-width="4"/>`;
+/** The ring of a prohibition sign, red on the road; alone, the sign for a road closed to all vehicles. */
+export const ring = (color: string): string => `<circle cx="14" cy="14" r="11.5" fill="#fff" stroke="${color}" stroke-width="4"/>`;
