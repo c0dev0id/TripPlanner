@@ -33,6 +33,8 @@
   the planner app and the read-only trip page.
 - MapLibre GL JS 6 (map rendering, Web Mercator).
 - uPlot 1.6 (MIT): the charts of a recording, drawn on a canvas.
+- Maki 8 (CC0), a development dependency: six of its icons are bundled for the POI
+  search's places.
 - libheif-js 1.23 (libheif compiled to WebAssembly, LGPL): decodes a HEIC in browsers that
   cannot, loaded on demand as a chunk of its own, about 2 MB.
 - Route tool, GPX reading, line simplification and polyline handling ported from Layer Slayer.

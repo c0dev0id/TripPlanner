@@ -202,7 +202,7 @@
   cafes, viewpoints and parking from OpenStreetMap, around the spot within 1 to 20 km,
   or along the selected day's routes within a distance per kind (200 m for fuel and
   parking, 2 km for restaurants, cafes and viewpoints, 10 km for hotels, each to change).
-  The places found are dots in their kind's colour until cleared; a tap shows name,
+  The places found stand on the map as their kind's icon until cleared; a tap shows name,
   address, cuisine, opening hours, phone and links to the website and OpenStreetMap.
 - English and German. The planner follows the browser's language, or the one chosen in
   its header (Auto, Deutsch, English), kept in the browser; numbers, dates and distances

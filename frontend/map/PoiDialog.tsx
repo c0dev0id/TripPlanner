@@ -6,6 +6,7 @@ import { poiSearchSpot, searchPois, setPoiSearchSpot } from '../state/poi';
 import { openTrip, selectedDay } from '../state/trip';
 import { dayLabelOf } from '../trip/labels';
 import { showModalWhile } from '../ui/modal';
+import { poiBadgeUrl } from './poiImages';
 
 /** The distances around a spot to choose from, in kilometres. */
 const SPOT_KM = [1, 2, 5, 10, 20];
@@ -60,7 +61,7 @@ export function PoiDialog() {
               {(category) => (
                 <label>
                   <input type="checkbox" checked={chosen().includes(category.id)} onChange={(e) => toggle(category.id, e.currentTarget.checked)} />
-                  <span class="poi-dot" style={{ background: category.color }} />
+                  <img class="poi-badge" src={poiBadgeUrl(category)} alt="" />
                   <span class="grow">{category.label}</span>
                   <Show when={along()}>
                     <input

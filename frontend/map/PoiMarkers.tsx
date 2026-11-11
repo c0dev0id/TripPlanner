@@ -4,11 +4,13 @@ import { t } from '../i18n/t';
 import { POI_CATEGORIES } from '../poi/categories';
 import { poiDetails } from '../poi/details';
 import { foundPois } from '../state/poi';
+import { providePoiImages } from './poiImages';
 import { POI_LAYERS, POI_SOURCE, poiFeatures } from './poiOverlay';
 import { popupOnTap } from './tapPopup';
 
 /** Keeps the places a POI search found on the map, and says what one tapped is. */
 export function PoiMarkers(props: { map: MapLibreMap }) {
+  void providePoiImages(props.map);
   const popup = popupOnTap(
     props.map,
     'map-info',

@@ -256,10 +256,16 @@ entries at the end of their section.
   200 m, a hotel within 10 km. A route's line is thinned to a quarter of the distance
   first, which keeps the query of a day's ride at a few kilobytes. One query asks for
   `out center`, so that areas and relations answer as one position.
-- **Found places are shown, not kept.** They are dots in a layer of the map, as the other
-  days' stops are, since a search can answer with two thousand; they belong to the page,
+- **Found places are shown, not kept.** They are icons in a layer of the map, not
+  markers, since a search can answer with two thousand; they belong to the page,
   not to the trip, and go with *Clear* or the next search. Making a stop of one is left
   to the stop tool: the user decided against a button for it.
+- **A found place is Maki's icon on a disc, not one of our stop drawings.** Maki is the
+  icon set made for maps and named after OpenStreetMap's features, which Layer Slayer
+  draws its layers with: white on a disc of the kind's colour, small enough for hundreds
+  and not to be taken for a stop of the trip. The six icons are bundled as SVG text and
+  drawn into map images in the browser; a style that lacks one asks for it again, which
+  every change of base map does. The same picture stands in the dialog and the result bar.
 - **Place search by Nominatim, on Enter, ported from Layer Slayer.** OpenStreetMap's own
   geocoder needs no key; its policy allows one request per second and no search as you
   type, so the box searches when Enter is pressed and keeps a second between requests.

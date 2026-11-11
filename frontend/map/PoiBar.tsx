@@ -2,6 +2,7 @@ import { For, Match, Show, Switch } from 'solid-js';
 import { plural, t } from '../i18n/t';
 import { POI_CATEGORIES } from '../poi/categories';
 import { POI_LIMIT } from '../poi/overpass';
+import { poiBadgeUrl } from './poiImages';
 import { clearPois, foundPois, poiSearch } from '../state/poi';
 
 /** How the POI search went, over the map: searching, what was found by kind, or why not; and the way to clear it. */
@@ -25,7 +26,7 @@ export function PoiBar() {
               <For each={counts()}>
                 {({ category, count }) => (
                   <span>
-                    <span class="poi-dot" style={{ background: category.color }} /> {count} {category.label}
+                    <img class="poi-badge" src={poiBadgeUrl(category)} alt="" /> {count} {category.label}
                   </span>
                 )}
               </For>
