@@ -4,7 +4,8 @@ import { t } from '../i18n/t';
 import { dateText } from '../ui/format';
 import { svgInlay, type MapImage } from './mapImages';
 import type { Overlay, TapInfo } from './overlays';
-import { byZoom, ring, sign, SIGN_GREY, SIGN_RED, signSize } from './overlaySigns';
+import { ring, sign, SIGN_GREY, SIGN_RED, signSize } from './overlaySigns';
+import { byZoom } from './zoomSize';
 
 /**
  * The roadworks two German states' services list, read as features (WFS) and drawn by the

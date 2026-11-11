@@ -2,7 +2,8 @@ import motorcycle from '@rapideditor/temaki/icons/motorcycle.svg?raw';
 import { t } from '../i18n/t';
 import { svgInlay } from './mapImages';
 import type { Overlay } from './overlays';
-import { byZoom, ring, sign, SIGN_RED, signSize } from './overlaySigns';
+import { ring, sign, SIGN_RED, signSize } from './overlaySigns';
+import { byZoom } from './zoomSize';
 
 /** The roads closed to motorcycles as mintelonline.de collects them: a dashed line, and the road sign where one begins. */
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sizeAt } from './overlaySigns';
+import { sizeAt } from './zoomSize';
 
 describe('sizeAt', () => {
   const lineWidth = (zoom: number, sharpUntil: number) => Math.round(sizeAt(zoom, 4, 6, 12, 0.8, sharpUntil) * 10) / 10;

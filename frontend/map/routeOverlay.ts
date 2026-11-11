@@ -1,7 +1,7 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ExpressionSpecification, FilterSpecification, LayerSpecification, LineLayerSpecification } from 'maplibre-gl';
 import type { Day, LngLat } from '../model/trip';
-import { atZooms, sizeAt } from './overlaySigns';
+import { atZooms, sizeAt } from './zoomSize';
 import { legCoordinates, legState, routeLegs, type LegState } from '../routing/legs';
 
 /** The source and layers of the route lines, the free stops' marks and the other days' stops, and their features. */
