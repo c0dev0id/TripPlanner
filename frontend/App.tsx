@@ -1,4 +1,4 @@
-import { createResource, createSignal, For, Show } from 'solid-js';
+import { createEffect, createResource, createSignal, For, onMount, Show } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout } from './api';
 import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
@@ -11,8 +11,9 @@ import { MapView } from './map/MapView';
 import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
-import { relistTrips } from './state/library';
-import { closeTrip, loadTrip, openTrip } from './state/trip';
+import { libraryFolders, relistTrips, showFolder, shownFolderId } from './state/library';
+import { keepViewOf, readPlace, withPlace } from './state/place';
+import { closeTrip, editingRouteId, editRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
 import { DayDialog } from './trip/DayDialog';
 import { ExportDialog } from './trip/ExportDialog';
 import { JournalDialog } from './trip/JournalDialog';
@@ -63,6 +64,25 @@ export function App() {
     resetSaveState();
     if (changed) relistTrips();
   };
+
+  /** Whether the page is back at the place its address named, from when on the address follows the place. */
+  const [returned, setReturned] = createSignal(false);
+  onMount(async () => {
+    const place = readPlace(location.hash);
+    showFolder(place.folderId);
+    if (place.tripId !== undefined) {
+      if (/(^#|&)map=/.test(location.hash)) keepViewOf(place.tripId);
+      await open(place.tripId, place.dayId);
+      if (selectedDay()?.routes.some((route) => route.id === place.routeId)) editRoute(place.routeId);
+    }
+    setReturned(true);
+  });
+  createEffect(() => {
+    // The folder shown is only known once the folders are listed.
+    if (!returned() || libraryFolders.loading) return;
+    const place = { folderId: shownFolderId(), tripId: openTripId(), dayId: selectedDayId(), routeId: editingRouteId() };
+    history.replaceState(history.state, '', location.pathname + location.search + withPlace(location.hash, place));
+  });
 
   return (
     <>

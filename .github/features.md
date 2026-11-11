@@ -211,6 +211,9 @@
   The places found stand on the map as their kind's icon until cleared; a tap shows name,
   address, cuisine, opening hours, phone and links to the homepage and OpenStreetMap.
 - A spot of the map opened in Google Maps or Google Street View, from the map's menu.
+- Loading the page again comes back to where it was: the folder shown, the open trip, its
+  selected day, the route being edited and the map's view are kept in the address, which
+  can be bookmarked or opened on another device.
 - English and German. The planner follows the browser's language, or the one chosen in
   its header (Auto, Deutsch, English), kept in the browser; numbers, dates and distances
   are written the language's way. The server's pages, messages and mails follow the

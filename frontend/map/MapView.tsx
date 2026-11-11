@@ -4,6 +4,7 @@ import type { Day, LngLat } from '../model/trip';
 import { panTarget, showNeighbours } from '../state/drawing';
 import { routePositions } from '../routing/legs';
 import { colorRuns } from '../recording/lineColors';
+import { keepsView } from '../state/place';
 import { opened, openedLineColors } from '../state/recordingView';
 import { loadedTrack, recordingColor, shownRecordings } from '../state/recordings';
 import { failedLegs } from '../state/routing';
@@ -26,7 +27,8 @@ export function MapView() {
   const [map, setMap] = createSignal<MapLibreMap>();
 
   onMount(() => {
-    const m = newBaseMap(container, {}, setMap);
+    // The map keeps its view in the address, as `map=`, and starts from it.
+    const m = newBaseMap(container, { hash: 'map' }, setMap);
     onCleanup(() => m.remove());
   });
 
@@ -127,6 +129,8 @@ function RouteLines(props: { map: MapLibreMap }) {
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
     on([selectedDayId, openTripId], () => {
+      // Back at the view the address names, the map stays there.
+      if (keepsView(openTripId())) return;
       const bounds = new LngLatBounds();
       for (const { day } of shownDays().filter((d) => d.role === 'selected')) {
         for (const route of day.routes) for (const position of routePositions(route)) bounds.extend(position);

@@ -320,6 +320,15 @@ entries at the end of their section.
   and gives a tap that does no tool's work to the popups of the places and the closures
   first, then to the recording's line: one popup opens, any other closes. A popup listening
   to the map's clicks itself would open on the click that ends a pan or closes a menu.
+- **Where the user is lives in the address's fragment.** The folder shown, the open trip,
+  its day and the route being edited are written there as they change, and read when the
+  page loads; the map keeps its view beside them (`map=`, MapLibre's own option). The
+  address is replaced, not added to the history: the back button leaves the planner as
+  before, as the user asked. Coming back, the map stays at the view the address names
+  where opening a day would show it whole, once, for that trip. The tool, open dialogs
+  and what a search found are not kept: a page that loads with the delete tool armed is a
+  surprise. Rejected: session storage, which keeps the place for a reload but gives no
+  address to bookmark or to open on another device.
 - **Place search by Nominatim, on Enter, ported from Layer Slayer.** OpenStreetMap's own
   geocoder needs no key; its policy allows one request per second and no search as you
   type, so the box searches when Enter is pressed and keeps a second between requests.
