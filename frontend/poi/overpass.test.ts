@@ -129,6 +129,18 @@ describe('findPois', () => {
     expect(fetched).toHaveBeenCalledTimes(1);
   });
 
+  it('counts a server that does not answer within 75 seconds as busy, and asks again', async () => {
+    const never = (_: unknown, init?: RequestInit) => new Promise<Response>((_resolve, reject) => init!.signal!.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError'))));
+    fetched.mockImplementationOnce(never).mockResolvedValueOnce(answer({ elements: [node(1)] }));
+    const search = find({ spot: [8, 49] });
+    await vi.advanceTimersByTimeAsync(74_999);
+    expect(fetched).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(5_001);
+    await search;
+    expect(fetched).toHaveBeenCalledTimes(2);
+    expect(heard.at(-1)).toEqual([['node/1'], 1, 1]);
+  });
+
   it('stops waiting when the search is aborted', async () => {
     fetched.mockResolvedValue(answer({ elements: [] }));
     const stop = new AbortController();

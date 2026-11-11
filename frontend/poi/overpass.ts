@@ -9,10 +9,12 @@ import { categoryOf, type PoiCategory } from './categories';
  * (wiki.openstreetmap.org/wiki/Overpass_API) around a spot or along lines.
  */
 
-const OVERPASS_URL = 'https://overpass.private.coffee/api/interpreter';
+const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 export const OVERPASS_ATTRIBUTION = t('POI: Overpass API, © OpenStreetMap contributors');
 /** Seconds the server may take before it gives up on a query. */
 const TIMEOUT_S = 60;
+/** How long a query is waited for: a server that does not answer at all never says it gave up. */
+const ANSWER_LIMIT_MS = 75_000;
 /** The most places of one category a query answers with, so that many of one kind leave room for the others. */
 const KIND_LIMIT = 500;
 /** Lines are asked for in stretches of this length, a query each: one query along a day's ride runs out of time. */
@@ -126,12 +128,27 @@ function pause(ms: number, signal: AbortSignal): Promise<void> {
   });
 }
 
-/** Sends one query; the statuses of a server that is busy or took too long are thrown as such. */
+/**
+ * Sends one query; a server that is busy, took too long or does not answer within the
+ * limit is thrown as busy.
+ */
 async function ask(query: string, signal: AbortSignal): Promise<Poi[]> {
-  const response = await fetch(OVERPASS_URL, { method: 'POST', body: new URLSearchParams({ data: query }), signal });
-  if ([429, 502, 503, 504].includes(response.status)) throw new OverpassBusy(t('The POI search is not available right now ({status}).', { status: response.status }));
-  if (!response.ok) throw new Error(t('The POI search is not available right now ({status}).', { status: response.status }));
-  return parsePois(await response.json());
+  const request = new AbortController();
+  const stop = () => request.abort();
+  signal.addEventListener('abort', stop);
+  const limit = setTimeout(stop, ANSWER_LIMIT_MS);
+  try {
+    const response = await fetch(OVERPASS_URL, { method: 'POST', body: new URLSearchParams({ data: query }), signal: request.signal });
+    if ([429, 502, 503, 504].includes(response.status)) throw new OverpassBusy(t('The POI search is not available right now ({status}).', { status: response.status }));
+    if (!response.ok) throw new Error(t('The POI search is not available right now ({status}).', { status: response.status }));
+    return parsePois(await response.json());
+  } catch (fault) {
+    if (request.signal.aborted && !signal.aborted) throw new OverpassBusy(t('The POI search did not answer in time.'));
+    throw fault;
+  } finally {
+    clearTimeout(limit);
+    signal.removeEventListener('abort', stop);
+  }
 }
 
 export interface FoundPois {

@@ -416,6 +416,7 @@
   "The image cannot be read.": "Das Bild lässt sich nicht lesen.",
   "The password needs at least {n} characters.": "Das Passwort braucht mindestens {n} Zeichen.",
   "The planned route": "Die geplante Route",
+  "The POI search did not answer in time.": "Die POI-Suche hat nicht rechtzeitig geantwortet.",
   "The POI search did not answer with OpenStreetMap data.": "Die POI-Suche hat keine OpenStreetMap-Daten geliefert.",
   "The POI search gave up; a smaller distance or fewer kinds may work.": "Die POI-Suche hat aufgegeben; mit kleinerer Entfernung oder weniger Arten klappt es vielleicht.",
   "The POI search is not available right now ({status}).": "Die POI-Suche ist gerade nicht erreichbar ({status}).",
