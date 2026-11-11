@@ -19,8 +19,6 @@ use ZipArchive;
  */
 final class TripArchive
 {
-    public const FORMAT = 'trip-planner';
-
     public function __construct(
         private readonly TripDocuments $documents,
         private readonly Entries $entries,
@@ -39,6 +37,13 @@ final class TripArchive
     {
         $zip = new ZipArchive();
         $zip->open($file, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        // Text goes in by way of a file: what is added as a string, the zip keeps in memory until it is closed.
+        $written = [];
+        $addText = function (string $name, string $text) use ($zip, &$written): void {
+            $written[] = $part = tempnam(sys_get_temp_dir(), 'trip');
+            file_put_contents($part, $text);
+            $zip->addFile($part, $name);
+        };
         $folders = [];
         $names = [];
         foreach ($tripIds as $tripId) {
@@ -52,18 +57,18 @@ final class TripArchive
             }
             $folders[] = $folder;
             $names[] = $document['name'];
-            $zip->addFromString("$folder/trip.json", Json::encode([
-                'format' => self::FORMAT,
-                'version' => 1,
+            $addText("$folder/trip.json", Json::encode([
+                'format' => 'trip-planner',
                 'trip' => array_intersect_key($document, array_flip(['kind', 'name', 'description', 'state', 'days'])),
                 'journal' => $this->addJournal($zip, $folder, $userId, $tripId),
-                'recordings' => $this->addRecordings($zip, $folder, $userId, $tripId),
+                'recordings' => $this->addRecordings($addText, $folder, $userId, $tripId),
             ]));
             foreach (array_keys($document['days']) as $index) {
-                $zip->addFromString("$folder/" . TripGpx::dayFileName($document, $index) . '.gpx', TripGpx::day($document, $index, $now));
+                $addText("$folder/" . TripGpx::dayFileName($document, $index) . '.gpx', TripGpx::day($document, $index, $now));
             }
         }
         $zip->close();
+        array_map(unlink(...), $written);
         return $names;
     }
 
@@ -94,13 +99,17 @@ final class TripArchive
         return $journal;
     }
 
-    /** Adds the trip's recordings as GPX files and gives them, each naming its file in the folder. */
-    private function addRecordings(ZipArchive $zip, string $folder, int $userId, int $tripId): array
+    /**
+     * Adds the trip's recordings as GPX files and gives them, each naming its file in the folder.
+     *
+     * @param callable(string, string): void $addText
+     */
+    private function addRecordings(callable $addText, string $folder, int $userId, int $tripId): array
     {
         $recordings = [];
         foreach ($this->recordings->listFor($userId, $tripId) as $recording) {
             $path = "recordings/$recording->id-" . TripGpx::fileName($recording->name) . '.gpx';
-            $zip->addFromString("$folder/$path", gzdecode($this->recordings->gzip($userId, $tripId, $recording->id)));
+            $addText("$folder/$path", gzdecode($this->recordings->gzip($userId, $tripId, $recording->id)));
             $recordings[] = ['dayId' => $recording->dayId, 'name' => $recording->name, 'file' => $path];
         }
         return $recordings;

@@ -57,6 +57,10 @@ final class TripGpx
             $linesOf = function () use (&$dayLines, $routes): array {
                 return $dayLines ??= array_map(RouteGeometry::line(...), $routes);
             };
+            $dayBounds = null;
+            $boundsOf = function () use (&$dayBounds, $linesOf): array {
+                return $dayBounds ??= array_map(Proximity::bounds(...), $linesOf());
+            };
             $dayLabel = self::dayLabel($day, $index);
             $several = count($routes) > 1;
             foreach ($routes as $i => $route) {
@@ -67,7 +71,7 @@ final class TripGpx
             $pointIds = array_merge([], ...array_map(fn (array $route) => array_column($route['points'] ?? [], 'id'), $routes));
             foreach ($day['stops'] as $stop) {
                 $bound = $stop['pointId'] !== null && in_array($stop['pointId'], $pointIds, true);
-                if ($included($stop) && ($bound || self::nearALine($stop['lngLat'], $linesOf(), $options->reachM))) {
+                if ($included($stop) && ($bound || self::nearALine($stop['lngLat'], $linesOf(), $boundsOf(), $options->reachM))) {
                     $waypoints[] = ['name' => $stop['name'], 'lngLat' => $stop['lngLat'], 'symbol' => $stop['symbol']];
                 }
             }
@@ -75,10 +79,10 @@ final class TripGpx
         return $options->form === 'routes' ? Gpx::document($name, $waypoints, $lines, [], $time) : Gpx::document($name, $waypoints, [], $lines, $time);
     }
 
-    private static function nearALine(array $position, array $lines, int $reachM): bool
+    private static function nearALine(array $position, array $lines, array $bounds, int $reachM): bool
     {
-        foreach ($lines as $line) {
-            if (Proximity::toLine($position, $line) <= $reachM) {
+        foreach ($lines as $i => $line) {
+            if (Proximity::reaches($position, $line, $bounds[$i], $reachM)) {
                 return true;
             }
         }

@@ -27,14 +27,16 @@ final class ArchiveController
             return Json::error($response, 422, 'ids must be the numbers of trips, separated by commas.');
         }
         $file = tempnam(sys_get_temp_dir(), 'trips');
-        $names = $this->archive->write($file, $this->currentUser->get()->id, array_map(intval(...), explode(',', $ids)), new DateTimeImmutable());
-        if ($names === []) {
+        try {
+            $names = $this->archive->write($file, $this->currentUser->get()->id, array_map(intval(...), explode(',', $ids)), new DateTimeImmutable());
+            if ($names === []) {
+                return Json::error($response, 404, 'No such trip.');
+            }
+            $body = (new StreamFactory())->createStreamFromFile($file);
+        } finally {
+            // An open file outlives its name.
             unlink($file);
-            return Json::error($response, 404, 'No such trip.');
         }
-        $body = (new StreamFactory())->createStreamFromFile($file);
-        // The open file outlives its name.
-        unlink($file);
         $name = count($names) === 1 ? TripGpx::fileName($names[0]) : 'trips';
         return $response
             ->withBody($body)

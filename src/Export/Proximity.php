@@ -23,6 +23,40 @@ final class Proximity
     }
 
     /**
+     * Whether the line comes within `$reachM` of the position; a line whose bounds lie
+     * farther away is not walked.
+     *
+     * @param array{0: float, 1: float} $position
+     * @param list<array{0: float, 1: float}> $line
+     * @param array{0: float, 1: float, 2: float, 3: float} $bounds the line's, as `bounds` gives them
+     */
+    public static function reaches(array $position, array $line, array $bounds, float $reachM): bool
+    {
+        $lat = $reachM / self::METRES_PER_DEGREE;
+        $lng = $lat / max(cos(deg2rad($position[1])), 0.01);
+        if ($position[0] < $bounds[0] - $lng || $position[0] > $bounds[2] + $lng || $position[1] < $bounds[1] - $lat || $position[1] > $bounds[3] + $lat) {
+            return false;
+        }
+        return self::toLine($position, $line) <= $reachM;
+    }
+
+    /**
+     * The west, south, east and north of a line; of a line without points, bounds nothing lies in.
+     *
+     * @param list<array{0: float, 1: float}> $line
+     * @return array{0: float, 1: float, 2: float, 3: float}
+     */
+    public static function bounds(array $line): array
+    {
+        if ($line === []) {
+            return [INF, INF, -INF, -INF];
+        }
+        $lngs = array_column($line, 0);
+        $lats = array_column($line, 1);
+        return [min($lngs), min($lats), max($lngs), max($lats)];
+    }
+
+    /**
      * The distance in metres from a position to the nearest point of a line; infinite for
      * a line without points.
      *
