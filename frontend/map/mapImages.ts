@@ -10,27 +10,19 @@ export interface MapImage {
 }
 
 /**
- * Gives the map each of the pictures when a style asks for it by its id, which every new
- * base map does again. A style has to be answered at once and an SVG takes a moment to
- * draw, so a picture asked for too early is empty first and filled in when it is drawn.
+ * Has the map draw each of the pictures when a style first needs it, by its id; every new
+ * base map needs them again. The map waits for the drawing, which an SVG takes a moment for.
  */
 export function provideImages(map: MapLibreMap, images: ReadonlyMap<string, MapImage>): void {
-  const drawn = new Map<string, HTMLImageElement>();
-  map.on('styleimagemissing', ({ id }) => {
+  map.setMissingStyleImageResolver(async (id) => {
     const image = images.get(id);
-    if (!image || map.hasImage(id)) return;
-    const side = image.size * image.pixelRatio;
-    map.addImage(id, drawn.get(id) ?? { width: side, height: side, data: new Uint8Array(side * side * 4) }, { pixelRatio: image.pixelRatio });
-  });
-  for (const [id, image] of images) {
+    if (!image) return;
     const side = image.size * image.pixelRatio;
     const picture = new Image(side, side);
     picture.src = image.url;
-    void picture.decode().then(() => {
-      drawn.set(id, picture);
-      if (map.hasImage(id)) map.updateImage(id, picture);
-    });
-  }
+    await picture.decode();
+    if (!map.hasImage(id)) map.addImage(id, picture, { pixelRatio: image.pixelRatio });
+  });
 }
 
 /** A square picture from the SVG markup of a drawing in a box of `size` × `size`. */
