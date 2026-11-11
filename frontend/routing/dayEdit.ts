@@ -79,7 +79,7 @@ export function defaultProfile(day: Day): Profile {
 export function addRoute(trip: Trip, dayId: string, id: string): Trip {
   return updateDay(trip, dayId, (day) => ({
     ...day,
-    routes: [...day.routes, { id, name: '', kind: 'routed', profile: defaultProfile(day), highways: 'allow', optional: false, points: [], legs: {} }],
+    routes: [...day.routes, { id, name: '', kind: 'routed', profile: defaultProfile(day), highways: 'allow', optional: false, color: null, points: [], legs: {} }],
   }));
 }
 

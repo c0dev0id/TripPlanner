@@ -3,6 +3,7 @@ import { onCleanup, onMount } from 'solid-js';
 import { newBaseMap } from '../map/baseMap';
 import { entryMarkerElement, markerElement, stopContent } from '../map/markerContent';
 import { ROUTES_SOURCE, routeFeatures } from '../map/routeOverlay';
+import { DEFAULT_ROUTE_COLORING, routeColors } from '../model/routeLook';
 import type { Entry } from '../model/journal';
 import type { Trip } from '../model/trip';
 import { routePositions } from '../routing/legs';
@@ -14,7 +15,7 @@ export function ViewMap(props: { trip: Trip; entries: Entry[]; api: string }) {
     // The drawing buffer is kept so that the map prints.
     const map = newBaseMap(container, { canvasContextAttributes: { preserveDrawingBuffer: true } }, (m) => {
       const days = props.trip.days.map((day) => ({ day, role: 'selected' as const }));
-      m.getSource<GeoJSONSource>(ROUTES_SOURCE)!.setData(routeFeatures(days, undefined, new Set(), []));
+      m.getSource<GeoJSONSource>(ROUTES_SOURCE)!.setData(routeFeatures(days, routeColors(props.trip.days, DEFAULT_ROUTE_COLORING), undefined, new Set(), []));
       const bounds = new LngLatBounds();
       for (const day of props.trip.days) {
         for (const route of day.routes) for (const position of routePositions(route)) bounds.extend(position);

@@ -11,12 +11,13 @@ const route = (straight: boolean[]): Route => ({
   profile: 'motorcycle',
   highways: 'allow',
   optional: false,
+  color: null,
   points: straight.map((s, i) => ({ id: `r${i}`, lngLat: [11 + i * 0.01, 48] as LngLat, ...(s && { straight: true }) })),
   legs: {},
 });
 const lines = (routes: Route[]) => {
   const day: Day = { id: 'd', name: '', date: null, notes: '', routes, stops: [] };
-  return routeFeatures([{ day, role: 'selected' }], undefined, new Set(), []).features.map((f) => [f.properties!.state, (f.geometry as LineString).coordinates.length]);
+  return routeFeatures([{ day, role: 'selected' }], new Map(), undefined, new Set(), []).features.map((f) => [f.properties!.state, (f.geometry as LineString).coordinates.length]);
 };
 
 describe('routeFeatures', () => {
@@ -27,12 +28,12 @@ describe('routeFeatures', () => {
       [11.1, 48],
       [11.2, 48.1],
     ];
-    expect(lines([{ id: 't', name: '', kind: 'track', profile: 'motorcycle', optional: false, line: encodePolyline(line) }])).toEqual([['track', 3]]);
+    expect(lines([{ id: 't', name: '', kind: 'track', profile: 'motorcycle', optional: false, color: null, line: encodePolyline(line) }])).toEqual([['track', 3]]);
   });
 
   it('draws the other days\' stops as grey dots, apart from the free stops\' marks', () => {
     const day: Day = { id: 'd', name: '', date: null, notes: '', routes: [], stops: [] };
-    const points = routeFeatures([{ day, role: 'selected' }], undefined, new Set(), [[11, 48]], [[12, 48], [12.1, 48]]).features;
+    const points = routeFeatures([{ day, role: 'selected' }], new Map(), undefined, new Set(), [[11, 48]], [[12, 48], [12.1, 48]]).features;
     expect(points.map((f) => [f.properties, (f.geometry as Point).coordinates])).toEqual([
       [{}, [11, 48]],
       [{ dim: true }, [12, 48]],

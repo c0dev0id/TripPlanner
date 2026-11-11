@@ -317,6 +317,23 @@ entries at the end of their section.
   are switched at a time, and the app's menu closes with each pick; a list of checkboxes
   that stays open under the panel's icons takes as many ticks as wanted. The map's own
   controls stay for what belongs to the map alone: the base map and the two overlays.
+- **A route's colour says which route it is, not what state it is in.** Routes were
+  orange, the neighbouring days' grey: among roads drawn in orange and yellow and the red
+  of closures and roadworks the line was hard to follow, and with every day shown nothing
+  told the days apart. A route now takes a colour from a palette of eight that avoids
+  those of roads and overlays, by its day or by its place among the trip's routes, and
+  the palette starts over where it ends. The selected day, its neighbours and the edited
+  route differ by width and opacity alone, so a route looks the same wherever it is
+  drawn.
+- **A colour chosen is part of the trip, the default colouring and the width are
+  preferences.** The colour picked in a route's menu is stored with the route, as the
+  hex value: it is the trip that is coloured, and a later change of the palette leaves
+  it as chosen. Which colours the other routes get and how wide lines are is how one
+  user likes to see any trip, and the read-only page draws with the defaults.
+- **Route lines widen with the zoom.** A line of constant width is lost beside a road
+  that the base map draws ever wider; the line grows to 1.8 times its width by zoom 18
+  and, over raster tiles blown up, stays at half a road's width, by the sizing the
+  overlays use.
 - **Preferences are an object the planner owns.** What a user sets for the planner as a
   whole is kept with the account as JSON the server stores and returns without reading
   it: a new preference needs no change on the server. What depends on the device (base

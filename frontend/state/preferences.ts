@@ -1,5 +1,6 @@
 import { createResource, createRoot } from 'solid-js';
 import { fetchPreferences, savePreferences, type Preferences } from '../api';
+import { DEFAULT_ROUTE_COLORING, DEFAULT_ROUTE_WIDTH, type RouteColoring } from '../model/routeLook';
 import type { PoiCategoryId } from '../poi/categories';
 
 /** What the user set for the planner as a whole, kept with the account: loaded once, saved as it changes. */
@@ -14,9 +15,15 @@ export const DEFAULT_PLACE_REACH_M = 200;
 /** How far from a route a place of the kind is still shown along it, in metres. */
 export const placeReachM = (kind: PoiCategoryId): number => preferences().placeReachM?.[kind] ?? DEFAULT_PLACE_REACH_M;
 
-/** Sets the distances of the kinds given and keeps them with the account. */
-export async function setPlaceReaches(reaches: Partial<Record<PoiCategoryId, number>>): Promise<void> {
-  const next = { ...preferences(), placeReachM: { ...preferences().placeReachM, ...reaches } };
+/** The width of a route's line in pixels. */
+export const routeWidth = (): number => preferences().routeWidth ?? DEFAULT_ROUTE_WIDTH;
+
+/** How routes without a colour of their own get one. */
+export const routeColoring = (): RouteColoring => preferences().routeColoring ?? DEFAULT_ROUTE_COLORING;
+
+/** Sets the preferences given and keeps them with the account. */
+export async function changePreferences(change: Preferences): Promise<void> {
+  const next = { ...preferences(), ...change };
   await savePreferences(next);
   mutate(next);
 }

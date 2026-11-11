@@ -14,6 +14,7 @@ const base: RoutedRoute = {
   profile: 'motorcycle',
   highways: 'allow',
   optional: false,
+  color: null,
   points: [
     { id: 'a', lngLat: [1, 1] },
     { id: 'b', lngLat: [2, 2] },
@@ -99,7 +100,7 @@ describe('thinning a track', () => {
     [11.2, 48.1],
     [11.2, 48.2],
   ];
-  const track: Track = { id: 't', name: 'Pass', kind: 'track', profile: 'bicycle', optional: true, line: encodePolyline(corners) };
+  const track: Track = { id: 't', name: 'Pass', kind: 'track', profile: 'bicycle', optional: true, color: null, line: encodePolyline(corners) };
 
   it('condenses to the corners', () => {
     const condensed = condenseTrack(track, 10);
@@ -110,7 +111,7 @@ describe('thinning a track', () => {
   it('makes a route of it under its id, its points under new ids, every leg routed', () => {
     let n = 0;
     const made = trackToRoute(track, 10, () => `p${n++}`);
-    expect(made).toMatchObject({ id: 't', name: 'Pass', kind: 'routed', profile: 'bicycle', highways: 'allow', optional: true, legs: {} });
+    expect(made).toMatchObject({ id: 't', name: 'Pass', kind: 'routed', profile: 'bicycle', highways: 'allow', optional: true, color: null, legs: {} });
     expect(made.points).toEqual([
       { id: 'p0', lngLat: corners[0] },
       { id: 'p1', lngLat: corners[2] },

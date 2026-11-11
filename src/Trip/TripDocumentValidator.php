@@ -120,6 +120,7 @@ final class TripDocumentValidator
             'kind' => self::oneOf($route, 'kind', self::ROUTE_KINDS, $at),
             'profile' => self::oneOf($route, 'profile', self::PROFILES, $at),
             'optional' => self::bool($route, 'optional', $at),
+            'color' => self::color($route, $at),
         ];
         if ($common['kind'] === 'track') {
             $line = $route['line'] ?? null;
@@ -186,6 +187,16 @@ final class TripDocumentValidator
         $value = $stop['symbol'] ?? null;
         if ($value !== null && !(is_string($value) && $value !== '' && mb_strlen($value) <= self::MAX_SYMBOL)) {
             throw new InvalidDocument("$at.symbol must be the name of a symbol, of up to " . self::MAX_SYMBOL . ' characters, or null.');
+        }
+        return $value;
+    }
+
+    /** A colour as #rrggbb, or null for none. */
+    private static function color(array $route, string $at): ?string
+    {
+        $value = $route['color'] ?? null;
+        if ($value !== null && !(is_string($value) && preg_match('/^#[0-9a-f]{6}$/', $value))) {
+            throw new InvalidDocument("$at.color must be a colour as #rrggbb or null.");
         }
         return $value;
     }

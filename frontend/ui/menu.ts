@@ -6,8 +6,8 @@ import { createSignal } from 'solid-js';
  * ContextMenu renders it and closes it on any interaction elsewhere.
  */
 
-/** An item that does something, or one that opens a submenu of `items`. */
-export type MenuItem = { label: string; disabled?: boolean } & (
+/** An item that does something, or one that opens a submenu of `items`; `swatch` is a colour shown before its label. */
+export type MenuItem = { label: string; disabled?: boolean; swatch?: string } & (
   | {
       run: () => void;
       /** Set on the items of a choice, true on the one chosen. */

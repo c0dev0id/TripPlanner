@@ -3,6 +3,7 @@ import { createMemo, createSignal, Show } from 'solid-js';
 import { errorMessage } from '../api';
 import { readGpxFile } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
+import { ROUTE_PALETTE } from '../model/routeLook';
 import type { Day, Route, Stop } from '../model/trip';
 import { defaultProfile } from '../routing/dayEdit';
 import { pointCount, routeDistance, routesDistance } from '../routing/legs';
@@ -12,6 +13,7 @@ import { panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, s
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
+import { openRouteColors } from '../state/routeColors';
 import { copyRoute, copyStop, pasteItem } from '../state/clipboard';
 import {
   addDay,
@@ -28,6 +30,7 @@ import {
   removeStop,
   selectDay,
   selectedDayId,
+  updateRoute,
   selectedSequence,
   selectedTimeline,
 } from '../state/trip';
@@ -233,6 +236,13 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
     { label: t('Duplicate'), run: () => duplicateRoute(props.route.id) },
     { label: t('Copy'), run: () => copyRoute(props.day, props.route) },
     ...moveToDayItem(props.day.id, (dayId) => moveRouteToDay(props.route.id, dayId)),
+    {
+      label: t('Color'),
+      items: [
+        { label: t('Automatic'), checked: props.route.color === null, run: () => updateRoute(props.route.id, { color: null }) },
+        ...ROUTE_PALETTE.map(({ color, label }) => ({ label, swatch: color, checked: props.route.color === color, run: () => updateRoute(props.route.id, { color }) })),
+      ],
+    },
     ...(props.route.kind === 'track'
       ? [
           { label: t('Condense points…'), run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) },
@@ -251,7 +261,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
               {label()}
             </span>
             <span class="muted detail">
-              {routeKindLabel(props.route)}
+              <span class="swatch" style={{ background: openRouteColors().get(props.route.id) }} /> {routeKindLabel(props.route)}
               {distance() > 0 ? ` · ${distanceText(distance())}` : ''}
               {props.route.kind === 'track' ? ` · ${counted(pointCount(props.route), 'point')}` : ''}
               {stopCount() > 0 ? ` · ${counted(stopCount(), 'stop')}` : ''}

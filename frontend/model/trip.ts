@@ -91,6 +91,8 @@ interface RouteBase {
   /** What it is travelled with; a track made into a route is routed with it. */
   profile: Profile;
   optional: boolean;
+  /** The colour of its line as #rrggbb, where the user chose one; null for the colour its place in the trip gives it. */
+  color: string | null;
 }
 
 /** A road to drive: points in order, the legs between consecutive points routed, or straight where the point they lead to says so. */

@@ -45,7 +45,7 @@ final class TripDocuments
         foreach ($this->rows('SELECT id, name, date, notes FROM days WHERE trip_id = ? ORDER BY position', $tripId) as $day) {
             $days[$day['id']] = ['id' => $day['id'], 'name' => $day['name'], 'date' => $day['date'], 'notes' => $day['notes'], 'routes' => [], 'stops' => []];
         }
-        $routes = 'SELECT id, day_id, name, kind, profile, highways, optional, points, legs, line FROM routes WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
+        $routes = 'SELECT id, day_id, name, kind, profile, highways, optional, color, points, legs, line FROM routes WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
         foreach ($this->rows($routes, $tripId) as $row) {
             $days[$row['day_id']]['routes'][] = self::route($row);
         }
@@ -81,7 +81,7 @@ final class TripDocuments
     /** A row of the routes table as the document's route: a routed route's points and legs, or a track's line. */
     public static function route(array $row): array
     {
-        $common = ['id' => $row['id'], 'name' => $row['name'], 'kind' => $row['kind'], 'profile' => $row['profile'], 'optional' => (bool) $row['optional']];
+        $common = ['id' => $row['id'], 'name' => $row['name'], 'kind' => $row['kind'], 'profile' => $row['profile'], 'optional' => (bool) $row['optional'], 'color' => $row['color']];
         return $row['kind'] === 'track' ? $common + ['line' => $row['line']] : $common + [
             'highways' => $row['highways'],
             'points' => json_decode($row['points'], true, flags: JSON_THROW_ON_ERROR),
@@ -244,9 +244,9 @@ final class TripDocuments
              ON CONFLICT(id) DO UPDATE SET position = excluded.position, name = excluded.name, date = excluded.date, notes = excluded.notes',
         );
         $upsertRoute = $this->db->prepare(
-            'INSERT INTO routes (id, day_id, position, name, kind, profile, highways, optional, points, legs, line) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            'INSERT INTO routes (id, day_id, position, name, kind, profile, highways, optional, color, points, legs, line) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, position = excluded.position, name = excluded.name, kind = excluded.kind,
-                 profile = excluded.profile, highways = excluded.highways, optional = excluded.optional, points = excluded.points, legs = excluded.legs,
+                 profile = excluded.profile, highways = excluded.highways, optional = excluded.optional, color = excluded.color, points = excluded.points, legs = excluded.legs,
                  line = excluded.line',
         );
         $upsertStop = $this->db->prepare(
@@ -266,7 +266,7 @@ final class TripDocuments
             foreach ($day['routes'] as $index => $route) {
                 $track = $route['kind'] === 'track';
                 $upsertRoute->execute([
-                    $route['id'], $day['id'], $index, $route['name'], $route['kind'], $route['profile'], $track ? null : $route['highways'], (int) $route['optional'],
+                    $route['id'], $day['id'], $index, $route['name'], $route['kind'], $route['profile'], $track ? null : $route['highways'], (int) $route['optional'], $route['color'],
                     $track ? null : Json::encode($route['points']), $track ? null : Json::encode((object) $route['legs']), $track ? $route['line'] : null,
                 ]);
             }

@@ -121,6 +121,8 @@ CREATE TABLE IF NOT EXISTS routes (
     -- The motorway dial of the road profile: avoid, allow, prefer.
     highways TEXT,
     optional INTEGER NOT NULL DEFAULT 0,
+    -- The colour of its line as #rrggbb where the user chose one.
+    color TEXT,
     points TEXT,
     legs TEXT,
     line TEXT,

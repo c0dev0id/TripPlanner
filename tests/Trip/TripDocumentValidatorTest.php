@@ -53,6 +53,15 @@ final class TripDocumentValidatorTest extends TestCase
         self::assertSame($symbols, array_column(TripDocumentValidator::validated($document)['days'][0]['stops'], 'symbol'));
     }
 
+    public function testKeepsARoutesColourAndTakesNoneForNone(): void
+    {
+        $document = TripFixture::document();
+        unset($document['days'][0]['routes'][0]['color']);
+        self::assertNull(TripDocumentValidator::validated($document)['days'][0]['routes'][0]['color']);
+        $document['days'][0]['routes'][0]['color'] = '#c2255c';
+        self::assertSame('#c2255c', TripDocumentValidator::validated($document)['days'][0]['routes'][0]['color']);
+    }
+
     public function testKeepsATrackAsItsLineAlone(): void
     {
         $document = TripFixture::document();
@@ -86,6 +95,7 @@ final class TripDocumentValidatorTest extends TestCase
         yield 'no name' => [fn (array &$d) => $d['name'] = '  ', 'document.name'];
         yield 'name too long' => [fn (array &$d) => $d['name'] = str_repeat('x', 201), 'document.name'];
         yield 'notes too long' => [fn (array &$d) => $d['days'][0]['stops'][0]['notes'] = str_repeat('ü', 20001), 'stops[0].notes'];
+        yield 'colour by name' => [fn (array &$d) => $d['days'][0]['routes'][0]['color'] = 'red', 'routes[0].color'];
         yield 'bad date' => [fn (array &$d) => $d['days'][0]['date'] = '2027-02-30', 'days[0].date'];
         yield 'empty stop symbol' => [fn (array &$d) => $d['days'][0]['stops'][0]['symbol'] = '', 'stops[0].symbol'];
         yield 'stop symbol too long' => [fn (array &$d) => $d['days'][0]['stops'][0]['symbol'] = str_repeat('x', 101), 'stops[0].symbol'];

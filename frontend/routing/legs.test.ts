@@ -12,6 +12,7 @@ const route = (id: string, points: [number, number][], legs: Record<string, Rout
   profile: 'bicycle',
   highways: 'allow',
   optional: false,
+  color: null,
   points: points.map((lngLat, i) => ({ id: `${id}${i}`, lngLat })),
   legs,
 });
@@ -208,7 +209,7 @@ describe('tracks', () => {
     [11.001, 48],
     [11.002, 48.001],
   ];
-  const track: Track = { id: 't', name: '', kind: 'track', profile: 'motorcycle', optional: false, line: encodePolyline(line) };
+  const track: Track = { id: 't', name: '', kind: 'track', profile: 'motorcycle', optional: false, color: null, line: encodePolyline(line) };
 
   it('are one leg along their line, drawn as a track and never routed', () => {
     const legs = routeLegs(track);

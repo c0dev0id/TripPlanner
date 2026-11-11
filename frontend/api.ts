@@ -1,6 +1,7 @@
 import { language } from './i18n/language';
 import { t } from './i18n/t';
 import type { Entry, EntryTarget } from './model/journal';
+import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Trip, TripKind, TripSummary } from './model/trip';
 import { withStopsInRidingOrder } from './routing/sequence';
 
@@ -121,6 +122,10 @@ export const fetchPlaces = (x: number, y: number, kinds: readonly string[]): Pro
 export interface Preferences {
   /** How far from a route a place of each kind is still shown along it, in metres, by kind. */
   placeReachM?: Record<string, number>;
+  /** The width of a route's line in pixels. */
+  routeWidth?: number;
+  /** Whether routes without a colour of their own get one per day or one per route. */
+  routeColoring?: RouteColoring;
 }
 
 export const fetchPreferences = (): Promise<Preferences> => request('GET', `/api/preferences`);

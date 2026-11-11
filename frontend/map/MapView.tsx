@@ -5,8 +5,10 @@ import { panTarget, showNeighbours } from '../state/drawing';
 import { routePositions } from '../routing/legs';
 import { colorRuns } from '../recording/lineColors';
 import { keepsView } from '../state/place';
+import { routeWidth } from '../state/preferences';
 import { opened, openedLineColors } from '../state/recordingView';
 import { loadedTrack, recordingColor, shownRecordings } from '../state/recordings';
+import { openRouteColors } from '../state/routeColors';
 import { failedLegs } from '../state/routing';
 import { editingRouteId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
 import { newBaseMap } from './baseMap';
@@ -28,7 +30,7 @@ export function MapView() {
 
   onMount(() => {
     // The map keeps its view in the address, as `map=`, and starts from it.
-    const m = newBaseMap(container, { hash: 'map' }, setMap);
+    const m = newBaseMap(container, { hash: 'map' }, setMap, routeWidth);
     onCleanup(() => m.remove());
   });
 
@@ -125,7 +127,7 @@ function RouteLines(props: { map: MapLibreMap }) {
   const days = createMemo(shownDays, [], { equals: sameLines });
   const marks = createMemo(() => selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : [])), [], { equals: samePlaces });
   const dims = createMemo(dimStops, [], { equals: samePlaces });
-  const features = createMemo(() => routeFeatures(days(), editingRouteId(), failedLegs(), marks(), dims()));
+  const features = createMemo(() => routeFeatures(days(), openRouteColors(), editingRouteId(), failedLegs(), marks(), dims()));
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
     on([selectedDayId, openTripId], () => {

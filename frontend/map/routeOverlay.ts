@@ -1,6 +1,7 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
-import type { FilterSpecification, LayerSpecification, LineLayerSpecification } from 'maplibre-gl';
+import type { ExpressionSpecification, FilterSpecification, LayerSpecification, LineLayerSpecification } from 'maplibre-gl';
 import type { Day, LngLat } from '../model/trip';
+import { atZooms, sizeAt } from './overlaySigns';
 import { legCoordinates, legState, routeLegs, type LegState } from '../routing/legs';
 
 /** The source and layers of the route lines, the free stops' marks and the other days' stops, and their features. */
@@ -10,10 +11,9 @@ export const ROUTES_SOURCE = 'routes';
 /** A day's routes on the map: the one being edited, the others of the selected day, the neighbouring days. */
 export type RouteRole = 'edited' | 'selected' | 'neighbour';
 
-/** Bound stops and the routes, and free stops with their marks on the route. */
+/** Bound stops, and free stops with their marks on the route. */
 export const BOUND_COLOR = '#d9480f';
 export const FREE_COLOR = '#1971c2';
-const NEIGHBOUR_COLOR = '#adb5bd';
 const DIM_STOP_COLOR = '#868e96';
 
 /** Legs drawn as part of the route: routed, straight by choice, or a track's line. Pending and failed legs are dashed. */
@@ -26,63 +26,72 @@ const LINE_LAYOUT: LineLayerSpecification['layout'] = {
   'line-sort-key': ['match', ['get', 'role'], 'edited', 2, 'selected', 1, 0],
 };
 
-export const ROUTE_LAYERS: LayerSpecification[] = [
-  {
-    id: `${ROUTES_SOURCE}-casing`,
-    type: 'line',
-    source: ROUTES_SOURCE,
-    filter: DRAWN,
-    layout: LINE_LAYOUT,
-    paint: { 'line-color': '#ffffff', 'line-width': ['match', ['get', 'role'], 'edited', 9, 'selected', 7, 5], 'line-opacity': 0.85 },
-  },
-  {
-    id: `${ROUTES_SOURCE}-line`,
-    type: 'line',
-    source: ROUTES_SOURCE,
-    filter: DRAWN,
-    layout: LINE_LAYOUT,
-    paint: {
-      'line-color': ['match', ['get', 'role'], 'neighbour', NEIGHBOUR_COLOR, BOUND_COLOR],
-      'line-width': ['match', ['get', 'role'], 'edited', 5, 'selected', 3.5, 2.5],
-      'line-opacity': ['match', ['get', 'role'], 'selected', 0.7, 1],
+/**
+ * The layers of the routes, a line `width` pixels wide at the zooms a trip is planned at
+ * and wider closer in, over a base map drawn sharp up to the zoom `sharpUntil`: the edited
+ * route wider than the others, the neighbouring days' narrower and paler.
+ */
+export function routeLayers(width: number, sharpUntil: number): LayerSpecification[] {
+  const lineAt = (zoom: number): number => sizeAt(zoom, width, width, width * 1.8, 0.5, sharpUntil);
+  const byRole = (zoom: number, casing: number): ExpressionSpecification => {
+    const line = lineAt(zoom);
+    return ['match', ['get', 'role'], 'edited', line * 1.4 + casing, 'neighbour', line * 0.7 + casing, line + casing];
+  };
+  return [
+    {
+      id: `${ROUTES_SOURCE}-casing`,
+      type: 'line',
+      source: ROUTES_SOURCE,
+      filter: DRAWN,
+      layout: LINE_LAYOUT,
+      paint: { 'line-color': '#ffffff', 'line-width': atZooms((zoom) => byRole(zoom, 3.5)), 'line-opacity': ['match', ['get', 'role'], 'neighbour', 0.5, 0.9] },
     },
-  },
-  {
-    id: `${ROUTES_SOURCE}-unrouted`,
-    type: 'line',
-    source: ROUTES_SOURCE,
-    filter: ['all', ['==', ['geometry-type'], 'LineString'], ['in', ['get', 'state'], ['literal', ['pending', 'failed']]]],
-    paint: {
-      'line-color': ['match', ['get', 'state'], 'failed', '#e03131', '#495057'],
-      'line-width': 2.5,
-      'line-dasharray': [2, 2],
+    {
+      id: `${ROUTES_SOURCE}-line`,
+      type: 'line',
+      source: ROUTES_SOURCE,
+      filter: DRAWN,
+      layout: LINE_LAYOUT,
+      paint: { 'line-color': ['get', 'color'], 'line-width': atZooms((zoom) => byRole(zoom, 0)), 'line-opacity': ['match', ['get', 'role'], 'neighbour', 0.55, 1] },
     },
-  },
-  {
-    // Drawn on the map rather than as markers, which a trip of thousands of stops made slow.
-    id: `${ROUTES_SOURCE}-dim-stops`,
-    type: 'circle',
-    source: ROUTES_SOURCE,
-    filter: ['all', ['==', ['geometry-type'], 'Point'], ['has', 'dim']],
-    paint: { 'circle-radius': 3, 'circle-color': DIM_STOP_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
-  },
-  {
-    id: `${ROUTES_SOURCE}-marks`,
-    type: 'circle',
-    source: ROUTES_SOURCE,
-    filter: ['all', ['==', ['geometry-type'], 'Point'], ['!', ['has', 'dim']]],
-    paint: { 'circle-radius': 5, 'circle-color': FREE_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
-  },
-];
+    {
+      id: `${ROUTES_SOURCE}-unrouted`,
+      type: 'line',
+      source: ROUTES_SOURCE,
+      filter: ['all', ['==', ['geometry-type'], 'LineString'], ['in', ['get', 'state'], ['literal', ['pending', 'failed']]]],
+      paint: {
+        'line-color': ['match', ['get', 'state'], 'failed', '#e03131', '#495057'],
+        'line-width': atZooms((zoom) => lineAt(zoom) * 0.6),
+        'line-dasharray': [2, 2],
+      },
+    },
+    {
+      // Drawn on the map rather than as markers, which a trip of thousands of stops made slow.
+      id: `${ROUTES_SOURCE}-dim-stops`,
+      type: 'circle',
+      source: ROUTES_SOURCE,
+      filter: ['all', ['==', ['geometry-type'], 'Point'], ['has', 'dim']],
+      paint: { 'circle-radius': 3, 'circle-color': DIM_STOP_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
+    },
+    {
+      id: `${ROUTES_SOURCE}-marks`,
+      type: 'circle',
+      source: ROUTES_SOURCE,
+      filter: ['all', ['==', ['geometry-type'], 'Point'], ['!', ['has', 'dim']]],
+      paint: { 'circle-radius': 5, 'circle-color': FREE_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
+    },
+  ];
+}
 
 /**
- * The legs of the days shown as lines with their role and routing state, consecutive legs
- * of a route in the same state as one line, a mark at each spot given (where a free stop
- * is nearest to the route), and a grey dot at each of `dimStops` (the stops of the days
- * shown that are not selected).
+ * The legs of the days shown as lines with their role, their routing state and the colour
+ * `colors` holds for their route, consecutive legs of a route in the same state as one
+ * line, a mark at each spot given (where a free stop is nearest to the route), and a grey
+ * dot at each of `dimStops` (the stops of the days shown that are not selected).
  */
 export function routeFeatures(
   days: readonly { day: Day; role: RouteRole }[],
+  colors: ReadonlyMap<string, string>,
   editingRouteId: string | undefined,
   failed: ReadonlySet<string>,
   marks: readonly LngLat[],
@@ -102,7 +111,7 @@ export function routeFeatures(
       }
       for (const { state, parts } of runs) {
         const coordinates = parts.length === 1 ? parts[0]! : parts.flatMap((part, i) => (i === 0 ? part : part.slice(1)));
-        features.push({ type: 'Feature', properties: { state, role: routeRole }, geometry: { type: 'LineString', coordinates } });
+        features.push({ type: 'Feature', properties: { state, role: routeRole, color: colors.get(route.id) }, geometry: { type: 'LineString', coordinates } });
       }
     }
   }

@@ -56,6 +56,7 @@ final class TripDocumentsTest extends TestCase
         $document['days'][0]['routes'][0]['legs'] = ['motorcycle:allow/11.5,48.1;11.45,47.8' => ['geometry' => 'abc', 'distanceM' => 100, 'durationS' => 60]];
         $document['days'][0]['stops'][1]['arriveAt'] = '18:30';
         $document['days'][0]['stops'][1]['pauseMinutes'] = 0;
+        $document['days'][0]['routes'][0]['color'] = '#1c7ed6';
         $document['days'][0]['routes'][] = TripFixture::track('t1');
         self::assertSame(2, $this->save($document, 1));
         $loaded = $this->documents->load($this->userId, $this->tripId);
@@ -66,6 +67,7 @@ final class TripDocumentsTest extends TestCase
         self::assertSame($document['days'][0]['stops'], $day['stops']);
         self::assertEquals($document['days'][0]['routes'][0]['points'], $day['routes'][0]['points']);
         self::assertEquals((object) $document['days'][0]['routes'][0]['legs'], $day['routes'][0]['legs']);
+        self::assertSame('#1c7ed6', $day['routes'][0]['color']);
         self::assertSame(TripFixture::track('t1'), $day['routes'][1]);
     }
 

@@ -24,13 +24,12 @@ export function sizeAt(zoom: number, far: number, mid: number, near: number, ofR
   return Math.max(own, ofRoad * road);
 }
 
+/** A style expression of the zoom that has the value `of` gives at each of the zooms, a number or an expression for one. */
+export const atZooms = (of: (zoom: number) => number | ExpressionSpecification): ExpressionSpecification => ['interpolate', ['linear'], ['zoom'], ...ZOOMS.flatMap((zoom) => [zoom, of(zoom)])];
+
 /** `sizeAt` as a style expression of the zoom. */
-export const byZoom = (far: number, mid: number, near: number, ofRoad: number, sharpUntil: number): ExpressionSpecification => [
-  'interpolate',
-  ['linear'],
-  ['zoom'],
-  ...ZOOMS.flatMap((zoom) => [zoom, sizeAt(zoom, far, mid, near, ofRoad, sharpUntil)]),
-];
+export const byZoom = (far: number, mid: number, near: number, ofRoad: number, sharpUntil: number): ExpressionSpecification =>
+  atZooms((zoom) => sizeAt(zoom, far, mid, near, ofRoad, sharpUntil));
 
 /** A sign's side in CSS pixels at icon size 1, and the pixels it is drawn with for each: it is shown several times that size over a base map blown up. */
 const SIGN_SIZE = 28;

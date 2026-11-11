@@ -17,6 +17,7 @@ const route: Route = {
   profile: 'motorcycle',
   highways: 'allow',
   optional: false,
+  color: null,
   points: [
     { id: 'a', lngLat: [11, 47] },
     { id: 'b', lngLat: [11, 47.1] },
@@ -107,7 +108,7 @@ describe('daySequence', () => {
 
 describe('daySequence along a track', () => {
   // North along 11°E from 47° to 47.2° in steps of 0.05°, about 5.56 km each; the decoder is the real one.
-  const track: Route = { id: 't', name: '', kind: 'track', profile: 'motorcycle', optional: false, line: encodePolyline([[11, 47], [11, 47.05], [11, 47.1], [11, 47.15], [11, 47.2]]) };
+  const track: Route = { id: 't', name: '', kind: 'track', profile: 'motorcycle', optional: false, color: null, line: encodePolyline([[11, 47], [11, 47.05], [11, 47.1], [11, 47.15], [11, 47.2]]) };
 
   it('places a free stop along the line and ends with the track', () => {
     const entries = daySequence(day([stop('cafe', [11.002, 47.12], null)], [track]));

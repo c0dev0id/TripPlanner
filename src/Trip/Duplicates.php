@@ -41,7 +41,7 @@ final class Duplicates
     public function of(int $userId): array
     {
         $statement = $this->db->prepare(
-            'SELECT r.id, r.name, r.kind, r.profile, r.highways, r.optional, r.points, r.legs, r.line,
+            'SELECT r.id, r.name, r.kind, r.profile, r.highways, r.optional, r.color, r.points, r.legs, r.line,
                     d.id AS day_id, d.name AS day_name, d.date, d.position AS day_index, t.id AS trip_id, t.name AS trip_name, t.kind AS trip_kind
              FROM routes r JOIN days d ON d.id = r.day_id JOIN trips t ON t.id = d.trip_id
              WHERE t.user_id = ? ORDER BY t.name, t.id, d.position, r.position',

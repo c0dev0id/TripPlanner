@@ -77,7 +77,7 @@ describe('stops', () => {
   });
 
   it('inserts a stop on a track as a free stop where it was asked for', () => {
-    const track = { id: 't', name: '', kind: 'track' as const, profile: 'motorcycle' as const, optional: false, line: encodePolyline([[1, 1], [2, 2]]) };
+    const track = { id: 't', name: '', kind: 'track' as const, profile: 'motorcycle' as const, optional: false, color: null, line: encodePolyline([[1, 1], [2, 2]]) };
     const trip = insertStop(addParts(fixture(), 'd', { routes: [track], stops: [] }), 'd', 't', 1, [1.5, 1.5], 'x', 's3');
     expect(day(trip).routes[1]).toEqual(track);
     expect(day(trip).stops[2]).toMatchObject({ id: 's3', pointId: null, lngLat: [1.5, 1.5] });

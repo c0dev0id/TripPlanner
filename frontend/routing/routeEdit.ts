@@ -38,7 +38,7 @@ export function setStraight(route: RoutedRoute, id: string, straight: boolean): 
 }
 
 /** What a route says about itself; the motorway dial only a routed route has. */
-export type RouteSettings = Pick<RoutedRoute, 'name' | 'profile' | 'highways' | 'optional'>;
+export type RouteSettings = Pick<RoutedRoute, 'name' | 'profile' | 'highways' | 'optional' | 'color'>;
 
 /** Changes what a route says about itself, the motorway dial a routed route's alone; under a new profile or motorway dial its legs are routed again. */
 export function changeSettings(route: Route, change: Partial<RouteSettings>): Route {

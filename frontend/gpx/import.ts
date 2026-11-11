@@ -60,7 +60,7 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
     ...gpx.tracks.map((t) => ({ name: t.name, kind: 'track' as const, points: t.segments.flat() })),
   ].filter((l) => l.points.length > 0);
   const routes = lines.map((line, i): Route => {
-    const base = { id: options.newId(), name: asName(line.name ?? (lines.length === 1 ? options.fileName : `${options.fileName} ${i + 1}`)), profile: options.profile, optional: false };
+    const base = { id: options.newId(), name: asName(line.name ?? (lines.length === 1 ? options.fileName : `${options.fileName} ${i + 1}`)), profile: options.profile, optional: false, color: null };
     if (line.kind === 'track') return { ...base, kind: 'track', line: encodePolyline(cleanPoints(line.points)) };
     const points = cleanPoints(line.points).map((lngLat) => ({ id: options.newId(), lngLat }));
     return { ...base, kind: 'routed', highways: 'allow', points, legs: calculatedLegs(line.points, line.ways, options.profile) };

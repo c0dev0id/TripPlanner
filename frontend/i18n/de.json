@@ -530,5 +530,19 @@
   "{v}° further": "{v}° mehr",
   "{v}° less": "{v}° weniger",
   "{what}, hidden: the recording symbol on the day shows them.": "{what}, ausgeblendet: das Aufzeichnungssymbol am Tag zeigt sie.",
-  "“{name}” added as a recording.": "„{name}“ als Aufzeichnung hinzugefügt."
+  "“{name}” added as a recording.": "„{name}“ als Aufzeichnung hinzugefügt.",
+  "Magenta": "Magenta",
+  "Blue": "Blau",
+  "Violet": "Violett",
+  "Teal": "Petrol",
+  "Green": "Grün",
+  "Orange": "Orange",
+  "Brown": "Braun",
+  "Black": "Schwarz",
+  "Color": "Farbe",
+  "Automatic": "Automatisch",
+  "Width of route lines, in pixels": "Breite der Routenlinien, in Pixeln",
+  "Colors of routes that have none of their own": "Farben der Routen ohne eigene Farbe",
+  "One color for each day": "Eine Farbe je Tag",
+  "One color for each route": "Eine Farbe je Route"
 }
