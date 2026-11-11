@@ -9,6 +9,7 @@ use League\Plates\Engine;
 use PDO;
 use Planner\Account\CurrentUser;
 use Planner\Account\PasswordResets;
+use Planner\Http\GzipJson;
 use Planner\Http\Routes;
 use Planner\Http\SessionMiddleware;
 use Planner\I18n\Language;
@@ -57,6 +58,7 @@ final class Kernel
         Routes::register($app);
         $app->addBodyParsingMiddleware();
         $app->addRoutingMiddleware();
+        $app->add(GzipJson::class);
         $app->add(SessionMiddleware::class);
         $app->add(LanguageMiddleware::class);
         $app->addErrorMiddleware($container->get(Config::class)->debug, true, true);

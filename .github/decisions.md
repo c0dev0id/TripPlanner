@@ -696,6 +696,12 @@ entries at the end of their section.
   is given: OpenBSD, httpd, php-fpm, PHP 8.5, deployed with `git pull`. The public pages
   (landing, sign-up, sign-in) are server-rendered so that they need no JavaScript; the
   planner itself is a single-page app because a map editor is one.
+- **JSON answers are compressed by PHP.** OpenBSD's httpd compresses nothing that comes
+  from FastCGI, and a collection of some hundred tracks is megabytes of JSON. A
+  middleware gzips JSON answers of a kilobyte and more for clients that take gzip; files
+  (pictures, GPX, zip) are compressed already and go out as they are. Track lines are
+  dense text, so this takes about 40 % off a large trip, not more; saves still send the
+  whole document uncompressed.
 - **Slim 4, PHP-DI, Plates, PHPMailer.** Each does one job and is small: routing with
   middleware and PSR-7, a container with autowiring, templates with layouts and escaping,
   SMTP without a dependency tree. Laravel and Symfony were rejected for their weight;
