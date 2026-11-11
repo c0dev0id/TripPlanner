@@ -1,3 +1,4 @@
+import { stretchesOf } from '../geo/measure';
 import { keepTolerances } from '../geo/simplify';
 import { t } from '../i18n/t';
 import type { LngLat } from '../model/trip';
@@ -12,8 +13,15 @@ const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 export const OVERPASS_ATTRIBUTION = t('POI: Overpass API, © OpenStreetMap contributors');
 /** Seconds the server may take before it gives up on a query. */
 const TIMEOUT_S = 60;
-/** The most places one search answers with. */
-export const POI_LIMIT = 2000;
+/** The most places one query answers with. */
+const QUERY_LIMIT = 2000;
+/** Lines are asked for in stretches of this length, a query each: one query along a day's ride runs out of time. */
+const STRETCH_M = 50_000;
+/** The pause between two queries of a search, and the wait before a query that ran out of time is sent again. */
+const PAUSE_MS = 1000;
+const RETRY_AFTER_MS = 5000;
+/** How often a query that ran out of time is sent again before the search gives up. */
+const RETRIES = 3;
 
 /** A category to look for, and how far from the spot or the lines, in metres. */
 export interface PoiReach {
@@ -55,7 +63,7 @@ export function poiQuery(reaches: readonly PoiReach[], area: PoiArea): string {
           );
     return around.filter((positions) => positions !== '').map((positions) => `nwr["${category.key}"${value}]${access}(around:${Math.round(metres)},${positions});`);
   });
-  return `[out:json][timeout:${TIMEOUT_S}];(${statements.join('')});out center ${POI_LIMIT};`;
+  return `[out:json][timeout:${TIMEOUT_S}];(${statements.join('')});out center ${QUERY_LIMIT};`;
 }
 
 interface OverpassElement {
@@ -67,6 +75,9 @@ interface OverpassElement {
   tags?: Record<string, string>;
 }
 
+/** The server ran out of time or is busy: the same query may be answered a little later. */
+class OverpassBusy extends Error {}
+
 /**
  * The places in an Overpass answer; elements without a position or of no category are left
  * out. A query that runs out of time or memory still answers with status 200 and a remark
@@ -75,7 +86,7 @@ interface OverpassElement {
 export function parsePois(json: unknown): Poi[] {
   const answer = json as { elements?: unknown; remark?: unknown } | null;
   if (typeof answer !== 'object' || answer === null || !Array.isArray(answer.elements)) throw new Error(t('The POI search did not answer with OpenStreetMap data.'));
-  if (typeof answer.remark === 'string' && /error/i.test(answer.remark)) throw new Error(t('The POI search gave up; a smaller distance or fewer kinds may work.'));
+  if (typeof answer.remark === 'string' && /error/i.test(answer.remark)) throw new OverpassBusy(t('The POI search gave up; a smaller distance or fewer kinds may work.'));
   return (answer.elements as OverpassElement[]).flatMap((element): Poi[] => {
     const lng = Number(element.lon ?? element.center?.lon);
     const lat = Number(element.lat ?? element.center?.lat);
@@ -86,9 +97,55 @@ export function parsePois(json: unknown): Poi[] {
   });
 }
 
-/** The places of each category within its reach of the area. */
-export async function findPois(reaches: readonly PoiReach[], area: PoiArea): Promise<Poi[]> {
-  const response = await fetch(OVERPASS_URL, { method: 'POST', body: new URLSearchParams({ data: poiQuery(reaches, area) }) });
+/** Resolves after the time, or rejects as soon as the signal aborts. */
+function pause(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener('abort', () => {
+      clearTimeout(timer);
+      reject(signal.reason);
+    });
+  });
+}
+
+/** Sends one query; the statuses of a server that is busy or took too long are thrown as such. */
+async function ask(query: string, signal: AbortSignal): Promise<Poi[]> {
+  const response = await fetch(OVERPASS_URL, { method: 'POST', body: new URLSearchParams({ data: query }), signal });
+  if (response.status === 429 || response.status === 504) throw new OverpassBusy(t('The POI search is not available right now ({status}).', { status: response.status }));
   if (!response.ok) throw new Error(t('The POI search is not available right now ({status}).', { status: response.status }));
   return parsePois(await response.json());
+}
+
+export interface FoundPois {
+  pois: Poi[];
+  /** Whether a query answered with as many places as it may, so that there are likely more. */
+  truncated: boolean;
+}
+
+/**
+ * The places of each category within its reach of the area. Lines are asked for stretch by
+ * stretch with a pause between the queries, and a query the server ran out of time on is
+ * sent again after a wait, a few times; `progress` hears how many of the queries are done.
+ */
+export async function findPois(reaches: readonly PoiReach[], area: PoiArea, signal: AbortSignal, progress: (done: number, total: number) => void): Promise<FoundPois> {
+  const areas: PoiArea[] = 'spot' in area ? [area] : area.lines.flatMap((line) => stretchesOf(line, STRETCH_M)).map((stretch) => ({ lines: [stretch] }));
+  const pois = new Map<string, Poi>();
+  let truncated = false;
+  for (const [done, part] of areas.entries()) {
+    progress(done, areas.length);
+    if (done > 0) await pause(PAUSE_MS, signal);
+    const query = poiQuery(reaches, part);
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const found = await ask(query, signal);
+        truncated ||= found.length >= QUERY_LIMIT;
+        for (const poi of found) pois.set(poi.id, poi);
+        break;
+      } catch (fault) {
+        if (!(fault instanceof OverpassBusy) || attempt === RETRIES) throw fault;
+        await pause(RETRY_AFTER_MS, signal);
+      }
+    }
+  }
+  return { pois: [...pois.values()], truncated };
 }

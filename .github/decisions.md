@@ -253,9 +253,15 @@ entries at the end of their section.
   there to stop at, so its kinds are a fixed list of one tag each and the area is a
   distance: around a spot, or along the day's routes with Overpass's `around` filter over
   a line. A distance per kind along a route is the point: a fuel station counts within
-  200 m, a hotel within 10 km. A route's line is thinned to a quarter of the distance
-  first, which keeps the query of a day's ride at a few kilobytes. One query asks for
-  `out center`, so that areas and relations answer as one position.
+  200 m, a hotel within 5 km. A route's line is thinned to a quarter of the distance
+  first, which keeps a query short. A query asks for `out center`, so that areas and
+  relations answer as one position.
+- **A route is searched in stretches of 50 km, one query after another.** One query along
+  a whole day's ride ran out of the server's time. The queries are sent a second apart,
+  as a public server asks; one the server ran out of time on, or answered busy (429,
+  504), is sent again after five seconds, three times at most before the search fails.
+  A place two stretches both find is kept once. The search can be stopped at any moment:
+  clearing it or starting another aborts the request and the waits.
 - **Found places are shown, not kept.** They are icons in a layer of the map, not
   markers, since a search can answer with two thousand; they belong to the page,
   not to the trip, and go with *Clear* or the next search. Making a stop of one is left

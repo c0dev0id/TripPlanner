@@ -201,7 +201,8 @@
 - A POI search from the map's menu (*Find POI…*): fuel stations, hotels, restaurants,
   cafes, viewpoints and parking from OpenStreetMap, around the spot within 1 to 20 km,
   or along the selected day's routes within a distance per kind (200 m for fuel and
-  parking, 2 km for restaurants, cafes and viewpoints, 10 km for hotels, each to change).
+  parking, 2 km for restaurants, cafes and viewpoints, 5 km for hotels, each to change); a
+  route is searched in stretches of 50 km, with the progress shown.
   The places found stand on the map as their kind's icon until cleared; a tap shows name,
   address, cuisine, opening hours, phone and links to the homepage and OpenStreetMap.
 - A spot of the map opened in Google Maps or Google Street View, from the map's menu.

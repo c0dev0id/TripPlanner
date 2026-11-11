@@ -37,3 +37,20 @@ export function metresAlong(line: readonly LngLat[]): Float64Array {
 
 /** The length of a line in metres. */
 export const lineLength = (line: readonly LngLat[]): number => metresAlong(line).at(-1) ?? 0;
+
+/**
+ * The line in stretches of at most about `metres`, each beginning at the point the one
+ * before ends at; a segment longer than that is a stretch of its own.
+ */
+export function stretchesOf(line: readonly LngLat[], metres: number): LngLat[][] {
+  const along = metresAlong(line);
+  const stretches: LngLat[][] = [];
+  let first = 0;
+  for (let i = 1; i < line.length; i++) {
+    if (i === line.length - 1 || along[i + 1]! - along[first]! > metres) {
+      stretches.push(line.slice(first, i + 1));
+      first = i;
+    }
+  }
+  return stretches;
+}

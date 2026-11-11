@@ -19,7 +19,7 @@ export interface PoiCategory {
 
 export const POI_CATEGORIES: readonly PoiCategory[] = [
   { id: 'fuel', label: t('Fuel stations'), key: 'amenity', values: ['fuel'], alongM: 200, color: '#2b8a3e' },
-  { id: 'hotel', label: t('Hotels'), key: 'tourism', values: ['hotel', 'guest_house', 'motel'], alongM: 10000, color: '#5f3dc4' },
+  { id: 'hotel', label: t('Hotels'), key: 'tourism', values: ['hotel', 'guest_house', 'motel'], alongM: 5000, color: '#5f3dc4' },
   { id: 'restaurant', label: t('Restaurants'), key: 'amenity', values: ['restaurant'], alongM: 2000, color: '#e67700' },
   { id: 'cafe', label: t('Cafes'), key: 'amenity', values: ['cafe'], alongM: 2000, color: '#7b4a2d' },
   { id: 'viewpoint', label: t('Viewpoints'), key: 'tourism', values: ['viewpoint'], alongM: 2000, color: '#0b7285' },
