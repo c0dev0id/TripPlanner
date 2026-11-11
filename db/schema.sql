@@ -162,3 +162,18 @@ CREATE TABLE IF NOT EXISTS recordings (
     created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS recordings_day ON recordings(day_id);
+
+-- What a POI search found along a route, one row per kind of place: asking again is slow
+-- and counted against the user by the server asked, so the answer is kept. The places are
+-- JSON as the planner holds them (id, lngLat, tags). line_mark says which line the route
+-- had when it was searched, for the planner to tell when it has changed since. A removed
+-- route takes its places with it.
+CREATE TABLE IF NOT EXISTS route_pois (
+    route_id TEXT NOT NULL REFERENCES routes(id) ON DELETE CASCADE,
+    category TEXT NOT NULL,
+    reach_m INTEGER NOT NULL,
+    line_mark TEXT NOT NULL,
+    places TEXT NOT NULL,
+    found_at TEXT NOT NULL,
+    PRIMARY KEY (route_id, category)
+);

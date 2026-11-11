@@ -12,6 +12,7 @@ use Planner\Export\ExportPresetController;
 use Planner\Export\GpxExportController;
 use Planner\Journal\JournalController;
 use Planner\Pages\AppController;
+use Planner\Poi\RoutePoisController;
 use Planner\Pages\TripViewController;
 use Planner\Recording\RecordingController;
 use Planner\Share\SharedTripController;
@@ -73,6 +74,9 @@ final class Routes
             $api->delete('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}', [JournalController::class, 'delete']);
             $api->get('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}/file', [JournalController::class, 'file']);
             $api->get('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}/preview', [JournalController::class, 'preview']);
+            $api->get('/trips/{id:[0-9]+}/pois', [RoutePoisController::class, 'index']);
+            $api->put('/trips/{id:[0-9]+}/routes/{route}/pois/{category:[a-z_]{1,40}}', [RoutePoisController::class, 'keep']);
+            $api->delete('/trips/{id:[0-9]+}/routes/{route}/pois/{category:[a-z_]{1,40}}', [RoutePoisController::class, 'forget']);
             $api->get('/trips/{id:[0-9]+}/recordings', [RecordingController::class, 'index']);
             $api->post('/trips/{id:[0-9]+}/recordings', [RecordingController::class, 'add']);
             $api->patch('/trips/{id:[0-9]+}/recordings/{recording:[0-9]+}', [RecordingController::class, 'rename']);
