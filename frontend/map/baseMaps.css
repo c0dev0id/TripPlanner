@@ -1,17 +1,11 @@
 /* The base map button among the map's controls, which are light in either theme: its icon takes their dark ink, not the page's. */
 
+.base-maps > button,
 .base-maps > button {
-  display: grid;
-  place-items: center;
   color: #333;
 }
 
 /* The overlays' buttons among the map's controls: an overlay's sign, greyed while it is off. */
-
-.overlay-toggles > button {
-  display: grid;
-  place-items: center;
-}
 
 .overlay-toggles img {
   width: 21px;

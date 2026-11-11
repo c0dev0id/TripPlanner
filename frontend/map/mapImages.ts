@@ -33,7 +33,14 @@ export function provideImages(map: MapLibreMap, images: ReadonlyMap<string, MapI
   }
 }
 
-/** The drawing inside an icon set's SVG document, to place in a picture of our own. */
-export const svgContent = (document: string): string => /<svg[^>]*>(.*)<\/svg>/s.exec(document)![1]!;
+/** A square picture from the SVG markup of a drawing in a box of `size` × `size`. */
+export function svgImage(size: number, pixelRatio: number, drawing: string): MapImage {
+  const side = size * pixelRatio;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${side}" height="${side}" viewBox="0 0 ${size} ${size}">${drawing}</svg>`;
+  return { url: `data:image/svg+xml,${encodeURIComponent(svg)}`, size, pixelRatio };
+}
 
-export const svgUrl = (svg: string): string => `data:image/svg+xml,${encodeURIComponent(svg)}`;
+/** The drawing of an icon set's SVG document, moved to (x, y), scaled and filled, to place in a picture of our own. */
+export function svgInlay(document: string, x: number, y: number, scale: number, fill: string): string {
+  return `<g transform="translate(${x} ${y}) scale(${scale})" fill="${fill}">${/<svg[^>]*>(.*)<\/svg>/s.exec(document)![1]!}</g>`;
+}

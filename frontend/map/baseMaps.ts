@@ -36,15 +36,15 @@ export const BASE_MAPS: readonly BaseMap[] = [
 
 /**
  * The zoom up to which a base style of raster tiles alone is drawn sharp, beyond which its
- * picture is blown up; undefined for a style with vector tiles, sharp at every zoom, also
+ * picture is blown up; Infinity for a style with vector tiles, sharp at every zoom, also
  * where it has a raster source for its relief. A tile of 256 px at its zoom covers what
  * the map shows a zoom lower.
  */
-export function sharpUntil(style: Pick<StyleSpecification, 'sources'>): number | undefined {
+export function sharpUntil(style: Pick<StyleSpecification, 'sources'>): number {
   const sources = Object.values(style.sources);
-  if (sources.some((source) => source.type === 'vector')) return undefined;
+  if (sources.some((source) => source.type === 'vector')) return Infinity;
   const sharp = sources.flatMap((source) => (source.type === 'raster' && source.maxzoom !== undefined ? [source.maxzoom - Math.log2(512 / (source.tileSize ?? 512))] : []));
-  return sharp.length > 0 ? Math.max(...sharp) : undefined;
+  return sharp.length > 0 ? Math.max(...sharp) : Infinity;
 }
 
 const stored = readPreference('baseMap');

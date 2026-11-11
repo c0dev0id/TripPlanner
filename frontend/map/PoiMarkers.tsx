@@ -3,14 +3,11 @@ import { createEffect, For, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { poiDetails } from '../poi/details';
 import { foundPois } from '../state/poi';
-import { provideImages } from './mapImages';
-import { POI_IMAGES } from './poiImages';
 import { POI_LAYERS, POI_SOURCE, poiFeatures } from './poiOverlay';
 import { popupOnTap } from './tapPopup';
 
 /** Keeps the places a POI search found on the map, and says what one tapped is. */
 export function PoiMarkers(props: { map: MapLibreMap }) {
-  provideImages(props.map, POI_IMAGES);
   const popup = popupOnTap(
     props.map,
     POI_LAYERS.map((layer) => layer.id),

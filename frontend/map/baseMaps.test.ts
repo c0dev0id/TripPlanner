@@ -21,8 +21,8 @@ describe('sharpUntil', () => {
     expect(sharpUntil({ sources: { a: { type: 'raster', tiles: [], tileSize: 512, maxzoom: 18 } } })).toBe(18);
   });
 
-  it('is undefined for a style with vector tiles, also where it has a raster source for its relief', () => {
-    expect(sharpUntil({ sources: { roads: { type: 'vector', url: 'x' }, relief: { type: 'raster', tiles: [], maxzoom: 6 } } })).toBeUndefined();
-    expect(sharpUntil({ sources: {} })).toBeUndefined();
+  it('is never for a style with vector tiles, also where it has a raster source for its relief', () => {
+    expect(sharpUntil({ sources: { roads: { type: 'vector', url: 'x' }, relief: { type: 'raster', tiles: [], maxzoom: 6 } } })).toBe(Infinity);
+    expect(sharpUntil({ sources: {} })).toBe(Infinity);
   });
 });

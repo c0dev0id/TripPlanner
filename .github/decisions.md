@@ -231,8 +231,12 @@ entries at the end of their section.
 - **Overlays are a fixed list, switched on per browser.** Roadworks and motorcycle
   closures lie between the base map and the trip. An overlay's sources and layers are in
   the style only while it is switched on, put there by the same style transform as the
-  route overlay: switching sets the base style again, which MapLibre diffs, so nothing is
-  fetched for an overlay that is off and there is one way into the style. As with the base
+  route overlay, so nothing is fetched for an overlay that is off and there is one way
+  into the style. The map sets its style again whenever the base map chosen or the
+  overlays switched on change; the controls only change those. A source already in the
+  style is carried over as the trip's are: MapLibre keeps a fetched source's data, not
+  its address, so the same address written anew counts as changed and is fetched again,
+  megabytes of roadworks on every switch of the other overlay. As with the base
   maps, the list is fixed in code; any other layer is Layer Slayer's business. Each has
   a button of its own among the map's controls, its sign, greyed while it is off: two
   switches used while looking at the map are one tap each, where a submenu of the base
@@ -257,7 +261,9 @@ entries at the end of their section.
   the size with nothing to tap. As features, lines and signs are sized like the closures',
   a site says what it is on a tap, and works yet to begin are drawn fainter. The
   Rhineland-Palatinate service also lists Baden-Württemberg's sites, which are left to
-  that state's own service. A stretch or a diversion carries nothing but its site's id,
+  that state's own service by a filter in the request. What each service calls its
+  fields is one table per service, which the layers' expressions and the tap's text are
+  both made from. A stretch or a diversion carries nothing but its site's id,
   so only sites answer a tap.
 - **The motorcycle closures are fetched and converted on the server.** mintelonline.de
   publishes them as a KMZ file its server does not let a web page read, so Layer Slayer

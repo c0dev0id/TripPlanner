@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Planner\Closures;
 
 use Planner\Download;
+use Planner\Http\Json;
 use RuntimeException;
 use ZipArchive;
 
@@ -29,7 +30,7 @@ final class MotorcycleClosures
         if ($geoJson['features'] === []) {
             throw new RuntimeException("$source holds no placemarks.");
         }
-        file_put_contents("$file.new", json_encode($geoJson, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        file_put_contents("$file.new", Json::encode($geoJson));
         rename("$file.new", $file);
         return count($geoJson['features']);
     }

@@ -1,4 +1,5 @@
 import { GeolocateControl, Map as MapLibreMap, NavigationControl, ScaleControl, setWorkerUrl, type GeoJSONSourceSpecification, type MapOptions, type StyleSpecification } from 'maplibre-gl';
+import { createEffect, on } from 'solid-js';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { ROUTING_ATTRIBUTION } from '../routing/valhalla';
 import { BaseMapControl } from './BaseMapControl';
@@ -7,6 +8,7 @@ import { chosenBaseMap, sharpUntil } from './baseMaps';
 import { OVERPASS_ATTRIBUTION } from '../poi/overpass';
 import { provideImages } from './mapImages';
 import { OVERLAYS, shownOverlays } from './overlays';
+import { POI_IMAGES } from './poiImages';
 import { POI_LAYERS, POI_SOURCE } from './poiOverlay';
 import { OPENED_RECORDING_SOURCE, RECORDING_LAYERS, RECORDING_POINT_LAYERS, RECORDING_POINT_SOURCE, RECORDINGS_SOURCE } from './recordingOverlay';
 import { ROUTE_LAYERS, ROUTES_SOURCE } from './routeOverlay';
@@ -27,14 +29,16 @@ function withOverlays(previous: StyleSpecification | undefined, next: StyleSpeci
   for (const id of [RECORDINGS_SOURCE, OPENED_RECORDING_SOURCE, RECORDING_POINT_SOURCE]) sources[id] = previous?.sources[id] ?? empty();
   sources[POI_SOURCE] = previous?.sources[POI_SOURCE] ?? { ...empty(), attribution: OVERPASS_ATTRIBUTION };
   const overlays = shownOverlays().map((overlay) => overlay.parts(sharpUntil(next)));
-  for (const overlay of overlays) Object.assign(sources, overlay.sources);
+  // An overlay's data read once stays: a source written anew would be fetched again.
+  for (const overlay of overlays) for (const [id, source] of Object.entries(overlay.sources)) sources[id] = previous?.sources[id] ?? source;
   return { ...next, sources, layers: [...next.layers, ...overlays.flatMap((o) => o.layers), ...RECORDING_LAYERS, ...ROUTE_LAYERS, ...POI_LAYERS, ...RECORDING_POINT_LAYERS] };
 }
 
 /**
  * A map over Europe on the base map this browser chose, with the navigation, locate-me,
  * base map, overlay and scale controls and the route overlay; `ready` gets the map once it has
- * loaded.
+ * loaded. Called while a component is set up, whose lifetime the map's following of the
+ * choices takes.
  */
 export function newBaseMap(container: HTMLElement, options: Partial<MapOptions>, ready: (map: MapLibreMap) => void): MapLibreMap {
   const map = new MapLibreMap({ container, style: chosenBaseMap().style, transformStyle: withOverlays, center: [10.5, 47.5], zoom: 5, attributionControl: { compact: true }, ...options });
@@ -43,7 +47,9 @@ export function newBaseMap(container: HTMLElement, options: Partial<MapOptions>,
   map.addControl(new BaseMapControl(), 'top-right');
   map.addControl(new OverlayControl(), 'top-right');
   map.addControl(new ScaleControl(), 'bottom-left');
-  provideImages(map, new Map(OVERLAYS.flatMap((overlay) => Object.entries(overlay.images))));
+  provideImages(map, new Map([...POI_IMAGES, ...OVERLAYS.flatMap((overlay) => [...overlay.images])]));
+  // The style follows the base map chosen and the overlays switched on.
+  createEffect(on([chosenBaseMap, shownOverlays], () => map.setStyle(chosenBaseMap().style), { defer: true }));
   map.once('load', () => ready(map));
   return map;
 }
