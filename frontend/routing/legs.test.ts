@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LngLat, RoutedLeg, RoutedRoute, Track } from '../model/trip';
 import { encodePolyline } from './polyline';
-import { legCoordinates, legKey, legState, nextMissingLeg, pointCount, pruneLegs, roundLngLat, routeDistance, routeLegs, routePositions } from './legs';
+import { legCoordinates, legKey, legState, nextMissingLeg, pointCount, pruneLegs, roundLngLat, routeDistance, routeLegs, routeLine, routePositions } from './legs';
 
 const routed = (geometry: string, distanceM = 1000): RoutedLeg => ({ geometry, distanceM, durationS: 60 });
 
@@ -129,6 +129,27 @@ describe('legCoordinates', () => {
       [1, 1],
       [2, 2],
     ]);
+  });
+});
+
+describe('routeLine', () => {
+  it('joins the legs, each along the road where it is routed, without doubling the points between them', () => {
+    const r = route(
+      'r',
+      [
+        [1, 1],
+        [2, 2],
+        [3, 3],
+      ],
+      { 'bicycle:allow/1,1;2,2': routed(encodePolyline([[1, 1], [1.5, 1.2], [2, 2]])) },
+    );
+    expect(routeLine(r)).toEqual([
+      [1, 1],
+      [1.5, 1.2],
+      [2, 2],
+      [3, 3],
+    ]);
+    expect(routeLine(route('r', [[1, 1]]))).toEqual([]);
   });
 });
 

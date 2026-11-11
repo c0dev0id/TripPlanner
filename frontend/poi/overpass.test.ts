@@ -15,7 +15,7 @@ describe('poiQuery', () => {
       { spot: [8.123456789, 49.5] },
     );
     expect(query).toBe(
-      '[out:json][timeout:60][bbox:49.32014,7.84548,49.67986,8.40143];(nwr["amenity"="fuel"](around:5000,49.50000,8.12346);nwr["tourism"~"^(hotel|guest_house|motel)$"](around:20000,49.50000,8.12346););out center 2000;',
+      '[out:json][timeout:60][bbox:49.32014,7.84548,49.67986,8.40143];(nwr["amenity"="fuel"](around:5000,49.50000,8.12346););out center 500;(nwr["tourism"~"^(hotel|guest_house|motel)$"](around:20000,49.50000,8.12346););out center 500;',
     );
   });
 
@@ -35,7 +35,7 @@ describe('poiQuery', () => {
       [9.1, 50],
     ];
     const along = (metres: number) => poiQuery([{ category: category('fuel'), metres }], { lines: [bent, other] });
-    expect(along(200)).toContain('(around:200,49.00000,8.00000,49.00050,8.01000,49.00000,8.02000);nwr["amenity"="fuel"](around:200,50.00000,9.00000,50.00000,9.10000);');
+    expect(along(200)).toContain('(nwr["amenity"="fuel"](around:200,49.00000,8.00000,49.00050,8.01000,49.00000,8.02000);nwr["amenity"="fuel"](around:200,50.00000,9.00000,50.00000,9.10000););out center 500;');
     expect(along(2000)).toContain('(around:2000,49.00000,8.00000,49.00000,8.02000);');
   });
 });

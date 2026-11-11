@@ -1,7 +1,7 @@
 import { createSignal, For, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { POI_CATEGORIES, type PoiCategoryId } from '../poi/categories';
-import { routePositions } from '../routing/legs';
+import { routeLine } from '../routing/legs';
 import { poiSearchSpot, searchPois, setPoiSearchSpot } from '../state/poi';
 import { openTrip, selectedDay } from '../state/trip';
 import { dayLabelOf } from '../trip/labels';
@@ -25,8 +25,8 @@ export function PoiDialog() {
   const [chosen, setChosen] = createSignal<readonly PoiCategoryId[]>(['fuel', 'hotel', 'restaurant']);
   const [alongKm, setAlongKm] = createSignal(Object.fromEntries(POI_CATEGORIES.map((c) => [c.id, c.alongM / 1000])) as Record<PoiCategoryId, number>);
   const close = () => setPoiSearchSpot(undefined);
-  /** The selected day's routes that are lines. */
-  const lines = () => (selectedDay()?.routes ?? []).map(routePositions).filter((line) => line.length > 1);
+  /** The lines the selected day's routes run along. */
+  const lines = () => (selectedDay()?.routes ?? []).map(routeLine).filter((line) => line.length > 1);
   const along = () => alongDay() && lines().length > 0;
   const toggle = (id: PoiCategoryId, on: boolean) => setChosen((ids) => (on ? [...ids, id] : ids.filter((other) => other !== id)));
   const search = (e: SubmitEvent) => {

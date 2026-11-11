@@ -13,8 +13,8 @@ const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
 export const OVERPASS_ATTRIBUTION = t('POI: Overpass API, © OpenStreetMap contributors');
 /** Seconds the server may take before it gives up on a query. */
 const TIMEOUT_S = 60;
-/** The most places one query answers with. */
-const QUERY_LIMIT = 2000;
+/** The most places of one category a query answers with, so that many of one kind leave room for the others. */
+const KIND_LIMIT = 500;
 /** Lines are asked for in stretches of this length, a query each: one query along a day's ride runs out of time. */
 const STRETCH_M = 50_000;
 /** The pause between two queries of a search, and the wait before a query that ran out of time is sent again. */
@@ -59,7 +59,7 @@ function boxAround(positions: readonly LngLat[], metres: number): string {
 
 /**
  * The query for the places of each category within its reach of the area, answered as JSON
- * with a position for each. A line is asked for without the points that lie within a
+ * with a position for each, category by category. A line is asked for without the points that lie within a
  * quarter of the reach of what remains, which keeps the query of a long route short. The
  * query names the box all of it lies in, so that the server looks at nothing outside it.
  */
@@ -77,10 +77,11 @@ export function poiQuery(reaches: readonly PoiReach[], area: PoiArea): string {
               .map(latLng)
               .join(','),
           );
-    return around.filter((positions) => positions !== '').map((positions) => `nwr["${category.key}"${value}]${access}(around:${Math.round(metres)},${positions});`);
+    const found = around.filter((positions) => positions !== '').map((positions) => `nwr["${category.key}"${value}]${access}(around:${Math.round(metres)},${positions});`);
+    return found.length > 0 ? [`(${found.join('')});out center ${KIND_LIMIT};`] : [];
   });
   const box = boxAround('spot' in area ? [area.spot] : area.lines.flat(), Math.max(...reaches.map((r) => r.metres)));
-  return `[out:json][timeout:${TIMEOUT_S}][bbox:${box}];(${statements.join('')});out center ${QUERY_LIMIT};`;
+  return `[out:json][timeout:${TIMEOUT_S}][bbox:${box}];${statements.join('')}`;
 }
 
 interface OverpassElement {
@@ -135,7 +136,7 @@ async function ask(query: string, signal: AbortSignal): Promise<Poi[]> {
 
 export interface FoundPois {
   pois: Poi[];
-  /** Whether a query answered with as many places as it may, so that there are likely more. */
+  /** Whether a query answered with as many places of a category as it may, so that there are likely more. */
   truncated: boolean;
 }
 
@@ -157,7 +158,7 @@ export async function findPois(reaches: readonly PoiReach[], area: PoiArea, sign
     for (let attempt = 0; ; attempt++) {
       try {
         const found = await ask(query, signal);
-        truncated ||= found.length >= QUERY_LIMIT;
+        truncated ||= reaches.some(({ category }) => found.filter((poi) => poi.category === category).length >= KIND_LIMIT);
         for (const poi of found) pois.set(poi.id, poi);
         break;
       } catch (fault) {

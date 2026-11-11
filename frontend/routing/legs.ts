@@ -96,6 +96,11 @@ export function routePositions(route: Route): LngLat[] {
   return route.kind === 'track' ? decodeCached(route.line) : route.points.map((p) => p.lngLat);
 }
 
+/** The line a route runs along: its legs' lines joined, each as `legCoordinates` gives it. */
+export function routeLine(route: Route): LngLat[] {
+  return routeLegs(route).flatMap((leg, i) => (i === 0 ? legCoordinates(route, leg) : legCoordinates(route, leg).slice(1)));
+}
+
 /** The pace assumed for a leg the routing has not timed: a track, a straight one, one not routed yet, or one imported with its way. */
 const ASSUMED_SPEED_MPS = 50 / 3.6;
 

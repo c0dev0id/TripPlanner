@@ -263,7 +263,14 @@ entries at the end of their section.
   both find is kept once. Each stretch's places go on the map as it is answered, since a
   stretch can take a minute; a stretch that fails for good ends the search with what the
   others found still shown, and *Stop* ends it the same way. Each query names the box
-  its stretch and reach lie in, so that the server looks at nothing outside it.
+  its stretch and reach lie in.
+- **Along a route means along the road.** The search follows the routed legs' geometry,
+  not the route's points: the straight lines between waypoints leave a winding road by
+  kilometres, and a search within 200 m of them finds what happens to stand at a
+  waypoint. A leg not routed yet is searched along its straight line.
+- **Each kind has its own limit in a query.** A query answers kind by kind, each with at
+  most 500 places per stretch: under one limit for all, the parking of a town used it up
+  and left no room for its fuel stations.
 - **Found places are shown, not kept.** They are icons in a layer of the map, not
   markers, since a search can answer with two thousand; they belong to the page,
   not to the trip, and go with *Clear* or the next search. Making a stop of one is left
