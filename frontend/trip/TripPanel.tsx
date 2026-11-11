@@ -14,7 +14,7 @@ import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
 import { openRouteColors } from '../state/routeColors';
-import { copyRoute, copyStop, pasteItem } from '../state/clipboard';
+import { copyRoute, copyStop, pasteItem, stopPasteItem } from '../state/clipboard';
 import {
   addDay,
   addParts,
@@ -235,6 +235,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
     { label: t('Edit…'), run: () => setEditTarget({ kind: 'route', id: props.route.id }) },
     { label: t('Duplicate'), run: () => duplicateRoute(props.route.id) },
     { label: t('Copy'), run: () => copyRoute(props.day, props.route) },
+    ...stopPasteItem(props.route.id),
     ...moveToDayItem(props.day.id, (dayId) => moveRouteToDay(props.route.id, dayId)),
     {
       label: t('Color'),
@@ -356,7 +357,7 @@ function AloneStopItem(props: { stop: Stop }) {
   );
 }
 
-/** A stop's menu, opened from its row by right-click or a long press: edit, copy to paste into a day, remove. */
+/** A stop's menu, opened from its row by right-click or a long press: edit, copy to paste into a day or a route, remove. */
 function stopItems(stop: Stop): MenuItem[] {
   return [
     { label: t('Edit…'), run: () => setEditTarget({ kind: 'stop', id: stop.id }) },

@@ -8,7 +8,7 @@ import { copiedRoute, defaultProfile, type CopiedRoute } from '../routing/dayEdi
 import { decodeCached } from '../routing/polyline';
 import type { MenuItem } from '../ui/menu';
 import { addRecording, recordingAction } from './recordings';
-import { openTrip, pasteRoutes, pasteStop, selectDay } from './trip';
+import { openTrip, pasteRoutes, pasteStop, pasteStopIntoRoute, selectDay } from './trip';
 
 /**
  * What was copied to be pasted: routes with the stops bound to them, a stop, or a
@@ -85,6 +85,12 @@ export function pasteItem(dayId: string): MenuItem[] {
     { label: pasteLabel(copied), run: shown(() => pasteRoutes(dayId, copied.routes)) },
     ...(track ? [{ label: t('Paste “{name}” as a recording', { name: track.name || t('track') }), run: shown(() => pasteAsRecording(dayId, track.name || t('Track'), trackGpx(track.name, decodeCached(track.line)))) }] : []),
   ];
+}
+
+/** The menu item that pastes the copied stop into the route of the open trip, as a point of it; none while no stop is copied. */
+export function stopPasteItem(routeId: string): MenuItem[] {
+  const copied = clip();
+  return copied && 'stop' in copied ? [{ label: pasteLabel(copied), run: () => pasteStopIntoRoute(routeId, copied.stop) }] : [];
 }
 
 /** The menu item that hands the copied routes to `paste`, which puts them into a trip or a folder of the library; none while no route is copied. */

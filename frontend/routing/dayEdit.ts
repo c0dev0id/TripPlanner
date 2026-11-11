@@ -1,6 +1,9 @@
 import { t } from '../i18n/t';
 import { withChanges, type Day, type LngLat, type Profile, type Route, type RoutedRoute, type RoutePoint, type Stop, type Trip } from '../model/trip';
+import { planeAt } from '../geo/measure';
+import { nearestOnLines } from '../geo/nearest';
 import { PLAIN_SYMBOL } from '../symbols/symbols';
+import { legCoordinates, routeLegs } from './legs';
 import * as routeEdit from './routeEdit';
 
 /**
@@ -284,6 +287,32 @@ export function pasteIntoTrip(trip: Trip, copied: readonly CopiedRoute[], newId:
 /** Adds a copied stop to the day under `id`, free where it stands. */
 export function pasteStop(trip: Trip, dayId: string, stop: Stop, id: string): Trip {
   return updateDay(trip, dayId, (day) => ({ ...day, stops: [...day.stops, { ...stop, id, pointId: null }] }));
+}
+
+/**
+ * Where in the route a new point at the position goes: into the leg that passes closest,
+ * or before the first point or after the last where the position lies off that end.
+ */
+function placeInRoute(route: RoutedRoute, lngLat: LngLat): number {
+  const legs = routeLegs(route);
+  const toPlane = planeAt(lngLat);
+  const hit = nearestOnLines(legs.map((leg) => legCoordinates(route, leg).map(toPlane)))(toPlane(lngLat));
+  if (!hit) return route.points.length;
+  if (hit.index === 0 && hit.segment === 0 && hit.t === 0) return 0;
+  const lastSegment = legCoordinates(route, legs[hit.index]!).length - 2;
+  return hit.index === legs.length - 1 && hit.segment === lastSegment && hit.t === 1 ? route.points.length : hit.index + 1;
+}
+
+/**
+ * Adds a copied stop to the route's day under `id`, bound to a new point `pointId` of the
+ * route where it passes closest to the stop; beside a track, which has no points, free.
+ */
+export function pasteStopIntoRoute(trip: Trip, routeId: string, stop: Stop, id: string, pointId: string): Trip {
+  const day = dayOfRoute(trip, routeId);
+  const route = day?.routes.find((r) => r.id === routeId);
+  if (!day || !route) return trip;
+  const pasted = pasteStop(trip, day.id, stop, id);
+  return route.kind === 'track' ? pasted : connectStop(pasted, day.id, id, routeId, placeInRoute(route, stop.lngLat), pointId);
 }
 
 /** The ids of the day's route points that stops stand on. */

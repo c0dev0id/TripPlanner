@@ -45,7 +45,9 @@
   moved to another day with the stops bound to it, from its row's menu (right-click or
   long press), where Move… opens the other days. Copy in a route's or a stop's menu keeps
   it to be pasted from a day's menu into that day, of the same trip or another: a route
-  with the stops bound to it, a stop free where it stands. Copied routes are also pasted
+  with the stops bound to it, a stop free where it stands. A copied stop is also pasted
+  from a route's menu into that route, as a point of it where the route passes closest,
+  or at its start or end where the stop lies off it. Copied routes are also pasted
   from a trip's menu in the library, each onto the day of its date or a new day (into a
   collection as a new section each), and from a folder's menu as a new collection with a
   section per route.

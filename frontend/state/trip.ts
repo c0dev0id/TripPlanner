@@ -327,6 +327,11 @@ export function pasteStop(dayId: string, stop: Stop): void {
   edit((trip) => dayEdit.pasteStop(trip, dayId, stop, newId()), t('Paste stop'));
 }
 
+/** Adds a copied stop to a route, as a point of it where it passes closest; beside a track, free. */
+export function pasteStopIntoRoute(routeId: string, stop: Stop): void {
+  edit((trip) => dayEdit.pasteStopIntoRoute(trip, routeId, { ...stop, lngLat: roundLngLat(stop.lngLat) }, newId(), newId()), t('Paste stop'));
+}
+
 /** Removes a day; the day before it, or the first, is selected instead. */
 export function removeDay(dayId: string): void {
   const days = openTrip()?.days ?? [];

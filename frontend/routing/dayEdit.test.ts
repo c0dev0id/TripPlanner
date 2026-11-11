@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { withChanges, type Day, type RoutedLeg, type Trip } from '../model/trip';
-import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, pasteIntoTrip, pasteRoute, pasteStop, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop } from './dayEdit';
+import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, pasteIntoTrip, pasteRoute, pasteStop, pasteStopIntoRoute, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop } from './dayEdit';
 import { changeSettings } from './routeEdit';
 import { pointCount, routedLegs } from './legs';
 import { encodePolyline } from './polyline';
@@ -203,6 +203,24 @@ describe('reordering and copying', () => {
   it('pastes a stop into a day as a free stop', () => {
     const trip = pasteStop(twoDays(), 'e', day(twoDays()).stops[0]!, 'c');
     expect(trip.days[1]!.stops).toEqual([{ ...day(trip).stops[0]!, id: 'c', pointId: null }]);
+  });
+
+  it('pastes a stop into a route as a point of it where the route passes closest, or off its ends', () => {
+    let trip = addRoute(empty(), 'd', 'r');
+    for (const [id, lngLat] of [['a', [1, 1]], ['b', [2, 1]], ['c', [3, 1]]] as const) {
+      trip = updateRoute(trip, 'r', routedOnly((r) => routeEdit.appendPoint(r, { id, lngLat: [...lngLat] })));
+    }
+    const stop = { ...day(fixture()).stops[1]!, name: 'Café' };
+    const at = (lngLat: [number, number]) => {
+      const pasted = pasteStopIntoRoute(trip, 'r', { ...stop, lngLat }, 'new', 'p');
+      expect(day(pasted).stops).toEqual([{ ...stop, lngLat, id: 'new', pointId: 'p' }]);
+      return routedOf(day(pasted).routes[0]!).points.map((point) => point.id);
+    };
+    expect(at([2.4, 1.2])).toEqual(['a', 'b', 'p', 'c']);
+    expect(at([1.5, 0.9])).toEqual(['a', 'p', 'b', 'c']);
+    expect(at([3.5, 1])).toEqual(['a', 'b', 'c', 'p']);
+    expect(at([0.5, 1])).toEqual(['p', 'a', 'b', 'c']);
+    expect(routedOf(day(pasteStopIntoRoute(addRoute(empty(), 'd', 'r'), 'r', stop, 'new', 'p')).routes[0]!).points.map((point) => point.id)).toEqual(['p']);
   });
 
   it('pastes a copied route with its bound stops under new ids, the stops bound to the new points', () => {
