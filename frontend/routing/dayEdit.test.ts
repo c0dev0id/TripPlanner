@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { withChanges, type Day, type RoutedLeg, type Trip } from '../model/trip';
-import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, pasteIntoTrip, pasteRoute, pasteStop, pasteStopIntoRoute, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop } from './dayEdit';
+import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, pasteIntoTrip, pasteRoute, pasteStop, pasteStopIntoRoute, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop, withNewPartIds } from './dayEdit';
 import { changeSettings } from './routeEdit';
 import { pointCount, routedLegs } from './legs';
 import { encodePolyline } from './polyline';
@@ -198,6 +198,17 @@ describe('reordering and copying', () => {
     expect(trip.days[1]!.stops.map((s) => [s.id, s.pointId])).toEqual([['s1', 'b']]);
     const same = twoDays();
     expect(moveRouteToDay(same, 'r', 'd')).toBe(same);
+  });
+
+  it('renews the ids of a day\'s parts, names each new one, and frees a stop whose point is gone', () => {
+    const source = day(fixture());
+    const lost = { ...source.stops[1]!, id: 'lost', pointId: 'gone' };
+    const { day: renewed, ids: made } = withNewPartIds({ ...source, stops: [...source.stops, lost] }, ids('n'));
+    expect(new Set(made.keys())).toEqual(new Set(['r', 'a', 'b', 'c', 's1', 's2', 'lost']));
+    expect(new Set(made.values()).size).toBe(7);
+    expect(renewed.id).toBe('d');
+    expect(routedOf(renewed.routes[0]!).points.map((p) => p.id)).toEqual([made.get('a'), made.get('b'), made.get('c')]);
+    expect(renewed.stops.map((s) => [s.id, s.pointId])).toEqual([[made.get('s1'), made.get('b')], [made.get('s2'), null], [made.get('lost'), null]]);
   });
 
   it('pastes a stop into a day as a free stop', () => {

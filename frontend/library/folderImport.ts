@@ -169,10 +169,11 @@ export async function importFolder(
   const total = plan.length + archives.length;
   const byPath = new Map(sources.map((source) => [source.path, source]));
   for (const [n, folder] of archives.entries()) {
-    const above = folder.split('/').slice(0, -1).map(asName);
-    onProgress(t('Importing {i} of {n}: {name}', { i: n + 1, n: total, name: folder.split('/').at(-1) ?? '' }));
+    const above = folder.split('/');
+    const name = above.pop()!;
+    onProgress(t('Importing {i} of {n}: {name}', { i: n + 1, n: total, name }));
     try {
-      await importArchive(async (path) => byPath.get(folder === '' ? path : `${folder}/${path}`)?.open(), await folderIn(above), result.errors);
+      await importArchive(async (path) => byPath.get(folder === '' ? path : `${folder}/${path}`)?.open(), await folderIn(above.map(asName)), result.errors);
       result.trips++;
     } catch (error) {
       result.errors.push(`${folder}: ${errorMessage(error)}`);

@@ -12,6 +12,7 @@ import { counted } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { CopyIcon, FileImportIcon, FolderImportIcon, FolderPlusIcon, MapPlusIcon, PinIcon } from '../ui/icons';
 import { NameDialog } from '../ui/NameDialog';
+import { pickFile } from '../ui/pickFile';
 
 /**
  * The panel's actions as icons, the same at every level of the explorer: a new trip or
@@ -25,7 +26,6 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
   /** What was picked for import, while the dialog asks how its GPX files are organized: the files, the paths of those to plan from, and the folders of exported trips. */
   const [picked, setPicked] = createSignal<{ sources: ImportSource[]; paths: string[]; archives: string[] }>();
   let folderInput!: HTMLInputElement;
-  let zipInput!: HTMLInputElement;
   /** Imports the sources into the folder shown: exported trips as they were, GPX files beside them as the dialog then says. */
   const pick = (sources: ImportSource[]) => {
     const archives = archiveFolders(sources.map((source) => source.path));
@@ -40,8 +40,8 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
     folderInput.value = '';
     pick(files.map((file) => ({ path: pickedPath(file), open: async () => file })));
   };
-  const pickZip = async (file: File | undefined) => {
-    zipInput.value = '';
+  const pickZip = async () => {
+    const file = await pickFile('.zip,application/zip');
     if (!file) return;
     try {
       pick((await zipEntries(file)).map((entry) => ({ path: entry.path, open: async () => new File([await entry.read()], entry.path.slice(entry.path.lastIndexOf('/') + 1)) })));
@@ -72,7 +72,7 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
       <IconButton label={t('Import a folder of GPX files or exported trips…')} disabled={importing()} onClick={() => folderInput.click()}>
         <FolderImportIcon />
       </IconButton>
-      <IconButton label={t('Import exported trips (zip)…')} disabled={importing()} onClick={() => zipInput.click()}>
+      <IconButton label={t('Import exported trips (zip)…')} disabled={importing()} onClick={() => void pickZip()}>
         <FileImportIcon />
       </IconButton>
       <IconButton label={t('Duplicates…')} onClick={openDuplicates}>
@@ -90,7 +90,6 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
         hidden
         onChange={(e) => pickFolder(e.currentTarget.files)}
       />
-      <input ref={zipInput} type="file" accept=".zip,application/zip" hidden onChange={(e) => void pickZip(e.currentTarget.files?.[0])} />
       <ImportDialog
         paths={picked()?.paths}
         into={folderPath(libraryFolders() ?? [], shownFolderId())}

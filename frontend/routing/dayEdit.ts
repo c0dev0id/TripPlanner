@@ -199,12 +199,24 @@ export function moveDay(trip: Trip, dayId: string, to: number): Trip {
 export function duplicateDay(trip: Trip, dayId: string, id: string, newId: () => string): Trip {
   const index = trip.days.findIndex((d) => d.id === dayId);
   if (index < 0) return trip;
-  const day = trip.days[index]!;
-  const routes = day.routes.map((route) => copyRoute(route, newId));
-  const pointIds = new Map(day.routes.flatMap((route, r) => copiedPointIds(route, routes[r]!)));
-  const stops = day.stops.map((stop) => ({ ...stop, id: newId(), pointId: stop.pointId === null ? null : pointIds.get(stop.pointId)! }));
-  const copy: Day = { ...day, id, date: null, routes, stops };
+  const copy: Day = { ...withNewPartIds(trip.days[index]!, newId).day, id, date: null };
   return { ...trip, days: trip.days.toSpliced(index + 1, 0, copy) };
+}
+
+/**
+ * The day with its routes, their points and its stops under new ids, bound stops following
+ * their points, and the new id of each old one; a stop bound to a point that is not there
+ * stands free.
+ */
+export function withNewPartIds(day: Day, newId: () => string): { day: Day; ids: Map<string, string> } {
+  const routes = day.routes.map((route) => copyRoute(route, newId));
+  const ids = new Map(day.routes.flatMap((route, r): [string, string][] => [[route.id, routes[r]!.id], ...copiedPointIds(route, routes[r]!)]));
+  const stops = day.stops.map((stop) => {
+    const id = newId();
+    ids.set(stop.id, id);
+    return { ...stop, id, pointId: (stop.pointId !== null && ids.get(stop.pointId)) || null };
+  });
+  return { day: { ...day, routes, stops }, ids };
 }
 
 /** Moves the route to place `to` among the routes of its day. */
@@ -296,11 +308,12 @@ export function pasteStop(trip: Trip, dayId: string, stop: Stop, id: string): Tr
 function placeInRoute(route: RoutedRoute, lngLat: LngLat): number {
   const legs = routeLegs(route);
   const toPlane = planeAt(lngLat);
-  const hit = nearestOnLines(legs.map((leg) => legCoordinates(route, leg).map(toPlane)))(toPlane(lngLat));
+  const lines = legs.map((leg) => legCoordinates(route, leg));
+  const hit = nearestOnLines(lines.map((line) => line.map(toPlane)))(toPlane(lngLat));
   if (!hit) return route.points.length;
   if (hit.index === 0 && hit.segment === 0 && hit.t === 0) return 0;
-  const lastSegment = legCoordinates(route, legs[hit.index]!).length - 2;
-  return hit.index === legs.length - 1 && hit.segment === lastSegment && hit.t === 1 ? route.points.length : hit.index + 1;
+  const atEnd = hit.index === lines.length - 1 && hit.segment === lines[hit.index]!.length - 2 && hit.t === 1;
+  return atEnd ? route.points.length : hit.index + 1;
 }
 
 /**

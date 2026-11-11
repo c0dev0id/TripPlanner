@@ -1,13 +1,14 @@
-import { addEntry, addRecording, createTrip, fetchTrip, saveTrip } from '../api';
+import { addEntry, addRecording, createTrip, errorMessage, fetchTrip, saveTrip } from '../api';
 import type { EntryTarget } from '../model/journal';
-import { newId, type Day, type LngLat, type Trip } from '../model/trip';
+import { newId, type LngLat, type Trip } from '../model/trip';
+import { withNewPartIds } from '../routing/dayEdit';
 
 /**
  * A trip as the export wrote it into a folder: `trip.json` with the trip's document, its
  * journal and its recordings, and beside it the files those name.
  */
 
-export const ARCHIVE_FILE = 'trip.json';
+const ARCHIVE_FILE = 'trip.json';
 
 interface Archive {
   format: 'trip-planner';
@@ -25,27 +26,6 @@ export function archiveFolders(paths: readonly string[]): string[] {
 export const inFolders = (path: string, folders: readonly string[]): boolean => folders.some((folder) => folder === '' || path.startsWith(`${folder}/`));
 
 /**
- * The days under new ids, of the days, routes, route points and stops alike, with the new
- * id of each old one: an exported trip may still be in the library, and ids are the
- * library's as a whole.
- */
-export function withNewIds(days: readonly Day[], makeId: () => string = newId): { days: Day[]; ids: Map<string, string> } {
-  const ids = new Map<string, string>();
-  const renew = (id: string): string => {
-    const made = makeId();
-    ids.set(id, made);
-    return made;
-  };
-  const renewed = days.map((day) => {
-    const routes = day.routes.map((route) => (route.kind === 'track' ? { ...route, id: renew(route.id) } : { ...route, id: renew(route.id), points: route.points.map((point) => ({ ...point, id: renew(point.id) })) }));
-    // A stop bound to a point that is not there stands free.
-    const stops = day.stops.map((stop) => ({ ...stop, id: renew(stop.id), pointId: (stop.pointId !== null && ids.get(stop.pointId)) || null }));
-    return { ...day, id: renew(day.id), routes, stops };
-  });
-  return { days: renewed, ids };
-}
-
-/**
  * Makes the trip exported into a folder anew in the library's folder `folderId`, with its
  * journal and recordings; `read` gives a file of the folder by its path in it, or nothing
  * where it is missing. An entry or a recording that cannot be put back is told in the
@@ -56,15 +36,23 @@ export function withNewIds(days: readonly Day[], makeId: () => string = newId): 
 export async function importArchive(read: (path: string) => Promise<Blob | undefined>, folderId: number | null, errors: string[]): Promise<void> {
   const archive = JSON.parse(await (await read(ARCHIVE_FILE))!.text()) as Archive;
   if (archive.format !== 'trip-planner' || !Array.isArray(archive.trip?.days)) throw new Error(`${ARCHIVE_FILE} is no exported trip.`);
-  const { days, ids } = withNewIds(archive.trip.days);
+  // An exported trip may still be in the library, and ids are the library's as a whole.
+  const ids = new Map<string, string>();
+  const days = archive.trip.days.map((day) => {
+    const renewed = withNewPartIds(day, newId);
+    const id = newId();
+    for (const [old, made] of [[day.id, id], ...renewed.ids]) ids.set(old!, made!);
+    return { ...renewed.day, id };
+  });
   const made = await fetchTrip((await createTrip(archive.trip.name, folderId, archive.trip.kind)).id);
   await saveTrip({ ...made, description: archive.trip.description, state: archive.trip.state, days });
-  const note = (what: string, error: unknown) => errors.push(`${archive.trip.name} / ${what}: ${error instanceof Error ? error.message : String(error)}`);
+  const note = (what: string, error: unknown) => errors.push(`${archive.trip.name} / ${what}: ${errorMessage(error)}`);
   for (const entry of archive.journal ?? []) {
     try {
       const file = entry.file === null ? undefined : await read(entry.file);
-      const part = (key: 'dayId' | 'stopId' | 'routeId') => (entry[key] !== null ? ids.get(entry[key]) : undefined);
-      const target: EntryTarget = part('dayId') ? { dayId: part('dayId')! } : part('stopId') ? { stopId: part('stopId')! } : part('routeId') ? { routeId: part('routeId')! } : {};
+      // An entry on a part that is not there goes on the trip.
+      const key = (['dayId', 'stopId', 'routeId'] as const).find((k) => entry[k] !== null && ids.has(entry[k]));
+      const target = (key ? { [key]: ids.get(entry[key]!) } : {}) as EntryTarget;
       await addEntry(made.id, target, entry.text, file && new File([file], entry.fileName ?? 'file'), entry.lngLat ?? undefined, entry.createdAt);
     } catch (error) {
       note(entry.fileName ?? entry.text.slice(0, 40), error);
