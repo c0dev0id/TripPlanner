@@ -19,13 +19,12 @@ final class GzipJson implements MiddlewareInterface
     public function process(Request $request, Handler $handler): Response
     {
         $response = $handler->handle($request);
-        $body = (string) $response->getBody();
         $takesGzip = preg_match('/\bgzip\b(?!\s*;\s*q=0(\.0*)?\s*(,|$))/', $request->getHeaderLine('Accept-Encoding')) === 1;
-        if (!$takesGzip || $response->getHeaderLine('Content-Type') !== 'application/json' || strlen($body) < self::MIN_BYTES) {
+        if (!$takesGzip || $response->getHeaderLine('Content-Type') !== 'application/json' || $response->getBody()->getSize() < self::MIN_BYTES) {
             return $response;
         }
         return $response
-            ->withBody((new StreamFactory())->createStream(gzencode($body, 6)))
+            ->withBody((new StreamFactory())->createStream(gzencode((string) $response->getBody(), 6)))
             ->withHeader('Content-Encoding', 'gzip')
             ->withHeader('Vary', 'Accept-Encoding');
     }
