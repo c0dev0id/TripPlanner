@@ -23,7 +23,7 @@ export class BaseMapControl implements IControl {
     const open = (e: MouseEvent) => {
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const baseMaps = BASE_MAPS.map((b) => ({ label: b.label, checked: b === chosenBaseMap(), run: () => pick(b) }));
-      const overlays = OVERLAYS.map((o) => ({ label: o.label, checked: isShown(o), run: () => toggle(o) }));
+      const overlays = OVERLAYS.map((o) => ({ label: o.label, switched: isShown(o), run: () => toggle(o) }));
       setMenu({ x: rect.left - 166, y: rect.top, touch: false, items: [...baseMaps, { label: t('Overlays'), items: overlays }] });
     };
     this.root = (

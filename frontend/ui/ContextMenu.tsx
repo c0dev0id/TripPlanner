@@ -75,11 +75,12 @@ function MenuList(props: {
         {(item, index) => {
           const submenu = 'items' in item ? item.items : undefined;
           const checked = 'checked' in item ? item.checked : undefined;
+          const switched = 'switched' in item ? item.switched : undefined;
           return (
             <li>
               <button
-                role={checked === undefined ? undefined : 'menuitemradio'}
-                aria-checked={checked}
+                role={checked !== undefined ? 'menuitemradio' : switched !== undefined ? 'menuitemcheckbox' : undefined}
+                aria-checked={checked ?? switched}
                 aria-haspopup={submenu ? 'menu' : undefined}
                 aria-expanded={submenu ? open()?.index === index() : undefined}
                 disabled={item.disabled}

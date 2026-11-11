@@ -9,12 +9,13 @@ import { fromMarker, toLngLat } from './markers';
 import { recordingPointAt } from './recordingPick';
 import { hitRouteLine } from './routeTools';
 import { TapFilter, tapReach, type PointerSample } from './tapFilter';
+import { popupAt } from './tapPopup';
 
 /**
  * Taps on the map and keys while a route is selected: the tool's work on that route, undo
  * and redo, the hand while the space bar is held, and the menu of a spot on the map
- * (right-click or long press). A tap that does no tool's work picks the point of a
- * recording's line it hits.
+ * (right-click or long press). A tap that does no tool's work opens the popup of a place
+ * or a closure it hits, or else picks the point of a recording's line it hits.
  */
 export function Interactions(props: { map: MapLibreMap }) {
   const map = props.map;
@@ -77,7 +78,9 @@ export function Interactions(props: { map: MapLibreMap }) {
     if ((action !== 'point' && action !== 'stop') || !route) {
       // A delete tap acts on markers only.
       if (action === 'delete') return;
-      const hit = recordingPointAt(map, e.point, tapReach(pointerType !== 'mouse'));
+      const reach = tapReach(pointerType !== 'mouse');
+      if (popupAt(e.point, e.lngLat, reach)) return;
+      const hit = recordingPointAt(map, e.point, reach);
       if (hit) pickPoint(hit.id, hit.index);
       else setPickedIndex(undefined);
       return;

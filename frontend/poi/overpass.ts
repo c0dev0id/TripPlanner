@@ -27,29 +27,32 @@ export type PoiArea = { spot: LngLat } | { lines: readonly (readonly LngLat[])[]
 export interface Poi {
   /** The OpenStreetMap object, as "node/123". */
   id: string;
-  categoryId: string;
+  category: PoiCategory;
   lngLat: LngLat;
   tags: Readonly<Record<string, string>>;
 }
 
 const latLng = ([lng, lat]: LngLat): string => `${lat.toFixed(5)},${lng.toFixed(5)}`;
 
-/** A line with the points left out that lie within the tolerance of what remains. */
-function simplified(line: readonly LngLat[], toleranceM: number): LngLat[] {
-  const keptUpTo = keepTolerances(line);
-  return line.filter((_, i) => keptUpTo[i]! > toleranceM);
-}
-
 /**
  * The query for the places of each category within its reach of the area, answered as JSON
- * with a position for each. A line is asked for with a quarter of the reach as tolerance,
- * which keeps the query of a long route short.
+ * with a position for each. A line is asked for without the points that lie within a
+ * quarter of the reach of what remains, which keeps the query of a long route short.
  */
 export function poiQuery(reaches: readonly PoiReach[], area: PoiArea): string {
+  const lines = 'spot' in area ? [] : area.lines.map((line) => ({ line, keptUpTo: keepTolerances(line) }));
   const statements = reaches.flatMap(({ category, metres }) => {
     const value = category.values.length === 1 ? `="${category.values[0]}"` : `~"^(${category.values.join('|')})$"`;
     const access = category.noAccess ? `["access"!~"^(${category.noAccess.join('|')})$"]` : '';
-    const around = 'spot' in area ? [latLng(area.spot)] : area.lines.map((line) => simplified(line, metres / 4).map(latLng).join(','));
+    const around =
+      'spot' in area
+        ? [latLng(area.spot)]
+        : lines.map(({ line, keptUpTo }) =>
+            line
+              .filter((_, i) => keptUpTo[i]! > metres / 4)
+              .map(latLng)
+              .join(','),
+          );
     return around.filter((positions) => positions !== '').map((positions) => `nwr["${category.key}"${value}]${access}(around:${Math.round(metres)},${positions});`);
   });
   return `[out:json][timeout:${TIMEOUT_S}];(${statements.join('')});out center ${POI_LIMIT};`;
@@ -79,7 +82,7 @@ export function parsePois(json: unknown): Poi[] {
     const tags = element.tags ?? {};
     const category = categoryOf(tags);
     if (!category || !Number.isFinite(lng) || !Number.isFinite(lat)) return [];
-    return [{ id: `${String(element.type)}/${String(element.id)}`, categoryId: category.id, lngLat: [lng, lat], tags }];
+    return [{ id: `${String(element.type)}/${String(element.id)}`, category, lngLat: [lng, lat], tags }];
   });
 }
 

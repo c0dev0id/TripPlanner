@@ -22,8 +22,9 @@ final class Kml
         $features = [];
         foreach ($document->xpath('//*[local-name()="Placemark"]') as $placemark) {
             $properties = ['name' => trim((string) $placemark->name)];
-            if (trim((string) $placemark->description) !== '') {
-                $properties['description'] = trim((string) $placemark->description);
+            $description = trim((string) $placemark->description);
+            if ($description !== '') {
+                $properties['description'] = $description;
             }
             foreach ($placemark->xpath('.//*[local-name()="Point" or local-name()="LineString"]') as $geometry) {
                 $positions = self::positions((string) $geometry->coordinates);

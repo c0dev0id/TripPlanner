@@ -51,8 +51,8 @@ describe('parsePois', () => {
       ],
     });
     expect(pois).toEqual([
-      { id: 'node/1', categoryId: 'fuel', lngLat: [8.1, 49.1], tags: { amenity: 'fuel', brand: 'Aral' } },
-      { id: 'way/2', categoryId: 'hotel', lngLat: [8.2, 49.2], tags: { tourism: 'guest_house', name: 'Zur Post' } },
+      { id: 'node/1', category: category('fuel'), lngLat: [8.1, 49.1], tags: { amenity: 'fuel', brand: 'Aral' } },
+      { id: 'way/2', category: category('hotel'), lngLat: [8.2, 49.2], tags: { tourism: 'guest_house', name: 'Zur Post' } },
     ]);
   });
 

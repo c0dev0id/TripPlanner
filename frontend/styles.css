@@ -862,41 +862,15 @@ fieldset.choices legend {
   color: #fff;
 }
 
-/* How the POI search went, over the routing's state at the bottom of the map. */
+/* How the POI search went: a bar as the routing's, above it. */
 .poi-bar {
-  position: absolute;
   bottom: calc(76px + var(--chart-room, 0px));
-  left: 50%;
-  z-index: 5;
-  display: flex;
   flex-wrap: wrap;
-  align-items: center;
   gap: 4px 12px;
-  max-width: min(720px, calc(100% - 120px));
-  transform: translateX(-50%);
-  padding: 6px 10px 6px 12px;
-  border-radius: 6px;
-  background: rgba(33, 37, 41, 0.85);
-  color: #fff;
-  font-size: 13px;
 }
 
 .map-wrap:has(.toolbar) .poi-bar {
   bottom: calc(144px + var(--chart-room, 0px));
-}
-
-.poi-bar .failed {
-  color: #ffa8a8;
-}
-
-.poi-bar button {
-  padding: 2px 8px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  border-radius: 4px;
-  background: none;
-  color: #fff;
-  font: inherit;
-  cursor: pointer;
 }
 
 /* A POI category's badge, as on the map. */
@@ -913,10 +887,6 @@ fieldset.choices legend {
 
 .poi-dialog input[type='number'] {
   width: 5em;
-}
-
-.map-info .muted {
-  color: var(--muted);
 }
 
 /* An opened recording's figures float over the map: its summary top left under the place search, its charts along the bottom. */

@@ -266,6 +266,10 @@ entries at the end of their section.
   and not to be taken for a stop of the trip. The six icons are bundled as SVG text and
   drawn into map images in the browser; a style that lacks one asks for it again, which
   every change of base map does. The same picture stands in the dialog and the result bar.
+- **One place decides what a tap on the map is.** `Interactions` filters clicks into taps
+  and gives a tap that does no tool's work to the popups of the places and the closures
+  first, then to the recording's line: one popup opens, any other closes. A popup listening
+  to the map's clicks itself would open on the click that ends a pan or closes a menu.
 - **Place search by Nominatim, on Enter, ported from Layer Slayer.** OpenStreetMap's own
   geocoder needs no key; its policy allows one request per second and no search as you
   type, so the box searches when Enter is pressed and keeps a second between requests.

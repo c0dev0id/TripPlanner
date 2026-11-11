@@ -44,17 +44,15 @@ final class MotorcycleClosures
         $archiveFile = tempnam(sys_get_temp_dir(), 'kmz');
         file_put_contents($archiveFile, $kmz);
         $zip = new ZipArchive();
-        $opened = $zip->open($archiveFile, ZipArchive::RDONLY) === true;
         try {
-            if (!$opened) {
+            if ($zip->open($archiveFile, ZipArchive::RDONLY) !== true) {
                 throw new RuntimeException('This is not a KMZ archive.');
             }
             $names = [];
             for ($i = 0; $i < $zip->numFiles; $i++) {
-                if (preg_match('/\.kml$/i', (string) $zip->getNameIndex($i)) === 1) {
-                    $names[] = $zip->getNameIndex($i);
-                }
+                $names[] = $zip->getNameIndex($i);
             }
+            $names = preg_grep('/\.kml$/i', $names);
             sort($names);
             $name = in_array('doc.kml', $names, true) ? 'doc.kml' : ($names[0] ?? null);
             if ($name === null) {
@@ -62,9 +60,6 @@ final class MotorcycleClosures
             }
             return $zip->getFromName($name);
         } finally {
-            if ($opened) {
-                $zip->close();
-            }
             unlink($archiveFile);
         }
     }

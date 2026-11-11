@@ -43,8 +43,8 @@ export function MapView() {
             <EntryMarkers map={m()} />
             <PointMarkers map={m()} />
             <Interactions map={m()} />
-            <ClosureInfo map={m()} />
             <PoiMarkers map={m()} />
+            <ClosureInfo map={m()} />
             <SearchBox map={m()} />
           </>
         )}

@@ -19,6 +19,6 @@ export const POI_LAYERS: LayerSpecification[] = [
 export function poiFeatures(pois: readonly Poi[]): FeatureCollection<Point> {
   return {
     type: 'FeatureCollection',
-    features: pois.map((poi): Feature<Point> => ({ type: 'Feature', properties: { id: poi.id, image: poiImageId(poi.categoryId) }, geometry: { type: 'Point', coordinates: poi.lngLat } })),
+    features: pois.map((poi): Feature<Point> => ({ type: 'Feature', properties: { id: poi.id, image: poiImageId(poi.category.id) }, geometry: { type: 'Point', coordinates: poi.lngLat } })),
   };
 }

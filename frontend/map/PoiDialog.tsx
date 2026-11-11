@@ -1,6 +1,6 @@
 import { createSignal, For, Show } from 'solid-js';
 import { t } from '../i18n/t';
-import { POI_CATEGORIES } from '../poi/categories';
+import { POI_CATEGORIES, type PoiCategoryId } from '../poi/categories';
 import { routePositions } from '../routing/legs';
 import { poiSearchSpot, searchPois, setPoiSearchSpot } from '../state/poi';
 import { openTrip, selectedDay } from '../state/trip';
@@ -22,17 +22,17 @@ export function PoiDialog() {
   showModalWhile(() => dialog, () => poiSearchSpot() !== undefined);
   const [alongDay, setAlongDay] = createSignal(false);
   const [spotKm, setSpotKm] = createSignal(5);
-  const [chosen, setChosen] = createSignal<readonly string[]>(['fuel', 'hotel', 'restaurant']);
-  const [alongKm, setAlongKm] = createSignal<Readonly<Record<string, number>>>(Object.fromEntries(POI_CATEGORIES.map((c) => [c.id, c.alongM / 1000])));
+  const [chosen, setChosen] = createSignal<readonly PoiCategoryId[]>(['fuel', 'hotel', 'restaurant']);
+  const [alongKm, setAlongKm] = createSignal(Object.fromEntries(POI_CATEGORIES.map((c) => [c.id, c.alongM / 1000])) as Record<PoiCategoryId, number>);
   const close = () => setPoiSearchSpot(undefined);
   /** The selected day's routes that are lines. */
   const lines = () => (selectedDay()?.routes ?? []).map(routePositions).filter((line) => line.length > 1);
   const along = () => alongDay() && lines().length > 0;
-  const toggle = (id: string, on: boolean) => setChosen((ids) => (on ? [...ids, id] : ids.filter((other) => other !== id)));
+  const toggle = (id: PoiCategoryId, on: boolean) => setChosen((ids) => (on ? [...ids, id] : ids.filter((other) => other !== id)));
   const search = (e: SubmitEvent) => {
     e.preventDefault();
     const categories = POI_CATEGORIES.filter((c) => chosen().includes(c.id));
-    const reaches = categories.map((category) => ({ category, metres: (along() ? alongKm()[category.id]! : spotKm()) * 1000 }));
+    const reaches = categories.map((category) => ({ category, metres: (along() ? alongKm()[category.id] : spotKm()) * 1000 }));
     void searchPois(reaches, along() ? { lines: lines() } : { spot: poiSearchSpot()! });
     close();
   };

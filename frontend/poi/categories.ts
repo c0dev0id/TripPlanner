@@ -2,8 +2,10 @@ import { t } from '../i18n/t';
 
 /** The kinds of places the POI search finds, each by the values of one OpenStreetMap tag. */
 
+export type PoiCategoryId = 'fuel' | 'hotel' | 'restaurant' | 'cafe' | 'viewpoint' | 'parking';
+
 export interface PoiCategory {
-  id: string;
+  id: PoiCategoryId;
   label: string;
   /** The tag key and the values of it that make a place one of this kind. */
   key: string;

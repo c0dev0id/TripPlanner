@@ -7,16 +7,15 @@ import { findPois, type Poi, type PoiArea, type PoiReach } from '../poi/overpass
 
 export const [poiSearchSpot, setPoiSearchSpot] = createSignal<LngLat>();
 
-export type PoiSearch = { state: 'searching' } | { state: 'found'; pois: Poi[] } | { state: 'failed'; message: string };
+type PoiSearch = { state: 'searching' } | { state: 'found'; pois: Poi[] } | { state: 'failed'; message: string };
 
-export const [poiSearch, setPoiSearch] = createSignal<PoiSearch>();
-
-const NONE: Poi[] = [];
+const [poiSearch, setPoiSearch] = createSignal<PoiSearch>();
+export { poiSearch };
 
 /** The places the last search found. */
 export function foundPois(): Poi[] {
   const search = poiSearch();
-  return search?.state === 'found' ? search.pois : NONE;
+  return search?.state === 'found' ? search.pois : [];
 }
 
 /** Counts the searches, so that one a later search or a clearing overtook is dropped. */
