@@ -1,6 +1,6 @@
 import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSelector, createSignal, For, Match, on, Show, Switch } from 'solid-js';
-import { changeTrip, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip } from '../api';
+import { changeTrip, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { routesPasteItem } from '../state/clipboard';
@@ -114,7 +114,9 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
     ];
     return places.length > 0 ? [{ label, items: places }] : [];
   };
-  /** The menu of several selected trips: merging the others into the first selected where they are of one kind, moving and deleting them all. */
+  /** Downloads the trips as a zip to keep or to import again. */
+  const exportTrips = (trips: TripSummary[]) => window.location.assign(tripArchiveUrl(trips.map((trip) => trip.id)));
+  /** The menu of several selected trips: merging the others into the first selected where they are of one kind, moving, exporting and deleting them all. */
   const selectionItems = (into: TripSummary, others: TripSummary[]): MenuItem[] => {
     const all = [into, ...others];
     return [
@@ -122,6 +124,7 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
         ? { label: t('Merge into “{name}”', { name: into.name }), run: () => void merge(into, others) }
         : { label: t('Trips and planning material do not merge'), disabled: true, run: () => undefined },
       ...moveItem(all, t('Move {n} trips…', { n: all.length })),
+      { label: t('Export {n} trips', { n: all.length }), run: () => exportTrips(all) },
       { label: t('Delete {n} trips', { n: all.length }), run: () => void removeTrips(all) },
     ];
   };
@@ -153,6 +156,7 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
       { label: t('Rename…'), run: () => setDialog({ kind: 'rename-trip', trip }) },
       ...moveItem([trip], t('Move…')),
       { label: t('Duplicate'), run: () => void runLibrary(() => duplicateTrip(trip.id), relistTrips) },
+      { label: t('Export'), run: () => exportTrips([trip]) },
       ...routesPasteItem((routes) => void runLibrary(() => pasteInto(trip.id, routes), relistTrips)),
       { label: t('Delete'), run: () => void removeTrips([trip]) },
     ];

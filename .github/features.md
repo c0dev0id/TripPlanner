@@ -9,7 +9,8 @@
   an account without an invitation and prints a generated password; at the first
   sign-in the user has to replace it before the planner opens.
 - The panel's explorer, the same from the top of the library down to a trip's day: the
-  library's actions as icons (new trip, new folder, import a folder, duplicates), the
+  library's actions as icons (new trip, new folder, import a folder, import a zip of
+  exported trips, duplicates), the
   search, a path heading that names where it is (the trip's own icons on its right: edit,
   export, journal, print and share, and whether it is saved), and a card one level up,
   always in the same place: "All trips" at the top, else the place above, from a day to
@@ -134,6 +135,13 @@
   within a chosen distance of a route. Stops become waypoints with their Garmin symbol;
   each route is named after its day and its own name. Named presets of these options are
   kept with the account.
+- Export of whole trips, to keep or to move: *Export* in a trip's menu, or in the menu of
+  several selected trips, downloads a zip with a folder per trip. In it stand `trip.json`
+  (the trip as the planner holds it, its journal and its recordings), the journal's
+  files, the recordings as GPX, and one GPX file per day for other programs. The zip, or
+  the folder it unpacks to, is imported again from the library's icons: each trip comes
+  back as a new one with its days, routes, stops, journal and recordings, an entry at
+  the time it was written. GPX files beside exported trips are imported as before.
 
 - Recordings on a day: *Add recording…* in the day's menu or under the opened day takes
   a GPX file of one track, such as Ridelink's or Scenic's (waypoints in it are left

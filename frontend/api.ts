@@ -54,6 +54,9 @@ export const listTrips = (): Promise<TripSummary[]> => request('GET', '/api/trip
 
 export const createTrip = (name: string, folderId: number | null, kind: TripKind = 'trip'): Promise<TripSummary> => request('POST', '/api/trips', { name, folderId, kind });
 
+/** Where the trips are downloaded from as a zip to keep or to import again: with their journal, recordings and a GPX file per day. */
+export const tripArchiveUrl = (ids: readonly number[]): string => `/api/trips/archive?ids=${ids.join(',')}`;
+
 /** A copy of the trip with all its days, next to it in the library; the answer is the copy's id. */
 export const duplicateTrip = (id: number): Promise<{ id: number }> => request('POST', `/api/trips/${id}/copies`);
 
@@ -90,8 +93,8 @@ export const entryFileUrl = (base: string, entryId: number): string => `${base}/
 
 export const entryPreviewUrl = (base: string, entryId: number): string => `${base}/entries/${entryId}/preview`;
 
-/** Adds a journal entry on the trip or on the part the target names, with a file where given, at a spot on the map where given. */
-export function addEntry(tripId: number, target: EntryTarget, text: string, file: File | undefined, spot: LngLat | undefined): Promise<Entry> {
+/** Adds a journal entry on the trip or on the part the target names, with a file where given, at a spot on the map where given; an imported one as written at `createdAt`. */
+export function addEntry(tripId: number, target: EntryTarget, text: string, file: File | undefined, spot: LngLat | undefined, createdAt?: string): Promise<Entry> {
   const form = new FormData();
   form.set('text', text);
   for (const [key, value] of Object.entries(target)) form.set(key, value);
@@ -100,6 +103,7 @@ export function addEntry(tripId: number, target: EntryTarget, text: string, file
     form.set('lng', String(spot[0]));
     form.set('lat', String(spot[1]));
   }
+  if (createdAt) form.set('createdAt', createdAt);
   return request('POST', `${tripApi(tripId)}/entries`, form);
 }
 

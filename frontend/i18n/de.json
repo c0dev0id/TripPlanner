@@ -167,7 +167,6 @@
   "Import": "Importieren",
   "Import GPX": "GPX importieren",
   "Import GPX…": "GPX importieren…",
-  "Import a folder of GPX files…": "Einen Ordner mit GPX-Dateien importieren…",
   "Import folder": "Ordner importieren",
   "Imported collection": "Importierte Sammlung",
   "Imported trip": "Importierte Tour",
@@ -226,7 +225,6 @@
   "New password again": "Neues Passwort wiederholen",
   "New trip": "Neue Tour",
   "New trip…": "Neue Tour…",
-  "No GPX files in that folder.": "Keine GPX-Dateien in diesem Ordner.",
   "No Garmin symbol matches.": "Kein Garmin-Symbol passt.",
   "No date": "Kein Datum",
   "No folder": "Kein Ordner",
@@ -544,5 +542,12 @@
   "Width of route lines, in pixels": "Breite der Routenlinien, in Pixeln",
   "Colors of routes that have none of their own": "Farben der Routen ohne eigene Farbe",
   "One color for each day": "Eine Farbe je Tag",
-  "One color for each route": "Eine Farbe je Route"
+  "One color for each route": "Eine Farbe je Route",
+  "Import a folder of GPX files or exported trips…": "Ordner mit GPX-Dateien oder exportierten Touren importieren…",
+  "Import exported trips (zip)…": "Exportierte Touren importieren (zip)…",
+  "No GPX files and no exported trips in there.": "Darin sind weder GPX-Dateien noch exportierte Touren.",
+  "Export {n} trips": "{n} Touren exportieren",
+  "Export": "Exportieren",
+  "ids must be the numbers of trips, separated by commas.": "ids müssen die Nummern von Touren sein, durch Kommas getrennt.",
+  "createdAt is not a time.": "createdAt ist keine Zeitangabe."
 }

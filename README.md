@@ -47,6 +47,8 @@ share work; sharing between users is on the way.
 - **GPX export the way the device wants it** — the trip or a day, one file or one per
   day, routes as tracks or as points for the device to route, with or without the
   optional parts; the settings kept as named presets.
+- **Trips to keep or to move** — export one or several as a zip with journal, photos and
+  recordings; import the zip, or its unpacked folder, to get them back.
 - **Recordings beside the plan** — add a day's rides as recorded (Ridelink, Scenic or any
   GPX track) and see them on the map next to the planned route. Open one for its
   figures: speed, climb, lean and road surface, charted and coloured on the line.

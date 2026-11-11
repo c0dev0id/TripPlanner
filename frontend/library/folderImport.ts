@@ -3,6 +3,7 @@ import { createFolder, createTrip, errorMessage, fetchTrip, listFolders, saveTri
 import { readGpxFile, type DayParts } from '../gpx/import';
 import { asName, newId, type TripKind } from '../model/trip';
 import { addDay, addParts, dayAfter, updateDay } from '../routing/dayEdit';
+import { importArchive } from './tripArchive';
 
 /**
  * How a picked folder tree is organized: a trip per folder of GPX files with a day per
@@ -59,6 +60,12 @@ const byName = new Intl.Collator(undefined, { numeric: true }).compare;
  * none; composed (NFC), since macOS writes names decomposed and names must compare as typed.
  */
 export const pickedPath = (file: File): string => (file.webkitRelativePath || file.name).normalize('NFC');
+
+/** A file to import by its path in the folder picked or in the zip, read when it is needed. */
+export interface ImportSource {
+  path: string;
+  open: () => Promise<File>;
+}
 
 /**
  * The trips or collections a picked folder tree makes, from the files' paths relative to
@@ -134,41 +141,61 @@ interface ImportResult {
 }
 
 /**
- * Makes the planned trips from the picked files inside the folder `parentId` (none for the
- * top): the folders each goes into are found by name or created, the trip is created and
- * its days saved as one document. A file that is no GPX is left out, as is a day or a trip
- * left without one; what cannot be read or saved is reported, and the import goes on.
+ * Makes the planned trips from the sources, and the trips exported into the folders
+ * `archives` anew, inside the folder `parentId` (none for the top): the folders each goes
+ * into are found by name or created, the trip is created and its days saved as one
+ * document. A file that is no GPX is left out, as is a day or a trip left without one;
+ * what cannot be read or saved is reported, and the import goes on.
  */
-export async function importFolder(files: readonly File[], plan: readonly PlannedTrip[], parentId: number | null, onProgress: (text: string) => void): Promise<ImportResult> {
+export async function importFolder(
+  sources: readonly ImportSource[],
+  plan: readonly PlannedTrip[],
+  archives: readonly string[],
+  parentId: number | null,
+  onProgress: (text: string) => void,
+): Promise<ImportResult> {
   const folders = await listFolders();
-  const folderIn = async (parent: number | null, name: string): Promise<number> => {
-    const found = folders.find((f) => f.parentId === parent && f.name === name);
-    if (found) return found.id;
-    const made = await createFolder(name, parent);
-    folders.push(made);
-    return made.id;
+  const folderIn = async (names: readonly string[]): Promise<number | null> => {
+    let id = parentId;
+    for (const name of names) {
+      const found = folders.find((f) => f.parentId === id && f.name === name);
+      const folder = found ?? (await createFolder(name, id));
+      if (!found) folders.push(folder);
+      id = folder.id;
+    }
+    return id;
   };
   const result: ImportResult = { trips: 0, errors: [] };
+  const total = plan.length + archives.length;
+  const byPath = new Map(sources.map((source) => [source.path, source]));
+  for (const [n, folder] of archives.entries()) {
+    const above = folder.split('/').slice(0, -1).map(asName);
+    onProgress(t('Importing {i} of {n}: {name}', { i: n + 1, n: total, name: folder.split('/').at(-1) ?? '' }));
+    try {
+      await importArchive(async (path) => byPath.get(folder === '' ? path : `${folder}/${path}`)?.open(), await folderIn(above), result.errors);
+      result.trips++;
+    } catch (error) {
+      result.errors.push(`${folder}: ${errorMessage(error)}`);
+    }
+  }
   for (const [n, planned] of plan.entries()) {
-    onProgress(t('Importing {i} of {n}: {name}', { i: n + 1, n: plan.length, name: planned.name }));
+    onProgress(t('Importing {i} of {n}: {name}', { i: archives.length + n + 1, n: total, name: planned.name }));
     const days: { day: PlannedDay; parts: DayParts[] }[] = [];
     for (const day of planned.days) {
       const parts: DayParts[] = [];
       for (const i of day.files) {
-        const file = files[i]!;
+        const source = sources[i]!;
         try {
-          parts.push(await readGpxFile(file, 'motorcycle'));
+          parts.push(await readGpxFile(await source.open(), 'motorcycle'));
         } catch (error) {
-          result.errors.push(`${pickedPath(file)}: ${errorMessage(error)}`);
+          result.errors.push(`${source.path}: ${errorMessage(error)}`);
         }
       }
       if (parts.length > 0) days.push({ day, parts });
     }
     if (days.length === 0) continue;
     try {
-      let folderId = parentId;
-      for (const name of planned.folders) folderId = await folderIn(folderId, name);
-      let trip = await fetchTrip((await createTrip(planned.name, folderId, planned.kind)).id);
+      let trip = await fetchTrip((await createTrip(planned.name, await folderIn(planned.folders), planned.kind)).id);
       for (const { day, parts } of days) {
         const id = newId();
         trip = updateDay(addDay(trip, id), id, (d) => ({ ...d, name: day.name, date: day.date }));

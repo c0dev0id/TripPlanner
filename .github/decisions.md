@@ -169,6 +169,26 @@ entries at the end of their section.
   the user (a few hundred small rows at most for a personal planner) and filters them by
   name; the results are capped at twenty. A server search would add an endpoint for
   data the client already holds.
+- **An exported trip is its document, with GPX beside it for others.** GPX cannot carry
+  a trip back: a stop's details, dates, the motorway dial, colours and the points of a
+  routed route have no place in it. So the export writes the document as the planner
+  saves it into `trip.json`, with the journal and the recordings, whose files lie beside
+  it, and adds the per-day GPX files of the GPX export for any other program. An import
+  reads `trip.json` alone and takes the folder's GPX files for what they are, the same
+  trip once more.
+- **An exported trip is imported as a new trip, under new ids.** The ids of days, routes
+  and stops are the library's as a whole, and the trip exported may still be in it; so
+  the import renews every id and carries the journal's and recordings' references over.
+  It runs in the browser through the API a user's own actions use, like the folder
+  import: creating the trip, saving its document, adding each entry and recording. The
+  one addition to the API is the time an entry was written, which an import hands on.
+- **The zip is read in the browser by forty lines of our own.** A zip of trips with
+  photos reaches hundreds of megabytes, so its files are read one at a time from the
+  picked file by the directory at its end, never the whole into memory; inflating is the
+  browser's `DecompressionStream`. The libraries that read a zip this way bring their own
+  inflate, workers and WebAssembly for what the platform already does; ZIP64 and
+  encryption, which they would add, are refused instead. The server writes the zip with
+  PHP's zip extension into a temporary file and streams it, photos stored as they are.
 - **A folder tree is imported in the browser.** The library's *Import folder…* opens the
   browser's folder picker (`webkitdirectory`), and the files are read with the same GPX
   import a day uses, then saved through the API: no files on the server, no second GPX

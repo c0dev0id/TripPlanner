@@ -28,7 +28,10 @@ final class JournalController
         return $entries === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $entries);
     }
 
-    /** Adds an entry from a multipart form: `text`, at most one of `dayId`, `stopId`, `routeId`, a `file`, and `lng` and `lat` for a spot on the map. */
+    /**
+     * Adds an entry from a multipart form: `text`, at most one of `dayId`, `stopId`, `routeId`, a `file`, `lng` and `lat` for a
+     * spot on the map, and for an entry written earlier and imported now `createdAt`, as the journal gives it.
+     */
     public function add(Request $request, Response $response, array $args): Response
     {
         $body = (array) $request->getParsedBody();
@@ -54,8 +57,12 @@ final class JournalController
         if ($spot === false) {
             return Json::error($response, 422, 'The spot is not a position.');
         }
+        $createdAt = isset($body['createdAt']) ? DateTimeImmutable::createFromFormat('Y-m-d\TH:i:sp', (string) $body['createdAt']) : new DateTimeImmutable();
+        if ($createdAt === false) {
+            return Json::error($response, 422, 'createdAt is not a time.');
+        }
         $tripId = (int) $args['id'];
-        $entry = $this->entries->add($this->currentUser->get()->id, $tripId, $target, $text, $upload === null ? null : self::fileOf($upload), new DateTimeImmutable(), $spot);
+        $entry = $this->entries->add($this->currentUser->get()->id, $tripId, $target, $text, $upload === null ? null : self::fileOf($upload), $createdAt, $spot);
         if ($entry === null) {
             return Json::error($response, 404, 'No such trip or part of it.');
         }
