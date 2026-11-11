@@ -75,7 +75,12 @@ switch ($command) {
         }
         break;
     case 'closures:fetch':
-        $features = MotorcycleClosures::fetch($root . '/public/closures.geojson');
+        try {
+            $features = MotorcycleClosures::fetch($root . '/public/closures.geojson');
+        } catch (RuntimeException $failure) {
+            fwrite(STDERR, $failure->getMessage() . "\n");
+            exit(1);
+        }
         echo "Motorcycle closures: $features places and stretches.\n";
         break;
     default:

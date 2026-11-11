@@ -36,7 +36,7 @@ final class MotorcycleClosuresTest extends TestCase
             $zip->addFromString($name, $content);
         }
         $zip->close();
-        return "$this->dir/source.kmz";
+        return "file://$this->dir/source.kmz";
     }
 
     public function testWritesThePlacemarksOfDocKmlAsGeoJson(): void
@@ -60,7 +60,7 @@ final class MotorcycleClosuresTest extends TestCase
         file_put_contents("$this->dir/closures.geojson", 'kept');
         file_put_contents("$this->dir/source.kmz", '<html>gone</html>');
         try {
-            MotorcycleClosures::fetch("$this->dir/closures.geojson", "$this->dir/source.kmz");
+            MotorcycleClosures::fetch("$this->dir/closures.geojson", "file://$this->dir/source.kmz");
             self::fail('No exception.');
         } catch (RuntimeException) {
             self::assertSame('kept', file_get_contents("$this->dir/closures.geojson"));

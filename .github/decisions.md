@@ -246,7 +246,9 @@ entries at the end of their section.
   which httpd serves and the map reads; cron repeats it, as the source changes every few
   weeks. It is a command, as `make garmin-icons` is, so that no user's request waits for
   another server or fails with it. The file is not in git: it is
-  the collector's work. KML styles are dropped; a closure's name says when and in which
+  the collector's work. The command line's fetches go through the curl extension
+  (`Download`): PHP's own streams need `allow_url_fopen`, which OpenBSD's PHP switches
+  off, and a certificate file of their own. KML styles are dropped; a closure's name says when and in which
   direction it holds, and a tap shows it with the description.
 - **The POI search asks Overpass by a fixed list of kinds.** Layer Slayer's OSM query
   tool takes any tag filter within a drawn area; the planner asks one question, what is

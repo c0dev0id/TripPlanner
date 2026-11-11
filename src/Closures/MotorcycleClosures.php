@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Planner\Closures;
 
+use Planner\Download;
 use RuntimeException;
 use ZipArchive;
 
@@ -24,12 +25,7 @@ final class MotorcycleClosures
      */
     public static function fetch(string $file, string $source = self::SOURCE): int
     {
-        $context = stream_context_create(['http' => ['timeout' => 60, 'user_agent' => 'Trip Planner (make closures)']]);
-        $kmz = @file_get_contents($source, context: $context);
-        if ($kmz === false) {
-            throw new RuntimeException("$source could not be fetched.");
-        }
-        $geoJson = Kml::geoJson(self::kmzDocument($kmz));
+        $geoJson = Kml::geoJson(self::kmzDocument(Download::get($source, 'make closures')));
         if ($geoJson['features'] === []) {
             throw new RuntimeException("$source holds no placemarks.");
         }

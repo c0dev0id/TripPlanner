@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Planner\Symbols;
 
+use Planner\Download;
+use RuntimeException;
+
 /**
  * Garmin's pictures of its waypoint symbols, fetched from GPS Visualizer's copies for the
  * app to show. They are Garmin's artwork, so they are fetched on the server rather than
@@ -25,7 +28,6 @@ final class GarminPictures
         if (!is_dir($dir)) {
             mkdir($dir, 0755, true);
         }
-        $context = stream_context_create(['http' => ['timeout' => 20, 'user_agent' => 'Trip Planner (make garmin-icons)']]);
         $result = ['fetched' => 0, 'kept' => 0, 'missing' => []];
         $list = json_decode((string) file_get_contents($listFile), true, flags: JSON_THROW_ON_ERROR);
         foreach (array_diff(array_merge(...array_column($list['groups'], 'names')), $list['withoutPicture']) as $name) {
@@ -34,8 +36,12 @@ final class GarminPictures
                 $result['kept']++;
                 continue;
             }
-            $png = @file_get_contents($source . rawurlencode($file), context: $context);
-            if ($png === false || !str_starts_with($png, "\x89PNG")) {
+            try {
+                $png = Download::get($source . rawurlencode($file), 'make garmin-icons');
+            } catch (RuntimeException) {
+                $png = '';
+            }
+            if (!str_starts_with($png, "\x89PNG")) {
                 $result['missing'][] = $name;
                 continue;
             }
