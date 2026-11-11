@@ -153,7 +153,7 @@ erDiagram
   ROUTE |o--o{ ENTRY : "on"
   DAY ||--o{ RECORDING : "recordings"
   USER ||--o| USER_PREFERENCES : sets
-  PLACE_AREA ||--o{ PLACE : "fetched with"
+  PLACE_FETCH ||--o{ PLACE : "fetched with"
 
   USER {
     int id PK
@@ -255,9 +255,10 @@ erDiagram
     int tile_y
     json tags "the tags its details are made of"
   }
-  PLACE_AREA {
-    string area PK "ISO 3166 code of a region or a country"
-    int places
+  PLACE_FETCH {
+    string area PK "ISO 3166 code"
+    string kind PK
+    int places "how many the fetch brought"
     datetime fetched_at
   }
   ENTRY {
