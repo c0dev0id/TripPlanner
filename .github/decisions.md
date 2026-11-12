@@ -444,14 +444,13 @@ entries at the end of their section.
   the tree moved under the pointer with every trip opened, and the open trip's
   arrowhead did nothing. A trip now lists its days only while it is unfolded,
   open or not, by its arrowhead or by a click on it: the click opens and unfolds it and
-  folds it again where it was both already, which is what a click on a folder does, so
-  that the two kinds of row answer alike. They answer alike because they share one
-  mark: the tree had two, the folder shown and the open trip, each with the same bar,
-  so a trip clicked after a folder folded where a folder would first have taken the
-  mark. Now the row clicked last holds the only mark, the open trip stays open under
-  another look, and marking a trip is what opens it. Opening a trip folds no other, and one
-  button folds everything away. A click on the open trip used to show it whole on the
-  map; closing the day's pane does that. One thing still unfolds by
+  folds it again where it was both already, which is what a click on a folder does: a
+  trip is a folder of days. What a folder's mark is to a folder, being shown whole is
+  to a trip: with one of its days picked, the day is what is marked, and a click on
+  the trip goes back to the trip before a second one folds it. For a while the click
+  folded an open trip at once, day picked or not, which took away the way from a day
+  back to the whole trip that a click on it had been. Opening a trip folds no other, and one
+  button folds everything away. One thing still unfolds by
   itself, to keep something in reach rather than to rearrange the tree: the folders
   around a trip when it opens, since a trip opened from the search or from the address
   would otherwise be out of sight.

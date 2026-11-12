@@ -586,12 +586,12 @@ a {
   display: block;
 }
 
-/* The tree's one mark, on the folder or trip clicked last. */
+/* The folder new things go into, and the trip that is shown whole. */
 .tree .card.current > .row {
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
-/* The trip that is open, on the map, whether or not it holds the mark. */
+/* The open trip, also while one of its days is what is shown. */
 .tree .card.open > .row > .text > .lines > .name {
   font-weight: 600;
 }
