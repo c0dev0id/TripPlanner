@@ -6,7 +6,7 @@ import { importFolder, pickedPath, planFolderImport, type ImportSource, type Pla
 import { ImportDialog } from './ImportDialog';
 import { archiveFolders, inFolders } from './tripArchive';
 import { zipEntries } from './zip';
-import { libraryFolders, relistFolders, relistTrips, runLibrary, setImportNote, showDuplicates, shownFolderId } from '../state/library';
+import { libraryFolders, relistFolders, relistTrips, runLibrary, setImportNote, setShowingDuplicates, showingDuplicates, shownFolderId } from '../state/library';
 import { placesListOpen, setPlacesListOpen } from '../state/places';
 import { counted } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
@@ -60,7 +60,6 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
     relistFolders();
     relistTrips();
   };
-  const openDuplicates = () => void props.onLeave().then(showDuplicates);
   return (
     <div class="row library-actions" role="toolbar" aria-label={t('Library')}>
       <IconButton label={t('New trip…')} disabled={props.opening} onClick={() => setDialog('trip')}>
@@ -75,7 +74,7 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
       <IconButton label={t('Import exported trips (zip)…')} disabled={importing()} onClick={() => void pickZip()}>
         <FileImportIcon />
       </IconButton>
-      <IconButton label={t('Duplicates…')} onClick={openDuplicates}>
+      <IconButton label={t('Routes kept more than once')} pressed={showingDuplicates()} onClick={() => setShowingDuplicates(!showingDuplicates())}>
         <CopyIcon />
       </IconButton>
       <IconButton label={t('Places')} pressed={placesListOpen()} onClick={() => setPlacesListOpen(!placesListOpen())}>

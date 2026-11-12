@@ -8,7 +8,7 @@ import { createRequest } from '../ui/request';
 /** The folder the explorer was sent to, null for the top. It outlives an open trip, so leaving the trip goes back to it. */
 const [listFolderId, setListFolderId] = createSignal<number | null>(null);
 
-/** Whether the explorer shows the duplicates report instead of the folder; it too outlives a trip opened from it. */
+/** Whether the duplicates report stands in the pane between the library and the map. */
 export const [showingDuplicates, setShowingDuplicates] = createSignal(false);
 
 /** The search typed into the explorer; while there is one, what it finds stands in for the list. */
@@ -59,15 +59,8 @@ export const runLibrary = (work: () => Promise<unknown>, then?: () => void): Pro
 /** How the last folder import goes or went, and what it could not read or save. */
 export const [importNote, setImportNote] = createSignal<{ text: string; errors: string[] }>();
 
-/** Shows a folder, null for the top: its list, rather than the duplicates report or what a search found. */
+/** Shows a folder, null for the top: its list, rather than what a search found. */
 export function showFolder(id: number | null): void {
   setListFolderId(id);
-  setShowingDuplicates(false);
-  setQuery('');
-}
-
-/** Shows the duplicates report in place of the folder's list. */
-export function showDuplicates(): void {
-  setShowingDuplicates(true);
   setQuery('');
 }

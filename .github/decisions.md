@@ -460,13 +460,15 @@ entries at the end of their section.
   pad or a modified click, as the menus do; only cut and copy fall back to the route
   being edited, since that is plainly the current one and neither destroys anything.
   Delete has no fallback: a key that removes what was merely clicked is a trap. For the
-  keys to have one answer, the library's selection and the open trip's give way to each
-  other, and a day's selected routes, stops and recordings are forgotten when another
+  keys to have one answer, the selections of the library, the open trip and the
+  duplicates report give way to each other, and a day's selected routes, stops and recordings are forgotten when another
   day is shown: a selection that is out of sight must not be acted on. Paste has no
   row under the pointer to name its target, so it takes the nearest one in view: the
   route being edited, then the day picked, and for folders and trips the folder shown.
-  The key reading is one function (`ui/fileVerb.ts`); the library and the trip each
-  listen and act only on their own selection or clipboard.
+  The key reading is one function (`ui/fileVerb.ts`); the library, the trip and the
+  duplicates report each listen and act only on their own selection or clipboard, and
+  one name in `ui/selection.ts` says which list holds the selection, which the others
+  give theirs up for.
 - **A selection inside a trip is of one kind.** In the library folders and trips are
   selected together, since they share a list and nearly all their verbs. Days, routes
   or stops are selected together, never mixed: the verbs of a mixed selection would be those all kinds share, and what a
@@ -871,21 +873,21 @@ entries at the end of their section.
   schema is `db/schema.sql`; while nothing is released, a schema change recreates the
   database (`make recreate`, which also empties the file store, since `CREATE TABLE IF
   NOT EXISTS` adds tables but never columns). Migrations start with the first release.
-- **One explorer frames the panel at every level.** The library, a folder, a trip and its
-  opened day share one frame: the library's actions as icons and the search on top, a
-  path heading that names where the panel is, and under it a card leading one level up,
-  "All trips" at the top. The frame has the same height at every level, so the card is
-  always in the same place and stepping up or down never moves what the pointer is on.
-  The trip's own actions sit as icons on the path heading, and the actions of days,
-  routes and recordings as icons on their own headers; they were buttons that pushed the
-  panel wide. A day still opens in place in its trip's list, but counts as a level: the
-  path ends in it and the card above closes it. The library's actions stay at every
-  level; all but a new trip leave an open trip first.
-- **The path heading names the place, the card the way up.** Naming the parent on the
-  card says where a click and a drop go; the place itself is the last name of the path,
-  which shortens its earlier names first. A trip opened from the search stands in its own
-  folder, so that the path is its place and the way up leads there; one opened from the
-  duplicates report goes back to the report.
+- **The library's pane has one frame.** The library's actions as icons and the search
+  on top, under them the open trip's name with the trip's own actions as icons, then
+  the tree; the actions of days, routes and recordings are icons on their own headers.
+  They were buttons that pushed the panel wide. The path heading and the card that led
+  one level up went with the explorer that showed one level at a time: in a tree the
+  place is where the row stands.
+- **The duplicates report takes the pane beside the library, not the library's place.**
+  It stood where the tree stands, so looking at a route it listed meant leaving the
+  report, and the trip had to be left to show it. In the pane between the library and
+  the map the tree stays, a route opened from the report is shown on the map beside
+  it, and the report is still there for the next one. It shares the pane with the day:
+  the report has it while it is switched on, and a day picked anywhere but from the
+  report takes it back, since picking a day asks for its routes. The pane's frame (its
+  heading with the close button, the edge that sets its width, the handle that makes it
+  a sheet on a phone) is one component for both.
 - **Trips and folders are dragged by their pad.** The pad that selects a trip also drags
   it, a press that moves rather than a tap, and selected trips go together; folders got
   the same pad. A folder's card and the card one level up take the drop. Dragging the

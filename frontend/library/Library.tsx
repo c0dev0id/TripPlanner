@@ -6,7 +6,6 @@ import { pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
 import { heldOf, importNote, libraryFolders, libraryTrips, outlineOf, query, relistFolders, relistTrips, runLibrary, showFolder, shownFolderId } from '../state/library';
 import { folderPath, heldInAll, heldText } from './folders';
-import { ALL_TRIPS } from './place';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
 import { openTrip, openTripId, selectDay } from '../state/trip';
@@ -20,9 +19,8 @@ import { ChevronIcon, CollectionIcon, FoldIcon, FolderIcon, HomeIcon, TripIcon }
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
-import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection } from '../ui/selection';
+import { clickSelect, holdSelection, menuSelection, NOTHING_SELECTED, selectionOwner, toggled, type Selection } from '../ui/selection';
 import { fileVerb } from '../ui/fileVerb';
-import { clearPartSelection, selectedParts } from '../state/partSelection';
 import { ForById } from '../ui/ForById';
 import { Pad } from '../ui/Pad';
 import { dragToFolder } from './dragToFolder';
@@ -30,6 +28,9 @@ import { TripShape } from './TripShape';
 
 /** A folder or a trip of the library, as what is selected, cut, moved and deleted together. */
 type Item = { folder: Folder } | { trip: TripSummary };
+
+/** The top of the library, as a row of the tree and a place to paste into. */
+const ALL_TRIPS = t('All trips');
 
 const keyOf = (item: Item): string => ('folder' in item ? `folder:${item.folder.id}` : `trip:${item.trip.id}`);
 const nameOf = (item: Item): string => ('folder' in item ? item.folder.name : item.trip.name);
@@ -177,9 +178,9 @@ export function Library(props: {
   /** The folders and trips selected to be acted on together, by key, the first selected first; none once another folder is shown. */
   const [selected, setSelected] = createSignal<Selection<string>>(NOTHING_SELECTED);
   createEffect(on(shownFolderId, () => setSelected(NOTHING_SELECTED)));
-  // The keys act on one selection: the library's and the open trip's give way to each other.
-  createEffect(() => selected().keys.size > 0 && clearPartSelection());
-  createEffect(() => selectedParts() && setSelected(NOTHING_SELECTED));
+  // One selection at a time across the lists: this one gives way to another's.
+  createEffect(() => holdSelection('library', selected().keys.size));
+  createEffect(() => selectionOwner() !== 'library' && setSelected(NOTHING_SELECTED));
   const isSelected = createSelector(() => selected().keys, (key: string, keys) => keys.has(key));
   /** Every folder and trip there is, by key. */
   const itemOf = (key: string): Item | undefined => {

@@ -3,7 +3,7 @@ import type { PartKind } from '../routing/dayEdit';
 
 /** What of the open trip is selected: a kind of its parts, or the recordings on its days, by their id as text. */
 export type Selectable = PartKind | 'recording';
-import { clickSelect, menuSelection, toggled, type Selection } from '../ui/selection';
+import { clickSelect, holdSelection, menuSelection, selectionOwner, toggled, type Selection } from '../ui/selection';
 import { openTripId, selectedDayId } from './trip';
 
 /**
@@ -12,9 +12,14 @@ import { openTripId, selectedDayId } from './trip';
  */
 const [selected, setSelected] = createSignal<{ kind: Selectable; rows: Selection<string> }>();
 
+const OWNER = 'parts';
+
 createRoot(() => {
   createEffect(on(openTripId, () => setSelected(undefined), { defer: true }));
   createEffect(on(selectedDayId, () => selected()?.kind !== 'day' && setSelected(undefined), { defer: true }));
+  // One selection at a time across the lists: this one gives way to another's.
+  createEffect(() => holdSelection(OWNER, selected()?.rows.keys.size ?? 0));
+  createEffect(() => selectionOwner() !== OWNER && setSelected(undefined));
 });
 
 const rowsOf = (kind: Selectable): Selection<string> => (selected()?.kind === kind ? selected()!.rows : { keys: new Set() });

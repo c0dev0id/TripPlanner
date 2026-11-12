@@ -1,3 +1,5 @@
+import { createSignal } from 'solid-js';
+
 /** Rows of a list selected by key, and the row a Shift-click selects from. */
 export interface Selection<K> {
   /** In the order they were selected; a run from its anchor on. */
@@ -34,3 +36,17 @@ export function clickSelect<K>(selection: Selection<K>, order: readonly K[], key
 
 /** The selection a row's menu acts on: the selection where it holds the row, else the row alone. */
 export const menuSelection = <K>(selection: Selection<K>, key: K): Selection<K> => (selection.keys.has(key) ? selection : only(key));
+
+/**
+ * The list whose selection the keys act on, by a name of its own; none while nothing is
+ * selected anywhere. A list claims it when rows are selected in it and gives it back when
+ * none are; the others let go of theirs when it is no longer them.
+ */
+const [selectionOwner, setSelectionOwner] = createSignal<string>();
+export { selectionOwner };
+
+/** Tells that the list `owner` holds `count` selected rows. */
+export function holdSelection(owner: string, count: number): void {
+  if (count > 0) setSelectionOwner(owner);
+  else if (selectionOwner() === owner) setSelectionOwner(undefined);
+}

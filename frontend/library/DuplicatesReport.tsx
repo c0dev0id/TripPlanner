@@ -1,15 +1,19 @@
 import { t } from '../i18n/t';
-import { createMemo, createResource, createSelector, createSignal, For, Match, Show, Switch } from 'solid-js';
+import { createEffect, createMemo, createResource, createSelector, createSignal, For, Match, on, onCleanup, Show, Switch } from 'solid-js';
 import { changeTrip, errorMessage, fetchTrip, listDuplicates, type DuplicateGroup, type DuplicateRoute } from '../api';
 import { copiedRoute, removeRoute, type CopiedRoute } from '../routing/dayEdit';
 import { copyRoutes } from '../state/clipboard';
+import { setShowingDuplicates } from '../state/library';
+import { selectedDayId } from '../state/trip';
 import { dayLabel } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { counted, distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
-import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection } from '../ui/selection';
+import { fileVerb } from '../ui/fileVerb';
+import { clickSelect, holdSelection, menuSelection, NOTHING_SELECTED, selectionOwner, toggled, type Selection } from '../ui/selection';
+import { SidePane } from '../ui/SidePane';
 import { Pad } from '../ui/Pad';
 
 /** Where a route of the report is: its trip, and its day by number, date and name, or its section. */
@@ -38,12 +42,16 @@ async function removeRoutes(routes: readonly DuplicateRoute[]): Promise<void> {
   await Promise.all(tripIdsOf(routes).map((id) => changeTrip(id, (trip) => routes.filter((r) => r.tripId === id).reduce((t, r) => removeRoute(t, r.dayId, r.routeId), trip))));
 }
 
+const OWNER = 'duplicates';
+
 /**
- * The routes the library keeps more than once, made afresh each time it is shown: exact
- * copies, and the same ride kept from two sources on one day. A click selects a route,
- * with Cmd or Ctrl one more, with Shift a run of them; its pad adds or takes it away. On a
- * touch screen a tap opens the route instead. The menu opens one, and copies or deletes
- * the selected ones.
+ * The routes the library keeps more than once, in the pane between the library and the
+ * map, made afresh each time it is shown: exact copies, and the same ride kept from two
+ * sources on one day. A click selects a route, with Cmd or Ctrl one more, with Shift a run
+ * of them; its pad adds or takes it away. On a touch screen a tap opens the route instead.
+ * The menu opens one at its day, which the map then shows beside the report, and copies or
+ * deletes the selected ones, as Ctrl+C and Delete do. A day picked elsewhere takes the
+ * pane for itself.
  */
 export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void; disabled: boolean }) {
   const [groups, { refetch }] = createResource(listDuplicates);
@@ -53,9 +61,26 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   /** The routes in the order shown, by key; a route in a group of each kind is shown twice but listed once. */
   const shown = createMemo(() => new Map([...of('copies'), ...of('same ride')].flatMap((g) => g.routes).map((r) => [keyOf(r), r])));
   const isSelected = createSelector(() => selection().keys, (key: string, keys) => keys.has(key));
+  // One selection at a time across the lists: this one gives way to another's.
+  createEffect(() => holdSelection(OWNER, selection().keys.size));
+  createEffect(() => selectionOwner() !== OWNER && setSelection(NOTHING_SELECTED));
+  /** The day the report opened itself, which leaves it in the pane. */
+  let opened: string | undefined;
   const open = (route: DuplicateRoute) => {
-    if (!props.disabled) props.onOpen(route.tripId, route.dayId);
+    if (props.disabled) return;
+    opened = route.dayId;
+    props.onOpen(route.tripId, route.dayId);
   };
+  createEffect(
+    on(
+      selectedDayId,
+      (id) => {
+        if (id && id !== opened) setShowingDuplicates(false);
+        if (!id) opened = undefined;
+      },
+      { defer: true },
+    ),
+  );
   /** Runs a job that reads and writes trips, saying what it is doing and then what it did or why it failed. */
   const work = async (doing: string, job: () => Promise<string>) => {
     setNote({ text: doing, error: false });
@@ -98,6 +123,15 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
       { label: one ? t('Delete') : t('Delete {n} routes', { n }), run: () => void remove(chosen) },
     ];
   };
+  const onKey = (e: KeyboardEvent) => {
+    const chosen = [...shown().values()].filter((r) => selection().keys.has(keyOf(r)));
+    const verb = chosen.length > 0 ? fileVerb(e) : undefined;
+    if (verb !== 'copy' && verb !== 'delete') return;
+    e.preventDefault();
+    void (verb === 'copy' ? copy(chosen) : remove(chosen));
+  };
+  document.addEventListener('keydown', onKey);
+  onCleanup(() => document.removeEventListener('keydown', onKey));
   const rows = {
     selected: (route: DuplicateRoute) => isSelected(keyOf(route)),
     onClick: (route: DuplicateRoute, e: MouseEvent) => setSelection((s) => clickSelect(s, [...shown().keys()], keyOf(route), e)),
@@ -106,7 +140,17 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
     items,
   };
   return (
-    <>
+    <SidePane
+      label={t('Routes kept more than once')}
+      onClose={() => setShowingDuplicates(false)}
+      heading={
+        <span class="lines grow">
+          <span class="name">{t('Routes kept more than once')}</span>
+          <Show when={groups()}>{(found) => <span class="muted detail">{counted(found().length, 'group')}</span>}</Show>
+        </span>
+      }
+    >
+      <div class="day-details">
       <Switch fallback={<p class="muted">{t('Looking for routes kept more than once…')}</p>}>
         <Match when={groups.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
         <Match when={groups()?.length === 0}>
@@ -118,7 +162,8 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
           <Section title={t('The same ride kept twice: {what}', { what: counted(of('same ride').length, 'group') })} groups={of('same ride')} {...rows} />
         </Match>
       </Switch>
-    </>
+      </div>
+    </SidePane>
   );
 }
 

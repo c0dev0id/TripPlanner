@@ -74,8 +74,9 @@
   A paste goes into the route being edited where it takes what was copied (stops, as
   its points), else into the day picked, days after it. In the library they act on the
   selected folders and trips, and a paste goes into the folder shown. Selecting in the
-  library clears the selection in the trip and the other way round, and what is
-  selected of a day is forgotten when another day is shown. In a text field the keys
+  library clears the selection in the trip and the other way round, as does selecting
+  in the duplicates report, and what is selected of a day is forgotten when another day
+  is shown. In a text field the keys
   type, and a copy while text is selected copies the text.
   Copied routes are also pasted
   from a trip's menu in the library, each onto the day of its date or a new day (into a
@@ -160,14 +161,18 @@
   named and dated by the file, in its folder. Planning material: each folder holding GPX
   files becomes a collection with a section per file. Files that are no GPX are reported
   and left out.
-- A duplicates report in the library: the routes kept more than once across all trips
+- A duplicates report, switched on by its icon among the library's actions, in the pane
+  between the library and the map: the routes kept more than once across all trips
   and collections, grouped as exact copies (the same points or the same line, whatever
   the date) or as the same ride kept twice (the same way within a kilometre at both
   ends, lengths within a tenth, nine in ten of each line's points within 75 m of the
   other, on the same date or an undated day). A click selects a route, Cmd or Ctrl one more,
   Shift a run of them; a route's pad adds it or takes it away; a selected row is highlighted. On a touch screen a
   tap on the pad selects and a tap on the route opens it. The menu (right-click or long
-  press) opens a single route at its day, and copies or deletes the selected ones. The report is made afresh each time it is shown and after a delete.
+  press) opens a single route at its day, which the map shows while the report and the
+  tree stay, and copies or deletes the selected ones, as Ctrl+C and Delete do. A day
+  picked in the tree takes the pane for itself and closes the report. The report is made
+  afresh each time it is shown and after a delete.
 - Collections of planning material, such as a long-distance trail by country: listed in
   the library as planning material, opened like a trip but with sections instead of
   days and no dates, times, journal, tools or export. A section lists its routes and

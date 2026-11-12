@@ -1,6 +1,6 @@
 :root {
   --panel-width: 340px;
-  --day-pane-width: 360px;
+  --side-pane-width: 360px;
 }
 
 * {
@@ -26,8 +26,8 @@ body {
 }
 
 /* With a day picked, its pane stands between the library and the map. */
-#root:has(> .day-pane) {
-  grid-template-columns: var(--panel-shown, var(--panel-width)) var(--day-pane-width) 1fr;
+#root:has(> .side-pane) {
+  grid-template-columns: var(--panel-shown, var(--panel-width)) var(--side-pane-width) 1fr;
 }
 
 /* The library folded away: a strip with the button that brings it back. */
@@ -66,13 +66,13 @@ body {
 }
 
 /* The pane of the day picked: its heading, then its routes, stops and recordings. */
-.day-pane {
+.side-pane {
   position: relative;
   min-width: 0;
   padding: 0 4px 12px;
 }
 
-.day-pane-header {
+.side-pane-header {
   position: sticky;
   top: 0;
   z-index: 3;
@@ -83,7 +83,7 @@ body {
 }
 
 /* The day's name wraps rather than lose its end to the buttons beside it. */
-.day-pane-header .name {
+.side-pane-header .name {
   font-weight: 600;
   white-space: normal;
 }
@@ -109,11 +109,11 @@ body {
 }
 
 /* The edge of the library is dragged where the day's pane begins, while there is one. */
-#root:has(> .day-pane) .map-wrap > .panel-resizer {
+#root:has(> .side-pane) .map-wrap > .panel-resizer {
   display: none;
 }
 
-.day-pane > .panel-resizer {
+.side-pane > .panel-resizer {
   left: -3px;
 }
 
@@ -418,8 +418,7 @@ a {
 .trips .name,
 .folders .name,
 .results .name,
-.duplicates .name,
-.up-card .name {
+.duplicates .name {
   display: block;
 }
 
@@ -428,10 +427,7 @@ a {
   overflow-wrap: anywhere;
 }
 
-/*
- * The explorer: the library's actions and search on top, then the path to where it is and
- * the card one level up, all of fixed height at every level, so that the card stays put.
- */
+/* The library's pane: its actions and search on top, then the open trip's name over the tree. */
 .library-actions {
   gap: 2px;
   margin-top: 8px;
@@ -483,11 +479,6 @@ a {
   max-width: 70%;
   color: var(--fg);
   font-weight: 600;
-}
-
-.up-card > .row {
-  gap: 8px;
-  padding: 6px 8px;
 }
 
 .save-state {
@@ -1495,7 +1486,7 @@ fieldset.symbols {
  * library's place while a day is picked.
  */
 @media (min-width: 721px) and (max-width: 1023px) {
-  #root:has(> .day-pane) > .library-panel {
+  #root:has(> .side-pane) > .library-panel {
     display: none;
   }
 
@@ -1503,8 +1494,8 @@ fieldset.symbols {
     grid-template-columns: min(var(--panel-shown, var(--panel-width)), 42vw) 1fr;
   }
 
-  #root:has(> .day-pane) {
-    grid-template-columns: min(var(--day-pane-width), 42vw) 1fr;
+  #root:has(> .side-pane) {
+    grid-template-columns: min(var(--side-pane-width), 42vw) 1fr;
   }
 }
 
@@ -1533,7 +1524,7 @@ fieldset.symbols {
  */
 @media (max-width: 720px) {
   #root,
-  #root:has(> .day-pane),
+  #root:has(> .side-pane),
   #root:has(> .panel.folded) {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr auto;
@@ -1592,7 +1583,7 @@ fieldset.symbols {
     font-weight: 600;
   }
 
-  .day-pane {
+  .side-pane {
     grid-row: 2;
     height: 45dvh;
     padding-top: 0;
@@ -1600,15 +1591,15 @@ fieldset.symbols {
     border-top: 1px solid var(--line);
   }
 
-  .day-pane.sheet-full {
+  .side-pane.sheet-full {
     height: calc(100dvh - 64px);
   }
 
-  .day-pane.sheet-peek:not(.dragging) {
+  .side-pane.sheet-peek:not(.dragging) {
     height: auto;
   }
 
-  .day-pane.sheet-peek:not(.dragging) > :not(.sheet-handle, .day-pane-header) {
+  .side-pane.sheet-peek:not(.dragging) > :not(.sheet-handle, .side-pane-header) {
     display: none;
   }
 
@@ -1641,7 +1632,7 @@ fieldset.symbols {
     background: var(--line);
   }
 
-  .day-pane-header {
+  .side-pane-header {
     top: 18px;
     padding-top: 2px;
   }

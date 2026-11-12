@@ -1,5 +1,6 @@
 import { createEffect, createResource, createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout } from './api';
+import { DuplicatesReport } from './library/DuplicatesReport';
 import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';
@@ -10,7 +11,7 @@ import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { setPreferencesOpen } from './state/drawing';
-import { libraryFolders, relistTrips, showFolder, shownFolderId } from './state/library';
+import { libraryFolders, relistTrips, showFolder, shownFolderId, showingDuplicates } from './state/library';
 import { foldPanel, onPhone, panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, editRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
@@ -69,8 +70,8 @@ export function App() {
     if (changed) relistTrips();
   };
 
-  // On a phone the library lies over the map: a day picked in it is shown by folding it away.
-  createEffect(() => selectedDayId() && onPhone() && foldPanel(true));
+  // On a phone the library lies over the map: a day picked in it, or the duplicates report asked for, is shown by folding it away.
+  createEffect(() => (selectedDayId() || showingDuplicates()) && onPhone() && foldPanel(true));
 
   document.addEventListener('keydown', partKeys);
   onCleanup(() => document.removeEventListener('keydown', partKeys));
@@ -120,7 +121,9 @@ export function App() {
         </header>
         <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} opening={opening()} error={error()} />
       </aside>
-      <DayPane />
+      <Show when={showingDuplicates()} fallback={<DayPane />}>
+        <DuplicatesReport onOpen={(id, dayId) => void open(id, dayId)} disabled={opening()} />
+      </Show>
       <div class="map-wrap">
         <PanelResizer />
         <MapView />
