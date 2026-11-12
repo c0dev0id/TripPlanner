@@ -11,3 +11,11 @@ export function foldPanel(folded: boolean): void {
   setPanelFolded(folded);
   writePreference(PREFERENCE, folded ? '1' : undefined);
 }
+
+/** Whether the screen is a phone's, where the library lies over the map and the day's pane is a sheet under it; the width is the one the styles turn at. */
+export const onPhone = (): boolean => matchMedia('(max-width: 720px)').matches;
+
+/** How much of a phone's screen the day's sheet takes: its heading alone, about half, or nearly all. */
+export type Sheet = 'peek' | 'half' | 'full';
+
+export const [sheet, setSheet] = createSignal<Sheet>('half');

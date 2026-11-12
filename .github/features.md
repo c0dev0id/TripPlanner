@@ -100,7 +100,15 @@
   up to be edited, and unfolds it. The button with three lines folds the library away
   to a strip, which leaves the map the room, and brings it back. On a screen without
   room for three panes the day's pane takes the library's place while a day is picked,
-  and its close button gives the library back. The days before and after
+  and its close button gives the library back; its heading then steps to the day before
+  and after. On a phone the map is the page: the day picked is a sheet under it, pulled
+  up to nearly the whole screen or down to its heading by its top edge, and folded down
+  by itself while a route is edited; the library lies over everything and folds away,
+  when a day is picked in it, to its button over the map, beside the open trip's name
+  and whether it is saved. There the menus come up from the bottom edge, and the route
+  tools are one bar with captions: the tools, undo and done, the rest under More. On a
+  touch screen every row with a menu has a button with three dots that opens it. A save
+  that failed, or a trip changed elsewhere, is said over the map. The days before and after
   the selected one are drawn dimmed on the map, switchable. The library is as wide as its
   edge is dragged, kept per browser; a double click on the edge puts the default back.
 - A date per day; a new day after a dated one is dated the day after, and the library

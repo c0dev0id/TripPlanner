@@ -108,7 +108,7 @@ entries at the end of their section.
   on pointer events from the grip alone, which works with touch where the browser's
   own drag and drop does not and leaves the rest of the row to its click; about fifty
   lines, no library. A route's or a stop's row, like a card, opens its menu by
-  right-click or a long press and has no pencil or dots: a route's menu edits,
+  right-click or a long press and has no pencil, and dots only on a touch screen: a route's menu edits,
   duplicates, moves it to another day, condenses or converts a track and removes it; a
   stop's edits, copies it to another day and removes it. Each row's journal is an icon on
   it that counts the entries. A menu that would list an entry per day or per folder
@@ -117,7 +117,7 @@ entries at the end of their section.
   Submenus are part of the one menu mechanism, so every menu can have them.
 - **Folders, trips and days are cards whose menu is the card itself.** A card shows two
   lines, the name over its metadata (a folder's trip count; a trip's days, start and
-  state; a day's date and length), and has neither pencil nor dots: right-click, the
+  state; a day's date and length), and has neither pencil nor, with a mouse, dots: right-click, the
   menu key or a long press of half a second on the card opens its menu, which therefore
   holds every action the card has (rename, move, duplicate, delete; a day's edit,
   duplicate and remove). The long press is left out on the grip, which drags, and the
@@ -367,11 +367,44 @@ entries at the end of their section.
   They are several lines on a phone and lay under the route tools; rather than fold
   them through the control's inner workings, the tools stand above them while they are
   spread out.
-- **Small and touch screens by stylesheet rules alone.** Between 721 and 1023 px, a
-  tablet held upright, the panel takes at most 42 % of the width; on a touch screen
-  every field's text is 16 px, below which Safari zooms into the page on focus and
-  stays there; heights that follow the screen use `dvh`, which leaves out what the
-  browser's own bars cover.
+- **Small and touch screens by stylesheet rules, with two exceptions.** Between 721 and
+  1023 px, a tablet held upright, the panel takes at most 42 % of the width; on a touch
+  screen every field's text is 16 px, below which Safari zooms into the page on focus
+  and stays there, and an icon button is at least 36 px; heights that follow the screen
+  use `dvh`, which leaves out what the browser's own bars cover. What the stylesheet
+  cannot do is in `state/panel.ts`: a phone folds the library away when a day is
+  picked, and the day's sheet has a height the user sets. The width a phone ends at,
+  720 px, therefore stands in the stylesheet and once in the script.
+- **A phone stacks the three panes.** The desktop's panes are the phone's layers: the
+  map is the page, the day's pane a sheet under it, the library a layer over
+  everything, folded away to the same button with three lines. Nothing is a mode of its
+  own and no component exists twice; the same elements are placed otherwise. The
+  library folds away by itself when a day is picked, since on a phone picking a day
+  means wanting to see it, and the sheet folds down to its heading while a route is
+  edited, since editing happens on the map.
+- **The day's sheet is a row under the map, not a layer over it.** A sheet over the map
+  would cover MapLibre's credits and scale, and the route tools, the routing's state
+  and the fitting of a day into view would each have to know how much of the map it
+  hides. As a row of the page's grid it makes the map smaller instead: everything on
+  the map stays where it is seen, and MapLibre follows the size by itself. The price is
+  that the map is redrawn while the sheet is dragged.
+- **Rows have a menu button where there is no right-click.** A long press opens a row's
+  menu on a touch screen, but nothing says so. On a screen whose pointer cannot hover
+  every row with a menu shows a button with three dots that opens the same menu; with
+  a mouse the rows stay as they were, a right-click away from their menu.
+- **On a phone the menu is a sheet from the bottom edge.** A menu at the finger is
+  narrow, runs off the screen and puts its submenu where there is no room. At a phone's
+  width the one menu is as wide as the screen and rises from the bottom, and a submenu
+  takes the place of the list that opened it. It is the same list restyled, so every
+  menu, on the map as in the panes, gets it.
+- **The route tools fit a phone by leaving three out.** Nine buttons fit a phone only
+  as bare icons, which a touch screen has no tooltips to explain. The bar keeps
+  captions and holds the tools, undo and done; redo, reroute and the route's settings
+  are the menu of a button that shows at that width alone.
+- **A failed save is said over the map.** The notice stood in the library, which can be
+  folded away and on a phone mostly is. Over the map it is seen whatever panes are
+  shown; the save state itself stands beside the library's button while the library is
+  folded.
 - **A day keeps an outline of its routes, made by the server.** Showing a trip's shape
   in the library must not cost its document, which is megabytes for a collection of
   tracks. So each day keeps the lines of its routes thinned to at most 32 points each

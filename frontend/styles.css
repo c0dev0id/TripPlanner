@@ -82,8 +82,30 @@ body {
   background: var(--panel);
 }
 
+/* The day's name wraps rather than lose its end to the buttons beside it. */
 .day-pane-header .name {
   font-weight: 600;
+  white-space: normal;
+}
+
+/* The days before and after, by buttons in the heading where the list of days is not beside it. */
+.day-step {
+  display: none;
+}
+
+.day-step:first-child svg {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 1023px) {
+  .day-step {
+    display: contents;
+  }
+}
+
+/* The pane's top edge is a handle only where the pane is a sheet under the map. */
+.panel button.sheet-handle {
+  display: none;
 }
 
 /* The edge of the library is dragged where the day's pane begins, while there is one. */
@@ -993,6 +1015,15 @@ fieldset.choices legend {
   white-space: nowrap;
 }
 
+/* What the toolbar shows at a phone's width alone, and what it leaves out there. */
+.toolbar .narrow {
+  display: none;
+}
+
+.toolbar span.wide {
+  display: contents;
+}
+
 .tool:hover:not(:disabled) {
   background: var(--hover);
 }
@@ -1470,15 +1501,16 @@ fieldset.symbols {
   margin: 0;
 }
 
-/* Without room for three panes, the day's pane takes the library's place while a day is picked. */
-@media (max-width: 1023px) {
+/*
+ * A narrow screen that still has a pane beside the map, such as a tablet held upright: the
+ * map keeps the larger part, and without room for three panes the day's pane takes the
+ * library's place while a day is picked.
+ */
+@media (min-width: 721px) and (max-width: 1023px) {
   #root:has(> .day-pane) > .library-panel {
     display: none;
   }
-}
 
-/* A narrow screen that still has a pane beside the map, such as a tablet held upright: the map keeps the larger part. */
-@media (min-width: 721px) and (max-width: 1023px) {
   #root {
     grid-template-columns: min(var(--panel-shown, var(--panel-width)), 42vw) 1fr;
   }
@@ -1498,34 +1530,141 @@ fieldset.symbols {
   :is(.panel, .dialog, .map-wrap) :is(input:not([type='checkbox'], [type='radio']), select, textarea) {
     font-size: 16px;
   }
+
+  /* An icon is a button a finger can hit. */
+  .panel button.icon:not(.grip, .pad) {
+    min-width: 36px;
+    min-height: 36px;
+  }
 }
 
+/*
+ * A phone: the map is the page. The day picked is a sheet under it, pulled up and down by
+ * its top edge; the library lies over everything and folds away to its button, which
+ * stays over the map with the open trip's name.
+ */
 @media (max-width: 720px) {
-  #root {
+  #root,
+  #root:has(> .day-pane),
+  #root:has(> .panel.folded) {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr auto;
   }
 
   .map-wrap {
     grid-row: 1;
+    min-height: 0;
   }
 
-  #root:has(> .day-pane),
-  #root:has(> .panel.folded) {
-    grid-template-columns: 1fr;
+  .library-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 8;
+    border: 0;
   }
 
-  .panel,
+  .library-panel .user {
+    display: none;
+  }
+
+  .library-panel.folded {
+    inset: 10px auto auto 10px;
+    z-index: 5;
+    max-width: calc(100% - 74px);
+    padding: 0;
+    overflow: visible;
+    background: none;
+  }
+
+  .panel.folded > .panel-header {
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+    padding: 0;
+  }
+
+  .panel.folded > .panel-header > :is(.icon, .open-trip) {
+    height: 44px;
+    border-radius: 8px;
+    background: var(--panel);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  .panel.folded > .panel-header > .icon {
+    flex: none;
+    width: 44px;
+  }
+
+  .panel.folded > .panel-header > .open-trip {
+    padding: 0 6px 0 12px;
+  }
+
+  .panel.folded .open-trip > .name {
+    display: block;
+    font-weight: 600;
+  }
+
   .day-pane {
     grid-row: 2;
-    max-height: 45dvh;
+    height: 45dvh;
+    padding-top: 0;
     border-right: 0;
     border-top: 1px solid var(--line);
   }
 
-  /* Folded away on a phone, the library is a bar under the map. */
-  .panel.folded {
-    padding: 0 12px;
+  .day-pane.sheet-full {
+    height: calc(100dvh - 64px);
+  }
+
+  .day-pane.sheet-peek:not(.dragging) {
+    height: auto;
+  }
+
+  .day-pane.sheet-peek:not(.dragging) > :not(.sheet-handle, .day-pane-header) {
+    display: none;
+  }
+
+  .panel button.sheet-handle {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: block;
+    width: 100%;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--panel);
+    cursor: row-resize;
+    touch-action: none;
+  }
+
+  .panel button.sheet-handle:hover:not(:disabled) {
+    background: var(--panel);
+  }
+
+  .sheet-handle::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 0 auto;
+    border-radius: 2px;
+    background: var(--line);
+  }
+
+  .day-pane-header {
+    top: 18px;
+    padding-top: 2px;
+  }
+
+  .maplibregl-ctrl-top-right {
+    top: 50px;
+  }
+
+  .save-problem,
+  .summary-card {
+    top: 62px;
   }
 
   .panel-resizer {
@@ -1536,18 +1675,34 @@ fieldset.symbols {
     max-width: calc(100% - 16px);
   }
 
-  /* The tools in one row: icons alone, close together, in one bar. */
+  /* The tools in one bar as wide as the map, each with its caption; what does not fit is in the menu of “More”. */
   .toolbar {
+    right: 8px;
+    left: 8px;
     flex-wrap: nowrap;
     gap: 0;
+    width: auto;
+    max-width: none;
+    transform: none;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
     border-radius: 10px;
+    background: color-mix(in srgb, var(--panel) 96%, transparent);
+  }
+
+  .toolbar :is(div, span).wide {
+    display: none;
+  }
+
+  .toolbar .narrow {
+    display: contents;
   }
 
   .toolbar-group {
+    flex: 1 1 auto;
     gap: 0;
     padding: 3px 0;
     border-radius: 0;
+    background: none;
     box-shadow: none;
   }
 
@@ -1566,29 +1721,37 @@ fieldset.symbols {
   }
 
   .tool {
-    min-width: 34px;
-    padding: 7px 6px;
-  }
-
-  .tool-label {
-    display: none;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 7px 2px 5px;
   }
 
   .map-wrap:has(.chart-card) {
     --chart-room: 150px;
   }
 
-  .summary-card {
-    top: 52px;
+  /* The box opens from a button at the right end of the top row and folds again, so the map stays in view. */
+  .place-search:not(.open) {
+    left: auto;
+    right: 10px;
+    width: auto;
   }
 
-  /* The box opens from a button and folds again, so the map stays in view. */
+  .place-search.open {
+    width: calc(100% - 20px);
+  }
+
+  .search-form {
+    min-height: 44px;
+  }
+
   .search-toggle {
     display: grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
+    width: 44px;
+    height: 44px;
     border: none;
+    border-radius: 8px;
     color: var(--fg);
     cursor: pointer;
   }

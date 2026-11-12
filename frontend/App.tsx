@@ -11,7 +11,7 @@ import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { setPreferencesOpen } from './state/drawing';
 import { libraryFolders, relistTrips, showFolder, shownFolderId } from './state/library';
-import { foldPanel, panelFolded } from './state/panel';
+import { foldPanel, onPhone, panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, editRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
 import { PreferencesDialog } from './preferences/PreferencesDialog';
@@ -69,6 +69,9 @@ export function App() {
     resetSaveState();
     if (changed) relistTrips();
   };
+
+  // On a phone the library lies over the map: a day picked in it is shown by folding it away.
+  createEffect(() => selectedDayId() && onPhone() && foldPanel(true));
 
   /** Whether the page is back at the place its address named, from when on the address follows the place. */
   const [returned, setReturned] = createSignal(false);
