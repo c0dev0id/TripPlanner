@@ -22,7 +22,8 @@
   in the folder shown. Trips and folders are dragged by their pad onto a folder's card,
   or onto the card one level up, to move them there; selected trips go together, and a
   folder never goes into itself. Folders and trips are cards with the name over a line
-  of metadata; right-click or a long press on a card opens its menu. A search by name
+  of metadata, each with the icon of its kind: a folder, a trip, a collection of planning
+  material; right-click or a long press on a card opens its menu. A search by name
   across trips and folders, listing at most twenty results; a trip opened from it stands
   in its own folder.
 - Several trips at once: a tap or click on a trip's pad (drawn as a drag grip), or Cmd or

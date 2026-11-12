@@ -9,7 +9,7 @@ import { folderPath, heldInAll, heldText } from './folders';
 import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
 import { counted, dateText } from '../ui/format';
-import { FolderIcon } from '../ui/icons';
+import { CollectionIcon, FolderIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
 import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection } from '../ui/selection';
@@ -297,6 +297,9 @@ function TripCard(props: {
           onClick={(e) => (props.select && (e.metaKey || e.ctrlKey || e.shiftKey) ? props.select.onClick(e) : props.onOpen(props.trip))}
           disabled={props.disabled}
         >
+          <Show when={props.trip.kind === 'collection'} fallback={<TripIcon />}>
+            <CollectionIcon />
+          </Show>
           <span class="lines">
             <span class="name">{props.trip.name}</span>
             <span class="muted detail">{meta()}</span>

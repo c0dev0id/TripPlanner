@@ -104,6 +104,23 @@ export const FolderIcon = () => (
   </Icon>
 );
 
+/** A trip: a folded map. */
+export const TripIcon = () => (
+  <Icon>
+    <path d="M3 7l6 -3l6 3l6 -3v13l-6 3l-6 -3l-6 3v-13" />
+    <path d="M9 4v13" />
+    <path d="M15 7v13" />
+  </Icon>
+);
+
+/** A collection of planning material: several sheets, one behind the other. */
+export const CollectionIcon = () => (
+  <Icon>
+    <path d="M7 5a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" />
+    <path d="M17 17v2a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2" />
+  </Icon>
+);
+
 export const GripIcon = () => (
   <Icon>
     <path d="M9 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
