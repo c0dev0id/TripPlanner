@@ -30,6 +30,7 @@ import { counted, distanceText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { PlusIcon, RecordingIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
+import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { dayLabel } from './labels';
 import { pickFile } from '../ui/pickFile';
@@ -170,13 +171,16 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
       classList={{ opened: opened()?.recording.id === props.recording.id, picked: isPartSelected('recording', String(props.recording.id)), cut: isCutRecording(props.recording.id) }}
       ref={(el) => cardMenu(el, () => recordingMenu(props.recording, props.onRename))}
     >
-      <button class="text row" onClick={click}>
-        <span class="swatch" style={{ background: recordingColor(props.recording) }} />
-        <span class="lines grow">
-          <span class="name">{props.recording.name}</span>
-          <span class="muted detail">{detail()}</span>
-        </span>
-      </button>
+      <div class="row">
+        <button class="text grow" onClick={click}>
+          <span class="swatch" style={{ background: recordingColor(props.recording) }} />
+          <span class="lines grow">
+            <span class="name">{props.recording.name}</span>
+            <span class="muted detail">{detail()}</span>
+          </span>
+        </button>
+        <MenuButton of={props.recording.name} items={() => recordingMenu(props.recording, props.onRename)} />
+      </div>
     </li>
   );
 }

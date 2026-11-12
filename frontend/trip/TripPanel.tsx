@@ -37,6 +37,7 @@ import { counted, distanceText, shortDateText, timeText } from '../ui/format';
 import { ChevronIcon, ClockIcon, DownloadIcon, FileImportIcon, NeighboursIcon, NotebookIcon, PencilIcon, PlusIcon, ShareIcon } from '../ui/icons';
 import { Grip } from '../ui/Grip';
 import { IconButton } from '../ui/IconButton';
+import { MenuButton } from '../ui/MenuButton';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 import { addRecordingPicked, DayRecordings, RecordingsToggle } from './Recordings';
@@ -128,6 +129,7 @@ function DayItem(props: { day: Day; index: number }) {
         </Show>
         <RecordingsToggle dayId={props.day.id} />
         <JournalButton target={{ dayId: props.day.id }} of={label()} />
+        <MenuButton of={label()} items={more} />
       </div>
     </li>
   );
@@ -270,6 +272,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
           </span>
         </button>
         <JournalButton target={{ routeId: props.route.id }} of={label()} />
+        <MenuButton of={label()} items={items} />
       </div>
       <Show when={unfolded()}>
         <ol class="stops">
@@ -333,7 +336,14 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
             </span>
           </span>
         </button>
-        <Show when={stop()}>{(s) => <JournalButton target={{ stopId: s().id }} of={s().name} />}</Show>
+        <Show when={stop()}>
+          {(s) => (
+            <>
+              <JournalButton target={{ stopId: s().id }} of={s().name} />
+              <MenuButton of={s().name} items={() => partMenu('stop', s().id)} />
+            </>
+          )}
+        </Show>
       </li>
     </>
   );
@@ -353,6 +363,7 @@ function AloneStopItem(props: { stop: Stop }) {
         </span>
       </button>
       <JournalButton target={{ stopId: props.stop.id }} of={props.stop.name} />
+      <MenuButton of={props.stop.name} items={() => partMenu('stop', props.stop.id)} />
     </li>
   );
 }

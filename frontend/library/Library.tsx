@@ -17,6 +17,7 @@ import { askChoice, askConfirmation } from '../ui/confirm';
 import { counted, dateText } from '../ui/format';
 import { ChevronIcon, CollectionIcon, FolderIcon, HomeIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
+import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection } from '../ui/selection';
 import { ForById } from '../ui/ForById';
@@ -519,6 +520,7 @@ function TripCard(props: {
           </span>
           <Show when={shape()?.length ? shape() : undefined}>{(days) => <TripShape days={days()} />}</Show>
         </button>
+        <MenuButton of={props.trip.name} items={props.items} />
       </div>
       <Show when={props.fold?.unfolded()}>
         <div class="tree-children">{props.children}</div>
@@ -549,6 +551,7 @@ function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) 
             <span class="muted detail">{props.note}</span>
           </span>
         </button>
+        <MenuButton of={props.folder.name} items={props.items} />
       </div>
       <Show when={props.fold?.unfolded()}>
         <ul class="tree-children">{props.children}</ul>

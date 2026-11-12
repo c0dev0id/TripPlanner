@@ -9,6 +9,7 @@
   "A trip needs a name of up to 200 characters.": "Eine Tour braucht einen Namen mit bis zu 200 Zeichen.",
   "A trip per file": "Eine Tour pro Datei",
   "A trip per folder": "Eine Tour pro Ordner",
+  "Actions for {what}": "Aktionen für {what}",
   "Add": "Hinzufügen",
   "Add a point here": "Hier einen Punkt anfügen",
   "Add a stop here, beside the route": "Hier einen Stopp neben der Route anlegen",

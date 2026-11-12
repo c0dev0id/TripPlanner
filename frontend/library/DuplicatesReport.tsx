@@ -8,6 +8,7 @@ import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { counted, distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
+import { MenuButton } from '../ui/MenuButton';
 import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection } from '../ui/selection';
 import { Pad } from '../ui/Pad';
 
@@ -158,6 +159,7 @@ function Section(props: {
                             <span class="muted detail">{whereText(route)}</span>
                           </span>
                         </button>
+                        <MenuButton of={nameOf(route)} items={() => props.items(route)} />
                       </div>
                     </li>
                   )}

@@ -61,3 +61,33 @@
 .context-menu .color-dot {
   margin-right: 0.5em;
 }
+
+/* On a phone the menu comes up from the bottom edge, over the dimmed page; a submenu takes its place. */
+@media (max-width: 720px) {
+  .context-menu {
+    top: auto !important;
+    right: 0;
+    bottom: 0;
+    left: 0 !important;
+    max-width: none;
+    max-height: 80dvh;
+    padding: 8px 0 max(8px, env(safe-area-inset-bottom));
+    overflow: auto;
+    border: 0;
+    border-radius: 14px 14px 0 0;
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.35);
+    font-size: 16px;
+  }
+
+  .context-menu .context-menu {
+    box-shadow: none;
+  }
+
+  .context-menu button {
+    padding: 12px 18px;
+  }
+
+  .context-menu:has(> li > .context-menu) > li > button {
+    display: none;
+  }
+}

@@ -131,6 +131,14 @@ export const MenuIcon = () => (
 );
 
 /** The arrowhead of a row that unfolds: pointing right, turned down by its button while it is unfolded. */
+export const DotsIcon = () => (
+  <Icon>
+    <path d="M4 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+    <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+    <path d="M18 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+  </Icon>
+);
+
 export const ChevronIcon = () => (
   <Icon>
     <path d="M9 6l6 6l-6 6" />

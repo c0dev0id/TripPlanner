@@ -12,6 +12,7 @@ import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { counted, distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
+import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { StopShape } from '../ui/StopShape';
 import { routeKindLabel, routeLabel } from './labels';
@@ -69,6 +70,7 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
             <span class="muted detail">{meta()}</span>
           </span>
         </button>
+        <MenuButton of={props.day.name} items={items} />
       </div>
     </li>
   );
@@ -116,6 +118,7 @@ function RouteItem(props: { route: Route; day: Day }) {
             </span>
           </span>
         </button>
+        <MenuButton of={label()} items={() => partMenu('route', props.route.id)} />
       </div>
     </li>
   );
@@ -139,6 +142,7 @@ function WaypointItem(props: { stop: Stop; day: Day }) {
           </Show>
         </span>
       </button>
+      <MenuButton of={props.stop.name} items={() => partMenu('stop', props.stop.id)} />
     </li>
   );
 }

@@ -224,6 +224,18 @@ a {
   color: inherit;
 }
 
+/* A row's menu as a button, where there is no right-click to open it. */
+.panel button.icon.menu-button {
+  display: none;
+  color: var(--muted);
+}
+
+@media (hover: none) {
+  .panel button.icon.menu-button {
+    display: inline-grid;
+  }
+}
+
 /* The handle a day or a route is dragged by into another place, and the pad a trip, a folder or a duplicate is selected or dragged by, drawn alike. */
 .panel button.icon:is(.grip, .pad) {
   padding: 2px 0;
