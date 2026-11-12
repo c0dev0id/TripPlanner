@@ -120,7 +120,8 @@
   up to nearly the whole screen or down to its heading by its top edge, and folded down
   by itself while a route is edited; the library lies over everything and folds away,
   when a day is picked in it, to its button over the map, beside the open trip's name
-  and whether it is saved. There the menus come up from the bottom edge, and the route
+  and whether it is saved. There the menus come up from the bottom edge, a submenu in the list's place under a
+  row that leads back, and the route
   tools are one bar with captions: the tools, undo and done, the rest under More. On a
   touch screen every row with a menu has a button with three dots that opens it. A save
   that failed, or a trip changed elsewhere, is said over the map. The days before and after

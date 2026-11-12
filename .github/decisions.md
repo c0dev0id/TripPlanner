@@ -401,8 +401,9 @@ entries at the end of their section.
 - **On a phone the menu is a sheet from the bottom edge.** A menu at the finger is
   narrow, runs off the screen and puts its submenu where there is no room. At a phone's
   width the one menu is as wide as the screen and rises from the bottom, and a submenu
-  takes the place of the list that opened it. It is the same list restyled, so every
-  menu, on the map as in the panes, gets it.
+  takes the place of the list that opened it, under a row that names it and leads back
+  to the list. It is the same list restyled, so every menu, on the map as in the panes,
+  gets it.
 - **The route tools fit a phone by leaving three out.** Nine buttons fit a phone only
   as bare icons, which a touch screen has no tooltips to explain. The bar keeps
   captions and holds the tools, undo and done; redo, reroute and the route's settings

@@ -39,7 +39,8 @@ export function ContextMenu() {
 /**
  * A list of menu items at a spot, kept inside the viewport. An item with items opens them
  * beside it, to the right or, without room there, to the left of `at.left`: on hover with
- * a mouse, and on a click, a tap or the keyboard.
+ * a mouse, and on a click, a tap or the keyboard. On a phone the submenu stands in the
+ * list's place, under a row that names it and leads back.
  */
 function MenuList(props: {
   items: MenuItem[];
@@ -47,6 +48,8 @@ function MenuList(props: {
   armed: () => boolean;
   ref?: (list: HTMLUListElement) => void;
   onPointerDown?: () => void;
+  /** Of a submenu: the item that opened it, and what folds it away again. Shown where the submenu takes the list's place, on a phone. */
+  back?: { label: string; close: () => void };
 }) {
   let list!: HTMLUListElement;
   const [open, setOpen] = createSignal<{ index: number; x: number; y: number; left: number }>();
@@ -71,6 +74,13 @@ function MenuList(props: {
       onContextMenu={(e) => e.preventDefault()}
       onPointerDown={() => props.onPointerDown?.()}
     >
+      <Show when={props.back}>
+        {(back) => (
+          <li class="menu-back">
+            <button onClick={() => props.armed() && back().close()}>{back().label}</button>
+          </li>
+        )}
+      </Show>
       <For each={props.items}>
         {(item, index) => {
           const submenu = 'items' in item ? item.items : undefined;
@@ -98,7 +108,7 @@ function MenuList(props: {
                 <Show when={item.swatch}>{(color) => <span class="color-dot" style={{ background: color() }} />}</Show>
                 {item.label}
               </button>
-              <Show when={submenu && open()?.index === index() && open()}>{(at) => <MenuList items={submenu!} at={at()} armed={props.armed} />}</Show>
+              <Show when={submenu && open()?.index === index() && open()}>{(at) => <MenuList items={submenu!} at={at()} armed={props.armed} back={{ label: item.label, close: () => setOpen(undefined) }} />}</Show>
             </li>
           );
         }}
