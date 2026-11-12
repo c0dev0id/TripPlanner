@@ -420,6 +420,19 @@ a {
 }
 
 /* A selected trip or duplicate, and the opened recording, are highlighted as a selected day is. */
+/* A trip's shape at the end of its card. */
+.trip-shape {
+  flex: none;
+  margin-left: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* Where the folders and trips on the clipboard go: the folder shown. */
 .panel button.paste-here {
   width: 100%;

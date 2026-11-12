@@ -54,6 +54,15 @@ export const listTrips = (): Promise<TripSummary[]> => request('GET', '/api/trip
 
 export const createTrip = (name: string, folderId: number | null, kind: TripKind = 'trip'): Promise<TripSummary> => request('POST', '/api/trips', { name, folderId, kind });
 
+/** A route's line thinned to a few points, as polyline6, with the colour the route has of its own. */
+export interface OutlineLine {
+  line: string;
+  color: string | null;
+}
+
+/** The outlines of every trip by its id: for each of its days the lines of its routes. */
+export const fetchOutlines = (): Promise<Record<string, OutlineLine[][]>> => request('GET', '/api/trips/outlines');
+
 /** Where the trips are downloaded from as a zip to keep or to import again: with their journal, recordings and a GPX file per day. */
 export const tripArchiveUrl = (ids: readonly number[]): string => `/api/trips/archive?ids=${ids.join(',')}`;
 

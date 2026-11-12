@@ -29,13 +29,12 @@ export const ROUTE_WIDTHS = { min: 2, max: 12 };
  * place among the trip's routes; the palette starts over where it ends.
  */
 export function routeColors(days: readonly Day[], coloring: RouteColoring): Map<string, string> {
-  const colors = new Map<string, string>();
+  const colors = lineColors(days.map((day) => day.routes), coloring);
+  return new Map(days.flatMap((day, d) => day.routes.map((route, r): [string, string] => [route.id, colors[d]![r]!])));
+}
+
+/** The colours of lines given day by day, each with the colour of its own or none: as routeColors gives them to routes. */
+export function lineColors(days: readonly (readonly { color: string | null }[])[], coloring: RouteColoring): string[][] {
   let place = 0;
-  days.forEach((day, dayIndex) => {
-    for (const route of day.routes) {
-      const index = coloring === 'day' ? dayIndex : place++;
-      colors.set(route.id, route.color ?? ROUTE_PALETTE[index % ROUTE_PALETTE.length]!.color);
-    }
-  });
-  return colors;
+  return days.map((lines, dayIndex) => lines.map((line) => line.color ?? ROUTE_PALETTE[(coloring === 'day' ? dayIndex : place++) % ROUTE_PALETTE.length]!.color));
 }

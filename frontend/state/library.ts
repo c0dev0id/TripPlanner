@@ -1,5 +1,5 @@
 import { createMemo, createResource, createRoot, createSignal } from 'solid-js';
-import { listFolders, listTrips } from '../api';
+import { listFolders, listTrips, fetchOutlines, type OutlineLine } from '../api';
 import { heldCounts } from '../library/folders';
 import { createRequest } from '../ui/request';
 
@@ -17,15 +17,19 @@ export const [query, setQuery] = createSignal('');
 const library = createRoot(() => {
   const [trips, { refetch: refetchTrips }] = createResource(listTrips);
   const [folders, { refetch: refetchFolders }] = createResource(listFolders);
+  const [outlines, { refetch: refetchOutlines }] = createResource(fetchOutlines);
   /** The folder sent to while it exists, else the top: a folder deleted elsewhere leaves the explorer at the top. */
   const shownFolderId = createMemo(() => (folders()?.some((f) => f.id === listFolderId()) ? listFolderId() : null));
   const heldOf = createMemo(() => heldCounts(folders() ?? [], trips() ?? []));
-  return { trips, folders, refetchTrips, refetchFolders, shownFolderId, heldOf };
+  return { trips, folders, outlines, refetchTrips, refetchFolders, refetchOutlines, shownFolderId, heldOf };
 });
 
 /** The user's trips and folders as the server last listed them. */
 export const libraryTrips = library.trips;
 export const libraryFolders = library.folders;
+
+/** The outline of a trip, day by day, as last fetched: none while they load, or where they could not be had. */
+export const outlineOf = (tripId: number): OutlineLine[][] | undefined => (library.outlines.error ? undefined : library.outlines()?.[tripId]);
 
 /** The folder the explorer shows, null for the top. */
 export const shownFolderId = library.shownFolderId;
@@ -34,7 +38,10 @@ export const shownFolderId = library.shownFolderId;
 export const heldOf = (id: number | null) => library.heldOf()(id);
 
 /** Lists the trips, or the folders, afresh after they changed. */
-export const relistTrips = (): void => void library.refetchTrips();
+export const relistTrips = (): void => {
+  void library.refetchTrips();
+  void library.refetchOutlines();
+};
 export const relistFolders = (): void => void library.refetchFolders();
 
 const requests = createRequest();

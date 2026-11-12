@@ -372,6 +372,16 @@ entries at the end of their section.
   every field's text is 16 px, below which Safari zooms into the page on focus and
   stays there; heights that follow the screen use `dvh`, which leaves out what the
   browser's own bars cover.
+- **A day keeps an outline of its routes, made by the server.** Showing a trip's shape
+  in the library must not cost its document, which is megabytes for a collection of
+  tracks. So each day keeps the lines of its routes thinned to at most 32 points each
+  (Douglas–Peucker, the tolerance one hundredth of the line's extent and widened until
+  the points fit), with the colour a route has of its own. The server works them out
+  when a trip is saved, since it already holds the lines and so every path to a trip
+  (the planner, an import, a copy, a merge) gets them without knowing of them. A key of
+  what an outline was made from is kept beside it: an autosave works out only the days
+  whose routes changed. The outlines of all trips come from one request of their own,
+  so that the list of trips stays as light as it was.
 - **One menu for days, routes and stops, built in one place.** The menus had grown per
   type: a route could be copied and moved, a stop copied only, a collection's route had
   two entries where a trip's had eight. `trip/partMenu.ts` now builds the menu of every

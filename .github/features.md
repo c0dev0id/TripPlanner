@@ -23,7 +23,8 @@
   or onto the card one level up, to move them there; selected trips go together, and a
   folder never goes into itself. Folders and trips are cards with the name over a line
   of metadata, each with the icon of its kind: a folder, a trip, a collection of planning
-  material; right-click or a long press on a card opens its menu. A search by name
+  material; a trip's card also shows its shape, small, each line in the colour its route
+  has on the map; right-click or a long press on a card opens its menu. A search by name
   across trips and folders, listing at most twenty results; a trip opened from it stands
   in its own folder.
 - Folders and trips answer to one menu: Rename, Duplicate, Cut, Copy, Paste, Move…,

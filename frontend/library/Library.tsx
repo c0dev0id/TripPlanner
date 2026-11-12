@@ -4,7 +4,7 @@ import { changeTrip, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorM
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
-import { heldOf, importNote, libraryFolders, libraryTrips, query, relistFolders, relistTrips, runLibrary, shownFolderId } from '../state/library';
+import { heldOf, importNote, libraryFolders, libraryTrips, outlineOf, query, relistFolders, relistTrips, runLibrary, shownFolderId } from '../state/library';
 import { folderPath, heldInAll, heldText } from './folders';
 import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
@@ -16,6 +16,7 @@ import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection }
 import { ForById } from '../ui/ForById';
 import { Pad } from '../ui/Pad';
 import { dragToFolder } from './dragToFolder';
+import { TripShape } from './TripShape';
 
 /** A folder or a trip of the library, as what is selected, cut, moved and deleted together. */
 type Item = { folder: Folder } | { trip: TripSummary };
@@ -358,6 +359,7 @@ function TripCard(props: {
   where?: string;
   select?: CardSelect;
 }) {
+  const shape = () => outlineOf(props.trip.id)?.filter((day) => day.length > 0);
   const meta = () =>
     (props.trip.kind === 'collection'
       ? [props.where, t('Planning material'), counted(props.trip.dayCount, 'section')]
@@ -385,6 +387,7 @@ function TripCard(props: {
             <span class="name">{props.trip.name}</span>
             <span class="muted detail">{meta()}</span>
           </span>
+          <Show when={shape()?.length ? shape() : undefined}>{(days) => <TripShape days={days()} />}</Show>
         </button>
       </div>
     </li>
