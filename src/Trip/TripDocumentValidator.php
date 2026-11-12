@@ -39,10 +39,19 @@ final class TripDocumentValidator
     }
 
 
+    /** Whether a day or a route of a document stands for the one stored under its id, sent as that id alone. */
+    public static function isUnchanged(mixed $part): bool
+    {
+        return is_array($part) && ($part['unchanged'] ?? null) === true;
+    }
+
     private static function day(mixed $day, string $at): array
     {
         if (!is_array($day)) {
             throw new InvalidDocument("$at must be an object.");
+        }
+        if (self::isUnchanged($day)) {
+            return ['id' => self::id($day, $at), 'unchanged' => true];
         }
         $routes = [];
         $positions = [];
@@ -121,7 +130,7 @@ final class TripDocumentValidator
             'profile' => self::oneOf($route, 'profile', self::PROFILES, $at),
             'optional' => self::bool($route, 'optional', $at),
             'color' => self::color($route, $at),
-        ];
+        ] + (self::isUnchanged($route) ? ['unchanged' => true] : []);
         if ($common['kind'] === 'track') {
             $line = $route['line'] ?? null;
             if (!is_string($line) || !Polyline::isWellFormed($line)) {

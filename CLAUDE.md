@@ -80,7 +80,10 @@ Layers, each depending only on the ones below:
   position, moves with it) or free.
 - The client holds the whole trip and saves it as one `PUT /api/trips/{id}` 1.5 s after
   the last change. The document carries the version it was loaded at; the server answers
-  409 on a newer version.
+  409 on a newer version. A day or a route that is the same object as in the trip last
+  saved (`state/trip.ts` `savedTrip`) is sent as `{id, unchanged: true}`
+  (`model/delta.ts`); the server fills such routes from its rows before validating and
+  leaves unchanged rows alone. This relies on parts never being changed in place.
 - Days, routes and stops carry client-generated ids. The server upserts them by id and
   deletes the rows the document no longer holds, because journal entries reference them.
   `Trip/TripDocumentValidator` checks the document, including that no id belongs to

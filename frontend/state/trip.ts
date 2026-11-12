@@ -114,9 +114,14 @@ function restore(earlier: Trip | undefined, current: Trip): void {
   });
 }
 
+/** The open trip as the server has it: as loaded, or as last saved. A save sends what differs from it. */
+let saved: Trip | undefined;
+export const savedTrip = (): Trip | undefined => saved;
+
 /** Opens a trip as loaded from the server, at the day `dayId` or with none shown; nothing before it can be undone. */
 export function loadTrip(loaded: Trip, dayId?: string): void {
   history.clear();
+  saved = loaded;
   batch(() => {
     setOpenTrip(loaded);
     setHistoryVersion((v) => v + 1);
@@ -127,6 +132,7 @@ export function loadTrip(loaded: Trip, dayId?: string): void {
 
 export function closeTrip(): void {
   history.clear();
+  saved = undefined;
   batch(() => {
     setOpenTrip(undefined);
     setSelectedDayId(undefined);
@@ -135,10 +141,12 @@ export function closeTrip(): void {
   });
 }
 
-/** Records the version a save stored; a save is no change. */
-export function markSaved(version: number): void {
+/** Records that a save stored `sent` as the version given; a save is no change. */
+export function markSaved(sent: Trip, version: number): void {
   const current = openTrip();
-  if (current) setOpenTrip({ ...current, version });
+  if (!current) return;
+  saved = sent;
+  setOpenTrip({ ...current, version });
 }
 
 /** Applies a pure edit to the open trip; with a label it is an undo step. */

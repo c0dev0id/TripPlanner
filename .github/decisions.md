@@ -543,7 +543,7 @@ entries at the end of their section.
 
 - **The trip is saved as one document.** The client holds the whole trip, edits it with
   pure functions and an undo history exactly as Layer Slayer's route store does, and
-  saves it as one `PUT` 1.5 s after the last change. Fine-grained requests per stop or
+  saves it as one `PUT` 1.5 s after the last change, which leaves out what is unchanged (see below). Fine-grained requests per stop or
   point would have turned undo into a problem of reversing requests. The document carries
   the version it was loaded at; the server refuses a save over a newer version (409) and
   the app offers to reload, which is enough while a trip has one editor.
@@ -554,6 +554,24 @@ entries at the end of their section.
   checks that none of them belongs to another trip, in one place, rather than guarding
   each upsert. Trips themselves are created by the server with integer ids; a trip is the
   root the library works with, its content is the document.
+- **A save leaves out what the server already has.** The document stays one document
+  with one version, but a collection of tracks is megabytes, and sending all of it for
+  a renamed route is paid on every edit, on the uplink. The open trip is an immutable
+  value whose untouched parts stay the same objects, so the client knows without
+  comparing what is unchanged since the last save: a day that is the very object last
+  saved goes as `{id, unchanged: true}`, and so does such a route in a day that
+  changed. The version check makes this safe: a save is only accepted over the version
+  the client last saw, so what it calls unchanged is what the server holds. The server
+  fills the routes sent so from its rows, inside the save's transaction, so that the
+  day they stand in is validated whole (a bound stop against its route point, the
+  outline's key), and then leaves their rows alone but for their day and place; a day
+  sent so keeps all its rows. Stops always go whole with a changed day: they are small
+  and their order is the day's. Finer than a route was not worth its price: a renamed
+  track still sends its line. A document without such marks is as valid as before,
+  which is what imports send. Taking the lines out of the document into a table of
+  their own would also have made the load smaller, but it changes the schema and every
+  path that copies a trip; compressing the upload would have saved 40 % and still sent
+  everything.
 - **The open trip is an immutable value in a signal, not a Solid store.** Each edit
   replaces it with the result of a pure edit, which shares every part it leaves alone. A
   store wraps every object in a proxy: each read of a point registered a dependency, and
@@ -827,8 +845,8 @@ entries at the end of their section.
   from FastCGI, and a collection of some hundred tracks is megabytes of JSON. A
   middleware gzips JSON answers of a kilobyte and more for clients that take gzip; files
   (pictures, GPX, zip) are compressed already and go out as they are. Track lines are
-  dense text, so this takes about 40 % off a large trip, not more; saves still send the
-  whole document uncompressed.
+  dense text, so this takes about 40 % off a large trip, not more. Saves are not
+  compressed; they leave out what is unchanged instead.
 - **Slim 4, PHP-DI, Plates, PHPMailer.** Each does one job and is small: routing with
   middleware and PSR-7, a container with autowiring, templates with layouts and escaping,
   SMTP without a dependency tree. Laravel and Symfony were rejected for their weight;

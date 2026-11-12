@@ -1,5 +1,6 @@
 import { language } from './i18n/language';
 import { t } from './i18n/t';
+import { daysToSend } from './model/delta';
 import type { Entry, EntryTarget } from './model/journal';
 import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Trip, TripKind, TripSummary } from './model/trip';
@@ -191,15 +192,22 @@ export const unshareTrip = (tripId: number): Promise<void> => request('DELETE', 
 /** The read-only page of a trip shared under a token. */
 export const sharedPageUrl = (token: string): string => `${location.origin}/t/${token}`;
 
-/** Saves the whole trip as the server keeps it, each day's stops in riding order; the answer is its new version. */
-export async function saveTrip(trip: Trip, keepalive = false): Promise<number> {
-  const { version } = await request<{ version: number }>('PUT', `/api/trips/${trip.id}`, withStopsInRidingOrder(trip), keepalive);
+/**
+ * Saves the trip as the server keeps it, each day's stops in riding order; the answer is
+ * its new version. Given the trip as the server has it, `saved`, the days and routes
+ * untouched since go as their ids alone.
+ */
+export async function saveTrip(trip: Trip, saved?: Trip, keepalive = false): Promise<number> {
+  const ordered = withStopsInRidingOrder(trip);
+  const days = daysToSend(trip.days, saved, (_, index) => ordered.days[index]!);
+  const { version } = await request<{ version: number }>('PUT', `/api/trips/${trip.id}`, { ...ordered, days }, keepalive);
   return version;
 }
 
-/** Reads the trip, changes it with `change` and saves it; the answer is its new version. */
+/** Reads the trip, changes it with `change` and saves what that changed; the answer is its new version. */
 export async function changeTrip(id: number, change: (trip: Trip) => Trip): Promise<number> {
-  return saveTrip(change(await fetchTrip(id)));
+  const loaded = await fetchTrip(id);
+  return saveTrip(change(loaded), loaded);
 }
 
 export const deleteTrip = (id: number): Promise<void> => request('DELETE', `/api/trips/${id}`);

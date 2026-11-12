@@ -1,9 +1,10 @@
 import { createEffect, createRoot, createSignal, on } from 'solid-js';
 import { ApiError, saveTrip } from '../api';
-import { changeCount, markSaved, openTrip } from './trip';
+import { changeCount, markSaved, openTrip, savedTrip } from './trip';
 
 /**
- * Saves the open trip a moment after its last change, as one document. A save that fails
+ * Saves the open trip a moment after its last change, as one document that leaves out
+ * what the server has already. A save that fails
  * is tried again later; one the server refuses as stale (409) stops the saving until the
  * trip is loaded again.
  */
@@ -29,7 +30,7 @@ async function save(keepalive = false): Promise<void> {
   const count = changeCount();
   setSaveState('saving');
   try {
-    markSaved(await saveTrip(trip, keepalive));
+    markSaved(trip, await saveTrip(trip, savedTrip(), keepalive));
     setSavedSinceLoad(true);
     if (changeCount() === count) setSaveState('saved');
     else {

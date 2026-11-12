@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Trip } from '../model/trip';
 import { routedOf } from '../routing/testing';
-import { addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRouteId, loadTrip, markSaved, openTrip, redo, selectDay, selectedDay, undo, undoLabel, updateStop } from './trip';
+import { addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRouteId, loadTrip, markSaved, openTrip, redo, savedTrip, selectDay, selectedDay, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -86,7 +86,7 @@ describe('the open trip', () => {
     addDay();
     const [first, second] = openTrip()!.days;
     const shown = selectedDay();
-    markSaved(2);
+    markSaved(openTrip()!, 2);
     expect(selectedDay()).toBe(shown);
     selectDay(first!.id);
     appendPoint(routeId, [3, 3]);
@@ -96,11 +96,24 @@ describe('the open trip', () => {
     expect(openTrip()!.days[0]).toBe(first);
   });
 
+  it('remembers the trip as the server has it: as loaded, then as last saved', () => {
+    const loaded = savedTrip();
+    addDay();
+    expect(savedTrip()).toBe(loaded);
+    const sentTrip = openTrip()!;
+    addDay();
+    markSaved(sentTrip, 2);
+    expect(savedTrip()).toBe(sentTrip);
+    expect(openTrip()!.days).toHaveLength(2);
+    closeTrip();
+    expect(savedTrip()).toBeUndefined();
+  });
+
   it('keeps the saved version through an undo', () => {
     addDay();
-    markSaved(2);
+    markSaved(openTrip()!, 2);
     addRoute();
-    markSaved(3);
+    markSaved(openTrip()!, 3);
     undo();
     expect(sent().version).toBe(3);
     expect(sent().days[0]!.routes).toHaveLength(0);

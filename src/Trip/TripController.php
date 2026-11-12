@@ -145,8 +145,7 @@ final class TripController
             return Json::error($response, 422, 'The document must carry the version it was loaded at.');
         }
         try {
-            $document = TripDocumentValidator::validated($body);
-            $saved = $this->documents->save($this->currentUser->get()->id, (int) $args['id'], $document, $version, new DateTimeImmutable());
+            $saved = $this->documents->save($this->currentUser->get()->id, (int) $args['id'], $body, $version, new DateTimeImmutable());
         } catch (InvalidDocument $error) {
             return Json::error($response, 422, $error->getMessage());
         } catch (VersionConflict $conflict) {

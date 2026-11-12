@@ -133,8 +133,9 @@
   stops the ride is late at. Nothing is corrected. Straight legs and legs not routed
   yet count at 50 km/h. Nothing is compared with the clock; that is a navigation
   system's job.
-- Every change saved to the server a moment later, as one document with a version; a
-  save over a newer version is refused and the trip offered for reloading.
+- Every change saved to the server a moment later, as one document with a version that
+  sends only the days and routes changed since the last save; a save over a newer
+  version is refused and the trip offered for reloading.
 - GPX import into a day: a file's routes become routes with every point, their legs
   routed, except those the file carries the way a Garmin calculated for, which keep that
   way; its tracks keep their line with every point;
