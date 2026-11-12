@@ -2,9 +2,9 @@ import { createMemo, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { routesDistance } from '../routing/legs';
 import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
-import { addDay, openTrip, selectDay, selectedDay } from '../state/trip';
+import { openTrip, selectDay, selectedDay } from '../state/trip';
 import { IconButton } from '../ui/IconButton';
-import { ChevronIcon, NeighboursIcon, PencilIcon, PlusIcon } from '../ui/icons';
+import { ChevronIcon, NeighboursIcon, PencilIcon } from '../ui/icons';
 import { SidePane } from '../ui/SidePane';
 import { SectionDetails } from './CollectionPanel';
 import { dayDetail, dayHeading, dayTitleOf } from './labels';
@@ -56,9 +56,6 @@ export function DayPane() {
                 <Show when={!collection()}>
                   <IconButton label={neighboursLabel()} pressed={showNeighbours()} onClick={() => setShowNeighbours(!showNeighbours())}>
                     <NeighboursIcon />
-                  </IconButton>
-                  <IconButton label={t('Add day')} onClick={addDay}>
-                    <PlusIcon />
                   </IconButton>
                   <IconButton label={t('Edit {what}', { what: label() })} onClick={() => setEditTarget({ kind: 'day', id: shown().id })}>
                     <PencilIcon />

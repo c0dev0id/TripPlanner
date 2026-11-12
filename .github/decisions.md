@@ -443,11 +443,10 @@ entries at the end of their section.
   unfolded: opening a trip listed its days and folded those of the one open before, so
   the tree moved under the pointer with every trip opened, and the open trip's
   arrowhead did nothing. A trip now lists its days only while its arrowhead says so,
-  open or not, and one button folds everything away. Two things still unfold by
-  themselves, both to keep something in reach rather than to rearrange the tree: the
-  folders around a trip when it opens, since a trip opened from the search or from the
-  address would otherwise be out of sight, and a trip that is empty, where adding a
-  day is all there is to do.
+  open or not, and one button folds everything away. One thing still unfolds by
+  itself, to keep something in reach rather than to rearrange the tree: the folders
+  around a trip when it opens, since a trip opened from the search or from the address
+  would otherwise be out of sight.
 - **A day looks the same whether its trip is open or not.** An unopened trip listed its
   days as one bare line each, the open one as cards of two lines under a heading with
   two buttons, though both said the same. The outlines now carry what the second line
@@ -457,8 +456,10 @@ entries at the end of their section.
   unopened trip's days are the same cards. What needs the document stays with the open
   trip: the grip, the recordings, the journal; a gap stands where the grip would, so
   that the names line up. The heading "Days" went, since every row says what it is, and
-  its buttons went into the day's pane, which is where a day is worked on; an open trip
-  without days offers its first in the tree, since without a day there is no pane.
+  its two buttons went where what they act on is. Showing the neighbouring days is
+  about the day on the map, so it is in the day's pane. Adding a day adds to the trip
+  whichever day is shown, so it is in the trip's menu: there it needs no day picked
+  and no trip open, and an empty trip needs no row of its own to offer its first.
 - **A day has a pane of its own.** A day's routes and stops were listed inside the day's
   card, in the same narrow column as the library, the trip and its other days: on a wide
   screen one level showed and the rest of the width went unused. The day picked now

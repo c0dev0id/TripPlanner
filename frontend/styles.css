@@ -554,6 +554,7 @@ a {
 
 /* A trip without days says so where they would stand. */
 .no-days {
+  margin: 0;
   padding: 4px 8px;
   font-size: 12px;
 }

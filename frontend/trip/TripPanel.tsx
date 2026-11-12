@@ -17,7 +17,6 @@ import { openRouteColors } from '../state/routeColors';
 import { isCut } from '../state/clipboard';
 import { clickPart, isPartSelected, togglePart } from '../state/partSelection';
 import {
-  addDay,
   addParts,
   addRoute,
   editingRouteId,
@@ -76,7 +75,7 @@ export function TripIcons() {
   );
 }
 
-/** The open trip's days, under its row in the library's tree; a trip without any offers its first. */
+/** The open trip's days, under its row in the library's tree. */
 export function TripPanel() {
   return (
     <section class="trip">
@@ -84,12 +83,7 @@ export function TripPanel() {
         <ForById each={openTrip()!.days}>{(day, index) => <DayItem day={day()} index={index()} />}</ForById>
       </ol>
       <Show when={openTrip()!.days.length === 0}>
-        <div class="row no-days">
-          <span class="muted grow">{t('No days yet.')}</span>
-          <IconButton label={t('Add day')} onClick={addDay}>
-            <PlusIcon />
-          </IconButton>
-        </div>
+        <p class="muted no-days">{t('No days yet.')}</p>
       </Show>
     </section>
   );

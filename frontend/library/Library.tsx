@@ -2,13 +2,13 @@ import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
 import { changeTrip, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
-import { pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
+import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
 import { heldOf, importNote, libraryFolders, libraryTrips, outlineOf, query, relistFolders, relistTrips, runLibrary, showFolder, shownFolderId } from '../state/library';
 import { countsText, folderPath, heldInAll, heldText } from './folders';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
-import { openTrip, openTripId, selectDay } from '../state/trip';
+import { addDay, openTripId, selectDay } from '../state/trip';
 import { dayDetail, dayHeading } from '../trip/labels';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
@@ -143,10 +143,10 @@ export function Library(props: {
     setUnfolded(next);
     writePreference(UNFOLDED, JSON.stringify([...next]));
   };
-  // The folders a trip lies in unfold when it opens, so that it is in view; the trip itself only while it is empty, when all there is to do in it is adding to it.
+  // The folders a trip lies in unfold when it opens, so that it is in view.
   createEffect(
     on(openTripId, (id) => {
-      const keys: string[] = openTrip()?.days.length === 0 ? [`trip:${id}`] : [];
+      const keys: string[] = [];
       for (let f = folders().find((folder) => folder.id === trips().find((trip) => trip.id === id)?.folderId); f; f = folders().find((folder) => folder.id === f!.parentId)) keys.push(keyOf({ folder: f }));
       if (keys.length > 0) fold(keys, true);
     }),
@@ -339,9 +339,12 @@ export function Library(props: {
   document.addEventListener('keydown', onKey);
   onCleanup(() => document.removeEventListener('keydown', onKey));
 
+  /** Adds a day at the end of a trip: of the open one as an edit that can be undone, which shows the day; of another on the server. */
+  const addDayTo = (trip: TripSummary) => (trip.id === openTripId() ? addDay() : void runLibrary(() => changeTrip(trip.id, (loaded) => withDayAdded(loaded, newId())), relistTrips));
+
   /**
    * The menu of a folder or a trip, the same for both: rename, duplicate, cut, copy, paste
-   * into it, move, merge, export, delete. Opened on a card of the selection it acts on all
+   * into it, move, merge, a trip's new day, export, delete. Opened on a card of the selection it acts on all
    * of it; what does not apply to what is selected is greyed out.
    */
   const itemMenu = (item: Item): MenuItem[] => {
@@ -371,6 +374,7 @@ export function Library(props: {
               : { label: t('Trips and planning material do not merge'), disabled: true, run: nothing },
           ]
         : []),
+      ...(!several && 'trip' in item && item.trip.kind === 'trip' ? [{ label: t('Add day'), run: () => addDayTo(item.trip) }] : []),
       { label: t('Export'), disabled: within.length === 0, run: () => void flushSave().then(() => window.location.assign(tripArchiveUrl(within.map((trip) => trip.id)))) },
       { label: t('Delete'), run: () => void remove(chosen) },
     ];

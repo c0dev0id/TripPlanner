@@ -14,12 +14,11 @@
   makes it the one new trips, imports and pasted ones go into, and unfolds it; a click
   on a trip opens it, and on a day of any trip opens that trip at the day. A trip's days
   are listed only while it is unfolded by its arrowhead, the open trip's like any
-  other's: opening a trip unfolds nothing and folds nothing, except that an empty trip
-  unfolds, to be added to. A day reads the same in every trip, open or not: its number
+  other's: opening a trip unfolds nothing and folds nothing. A day reads the same in every trip, open or not: its number
   and name over its date and length, a collection's section over what it holds; the
   open trip's days have in addition the grip that reorders them, their recordings and
   their journal. The days stand under their trip without a heading; a trip without days
-  says so, and where it is open offers its first. The button on "All trips" folds every
+  says so. The button on "All trips" folds every
   folder and trip away.
   The open trip stays in the tree, the others around it, so that another trip is one
   click away. Above the tree stand the library's actions as icons (new trip, new
@@ -39,7 +38,9 @@
   across trips and folders, listing at most twenty results; a trip opened from it stands
   in its own folder.
 - Folders and trips answer to one menu: Rename, Duplicate, Cut, Copy, Paste, Move…,
-  Merge, Export, Delete; what does not apply is greyed out. Several are selected
+  Merge, Export, Delete; what does not apply is greyed out. A trip's menu also adds a
+  day at its end, whether the trip is open or not: in the open one as an edit that can
+  be undone and that shows the day. Several are selected
   together, folders and trips alike: a tap or click on a card's pad (drawn as a drag
   grip), Cmd or Ctrl with a click, Shift with a click for a run (a plain click or tap
   still opens). The menu then acts on all of them, and a press on a pad drags them all
@@ -112,8 +113,8 @@
   the trip, from the trip to the list, in the folder the trip was opened from.
 - Three panes on a wide screen: the library with the trip's days, the pane of the day
   picked, the map. The day's pane has in its heading what acts on the day and its
-  trip's days: showing the neighbouring days on the map, adding a day, the day's
-  dialog, its journal. It lists its routes with profile, distance and the number
+  trip's days: showing the neighbouring days on the map, the day's dialog, its
+  journal. It lists its routes with profile, distance and the number
   of stops on each, folded: a route's arrowhead unfolds its stops and route points in
   riding order with the distance from the day's start, each route on its own; free
   stops within 500 m take the place where the route passes closest, and say how far
