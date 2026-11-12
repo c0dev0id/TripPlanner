@@ -7,7 +7,8 @@ import { CollectionPanel } from '../trip/CollectionPanel';
 import { SaveState } from '../trip/SaveStatus';
 import { TripIcons, TripPanel } from '../trip/TripPanel';
 import { counted } from '../ui/format';
-import { BackIcon } from '../ui/icons';
+import { IconButton } from '../ui/IconButton';
+import { BackIcon, CloseIcon } from '../ui/icons';
 import { DuplicatesReport } from './DuplicatesReport';
 import { heldText } from './folders';
 import { Library } from './Library';
@@ -71,6 +72,9 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
                 <TripIcons />
               </Show>
               <SaveState />
+              <IconButton label={t('Close {what}', { what: trip().name })} onClick={() => void props.onLeave()}>
+                <CloseIcon />
+              </IconButton>
             </>
           )}
         </Show>
