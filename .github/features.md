@@ -122,7 +122,10 @@
   beside it they stand. A click pans the map to the entry. Free stops farther away, or
   of a day without a route, are listed on their own. A click on a route's name takes it
   up to be edited, and unfolds it. The button with three lines folds the library away
-  to a strip, which leaves the map the room, and brings it back. On a screen without
+  to a strip, which leaves the map the room, and brings it back. The strip keeps the
+  open trip's days in reach: a numbered button each, in the colour its routes have
+  where each day has one, the day shown ringed; a click shows the day, or the whole
+  trip again where that day is shown. On a screen without
   room for three panes the day's pane takes the library's place while a day is picked,
   and its close button gives the library back; its heading then steps to the day before
   and after. On a phone the map is the page: the day picked is a sheet under it, pulled

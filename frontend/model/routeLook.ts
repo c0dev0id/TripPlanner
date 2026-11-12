@@ -33,8 +33,11 @@ export function routeColors(days: readonly Day[], coloring: RouteColoring): Map<
   return new Map(days.flatMap((day, d) => day.routes.map((route, r): [string, string] => [route.id, colors[d]![r]!])));
 }
 
+/** The colour the routes of the day at place `index` get where each day has one; none where each route gets its own. */
+export const dayColor = (index: number, coloring: RouteColoring): string | undefined => (coloring === 'day' ? ROUTE_PALETTE[index % ROUTE_PALETTE.length]!.color : undefined);
+
 /** The colours of lines given day by day, each with the colour of its own or none: as routeColors gives them to routes. */
 export function lineColors(days: readonly (readonly { color: string | null }[])[], coloring: RouteColoring): string[][] {
   let place = 0;
-  return days.map((lines, dayIndex) => lines.map((line) => line.color ?? ROUTE_PALETTE[(coloring === 'day' ? dayIndex : place++) % ROUTE_PALETTE.length]!.color));
+  return days.map((lines, dayIndex) => lines.map((line) => line.color ?? dayColor(dayIndex, coloring) ?? ROUTE_PALETTE[place++ % ROUTE_PALETTE.length]!.color));
 }

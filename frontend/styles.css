@@ -65,6 +65,51 @@ body {
   display: none;
 }
 
+/* The open trip's days in the strip, a numbered button each; the day shown is ringed. A long trip's scroll. */
+.panel.folded {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel.folded > .day-strip {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+  /* As wide as the strip, so that the ring of the day shown has room. */
+  margin: 4px -6px 0;
+  padding: 4px 0 10px;
+  overflow-y: auto;
+  list-style: none;
+  scrollbar-width: none;
+}
+
+.panel button.day-chip {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 8px;
+  background: var(--active);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* In its day's colour, on each of which white reads; the border keeps the palette's black apart from a dark panel. */
+.panel button.day-chip.colored {
+  color: #fff;
+}
+
+.panel button.day-chip.colored:hover {
+  filter: brightness(1.15);
+}
+
+.panel button.day-chip[aria-pressed='true'] {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* The pane of the day picked: its heading, then its routes, stops and recordings. */
 .side-pane {
   position: relative;
@@ -1563,6 +1608,11 @@ fieldset.symbols {
   .panel.folded .open-trip > .name {
     display: block;
     font-weight: 600;
+  }
+
+  /* The sheet's heading steps through the days there. */
+  .panel.folded > .day-strip {
+    display: none;
   }
 
   .side-pane {

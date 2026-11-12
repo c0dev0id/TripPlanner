@@ -471,6 +471,13 @@ entries at the end of their section.
   library folds away to a strip when the map is what matters: planning is the same
   screen with other proportions, not another mode. Where three panes do not fit, the
   day's pane stands in for the library until it is closed.
+- **The folded library keeps the days as numbers.** With the library folded away, the
+  day shown could only be changed by unfolding it again. The strip lists the open
+  trip's days as numbered buttons in their route colour. Numbers, not small pictures
+  of each day's line: a number is read at once and is right while a route is being
+  drawn, where a thumbnail of the line would come from the outline, which is as old as
+  the last save, shows two days of a loop alike and an empty day as nothing. A phone
+  has no strip; its sheet steps through the days.
 - **Routes are folded until asked.** A day of a collection may hold hundreds of routes;
   each unfolds on its own by its arrowhead, and none does by itself, except that taking
   a route up to be edited unfolds it once, since its points are what is then worked on.

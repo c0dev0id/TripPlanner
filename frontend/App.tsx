@@ -18,6 +18,7 @@ import { closeTrip, editingRouteId, editRoute, loadTrip, openTrip, openTripId, s
 import { PreferencesDialog } from './preferences/PreferencesDialog';
 import { DayDialog } from './trip/DayDialog';
 import { DayPane } from './trip/DayPane';
+import { DayStrip } from './trip/DayStrip';
 import { ExportDialog } from './trip/ExportDialog';
 import { JournalDialog } from './trip/JournalDialog';
 import { partKeys } from './trip/partKeys';
@@ -116,6 +117,9 @@ export function App() {
             {t('Sign out')}
           </button>
         </header>
+        <Show when={panelFolded() && openTrip()}>
+          <DayStrip />
+        </Show>
         <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} opening={opening()} error={error()} />
       </aside>
       <Show when={showingDuplicates()} fallback={<DayPane />}>
