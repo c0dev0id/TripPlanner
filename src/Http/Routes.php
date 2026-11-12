@@ -64,6 +64,7 @@ final class Routes
             $api->get('/trips', [TripController::class, 'index']);
             $api->post('/trips', [TripController::class, 'create']);
             $api->get('/trips/archive', [ArchiveController::class, 'zip']);
+            $api->get('/trips/outlines', [TripController::class, 'outlines']);
             $api->get('/trips/{id:[0-9]+}', [TripController::class, 'show']);
             $api->put('/trips/{id:[0-9]+}', [TripController::class, 'update']);
             $api->post('/trips/{id:[0-9]+}/copies', [TripController::class, 'duplicate']);

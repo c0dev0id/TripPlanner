@@ -104,7 +104,9 @@ CREATE TABLE IF NOT EXISTS days (
     position INTEGER NOT NULL,
     name TEXT NOT NULL,
     date TEXT,
-    notes TEXT NOT NULL DEFAULT ''
+    notes TEXT NOT NULL DEFAULT '',
+    -- The thinned lines of its routes as JSON, with a key of what they were made from; see Outline.
+    outline TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS days_trip ON days(trip_id, position);
 

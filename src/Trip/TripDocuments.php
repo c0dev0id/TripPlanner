@@ -26,6 +26,21 @@ final class TripDocuments
         return $this->document('id = ? AND user_id = ?', [$tripId, $userId]);
     }
 
+    /**
+     * The outlines of the user's trips, by trip: for each of its days the thinned lines of
+     * its routes (see Outline).
+     *
+     * @return array<int, list<list<array{line: string, color: ?string}>>>
+     */
+    public function outlines(int $userId): array
+    {
+        $outlines = [];
+        foreach ($this->rows('SELECT d.trip_id, d.outline FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.user_id = ? ORDER BY d.trip_id, d.position', $userId) as $day) {
+            $outlines[(int) $day['trip_id']][] = Outline::lines($day['outline']);
+        }
+        return $outlines;
+    }
+
     /** The trip shared under the token, or null when none is. */
     public function loadShared(string $token): ?array
     {
@@ -240,9 +255,10 @@ final class TripDocuments
     private function saveDays(int $tripId, array $days): void
     {
         $upsertDay = $this->db->prepare(
-            'INSERT INTO days (id, trip_id, position, name, date, notes) VALUES (?, ?, ?, ?, ?, ?)
-             ON CONFLICT(id) DO UPDATE SET position = excluded.position, name = excluded.name, date = excluded.date, notes = excluded.notes',
+            'INSERT INTO days (id, trip_id, position, name, date, notes, outline) VALUES (?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT(id) DO UPDATE SET position = excluded.position, name = excluded.name, date = excluded.date, notes = excluded.notes, outline = excluded.outline',
         );
+        $outlines = array_column($this->rows('SELECT id, outline FROM days WHERE trip_id = ?', $tripId), 'outline', 'id');
         $upsertRoute = $this->db->prepare(
             'INSERT INTO routes (id, day_id, position, name, kind, profile, highways, optional, color, points, legs, line) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, position = excluded.position, name = excluded.name, kind = excluded.kind,
@@ -262,7 +278,7 @@ final class TripDocuments
         $this->deleteMissing('stops', 'day_id IN (SELECT id FROM days WHERE trip_id = ?)', $tripId, $stopIds);
         $this->deleteMissing('days', 'trip_id = ?', $tripId, array_column($days, 'id'));
         foreach ($days as $position => $day) {
-            $upsertDay->execute([$day['id'], $tripId, $position, $day['name'], $day['date'], $day['notes']]);
+            $upsertDay->execute([$day['id'], $tripId, $position, $day['name'], $day['date'], $day['notes'], Outline::stored($day, $outlines[$day['id']] ?? null)]);
             foreach ($day['routes'] as $index => $route) {
                 $track = $route['kind'] === 'track';
                 $upsertRoute->execute([
@@ -289,10 +305,10 @@ final class TripDocuments
         $this->db->prepare($sql)->execute([$tripId, ...$keep]);
     }
 
-    private function rows(string $sql, int $tripId): array
+    private function rows(string $sql, int $id): array
     {
         $statement = $this->db->prepare($sql);
-        $statement->execute([$tripId]);
+        $statement->execute([$id]);
         return $statement->fetchAll();
     }
 }

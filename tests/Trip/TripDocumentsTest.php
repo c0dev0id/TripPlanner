@@ -71,6 +71,19 @@ final class TripDocumentsTest extends TestCase
         self::assertSame(TripFixture::track('t1'), $day['routes'][1]);
     }
 
+    public function testKeepsAnOutlineOfEachDayForTheUsersTrips(): void
+    {
+        $document = TripFixture::document();
+        $document['days'][0]['routes'][] = TripFixture::track('t1');
+        $document['days'][] = TripFixture::day('empty');
+        $this->save($document, 1);
+        $outlines = $this->documents->outlines($this->userId);
+        self::assertSame([$this->tripId], array_keys($outlines));
+        self::assertCount(count($document['days'][0]['routes']), $outlines[$this->tripId][0]);
+        self::assertSame([], $outlines[$this->tripId][count($document['days']) - 1]);
+        self::assertSame([], $this->documents->outlines($this->userId + 1));
+    }
+
     public function testLoadsEmptyLegsAsAnObjectAndRoutesInOrder(): void
     {
         $document = TripFixture::document();

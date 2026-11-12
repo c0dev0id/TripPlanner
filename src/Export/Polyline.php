@@ -18,6 +18,33 @@ final class Polyline
     }
 
     /**
+     * Encodes [lng, lat] pairs as a polyline of the precision.
+     *
+     * @param list<array{0: float, 1: float}> $points
+     */
+    public static function encode(array $points, int $precision = 6): string
+    {
+        $factor = 10 ** $precision;
+        $encoded = '';
+        $last = [0, 0];
+        foreach ($points as $point) {
+            // Latitude first, each as the difference to the point before.
+            foreach ([1, 0] as $axis) {
+                $value = (int) round($point[$axis] * $factor);
+                $delta = $value - $last[$axis];
+                $last[$axis] = $value;
+                $bits = $delta < 0 ? ~($delta << 1) : $delta << 1;
+                while ($bits >= 0x20) {
+                    $encoded .= chr((0x20 | ($bits & 0x1f)) + 63);
+                    $bits >>= 5;
+                }
+                $encoded .= chr($bits + 63);
+            }
+        }
+        return $encoded;
+    }
+
+    /**
      * Decodes an encoded polyline (Google's format, as OSRM returns it) to [lng, lat]
      * pairs; OSRM's polyline6 has precision 6.
      *
@@ -31,10 +58,14 @@ final class Polyline
         $length = strlen($encoded);
         $lat = 0;
         $lng = 0;
-        $next = function () use ($encoded, &$index): int {
+        /** The next number, or null where the text ends within it. */
+        $next = function () use ($encoded, $length, &$index): ?int {
             $result = 0;
             $shift = 0;
             do {
+                if ($index >= $length) {
+                    return null;
+                }
                 $byte = ord($encoded[$index++]) - 63;
                 $result |= ($byte & 0x1f) << $shift;
                 $shift += 5;
@@ -42,8 +73,14 @@ final class Polyline
             return $result & 1 ? ~($result >> 1) : $result >> 1;
         };
         while ($index < $length) {
-            $lat += $next();
-            $lng += $next();
+            $dLat = $next();
+            $dLng = $next();
+            // A text cut off within a point ends the line at the point before.
+            if ($dLat === null || $dLng === null) {
+                break;
+            }
+            $lat += $dLat;
+            $lng += $dLng;
             $points[] = [$lng / $factor, $lat / $factor];
         }
         return $points;

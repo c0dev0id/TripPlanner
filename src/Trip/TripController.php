@@ -28,6 +28,12 @@ final class TripController
         return Json::of($response, $this->trips->listFor($this->currentUser->get()->id));
     }
 
+    /** The outlines of the user's trips, by trip id: per day the thinned lines of its routes. */
+    public function outlines(Request $request, Response $response): Response
+    {
+        return Json::of($response, (object) $this->documents->outlines($this->currentUser->get()->id));
+    }
+
     public function create(Request $request, Response $response): Response
     {
         $name = Name::of(Json::field($request, 'name'));
