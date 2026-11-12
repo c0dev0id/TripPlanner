@@ -16,10 +16,10 @@
   marked and unfolded already, it folds. A trip is a folder of days and answers the
   same way: a click marks it and unfolds it, which opens a trip that was not open. A
   click on a day marks the day and shows it in its pane. A click on the trip then gives
-  the mark back to the trip while the day stays shown; the next click folds the trip
-  and closes the day; the one after unfolds the trip again. A click on the day that is
-  shown changes nothing but the mark, which it takes back; a day is closed by its
-  pane's button or with its trip. What folds takes what it holds with it: a folder its
+  the mark back to the trip and closes the day; the next click folds the trip, the one
+  after unfolds it again. A click on the day that is shown changes nothing but the
+  mark, which it takes back from a folder; a day is closed by its pane's button or by
+  a click on its trip. What folds takes what it holds with it: a folder its
   folders and trips, a trip its day, a day the lists of its routes. The marked row is
   tinted, and a coloured strip runs down the left of it and of what is open besides:
   the folders around the mark, its trip and the top, and the open trip and its day

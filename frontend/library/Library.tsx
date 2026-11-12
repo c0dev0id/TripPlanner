@@ -179,15 +179,10 @@ export function Library(props: {
    */
   const clickTrip = (trip: TripSummary) => {
     const key = keyOf({ trip });
-    if (!isMarkedTrip(trip)) {
-      fold([key], true);
-      if (trip.id === openTripId()) markTrip();
-      else props.onOpen(trip);
-      return;
-    }
-    const unfold = !unfolded().has(key);
-    fold([key], unfold);
-    if (!unfold) selectDay(undefined);
+    if (isMarkedTrip(trip)) return fold([key], !unfolded().has(key));
+    fold([key], true);
+    if (trip.id === openTripId()) markTrip();
+    else props.onOpen(trip);
   };
   /** Whether what is acted on holds the open trip, which the library must not change behind its back. */
   const holdsOpen = (items: readonly Item[]): boolean => tripsWithin(items).some((trip) => trip.id === openTripId());

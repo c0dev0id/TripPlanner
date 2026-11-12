@@ -45,8 +45,13 @@ export const isTripMarked = (): boolean => mark() === 'trip' || (mark() === 'day
 /** Whether the mark is on the open trip or on its day: not on a folder. */
 export const isMarkInTrip = (): boolean => openTrip() !== undefined && mark() !== 'folder';
 
-/** Gives the mark to the open trip; a day that is shown stays shown. */
-export const markTrip = (): void => void setMark('trip');
+/** Gives the mark to the open trip, which closes its day that is shown. */
+export function markTrip(): void {
+  batch(() => {
+    selectDay(undefined);
+    setMark('trip');
+  });
+}
 
 /** Gives the mark back to the day that is shown. */
 export const markShownDay = (): void => void setMark('day');

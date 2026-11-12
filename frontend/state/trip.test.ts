@@ -109,28 +109,24 @@ describe('the open trip', () => {
     expect(savedTrip()).toBeUndefined();
   });
 
-  it('gives the mark to the day picked, and back to the trip while the day stays shown', () => {
+  it('gives the mark to the day picked, and back to the trip, which closes the day', () => {
     addDay();
     const dayId = openTrip()!.days[0]!.id;
     expect(isDayMarked(dayId)).toBe(true);
     expect(isTripMarked()).toBe(false);
     markTrip();
-    expect(selectedDay()?.id).toBe(dayId);
-    expect(isDayMarked(dayId)).toBe(false);
-    expect(isTripMarked()).toBe(true);
-    markShownDay();
-    expect(isDayMarked(dayId)).toBe(true);
-    selectDay(undefined);
+    expect(selectedDay()).toBeUndefined();
     expect(isTripMarked()).toBe(true);
     // A folder takes the mark from the trip and its day, which stay open, until one of them is clicked.
     selectDay(dayId);
     markFolder();
     expect([isTripMarked(), isDayMarked(dayId), isMarkInTrip()]).toEqual([false, false, false]);
     expect(selectedDay()?.id).toBe(dayId);
-    selectDay(undefined);
-    expect(isTripMarked()).toBe(false);
+    markShownDay();
+    expect(isDayMarked(dayId)).toBe(true);
+    markFolder();
     markTrip();
-    expect([isTripMarked(), isMarkInTrip()]).toEqual([true, true]);
+    expect([isTripMarked(), isMarkInTrip(), selectedDay()]).toEqual([true, true, undefined]);
   });
 
   it('keeps the saved version through an undo', () => {

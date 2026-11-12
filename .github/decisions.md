@@ -451,11 +451,11 @@ entries at the end of their section.
   on the row did. They answer to one rule instead. The tree has one mark, on the row
   clicked last. A click on a row that is not marked marks it and unfolds it, and for a
   trip that opens it, for a day that shows it; a click on the marked row folds it, or
-  unfolds it where it was folded. Being marked and being open are two things: a click
-  on the trip while its day holds the mark only takes the mark, the day stays shown,
-  and the click after that closes both, so that one click never does two things the
-  user did not ask for. Only the day that is shown has nothing to fold, so a click on
-  it does nothing but take the mark back. What folds takes what it holds with it, a
+  unfolds it where it was folded. A click on the trip while its day is shown closes the
+  day: the trip is then what is loaded, and the pane does not keep showing a day that
+  the tree no longer points at. The trip stays unfolded on that click and folds on the
+  next. Only the day that is shown has nothing to fold, so a click on it does nothing
+  but take the mark back from a folder that held it. What folds takes what it holds with it, a
   folder its folders and trips, a trip its day, a day the lists of its routes: what was
   closed is closed when it is seen again. What is open above the mark carries the mark's strip
   without its tint, as do the open trip and its day while the mark is elsewhere, so that the way down to
