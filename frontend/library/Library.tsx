@@ -5,7 +5,7 @@ import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
 import { heldOf, importNote, libraryFolders, libraryTrips, outlineOf, query, relistFolders, relistTrips, runLibrary, showFolder, shownFolderId } from '../state/library';
-import { folderPath, heldInAll, heldText } from './folders';
+import { countsText, folderPath, heldInAll, heldText } from './folders';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
 import { openTrip, openTripId, selectDay } from '../state/trip';
@@ -19,7 +19,7 @@ import { ChevronIcon, CollectionIcon, FoldIcon, FolderIcon, HomeIcon, TripIcon }
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
-import { clickSelect, holdSelection, menuSelection, NOTHING_SELECTED, selectionOwner, toggled, type Selection } from '../ui/selection';
+import { clickSelect, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, selects, toggled, type Selection } from '../ui/selection';
 import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
 import { Pad } from '../ui/Pad';
@@ -92,8 +92,9 @@ const SEARCH_LIMIT = 20;
 type LibraryDialog = { kind: 'rename-folder'; folder: Folder } | { kind: 'rename-trip'; trip: TripSummary };
 
 /**
- * The folder the explorer shows, its folders and trips, or what the search found across
- * all folders: open one, move, merge, rename, delete.
+ * The library as a tree: folders and trips unfolding in place, the open trip's days among
+ * them, or what the search found across all folders. Its rows are opened, selected, cut,
+ * copied, pasted into, moved, merged, renamed, exported and deleted.
  */
 export function Library(props: {
   onOpen: (trip: TripSummary, dayId?: string) => void;
@@ -148,11 +149,7 @@ export function Library(props: {
 
   /** Asks to delete the folder and, when it holds anything, whether that moves up or goes with it; undefined when the user cancels. */
   const askFolderDeletion = async (f: Folder): Promise<'move' | 'delete' | undefined> => {
-    const contentsText = ({ folders, trips }: { folders: number; trips: number }) => {
-      const folderText = folders > 0 ? counted(folders, 'folder') : '';
-      const tripText = trips > 0 ? counted(trips, 'trip') : '';
-      return folderText && tripText ? t('{folders} and {trips}', { folders: folderText, trips: tripText }) : folderText || tripText;
-    };
+    const contentsText = (held: { folders: number; trips: number }) => countsText(held.folders, held.trips);
     const own = contentsText(heldOf(f.id));
     if (!own) return (await askConfirmation(t('Delete the folder “{name}”?', { name: f.name }), t('Delete'))) ? 'move' : undefined;
     const all = contentsText(heldInAll(folders(), heldOf, f.id));
@@ -176,11 +173,9 @@ export function Library(props: {
     });
   };
   /** The folders and trips selected to be acted on together, by key, the first selected first; none once another folder is shown. */
-  const [selected, setSelected] = createSignal<Selection<string>>(NOTHING_SELECTED);
+  const selected = () => selectionOf('library');
+  const setSelected = (rows: Selection<string>) => selectIn('library', rows);
   createEffect(on(shownFolderId, () => setSelected(NOTHING_SELECTED)));
-  // One selection at a time across the lists: this one gives way to another's.
-  createEffect(() => holdSelection('library', selected().keys.size));
-  createEffect(() => selectionOwner() !== 'library' && setSelected(NOTHING_SELECTED));
   const isSelected = createSelector(() => selected().keys, (key: string, keys) => keys.has(key));
   /** Every folder and trip there is, by key. */
   const itemOf = (key: string): Item | undefined => {
@@ -198,8 +193,8 @@ export function Library(props: {
   const select = (item: Item) => ({
     selected: () => isSelected(keyOf(item)),
     cut: () => isCut(item),
-    onToggle: () => setSelected((s) => toggled(s, keyOf(item))),
-    onClick: (e: MouseEvent) => setSelected((s) => clickSelect(s, shownKeys(), keyOf(item), e)),
+    onToggle: () => setSelected(toggled(selected(), keyOf(item))),
+    onClick: (e: MouseEvent) => setSelected(clickSelect(selected(), shownKeys(), keyOf(item), e)),
     onDrag: (e: PointerEvent, dragged: () => void) => {
       const moved = chosenWith(item);
       dragToFolder(e, moved.length === 1 ? nameOf(item) : countText(moved), (into) => moveInto(moved, into), dragged);
@@ -210,11 +205,7 @@ export function Library(props: {
     return cut !== undefined && cut.move && ('folder' in item ? cut.folderIds.includes(item.folder.id) : cut.tripIds.includes(item.trip.id));
   };
   /** How many folders and trips: 2 folders and 3 trips. */
-  const countText = (items: readonly Item[]): string => {
-    const folderText = foldersOf(items).length > 0 ? counted(foldersOf(items).length, 'folder') : '';
-    const tripText = tripsOf(items).length > 0 ? counted(tripsOf(items).length, 'trip') : '';
-    return folderText && tripText ? t('{folders} and {trips}', { folders: folderText, trips: tripText }) : folderText || tripText;
-  };
+  const countText = (items: readonly Item[]): string => countsText(foldersOf(items).length, tripsOf(items).length);
   /** Lists the library afresh, nothing selected: after folders or trips were moved, merged, pasted or deleted. */
   const relist = () => {
     setSelected(NOTHING_SELECTED);
@@ -270,23 +261,17 @@ export function Library(props: {
     return places.length > 0 ? [{ label: t('Move…'), items: places }] : [];
   };
   /** What the clipboard holds of the library, by number: 2 folders and 3 trips. */
-  const clipText = (copied: LibraryClip): string => {
-    const folderText = copied.folderIds.length > 0 ? counted(copied.folderIds.length, 'folder') : '';
-    const tripText = copied.tripIds.length > 0 ? counted(copied.tripIds.length, 'trip') : '';
-    return folderText && tripText ? t('{folders} and {trips}', { folders: folderText, trips: tripText }) : folderText || tripText;
-  };
+  const clipText = (copied: LibraryClip): string => countsText(copied.folderIds.length, copied.tripIds.length);
   /** Pastes the folders and trips on the clipboard into a folder: cut, they move there; copied, each trip gets a copy there. */
   const pasteLibrary = (into: number | null) => {
     const copied = libraryClip();
     if (!copied) return;
     if (copied.move) {
       clearClip();
-      moveInto([...copied.folderIds.map((id) => itemOf(`folder:${id}`)), ...copied.tripIds.map((id) => itemOf(`trip:${id}`))].filter((item): item is Item => item !== undefined), into);
+      moveInto([...folders().filter((f) => copied.folderIds.includes(f.id)).map((folder) => ({ folder })), ...trips().filter((trip) => copied.tripIds.includes(trip.id)).map((trip) => ({ trip }))], into);
       return;
     }
-    void runLibrary(async () => {
-      for (const id of copied.tripIds) await moveTrip((await duplicateTrip(id)).id, into);
-    }, relist);
+    void runLibrary(() => Promise.all(copied.tripIds.map(async (id) => moveTrip((await duplicateTrip(id)).id, into))), relist);
   };
   const renamedFolder = () => {
     const d = dialog();
@@ -326,8 +311,9 @@ export function Library(props: {
   /** The keys that cut, copy and delete the selected folders and trips, and paste those on the clipboard into the folder shown, as the menu does. */
   const onKey = (e: KeyboardEvent) => {
     const verb = fileVerb(e);
+    if (!verb) return;
     const chosen = [...selected().keys].flatMap((key) => itemOf(key) ?? []);
-    if (!verb || (verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0)) return;
+    if ((verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0)) return;
     e.preventDefault();
     if (verb === 'paste') pasteLibrary(shownFolderId());
     else if (verb === 'delete') void remove(chosen);
@@ -517,7 +503,7 @@ function TripCard(props: {
   fold?: CardFold;
   children?: JSX.Element;
 }) {
-  const shape = () => outlineOf(props.trip.id)?.map((day) => day.lines).filter((lines) => lines.length > 0);
+  const shape = createMemo(() => outlineOf(props.trip.id)?.map((day) => day.lines).filter((lines) => lines.length > 0));
   const meta = () =>
     (props.trip.kind === 'collection'
       ? [props.where, t('Planning material'), counted(props.trip.dayCount, 'section')]
@@ -536,7 +522,7 @@ function TripCard(props: {
         <Show when={props.fold}>{(fold) => <FoldButton fold={fold()} />}</Show>
         <button
           class="text grow"
-          onClick={(e) => (props.select && (e.metaKey || e.ctrlKey || e.shiftKey) ? props.select.onClick(e) : props.onOpen(props.trip))}
+          onClick={(e) => (props.select && selects(e) ? props.select.onClick(e) : props.onOpen(props.trip))}
           disabled={props.disabled}
         >
           <Show when={props.trip.kind === 'collection'} fallback={<TripIcon />}>
@@ -559,8 +545,8 @@ function TripCard(props: {
 
 /**
  * A folder as a card: its name over `note`, what it holds and in search results where it
- * is; its menu renames and deletes it. Trips and folders dragged onto it move into it;
- * where `onDrag` is given, its pad drags it into another.
+ * is; its menu is the library's. Trips and folders dragged onto it move into it; with
+ * `select`, its pad selects it or drags it into another.
  */
 function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[]; select?: CardSelect; fold?: CardFold; children?: JSX.Element }) {
   return (
@@ -572,7 +558,7 @@ function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) 
           )}
         </Show>
         <Show when={props.fold}>{(fold) => <FoldButton fold={fold()} />}</Show>
-        <button class="text grow" onClick={(e) => (props.select && (e.metaKey || e.ctrlKey || e.shiftKey) ? props.select.onClick(e) : props.onOpen(props.folder.id))}>
+        <button class="text grow" onClick={(e) => (props.select && selects(e) ? props.select.onClick(e) : props.onOpen(props.folder.id))}>
           <FolderIcon />
           <span class="lines">
             <span class="name">{props.folder.name}</span>

@@ -5,6 +5,7 @@ import { deltaSummaryOf, type Delta } from '../recording/delta';
 import { DIFFERENCE_FIGURES, FIGURES, type Figure } from '../recording/figures';
 import { kmBySurface, NO_VALUE, SURFACES, surfaceLabel, type Coloring } from '../recording/lineColors';
 import { histogram, summaryOf, type Measures, type Metric } from '../recording/measures';
+import { onPhone } from '../state/panel';
 import {
   colorings,
   comparands,
@@ -81,7 +82,7 @@ function SummaryCard(props: { opened: Opened }) {
   });
   return (
     // On a narrow screen the card would cover half the map: it starts folded there.
-    <details class="map-card summary-card" open={matchMedia('(min-width: 721px)').matches}>
+    <details class="map-card summary-card" open={!onPhone()}>
       <summary class="row">
         <span class="swatch" style={{ background: recordingColor(props.opened.recording) }} />
         <h3 class="grow name">{props.opened.recording.name}</h3>

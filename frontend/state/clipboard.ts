@@ -86,13 +86,6 @@ export function isCutRecording(id: number): boolean {
   return from !== undefined && from.tripId === openTripId() && from.ids.includes(id);
 }
 
-/** Pastes a GPX file of one track into the day as a recording, saying so under the day's recordings. */
-const pasteAsRecording = (dayId: string, name: string, gpx: string) =>
-  void recordingAction(dayId, async () => {
-    await addRecording(dayId, gpx, { name });
-    return t('“{name}” added as a recording.', { name });
-  });
-
 /**
  * Pastes recordings onto a day of the open trip: cut from this trip they move there;
  * otherwise each is added, and what was cut from another trip is then deleted in it.
@@ -191,7 +184,7 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
   const track = more.length === 0 && only?.route.kind === 'track' ? only.route : undefined;
   return [
     { label, run: shown(pasted(copied, (ids) => movePartsToDay('route', ids, id), () => pasteRoutes(id, copied.routes))) },
-    ...(track ? [{ label: t('Paste “{name}” as a recording', { name: track.name || t('track') }), run: shown(() => pasteAsRecording(id, track.name || t('Track'), trackGpx(track.name, decodeCached(track.line)))) }] : []),
+    ...(track ? [{ label: t('Paste “{name}” as a recording', { name: track.name || t('track') }), run: shown(() => void pasteRecordings(id, [{ name: track.name || t('Track'), gpx: trackGpx(track.name, decodeCached(track.line)) }], undefined)) }] : []),
   ];
 }
 

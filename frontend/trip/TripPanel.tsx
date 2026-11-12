@@ -38,6 +38,7 @@ import { ChevronIcon, ClockIcon, DownloadIcon, FileImportIcon, NeighboursIcon, N
 import { Grip } from '../ui/Grip';
 import { IconButton } from '../ui/IconButton';
 import { MenuButton } from '../ui/MenuButton';
+import { selects } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 import { addRecordingPicked, DayRecordings, RecordingsToggle } from './Recordings';
@@ -56,9 +57,6 @@ export function JournalButton(props: { target: EntryTarget; of: string }) {
     </button>
   );
 }
-
-/** Whether a click is one that selects: with Cmd, Ctrl or Shift held. */
-const selects = (e: MouseEvent): boolean => e.metaKey || e.ctrlKey || e.shiftKey;
 
 /** The open trip's own actions, as icons on the explorer's heading: edit, export, journal, print and share. */
 export function TripIcons() {
@@ -211,7 +209,7 @@ function DaySummary(props: { timeline: DayTimeline }) {
 
 /**
  * A route of the day: its row, whose menu (right-click or a long press) edits, duplicates,
- * copies, moves, condenses or converts a track, and removes it; and while it is selected, its stops
+ * copies, moves, condenses or converts a track, and removes it; and while it is unfolded, its stops
  * and points in riding order under it, out of `sequence`, its part of the day's.
  */
 function RouteItem(props: { route: Route; index: number; day: Day; sequence: SequenceEntry[] }) {
@@ -288,14 +286,14 @@ function SequenceItems(props: { entries: SequenceEntry[] }) {
   return <ForById each={props.entries}>{(entry) => <SequenceItem entry={entry()} time={selectedTimeline()?.times.get(entry().id)} />}</ForById>;
 }
 
+/** The name of a sequence row that is a route point, not a stop. */
+const ROUTE_POINT = t('Route point');
+
 /**
  * A stop or a plain route point with its times and distance from the day's start; a click
  * pans the map there. Before a stop whose fixed time the ride misses stands a row of its
  * own that says by how much it is late or early, and when the ride gets there.
  */
-/** The name of a sequence row that is a route point, not a stop. */
-const ROUTE_POINT = t('Route point');
-
 function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined }) {
   const stop = () => props.entry.stop;
   return (

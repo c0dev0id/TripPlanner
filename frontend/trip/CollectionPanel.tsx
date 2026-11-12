@@ -14,6 +14,7 @@ import { counted, distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
+import { selects } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { routeKindLabel, routeLabel } from './labels';
 import { partMenu } from './partMenu';
@@ -44,9 +45,6 @@ export function CollectionPanel() {
     </section>
   );
 }
-
-/** Whether a click is one that selects: with Cmd, Ctrl or Shift held. */
-const selects = (e: MouseEvent): boolean => e.metaKey || e.ctrlKey || e.shiftKey;
 
 /** A section as a card: its name over what it holds; opened, its routes and waypoints. Its menu renames and removes it. */
 function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {

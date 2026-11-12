@@ -12,7 +12,7 @@ import { counted, distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { fileVerb } from '../ui/fileVerb';
-import { clickSelect, holdSelection, menuSelection, NOTHING_SELECTED, selectionOwner, toggled, type Selection } from '../ui/selection';
+import { clickSelect, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, toggled, type Selection } from '../ui/selection';
 import { SidePane } from '../ui/SidePane';
 import { Pad } from '../ui/Pad';
 
@@ -56,14 +56,15 @@ const OWNER = 'duplicates';
 export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void; disabled: boolean }) {
   const [groups, { refetch }] = createResource(listDuplicates);
   const of = (kind: DuplicateGroup['kind']) => (groups() ?? []).filter((g) => g.kind === kind);
-  const [selection, setSelection] = createSignal<Selection<string>>(NOTHING_SELECTED);
+  const selection = () => selectionOf(OWNER);
+  const setSelection = (rows: Selection<string>) => selectIn(OWNER, rows);
+  onCleanup(() => setSelection(NOTHING_SELECTED));
   const [note, setNote] = createSignal<{ text: string; error: boolean }>();
   /** The routes in the order shown, by key; a route in a group of each kind is shown twice but listed once. */
   const shown = createMemo(() => new Map([...of('copies'), ...of('same ride')].flatMap((g) => g.routes).map((r) => [keyOf(r), r])));
   const isSelected = createSelector(() => selection().keys, (key: string, keys) => keys.has(key));
-  // One selection at a time across the lists: this one gives way to another's.
-  createEffect(() => holdSelection(OWNER, selection().keys.size));
-  createEffect(() => selectionOwner() !== OWNER && setSelection(NOTHING_SELECTED));
+  /** The selected routes, in the order shown. */
+  const selectedRoutes = () => [...shown().values()].filter((r) => selection().keys.has(keyOf(r)));
   /** The day the report opened itself, which leaves it in the pane. */
   let opened: string | undefined;
   const open = (route: DuplicateRoute) => {
@@ -98,7 +99,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
       return t('Copied {what}: paste from the menu of a day, a trip or a folder.', { what: counted(copies.length, 'route') });
     });
   const remove = async (chosen: DuplicateRoute[]) => {
-    const trips = new Set(chosen.map((r) => r.tripId)).size;
+    const trips = tripIdsOf(chosen).length;
     const question =
       chosen.length === 1
         ? t('Delete the route “{name}” from {where}?', { name: nameOf(chosen[0]!), where: whereText(chosen[0]!) })
@@ -113,8 +114,8 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   };
   /** The menu of a route: for the selected routes, or for it alone where it is not selected. */
   const items = (route: DuplicateRoute): MenuItem[] => {
-    setSelection((s) => menuSelection(s, keyOf(route)));
-    const chosen = [...shown().values()].filter((r) => selection().keys.has(keyOf(r)));
+    setSelection(menuSelection(selection(), keyOf(route)));
+    const chosen = selectedRoutes();
     const one = chosen.length === 1 ? chosen[0] : undefined;
     const n = chosen.length;
     return [
@@ -124,18 +125,17 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
     ];
   };
   const onKey = (e: KeyboardEvent) => {
-    const chosen = [...shown().values()].filter((r) => selection().keys.has(keyOf(r)));
-    const verb = chosen.length > 0 ? fileVerb(e) : undefined;
+    const verb = selection().keys.size > 0 ? fileVerb(e) : undefined;
     if (verb !== 'copy' && verb !== 'delete') return;
     e.preventDefault();
-    void (verb === 'copy' ? copy(chosen) : remove(chosen));
+    void (verb === 'copy' ? copy(selectedRoutes()) : remove(selectedRoutes()));
   };
   document.addEventListener('keydown', onKey);
   onCleanup(() => document.removeEventListener('keydown', onKey));
   const rows = {
     selected: (route: DuplicateRoute) => isSelected(keyOf(route)),
-    onClick: (route: DuplicateRoute, e: MouseEvent) => setSelection((s) => clickSelect(s, [...shown().keys()], keyOf(route), e)),
-    onToggle: (route: DuplicateRoute) => setSelection((s) => toggled(s, keyOf(route))),
+    onClick: (route: DuplicateRoute, e: MouseEvent) => setSelection(clickSelect(selection(), [...shown().keys()], keyOf(route), e)),
+    onToggle: (route: DuplicateRoute) => setSelection(toggled(selection(), keyOf(route))),
     onOpen: open,
     items,
   };
@@ -151,17 +151,17 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
       }
     >
       <div class="day-details">
-      <Switch fallback={<p class="muted">{t('Looking for routes kept more than once…')}</p>}>
-        <Match when={groups.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
-        <Match when={groups()?.length === 0}>
-          <p class="muted">{t('No route is kept more than once.')}</p>
-        </Match>
-        <Match when={groups()}>
-          <Show when={note()}>{(n) => <p classList={{ error: n().error, muted: !n().error, hint: true }}>{n().text}</p>}</Show>
-          <Section title={t('Exact copies: {what}', { what: counted(of('copies').length, 'group') })} groups={of('copies')} {...rows} />
-          <Section title={t('The same ride kept twice: {what}', { what: counted(of('same ride').length, 'group') })} groups={of('same ride')} {...rows} />
-        </Match>
-      </Switch>
+        <Switch fallback={<p class="muted">{t('Looking for routes kept more than once…')}</p>}>
+          <Match when={groups.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
+          <Match when={groups()?.length === 0}>
+            <p class="muted">{t('No route is kept more than once.')}</p>
+          </Match>
+          <Match when={groups()}>
+            <Show when={note()}>{(n) => <p classList={{ error: n().error, muted: !n().error, hint: true }}>{n().text}</p>}</Show>
+            <Section title={t('Exact copies: {what}', { what: counted(of('copies').length, 'group') })} groups={of('copies')} {...rows} />
+            <Section title={t('The same ride kept twice: {what}', { what: counted(of('same ride').length, 'group') })} groups={of('same ride')} {...rows} />
+          </Match>
+        </Switch>
       </div>
     </SidePane>
   );

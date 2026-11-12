@@ -3,15 +3,15 @@ import { listFolders, listTrips, fetchOutlines, type OutlineDay } from '../api';
 import { heldCounts } from '../library/folders';
 import { createRequest } from '../ui/request';
 
-/** Where the explorer is in the library, and what it found there. */
+/** The library as the server lists it, and where the user is in it. */
 
-/** The folder the explorer was sent to, null for the top. It outlives an open trip, so leaving the trip goes back to it. */
+/** The folder asked for, null for the top: the one new trips, imports and pasted ones go into. */
 const [listFolderId, setListFolderId] = createSignal<number | null>(null);
 
 /** Whether the duplicates report stands in the pane between the library and the map. */
 export const [showingDuplicates, setShowingDuplicates] = createSignal(false);
 
-/** The search typed into the explorer; while there is one, what it finds stands in for the list. */
+/** The search typed into the library; while there is one, what it finds stands in for the tree. */
 export const [query, setQuery] = createSignal('');
 
 const library = createRoot(() => {
@@ -31,7 +31,7 @@ export const libraryFolders = library.folders;
 /** The outline of a trip, day by day, as last fetched: none while they load, or where they could not be had. */
 export const outlineOf = (tripId: number): OutlineDay[] | undefined => (library.outlines.error ? undefined : library.outlines()?.[tripId]);
 
-/** The folder the explorer shows, null for the top. */
+/** The folder shown, null for the top: the one asked for while it exists. */
 export const shownFolderId = library.shownFolderId;
 
 /** How many folders and trips each folder holds itself, by its id, null for the top. */
@@ -59,7 +59,7 @@ export const runLibrary = (work: () => Promise<unknown>, then?: () => void): Pro
 /** How the last folder import goes or went, and what it could not read or save. */
 export const [importNote, setImportNote] = createSignal<{ text: string; errors: string[] }>();
 
-/** Shows a folder, null for the top: its list, rather than what a search found. */
+/** Makes a folder the one shown, null for the top, and ends a search. */
 export function showFolder(id: number | null): void {
   setListFolderId(id);
   setQuery('');

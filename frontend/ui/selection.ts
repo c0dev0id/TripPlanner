@@ -38,15 +38,23 @@ export function clickSelect<K>(selection: Selection<K>, order: readonly K[], key
 export const menuSelection = <K>(selection: Selection<K>, key: K): Selection<K> => (selection.keys.has(key) ? selection : only(key));
 
 /**
- * The list whose selection the keys act on, by a name of its own; none while nothing is
- * selected anywhere. A list claims it when rows are selected in it and gives it back when
- * none are; the others let go of theirs when it is no longer them.
+ * The one selection the keys act on: the rows selected in one list, which it is held by
+ * under a name of its own. Selecting in a list takes the selection from whichever held
+ * it, so that no two lists have rows selected at once.
  */
-const [selectionOwner, setSelectionOwner] = createSignal<string>();
-export { selectionOwner };
+const [held, setHeld] = createSignal<{ owner: string; rows: Selection<string> }>();
 
-/** Tells that the list `owner` holds `count` selected rows. */
-export function holdSelection(owner: string, count: number): void {
-  if (count > 0) setSelectionOwner(owner);
-  else if (selectionOwner() === owner) setSelectionOwner(undefined);
+/** The list that holds the selection; none while nothing is selected. */
+export const selectionOwner = (): string | undefined => held()?.owner;
+
+/** The rows selected in the list `owner`; none while another list holds the selection. */
+export const selectionOf = (owner: string): Selection<string> => (held()?.owner === owner ? held()!.rows : NOTHING_SELECTED);
+
+/** Makes the rows the selection, held by the list `owner`; with no rows the list lets go of what it held. */
+export function selectIn(owner: string, rows: Selection<string>): void {
+  if (rows.keys.size > 0) setHeld({ owner, rows });
+  else if (held()?.owner === owner) setHeld(undefined);
 }
+
+/** Whether a click is one that selects: with Cmd, Ctrl or Shift held. */
+export const selects = (click: Pick<MouseEvent, 'metaKey' | 'ctrlKey' | 'shiftKey'>): boolean => click.metaKey || click.ctrlKey || click.shiftKey;

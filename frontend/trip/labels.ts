@@ -23,6 +23,9 @@ export function dayLabel(day: Pick<Day, 'date' | 'name'>, index: number): string
 /** A day's label within its trip. */
 export const dayLabelOf = (trip: Trip, day: Day): string => dayLabel(day, trip.days.findIndex((d) => d.id === day.id));
 
+/** What a day is called within its trip: its label, or in a collection the section's name. */
+export const dayTitleOf = (trip: Trip, day: Day): string => (trip.kind === 'collection' ? day.name : dayLabelOf(trip, day));
+
 /** "Track" for a track, else the route's profile (Motorcycle, Bicycle, On foot), and where the motorway dial is turned, how. */
 export function routeKindLabel(route: Route): string {
   if (route.kind === 'track') return t('Track');

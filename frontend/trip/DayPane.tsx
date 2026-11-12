@@ -1,31 +1,28 @@
-import { createEffect, createMemo, on, Show } from 'solid-js';
+import { createMemo, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { routesDistance } from '../routing/legs';
 import { setEditTarget } from '../state/drawing';
-import { setSheet } from '../state/panel';
-import { editingRouteId, openTrip, selectDay, selectedDay } from '../state/trip';
+import { openTrip, selectDay, selectedDay } from '../state/trip';
 import { counted, distanceText, shortDateText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { ChevronIcon, PencilIcon } from '../ui/icons';
 import { SidePane } from '../ui/SidePane';
 import { SectionDetails } from './CollectionPanel';
-import { dayLabelOf } from './labels';
+import { dayTitleOf } from './labels';
 import { DayDetails, JournalButton } from './TripPanel';
 
 /**
  * The pane of the day picked in the list, beside it: a trip's day with its routes, stops
  * and recordings, or a collection's section with its routes and waypoints. Not there
- * while no day is picked. On a phone it is a sheet under the map, which folds down to its
- * heading while a route is edited.
+ * while no day is picked.
  */
 export function DayPane() {
   const day = () => (openTrip() ? selectedDay() : undefined);
-  createEffect(on(editingRouteId, (id) => setSheet(id ? 'peek' : 'half'), { defer: true }));
   return (
     <Show when={day()}>
       {(shown) => {
         const collection = () => openTrip()!.kind === 'collection';
-        const label = createMemo(() => (collection() ? shown().name : dayLabelOf(openTrip()!, shown())));
+        const label = createMemo(() => dayTitleOf(openTrip()!, shown()));
         /** The label without the date, which stands under it. */
         const heading = () => (collection() ? shown().name : [t('Day {n}', { n: openTrip()!.days.indexOf(shown()) + 1 }), shown().name].filter(Boolean).join(' · '));
         const distance = createMemo(() => routesDistance(shown().routes));

@@ -15,10 +15,10 @@ import { NameDialog } from '../ui/NameDialog';
 import { pickFile } from '../ui/pickFile';
 
 /**
- * The panel's actions as icons, the same at every level of the explorer: a new trip or
- * folder in the folder shown, a folder of GPX files or a zip of exported trips imported into it, the duplicates
- * report, and the list of places to show on the map. The library's but a new trip leave an
- * open trip first.
+ * The library's actions as icons: a new trip or folder in the folder shown, a folder of
+ * GPX files or a zip of exported trips imported into it, the duplicates report and the
+ * list of places to show on the map, each switched on and off. A new folder and an
+ * import leave an open trip first.
  */
 export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: () => Promise<void>; opening: boolean }) {
   const [dialog, setDialog] = createSignal<'trip' | 'folder'>();

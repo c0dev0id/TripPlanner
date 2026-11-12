@@ -19,12 +19,12 @@ const EXPLORER = t('Trip Explorer');
  * actions, and the tree of folders and trips, the open trip's days among them.
  */
 export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; onLeave: () => Promise<void>; opening: boolean; error: string | undefined }) {
-  /** Opens a trip in its folder, which the explorer goes to: one found by the list or the search, or one just made in the folder shown. */
+  /** Opens a trip and makes its folder the one shown: a trip of the tree or the search, or one just made in the folder shown. */
   const openIn = (id: number, folderId: number | null, dayId?: string) => {
     showFolder(folderId);
     props.onOpen(id, dayId);
   };
-  /** Shows a folder from the list or the search, leaving an open trip for it. */
+  /** Shows a folder the search found, leaving an open trip for it. */
   const openFolder = (id: number) => void props.onLeave().then(() => showFolder(id));
   return (
     <section class="explorer">
@@ -33,7 +33,7 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
       <input class="search" type="search" placeholder={t('Search trips and folders')} aria-label={t('Search trips and folders')} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
       <div class="row explorer-heading">
         <h2 class="path grow" title={openTrip()?.name ?? EXPLORER}>
-          <span class="here">{openTrip()?.name ?? EXPLORER}</span>
+          {openTrip()?.name ?? EXPLORER}
         </h2>
         <Show when={openTrip()}>
           {(trip) => (

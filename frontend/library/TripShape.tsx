@@ -16,19 +16,28 @@ export function TripShape(props: { days: OutlineLine[][] }) {
   const paths = createMemo(() => {
     const colors = lineColors(props.days, routeColoring());
     const lines = props.days.flatMap((day, d) => day.map((outline, r) => ({ points: decodePolyline(outline.line), color: colors[d]![r]! })));
-    const all = lines.flatMap((line) => line.points);
-    if (all.length === 0) return [];
-    const lats = all.map((p) => p[1]);
+    let [west, east, south, north] = [Infinity, -Infinity, Infinity, -Infinity];
+    for (const { points } of lines) {
+      for (const [lng, lat] of points) {
+        west = Math.min(west, lng);
+        east = Math.max(east, lng);
+        south = Math.min(south, lat);
+        north = Math.max(north, lat);
+      }
+    }
+    if (west > east) return [];
     // Degrees of longitude are narrower than those of latitude, the more the farther north.
-    const narrow = Math.cos((((Math.min(...lats) + Math.max(...lats)) / 2) * Math.PI) / 180);
-    const xs = all.map((p) => p[0] * narrow);
-    const [west, north] = [Math.min(...xs), Math.max(...lats)];
-    const scale = (BOX - 2 * MARGIN) / Math.max(Math.max(...xs) - west, north - Math.min(...lats), 1e-9);
-    const [left, top] = [(BOX - (Math.max(...xs) - west) * scale) / 2, (BOX - (north - Math.min(...lats)) * scale) / 2];
-    return lines.map(({ points, color }) => ({
-      color,
-      d: points.map((p, i) => `${i === 0 ? 'M' : 'L'}${(left + (p[0] * narrow - west) * scale).toFixed(1)} ${(top + (north - p[1]) * scale).toFixed(1)}`).join(''),
-    }));
+    const narrow = Math.cos((((south + north) / 2) * Math.PI) / 180);
+    const [width, height] = [(east - west) * narrow, north - south];
+    const scale = (BOX - 2 * MARGIN) / Math.max(width, height, 1e-9);
+    const [left, top] = [(BOX - width * scale) / 2, (BOX - height * scale) / 2];
+    // One path for each colour: a collection has hundreds of lines and a handful of colours.
+    const byColor = new Map<string, string>();
+    for (const { points, color } of lines) {
+      const d = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${(left + (p[0] - west) * narrow * scale).toFixed(1)} ${(top + (north - p[1]) * scale).toFixed(1)}`).join('');
+      byColor.set(color, (byColor.get(color) ?? '') + d);
+    }
+    return [...byColor].map(([color, d]) => ({ color, d }));
   });
   return (
     <svg class="trip-shape" viewBox={`0 0 ${BOX} ${BOX}`} width={BOX} height={BOX} aria-hidden="true">

@@ -7,11 +7,11 @@ import { duplicateParts, movePartsToDay, openTrip, removeParts, routeById } from
 import { askConfirmation } from '../ui/confirm';
 import { counted } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
-import { dayLabel } from './labels';
+import { dayTitleOf } from './labels';
 import { removeDayAsked, removeRouteAsked } from './remove';
 
 /** What a part is called where its number is told, in a trip and in a collection. */
-const NOUNS: Record<PartKind, { trip: string; collection: string }> = {
+export const NOUNS: Record<PartKind, { trip: string; collection: string }> = {
   day: { trip: 'day', collection: 'section' },
   route: { trip: 'route', collection: 'route' },
   stop: { trip: 'stop', collection: 'waypoint' },
@@ -36,13 +36,19 @@ export async function removeAsked(kind: PartKind, ids: readonly string[]): Promi
   clearPartSelection();
 }
 
-/** Move… with the trip's other days as its submenu, for routes and stops; none in a trip of one day. */
+/** Move… with the open trip's days but `fromDayId` as its submenu, each handing its day to `run`; none in a trip of one day. */
+export function moveToDayItem(fromDayId: string | undefined, run: (dayId: string) => void): MenuItem[] {
+  const trip = openTrip()!;
+  const items = trip.days.filter((day) => day.id !== fromDayId).map((day) => ({ label: dayTitleOf(trip, day), run: () => run(day.id) }));
+  return items.length > 0 ? [{ label: t('Move…'), items }] : [];
+}
+
+/** Move… for routes and stops, to another day of the trip. */
 function moveItems(kind: PartKind, ids: readonly string[]): MenuItem[] {
   if (kind === 'day') return [];
   const trip = openTrip()!;
   const from = kind === 'route' ? dayOfRoute(trip, ids[0]!) : dayOfStop(trip, ids[0]!);
-  const items = trip.days.flatMap((day, index) => (day.id === from?.id ? [] : [{ label: trip.kind === 'collection' ? day.name : dayLabel(day, index), run: () => movePartsToDay(kind, ids, day.id) }]));
-  return items.length > 0 ? [{ label: t('Move…'), items }] : [];
+  return moveToDayItem(from?.id, (dayId) => movePartsToDay(kind, ids, dayId));
 }
 
 /**

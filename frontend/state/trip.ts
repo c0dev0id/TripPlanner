@@ -303,26 +303,9 @@ export function moveDay(dayId: string, to: number): void {
   edit((trip) => dayEdit.moveDay(trip, dayId, to), t('Move day'));
 }
 
-/** Copies the day right after itself and selects the copy. */
-export function duplicateDay(dayId: string): void {
-  const id = newId();
-  edit((trip) => dayEdit.duplicateDay(trip, dayId, id, newId), t('Duplicate day'));
-  if (openTrip()?.days.some((d) => d.id === id)) selectDay(id);
-}
-
 /** Moves the route to place `to` among the routes of its day. */
 export function moveRoute(routeId: string, to: number): void {
   edit((trip) => dayEdit.moveRoute(trip, routeId, to), t('Move route'));
-}
-
-export function duplicateRoute(routeId: string): void {
-  edit((trip) => dayEdit.duplicateRoute(trip, routeId, newId), t('Duplicate route'));
-}
-
-/** Moves the route and the stops bound to it to another day. */
-export function moveRouteToDay(routeId: string, dayId: string): void {
-  edit((trip) => dayEdit.moveRouteToDay(trip, routeId, dayId), t('Move route'));
-  if (editingRouteId() === routeId) setEditingRouteId(undefined);
 }
 
 /** Adds copied routes, with their bound stops, at the end of a day, as one step to undo. */

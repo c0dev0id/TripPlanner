@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TripSummary } from '../model/trip';
-import { folderPath, heldCounts, heldInAll } from './folders';
+import { countsText, folderPath, heldCounts, heldInAll } from './folders';
 
 const folders = [
   { id: 1, name: 'Rides', parentId: null },
@@ -39,5 +39,14 @@ describe('heldInAll', () => {
       { folders: 1, trips: 3 },
       { folders: 0, trips: 2 },
     ]);
+  });
+});
+
+describe('countsText', () => {
+  it('names the folders, the trips or both, and nothing where there are none', () => {
+    expect(countsText(2, 3)).toBe('2 folders and 3 trips');
+    expect(countsText(1, 0)).toBe('1 folder');
+    expect(countsText(0, 1)).toBe('1 trip');
+    expect(countsText(0, 0)).toBe('');
   });
 });

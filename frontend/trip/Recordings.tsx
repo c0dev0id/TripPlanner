@@ -23,7 +23,7 @@ import {
   showRecordings,
   trackOf,
 } from '../state/recordings';
-import { openTrip, openTripId, selectDay } from '../state/trip';
+import { openTripId, selectDay } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { counted, distanceText } from '../ui/format';
@@ -32,8 +32,9 @@ import { PlusIcon, RecordingIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
-import { dayLabel } from './labels';
+import { moveToDayItem } from './partMenu';
 import { pickFile } from '../ui/pickFile';
+import { selects } from '../ui/selection';
 
 /** Adds a GPX file of one track the user picks to the day as a recording, and shows it whole on the map. */
 export function addRecordingPicked(dayId: string): void {
@@ -139,13 +140,12 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
       for (const r of chosen) await moveRecording(r, to);
       clearPartSelection();
     });
-  const days = openTrip()!.days.flatMap((day, index) => (day.id === dayId ? [] : [{ label: dayLabel(day, index), run: () => move(day.id) }]));
   return [
     ...(several ? [{ label: t('{what} selected', { what: counted(chosen.length, 'recording') }), disabled: true, run: () => undefined }] : []),
     { label: t('Rename…'), disabled: several, run: () => onRename(recording) },
     { label: t('Cut'), run: () => clipRecordings(chosen, true) },
     { label: t('Copy'), run: () => clipRecordings(chosen, false) },
-    ...(days.length > 0 ? [{ label: t('Move…'), items: days }] : []),
+    ...moveToDayItem(dayId, move),
     ...(several || isPartSelected('recording', String(recording.id)) ? [] : [{ label: t('Select'), run: () => togglePart('recording', String(recording.id)) }]),
     { label: t('Delete'), run: () => void deleteRecordingsAsked(chosen) },
   ];
@@ -170,7 +170,7 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
     if (loaded) showWhole(loaded.points);
   };
   const click = (e: MouseEvent) => {
-    if (e.metaKey || e.ctrlKey || e.shiftKey) clickPart('recording', recordingsOf(props.recording.dayId).map((r) => String(r.id)), String(props.recording.id), e);
+    if (selects(e)) clickPart('recording', recordingsOf(props.recording.dayId).map((r) => String(r.id)), String(props.recording.id), e);
     else openIt();
   };
   return (

@@ -2,13 +2,15 @@ import { t } from '../i18n/t';
 import { createEffect, createResource, createSignal, For, on, Show } from 'solid-js';
 import { DEFAULT_EXPORT, deleteExportPreset, gpxUrl, listExportPresets, saveExportPreset, type ExportOptions } from '../api';
 import { flushSave } from '../state/autosave';
+import { dayOfRoute } from '../routing/dayEdit';
 import { exportScope, setExportScope } from '../state/drawing';
 import { openTrip, openTripId, routeById, selectedDay } from '../state/trip';
 import { counted } from '../ui/format';
 import { showModalWhile } from '../ui/modal';
 import { NameForm } from '../ui/NameForm';
 import { createRequest } from '../ui/request';
-import { dayLabelOf, routeLabelOf } from './labels';
+import { dayTitleOf, routeLabelOf } from './labels';
+import { NOUNS } from './partMenu';
 
 const sameOptions = (a: ExportOptions, b: ExportOptions) => a.per === b.per && a.form === b.form && a.optional === b.optional && a.reachM === b.reachM;
 
@@ -45,14 +47,17 @@ export function ExportDialog() {
     const of = asked && asked.kind !== 'trip' ? asked : day ? { kind: 'day' as const, ids: [day.id] } : undefined;
     if (!of) return undefined;
     const [only] = of.ids;
-    if (of.ids.length > 1) return { of, label: counted(of.ids.length, of.kind === 'route' ? 'route' : trip.kind === 'collection' ? 'section' : 'day') };
+    if (of.ids.length > 1) return { of, label: counted(of.ids.length, NOUNS[of.kind][trip.kind]) };
     const route = of.kind === 'route' ? routeById(only!) : undefined;
     const named = of.kind === 'day' ? trip.days.find((d) => d.id === only) : undefined;
-    return { of, label: route ? routeLabelOf(trip, route) : !named ? '' : trip.kind === 'collection' ? named.name : dayLabelOf(trip, named) };
+    return { of, label: route ? routeLabelOf(trip, route) : named ? dayTitleOf(trip, named) : '' };
   };
   const chosen = () => (scope() === 'part' ? part()?.of : undefined);
-  /** One day alone is one file. */
-  const oneDay = () => chosen()?.kind === 'day' && chosen()!.ids.length === 1;
+  /** What lies in one day is one file, as the server sends it. */
+  const oneDay = () => {
+    const of = chosen();
+    return of !== undefined && new Set(of.kind === 'day' ? of.ids : of.ids.map((id) => dayOfRoute(openTrip()!, id)?.id)).size === 1;
+  };
   const url = () => gpxUrl(openTripId()!, options(), chosen());
   const savePreset = (name: string) =>
     run(async () => {

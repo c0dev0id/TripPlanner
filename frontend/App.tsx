@@ -1,4 +1,4 @@
-import { createEffect, createResource, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
+import { createEffect, createResource, createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout } from './api';
 import { DuplicatesReport } from './library/DuplicatesReport';
 import { Explorer } from './library/Explorer';
@@ -12,7 +12,7 @@ import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { setPreferencesOpen } from './state/drawing';
 import { libraryFolders, relistTrips, showFolder, shownFolderId, showingDuplicates } from './state/library';
-import { foldPanel, onPhone, panelFolded } from './state/panel';
+import { foldPanel, panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, editRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
 import { PreferencesDialog } from './preferences/PreferencesDialog';
@@ -58,7 +58,7 @@ export function App() {
   };
   /** Loads the open trip again from the server, after it was changed elsewhere. */
   const reload = () => open(openTrip()!.id);
-  /** Leaves the open trip, saved, for the list it was opened from, which lists the trips afresh where a save changed one; nothing without one. */
+  /** Leaves the open trip, saved, and lists the trips afresh where a save changed one; nothing without one. */
   const leave = async () => {
     latest++;
     setOpening(false);
@@ -69,10 +69,6 @@ export function App() {
     resetSaveState();
     if (changed) relistTrips();
   };
-
-  // On a phone the library lies over the map: a day picked in it, or the duplicates report asked for, is shown by folding it away.
-  createEffect(on(selectedDayId, (id) => id && onPhone() && foldPanel(true)));
-  createEffect(on(showingDuplicates, (shown) => shown && onPhone() && foldPanel(true)));
 
   document.addEventListener('keydown', partKeys);
   onCleanup(() => document.removeEventListener('keydown', partKeys));

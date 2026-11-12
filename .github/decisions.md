@@ -373,7 +373,8 @@ entries at the end of their section.
   and stays there, and an icon button is at least 36 px; heights that follow the screen
   use `dvh`, which leaves out what the browser's own bars cover. What the stylesheet
   cannot do is in `state/panel.ts`: a phone folds the library away when a day is
-  picked, and the day's sheet has a height the user sets. The width a phone ends at,
+  picked or the duplicates report asked for, and the sheet has a height the user sets
+  and folds down while a route is edited. The width a phone ends at,
   720 px, therefore stands in the stylesheet and once in the script.
 - **A phone stacks the three panes.** The desktop's panes are the phone's layers: the
   map is the page, the day's pane a sheet under it, the library a layer over
@@ -418,9 +419,10 @@ entries at the end of their section.
   (Douglas–Peucker, the tolerance one hundredth of the line's extent and widened until
   the points fit), with the colour a route has of its own. The server works them out
   when a trip is saved, since it already holds the lines and so every path to a trip
-  (the planner, an import, a copy, a merge) gets them without knowing of them. A key of
-  what an outline was made from is kept beside it: an autosave works out only the days
-  whose routes changed. The outlines of all trips come from one request of their own,
+  (the planner, an import, a copy, a merge) gets them without knowing of them. Each line
+  is kept with a key of the route it was made from, so that a save thins only the
+  routes that changed: with one key for the whole day, moving one track out of a
+  section of three hundred thinned them all again, seconds of work on every such save. The outlines of all trips come from one request of their own,
   so that the list of trips stays as light as it was.
 - **The library is a tree, and the open trip stays in it.** The explorer showed one
   level at a time and replaced the library by the open trip: to look into another trip
@@ -474,8 +476,8 @@ entries at the end of their section.
   route being edited, then the day picked, and for folders and trips the folder shown.
   The key reading is one function (`ui/fileVerb.ts`); the library, the trip and the
   duplicates report each listen and act only on their own selection or clipboard, and
-  one name in `ui/selection.ts` says which list holds the selection, which the others
-  give theirs up for.
+  the selection itself is one value in `ui/selection.ts`, the rows and the list that
+  holds them, so that two lists cannot have rows selected at once.
 - **A selection is exported through the same dialog as the trip.** Export GPX… in the
   menu of days or routes opens the trip's export dialog with those parts as its scope,
   rather than downloading at once: the options (tracks or routes, optional parts, the
@@ -594,8 +596,8 @@ entries at the end of their section.
   changed. The version check makes this safe: a save is only accepted over the version
   the client last saw, so what it calls unchanged is what the server holds. The server
   fills the routes sent so from its rows, inside the save's transaction, so that the
-  day they stand in is validated whole (a bound stop against its route point, the
-  outline's key), and then leaves their rows alone but for their day and place; a day
+  day they stand in is validated whole (a bound stop against its route point) and its
+  outline finds every route, and then leaves their rows alone but for their day and place; a day
   sent so keeps all its rows. Stops always go whole with a changed day: they are small
   and their order is the day's. Finer than a route was not worth its price: a renamed
   track still sends its line. A document without such marks is as valid as before,
