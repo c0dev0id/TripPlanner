@@ -448,6 +448,16 @@ entries at the end of their section.
   folders around a trip when it opens, since a trip opened from the search or from the
   address would otherwise be out of sight, and a trip that is empty, where adding a
   day is all there is to do.
+- **A day looks the same whether its trip is open or not.** An unopened trip listed its
+  days as one bare line each, the open one as cards of two lines under a heading with
+  two buttons, though both said the same. The outlines now carry what the second line
+  needs (how many routes and stops, and the length, kept with each outline line when
+  it is thinned and measured as the planner measures, by the same formula), so an
+  unopened trip's days are the same cards. What needs the document stays with the open
+  trip: the grip, the recordings, the journal; a gap stands where the grip would, so
+  that the names line up. The heading "Days" went, since every row says what it is, and
+  its buttons went into the day's pane, which is where a day is worked on; an open trip
+  without days offers its first in the tree, since without a day there is no pane.
 - **A day has a pane of its own.** A day's routes and stops were listed inside the day's
   card, in the same narrow column as the library, the trip and its other days: on a wide
   screen one level showed and the rest of the width went unused. The day picked now

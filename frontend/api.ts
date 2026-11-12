@@ -61,11 +61,14 @@ export interface OutlineLine {
   color: string | null;
 }
 
-/** A day as the library knows it without its trip's document: what names it, and the lines of its routes. */
+/** A day as the library knows it without its trip's document: what names it, how many routes and stops it holds, its length in metres, and the lines of its routes. */
 export interface OutlineDay {
   id: string;
   name: string;
   date: string | null;
+  routes: number;
+  stops: number;
+  distanceM: number;
   lines: OutlineLine[];
 }
 

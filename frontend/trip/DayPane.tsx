@@ -1,14 +1,13 @@
 import { createMemo, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { routesDistance } from '../routing/legs';
-import { setEditTarget } from '../state/drawing';
-import { openTrip, selectDay, selectedDay } from '../state/trip';
-import { counted, distanceText, shortDateText } from '../ui/format';
+import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
+import { addDay, openTrip, selectDay, selectedDay } from '../state/trip';
 import { IconButton } from '../ui/IconButton';
-import { ChevronIcon, PencilIcon } from '../ui/icons';
+import { ChevronIcon, NeighboursIcon, PencilIcon, PlusIcon } from '../ui/icons';
 import { SidePane } from '../ui/SidePane';
 import { SectionDetails } from './CollectionPanel';
-import { dayTitleOf } from './labels';
+import { dayDetail, dayHeading, dayTitleOf } from './labels';
 import { DayDetails, JournalButton } from './TripPanel';
 
 /**
@@ -24,14 +23,12 @@ export function DayPane() {
         const collection = () => openTrip()!.kind === 'collection';
         const label = createMemo(() => dayTitleOf(openTrip()!, shown()));
         /** The label without the date, which stands under it. */
-        const heading = () => (collection() ? shown().name : [t('Day {n}', { n: openTrip()!.days.indexOf(shown()) + 1 }), shown().name].filter(Boolean).join(' · '));
+        const heading = () => (collection() ? shown().name : dayHeading(openTrip()!.days.indexOf(shown()), shown().name));
         const distance = createMemo(() => routesDistance(shown().routes));
         /** The day `by` days on from the one shown, where there is one. */
         const step = (by: number) => openTrip()!.days[openTrip()!.days.indexOf(shown()) + by];
-        const detail = () =>
-          (collection() ? [counted(shown().routes.length, 'route'), distance() > 0 && distanceText(distance())] : [shown().date ? shortDateText(shown().date!) : t('No date'), distance() > 0 && distanceText(distance())])
-            .filter(Boolean)
-            .join(' · ');
+        const detail = () => dayDetail(openTrip()!.kind, { date: shown().date, routes: shown().routes.length, stops: shown().stops.length, distanceM: distance() });
+        const neighboursLabel = () => t(showNeighbours() ? 'Hide the neighbouring days on the map' : 'Show the neighbouring days on the map, dimmed');
         return (
           <SidePane
             label={label()}
@@ -55,6 +52,12 @@ export function DayPane() {
                   </IconButton>
                 </span>
                 <Show when={!collection()}>
+                  <IconButton label={neighboursLabel()} pressed={showNeighbours()} onClick={() => setShowNeighbours(!showNeighbours())}>
+                    <NeighboursIcon />
+                  </IconButton>
+                  <IconButton label={t('Add day')} onClick={addDay}>
+                    <PlusIcon />
+                  </IconButton>
                   <IconButton label={t('Edit {what}', { what: label() })} onClick={() => setEditTarget({ kind: 'day', id: shown().id })}>
                     <PencilIcon />
                   </IconButton>

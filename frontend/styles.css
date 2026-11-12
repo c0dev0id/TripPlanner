@@ -508,15 +508,13 @@ a {
  * step in; the folder new things go into and the open trip are marked.
  */
 .tree,
-.tree-children,
-.tree-days {
+.tree-children {
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
-.tree-children,
-.tree-days {
+.tree-children {
   padding-left: 14px;
 }
 
@@ -543,12 +541,14 @@ a {
   background: var(--active);
 }
 
-.tree-days .text {
-  padding: 4px 8px;
-  font-size: 13px;
+/* Where a day's grip would stand, in a trip that is not open: its days line up with those of the open one. */
+.grip-space {
+  flex: none;
+  width: 18px;
 }
 
-.tree-days .muted {
+/* A trip without days says so where they would stand. */
+.no-days {
   padding: 4px 8px;
   font-size: 12px;
 }
@@ -1607,9 +1607,16 @@ fieldset.symbols {
     background: var(--line);
   }
 
+  /* The heading in two lines where its buttons leave the name no room: the name between the steps, the buttons under it. */
   .side-pane-header {
     top: 18px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     padding-top: 2px;
+  }
+
+  .side-pane-header > .lines {
+    flex-basis: calc(100% - 88px);
   }
 
   .maplibregl-ctrl-top-right {

@@ -9,7 +9,7 @@ import { defaultProfile } from '../routing/dayEdit';
 import { pointCount, routeDistance, routesDistance } from '../routing/legs';
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
-import { foldRoute, isRouteUnfolded, panTo, setEditTarget, setExportScope, setShareOpen, setShowNeighbours, setTrackAction, showNeighbours } from '../state/drawing';
+import { foldRoute, isRouteUnfolded, panTo, setEditTarget, setExportScope, setShareOpen, setTrackAction } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
@@ -33,14 +33,14 @@ import {
 } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
-import { counted, distanceText, shortDateText, timeText } from '../ui/format';
-import { ChevronIcon, ClockIcon, DownloadIcon, FileImportIcon, NeighboursIcon, NotebookIcon, PencilIcon, PlusIcon, ShareIcon } from '../ui/icons';
+import { counted, distanceText, timeText } from '../ui/format';
+import { ChevronIcon, ClockIcon, DownloadIcon, FileImportIcon, NotebookIcon, PencilIcon, PlusIcon, ShareIcon } from '../ui/icons';
 import { Grip } from '../ui/Grip';
 import { IconButton } from '../ui/IconButton';
 import { MenuButton } from '../ui/MenuButton';
 import { selects } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
-import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
+import { dayDetail, dayHeading, dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 import { addRecordingPicked, DayRecordings, RecordingsToggle } from './Recordings';
 import { partMenu } from './partMenu';
 
@@ -76,23 +76,21 @@ export function TripIcons() {
   );
 }
 
-/** The open trip's days with their routes and stops. */
+/** The open trip's days, under its row in the library's tree; a trip without any offers its first. */
 export function TripPanel() {
-  const neighboursLabel = () => t(showNeighbours() ? 'Hide the neighbouring days on the map' : 'Show the neighbouring days on the map, dimmed');
   return (
     <section class="trip">
-      <div class="row heading">
-        <h3 class="grow">{t('Days')}</h3>
-        <IconButton label={neighboursLabel()} pressed={showNeighbours()} onClick={() => setShowNeighbours(!showNeighbours())}>
-          <NeighboursIcon />
-        </IconButton>
-        <IconButton label={t('Add day')} onClick={addDay}>
-          <PlusIcon />
-        </IconButton>
-      </div>
       <ol class="days">
         <ForById each={openTrip()!.days}>{(day, index) => <DayItem day={day()} index={index()} />}</ForById>
       </ol>
+      <Show when={openTrip()!.days.length === 0}>
+        <div class="row no-days">
+          <span class="muted grow">{t('No days yet.')}</span>
+          <IconButton label={t('Add day')} onClick={addDay}>
+            <PlusIcon />
+          </IconButton>
+        </div>
+      </Show>
     </section>
   );
 }
@@ -104,7 +102,7 @@ function DayItem(props: { day: Day; index: number }) {
   // The day's routes change less often than the day.
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
-  const meta = () => [props.day.date ? shortDateText(props.day.date) : t('No date'), distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
+  const meta = () => dayDetail('trip', { date: props.day.date, routes: routes().length, stops: props.day.stops.length, distanceM: distance() });
   const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
   const click = (e: MouseEvent) => {
     if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);
@@ -116,7 +114,7 @@ function DayItem(props: { day: Day; index: number }) {
         <Grip label={t('Drag {what} to another place, or tap to select it', { what: label() })} index={props.index} onMove={(to) => moveDay(props.day.id, to)} onToggle={() => togglePart('day', props.day.id)} />
         <button class="text grow" onClick={click} aria-pressed={selected()}>
           <span class="lines">
-            <span class="name">{[t('Day {n}', { n: props.index + 1 }), props.day.name].filter(Boolean).join(' · ')}</span>
+            <span class="name">{dayHeading(props.index, props.day.name)}</span>
             <span class="muted detail">{meta()}</span>
           </span>
         </button>

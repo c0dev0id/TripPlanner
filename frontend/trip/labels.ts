@@ -1,8 +1,8 @@
 import { t } from '../i18n/t';
-import { PROFILES, takesMotorwayDial, type Day, type Route, type Trip } from '../model/trip';
+import { PROFILES, takesMotorwayDial, type Day, type Route, type Trip, type TripKind } from '../model/trip';
 import { dayOfRoute } from '../routing/dayEdit';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
-import { durationText, shortDateText, timeText } from '../ui/format';
+import { counted, distanceText, durationText, shortDateText, timeText } from '../ui/format';
 
 /** A route's name, or its place in the day where it has none. */
 export function routeLabel(route: Route, day: Day): string {
@@ -22,6 +22,16 @@ export function dayLabel(day: Pick<Day, 'date' | 'name'>, index: number): string
 
 /** A day's label within its trip. */
 export const dayLabelOf = (trip: Trip, day: Day): string => dayLabel(day, trip.days.findIndex((d) => d.id === day.id));
+
+/** A day's number and its name, without its date: "Day 2 · Furka". */
+export const dayHeading = (index: number, name: string): string => [t('Day {n}', { n: index + 1 }), name].filter(Boolean).join(' · ');
+
+/** What stands under a day's name: its date and its length; under a section's, what it holds and its length. */
+export function dayDetail(kind: TripKind, day: { date: string | null; routes: number; stops: number; distanceM: number }): string {
+  const length = day.distanceM > 0 && distanceText(day.distanceM);
+  const parts = kind === 'collection' ? [counted(day.routes, 'route'), day.stops > 0 && counted(day.stops, 'waypoint'), length] : [day.date ? shortDateText(day.date) : t('No date'), length];
+  return parts.filter(Boolean).join(' · ');
+}
 
 /** What a day is called within its trip: its label, or in a collection the section's name. */
 export const dayTitleOf = (trip: Trip, day: Day): string => (trip.kind === 'collection' ? day.name : dayLabelOf(trip, day));

@@ -10,13 +10,13 @@ import { openTrip, selectDay, selectedDayId, updateDay } from '../state/trip';
 import { symbolLabel } from '../symbols/symbols';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
-import { counted, distanceText } from '../ui/format';
+import { distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { selects } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
-import { routeKindLabel, routeLabel } from './labels';
+import { dayDetail, routeKindLabel, routeLabel } from './labels';
 import { partMenu } from './partMenu';
 
 /**
@@ -52,8 +52,7 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
   // The section's routes change less often than the section.
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
-  const meta = () =>
-    [counted(routes().length, 'route'), props.day.stops.length > 0 && counted(props.day.stops.length, 'waypoint'), distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
+  const meta = () => dayDetail('collection', { date: null, routes: routes().length, stops: props.day.stops.length, distanceM: distance() });
   const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
   const click = (e: MouseEvent) => {
     if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);

@@ -9,7 +9,7 @@ import { countsText, folderPath, heldInAll, heldText } from './folders';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
 import { openTrip, openTripId, selectDay } from '../state/trip';
-import { dayLabel } from '../trip/labels';
+import { dayDetail, dayHeading } from '../trip/labels';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
@@ -68,20 +68,35 @@ function FoldButton(props: { fold: CardFold }) {
   );
 }
 
-/** The days of a trip that is not open, as the library knows them: a click opens the trip at the day. */
+/**
+ * The days of a trip that is not open, as the library knows them, drawn as the open trip
+ * draws its own: a click opens the trip at the day. What needs the trip's document (the
+ * grip that reorders, the journal, the recordings) comes with opening it.
+ */
 function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void }) {
+  const collection = () => props.trip.kind === 'collection';
   return (
-    <ul class="tree-days">
-      <For each={outlineOf(props.trip.id) ?? []} fallback={<li class="muted">{t(props.trip.kind === 'collection' ? 'No sections yet.' : 'No days yet.')}</li>}>
-        {(day, index) => (
-          <li class="row">
-            <button class="text grow" onClick={() => props.onOpen(day.id)}>
-              <span class="name">{props.trip.kind === 'collection' ? day.name : dayLabel(day, index())}</span>
-            </button>
-          </li>
-        )}
-      </For>
-    </ul>
+    <section class="trip">
+      <ol class="days">
+        <For each={outlineOf(props.trip.id) ?? []} fallback={<li class="muted no-days">{t(collection() ? 'No sections yet.' : 'No days yet.')}</li>}>
+          {(day, index) => (
+            <li class="day card">
+              <div class="row">
+                <Show when={!collection()}>
+                  <span class="grip-space" />
+                </Show>
+                <button class="text grow" onClick={() => props.onOpen(day.id)}>
+                  <span class="lines">
+                    <span class="name">{collection() ? day.name : dayHeading(index(), day.name)}</span>
+                    <span class="muted detail">{dayDetail(props.trip.kind, day)}</span>
+                  </span>
+                </button>
+              </div>
+            </li>
+          )}
+        </For>
+      </ol>
+    </section>
   );
 }
 
