@@ -392,6 +392,12 @@ entries at the end of their section.
   menu on a touch screen, but nothing says so. On a screen whose pointer cannot hover
   every row with a menu shows a button with three dots that opens the same menu; with
   a mouse the rows stay as they were, a right-click away from their menu.
+- **The read-only page draws no overlays.** Its map came with the planner's overlay
+  control, and the roadworks and closures this browser had switched on, but without the
+  taps that say what a sign means, which the planner's map interactions answer. The
+  page shows a trip as it was planned, to be read and printed; what is closed today
+  belongs to planning. So the overlays and their control are the planner's alone, by
+  one option of the map both pages make.
 - **On a phone the menu is a sheet from the bottom edge.** A menu at the finger is
   narrow, runs off the screen and puts its submenu where there is no room. At a phone's
   width the one menu is as wide as the screen and rises from the bottom, and a submenu

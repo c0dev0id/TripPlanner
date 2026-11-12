@@ -241,7 +241,8 @@
   as its photo's preview; a photo that knows where it was taken stands there instead.
   An entry stays with the trip when its part is removed.
 - A trip is planned or done; the library marks done trips.
-- A read-only page of the trip for reading and printing: the map with every day, the
+- A read-only page of the trip for reading and printing: the map with every day, on the
+  base map chosen but without the planner's overlays, the
   journal, each day with its routes and its stops in riding order with their times,
   addresses, bookings and notes. The page is the owner's, or shared under a link that
   needs no sign-in and can be withdrawn.

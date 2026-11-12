@@ -30,7 +30,7 @@ export function MapView() {
 
   onMount(() => {
     // The map keeps its view in the address, as `map=`, and starts from it.
-    const m = newBaseMap(container, { hash: 'map' }, setMap, routeWidth);
+    const m = newBaseMap(container, { hash: 'map' }, setMap, { routeWidth, overlays: true });
     onCleanup(() => m.remove());
   });
 
