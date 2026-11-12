@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { withChanges, type Day, type RoutedLeg, type Trip } from '../model/trip';
-import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, moveDay, moveRoute, moveRouteToDay, moveStop, pasteIntoTrip, pasteRoute, pasteStop, pasteStopIntoRoute, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop, withNewPartIds } from './dayEdit';
+import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, duplicateParts, moveDay, moveDaysAfter, moveRoute, moveRouteToDay, moveStop, moveStopIntoRoute, moveStopToDay, pasteDays, pasteIntoTrip, pasteRoute, pasteStop, pasteStopIntoRoute, removeParts, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop, withNewPartIds } from './dayEdit';
 import { changeSettings } from './routeEdit';
 import { pointCount, routedLegs } from './legs';
 import { encodePolyline } from './polyline';
@@ -209,6 +209,67 @@ describe('reordering and copying', () => {
     expect(renewed.id).toBe('d');
     expect(routedOf(renewed.routes[0]!).points.map((p) => p.id)).toEqual([made.get('a'), made.get('b'), made.get('c')]);
     expect(renewed.stops.map((s) => [s.id, s.pointId])).toEqual([[made.get('s1'), made.get('b')], [made.get('s2'), null], [made.get('lost'), null]]);
+  });
+
+  it('removes several parts at once: days whole, routes leaving their stops free, stops leaving their points', () => {
+    const trip = twoDays();
+    expect(removeParts(trip, 'day', ['e', 'nowhere']).days.map((d) => d.id)).toEqual(['d']);
+    expect(removeParts(trip, 'day', ['nowhere'])).toBe(trip);
+    const routeless = removeParts(trip, 'route', ['r']);
+    expect(day(routeless).routes).toEqual([]);
+    expect(day(routeless).stops.map((s) => [s.id, s.pointId])).toEqual([['s1', null], ['s2', null]]);
+    const stopless = removeParts(trip, 'stop', ['s1', 's2']);
+    expect(day(stopless).stops).toEqual([]);
+    expect(routedOf(day(stopless).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('duplicates several parts, a stop as a free copy beside the original', () => {
+    const trip = duplicateParts(twoDays(), 'stop', ['s1', 's2'], ids('n'));
+    expect(day(trip).stops.map((s) => [s.id, s.pointId, s.name])).toEqual([
+      ['s1', 'b', 'Stop 1'],
+      ['n1', null, 'Stop 1 copy'],
+      ['s2', null, 'Stop 2'],
+      ['n2', null, 'Stop 2 copy'],
+    ]);
+    expect(duplicateParts(twoDays(), 'route', ['r'], ids('n')).days[0]!.routes.map((r) => r.id)).toEqual(['r', 'n1']);
+    expect(duplicateParts(twoDays(), 'day', ['d', 'e'], ids('n')).days).toHaveLength(4);
+  });
+
+  it('moves a stop to another day, free, its point gone from the route it was on', () => {
+    const trip = moveStopToDay(twoDays(), 's1', 'e');
+    expect(routedOf(day(trip).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'c']);
+    expect(day(trip).stops.map((s) => s.id)).toEqual(['s2']);
+    expect(trip.days[1]!.stops.map((s) => [s.id, s.pointId])).toEqual([['s1', null]]);
+    const same = twoDays();
+    expect(moveStopToDay(same, 's1', 'd')).toBe(same);
+  });
+
+  it('moves a stop onto a route of another day as a point of it, keeping its id', () => {
+    let trip = addRoute(twoDays(), 'e', 'q');
+    for (const [id, lngLat] of [['x', [5, 5]], ['y', [6, 5]]] as const) {
+      trip = updateRoute(trip, 'q', routedOnly((r) => routeEdit.appendPoint(r, { id, lngLat: [...lngLat] })));
+    }
+    const moved = moveStopIntoRoute(trip, 's2', 'q', 'p');
+    expect(day(moved).stops.map((s) => s.id)).toEqual(['s1']);
+    expect(moved.days[1]!.stops.map((s) => [s.id, s.pointId])).toEqual([['s2', 'p']]);
+    expect(routedOf(moved.days[1]!.routes[0]!).points.map((p) => p.id)).toEqual(['p', 'x', 'y']);
+  });
+
+  it('moves days to after another, in their order, and leaves the trip where nothing moves', () => {
+    const trip = addDay(addDay(twoDays(), 'f'), 'g');
+    expect(moveDaysAfter(trip, ['d', 'f'], 'g').days.map((d) => d.id)).toEqual(['e', 'g', 'd', 'f']);
+    expect(moveDaysAfter(trip, ['e'], 'd')).toBe(trip);
+    expect(moveDaysAfter(trip, ['d'], 'd')).toBe(trip);
+  });
+
+  it('pastes days under new ids after a day or at the end, without dates in a collection', () => {
+    const source = twoDays();
+    const pasted = pasteDays(source, [source.days[0]!], 'd', ids('n'));
+    expect(pasted.days.map((d) => d.id)).toEqual(['d', 'n7', 'e']);
+    expect(pasted.days[1]!.date).toBe('2027-06-12');
+    expect(pasted.days[1]!.stops.map((s) => s.pointId)).toEqual([routedOf(pasted.days[1]!.routes[0]!).points[1]!.id, null]);
+    const collection = pasteDays({ ...empty(), kind: 'collection', days: [] }, source.days, undefined, ids('m'));
+    expect(collection.days.map((d) => d.date)).toEqual([null, null]);
   });
 
   it('pastes a stop into a day as a free stop', () => {
