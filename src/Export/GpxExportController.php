@@ -43,11 +43,12 @@ final class GpxExportController
             fn (array $day): bool => ($dayIds === null || in_array($day['id'], $dayIds, true))
                 && ($routeIds === null || array_intersect(array_column($day['routes'], 'id'), $routeIds) !== []),
         ));
-        if ($indices === [] && ($dayIds !== null || $routeIds !== null)) {
+        $partial = $dayIds !== null || $routeIds !== null;
+        if ($indices === [] && $partial) {
             return Json::error($response, 404, 'No such day or route.');
         }
         $now = new DateTimeImmutable();
-        if (count($indices) === 1 && ($dayIds !== null || $routeIds !== null)) {
+        if (count($indices) === 1 && $partial) {
             return self::download($response, TripGpx::dayFileName($document, $indices[0]) . '.gpx', 'application/gpx+xml', TripGpx::day($document, $indices[0], $now, $options, $routeIds));
         }
         if ($options->per === 'day') {

@@ -236,37 +236,33 @@ final class TripDocuments
         if (!is_array($body) || !is_array($body['days'] ?? null)) {
             return $body;
         }
-        $ids = [];
-        foreach ($body['days'] as $day) {
-            foreach (is_array($day) && is_array($day['routes'] ?? null) ? $day['routes'] : [] as $route) {
+        // Where the routes sent as unchanged stand in the document, by their ids.
+        $places = [];
+        foreach ($body['days'] as $d => $day) {
+            foreach (is_array($day) && is_array($day['routes'] ?? null) ? $day['routes'] : [] as $r => $route) {
                 if (TripDocumentValidator::isUnchanged($route) && is_string($route['id'] ?? null)) {
-                    $ids[] = $route['id'];
+                    $places[$route['id']] = [$d, $r];
                 }
             }
         }
-        if ($ids === []) {
+        if ($places === []) {
             return $body;
         }
+        $ids = array_map('strval', array_keys($places));
         $statement = $this->db->prepare(
             'SELECT id, name, kind, profile, highways, optional, color, points, legs, line FROM routes
              WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) AND id IN (' . Database::placeholders($ids) . ')',
         );
         $statement->execute([$tripId, ...$ids]);
         $stored = array_column($statement->fetchAll(), null, 'id');
-        foreach ($body['days'] as &$day) {
-            foreach (is_array($day) && is_array($day['routes'] ?? null) ? $day['routes'] : [] as $index => $route) {
-                if (TripDocumentValidator::isUnchanged($route) && is_string($route['id'] ?? null)) {
-                    $row = $stored[$route['id']] ?? throw new InvalidDocument('The document leaves out a route the trip does not hold.');
-                    $filled = self::route($row);
-                    // As a parsed body has them: a map, not the object an answer needs for empty legs.
-                    if (isset($filled['legs'])) {
-                        $filled['legs'] = (array) $filled['legs'];
-                    }
-                    $day['routes'][$index] = ['unchanged' => true] + $filled;
-                }
+        foreach ($places as $id => [$d, $r]) {
+            $filled = self::route($stored[$id] ?? throw new InvalidDocument('The document leaves out a route the trip does not hold.'));
+            // As a parsed body has them: a map, not the object an answer needs for empty legs.
+            if (isset($filled['legs'])) {
+                $filled['legs'] = (array) $filled['legs'];
             }
+            $body['days'][$d]['routes'][$r] = ['unchanged' => true] + $filled;
         }
-        unset($day);
         return $body;
     }
 

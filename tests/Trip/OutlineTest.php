@@ -59,14 +59,25 @@ final class OutlineTest extends TestCase
         self::assertEquals(array_slice($line, 0, 2), Polyline::decode(substr($encoded, 0, -1)));
     }
 
-    public function testAnOutlineIsTakenOverWhileTheRoutesAreTheSame(): void
+    public function testARouteThatIsTheSameKeepsItsLine(): void
     {
-        $day = TripFixture::day('d', [TripFixture::track('t1')]);
-        $kept = Outline::stored($day, null);
-        self::assertSame($kept, Outline::stored($day + ['name' => 'renamed'], $kept));
+        $day = TripFixture::day('d', [TripFixture::track('t1'), TripFixture::route('r1', [[11.5, 48.1], [11.45, 47.8]])]);
+        $kept = json_decode(Outline::stored($day, null), true);
+        // A line that thinning would not give, to tell a kept line from one worked out again.
+        $kept['lines'][0]['line'] = Polyline::encode([[1.0, 1.0], [2.0, 2.0]]);
+        $kept = json_encode($kept);
+
         $recoloured = $day;
-        $recoloured['routes'][0]['color'] = '#c2255c';
-        self::assertNotSame($kept, Outline::stored($recoloured, $kept));
-        self::assertSame('#c2255c', Outline::lines(Outline::stored($recoloured, $kept))[0]['color']);
+        $recoloured['routes'][1]['color'] = '#c2255c';
+        $lines = Outline::lines(Outline::stored($recoloured, $kept));
+        self::assertSame(Outline::lines($kept)[0], $lines[0]);
+        self::assertSame('#c2255c', $lines[1]['color']);
+
+        // Under another id the same route is still the same line; changed, it is thinned again.
+        $copy = $day;
+        $copy['routes'][0]['id'] = 't2';
+        self::assertSame(Outline::lines($kept)[0], Outline::lines(Outline::stored($copy, $kept))[0]);
+        $copy['routes'][0]['color'] = '#1c7ed6';
+        self::assertNotSame(Outline::lines($kept)[0]['line'], Outline::lines(Outline::stored($copy, $kept))[0]['line']);
     }
 }

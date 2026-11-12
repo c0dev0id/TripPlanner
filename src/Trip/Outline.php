@@ -10,9 +10,8 @@ use Planner\Http\Json;
 
 /**
  * A day's outline: the lines of its routes thinned to a few points each, to draw the
- * shape of a day or a trip without its document. Kept with the day, together with a key
- * of what it was made from, so that a save works it out again only for a day whose
- * routes changed.
+ * shape of a day or a trip without its document. Kept with the day, each line with a key
+ * of the route it was made from, so that a save thins only the routes it changes.
  */
 final class Outline
 {
@@ -23,46 +22,43 @@ final class Outline
     private const TOLERANCE = 0.01;
 
     /**
-     * The outline as it is kept with a day: taken over from `$kept` where that was made
-     * from the same routes, else worked out.
+     * The outline as it is kept with a day: a thinned line for each of its routes, with a
+     * key of what it was made from. A route whose key is among those of `$kept` keeps that
+     * line; only the others are thinned, so that a save costs what it changed.
      */
     public static function stored(array $day, ?string $kept): string
     {
-        $key = self::keyOf($day['routes']);
-        if ($kept !== null && $kept !== '' && (json_decode($kept, true)['of'] ?? null) === $key) {
-            return $kept;
+        $have = $kept === null || $kept === '' ? [] : array_column(json_decode($kept, true)['lines'] ?? [], null, 'of');
+        $lines = [];
+        foreach ($day['routes'] as $route) {
+            $key = self::keyOf($route);
+            $line = $have[$key] ?? self::lineOf($route, $key);
+            if ($line !== null) {
+                $lines[] = $line;
+            }
         }
-        return Json::encode(['of' => $key, 'lines' => self::linesOf($day['routes'])]);
+        return Json::encode(['lines' => $lines]);
     }
 
     /** @return list<array{line: string, color: ?string}> the lines of a kept outline; none for a day that has none yet */
     public static function lines(string $kept): array
     {
-        return $kept === '' ? [] : json_decode($kept, true, 512, JSON_THROW_ON_ERROR)['lines'];
+        $lines = $kept === '' ? [] : json_decode($kept, true, 512, JSON_THROW_ON_ERROR)['lines'];
+        return array_map(fn (array $line): array => ['line' => $line['line'], 'color' => $line['color']], $lines);
     }
 
-    /** @return list<array{line: string, color: ?string}> each route's thinned line as polyline6, with the colour the route has of its own; routes without a line are left out */
-    public static function linesOf(array $routes): array
+    /** @return ?array{of: string, line: string, color: ?string} the route's thinned line as polyline6, with its key and the colour the route has of its own; none for a route without a line */
+    private static function lineOf(array $route, string $key): ?array
     {
-        $lines = [];
-        foreach ($routes as $route) {
-            $line = self::thinned(RouteGeometry::line($route));
-            if (count($line) > 1) {
-                $lines[] = ['line' => Polyline::encode($line), 'color' => $route['color'] ?? null];
-            }
-        }
-        return $lines;
+        $line = self::thinned(RouteGeometry::line($route));
+        return count($line) > 1 ? ['of' => $key, 'line' => Polyline::encode($line), 'color' => $route['color'] ?? null] : null;
     }
 
-    /** What decides the routes' outline, as a digest: their lines and colours. */
-    private static function keyOf(array $routes): string
+    /** What decides a route's line in the outline, as a digest: its line and its colour. */
+    private static function keyOf(array $route): string
     {
-        $digest = hash_init('md5');
-        foreach ($routes as $route) {
-            hash_update($digest, ($route['color'] ?? '') . '|' . $route['kind'] . '|');
-            hash_update($digest, $route['kind'] === 'track' ? $route['line'] : Json::encode([$route['profile'], $route['highways'], $route['points'], (object) (array) $route['legs']]));
-        }
-        return hash_final($digest);
+        $made = $route['kind'] === 'track' ? $route['line'] : Json::encode([$route['profile'], $route['highways'], $route['points'], (object) (array) $route['legs']]);
+        return md5(($route['color'] ?? '') . '|' . $route['kind'] . '|' . $made);
     }
 
     /**
