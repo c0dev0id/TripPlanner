@@ -97,6 +97,11 @@ body {
   transform: rotate(180deg);
 }
 
+/* A day's name between its steps: a line of its own on a phone, part of the heading's row elsewhere. */
+.day-title {
+  display: contents;
+}
+
 @media (max-width: 1023px) {
   .day-step {
     display: contents;
@@ -486,7 +491,7 @@ a {
 }
 
 .panel button.icon.recordings-toggle[aria-pressed='true'],
-.panel .heading button.icon[aria-pressed='true'] {
+.side-pane-header button.icon[aria-pressed='true'] {
   color: var(--accent);
 }
 
@@ -1607,7 +1612,7 @@ fieldset.symbols {
     background: var(--line);
   }
 
-  /* The heading in two lines where its buttons leave the name no room: the name between the steps, the buttons under it. */
+  /* The heading in two lines where its buttons leave a day's name no room: the name between the steps, the buttons under it. */
   .side-pane-header {
     top: 18px;
     flex-wrap: wrap;
@@ -1615,8 +1620,12 @@ fieldset.symbols {
     padding-top: 2px;
   }
 
-  .side-pane-header > .lines {
-    flex-basis: calc(100% - 88px);
+  .day-title {
+    display: flex;
+    flex: 1 0 100%;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
   }
 
   .maplibregl-ctrl-top-right {

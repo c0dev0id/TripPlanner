@@ -23,8 +23,8 @@ export function dayLabel(day: Pick<Day, 'date' | 'name'>, index: number): string
 /** A day's label within its trip. */
 export const dayLabelOf = (trip: Trip, day: Day): string => dayLabel(day, trip.days.findIndex((d) => d.id === day.id));
 
-/** A day's number and its name, without its date: "Day 2 · Furka". */
-export const dayHeading = (index: number, name: string): string => [t('Day {n}', { n: index + 1 }), name].filter(Boolean).join(' · ');
+/** What heads a day in a list: its number and its name, without its date ("Day 2 · Furka"); a collection's section its name alone. */
+export const dayHeading = (kind: TripKind, index: number, name: string): string => (kind === 'collection' ? name : [t('Day {n}', { n: index + 1 }), name].filter(Boolean).join(' · '));
 
 /** What stands under a day's name: its date and its length; under a section's, what it holds and its length. */
 export function dayDetail(kind: TripKind, day: { date: string | null; routes: number; stops: number; distanceM: number }): string {

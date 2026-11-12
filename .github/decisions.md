@@ -452,7 +452,8 @@ entries at the end of their section.
   days as one bare line each, the open one as cards of two lines under a heading with
   two buttons, though both said the same. The outlines now carry what the second line
   needs (how many routes and stops, and the length, kept with each outline line when
-  it is thinned and measured as the planner measures, by the same formula), so an
+  it is thinned and measured as the planner measures, by the same formula, which a
+  test on each side pins to the same figures), so an
   unopened trip's days are the same cards. What needs the document stays with the open
   trip: the grip, the recordings, the journal; a gap stands where the grip would, so
   that the names line up. The heading "Days" went, since every row says what it is, and

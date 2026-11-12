@@ -114,7 +114,7 @@ function DayItem(props: { day: Day; index: number }) {
         <Grip label={t('Drag {what} to another place, or tap to select it', { what: label() })} index={props.index} onMove={(to) => moveDay(props.day.id, to)} onToggle={() => togglePart('day', props.day.id)} />
         <button class="text grow" onClick={click} aria-pressed={selected()}>
           <span class="lines">
-            <span class="name">{dayHeading(props.index, props.day.name)}</span>
+            <span class="name">{dayHeading('trip', props.index, props.day.name)}</span>
             <span class="muted detail">{meta()}</span>
           </span>
         </button>

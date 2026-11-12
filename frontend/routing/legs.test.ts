@@ -163,6 +163,22 @@ describe('routeDistance', () => {
   });
 });
 
+describe('a route measured here and on the server', () => {
+  // The same route and track, and the same figures, as tests/Export/RouteGeometryTest.php: the server tells the lengths of days of trips that are not open.
+  it('comes to the same length', () => {
+    const points = [
+      { id: 'a', lngLat: [1, 1] as LngLat },
+      { id: 'b', lngLat: [2, 2] as LngLat },
+      { id: 'c', lngLat: [3, 3] as LngLat, straight: true },
+      { id: 'd', lngLat: [4, 4] as LngLat },
+    ];
+    const legs = { 'motorcycle:allow/1,1;2,2': routed('', 1000), 'motorcycle:allow/2,2;3,3': routed('', 5) };
+    expect(routeDistance({ ...route('r', []), profile: 'motorcycle', points, legs })).toBeCloseTo(315_283.763, 3);
+    const south: Track = { id: 't1', name: '', kind: 'track', profile: 'motorcycle', optional: false, color: null, line: '_y}eyA_sxvT~hbE~s`B~hbE~s`B' };
+    expect(routeDistance(south)).toBeCloseTo(23_487.286, 3);
+  });
+});
+
 describe('straight legs', () => {
   const r = route('s', [
     [1, 1],

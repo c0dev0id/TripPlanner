@@ -75,28 +75,30 @@ function FoldButton(props: { fold: CardFold }) {
  */
 function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void }) {
   const collection = () => props.trip.kind === 'collection';
+  const days = () => outlineOf(props.trip.id) ?? [];
   return (
-    <section class="trip">
-      <ol class="days">
-        <For each={outlineOf(props.trip.id) ?? []} fallback={<li class="muted no-days">{t(collection() ? 'No sections yet.' : 'No days yet.')}</li>}>
-          {(day, index) => (
-            <li class="day card">
-              <div class="row">
-                <Show when={!collection()}>
-                  <span class="grip-space" />
-                </Show>
-                <button class="text grow" onClick={() => props.onOpen(day.id)}>
-                  <span class="lines">
-                    <span class="name">{collection() ? day.name : dayHeading(index(), day.name)}</span>
-                    <span class="muted detail">{dayDetail(props.trip.kind, day)}</span>
-                  </span>
-                </button>
-              </div>
-            </li>
-          )}
-        </For>
-      </ol>
-    </section>
+    <ol class="days">
+      <ForById each={days()}>
+        {(day, index) => (
+          <li class="day card">
+            <div class="row">
+              <Show when={!collection()}>
+                <span class="grip-space" />
+              </Show>
+              <button class="text grow" onClick={() => props.onOpen(day().id)}>
+                <span class="lines">
+                  <span class="name">{dayHeading(props.trip.kind, index(), day().name)}</span>
+                  <span class="muted detail">{dayDetail(props.trip.kind, day())}</span>
+                </span>
+              </button>
+            </div>
+          </li>
+        )}
+      </ForById>
+      <Show when={days().length === 0}>
+        <li class="muted no-days">{t(collection() ? 'No sections yet.' : 'No days yet.')}</li>
+      </Show>
+    </ol>
   );
 }
 

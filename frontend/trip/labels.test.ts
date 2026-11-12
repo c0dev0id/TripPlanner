@@ -11,8 +11,9 @@ describe('offTime', () => {
 
 describe('a day in a list', () => {
   it('is headed by its number and its name, without its date', () => {
-    expect(dayHeading(1, 'Furka')).toBe('Day 2 · Furka');
-    expect(dayHeading(0, '')).toBe('Day 1');
+    expect(dayHeading('trip', 1, 'Furka')).toBe('Day 2 · Furka');
+    expect(dayHeading('trip', 0, '')).toBe('Day 1');
+    expect(dayHeading('collection', 1, 'North')).toBe('North');
   });
 
   it('says its date and length under its name, a section what it holds', () => {

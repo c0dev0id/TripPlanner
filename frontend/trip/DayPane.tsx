@@ -23,7 +23,7 @@ export function DayPane() {
         const collection = () => openTrip()!.kind === 'collection';
         const label = createMemo(() => dayTitleOf(openTrip()!, shown()));
         /** The label without the date, which stands under it. */
-        const heading = () => (collection() ? shown().name : dayHeading(openTrip()!.days.indexOf(shown()), shown().name));
+        const heading = () => dayHeading(openTrip()!.kind, openTrip()!.days.indexOf(shown()), shown().name);
         const distance = createMemo(() => routesDistance(shown().routes));
         /** The day `by` days on from the one shown, where there is one. */
         const step = (by: number) => openTrip()!.days[openTrip()!.days.indexOf(shown()) + by];
@@ -35,21 +35,23 @@ export function DayPane() {
             onClose={() => selectDay(undefined)}
             heading={
               <>
-                <span class="day-step">
-                  <IconButton label={t(collection() ? 'The section before' : 'The day before')} disabled={!step(-1)} onClick={() => selectDay(step(-1)!.id)}>
-                    <ChevronIcon />
-                  </IconButton>
-                </span>
-                <span class="lines grow">
-                  <span class="name" title={label()}>
-                    {heading()}
+                <span class="day-title">
+                  <span class="day-step">
+                    <IconButton label={t(collection() ? 'The section before' : 'The day before')} disabled={!step(-1)} onClick={() => selectDay(step(-1)!.id)}>
+                      <ChevronIcon />
+                    </IconButton>
                   </span>
-                  <span class="muted detail">{detail()}</span>
-                </span>
-                <span class="day-step">
-                  <IconButton label={t(collection() ? 'The section after' : 'The day after')} disabled={!step(1)} onClick={() => selectDay(step(1)!.id)}>
-                    <ChevronIcon />
-                  </IconButton>
+                  <span class="lines grow">
+                    <span class="name" title={label()}>
+                      {heading()}
+                    </span>
+                    <span class="muted detail">{detail()}</span>
+                  </span>
+                  <span class="day-step">
+                    <IconButton label={t(collection() ? 'The section after' : 'The day after')} disabled={!step(1)} onClick={() => selectDay(step(1)!.id)}>
+                      <ChevronIcon />
+                    </IconButton>
+                  </span>
                 </span>
                 <Show when={!collection()}>
                   <IconButton label={neighboursLabel()} pressed={showNeighbours()} onClick={() => setShowNeighbours(!showNeighbours())}>
