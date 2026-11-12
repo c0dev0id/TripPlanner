@@ -60,8 +60,16 @@ export interface OutlineLine {
   color: string | null;
 }
 
-/** The outlines of every trip by its id: for each of its days the lines of its routes. */
-export const fetchOutlines = (): Promise<Record<string, OutlineLine[][]>> => request('GET', '/api/trips/outlines');
+/** A day as the library knows it without its trip's document: what names it, and the lines of its routes. */
+export interface OutlineDay {
+  id: string;
+  name: string;
+  date: string | null;
+  lines: OutlineLine[];
+}
+
+/** The outlines of every trip by its id: its days in order. */
+export const fetchOutlines = (): Promise<Record<string, OutlineDay[]>> => request('GET', '/api/trips/outlines');
 
 /** Where the trips are downloaded from as a zip to keep or to import again: with their journal, recordings and a GPX file per day. */
 export const tripArchiveUrl = (ids: readonly number[]): string => `/api/trips/archive?ids=${ids.join(',')}`;

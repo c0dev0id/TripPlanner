@@ -1,5 +1,5 @@
 import { createMemo, createResource, createRoot, createSignal } from 'solid-js';
-import { listFolders, listTrips, fetchOutlines, type OutlineLine } from '../api';
+import { listFolders, listTrips, fetchOutlines, type OutlineDay } from '../api';
 import { heldCounts } from '../library/folders';
 import { createRequest } from '../ui/request';
 
@@ -29,7 +29,7 @@ export const libraryTrips = library.trips;
 export const libraryFolders = library.folders;
 
 /** The outline of a trip, day by day, as last fetched: none while they load, or where they could not be had. */
-export const outlineOf = (tripId: number): OutlineLine[][] | undefined => (library.outlines.error ? undefined : library.outlines()?.[tripId]);
+export const outlineOf = (tripId: number): OutlineDay[] | undefined => (library.outlines.error ? undefined : library.outlines()?.[tripId]);
 
 /** The folder the explorer shows, null for the top. */
 export const shownFolderId = library.shownFolderId;

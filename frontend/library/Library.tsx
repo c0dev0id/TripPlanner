@@ -359,7 +359,7 @@ function TripCard(props: {
   where?: string;
   select?: CardSelect;
 }) {
-  const shape = () => outlineOf(props.trip.id)?.filter((day) => day.length > 0);
+  const shape = () => outlineOf(props.trip.id)?.map((day) => day.lines).filter((lines) => lines.length > 0);
   const meta = () =>
     (props.trip.kind === 'collection'
       ? [props.where, t('Planning material'), counted(props.trip.dayCount, 'section')]

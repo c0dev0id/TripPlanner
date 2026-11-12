@@ -27,16 +27,18 @@ final class TripDocuments
     }
 
     /**
-     * The outlines of the user's trips, by trip: for each of its days the thinned lines of
-     * its routes (see Outline).
+     * The outlines of the user's trips, by trip: its days in order, each by its id, name
+     * and date with the thinned lines of its routes (see Outline). Enough to list a
+     * trip's days and draw its shape without its document.
      *
-     * @return array<int, list<list<array{line: string, color: ?string}>>>
+     * @return array<int, list<array{id: string, name: string, date: ?string, lines: list<array{line: string, color: ?string}>}>>
      */
     public function outlines(int $userId): array
     {
         $outlines = [];
-        foreach ($this->rows('SELECT d.trip_id, d.outline FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.user_id = ? ORDER BY d.trip_id, d.position', $userId) as $day) {
-            $outlines[(int) $day['trip_id']][] = Outline::lines($day['outline']);
+        $days = 'SELECT d.trip_id, d.id, d.name, d.date, d.outline FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.user_id = ? ORDER BY d.trip_id, d.position';
+        foreach ($this->rows($days, $userId) as $day) {
+            $outlines[(int) $day['trip_id']][] = ['id' => $day['id'], 'name' => $day['name'], 'date' => $day['date'], 'lines' => Outline::lines($day['outline'])];
         }
         return $outlines;
     }

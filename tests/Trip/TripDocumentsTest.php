@@ -79,8 +79,10 @@ final class TripDocumentsTest extends TestCase
         $this->save($document, 1);
         $outlines = $this->documents->outlines($this->userId);
         self::assertSame([$this->tripId], array_keys($outlines));
-        self::assertCount(count($document['days'][0]['routes']), $outlines[$this->tripId][0]);
-        self::assertSame([], $outlines[$this->tripId][count($document['days']) - 1]);
+        $first = $outlines[$this->tripId][0];
+        self::assertSame([$document['days'][0]['id'], $document['days'][0]['name'], '2027-06-12'], [$first['id'], $first['name'], $first['date']]);
+        self::assertCount(count($document['days'][0]['routes']), $first['lines']);
+        self::assertSame(['id' => 'empty', 'name' => '', 'date' => null, 'lines' => []], $outlines[$this->tripId][count($document['days']) - 1]);
         self::assertSame([], $this->documents->outlines($this->userId + 1));
     }
 
