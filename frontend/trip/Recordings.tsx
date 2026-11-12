@@ -104,6 +104,27 @@ export function DayRecordings(props: { day: Day }) {
   );
 }
 
+/** Copies recordings of a day of the open trip, each with its GPX file; cut, they leave it when they are pasted. */
+export function clipRecordings(chosen: readonly Recording[], cut: boolean): void {
+  if (chosen.length === 0) return;
+  void recordingAction(chosen[0]!.dayId, async () => {
+    const copied = await Promise.all(chosen.map(async (r) => ({ name: r.name, gpx: await recordingGpx(r) })));
+    copyRecordings(copied, cut ? { tripId: openTripId()!, ids: chosen.map((r) => r.id) } : undefined);
+  });
+}
+
+/** Deletes recordings of a day of the open trip, once the user agrees. */
+export async function deleteRecordingsAsked(chosen: readonly Recording[]): Promise<void> {
+  const [first] = chosen;
+  if (!first) return;
+  const question = chosen.length > 1 ? t('Delete {what}?', { what: counted(chosen.length, 'recording') }) : t('Delete the recording “{name}”?', { name: first.name });
+  if (!(await askConfirmation(question, t('Delete')))) return;
+  await recordingAction(first.dayId, async () => {
+    for (const r of chosen) await removeRecording(r);
+    clearPartSelection();
+  });
+}
+
 /**
  * The menu of a recording, or of the selected recordings it is one of: rename, cut, copy,
  * move to another day, select, delete. What takes one recording alone is greyed out for
@@ -113,33 +134,20 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
   const chosen = partsOfMenu('recording', String(recording.id)).flatMap((id) => recordingById(Number(id)) ?? []);
   const several = chosen.length > 1;
   const dayId = recording.dayId;
-  const copy = (cut: boolean) =>
-    void recordingAction(dayId, async () => {
-      const copied = await Promise.all(chosen.map(async (r) => ({ name: r.name, gpx: await recordingGpx(r) })));
-      copyRecordings(copied, cut ? { tripId: openTripId()!, ids: chosen.map((r) => r.id) } : undefined);
-    });
   const move = (to: string) =>
     void recordingAction(dayId, async () => {
       for (const r of chosen) await moveRecording(r, to);
       clearPartSelection();
     });
-  const remove = async () => {
-    const question = several ? t('Delete {what}?', { what: counted(chosen.length, 'recording') }) : t('Delete the recording “{name}”?', { name: recording.name });
-    if (!(await askConfirmation(question, t('Delete')))) return;
-    await recordingAction(dayId, async () => {
-      for (const r of chosen) await removeRecording(r);
-      clearPartSelection();
-    });
-  };
   const days = openTrip()!.days.flatMap((day, index) => (day.id === dayId ? [] : [{ label: dayLabel(day, index), run: () => move(day.id) }]));
   return [
     ...(several ? [{ label: t('{what} selected', { what: counted(chosen.length, 'recording') }), disabled: true, run: () => undefined }] : []),
     { label: t('Rename…'), disabled: several, run: () => onRename(recording) },
-    { label: t('Cut'), run: () => copy(true) },
-    { label: t('Copy'), run: () => copy(false) },
+    { label: t('Cut'), run: () => clipRecordings(chosen, true) },
+    { label: t('Copy'), run: () => clipRecordings(chosen, false) },
     ...(days.length > 0 ? [{ label: t('Move…'), items: days }] : []),
     ...(several || isPartSelected('recording', String(recording.id)) ? [] : [{ label: t('Select'), run: () => togglePart('recording', String(recording.id)) }]),
-    { label: t('Delete'), run: () => void remove() },
+    { label: t('Delete'), run: () => void deleteRecordingsAsked(chosen) },
   ];
 }
 

@@ -95,6 +95,7 @@ share work; sharing between users is on the way.
 | Key or gesture | Does |
 |---|---|
 | Ctrl+Z, Ctrl+Shift+Z | Undo, redo |
+| Ctrl+X, Ctrl+C, Ctrl+V, Delete | Cut, copy, paste and delete what is selected, in the trip and in the library |
 | Esc | Closes a menu; back to the Hand; leaves the route |
 | Space, held | The Hand while a drawing tool is picked |
 | Right-click or long press on a stop or point on the map | Make a stop, connect, disconnect, straight leg, remove |

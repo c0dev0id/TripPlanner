@@ -16,8 +16,9 @@
   stays in the tree with its days under it, the others around it, so that another trip
   is one click away. Above the tree stand the library's actions as icons (new trip, new
   folder, import a folder, import a zip of exported trips, duplicates), the search, and
-  the open trip's name with its own icons (edit, export, journal, print and share, and
-  whether it is saved).
+  the open trip's name with its own icons (edit, export, journal, print and share,
+  whether it is saved, and a button that closes the trip, saved, and leaves the map
+  empty).
 - A library of the user's trips in folders, which may hold folders: create, open, rename,
   duplicate and delete trips, create, rename and delete folders (for a folder that holds
   anything the confirmation asks whether that moves up into its parent or is deleted with it), move a trip between folders from Move… in its menu, create a trip or a folder
@@ -63,6 +64,16 @@
   the stop lies off it. What was cut waits, dimmed, and moves when it is pasted: within
   the trip it keeps its journal; into another trip or out of a collection it is copied
   there and then taken from where it was. Every such step is undone with Ctrl+Z.
+- The keys of a file manager do what the menus do: Ctrl or Cmd with X and C cut and
+  copy what is selected, Delete or Backspace removes it after the menu's question, and
+  Ctrl or Cmd with V pastes. In the open trip they act on the selected days, routes,
+  stops or recordings; with nothing selected, cut and copy take the route being edited.
+  A paste goes into the route being edited where it takes what was copied (stops, as
+  its points), else into the day picked, days after it. In the library they act on the
+  selected folders and trips, and a paste goes into the folder shown. Selecting in the
+  library clears the selection in the trip and the other way round, and what is
+  selected of a day is forgotten when another day is shown. In a text field the keys
+  type, and a copy while text is selected copies the text.
   Copied routes are also pasted
   from a trip's menu in the library, each onto the day of its date or a new day (into a
   collection as a new section each), and from a folder's menu as a new collection with a

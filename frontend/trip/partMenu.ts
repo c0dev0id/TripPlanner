@@ -18,7 +18,7 @@ const NOUNS: Record<PartKind, { trip: string; collection: string }> = {
 };
 
 /** Removes the parts: one after the question its kind asks, several after one question for all. */
-async function removeAsked(kind: PartKind, ids: readonly string[]): Promise<void> {
+export async function removeAsked(kind: PartKind, ids: readonly string[]): Promise<void> {
   const trip = openTrip()!;
   const [only] = ids;
   if (ids.length === 1 && kind === 'day') {

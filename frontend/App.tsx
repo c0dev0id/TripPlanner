@@ -1,4 +1,4 @@
-import { createEffect, createResource, createSignal, For, onMount, Show } from 'solid-js';
+import { createEffect, createResource, createSignal, For, onCleanup, onMount, Show } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout } from './api';
 import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
@@ -19,6 +19,7 @@ import { DayDialog } from './trip/DayDialog';
 import { DayPane } from './trip/DayPane';
 import { ExportDialog } from './trip/ExportDialog';
 import { JournalDialog } from './trip/JournalDialog';
+import { partKeys } from './trip/partKeys';
 import { RouteDialog } from './trip/RouteDialog';
 import { SaveProblem, SaveState } from './trip/SaveStatus';
 import { ShareDialog } from './trip/ShareDialog';
@@ -72,6 +73,9 @@ export function App() {
 
   // On a phone the library lies over the map: a day picked in it is shown by folding it away.
   createEffect(() => selectedDayId() && onPhone() && foldPanel(true));
+
+  document.addEventListener('keydown', partKeys);
+  onCleanup(() => document.removeEventListener('keydown', partKeys));
 
   /** Whether the page is back at the place its address named, from when on the address follows the place. */
   const [returned, setReturned] = createSignal(false);

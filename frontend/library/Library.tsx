@@ -1,5 +1,5 @@
 import { plural, t } from '../i18n/t';
-import { createEffect, createMemo, createSelector, createSignal, For, Match, on, Show, Switch, type JSX } from 'solid-js';
+import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
 import { changeTrip, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
@@ -20,6 +20,8 @@ import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection } from '../ui/selection';
+import { fileVerb } from '../ui/fileVerb';
+import { clearPartSelection, selectedParts } from '../state/partSelection';
 import { ForById } from '../ui/ForById';
 import { Pad } from '../ui/Pad';
 import { dragToFolder } from './dragToFolder';
@@ -170,6 +172,9 @@ export function Library(props: {
   /** The folders and trips selected to be acted on together, by key, the first selected first; none once another folder is shown. */
   const [selected, setSelected] = createSignal<Selection<string>>(NOTHING_SELECTED);
   createEffect(on(shownFolderId, () => setSelected(NOTHING_SELECTED)));
+  // The keys act on one selection: the library's and the open trip's give way to each other.
+  createEffect(() => selected().keys.size > 0 && clearPartSelection());
+  createEffect(() => selectedParts() && setSelected(NOTHING_SELECTED));
   const isSelected = createSelector(() => selected().keys, (key: string, keys) => keys.has(key));
   /** Every folder and trip there is, by key. */
   const itemOf = (key: string): Item | undefined => {
@@ -310,6 +315,21 @@ export function Library(props: {
       days: (days) => left(() => changeTrip(id, (trip) => pasteDays(trip, days, undefined, newId))),
     });
   };
+  /** Puts folders and trips on the clipboard: cut, to be moved where they are pasted; copied, which only trips are. */
+  const clip = (chosen: readonly Item[], move: boolean) => copyLibraryItems({ tripIds: tripsOf(chosen).map((trip) => trip.id), folderIds: foldersOf(chosen).map((f) => f.id), move });
+  /** The keys that cut, copy and delete the selected folders and trips, and paste those on the clipboard into the folder shown, as the menu does. */
+  const onKey = (e: KeyboardEvent) => {
+    const verb = fileVerb(e);
+    const chosen = [...selected().keys].flatMap((key) => itemOf(key) ?? []);
+    if (!verb || (verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0)) return;
+    e.preventDefault();
+    if (verb === 'paste') pasteLibrary(shownFolderId());
+    else if (verb === 'delete') void remove(chosen);
+    else clip(chosen, verb === 'cut');
+  };
+  document.addEventListener('keydown', onKey);
+  onCleanup(() => document.removeEventListener('keydown', onKey));
+
   /**
    * The menu of a folder or a trip, the same for both: rename, duplicate, cut, copy, paste
    * into it, move, merge, export, delete. Opened on a card of the selection it acts on all
@@ -326,14 +346,13 @@ export function Library(props: {
     const paste = several ? [] : pasteItems(item);
     const within = tripsWithin(chosen);
     const nothing = () => undefined;
-    const ids = { tripIds: chosenTrips.map((trip) => trip.id), folderIds: foldersOf(chosen).map((f) => f.id) };
     return [
       ...(several ? [{ label: t('{what} selected', { what: countText(chosen) }), disabled: true, run: nothing }] : []),
       // The open trip is renamed as it is edited; the others on the server.
       { label: t('Rename…'), disabled: several, run: () => ('folder' in item ? setDialog({ kind: 'rename-folder', folder: item.folder }) : item.trip.id === openTripId() ? setEditTarget({ kind: 'trip' }) : setDialog({ kind: 'rename-trip', trip: item.trip })) },
       { label: t('Duplicate'), disabled: !onlyTrips, run: () => void flushSave().then(() => runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist)) },
-      { label: t('Cut'), run: () => copyLibraryItems({ ...ids, move: true }) },
-      { label: t('Copy'), disabled: !onlyTrips, run: () => copyLibraryItems({ ...ids, move: false }) },
+      { label: t('Cut'), run: () => clip(chosen, true) },
+      { label: t('Copy'), disabled: !onlyTrips, run: () => clip(chosen, false) },
       ...(paste.length > 0 ? paste : [{ label: t('Paste'), disabled: true, run: nothing }]),
       ...moveItem(chosen),
       ...(onlyTrips && several

@@ -440,6 +440,18 @@ entries at the end of their section.
   kind from the same verbs, takes what only one kind has as an addition, and greys out
   what does not apply instead of leaving it away, so that a menu looks the same wherever
   it opens.
+- **The keys act on what is selected, and there is one selection.** A click here opens
+  rather than selects, so Ctrl+X, Ctrl+C and Delete act on what was selected with the
+  pad or a modified click, as the menus do; only cut and copy fall back to the route
+  being edited, since that is plainly the current one and neither destroys anything.
+  Delete has no fallback: a key that removes what was merely clicked is a trap. For the
+  keys to have one answer, the library's selection and the open trip's give way to each
+  other, and a day's selected routes, stops and recordings are forgotten when another
+  day is shown: a selection that is out of sight must not be acted on. Paste has no
+  row under the pointer to name its target, so it takes the nearest one in view: the
+  route being edited, then the day picked, and for folders and trips the folder shown.
+  The key reading is one function (`ui/fileVerb.ts`); the library and the trip each
+  listen and act only on their own selection or clipboard.
 - **A selection inside a trip is of one kind.** In the library folders and trips are
   selected together, since they share a list and nearly all their verbs. Days, routes
   or stops are selected together, never mixed: the verbs of a mixed selection would be those all kinds share, and what a
