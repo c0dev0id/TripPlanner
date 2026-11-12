@@ -71,7 +71,7 @@ share work; sharing between users is on the way.
 - **Your map, your colours** — OpenFreeMap styles, OpenTopoMap, OpenStreetMap,
   CyclOSM or TopPlusOpen tiles, or satellite imagery under the routes; the interface light or dark by hand.
 - **English or German** — the planner, its pages and mails follow the browser's language,
-  or the one picked in the header; the GPX export names its days along.
+  or the one picked in the preferences; the GPX export names its days along.
 
 ## Getting started
 

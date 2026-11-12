@@ -494,18 +494,6 @@ a {
   color: var(--muted);
 }
 
-.panel-header .theme,
-.panel-header .language {
-  max-width: 96px;
-  padding: 3px 4px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--bg);
-  color: var(--fg);
-  font: inherit;
-  font-size: 12px;
-}
-
 .day.selected > .row {
   background: var(--active);
   border-radius: 7px 7px 0 0;

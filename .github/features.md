@@ -266,9 +266,10 @@
   its homepage and OpenStreetMap. The store is filled area by area by `make places`, which lists
   the areas to pick from when run without one, and names those of which a kind of place
   is behind the others or missing.
-- Preferences, kept with the account: how wide route lines are drawn, how routes get
-  their colours, and how far from a route a place of each kind is still shown along it,
-  200 m to begin with.
+- Preferences in one dialog. Kept with the account: how wide route lines are drawn, how
+  routes get their colours, and how far from a route a place of each kind is still shown
+  along it, 200 m to begin with. Kept in the browser: the language, and light or dark
+  colours.
 - Route lines in colour: one colour for each day, or the palette's next colour for each
   route of the trip, as the preferences say; a route's menu gives it a colour of its own,
   which it keeps wherever it is drawn. A route's row shows its colour. Lines are 5 pixels
@@ -278,7 +279,7 @@
   selected day, the route being edited and the map's view are kept in the address, which
   can be bookmarked or opened on another device.
 - English and German. The planner follows the browser's language, or the one chosen in
-  its header (Auto, Deutsch, English), kept in the browser; numbers, dates and distances
+  its preferences, kept in the browser; numbers, dates and distances
   are written the language's way. The server's pages, messages and mails follow the
   browser's language, and the GPX export names unnamed days and routes ("Tag 1",
   "Route 2") in the planner's.

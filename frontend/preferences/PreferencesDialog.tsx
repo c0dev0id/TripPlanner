@@ -1,4 +1,5 @@
 import { For } from 'solid-js';
+import { chooseLanguage, LANGUAGES, languageChoice, type Language } from '../i18n/language';
 import { t } from '../i18n/t';
 import { poiBadgeUrl } from '../map/poiImages';
 import { DEFAULT_ROUTE_WIDTH, ROUTE_WIDTHS } from '../model/routeLook';
@@ -6,24 +7,45 @@ import { POI_CATEGORIES } from '../poi/categories';
 import { preferencesOpen, setPreferencesOpen } from '../state/drawing';
 import { changePreferences, placeReachM, routeColoring, routeWidth } from '../state/preferences';
 import { EditDialog } from '../ui/EditDialog';
+import { chooseTheme, theme, THEMES, type Theme } from '../ui/theme';
 
 /** The farthest a place may be from a route and still be shown along it, in kilometres. */
 const MAX_KM = 20;
 
-/** What the user sets for the planner as a whole: how wide routes are drawn, how they get their colours, and how far from a route a place of each kind is still shown along it. */
+/**
+ * What the user sets for the planner as a whole: for this browser its language and its
+ * light or dark colours, and for the account how wide routes are drawn, how they get
+ * their colours, and how far from a route a place of each kind is still shown along it.
+ */
 export function PreferencesDialog() {
-  const save = (form: FormData) => {
+  const save = async (form: FormData) => {
     const reaches = POI_CATEGORIES.map((category) => [category.id, Math.round(Math.max(0.1, Math.min(MAX_KM, Number(form.get(category.id)) || 0.2)) * 1000)]);
-    void changePreferences({
+    chooseTheme(form.get('theme') as Theme);
+    await changePreferences({
       placeReachM: Object.fromEntries(reaches),
       routeWidth: Math.max(ROUTE_WIDTHS.min, Math.min(ROUTE_WIDTHS.max, Number(form.get('routeWidth')) || DEFAULT_ROUTE_WIDTH)),
       routeColoring: form.get('routeColoring') === 'route' ? 'route' : 'day',
     });
+    // Last, since another language loads the page again.
+    const chosen = form.get('language') as Language | 'auto';
+    if (chosen !== languageChoice) chooseLanguage(chosen);
   };
   return (
-    <EditDialog label={t('Preferences')} value={preferencesOpen() || undefined} title={() => t('Preferences')} onClose={() => setPreferencesOpen(false)} onSubmit={save}>
+    <EditDialog label={t('Preferences')} value={preferencesOpen() || undefined} title={() => t('Preferences')} onClose={() => setPreferencesOpen(false)} onSubmit={(form) => void save(form)}>
       {() => (
         <>
+          <label>
+            {t('Language, in this browser')}
+            <select name="language" value={languageChoice}>
+              <For each={LANGUAGES}>{(choice) => <option value={choice.value}>{choice.value === 'auto' ? t('As the browser says') : choice.label}</option>}</For>
+            </select>
+          </label>
+          <label>
+            {t('Colors, in this browser')}
+            <select name="theme" value={theme()}>
+              <For each={THEMES}>{(choice) => <option value={choice.value}>{choice.label}</option>}</For>
+            </select>
+          </label>
           <label>
             {t('Width of route lines, in pixels')}
             <input type="number" name="routeWidth" min={ROUTE_WIDTHS.min} max={ROUTE_WIDTHS.max} step={0.5} value={routeWidth()} />

@@ -424,6 +424,12 @@ entries at the end of their section.
   does to the open trip on the server (deleting, merging, pasting onto it) leaves the
   trip first, saved, and renaming it is the edit of the trip itself: the open document
   is never changed behind its back.
+- **Language and colours are chosen in the preferences, not in the header.** Both are
+  set once and then left alone, and as two unlabelled selects in the panel's header
+  they took a line of it on every screen and wrapped it into two on a phone. They stand
+  in the preferences dialog with the account's settings, said to be this browser's,
+  and take effect when the dialog is saved; the language last, since it loads the page
+  again.
 - **What is unfolded in the tree is the user's doing.** The open trip was always
   unfolded: opening a trip listed its days and folded those of the one open before, so
   the tree moved under the pointer with every trip opened, and the open trip's

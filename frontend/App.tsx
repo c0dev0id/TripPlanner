@@ -1,4 +1,4 @@
-import { createEffect, createResource, createSignal, For, onCleanup, onMount, Show } from 'solid-js';
+import { createEffect, createResource, createSignal, onCleanup, onMount, Show } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout } from './api';
 import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
@@ -29,9 +29,7 @@ import { TripDialog } from './trip/TripDialog';
 import { ConfirmDialog } from './ui/ConfirmDialog';
 import { IconButton } from './ui/IconButton';
 import { MenuIcon } from './ui/icons';
-import { chooseLanguage, LANGUAGES, languageChoice, type Language } from './i18n/language';
 import { t } from './i18n/t';
-import { chooseTheme, theme, THEMES, type Theme } from './ui/theme';
 
 export function App() {
   const [me] = createResource(fetchMe);
@@ -113,12 +111,6 @@ export function App() {
           </Show>
           <h1>Trip Planner</h1>
           <Show when={me()}>{(user) => <span class="user">{user().email}</span>}</Show>
-          <select class="language" aria-label={t('Language')} title={t('German or English, or as the browser says')} value={languageChoice} onChange={(e) => chooseLanguage(e.currentTarget.value as Language | 'auto')}>
-            <For each={LANGUAGES}>{(l) => <option value={l.value}>{l.label}</option>}</For>
-          </select>
-          <select class="theme" aria-label={t('Theme')} title={t('Light or dark, or as the browser says')} value={theme()} onChange={(e) => chooseTheme(e.currentTarget.value as Theme)}>
-            <For each={THEMES}>{(choice) => <option value={choice.value}>{choice.label}</option>}</For>
-          </select>
           <button type="button" class="link" onClick={() => setPreferencesOpen(true)}>
             {t('Preferences')}
           </button>

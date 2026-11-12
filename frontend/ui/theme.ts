@@ -12,7 +12,7 @@ import { readPreference, writePreference } from './preferences';
 export type Theme = 'system' | 'light' | 'dark';
 
 export const THEMES: readonly { value: Theme; label: string }[] = [
-  { value: 'system', label: t('Auto') },
+  { value: 'system', label: t('As the browser says') },
   { value: 'light', label: t('Light') },
   { value: 'dark', label: t('Dark') },
 ];
