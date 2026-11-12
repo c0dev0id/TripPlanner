@@ -1,5 +1,6 @@
 :root {
-  --panel-width: 400px;
+  --panel-width: 340px;
+  --day-pane-width: 360px;
 }
 
 * {
@@ -21,7 +22,70 @@ body {
 
 #root {
   display: grid;
-  grid-template-columns: var(--panel-width) 1fr;
+  grid-template-columns: var(--panel-shown, var(--panel-width)) 1fr;
+}
+
+/* With a day picked, its pane stands between the library and the map. */
+#root:has(> .day-pane) {
+  grid-template-columns: var(--panel-shown, var(--panel-width)) var(--day-pane-width) 1fr;
+}
+
+/* The library folded away: a strip with the button that brings it back. */
+#root:has(> .panel.folded) {
+  --panel-shown: 46px;
+}
+
+.panel.folded {
+  padding: 0 6px;
+  overflow: hidden;
+}
+
+.panel.folded > :not(.panel-header),
+.panel.folded > .panel-header > :not(.icon) {
+  display: none;
+}
+
+.panel.folded > .panel-header {
+  border-bottom: 0;
+}
+
+/* The pane of the day picked: its heading, then its routes, stops and recordings. */
+.day-pane {
+  position: relative;
+  min-width: 0;
+  padding: 0 4px 12px;
+}
+
+.day-pane-header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  gap: 4px;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.day-pane-header .name {
+  font-weight: 600;
+}
+
+/* The edge of the library is dragged where the day's pane begins, while there is one. */
+#root:has(> .day-pane) .map-wrap > .panel-resizer {
+  display: none;
+}
+
+.day-pane > .panel-resizer {
+  left: -3px;
+}
+
+/* A route's arrowhead points down while its stops are listed. */
+.panel button.icon.fold {
+  color: var(--muted);
+}
+
+button.icon.fold[aria-expanded='true'] svg {
+  transform: rotate(90deg);
 }
 
 a {
@@ -1325,10 +1389,21 @@ fieldset.symbols {
   margin: 0;
 }
 
-/* A narrow screen that still has the panel beside the map, such as a tablet held upright: the map keeps the larger part. */
+/* Without room for three panes, the day's pane takes the library's place while a day is picked. */
+@media (max-width: 1023px) {
+  #root:has(> .day-pane) > .library-panel {
+    display: none;
+  }
+}
+
+/* A narrow screen that still has a pane beside the map, such as a tablet held upright: the map keeps the larger part. */
 @media (min-width: 721px) and (max-width: 1023px) {
   #root {
-    grid-template-columns: min(var(--panel-width), 42vw) 1fr;
+    grid-template-columns: min(var(--panel-shown, var(--panel-width)), 42vw) 1fr;
+  }
+
+  #root:has(> .day-pane) {
+    grid-template-columns: min(var(--day-pane-width), 42vw) 1fr;
   }
 }
 
@@ -1354,11 +1429,22 @@ fieldset.symbols {
     grid-row: 1;
   }
 
-  .panel {
+  #root:has(> .day-pane),
+  #root:has(> .panel.folded) {
+    grid-template-columns: 1fr;
+  }
+
+  .panel,
+  .day-pane {
     grid-row: 2;
     max-height: 45dvh;
     border-right: 0;
     border-top: 1px solid var(--line);
+  }
+
+  /* Folded away on a phone, the library is a bar under the map. */
+  .panel.folded {
+    padding: 0 12px;
   }
 
   .panel-resizer {

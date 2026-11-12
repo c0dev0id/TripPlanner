@@ -382,6 +382,16 @@ entries at the end of their section.
   what an outline was made from is kept beside it: an autosave works out only the days
   whose routes changed. The outlines of all trips come from one request of their own,
   so that the list of trips stays as light as it was.
+- **A day has a pane of its own.** A day's routes and stops were listed inside the day's
+  card, in the same narrow column as the library, the trip and its other days: on a wide
+  screen one level showed and the rest of the width went unused. The day picked now
+  opens beside the list, so that the days stay in view while one is worked on, and the
+  library folds away to a strip when the map is what matters: planning is the same
+  screen with other proportions, not another mode. Where three panes do not fit, the
+  day's pane stands in for the library until it is closed.
+- **Routes are folded until asked.** A day of a collection may hold hundreds of routes;
+  each unfolds on its own by its arrowhead, and none does by itself, except that taking
+  a route up to be edited unfolds it once, since its points are what is then worked on.
 - **One menu for days, routes and stops, built in one place.** The menus had grown per
   type: a route could be copied and moved, a stop copied only, a collection's route had
   two entries where a trip's had eight. `trip/partMenu.ts` now builds the menu of every

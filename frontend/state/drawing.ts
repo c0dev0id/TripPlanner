@@ -88,3 +88,17 @@ export function straightLegItem(routeId: string, point: RoutePoint): MenuItem {
   const straight = point.straight === true;
   return { label: t(straight ? 'Route the leg to here' : 'Straight leg to here'), run: () => setStraight(routeId, point.id, !straight) };
 }
+
+/** The routes whose stops and points are listed under them: none to start with, each unfolded by the user. */
+const [unfoldedRoutes, setUnfoldedRoutes] = createSignal<ReadonlySet<string>>(new Set());
+
+export const isRouteUnfolded = (routeId: string): boolean => unfoldedRoutes().has(routeId);
+
+/** Unfolds a route's list or folds it again; `unfold` says which where it is not a toggle. */
+export function foldRoute(routeId: string, unfold = !unfoldedRoutes().has(routeId)): void {
+  if (unfold === unfoldedRoutes().has(routeId)) return;
+  const next = new Set(unfoldedRoutes());
+  if (unfold) next.add(routeId);
+  else next.delete(routeId);
+  setUnfoldedRoutes(next);
+}

@@ -9,7 +9,7 @@ import { defaultProfile } from '../routing/dayEdit';
 import { pointCount, routeDistance, routesDistance } from '../routing/legs';
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
-import { panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, setTrackAction, showNeighbours } from '../state/drawing';
+import { foldRoute, isRouteUnfolded, panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, setTrackAction, showNeighbours } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
@@ -34,7 +34,7 @@ import {
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { counted, distanceText, shortDateText, timeText } from '../ui/format';
-import { ClockIcon, DownloadIcon, FileImportIcon, NeighboursIcon, NotebookIcon, PencilIcon, PlusIcon, ShareIcon } from '../ui/icons';
+import { ChevronIcon, ClockIcon, DownloadIcon, FileImportIcon, NeighboursIcon, NotebookIcon, PencilIcon, PlusIcon, ShareIcon } from '../ui/icons';
 import { Grip } from '../ui/Grip';
 import { IconButton } from '../ui/IconButton';
 import { StopShape } from '../ui/StopShape';
@@ -43,7 +43,7 @@ import { addRecordingPicked, DayRecordings, RecordingsToggle } from './Recording
 import { partMenu } from './partMenu';
 
 /** The journal of a part as an icon, with the number of its entries where it has any. */
-function JournalButton(props: { target: EntryTarget; of: string }) {
+export function JournalButton(props: { target: EntryTarget; of: string }) {
   const count = createMemo(() => entriesOn(props.target).length);
   const label = () => `${t('Journal of {of}', { of: props.of })}${count() === 0 ? '' : `: ${counted(count(), 'entry')}`}`;
   return (
@@ -129,15 +129,12 @@ function DayItem(props: { day: Day; index: number }) {
         <RecordingsToggle dayId={props.day.id} />
         <JournalButton target={{ dayId: props.day.id }} of={label()} />
       </div>
-      <Show when={selected()}>
-        <DayDetails day={props.day} />
-      </Show>
     </li>
   );
 }
 
-/** The selected day's notes and times, its routes with their stops, and the stops that stand beside no route. */
-function DayDetails(props: { day: Day }) {
+/** The selected day's notes and times, its routes with their stops, and the stops that stand beside no route: what the day's pane shows. */
+export function DayDetails(props: { day: Day }) {
   const unplaced = createMemo(() => standingAlone(props.day, selectedSequence()));
   /** The sequence by route, in order: each route's points and the stops placed along it. */
   const byRoute = createMemo(() => {
@@ -241,15 +238,21 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
           : []),
       ],
     });
+  const unfolded = () => isRouteUnfolded(props.route.id);
   const click = (e: MouseEvent) => {
-    if (selects(e)) clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
-    else editRoute(editing() ? undefined : props.route.id);
+    if (selects(e)) return clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
+    // A route taken up to be edited shows what it holds; the user folds it again.
+    if (!editing()) foldRoute(props.route.id, true);
+    editRoute(editing() ? undefined : props.route.id);
   };
   return (
     <li class="route" classList={{ editing: editing(), picked: isPartSelected('route', props.route.id), cut: isCut(props.route.id) }}>
       <div class="row" ref={(el) => cardMenu(el, items)}>
         <Grip label={t('Drag {what} to another place, or tap to select it', { what: label() })} index={props.index} onMove={(to) => moveRoute(props.route.id, to)} onToggle={() => togglePart('route', props.route.id)} />
-        <button class="text grow" aria-expanded={editing()} onClick={click}>
+        <button class="icon fold" aria-expanded={unfolded()} title={t(unfolded() ? 'Fold the stops and points away' : 'Show the stops and points')} aria-label={t(unfolded() ? 'Fold the stops and points away' : 'Show the stops and points')} onClick={() => foldRoute(props.route.id)}>
+          <ChevronIcon />
+        </button>
+        <button class="text grow" aria-pressed={editing()} onClick={click}>
           <span class="lines">
             <span class="name" title={label()}>
               {label()}
@@ -268,7 +271,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
         </button>
         <JournalButton target={{ routeId: props.route.id }} of={label()} />
       </div>
-      <Show when={editing()}>
+      <Show when={unfolded()}>
         <ol class="stops">
           <SequenceItems entries={entries()} />
         </ol>

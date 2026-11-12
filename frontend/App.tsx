@@ -11,10 +11,12 @@ import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { setPreferencesOpen } from './state/drawing';
 import { libraryFolders, relistTrips, showFolder, shownFolderId } from './state/library';
+import { foldPanel, panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, editRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
 import { PreferencesDialog } from './preferences/PreferencesDialog';
 import { DayDialog } from './trip/DayDialog';
+import { DayPane } from './trip/DayPane';
 import { ExportDialog } from './trip/ExportDialog';
 import { JournalDialog } from './trip/JournalDialog';
 import { RouteDialog } from './trip/RouteDialog';
@@ -23,6 +25,8 @@ import { StopDialog } from './trip/StopDialog';
 import { TrackDialog } from './trip/TrackDialog';
 import { TripDialog } from './trip/TripDialog';
 import { ConfirmDialog } from './ui/ConfirmDialog';
+import { IconButton } from './ui/IconButton';
+import { MenuIcon } from './ui/icons';
 import { chooseLanguage, LANGUAGES, languageChoice, type Language } from './i18n/language';
 import { t } from './i18n/t';
 import { chooseTheme, theme, THEMES, type Theme } from './ui/theme';
@@ -86,8 +90,11 @@ export function App() {
 
   return (
     <>
-      <aside class="panel">
+      <aside class="panel library-panel" classList={{ folded: panelFolded() }}>
         <header class="panel-header">
+          <IconButton label={t(panelFolded() ? 'Show the library' : 'Fold the library away')} pressed={!panelFolded()} onClick={() => foldPanel(!panelFolded())}>
+            <MenuIcon />
+          </IconButton>
           <h1>Trip Planner</h1>
           <Show when={me()}>{(user) => <span class="user">{user().email}</span>}</Show>
           <select class="language" aria-label={t('Language')} title={t('German or English, or as the browser says')} value={languageChoice} onChange={(e) => chooseLanguage(e.currentTarget.value as Language | 'auto')}>
@@ -105,6 +112,7 @@ export function App() {
         </header>
         <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} onReload={() => void reload()} opening={opening()} error={error()} />
       </aside>
+      <DayPane />
       <div class="map-wrap">
         <PanelResizer />
         <MapView />

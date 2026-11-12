@@ -70,22 +70,28 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
           </span>
         </button>
       </div>
-      <Show when={selected()}>
-        <div class="day-details">
-          <ul class="routes">
-            <ForById each={props.day.routes}>{(route) => <RouteItem route={route()} day={props.day} />}</ForById>
-          </ul>
-          <Show when={props.day.stops.length > 0}>
-            <div class="row heading">
-              <h4 class="grow">{t('Waypoints')}</h4>
-            </div>
-            <ol class="stops">
-              <ForById each={props.day.stops}>{(stop) => <WaypointItem stop={stop()} day={props.day} />}</ForById>
-            </ol>
-          </Show>
-        </div>
-      </Show>
     </li>
+  );
+}
+
+/** What a section holds, in the pane beside the list: its routes and its waypoints. */
+export function SectionDetails(props: { day: Day }) {
+  return (
+    <div class="day-details">
+      <Show when={props.day.routes.length > 0} fallback={<p class="muted">{t('No routes in this section yet.')}</p>}>
+        <ul class="routes">
+          <ForById each={props.day.routes}>{(route) => <RouteItem route={route()} day={props.day} />}</ForById>
+        </ul>
+      </Show>
+      <Show when={props.day.stops.length > 0}>
+        <div class="row heading">
+          <h4 class="grow">{t('Waypoints')}</h4>
+        </div>
+        <ol class="stops">
+          <ForById each={props.day.stops}>{(stop) => <WaypointItem stop={stop()} day={props.day} />}</ForById>
+        </ol>
+      </Show>
+    </div>
   );
 }
 

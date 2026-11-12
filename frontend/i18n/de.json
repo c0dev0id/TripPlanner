@@ -565,5 +565,11 @@
   "Delete {what}?": "{what} löschen?",
   "Paste recording": "Aufzeichnung einfügen",
   "Paste {n} recordings": "{n} Aufzeichnungen einfügen",
-  "{n} recordings added.": "{n} Aufzeichnungen hinzugefügt."
+  "{n} recordings added.": "{n} Aufzeichnungen hinzugefügt.",
+  "Show the library": "Bibliothek zeigen",
+  "Fold the library away": "Bibliothek einklappen",
+  "Fold the stops and points away": "Stopps und Punkte einklappen",
+  "Show the stops and points": "Stopps und Punkte zeigen",
+  "Close {what}": "{what} schließen",
+  "No routes in this section yet.": "Noch keine Routen in diesem Abschnitt."
 }

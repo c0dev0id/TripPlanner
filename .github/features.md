@@ -88,13 +88,18 @@
 - A trip opens whole: every day's routes on the map with the stops as dots, no day open;
   a click on a day opens it, and another closes it. The panel's arrow goes up one level at a time: from a day to
   the trip, from the trip to the list, in the folder the trip was opened from.
-- The panel lists the selected day's routes with profile, distance and the number of
-  stops on each. Under the selected route stand its stops and route points in riding
-  order with the distance from the day's start; free stops within 500 m take the place
-  where the route passes closest, and say how far beside it they stand. A click pans the
-  map to the entry. Free stops farther away, or of a day without a route, are listed on
-  their own. The days before and after
-  the selected one are drawn dimmed on the map, switchable. The panel is as wide as its
+- Three panes on a wide screen: the library with the trip's days, the pane of the day
+  picked, the map. The day's pane lists its routes with profile, distance and the number
+  of stops on each, folded: a route's arrowhead unfolds its stops and route points in
+  riding order with the distance from the day's start, each route on its own; free
+  stops within 500 m take the place where the route passes closest, and say how far
+  beside it they stand. A click pans the map to the entry. Free stops farther away, or
+  of a day without a route, are listed on their own. A click on a route's name takes it
+  up to be edited, and unfolds it. The button with three lines folds the library away
+  to a strip, which leaves the map the room, and brings it back. On a screen without
+  room for three panes the day's pane takes the library's place while a day is picked,
+  and its close button gives the library back. The days before and after
+  the selected one are drawn dimmed on the map, switchable. The library is as wide as its
   edge is dragged, kept per browser; a double click on the edge puts the default back.
 - A date per day; a new day after a dated one is dated the day after, and the library
   shows a trip as starting on its first dated day. A stop can have a fixed arrival time
