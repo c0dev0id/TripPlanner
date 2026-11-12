@@ -32,8 +32,9 @@
 - A library of the user's trips in folders, which may hold folders: create, open, rename,
   duplicate and delete trips, create, rename and delete folders (for a folder that holds
   anything the confirmation asks whether that moves up into its parent or is deleted with it), move a trip between folders from Move… in its menu, create a trip or a folder
-  in the folder shown. Trips and folders are dragged by their pad onto a folder's row,
-  or onto "All trips", to move them there; selected trips go together, and a
+  in the folder shown. Trips and folders are dragged by their pad into a folder to move them there: onto its
+  row or onto anything it holds while unfolded, the folder lighting up; anywhere else in
+  the library's pane, "All trips" lights up and the drop goes to the top; selected trips go together, and a
   folder never goes into itself. Folders and trips are cards with the name over a line
   of metadata, each with the icon of its kind: a folder, a trip, a collection of planning
   material; a trip's card also shows its shape, small, each line in the colour its route

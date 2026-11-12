@@ -456,7 +456,7 @@ export function Library(props: {
                   )}
                 </Show>
                 <ul class="tree">
-                  <li class="card" classList={{ current: isMarked(null) }} data-drop-folder="top">
+                  <li class="card" classList={{ current: isMarked(null) }}>
                     <div class="row">
                       <button
                         class="text grow"
@@ -591,8 +591,8 @@ function TripCard(props: {
  */
 function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[]; select?: CardSelect; fold?: CardFold; children?: JSX.Element }) {
   return (
-    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current() }}>
-      <div class="row" data-drop-folder={String(props.folder.id)} ref={(el) => cardMenu(el, props.items)}>
+    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current() }} data-drop-folder={String(props.folder.id)}>
+      <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Show when={props.select}>
           {(select) => (
             <Pad label={t('Select {name}, or drag it into a folder', { name: props.folder.name })} selected={select().selected()} onToggle={select().onToggle} onPress={select().onDrag} />

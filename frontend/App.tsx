@@ -95,7 +95,7 @@ export function App() {
 
   return (
     <>
-      <aside class="panel library-panel" classList={{ folded: panelFolded() }}>
+      <aside class="panel library-panel" classList={{ folded: panelFolded() }} data-drop-folder="top">
         <header class="panel-header">
           <IconButton label={t(panelFolded() ? 'Show the library' : 'Fold the library away')} pressed={!panelFolded()} onClick={() => foldPanel(!panelFolded())}>
             <MenuIcon />

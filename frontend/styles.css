@@ -354,8 +354,11 @@ a {
   opacity: 0.5;
 }
 
-.card.drop-target {
-  border-color: var(--accent);
+/* The folder a dragged trip or folder would go into: its row, or the top's while it would go there. */
+.tree li.drop-target > .row,
+.library-panel.drop-target .tree > li:first-child > .row {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
   background: var(--active);
 }
 

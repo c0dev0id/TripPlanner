@@ -4,11 +4,14 @@ import { followPointer } from '../ui/followPointer';
 const DRAG_FROM_PX = 6;
 
 /**
- * Drags what a pressed pad stands for onto a folder: once the pointer moves, a label saying
- * `what` follows it and the folder under it is marked: a card with `data-drop-folder`, the
- * folder's id or "top". Released over one, `onDrop` gets that folder, null for the top. A
- * press that does not move stays a tap; one that moved tells `onDrag`, so that the click
- * its release makes is no tap.
+ * Drags what a pressed pad stands for into a folder: once the pointer moves, a label saying
+ * `what` follows it and the folder it is over is marked: the nearest element around the
+ * pointer with `data-drop-folder`, the folder's id or "top". A folder's whole row with all
+ * it holds is such an element, so a drop anywhere inside a folder goes into it, and the
+ * library's pane around the tree is the top. Released, `onDrop` gets that folder, null for
+ * the top. What is dragged takes no drop on itself or inside itself. A press that does not
+ * move stays a tap; one that moved tells `onDrag`, so that the click its release makes is
+ * no tap.
  */
 export function dragToFolder(e: PointerEvent, what: string, onDrop: (folderId: number | null) => void, onDrag: () => void): void {
   if (e.button !== 0) return;

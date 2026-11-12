@@ -933,7 +933,12 @@ entries at the end of their section.
   a sheet on a phone) is one component for both.
 - **Trips and folders are dragged by their pad.** The pad that selects a trip also drags
   it, a press that moves rather than a tap, and selected trips go together; folders got
-  the same pad. A folder's card and the card one level up take the drop. Dragging the
+  the same pad. A folder takes the drop
+  anywhere on it or on what it holds, and the pane around the tree is the top: in a
+  tree, a drop onto a trip inside a folder means the folder, and the gaps between rows
+  must not swallow a drop. The folder a drop would go into lights up; without that, as
+  it was for a while after the tree replaced the lists, dragging looks as if it did
+  nothing. Dragging the
   whole card was not chosen: on a touch screen a long press opens a card's menu. A
   folder moved into itself or into a folder inside it is refused by the server.
 - **A trip that arrives late is not opened.** Opening a trip waits for the server; a
