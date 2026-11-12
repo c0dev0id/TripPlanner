@@ -52,8 +52,14 @@ final class RecordingController
         return $recording === null ? Json::error($response, 404, 'No such trip or day.') : Json::of($response->withStatus(201), $recording);
     }
 
-    public function rename(Request $request, Response $response, array $args): Response
+    /** Renames the recording from `name`, or puts it on another day of the trip from `dayId`. */
+    public function change(Request $request, Response $response, array $args): Response
     {
+        $dayId = Json::field($request, 'dayId');
+        if ($dayId !== null) {
+            $moved = is_string($dayId) && $this->recordings->move($this->currentUser->get()->id, (int) $args['id'], (int) $args['recording'], $dayId);
+            return $moved ? $response->withStatus(204) : Json::error($response, 404, 'No such recording or day.');
+        }
         $name = Name::of(Json::field($request, 'name'));
         if ($name === null) {
             return Json::error($response, 422, 'A recording needs a name of up to 200 characters.');

@@ -58,6 +58,23 @@ final class RecordingsTest extends TestCase
         self::assertSame([], $this->recordings->listFor($this->userId, $this->tripId));
     }
 
+    public function testMovesToAnotherDayOfItsTripAndToNoOther(): void
+    {
+        $document = TripFixture::document();
+        $document['days'][] = TripFixture::day('day2');
+        $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated($document), 2, $this->now);
+        $otherTrip = $this->trips->create($this->userId, 'Other', $this->now)->id;
+        $other = TripFixture::document();
+        $other['days'] = [TripFixture::day('elsewhere')];
+        $this->documents->save($this->userId, $otherTrip, TripDocumentValidator::validated($other), 1, $this->now);
+        $recording = $this->recordings->add($this->userId, $this->tripId, 'day1', 'Ride', gzencode('<gpx><trk/></gpx>'), $this->now);
+
+        self::assertFalse($this->recordings->move($this->userId, $this->tripId, $recording->id, 'elsewhere'));
+        self::assertFalse($this->recordings->move($this->userId + 1, $this->tripId, $recording->id, 'day2'));
+        self::assertTrue($this->recordings->move($this->userId, $this->tripId, $recording->id, 'day2'));
+        self::assertSame(['day2'], array_map(fn ($r) => $r->dayId, $this->recordings->listFor($this->userId, $this->tripId)));
+    }
+
     public function testGoesWithItsDayAndIsCopiedWithTheTrip(): void
     {
         $this->recordings->add($this->userId, $this->tripId, 'day1', 'Morning ride', gzencode('<gpx/>'), $this->now);

@@ -112,7 +112,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `GET /trips/{id}/entries/{entry}/preview` | A small JPEG of an image entry. |
 | `GET /trips/{id}/recordings` | The trip's recordings in the order they were added: id, day, name. |
 | `POST /trips/{id}/recordings` | Adds a recording to a day from a multipart form: `dayId`, `name`, and `file`, a GPX file compressed with gzip. |
-| `PATCH /trips/{id}/recordings/{recording}` | Renames the recording from `{name}`. |
+| `PATCH /trips/{id}/recordings/{recording}` | Renames the recording from `{name}`, or puts it on another day of the trip from `{dayId}`. |
 | `DELETE /trips/{id}/recordings/{recording}` | Deletes the recording. |
 | `GET /trips/{id}/recordings/{recording}/gpx` | The recording's GPX file, sent compressed (`Content-Encoding: gzip`). |
 | `GET /export-presets` | The user's export presets by name. |

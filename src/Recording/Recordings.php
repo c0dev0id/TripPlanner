@@ -55,6 +55,16 @@ final class Recordings
         return $statement->rowCount() === 1;
     }
 
+    /** Puts the recording on another day of its trip; false when the user has no such recording, or the trip no such day. */
+    public function move(int $userId, int $tripId, int $recordingId, string $dayId): bool
+    {
+        $statement = $this->db->prepare(
+            'UPDATE recordings SET day_id = ? WHERE id = ? AND id IN (SELECT r.id ' . self::OF_TRIP . ') AND ? IN (SELECT id FROM days WHERE trip_id = ?)',
+        );
+        $statement->execute([$dayId, $recordingId, $tripId, $userId, $dayId, $tripId]);
+        return $statement->rowCount() === 1;
+    }
+
     /** False when the user has no such recording. */
     public function delete(int $userId, int $tripId, int $recordingId): bool
     {
