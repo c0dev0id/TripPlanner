@@ -3,13 +3,16 @@ import { t } from '../i18n/t';
 import type { Recording } from '../api';
 import { lineLength } from '../geo/measure';
 import type { Day } from '../model/trip';
-import { copyRecording } from '../state/clipboard';
+import { copyRecordings, isCutRecording } from '../state/clipboard';
+import { clearPartSelection, clickPart, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
 import { showWhole } from '../state/drawing';
 import { opened, openRecording } from '../state/recordingView';
 import {
   addRecording,
   loadedTrack,
+  moveRecording,
   recordingAction,
+  recordingById,
   recordingColor,
   recordingGpx,
   recordingNote,
@@ -20,7 +23,7 @@ import {
   showRecordings,
   trackOf,
 } from '../state/recordings';
-import { selectDay } from '../state/trip';
+import { openTrip, openTripId, selectDay } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { counted, distanceText } from '../ui/format';
@@ -28,6 +31,7 @@ import { IconButton } from '../ui/IconButton';
 import { PlusIcon, RecordingIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
+import { dayLabel } from './labels';
 import { pickFile } from '../ui/pickFile';
 
 /** Adds a GPX file of one track the user picks to the day as a recording, and shows it whole on the map. */
@@ -99,7 +103,49 @@ export function DayRecordings(props: { day: Day }) {
   );
 }
 
-/** A recording as a row: its colour, its name over its length; a click shows it whole on the map with its figures, its menu renames, copies or deletes it. */
+/**
+ * The menu of a recording, or of the selected recordings it is one of: rename, cut, copy,
+ * move to another day, select, delete. What takes one recording alone is greyed out for
+ * several.
+ */
+function recordingMenu(recording: Recording, onRename: (recording: Recording) => void): MenuItem[] {
+  const chosen = partsOfMenu('recording', String(recording.id)).flatMap((id) => recordingById(Number(id)) ?? []);
+  const several = chosen.length > 1;
+  const dayId = recording.dayId;
+  const copy = (cut: boolean) =>
+    void recordingAction(dayId, async () => {
+      const copied = await Promise.all(chosen.map(async (r) => ({ name: r.name, gpx: await recordingGpx(r) })));
+      copyRecordings(copied, cut ? { tripId: openTripId()!, ids: chosen.map((r) => r.id) } : undefined);
+    });
+  const move = (to: string) =>
+    void recordingAction(dayId, async () => {
+      for (const r of chosen) await moveRecording(r, to);
+      clearPartSelection();
+    });
+  const remove = async () => {
+    const question = several ? t('Delete {what}?', { what: counted(chosen.length, 'recording') }) : t('Delete the recording “{name}”?', { name: recording.name });
+    if (!(await askConfirmation(question, t('Delete')))) return;
+    await recordingAction(dayId, async () => {
+      for (const r of chosen) await removeRecording(r);
+      clearPartSelection();
+    });
+  };
+  const days = openTrip()!.days.flatMap((day, index) => (day.id === dayId ? [] : [{ label: dayLabel(day, index), run: () => move(day.id) }]));
+  return [
+    ...(several ? [{ label: t('{what} selected', { what: counted(chosen.length, 'recording') }), disabled: true, run: () => undefined }] : []),
+    { label: t('Rename…'), disabled: several, run: () => onRename(recording) },
+    { label: t('Cut'), run: () => copy(true) },
+    { label: t('Copy'), run: () => copy(false) },
+    ...(days.length > 0 ? [{ label: t('Move…'), items: days }] : []),
+    ...(several || isPartSelected('recording', String(recording.id)) ? [] : [{ label: t('Select'), run: () => togglePart('recording', String(recording.id)) }]),
+    { label: t('Delete'), run: () => void remove() },
+  ];
+}
+
+/**
+ * A recording as a row: its colour, its name over its length; a click shows it whole on
+ * the map with its figures, with Cmd, Ctrl or Shift it selects; its menu is recordingMenu.
+ */
 function RecordingItem(props: { recording: Recording; onRename: (recording: Recording) => void }) {
   const track = () => trackOf(props.recording);
   const detail = () => {
@@ -108,29 +154,23 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
     if (loaded instanceof Error) return loaded.message;
     return `${distanceText(lineLength(loaded.points))} · ${counted(loaded.points.length, 'point')}`;
   };
-  const dayId = () => props.recording.dayId;
-  const remove = async () => {
-    if (!(await askConfirmation(t('Delete the recording “{name}”?', { name: props.recording.name }), t('Delete')))) return;
-    await recordingAction(dayId(), () => removeRecording(props.recording));
-  };
-  const items = (): MenuItem[] => [
-    { label: t('Rename…'), run: () => props.onRename(props.recording) },
-    {
-      label: t('Copy'),
-      run: () =>
-        void recordingAction(dayId(), async () => copyRecording(props.recording.name, await recordingGpx(props.recording))),
-    },
-    { label: t('Delete'), run: () => void remove() },
-  ];
   const openIt = () => {
     // Opened first, so that it is shown whole beside its cards.
     openRecording(props.recording.id);
     const loaded = loadedTrack(props.recording);
     if (loaded) showWhole(loaded.points);
   };
+  const click = (e: MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey) clickPart('recording', recordingsOf(props.recording.dayId).map((r) => String(r.id)), String(props.recording.id), e);
+    else openIt();
+  };
   return (
-    <li class="recording" classList={{ opened: opened()?.recording.id === props.recording.id }} ref={(el) => cardMenu(el, items)}>
-      <button class="text row" onClick={openIt}>
+    <li
+      class="recording"
+      classList={{ opened: opened()?.recording.id === props.recording.id, picked: isPartSelected('recording', String(props.recording.id)), cut: isCutRecording(props.recording.id) }}
+      ref={(el) => cardMenu(el, () => recordingMenu(props.recording, props.onRename))}
+    >
+      <button class="text row" onClick={click}>
         <span class="swatch" style={{ background: recordingColor(props.recording) }} />
         <span class="lines grow">
           <span class="name">{props.recording.name}</span>

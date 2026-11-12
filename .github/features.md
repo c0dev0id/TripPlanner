@@ -163,8 +163,10 @@
   aside); the file is kept as it is, with every value it measured per point. A day with
   recordings shows a recording symbol that shows or hides them: listed under the day,
   each in its own colour, and drawn on the map in that colour under the planned routes.
-  A recording is renamed, copied or deleted from its menu. A copied recording pastes into
-  any day as a recording or as a track route, and a single copied track also as a
+  A recording's menu renames, cuts, copies, moves it to another day and deletes it;
+  several are selected as routes are, and the menu then acts on all of them. Copied
+  recordings paste into any day, of this trip or another; cut ones move there. A single
+  copied recording also pastes as a track route, and a single copied track as a
   recording.
 - A recording's figures: a click on it shows it whole and opens a card over the map with
   its distance, time and moving time, average and top speed, climb and descent, lowest

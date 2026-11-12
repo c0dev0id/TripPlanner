@@ -156,6 +156,9 @@ export async function addRecording(tripId: number, dayId: string, name: string, 
 
 export const renameRecording = (tripId: number, id: number, name: string): Promise<void> => request('PATCH', `${tripApi(tripId)}/recordings/${id}`, { name });
 
+/** Puts a recording on another day of its trip. */
+export const moveRecording = (tripId: number, id: number, dayId: string): Promise<void> => request('PATCH', `${tripApi(tripId)}/recordings/${id}`, { dayId });
+
 export const deleteRecording = (tripId: number, id: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/recordings/${id}`);
 
 /** A recording's GPX file; the browser undoes the compression it is sent with. */

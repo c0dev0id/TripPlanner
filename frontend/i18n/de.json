@@ -561,5 +561,9 @@
   "Delete {what} with everything in them?": "{what} mit allem darin löschen?",
   "Delete {what} with all their days?": "{what} mit allen Tagen löschen?",
   "Move {what} here": "{what} hierher verschieben",
-  "Paste a copy of {what} here": "Kopie von {what} hier einfügen"
+  "Paste a copy of {what} here": "Kopie von {what} hier einfügen",
+  "Delete {what}?": "{what} löschen?",
+  "Paste recording": "Aufzeichnung einfügen",
+  "Paste {n} recordings": "{n} Aufzeichnungen einfügen",
+  "{n} recordings added.": "{n} Aufzeichnungen hinzugefügt."
 }

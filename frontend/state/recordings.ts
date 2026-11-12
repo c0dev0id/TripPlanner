@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { createEffect, createResource, createRoot, createSignal, on } from 'solid-js';
-import { addRecording as postRecording, deleteRecording, errorMessage, fetchRecordingGpx, listRecordings, renameRecording as patchRecording, type Recording } from '../api';
+import { addRecording as postRecording, deleteRecording, errorMessage, fetchRecordingGpx, listRecordings, moveRecording as putOnDay, renameRecording as patchRecording, type Recording } from '../api';
 import { asName } from '../model/trip';
 import { readRecording, type RecordedTrack } from '../recording/track';
 import { openTripId } from './trip';
@@ -99,6 +99,15 @@ export async function renameRecording(recording: Recording, name: string): Promi
   await patchRecording(openTripId()!, recording.id, name);
   mutate((loaded) => loaded && { ...loaded, recordings: loaded.recordings.map((r) => (r.id === recording.id ? { ...r, name } : r)) });
 }
+
+/** Puts the recording on another day of the open trip. */
+export async function moveRecording(recording: Recording, dayId: string): Promise<void> {
+  await putOnDay(openTripId()!, recording.id, dayId);
+  mutate((loaded) => loaded && { ...loaded, recordings: loaded.recordings.map((r) => (r.id === recording.id ? { ...r, dayId } : r)) });
+}
+
+/** The open trip's recording of the id. */
+export const recordingById = (id: number): Recording | undefined => allRecordings().find((r) => r.id === id);
 
 export async function removeRecording(recording: Recording): Promise<void> {
   await deleteRecording(openTripId()!, recording.id);
