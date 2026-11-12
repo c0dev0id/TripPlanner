@@ -9,7 +9,7 @@ import { defaultProfile } from '../routing/dayEdit';
 import { pointCount, routeDistance, routesDistance } from '../routing/legs';
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
-import { foldRoute, isRouteUnfolded, panTo, setEditTarget, setExportScope, setShareOpen, setTrackAction } from '../state/drawing';
+import { panTo, setEditTarget, setExportScope, setShareOpen, setTrackAction } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
@@ -102,7 +102,7 @@ function DayItem(props: { day: Day; index: number }) {
   const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
   const click = (e: MouseEvent) => {
     if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);
-    // The day shown stays shown: a click on it only takes the mark back from the trip.
+    // The day shown stays shown: a click on it only takes the mark back from a folder.
     else if (selected()) markShownDay();
     else selectDay(props.day.id);
   };
@@ -235,11 +235,11 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
           : []),
       ],
     });
-  const unfolded = () => isRouteUnfolded(props.route.id);
+  const [unfolded, setUnfolded] = createSignal(false);
   /** A click takes the route up to be edited and lists its stops and points; on the route being edited, it ends that and folds the list away. */
   const click = (e: MouseEvent) => {
     if (selects(e)) return clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
-    foldRoute(props.route.id, !editing());
+    setUnfolded(!editing());
     editRoute(editing() ? undefined : props.route.id);
   };
   return (
