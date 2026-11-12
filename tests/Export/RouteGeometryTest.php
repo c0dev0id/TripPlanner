@@ -65,7 +65,8 @@ final class RouteGeometryTest extends TestCase
                 'motorcycle:allow/2,2;3,3' => ['geometry' => '', 'distanceM' => 5, 'durationS' => 1],
             ],
         ];
-        // The routed leg as routed, the straight one and the one not routed as the crow flies: the figures of frontend/geo/measure.ts.
+        // The routed leg as routed, the straight one and the one not routed as the crow flies. The planner
+        // must come to the same figures, since both tell a day's length: frontend/routing/legs.test.ts pins them too.
         self::assertEqualsWithDelta(315_283.763, RouteGeometry::length($route), 0.001);
         self::assertEqualsWithDelta(23_487.286, RouteGeometry::length(TripFixture::track('t1')), 0.001);
     }

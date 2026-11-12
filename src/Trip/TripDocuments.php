@@ -47,9 +47,7 @@ final class TripDocuments
                 'date' => $day['date'],
                 'routes' => (int) $day['routes'],
                 'stops' => (int) $day['stops'],
-                'distanceM' => Outline::distance($day['outline']),
-                'lines' => Outline::lines($day['outline']),
-            ];
+            ] + Outline::read($day['outline']);
         }
         return $outlines;
     }

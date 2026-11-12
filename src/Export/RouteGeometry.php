@@ -30,15 +30,9 @@ final class RouteGeometry
         if ($route['kind'] === 'track') {
             return Polyline::decode($route['line']);
         }
-        $points = $route['points'];
-        $legs = (array) $route['legs'];
         $line = [];
-        for ($i = 1, $n = count($points); $i < $n; $i++) {
-            $from = $points[$i - 1]['lngLat'];
-            $to = $points[$i]['lngLat'];
-            $leg = ($points[$i]['straight'] ?? false) ? null : $legs[self::legKey($route['profile'], $route['highways'], $from, $to)] ?? null;
-            $coordinates = $leg === null ? [$from, $to] : Polyline::decode($leg['geometry']);
-            foreach ($coordinates as $point) {
+        foreach (self::legs($route) as [$from, $to, $leg]) {
+            foreach ($leg === null ? [$from, $to] : Polyline::decode($leg['geometry']) as $point) {
                 $last = $line[count($line) - 1] ?? null;
                 if ($last === null || $last[0] != $point[0] || $last[1] != $point[1]) {
                     $line[] = [(float) $point[0], (float) $point[1]];
@@ -51,27 +45,40 @@ final class RouteGeometry
     /**
      * The route's length in metres as the planner counts it: along a track's line, a leg
      * as it was routed, and as the crow flies for a straight leg or one not routed.
+     * `$line` is the route's line where the caller has it, which spares a track its
+     * decoding.
      */
-    public static function length(array $route): float
+    public static function length(array $route, ?array $line = null): float
     {
+        $length = 0.0;
         if ($route['kind'] === 'track') {
-            $line = Polyline::decode($route['line']);
-            $length = 0.0;
+            $line ??= Polyline::decode($route['line']);
             for ($i = 1, $n = count($line); $i < $n; $i++) {
                 $length += self::between($line[$i - 1], $line[$i]);
             }
             return $length;
         }
-        $points = $route['points'];
-        $legs = (array) $route['legs'];
-        $length = 0.0;
-        for ($i = 1, $n = count($points); $i < $n; $i++) {
-            $from = $points[$i - 1]['lngLat'];
-            $to = $points[$i]['lngLat'];
-            $leg = ($points[$i]['straight'] ?? false) ? null : $legs[self::legKey($route['profile'], $route['highways'], $from, $to)] ?? null;
+        foreach (self::legs($route) as [$from, $to, $leg]) {
             $length += $leg === null ? self::between($from, $to) : $leg['distanceM'];
         }
         return $length;
+    }
+
+    /**
+     * The legs of a routed route in order: each with both its ends and the routing's
+     * answer for it, none for a straight leg or one the client has not routed.
+     *
+     * @return iterable<array{0: array{0: float, 1: float}, 1: array{0: float, 1: float}, 2: ?array}>
+     */
+    private static function legs(array $route): iterable
+    {
+        $points = $route['points'];
+        $legs = (array) $route['legs'];
+        for ($i = 1, $n = count($points); $i < $n; $i++) {
+            $from = $points[$i - 1]['lngLat'];
+            $to = $points[$i]['lngLat'];
+            yield [$from, $to, ($points[$i]['straight'] ?? false) ? null : $legs[self::legKey($route['profile'], $route['highways'], $from, $to)] ?? null];
+        }
     }
 
     /** The great-circle distance between two positions in metres, by the formula and the radius the planner uses, so that both tell the same length. */

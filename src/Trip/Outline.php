@@ -10,8 +10,9 @@ use Planner\Http\Json;
 
 /**
  * A day's outline: the lines of its routes thinned to a few points each, to draw the
- * shape of a day or a trip without its document. Kept with the day, each line with a key
- * of the route it was made from, so that a save thins only the routes it changes.
+ * shape of a day or a trip without its document. Kept with the day, each line with the
+ * length of its route and a key of what it was made from, so that a save thins and
+ * measures only the routes it changes.
  */
 final class Outline
 {
@@ -22,9 +23,10 @@ final class Outline
     private const TOLERANCE = 0.01;
 
     /**
-     * The outline as it is kept with a day: a thinned line for each of its routes, with a
-     * key of what it was made from. A route whose key is among those of `$kept` keeps that
-     * line; only the others are thinned, so that a save costs what it changed.
+     * The outline as it is kept with a day: for each of its routes a thinned line, the
+     * route's length and a key of what both were made from. A route whose key is among
+     * those of `$kept` keeps what is there; only the others are thinned and measured, so
+     * that a save costs what it changed.
      */
     public static function stored(array $day, ?string $kept): string
     {
@@ -40,24 +42,33 @@ final class Outline
         return Json::encode(['lines' => $lines]);
     }
 
-    /** @return list<array{line: string, color: ?string}> the lines of a kept outline; none for a day that has none yet */
-    public static function lines(string $kept): array
+    /**
+     * What a kept outline tells of its day: the length of its routes in metres and their
+     * lines; nothing of a day that has none yet.
+     *
+     * @return array{distanceM: int, lines: list<array{line: string, color: ?string}>}
+     */
+    public static function read(string $kept): array
     {
         $lines = $kept === '' ? [] : json_decode($kept, true, 512, JSON_THROW_ON_ERROR)['lines'];
-        return array_map(fn (array $line): array => ['line' => $line['line'], 'color' => $line['color']], $lines);
+        return [
+            'distanceM' => (int) array_sum(array_column($lines, 'm')),
+            'lines' => array_map(fn (array $line): array => ['line' => $line['line'], 'color' => $line['color']], $lines),
+        ];
     }
 
-    /** The length of the routes a kept outline has lines of, in metres. */
-    public static function distance(string $kept): int
+    /** @return list<array{line: string, color: ?string}> the lines of a kept outline */
+    public static function lines(string $kept): array
     {
-        return $kept === '' ? 0 : (int) array_sum(array_column(json_decode($kept, true, 512, JSON_THROW_ON_ERROR)['lines'], 'm'));
+        return self::read($kept)['lines'];
     }
 
     /** @return ?array{of: string, line: string, color: ?string, m: int} the route's thinned line as polyline6, with its key, the colour the route has of its own and the route's length in metres; none for a route without a line */
     private static function lineOf(array $route, string $key): ?array
     {
-        $line = self::thinned(RouteGeometry::line($route));
-        return count($line) > 1 ? ['of' => $key, 'line' => Polyline::encode($line), 'color' => $route['color'] ?? null, 'm' => (int) round(RouteGeometry::length($route))] : null;
+        $whole = RouteGeometry::line($route);
+        $line = self::thinned($whole);
+        return count($line) > 1 ? ['of' => $key, 'line' => Polyline::encode($line), 'color' => $route['color'] ?? null, 'm' => (int) round(RouteGeometry::length($route, $whole))] : null;
     }
 
     /** What decides a route's line in the outline, as a digest: its line and its colour. */
