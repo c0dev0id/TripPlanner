@@ -26,14 +26,19 @@
   material; right-click or a long press on a card opens its menu. A search by name
   across trips and folders, listing at most twenty results; a trip opened from it stands
   in its own folder.
-- Several trips at once: a tap or click on a trip's pad (drawn as a drag grip), or Cmd or
-  Ctrl with a click, selects trips of the open folder, Shift with a click a run of them (a
-  plain click or tap elsewhere still opens a trip). The menu of the selection moves them
-  all to another folder, deletes them all, or merges them into the one selected first. In
-  a merge a day joins that trip's day of the same date or goes in among its days by date,
-  an undated day at the end; a collection's sections go at its end. The journal moves
+- Folders and trips answer to one menu: Rename, Duplicate, Cut, Copy, Paste, Move…,
+  Merge, Export, Delete; what does not apply is greyed out. Several are selected
+  together, folders and trips alike: a tap or click on a card's pad (drawn as a drag
+  grip), Cmd or Ctrl with a click, Shift with a click for a run (a plain click or tap
+  still opens). The menu then acts on all of them, and a press on a pad drags them all
+  onto a folder. Cut folders and trips move to where they are pasted, copied trips get a
+  copy there: from Paste in a folder's menu, or from the line that offers it at the top
+  of the folder shown. Export takes the trips of selected folders along, at any depth;
+  Delete asks once for all. Several trips of a kind merge into the one selected first:
+  a day joins that trip's day of the same date or goes in among its days by date, an
+  undated day at the end; a collection's sections go at its end. The journal moves
   along, and the merged trips are deleted. Trips and collections are not merged with
-  each other.
+  each other. Copied days are pasted onto a trip from its menu, at its end.
 - Trips as a sequence of days; a day as one or more routes and its stops. A day is a
   card with its number and name over its date and length, and its menu (right-click or
   long press) edits, duplicates, pastes into and removes it. Their headers carry their

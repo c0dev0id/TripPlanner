@@ -2,8 +2,8 @@ import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSelector, createSignal, For, Match, on, Show, Switch } from 'solid-js';
 import { changeTrip, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
-import { pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
-import { routesPasteItem } from '../state/clipboard';
+import { pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
+import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
 import { heldOf, importNote, libraryFolders, libraryTrips, query, relistFolders, relistTrips, runLibrary, shownFolderId } from '../state/library';
 import { folderPath, heldInAll, heldText } from './folders';
 import { cardMenu } from '../ui/cardMenu';
@@ -16,6 +16,25 @@ import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection }
 import { ForById } from '../ui/ForById';
 import { Pad } from '../ui/Pad';
 import { dragToFolder } from './dragToFolder';
+
+/** A folder or a trip of the library, as what is selected, cut, moved and deleted together. */
+type Item = { folder: Folder } | { trip: TripSummary };
+
+const keyOf = (item: Item): string => ('folder' in item ? `folder:${item.folder.id}` : `trip:${item.trip.id}`);
+const nameOf = (item: Item): string => ('folder' in item ? item.folder.name : item.trip.name);
+const itemOfFolder = (folder: Folder | undefined): Item | undefined => folder && { folder };
+const itemOfTrip = (trip: TripSummary | undefined): Item | undefined => trip && { trip };
+const foldersOf = (items: readonly Item[]): Folder[] => items.flatMap((item) => ('folder' in item ? [item.folder] : []));
+const tripsOf = (items: readonly Item[]): TripSummary[] => items.flatMap((item) => ('trip' in item ? [item.trip] : []));
+
+/** How a card takes part in the selection: whether it is selected or cut, and what its pad and a click with a modifier do. */
+interface CardSelect {
+  selected: () => boolean;
+  cut: () => boolean;
+  onToggle: () => void;
+  onClick: (e: MouseEvent) => void;
+  onDrag: (e: PointerEvent, dragged: () => void) => void;
+}
 
 /** At most this many search results are listed. */
 const SEARCH_LIMIT = 20;
@@ -68,20 +87,63 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
     if (shownFolderId() !== null) return t(shownFolders().length > 0 ? 'No trips in this folder.' : 'Nothing in this folder yet.');
     return t(folders().length > 0 ? 'No trips outside the folders.' : 'No trips yet. Start one with the new trip icon above.');
   };
-  /** The trips of the folder selected to be merged, by id, the first selected first; none once another folder is shown. */
-  const [selectedTrips, setSelectedTrips] = createSignal<Selection<number>>(NOTHING_SELECTED);
-  createEffect(on(shownFolderId, () => setSelectedTrips(NOTHING_SELECTED)));
-  const isSelectedTrip = createSelector(() => selectedTrips().keys, (id: number, keys) => keys.has(id));
-  const selectedTripList = () => [...selectedTrips().keys].flatMap((id) => trips().find((t) => t.id === id) ?? []);
-  /** Lists the trips afresh, none selected: after trips were moved, merged or deleted. */
+  /** The folders and trips selected to be acted on together, by key, the first selected first; none once another folder is shown. */
+  const [selected, setSelected] = createSignal<Selection<string>>(NOTHING_SELECTED);
+  createEffect(on(shownFolderId, () => setSelected(NOTHING_SELECTED)));
+  const isSelected = createSelector(() => selected().keys, (key: string, keys) => keys.has(key));
+  /** Every folder and trip there is, by key. */
+  const itemOf = (key: string): Item | undefined => {
+    const id = Number(key.slice(key.indexOf(':') + 1));
+    if (key.startsWith('folder:')) return itemOfFolder(folders().find((f) => f.id === id));
+    return itemOfTrip(trips().find((t) => t.id === id));
+  };
+  const shownKeys = () => [...shownFolders().map((f) => keyOf({ folder: f })), ...shownTrips().map((trip) => keyOf({ trip }))];
+  /** What a card's menu, or a press on its pad, acts on: the selection where it holds the card, else the card alone. */
+  const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.keys.has(keyOf(item)) ? [...selection.keys].flatMap((key) => itemOf(key) ?? []) : [item]);
+  const select = (item: Item) => ({
+    selected: () => isSelected(keyOf(item)),
+    cut: () => isCut(item),
+    onToggle: () => setSelected((s) => toggled(s, keyOf(item))),
+    onClick: (e: MouseEvent) => setSelected((s) => clickSelect(s, shownKeys(), keyOf(item), e)),
+    onDrag: (e: PointerEvent, dragged: () => void) => {
+      const moved = chosenWith(item);
+      dragToFolder(e, moved.length === 1 ? nameOf(item) : countText(moved), (into) => moveInto(moved, into), dragged);
+    },
+  });
+  const isCut = (item: Item): boolean => {
+    const cut = libraryClip();
+    return cut !== undefined && cut.move && ('folder' in item ? cut.folderIds.includes(item.folder.id) : cut.tripIds.includes(item.trip.id));
+  };
+  /** How many folders and trips: 2 folders and 3 trips. */
+  const countText = (items: readonly Item[]): string => {
+    const folderText = foldersOf(items).length > 0 ? counted(foldersOf(items).length, 'folder') : '';
+    const tripText = tripsOf(items).length > 0 ? counted(tripsOf(items).length, 'trip') : '';
+    return folderText && tripText ? t('{folders} and {trips}', { folders: folderText, trips: tripText }) : folderText || tripText;
+  };
+  /** Lists the library afresh, nothing selected: after folders or trips were moved, merged, pasted or deleted. */
   const relist = () => {
-    setSelectedTrips(NOTHING_SELECTED);
+    setSelected(NOTHING_SELECTED);
+    relistFolders();
     relistTrips();
   };
-  const removeTrips = async (doomed: TripSummary[]) => {
-    const question = doomed.length === 1 ? t('Delete the trip “{name}” with all its days?', { name: doomed[0]!.name }) : t('Delete {n} trips with all their days?', { n: doomed.length });
+  /** The trips among the items and those in their folders, at any depth. */
+  const tripsWithin = (items: readonly Item[]): TripSummary[] => {
+    const inside = new Set(foldersOf(items).map((f) => f.id));
+    for (let grown = true; grown; ) {
+      grown = false;
+      for (const f of folders()) if (f.parentId !== null && inside.has(f.parentId) && !inside.has(f.id)) grown = inside.add(f.id).size > 0;
+    }
+    return [...tripsOf(items), ...trips().filter((trip) => trip.folderId !== null && inside.has(trip.folderId))];
+  };
+  const remove = async (doomed: readonly Item[]) => {
+    const [only] = doomed;
+    if (doomed.length === 1 && 'folder' in only!) return removeFolder(only.folder);
+    const question =
+      doomed.length === 1 && 'trip' in only!
+        ? t('Delete the trip “{name}” with all its days?', { name: only.trip.name })
+        : t(foldersOf(doomed).length > 0 ? 'Delete {what} with everything in them?' : 'Delete {what} with all their days?', { what: countText(doomed) });
     if (!(await askConfirmation(question, t('Delete')))) return;
-    await runLibrary(() => Promise.all(doomed.map((t) => deleteTrip(t.id))), relist);
+    await runLibrary(() => Promise.all([...tripsOf(doomed).map((trip) => deleteTrip(trip.id)), ...foldersOf(doomed).map((f) => deleteFolder(f.id, 'delete'))]), relist);
   };
   const merge = async (into: TripSummary, others: TripSummary[]) => {
     const what = counted(others.length, into.kind);
@@ -90,43 +152,44 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
     if (!(await askConfirmation(question, t('Merge')))) return;
     await runLibrary(() => mergeTrips(into.id, others.map((t) => t.id)), relist);
   };
-  /** Moves trips into a folder, none for the top, those not in it already. */
-  const moveTripsInto = (moved: TripSummary[], folderId: number | null) => {
-    const going = moved.filter((t) => t.folderId !== folderId);
-    if (going.length > 0) void runLibrary(() => Promise.all(going.map((t) => moveTrip(t.id, folderId))), relist);
+  /** Moves folders and trips into a folder, none for the top, those not in it already; the server refuses a folder inside itself. */
+  const moveInto = (moved: readonly Item[], into: number | null) => {
+    const goingTrips = tripsOf(moved).filter((trip) => trip.folderId !== into);
+    const goingFolders = foldersOf(moved).filter((f) => f.id !== into && f.parentId !== into);
+    if (goingTrips.length + goingFolders.length === 0) return;
+    void runLibrary(() => Promise.all([...goingTrips.map((trip) => moveTrip(trip.id, into)), ...goingFolders.map((f) => moveFolder(f.id, into))]), relist);
   };
-  /** Moves a folder into another, none for the top; the server refuses one inside itself. */
-  const moveFolderInto = (f: Folder, parentId: number | null) => {
-    if (parentId !== f.id && parentId !== f.parentId) void runLibrary(() => moveFolder(f.id, parentId), relistFolders);
-  };
-  /** The trips a press on a trip's pad drags: the selected ones where it is one of them, else it alone. */
-  const draggedWith = (trip: TripSummary): TripSummary[] => (isSelectedTrip(trip.id) ? selectedTripList() : [trip]);
-  /** The item that moves trips of one folder into another folder or into none, from a submenu; none where there is nowhere to go. */
-  const moveItem = (moved: TripSummary[], label: string): MenuItem[] => {
-    const from = moved[0]!.folderId;
-    const moveTo = (folderId: number | null) => () => moveTripsInto(moved, folderId);
+  /** Move… with the folders to move into as its submenu, and none for the top; none where there is nowhere to go. */
+  const moveItem = (moved: readonly Item[]): MenuItem[] => {
+    const from = 'folder' in moved[0]! ? moved[0].folder.parentId : moved[0]!.trip.folderId;
+    const movedFolders = new Set(foldersOf(moved).map((f) => f.id));
     const places: MenuItem[] = [
-      ...(from === null ? [] : [{ label: t('No folder'), run: moveTo(null) }]),
+      ...(from === null ? [] : [{ label: t('No folder'), run: () => moveInto(moved, null) }]),
       ...folders()
-        .filter((f) => f.id !== from)
-        .map((f) => ({ label: pathOf(f.id), run: moveTo(f.id) }))
-        .sort((a, b) => a.label.localeCompare(b.label)),
+        .filter((f) => f.id !== from && !movedFolders.has(f.id))
+        .map((f) => ({ label: pathOf(f.id), run: () => moveInto(moved, f.id) }))
+        .sort((x, y) => x.label.localeCompare(y.label)),
     ];
-    return places.length > 0 ? [{ label, items: places }] : [];
+    return places.length > 0 ? [{ label: t('Move…'), items: places }] : [];
   };
-  /** Downloads the trips as a zip to keep or to import again. */
-  const exportTrips = (trips: TripSummary[]) => window.location.assign(tripArchiveUrl(trips.map((trip) => trip.id)));
-  /** The menu of several selected trips: merging the others into the first selected where they are of one kind, moving, exporting and deleting them all. */
-  const selectionItems = (into: TripSummary, others: TripSummary[]): MenuItem[] => {
-    const all = [into, ...others];
-    return [
-      others.every((t) => t.kind === into.kind)
-        ? { label: t('Merge into “{name}”', { name: into.name }), run: () => void merge(into, others) }
-        : { label: t('Trips and planning material do not merge'), disabled: true, run: () => undefined },
-      ...moveItem(all, t('Move {n} trips…', { n: all.length })),
-      { label: t('Export {n} trips', { n: all.length }), run: () => exportTrips(all) },
-      { label: t('Delete {n} trips', { n: all.length }), run: () => void removeTrips(all) },
-    ];
+  /** What the clipboard holds of the library, by number: 2 folders and 3 trips. */
+  const clipText = (copied: LibraryClip): string => {
+    const folderText = copied.folderIds.length > 0 ? counted(copied.folderIds.length, 'folder') : '';
+    const tripText = copied.tripIds.length > 0 ? counted(copied.tripIds.length, 'trip') : '';
+    return folderText && tripText ? t('{folders} and {trips}', { folders: folderText, trips: tripText }) : folderText || tripText;
+  };
+  /** Pastes the folders and trips on the clipboard into a folder: cut, they move there; copied, each trip gets a copy there. */
+  const pasteLibrary = (into: number | null) => {
+    const copied = libraryClip();
+    if (!copied) return;
+    if (copied.move) {
+      clearClip();
+      moveInto([...copied.folderIds.map((id) => itemOf(`folder:${id}`)), ...copied.tripIds.map((id) => itemOf(`trip:${id}`))].filter((item): item is Item => item !== undefined), into);
+      return;
+    }
+    void runLibrary(async () => {
+      for (const id of copied.tripIds) await moveTrip((await duplicateTrip(id)).id, into);
+    }, relist);
   };
   const renamedFolder = () => {
     const d = dialog();
@@ -143,22 +206,53 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
     const first = routes[0]!.route.name || t('Pasted routes');
     return (await createTrip(asName(routes.length > 1 ? t('{name} and {n} more', { name: first, n: routes.length - 1 }) : first), f.id, 'collection')).id;
   };
-  const folderItems = (f: Folder): MenuItem[] => [
-    { label: t('Rename…'), run: () => setDialog({ kind: 'rename-folder', folder: f }) },
-    ...routesPasteItem((routes) => runLibrary(async () => pasteInto(await collectionFor(f, routes), routes), relistTrips)),
-    { label: t('Delete'), run: () => void removeFolder(f) },
-  ];
-  const tripItems = (trip: TripSummary): MenuItem[] => {
-    setSelectedTrips((s) => menuSelection(s, trip.id));
-    const [first, ...others] = selectedTripList();
-    if (first && others.length > 0) return selectionItems(first, others);
+  /** What is pasted into the one folder or trip: folders and trips into a folder, routes into either, days into a trip. */
+  const pasteItems = (item: Item): MenuItem[] => {
+    if ('folder' in item) {
+      const f = item.folder;
+      if (libraryClip()) return [{ label: t('Paste'), run: () => pasteLibrary(f.id) }];
+      return libraryPasteItem({ routes: (routes) => runLibrary(async () => pasteInto(await collectionFor(f, routes), routes), relistTrips) });
+    }
+    const id = item.trip.id;
+    return libraryPasteItem({
+      routes: (routes) => runLibrary(() => pasteInto(id, routes), relistTrips),
+      days: (days) => runLibrary(() => changeTrip(id, (trip) => pasteDays(trip, days, undefined, newId)), relistTrips),
+    });
+  };
+  /**
+   * The menu of a folder or a trip, the same for both: rename, duplicate, cut, copy, paste
+   * into it, move, merge, export, delete. Opened on a card of the selection it acts on all
+   * of it; what does not apply to what is selected is greyed out.
+   */
+  const itemMenu = (item: Item): MenuItem[] => {
+    const selection = menuSelection(selected(), keyOf(item));
+    setSelected(selection.keys.size > 1 ? selection : NOTHING_SELECTED);
+    const chosen = chosenWith(item, selection);
+    const several = chosen.length > 1;
+    const chosenTrips = tripsOf(chosen);
+    const onlyTrips = chosenTrips.length === chosen.length;
+    const [first, ...others] = chosenTrips;
+    const paste = several ? [] : pasteItems(item);
+    const within = tripsWithin(chosen);
+    const nothing = () => undefined;
+    const ids = { tripIds: chosenTrips.map((trip) => trip.id), folderIds: foldersOf(chosen).map((f) => f.id) };
     return [
-      { label: t('Rename…'), run: () => setDialog({ kind: 'rename-trip', trip }) },
-      ...moveItem([trip], t('Move…')),
-      { label: t('Duplicate'), run: () => void runLibrary(() => duplicateTrip(trip.id), relistTrips) },
-      { label: t('Export'), run: () => exportTrips([trip]) },
-      ...routesPasteItem((routes) => runLibrary(() => pasteInto(trip.id, routes), relistTrips)),
-      { label: t('Delete'), run: () => void removeTrips([trip]) },
+      ...(several ? [{ label: t('{what} selected', { what: countText(chosen) }), disabled: true, run: nothing }] : []),
+      { label: t('Rename…'), disabled: several, run: () => setDialog('folder' in item ? { kind: 'rename-folder', folder: item.folder } : { kind: 'rename-trip', trip: item.trip }) },
+      { label: t('Duplicate'), disabled: !onlyTrips, run: () => void runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist) },
+      { label: t('Cut'), run: () => copyLibraryItems({ ...ids, move: true }) },
+      { label: t('Copy'), disabled: !onlyTrips, run: () => copyLibraryItems({ ...ids, move: false }) },
+      ...(paste.length > 0 ? paste : [{ label: t('Paste'), disabled: true, run: nothing }]),
+      ...moveItem(chosen),
+      ...(onlyTrips && several
+        ? [
+            others.every((trip) => trip.kind === first!.kind)
+              ? { label: t('Merge into “{name}”', { name: first!.name }), run: () => void merge(first!, others) }
+              : { label: t('Trips and planning material do not merge'), disabled: true, run: nothing },
+          ]
+        : []),
+      { label: t('Export'), disabled: within.length === 0, run: () => window.location.assign(tripArchiveUrl(within.map((trip) => trip.id))) },
+      { label: t('Delete'), run: () => void remove(chosen) },
     ];
   };
 
@@ -180,16 +274,17 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
             when={query().trim()}
             fallback={
               <>
+                <Show when={libraryClip()}>
+                  {(copied) => (
+                    <button class="paste-here" onClick={() => pasteLibrary(shownFolderId())}>
+                      {t(copied().move ? 'Move {what} here' : 'Paste a copy of {what} here', { what: clipText(copied()) })}
+                    </button>
+                  )}
+                </Show>
                 <ul class="folders">
                   <ForById each={shownFolders()}>
                     {(f) => (
-                      <FolderCard
-                        folder={f()}
-                        note={heldText(heldOf(f().id))}
-                        onOpen={props.onOpenFolder}
-                        items={() => folderItems(f())}
-                        onDrag={(e, dragged) => dragToFolder(e, f().name, (into) => moveFolderInto(f(), into), dragged)}
-                      />
+                      <FolderCard folder={f()} note={heldText(heldOf(f().id))} onOpen={props.onOpenFolder} items={() => itemMenu({ folder: f() })} select={select({ folder: f() })} />
                     )}
                   </ForById>
                 </ul>
@@ -197,21 +292,7 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
                   <ul class="trips">
                     <ForById each={shownTrips()}>
                       {(trip) => (
-                        <TripCard
-                          trip={trip()}
-                          onOpen={props.onOpen}
-                          disabled={props.opening}
-                          items={() => tripItems(trip())}
-                          select={{
-                            selected: () => isSelectedTrip(trip().id),
-                            onToggle: () => setSelectedTrips((s) => toggled(s, trip().id)),
-                            onClick: (e) => setSelectedTrips((s) => clickSelect(s, shownTrips().map((t) => t.id), trip().id, e)),
-                            onDrag: (e, dragged) => {
-                              const moved = draggedWith(trip());
-                              dragToFolder(e, moved.length === 1 ? trip().name : counted(moved.length, 'trip'), (into) => moveTripsInto(moved, into), dragged);
-                            },
-                          }}
-                        />
+                        <TripCard trip={trip()} onOpen={props.onOpen} disabled={props.opening} items={() => itemMenu({ trip: trip() })} select={select({ trip: trip() })} />
                       )}
                     </ForById>
                   </ul>
@@ -229,8 +310,8 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
                 disabled={props.opening}
                 folderNote={(f) => [pathOf(f.parentId), heldText(heldOf(f.id))].filter(Boolean).join(' · ')}
                 tripWhere={(trip) => pathOf(trip.folderId) || t('No folder')}
-                folderItems={folderItems}
-                tripItems={tripItems}
+                folderItems={(f) => itemMenu({ folder: f })}
+                tripItems={(trip) => itemMenu({ trip })}
               />
             )}
           </Show>
@@ -275,7 +356,7 @@ function TripCard(props: {
   disabled: boolean;
   items: () => MenuItem[];
   where?: string;
-  select?: { selected: () => boolean; onToggle: () => void; onClick: (e: MouseEvent) => void; onDrag: (e: PointerEvent, dragged: () => void) => void };
+  select?: CardSelect;
 }) {
   const meta = () =>
     (props.trip.kind === 'collection'
@@ -285,7 +366,7 @@ function TripCard(props: {
       .filter(Boolean)
       .join(' · ');
   return (
-    <li class="card" classList={{ selected: props.select?.selected() }} ref={(el) => cardMenu(el, props.items)}>
+    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut() }} ref={(el) => cardMenu(el, props.items)}>
       <div class="row">
         <Show when={props.select}>
           {(select) => (
@@ -315,12 +396,16 @@ function TripCard(props: {
  * is; its menu renames and deletes it. Trips and folders dragged onto it move into it;
  * where `onDrag` is given, its pad drags it into another.
  */
-function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[]; onDrag?: (e: PointerEvent, dragged: () => void) => void }) {
+function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[]; select?: CardSelect }) {
   return (
-    <li class="card" data-drop-folder={String(props.folder.id)} ref={(el) => cardMenu(el, props.items)}>
+    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut() }} data-drop-folder={String(props.folder.id)} ref={(el) => cardMenu(el, props.items)}>
       <div class="row">
-        <Show when={props.onDrag}>{(onDrag) => <Pad label={t('Drag {name} into another folder', { name: props.folder.name })} onPress={onDrag()} />}</Show>
-        <button class="text grow" onClick={() => props.onOpen(props.folder.id)}>
+        <Show when={props.select}>
+          {(select) => (
+            <Pad label={t('Select {name}, or drag it into a folder', { name: props.folder.name })} selected={select().selected()} onToggle={select().onToggle} onPress={select().onDrag} />
+          )}
+        </Show>
+        <button class="text grow" onClick={(e) => (props.select && (e.metaKey || e.ctrlKey || e.shiftKey) ? props.select.onClick(e) : props.onOpen(props.folder.id))}>
           <FolderIcon />
           <span class="lines">
             <span class="name">{props.folder.name}</span>

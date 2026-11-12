@@ -95,8 +95,6 @@
   "Delete this journal entry?": "Diesen Tagebucheintrag löschen?",
   "Delete {n} routes": "{n} Routen löschen",
   "Delete {n} routes from {trips}?": "{n} Routen aus {trips} löschen?",
-  "Delete {n} trips": "{n} Touren löschen",
-  "Delete {n} trips with all their days?": "{n} Touren mit allen ihren Tagen löschen?",
   "Deleted {what}.": "{what} gelöscht.",
   "Deleting…": "Wird gelöscht…",
   "Descent": "Abstieg",
@@ -113,7 +111,6 @@
   "Download": "Herunterladen",
   "Drag the map; tap a stop for its details; points and stops stay where they are. Hold Space for the hand with another tool.": "Karte ziehen; ein Stopp zeigt beim Antippen seine Details; Punkte und Stopps bleiben, wo sie sind. Leertaste gedrückt halten für die Hand bei einem anderen Werkzeug.",
   "Drag to set the panel's width; double-click for the default": "Ziehen setzt die Breite des Bereichs; Doppelklick für die Vorgabe",
-  "Drag {name} into another folder": "{name} in einen anderen Ordner ziehen",
   "Drag {what} to another place": "{what} an eine andere Stelle ziehen",
   "Duplicate": "Duplizieren",
   "Duplicate day": "Tag duplizieren",
@@ -210,7 +207,6 @@
   "Move point": "Punkt verschieben",
   "Move route": "Route verschieben",
   "Move stop": "Stopp verschieben",
-  "Move {n} trips…": "{n} Touren verschieben…",
   "Move…": "Verschieben…",
   "Moving": "In Fahrt",
   "Name": "Name",
@@ -545,7 +541,6 @@
   "Import a folder of GPX files or exported trips…": "Ordner mit GPX-Dateien oder exportierten Touren importieren…",
   "Import exported trips (zip)…": "Exportierte Touren importieren (zip)…",
   "No GPX files and no exported trips in there.": "Darin sind weder GPX-Dateien noch exportierte Touren.",
-  "Export {n} trips": "{n} Touren exportieren",
   "Export": "Exportieren",
   "ids must be the numbers of trips, separated by commas.": "ids müssen die Nummern von Touren sein, durch Kommas getrennt.",
   "createdAt is not a time.": "createdAt ist keine Zeitangabe.",
@@ -562,5 +557,9 @@
   "Paste {n} stops": "{n} Stopps einfügen",
   "Drag {what} to another place, or tap to select it": "{what} an eine andere Stelle ziehen oder zum Auswählen antippen",
   "The parts are pasted here, but could not be taken from the trip they were cut from: {error}": "Die Teile sind hier eingefügt, konnten aber nicht aus der Tour entfernt werden, aus der sie ausgeschnitten wurden: {error}",
-  "OK": "OK"
+  "OK": "OK",
+  "Delete {what} with everything in them?": "{what} mit allem darin löschen?",
+  "Delete {what} with all their days?": "{what} mit allen Tagen löschen?",
+  "Move {what} here": "{what} hierher verschieben",
+  "Paste a copy of {what} here": "Kopie von {what} hier einfügen"
 }

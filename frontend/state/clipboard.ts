@@ -18,12 +18,33 @@ import { moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, openTripId
  * bound to them, stops, or a recording's GPX file. Kept while the app runs, from one trip
  * to another. What was cut is taken from where it was once it is pasted.
  */
-type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[] } | { recording: { name: string; gpx: string } }) & {
+type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[] } | { recording: { name: string; gpx: string } } | { library: LibraryClip }) & {
   /** Where the parts were cut from. */
   cut?: { tripId: number; kind: PartKind; ids: string[] };
 };
 
+/** Trips and folders of the library, by id: copied, or cut to be moved where they are pasted. */
+export interface LibraryClip {
+  tripIds: number[];
+  folderIds: number[];
+  move: boolean;
+}
+
 const [clip, setClip] = createSignal<Clip>();
+
+/** Copies trips, or cuts trips and folders, of the library. */
+export function copyLibraryItems(items: LibraryClip): void {
+  setClip({ library: items });
+}
+
+/** The trips and folders on the clipboard, if that is what it holds. */
+export function libraryClip(): LibraryClip | undefined {
+  const copied = clip();
+  return copied && 'library' in copied ? copied.library : undefined;
+}
+
+/** Empties the clipboard: what was cut is pasted once. */
+export const clearClip = (): void => void setClip(undefined);
 
 /** Copies routes with the stops bound to them. */
 export function copyRoutes(routes: CopiedRoute[]): void {
@@ -68,6 +89,7 @@ function recordingAsRoute(dayId: string, name: string, gpx: string): CopiedRoute
 function pasteLabel(copied: Clip): string {
   const of = (named: string, unnamed: string, several: string, names: string[]) =>
     names.length > 1 ? t(several, { n: names.length }) : names[0] ? t(named, { name: names[0] }) : t(unnamed);
+  if ('library' in copied) return t('Paste');
   if ('recording' in copied) return t('Paste recording “{name}”', { name: copied.recording.name });
   if ('days' in copied) return of('Paste day “{name}”', 'Paste day', 'Paste {n} days', copied.days.map((d) => d.name));
   if ('stops' in copied) return of('Paste stop “{name}”', 'Paste stop', 'Paste {n} stops', copied.stops.map((s) => s.name));
@@ -111,7 +133,7 @@ function pasted(copied: Clip, move: (ids: string[]) => void, paste: () => void):
  */
 export function pasteItems(kind: PartKind, id: string): MenuItem[] {
   const copied = clip();
-  if (!copied || kind === 'stop') return [];
+  if (!copied || kind === 'stop' || 'library' in copied) return [];
   const label = pasteLabel(copied);
   if (kind === 'route') {
     return 'stops' in copied ? [{ label, run: pasted(copied, (ids) => moveStopsIntoRoute(ids, id), () => pasteStopsIntoRoute(id, copied.stops)) }] : [];
@@ -138,15 +160,18 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
 }
 
 /**
- * The menu item that hands the copied routes to `paste`, which puts them into a trip or a
- * folder of the library; once that is done, routes that were cut are taken from their
- * trip. None while no route is copied.
+ * The menu item that hands the copied routes to `routes`, or the copied days to `days`,
+ * which put them into a trip or a folder of the library; once that is done, what was cut
+ * is taken from its trip. None where the clipboard holds neither, or what it holds has
+ * nowhere to go.
  */
-export function routesPasteItem(paste: (routes: CopiedRoute[]) => Promise<unknown>): MenuItem[] {
+export function libraryPasteItem(into: { routes?: (routes: CopiedRoute[]) => Promise<unknown>; days?: (days: Day[]) => Promise<unknown> }): MenuItem[] {
   const copied = clip();
-  if (!copied || !('routes' in copied)) return [];
+  if (!copied) return [];
+  const paste = 'routes' in copied && into.routes ? () => into.routes!(copied.routes) : 'days' in copied && into.days ? () => into.days!(copied.days) : undefined;
+  if (!paste) return [];
   const run = async () => {
-    await paste(copied.routes);
+    await paste();
     if (!copied.cut) return;
     setClip(undefined);
     await removeFromSource(copied.cut);

@@ -378,8 +378,9 @@ entries at the end of their section.
   kind from the same verbs, takes what only one kind has as an addition, and greys out
   what does not apply instead of leaving it away, so that a menu looks the same wherever
   it opens.
-- **A selection is of one kind.** Days, routes or stops are selected together, never
-  mixed: the verbs of a mixed selection would be those all kinds share, and what a
+- **A selection inside a trip is of one kind.** In the library folders and trips are
+  selected together, since they share a list and nearly all their verbs. Days, routes
+  or stops are selected together, never mixed: the verbs of a mixed selection would be those all kinds share, and what a
   paste of days and stops together into a route means has no good answer.
 - **Cut within a trip moves, cut across trips copies and then removes.** Within the open
   trip the parts keep their ids, and with them their journal entries, and the move is
@@ -387,6 +388,9 @@ entries at the end of their section.
   open trip is saved, and only then are they taken from the trip they came from: if that
   last step fails they are in both trips, never in neither. The journal of a part that
   left its trip stays behind with the trip. Only the open trip's side can be undone.
+- **A folder is cut, not copied.** Copying or duplicating a folder is a copy of every
+  trip in it, at any depth: megabytes started by one click. Trips are copied one by
+  one, where the size is in view.
 - **Undo is not bound to editing a route.** Ctrl+Z took back steps only while a route
   was being edited, although every edit of the trip is recorded; moving and removing in
   the panel is now as much of the work, so it is undone whenever a trip is open.

@@ -420,6 +420,19 @@ a {
 }
 
 /* A selected trip or duplicate, and the opened recording, are highlighted as a selected day is. */
+/* Where the folders and trips on the clipboard go: the folder shown. */
+.panel button.paste-here {
+  width: 100%;
+  margin: 0 0 6px;
+  padding: 8px 10px;
+  border: 1px dashed var(--accent);
+  border-radius: 8px;
+  background: none;
+  color: var(--accent);
+  text-align: left;
+  white-space: normal;
+}
+
 /* Parts of a trip selected to be acted on together, and those cut and waiting to be pasted. */
 .picked > .row,
 li.row.picked {
@@ -432,6 +445,7 @@ li.row.cut {
   opacity: 0.5;
 }
 
+.folders > li.selected > .row,
 .trips > li.selected > .row,
 .duplicates li.selected > .row,
 .recording.opened > .row {
