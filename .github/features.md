@@ -12,9 +12,12 @@
   in place by its arrowhead, a folder to its folders and trips, a trip to its days, as
   many at once as wanted; what is unfolded is kept per browser. A click on a folder
   makes it the one new trips, imports and pasted ones go into, and unfolds it; a click
-  on a trip opens it, and on a day of any trip opens that trip at the day. The open trip
-  stays in the tree with its days under it, the others around it, so that another trip
-  is one click away. Above the tree stand the library's actions as icons (new trip, new
+  on a trip opens it, and on a day of any trip opens that trip at the day. A trip's days
+  are listed only while it is unfolded by its arrowhead, the open trip's like any
+  other's: opening a trip unfolds nothing and folds nothing, except that an empty trip
+  unfolds, to be added to. The button on "All trips" folds every folder and trip away.
+  The open trip stays in the tree, the others around it, so that another trip is one
+  click away. Above the tree stand the library's actions as icons (new trip, new
   folder, import a folder, import a zip of exported trips, duplicates), the search, and
   the open trip's name with its own icons (edit, export, journal, print and share,
   whether it is saved, and a button that closes the trip, saved, and leaves the map

@@ -424,6 +424,15 @@ entries at the end of their section.
   does to the open trip on the server (deleting, merging, pasting onto it) leaves the
   trip first, saved, and renaming it is the edit of the trip itself: the open document
   is never changed behind its back.
+- **What is unfolded in the tree is the user's doing.** The open trip was always
+  unfolded: opening a trip listed its days and folded those of the one open before, so
+  the tree moved under the pointer with every trip opened, and the open trip's
+  arrowhead did nothing. A trip now lists its days only while its arrowhead says so,
+  open or not, and one button folds everything away. Two things still unfold by
+  themselves, both to keep something in reach rather than to rearrange the tree: the
+  folders around a trip when it opens, since a trip opened from the search or from the
+  address would otherwise be out of sight, and a trip that is empty, where adding a
+  day is all there is to do.
 - **A day has a pane of its own.** A day's routes and stops were listed inside the day's
   card, in the same narrow column as the library, the trip and its other days: on a wide
   screen one level showed and the rest of the width went unused. The day picked now

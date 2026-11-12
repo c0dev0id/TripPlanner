@@ -9,13 +9,14 @@ import { folderPath, heldInAll, heldText } from './folders';
 import { ALL_TRIPS } from './place';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
-import { openTripId, selectDay } from '../state/trip';
+import { openTrip, openTripId, selectDay } from '../state/trip';
 import { dayLabel } from '../trip/labels';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
 import { counted, dateText } from '../ui/format';
-import { ChevronIcon, CollectionIcon, FolderIcon, HomeIcon, TripIcon } from '../ui/icons';
+import { IconButton } from '../ui/IconButton';
+import { ChevronIcon, CollectionIcon, FoldIcon, FolderIcon, HomeIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
@@ -107,9 +108,13 @@ export function Library(props: {
   const trips = () => libraryTrips() ?? [];
   const pathOf = (id: number | null) => folderPath(folders(), id);
 
-  /** The folders and trips unfolded in the tree, by key; this browser keeps them. The open trip is always unfolded. */
+  /** The folders and trips unfolded in the tree, by key; this browser keeps them. */
   const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>(new Set(JSON.parse(readPreference(UNFOLDED) ?? '[]') as string[]));
-  const isUnfolded = (item: Item): boolean => unfolded().has(keyOf(item)) || ('trip' in item && item.trip.id === openTripId());
+  const isUnfolded = (item: Item): boolean => unfolded().has(keyOf(item));
+  const foldAll = () => {
+    setUnfolded(new Set<string>());
+    writePreference(UNFOLDED, undefined);
+  };
   const fold = (keys: readonly string[], unfold: boolean) => {
     const next = new Set(unfolded());
     for (const key of keys) {
@@ -119,10 +124,10 @@ export function Library(props: {
     setUnfolded(next);
     writePreference(UNFOLDED, JSON.stringify([...next]));
   };
-  // The folders a trip lies in unfold when it opens, so that it is in view.
+  // The folders a trip lies in unfold when it opens, so that it is in view; the trip itself only while it is empty, when all there is to do in it is adding to it.
   createEffect(
     on(openTripId, (id) => {
-      const keys: string[] = [];
+      const keys: string[] = openTrip()?.days.length === 0 ? [`trip:${id}`] : [];
       for (let f = folders().find((folder) => folder.id === trips().find((trip) => trip.id === id)?.folderId); f; f = folders().find((folder) => folder.id === f!.parentId)) keys.push(keyOf({ folder: f }));
       if (keys.length > 0) fold(keys, true);
     }),
@@ -438,6 +443,9 @@ export function Library(props: {
                           <span class="muted detail">{heldText(heldOf(null))}</span>
                         </span>
                       </button>
+                      <IconButton label={t('Fold all folders and trips away')} disabled={unfolded().size === 0} onClick={foldAll}>
+                        <FoldIcon />
+                      </IconButton>
                     </div>
                   </li>
                   <Branch parent={null} />
