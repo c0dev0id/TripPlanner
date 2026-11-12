@@ -8,7 +8,7 @@ import { heldOf, importNote, libraryFolders, libraryTrips, outlineOf, query, rel
 import { countsText, folderPath, heldInAll, heldText } from './folders';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
-import { addDay, openTripId, selectDay } from '../state/trip';
+import { addDay, openTripId } from '../state/trip';
 import { dayDetail, dayHeading } from '../trip/labels';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
@@ -159,8 +159,13 @@ export function Library(props: {
     fold([key], !(unfolded().has(key) && shownFolderId() === f.id));
     showFolder(f.id);
   };
-  /** A click on a trip opens it; on the open one it shows the trip whole again. */
-  const clickTrip = (trip: TripSummary) => (trip.id === openTripId() ? selectDay(undefined) : props.onOpen(trip));
+  /** A click on a trip opens it and unfolds it, or folds it where it was both already: as a click on a folder does. */
+  const clickTrip = (trip: TripSummary) => {
+    const key = keyOf({ trip });
+    const open = trip.id === openTripId();
+    fold([key], !(unfolded().has(key) && open));
+    if (!open) props.onOpen(trip);
+  };
   /** Whether what is acted on holds the open trip, which the library must not change behind its back. */
   const holdsOpen = (items: readonly Item[]): boolean => tripsWithin(items).some((trip) => trip.id === openTripId());
 

@@ -11,10 +11,11 @@
 - The library is a tree: under "All trips" the folders and trips as rows, each unfolding
   in place by its arrowhead, a folder to its folders and trips, a trip to its days, as
   many at once as wanted; what is unfolded is kept per browser. A click on a folder
-  makes it the one new trips, imports and pasted ones go into, and unfolds it; a click
-  on a trip opens it, and on a day of any trip opens that trip at the day. A trip's days
-  are listed only while it is unfolded by its arrowhead, the open trip's like any
-  other's: opening a trip unfolds nothing and folds nothing. A day reads the same in every trip, open or not: its number
+  makes it the one new trips, imports and pasted ones go into, and unfolds it, or folds
+  it where it was both already; a click on a trip does the same for the trip: it opens
+  and unfolds it, or folds it where it was both already. A click on a day of any trip
+  opens that trip at the day. A trip's days are listed only while it is unfolded, the
+  open trip's like any other's: opening one trip folds no other. A day reads the same in every trip, open or not: its number
   and name over its date and length, a collection's section over what it holds; the
   open trip's days have in addition the grip that reorders them, their recordings and
   their journal. The days stand under their trip without a heading; a trip without days

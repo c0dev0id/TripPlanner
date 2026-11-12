@@ -442,8 +442,12 @@ entries at the end of their section.
 - **What is unfolded in the tree is the user's doing.** The open trip was always
   unfolded: opening a trip listed its days and folded those of the one open before, so
   the tree moved under the pointer with every trip opened, and the open trip's
-  arrowhead did nothing. A trip now lists its days only while its arrowhead says so,
-  open or not, and one button folds everything away. One thing still unfolds by
+  arrowhead did nothing. A trip now lists its days only while it is unfolded,
+  open or not, by its arrowhead or by a click on it: the click opens and unfolds it and
+  folds it again where it was both already, which is what a click on a folder does, so
+  that the two kinds of row answer alike. Opening a trip folds no other, and one
+  button folds everything away. A click on the open trip used to show it whole on the
+  map; closing the day's pane does that. One thing still unfolds by
   itself, to keep something in reach rather than to rearrange the tree: the folders
   around a trip when it opens, since a trip opened from the search or from the address
   would otherwise be out of sight.
