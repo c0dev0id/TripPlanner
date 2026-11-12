@@ -47,11 +47,17 @@ final class Outline
         return array_map(fn (array $line): array => ['line' => $line['line'], 'color' => $line['color']], $lines);
     }
 
-    /** @return ?array{of: string, line: string, color: ?string} the route's thinned line as polyline6, with its key and the colour the route has of its own; none for a route without a line */
+    /** The length of the routes a kept outline has lines of, in metres. */
+    public static function distance(string $kept): int
+    {
+        return $kept === '' ? 0 : (int) array_sum(array_column(json_decode($kept, true, 512, JSON_THROW_ON_ERROR)['lines'], 'm'));
+    }
+
+    /** @return ?array{of: string, line: string, color: ?string, m: int} the route's thinned line as polyline6, with its key, the colour the route has of its own and the route's length in metres; none for a route without a line */
     private static function lineOf(array $route, string $key): ?array
     {
         $line = self::thinned(RouteGeometry::line($route));
-        return count($line) > 1 ? ['of' => $key, 'line' => Polyline::encode($line), 'color' => $route['color'] ?? null] : null;
+        return count($line) > 1 ? ['of' => $key, 'line' => Polyline::encode($line), 'color' => $route['color'] ?? null, 'm' => (int) round(RouteGeometry::length($route))] : null;
     }
 
     /** What decides a route's line in the outline, as a digest: its line and its colour. */

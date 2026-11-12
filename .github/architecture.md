@@ -101,7 +101,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `DELETE /trips/{id}` | Deletes the trip with everything in it. |
 | `GET /trips/{id}/gpx` | The trip as GPX with the options `per=trip|day` (one file, or a zip with one per day), `form=tracks|routes`, `optional=0|1`, `reachM=<metres>`. `days=<ids>` takes those days alone and `routes=<ids>` those routes alone, ids separated by commas; what then lies in one day is that day's file. 404 when none of them is in the trip. |
 | `GET /trips/archive` | The trips named by `ids=` (comma-separated) as a zip to keep or to import again: a folder per trip with `trip.json` (document, journal, recordings), the journal's files, the recordings as GPX and a GPX file per day. Trips of another user are left out; 404 when none is left. |
-| `GET /trips/outlines` | The outlines of the user's trips by trip id: its days in order, each with its id, name and date and the lines of its routes, thinned to a few points each, as polyline6 with the colour a route has of its own. |
+| `GET /trips/outlines` | The outlines of the user's trips by trip id: its days in order, each with its id, name and date, how many routes and stops it holds, its length in metres (`distanceM`) and the lines of its routes, thinned to a few points each, as polyline6 with the colour a route has of its own. |
 | `GET /trips/{id}/share` | `{token}`: the token the trip's read-only page is public under, or null. |
 | `POST /trips/{id}/share` | Makes the page public under the trip's token, a new one where it has none; answers `{token}`. |
 | `DELETE /trips/{id}/share` | Takes the page off the public. |

@@ -47,6 +47,29 @@ final class RouteGeometryTest extends TestCase
         self::assertSame([[1.0, 1.0], [1.5, 1.2], [2.0, 2.0], [3.0, 3.0], [4.0, 4.0]], RouteGeometry::line($route));
     }
 
+    public function testMeasuresARouteAsThePlannerDoes(): void
+    {
+        $route = [
+            'kind' => 'routed',
+            'profile' => 'motorcycle',
+            'highways' => 'allow',
+            'points' => [
+                ['id' => 'a', 'lngLat' => [1.0, 1.0]],
+                ['id' => 'b', 'lngLat' => [2.0, 2.0]],
+                ['id' => 'c', 'lngLat' => [3.0, 3.0], 'straight' => true],
+                ['id' => 'd', 'lngLat' => [4.0, 4.0]],
+            ],
+            'legs' => [
+                'motorcycle:allow/1,1;2,2' => ['geometry' => '', 'distanceM' => 1000, 'durationS' => 1],
+                // Kept for a straight leg by mistake: a straight leg is as long as the crow flies all the same.
+                'motorcycle:allow/2,2;3,3' => ['geometry' => '', 'distanceM' => 5, 'durationS' => 1],
+            ],
+        ];
+        // The routed leg as routed, the straight one and the one not routed as the crow flies: the figures of frontend/geo/measure.ts.
+        self::assertEqualsWithDelta(315_283.763, RouteGeometry::length($route), 0.001);
+        self::assertEqualsWithDelta(23_487.286, RouteGeometry::length(TripFixture::track('t1')), 0.001);
+    }
+
     public function testReadsATrackAsItsLine(): void
     {
         self::assertSame([[11.4, 47.3], [11.35, 47.2], [11.3, 47.1]], RouteGeometry::line(TripFixture::track('t1')));
