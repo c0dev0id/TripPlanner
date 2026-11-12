@@ -1,32 +1,59 @@
 import { t } from '../i18n/t';
-import { createResource, createSignal, For, Show } from 'solid-js';
+import { createEffect, createResource, createSignal, For, on, Show } from 'solid-js';
 import { DEFAULT_EXPORT, deleteExportPreset, gpxUrl, listExportPresets, saveExportPreset, type ExportOptions } from '../api';
-import { exportOpen, setExportOpen } from '../state/drawing';
-import { openTrip, openTripId, selectedDay } from '../state/trip';
+import { flushSave } from '../state/autosave';
+import { exportScope, setExportScope } from '../state/drawing';
+import { openTrip, openTripId, routeById, selectedDay } from '../state/trip';
+import { counted } from '../ui/format';
 import { showModalWhile } from '../ui/modal';
 import { NameForm } from '../ui/NameForm';
 import { createRequest } from '../ui/request';
-import { dayLabel } from './labels';
+import { dayLabelOf, routeLabelOf } from './labels';
 
 const sameOptions = (a: ExportOptions, b: ExportOptions) => a.per === b.per && a.form === b.form && a.optional === b.optional && a.reachM === b.reachM;
 
-/** The GPX export: the whole trip or the selected day, the options, presets kept with the account, and the download. */
+/**
+ * The GPX export: the whole trip, or a part of it (the days or routes its menu was opened
+ * on, else the day picked), the options, presets kept with the account, and the download.
+ * What is exported is what is saved, so opening it saves first.
+ */
 export function ExportDialog() {
   let dialog!: HTMLDialogElement;
+  const exportOpen = () => exportScope() !== undefined;
   showModalWhile(() => dialog, exportOpen);
   const [presets, { mutate }] = createResource(exportOpen, (open) => (open ? listExportPresets() : []));
-  const [scope, setScope] = createSignal<'trip' | 'day'>('trip');
+  const [scope, setScope] = createSignal<'trip' | 'part'>('trip');
+  // Asked for from a menu, the parts are what is exported unless the user says otherwise.
+  createEffect(
+    on(exportScope, (asked) => {
+      if (!asked) return;
+      setScope(asked.kind === 'trip' ? 'trip' : 'part');
+      void flushSave();
+    }),
+  );
   const [options, setOptions] = createSignal<ExportOptions>(DEFAULT_EXPORT);
   const [naming, setNaming] = createSignal(false);
   const { error, run } = createRequest();
   const set = <K extends keyof ExportOptions>(key: K, value: ExportOptions[K]) => setOptions((o) => ({ ...o, [key]: value }));
   /** The preset whose options are the current ones, if any. */
   const presetId = () => presets()?.find((p) => sameOptions(p.options, options()))?.id;
-  const day = () => {
-    const d = selectedDay();
-    return d && { id: d.id, label: dayLabel(d, openTrip()!.days.indexOf(d)) };
+  /** The part offered beside the whole trip, and what it is called: one by its name, several by their number. */
+  const part = () => {
+    const asked = exportScope();
+    const trip = openTrip()!;
+    const day = selectedDay();
+    const of = asked && asked.kind !== 'trip' ? asked : day ? { kind: 'day' as const, ids: [day.id] } : undefined;
+    if (!of) return undefined;
+    const [only] = of.ids;
+    if (of.ids.length > 1) return { of, label: counted(of.ids.length, of.kind === 'route' ? 'route' : trip.kind === 'collection' ? 'section' : 'day') };
+    const route = of.kind === 'route' ? routeById(only!) : undefined;
+    const named = of.kind === 'day' ? trip.days.find((d) => d.id === only) : undefined;
+    return { of, label: route ? routeLabelOf(trip, route) : !named ? '' : trip.kind === 'collection' ? named.name : dayLabelOf(trip, named) };
   };
-  const url = () => gpxUrl(openTripId()!, options(), scope() === 'day' ? day()?.id : undefined);
+  const chosen = () => (scope() === 'part' ? part()?.of : undefined);
+  /** One day alone is one file. */
+  const oneDay = () => chosen()?.kind === 'day' && chosen()!.ids.length === 1;
+  const url = () => gpxUrl(openTripId()!, options(), chosen());
   const savePreset = (name: string) =>
     run(async () => {
       const preset = await saveExportPreset(name, options());
@@ -39,7 +66,7 @@ export function ExportDialog() {
       mutate((list) => list?.filter((p) => p.id !== id));
     });
   return (
-    <dialog ref={dialog} class="dialog export-dialog" aria-label={t('Export GPX')} onClose={() => setExportOpen(false)}>
+    <dialog ref={dialog} class="dialog export-dialog" aria-label={t('Export GPX')} onClose={() => setExportScope(undefined)}>
       <Show when={exportOpen() && openTrip()}>
         <div class="dialog-body">
           <fieldset>
@@ -47,15 +74,15 @@ export function ExportDialog() {
             <label>
               <input type="radio" name="scope" checked={scope() === 'trip'} onChange={() => setScope('trip')} /> {t('The whole trip')}
             </label>
-            <Show when={day()}>
-              {(d) => (
+            <Show when={part()}>
+              {(p) => (
                 <label>
-                  <input type="radio" name="scope" checked={scope() === 'day'} onChange={() => setScope('day')} /> {d().label}
+                  <input type="radio" name="scope" checked={scope() === 'part'} onChange={() => setScope('part')} /> {p().label}
                 </label>
               )}
             </Show>
           </fieldset>
-          <fieldset disabled={scope() === 'day'}>
+          <fieldset disabled={oneDay()}>
             <legend>{t('Files')}</legend>
             <label>
               <input type="radio" name="per" checked={options().per === 'trip'} onChange={() => set('per', 'trip')} /> {t('One file')}
@@ -99,7 +126,7 @@ export function ExportDialog() {
           </Show>
           <Show when={error()}>{(message) => <p class="error">{message()}</p>}</Show>
           <div class="row end">
-            <button type="button" onClick={() => setExportOpen(false)}>
+            <button type="button" onClick={() => setExportScope(undefined)}>
               {t('Close')}
             </button>
             <a class="button primary" href={url()} download="">

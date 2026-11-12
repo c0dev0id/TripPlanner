@@ -469,6 +469,13 @@ entries at the end of their section.
   duplicates report each listen and act only on their own selection or clipboard, and
   one name in `ui/selection.ts` says which list holds the selection, which the others
   give theirs up for.
+- **A selection is exported through the same dialog as the trip.** Export GPX… in the
+  menu of days or routes opens the trip's export dialog with those parts as its scope,
+  rather than downloading at once: the options (tracks or routes, optional parts, the
+  reach of free stops, the presets) apply to a part as to the whole. The server's
+  export takes lists of day and route ids instead of the one day it took; where routes
+  are named, their days are the ones exported, and a stop bound to a route left out is
+  kept only if it lies within reach of one that is in, like a free stop.
 - **A selection inside a trip is of one kind.** In the library folders and trips are
   selected together, since they share a list and nearly all their verbs. Days, routes
   or stops are selected together, never mixed: the verbs of a mixed selection would be those all kinds share, and what a

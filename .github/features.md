@@ -180,8 +180,9 @@
   their menus copy them, to be pasted into a day of a trip, or remove them. A section is
   renamed or removed from its menu.
 - Routes and stops can be marked optional, each in its dialog, and are shown so.
-- GPX export from a dialog: the whole trip or the selected day; one file or one file per
-  day in a zip; routes as tracks with their full line, or as routes of their points for
+- GPX export from a dialog: the whole trip, the day picked, or the days or routes
+  selected, from Export GPX… in their menu; what is exported is saved first; one file
+  or one file per day in a zip; routes as tracks with their full line, or as routes of their points for
   the device to route between; with or without the optional routes and stops; free stops
   within a chosen distance of a route. Stops become waypoints with their Garmin symbol;
   each route is named after its day and its own name. Named presets of these options are

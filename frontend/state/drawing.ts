@@ -41,8 +41,9 @@ export const [editTarget, setEditTarget] = createSignal<EditTarget>();
 /** The track whose points are being condensed or made into a route, in a dialog. */
 export const [trackAction, setTrackAction] = createSignal<{ routeId: string; action: 'condense' | 'convert' }>();
 
-/** Whether the export dialog is open. */
-export const [exportOpen, setExportOpen] = createSignal(false);
+/** What the export dialog is open for: the trip, or days or routes of it picked in a menu; none while it is closed. */
+export type ExportScope = { kind: 'trip' } | { kind: 'day' | 'route'; ids: string[] };
+export const [exportScope, setExportScope] = createSignal<ExportScope>();
 
 /** Whether the preferences dialog is open. */
 export const [preferencesOpen, setPreferencesOpen] = createSignal(false);

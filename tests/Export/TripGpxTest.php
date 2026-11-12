@@ -72,6 +72,20 @@ final class TripGpxTest extends TestCase
         self::assertSame(['Hotel Post', 'Far away'], array_map(fn ($w) => (string) $w->name, $wide->xpath('/g:gpx/g:wpt')));
     }
 
+    public function testWritesOnlyTheDaysAndRoutesAskedFor(): void
+    {
+        $names = fn (string $gpx): array => array_map('strval', $this->parse($gpx)->xpath('/g:gpx/g:trk/g:name'));
+        $now = new DateTimeImmutable();
+        self::assertSame(['Day 2 – Route 1', 'Day 2 – Hike'], $names(TripGpx::days($this->document(), [1], $now)));
+        self::assertCount(3, $names(TripGpx::days($this->document(), [0, 1], $now)));
+
+        // The hike alone: its day's bound stop stands at its start, so it is within reach; the far one is not.
+        $hike = $this->parse(TripGpx::days($this->document(), [1], $now, new ExportOptions(), ['r3']));
+        self::assertSame(['Day 2'], array_map('strval', $hike->xpath('/g:gpx/g:trk/g:name')));
+        self::assertSame(['Hotel Post'], array_map('strval', $hike->xpath('/g:gpx/g:wpt/g:name')));
+        self::assertSame($names(TripGpx::day($this->document(), 1, $now, new ExportOptions(), ['r3'])), ['Day 2']);
+    }
+
     public function testWritesRoutesAsRoutePointsOnRequest(): void
     {
         $xml = $this->parse(TripGpx::trip($this->document(), new DateTimeImmutable(), new ExportOptions(form: 'routes')));

@@ -10,7 +10,8 @@ use DateTimeImmutable;
  * A trip document as GPX: the stops as waypoints and every route as a track, or as a
  * route of its points, named after its day. A free stop is included where a route of its
  * day passes within reach; optional routes and stops are included or left out as the
- * options say.
+ * options say. Where only some routes are asked for, a stop bound to another counts as a
+ * free one.
  */
 final class TripGpx
 {
@@ -20,10 +21,16 @@ final class TripGpx
         return self::file($document, array_keys($document['days']), $document['name'], $time, $options);
     }
 
-    /** One day of the trip; `$index` is the day's position, counted from 0. */
-    public static function day(array $document, int $index, DateTimeImmutable $time, ExportOptions $options = new ExportOptions()): string
+    /** One day of the trip; `$index` is the day's position, counted from 0. Of its routes only those of `$routeIds`, where given. */
+    public static function day(array $document, int $index, DateTimeImmutable $time, ExportOptions $options = new ExportOptions(), ?array $routeIds = null): string
     {
-        return self::file($document, [$index], self::dayName($document, $index), $time, $options);
+        return self::file($document, [$index], self::dayName($document, $index), $time, $options, $routeIds);
+    }
+
+    /** The days at `$indices` in one file named after the trip; of their routes only those of `$routeIds`, where given. */
+    public static function days(array $document, array $indices, DateTimeImmutable $time, ExportOptions $options = new ExportOptions(), ?array $routeIds = null): string
+    {
+        return self::file($document, $indices, $document['name'], $time, $options, $routeIds);
     }
 
     /** The name of a day's file, without the extension. */
@@ -44,14 +51,14 @@ final class TripGpx
         return $document['name'] . ' – ' . self::dayLabel($document['days'][$index], $index);
     }
 
-    private static function file(array $document, array $indices, string $name, DateTimeImmutable $time, ExportOptions $options): string
+    private static function file(array $document, array $indices, string $name, DateTimeImmutable $time, ExportOptions $options, ?array $routeIds = null): string
     {
         $included = fn (array $part): bool => $options->optional || !$part['optional'];
         $waypoints = [];
         $lines = [];
         foreach ($indices as $index) {
             $day = $document['days'][$index];
-            $routes = array_values(array_filter($day['routes'], $included));
+            $routes = array_values(array_filter($day['routes'], fn (array $route): bool => $included($route) && ($routeIds === null || in_array($route['id'], $routeIds, true))));
             // The routes' full lines, decoded once and only where they are needed: the tracks form, a track's points, and free stops.
             $dayLines = null;
             $linesOf = function () use (&$dayLines, $routes): array {

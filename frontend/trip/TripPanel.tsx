@@ -9,7 +9,7 @@ import { defaultProfile } from '../routing/dayEdit';
 import { pointCount, routeDistance, routesDistance } from '../routing/legs';
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
-import { foldRoute, isRouteUnfolded, panTo, setEditTarget, setExportOpen, setShareOpen, setShowNeighbours, setTrackAction, showNeighbours } from '../state/drawing';
+import { foldRoute, isRouteUnfolded, panTo, setEditTarget, setExportScope, setShareOpen, setShowNeighbours, setTrackAction, showNeighbours } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
@@ -67,7 +67,7 @@ export function TripIcons() {
       <IconButton label={t('Edit trip')} onClick={() => setEditTarget({ kind: 'trip' })}>
         <PencilIcon />
       </IconButton>
-      <IconButton label={t('Export GPX…')} onClick={() => setExportOpen(true)}>
+      <IconButton label={t('Export GPX…')} onClick={() => setExportScope({ kind: 'trip' })}>
         <DownloadIcon />
       </IconButton>
       <JournalButton target={{}} of={t('the trip')} />

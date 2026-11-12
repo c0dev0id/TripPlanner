@@ -1,7 +1,7 @@
 import { t } from '../i18n/t';
 import { dayOfRoute, dayOfStop, type PartKind } from '../routing/dayEdit';
 import { copyParts, pasteItems } from '../state/clipboard';
-import { setEditTarget } from '../state/drawing';
+import { setEditTarget, setExportScope } from '../state/drawing';
 import { clearPartSelection, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
 import { duplicateParts, movePartsToDay, openTrip, removeParts, routeById } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
@@ -47,8 +47,8 @@ function moveItems(kind: PartKind, ids: readonly string[]): MenuItem[] {
 
 /**
  * The menu of a day, a route or a stop of the open trip, the same for each kind and in a
- * trip as in a collection: edit, duplicate, cut, copy, paste into it, move, what only its
- * kind has (`more`), select, remove. Opened on a part of a selection it acts on all of
+ * trip as in a collection: edit, duplicate, cut, copy, paste into it, move, export as GPX
+ * (days and routes), what only its kind has (`more`), select, remove. Opened on a part of a selection it acts on all of
  * them; what takes one part alone is then greyed out. `edit` stands in where a part is
  * edited otherwise than in its dialog.
  */
@@ -65,6 +65,7 @@ export function partMenu(kind: PartKind, id: string, own: { edit?: () => void; m
     { label: t('Copy'), run: () => copyParts(kind, ids) },
     ...(paste.length > 0 || kind === 'stop' ? paste : [{ label: t('Paste'), disabled: true, run: nothing }]),
     ...moveItems(kind, ids),
+    ...(kind === 'stop' ? [] : [{ label: t('Export GPX…'), run: () => setExportScope({ kind, ids }) }]),
     ...(several ? [] : (own.more ?? [])),
     ...(several || isPartSelected(kind, id) ? [] : [{ label: t('Select'), run: () => togglePart(kind, id) }]),
     { label: t('Remove'), run: () => void removeAsked(kind, ids) },
