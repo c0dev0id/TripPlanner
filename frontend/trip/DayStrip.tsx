@@ -7,7 +7,7 @@ import { dayTitleOf } from './labels';
 /**
  * The open trip's days in the strip the library folds away to: a numbered button each, in
  * the colour its routes have where the days are coloured apart. A click shows the day, or
- * the whole trip again where the day is shown already, as a click on its row in the tree.
+ * closes it where it is shown already.
  */
 export function DayStrip() {
   return (

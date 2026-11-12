@@ -36,6 +36,8 @@ body {
 }
 
 .panel.folded {
+  display: flex;
+  flex-direction: column;
   padding: 0 6px;
   overflow: hidden;
 }
@@ -66,11 +68,6 @@ body {
 }
 
 /* The open trip's days in the strip, a numbered button each; the day shown is ringed. A long trip's scroll. */
-.panel.folded {
-  display: flex;
-  flex-direction: column;
-}
-
 .panel.folded > .day-strip {
   display: flex;
   flex: 1;
@@ -544,7 +541,7 @@ a {
 
 /*
  * The library as a tree: folders and trips as rows, each unfolding to what it holds one
- * step in; the folder new things go into and the open trip are marked.
+ * step in.
  */
 .tree,
 .tree-children {
@@ -572,8 +569,8 @@ a {
   display: block;
 }
 
-/* The tree's one mark, on the row clicked last: a folder, the open trip, or its day that is shown. */
-.tree .card.current > .row {
+/* The tree's one mark, on the row clicked last: a folder, the open trip, or its day that is shown. Selected rows are tinted alike. */
+.tree .card:is(.current, .selected) > .row {
   background: var(--active);
 }
 
@@ -584,12 +581,8 @@ a {
 .tree .card.current > .row,
 .tree .card:has(.card.current) > .row,
 .tree .card.open > .row,
-.tree:has(> li:not(:first-child).current, > li:not(:first-child) .card.current) > li:first-child > .row {
+.tree:has(.card.current) > li:first-child > .row {
   box-shadow: inset 3px 0 0 var(--accent);
-}
-
-.tree .card.selected > .row {
-  background: var(--active);
 }
 
 /* Where a day's grip would stand, in a trip that is not open: its days line up with those of the open one. */
@@ -630,7 +623,7 @@ li.row.cut {
   opacity: 0.5;
 }
 
-/* A selected duplicate and the opened recording are highlighted as a selected day is. */
+/* A selected duplicate and the opened recording are tinted as the tree's mark is. */
 .duplicates li.selected > .row,
 .recording.opened > .row {
   background: var(--active);

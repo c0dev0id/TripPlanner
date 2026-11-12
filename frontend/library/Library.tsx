@@ -58,7 +58,6 @@ interface CardFold {
 /** The browser's preference that keeps what is unfolded in the tree. */
 const UNFOLDED = 'libraryUnfolded';
 
-
 /**
  * The days of a trip that is not open, as the library knows them, drawn as the open trip
  * draws its own: a click opens the trip at the day. What needs the trip's document (the
@@ -163,9 +162,8 @@ export function Library(props: {
   const clickFolder = (f: Folder) => {
     const key = keyOf({ folder: f });
     if (unfolded().has(key) && isMarkedFolder(f.id)) {
-      const within = keysWithin(f.id);
-      fold([key, ...within], false);
-      if (within.includes(`trip:${openTripId()}`)) selectDay(undefined);
+      fold([key, ...keysWithin(f.id)], false);
+      if (holdsOpen([{ folder: f }])) selectDay(undefined);
     } else fold([key], true);
     markFolderShown(f.id);
   };
@@ -173,9 +171,8 @@ export function Library(props: {
   const isMarkedTrip = (trip: TripSummary): boolean => trip.id === openTripId() && isTripMarked();
   /**
    * A click on a trip, which is a folder of days. It marks the trip and unfolds it: one
-   * that is not open opens, and one whose day held the mark takes it back while the day
-   * stays shown. Marked already, the trip folds, which closes the day shown with it, and
-   * unfolds again at the next click.
+   * that is not open opens, and the open one closes its day that is shown. Marked
+   * already, the trip folds, and unfolds again at the next click.
    */
   const clickTrip = (trip: TripSummary) => {
     const key = keyOf({ trip });

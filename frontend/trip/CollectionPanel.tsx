@@ -56,7 +56,7 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
   const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
   const click = (e: MouseEvent) => {
     if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);
-    // The day shown stays shown: a click on it only takes the mark back from the trip.
+    // The day shown stays shown: a click on it only takes the mark back from a folder.
     else if (selected()) markShownDay();
     else selectDay(props.day.id);
   };
