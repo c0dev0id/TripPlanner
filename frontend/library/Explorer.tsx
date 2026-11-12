@@ -4,7 +4,7 @@ import { PlacesList } from '../map/PlacesList';
 import { heldOf, libraryFolders, libraryProblem, query, setQuery, showFolder, shownFolderId, showingDuplicates } from '../state/library';
 import { openTrip, selectDay, selectedDay } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
-import { SaveProblem, SaveState } from '../trip/SaveStatus';
+import { SaveState } from '../trip/SaveStatus';
 import { TripIcons, TripPanel } from '../trip/TripPanel';
 import { counted } from '../ui/format';
 import { BackIcon } from '../ui/icons';
@@ -30,7 +30,7 @@ interface Up {
  * library's actions and search, the path to where it is with the trip's own actions, the
  * card that leads one level up, always in the same place, and what is there.
  */
-export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; onLeave: () => Promise<void>; onReload: () => void; opening: boolean; error: string | undefined }) {
+export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; onLeave: () => Promise<void>; opening: boolean; error: string | undefined }) {
   const folders = () => libraryFolders() ?? [];
   const place = createMemo((): Place => {
     const trip = openTrip();
@@ -89,9 +89,6 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
         )}
       </Show>
       <Show when={libraryProblem() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
-      <Show when={openTrip()}>
-        <SaveProblem onReload={props.onReload} />
-      </Show>
       <Show
         when={query().trim() || openTrip() || !showingDuplicates()}
         fallback={<DuplicatesReport onOpen={props.onOpen} disabled={props.opening} />}

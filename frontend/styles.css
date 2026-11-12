@@ -49,6 +49,22 @@ body {
   border-bottom: 0;
 }
 
+/* The open trip's name and whether it is saved, beside the button of the library folded away; of the strip beside the map only the latter. */
+.open-trip {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.panel.folded > .panel-header > .open-trip {
+  display: flex;
+}
+
+.panel.folded .open-trip > .name {
+  display: none;
+}
+
 /* The pane of the day picked: its heading, then its routes, stops and recordings. */
 .day-pane {
   position: relative;
@@ -734,14 +750,6 @@ li.row.cut {
   font-size: 13px;
 }
 
-.save-status {
-  margin: 4px 0;
-  font-size: 13px;
-}
-
-.save-status.failed {
-  color: var(--error);
-}
 
 
 /* The export dialog: a row of choices per option. */
@@ -1078,6 +1086,17 @@ fieldset.choices legend {
 
 .place-reaches input {
   width: 5em;
+}
+
+/* What went wrong saving stands over the map, under the place search, whatever panes are shown. */
+.save-problem {
+  top: 56px;
+  left: 10px;
+  z-index: 5;
+  max-width: min(360px, calc(100% - 70px));
+  margin: 0;
+  padding: 8px 10px;
+  color: var(--error);
 }
 
 /* An opened recording's figures float over the map: its summary top left under the place search, its charts along the bottom. */

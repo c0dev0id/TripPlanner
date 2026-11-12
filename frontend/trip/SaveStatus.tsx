@@ -23,11 +23,11 @@ export function SaveState() {
   );
 }
 
-/** What went wrong saving the open trip, and a way to reload it when it was changed elsewhere; nothing while saving goes well. */
+/** What went wrong saving the open trip, over the map, and a way to reload it when it was changed elsewhere; nothing while saving goes well. */
 export function SaveProblem(props: { onReload: () => void }) {
   return (
     <Show when={trouble()}>
-      <p class="save-status failed">
+      <p class="map-card save-problem" role="alert">
         <Show when={saveState() === 'conflict'} fallback={t('Saving failed; trying again shortly.')}>
           {t('The trip was changed elsewhere.')} <button onClick={props.onReload}>{t('Reload it')}</button> {t('to go on; the changes made here since are lost.')}
         </Show>

@@ -20,6 +20,7 @@ import { DayPane } from './trip/DayPane';
 import { ExportDialog } from './trip/ExportDialog';
 import { JournalDialog } from './trip/JournalDialog';
 import { RouteDialog } from './trip/RouteDialog';
+import { SaveProblem, SaveState } from './trip/SaveStatus';
 import { ShareDialog } from './trip/ShareDialog';
 import { StopDialog } from './trip/StopDialog';
 import { TrackDialog } from './trip/TrackDialog';
@@ -95,6 +96,14 @@ export function App() {
           <IconButton label={t(panelFolded() ? 'Show the library' : 'Fold the library away')} pressed={!panelFolded()} onClick={() => foldPanel(!panelFolded())}>
             <MenuIcon />
           </IconButton>
+          <Show when={openTrip()}>
+            {(trip) => (
+              <span class="open-trip">
+                <span class="name">{trip().name}</span>
+                <SaveState />
+              </span>
+            )}
+          </Show>
           <h1>Trip Planner</h1>
           <Show when={me()}>{(user) => <span class="user">{user().email}</span>}</Show>
           <select class="language" aria-label={t('Language')} title={t('German or English, or as the browser says')} value={languageChoice} onChange={(e) => chooseLanguage(e.currentTarget.value as Language | 'auto')}>
@@ -110,12 +119,15 @@ export function App() {
             {t('Sign out')}
           </button>
         </header>
-        <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} onReload={() => void reload()} opening={opening()} error={error()} />
+        <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} opening={opening()} error={error()} />
       </aside>
       <DayPane />
       <div class="map-wrap">
         <PanelResizer />
         <MapView />
+        <Show when={openTrip()}>
+          <SaveProblem onReload={() => void reload()} />
+        </Show>
         <RecordingCards />
         <RoutingBar />
         <Toolbar />
