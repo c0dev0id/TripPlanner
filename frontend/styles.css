@@ -497,6 +497,56 @@ a {
   stroke-linejoin: round;
 }
 
+/*
+ * The library as a tree: folders and trips as rows, each unfolding to what it holds one
+ * step in; the folder new things go into and the open trip are marked.
+ */
+.tree,
+.tree-children,
+.tree-days {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.tree-children,
+.tree-days {
+  padding-left: 14px;
+}
+
+.tree .card {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.tree .card > .row {
+  border-radius: 7px;
+}
+
+.tree .name {
+  display: block;
+}
+
+.tree .card.current > .row {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.tree .card.selected > .row {
+  background: var(--active);
+}
+
+.tree-days .text {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.tree-days .muted {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
 /* Where the folders and trips on the clipboard go: the folder shown. */
 .panel button.paste-here {
   width: 100%;

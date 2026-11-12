@@ -1,15 +1,21 @@
 import { plural, t } from '../i18n/t';
-import { createEffect, createMemo, createSelector, createSignal, For, Match, on, Show, Switch } from 'solid-js';
+import { createEffect, createMemo, createSelector, createSignal, For, Match, on, Show, Switch, type JSX } from 'solid-js';
 import { changeTrip, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
-import { heldOf, importNote, libraryFolders, libraryTrips, outlineOf, query, relistFolders, relistTrips, runLibrary, shownFolderId } from '../state/library';
+import { heldOf, importNote, libraryFolders, libraryTrips, outlineOf, query, relistFolders, relistTrips, runLibrary, showFolder, shownFolderId } from '../state/library';
 import { folderPath, heldInAll, heldText } from './folders';
+import { ALL_TRIPS } from './place';
+import { flushSave } from '../state/autosave';
+import { setEditTarget } from '../state/drawing';
+import { openTripId, selectDay } from '../state/trip';
+import { dayLabel } from '../trip/labels';
+import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
 import { counted, dateText } from '../ui/format';
-import { CollectionIcon, FolderIcon, TripIcon } from '../ui/icons';
+import { ChevronIcon, CollectionIcon, FolderIcon, HomeIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
 import { clickSelect, menuSelection, NOTHING_SELECTED, toggled, type Selection } from '../ui/selection';
@@ -37,6 +43,43 @@ interface CardSelect {
   onDrag: (e: PointerEvent, dragged: () => void) => void;
 }
 
+/** How a card unfolds in the tree, and whether it is the folder new things go into, or the open trip. */
+interface CardFold {
+  unfolded: () => boolean;
+  toggle: () => void;
+  current: () => boolean;
+}
+
+/** The browser's preference that keeps what is unfolded in the tree. */
+const UNFOLDED = 'libraryUnfolded';
+
+/** The arrowhead that unfolds a folder or a trip in the tree, and folds it again. */
+function FoldButton(props: { fold: CardFold }) {
+  const label = () => t(props.fold.unfolded() ? 'Fold away' : 'Unfold');
+  return (
+    <button class="icon fold" aria-expanded={props.fold.unfolded()} title={label()} aria-label={label()} onClick={() => props.fold.toggle()}>
+      <ChevronIcon />
+    </button>
+  );
+}
+
+/** The days of a trip that is not open, as the library knows them: a click opens the trip at the day. */
+function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void }) {
+  return (
+    <ul class="tree-days">
+      <For each={outlineOf(props.trip.id) ?? []} fallback={<li class="muted">{t(props.trip.kind === 'collection' ? 'No sections yet.' : 'No days yet.')}</li>}>
+        {(day, index) => (
+          <li class="row">
+            <button class="text grow" onClick={() => props.onOpen(day.id)}>
+              <span class="name">{props.trip.kind === 'collection' ? day.name : dayLabel(day, index())}</span>
+            </button>
+          </li>
+        )}
+      </For>
+    </ul>
+  );
+}
+
 /** At most this many search results are listed. */
 const SEARCH_LIMIT = 20;
 
@@ -47,13 +90,52 @@ type LibraryDialog = { kind: 'rename-folder'; folder: Folder } | { kind: 'rename
  * The folder the explorer shows, its folders and trips, or what the search found across
  * all folders: open one, move, merge, rename, delete.
  */
-export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFolder: (id: number) => void; opening: boolean }) {
+export function Library(props: {
+  onOpen: (trip: TripSummary, dayId?: string) => void;
+  onOpenFolder: (id: number) => void;
+  /** Leaves the open trip, saved: before the library changes it behind its back. */
+  onLeave: () => Promise<void>;
+  opening: boolean;
+  /** What stands under the open trip in the tree: its days, or a collection's sections. */
+  children: JSX.Element;
+}) {
   const [dialog, setDialog] = createSignal<LibraryDialog>();
   const folders = () => libraryFolders() ?? [];
   const trips = () => libraryTrips() ?? [];
-  const shownFolders = createMemo(() => folders().filter((f) => f.parentId === shownFolderId()));
-  const shownTrips = createMemo(() => trips().filter((t) => t.folderId === shownFolderId()));
   const pathOf = (id: number | null) => folderPath(folders(), id);
+
+  /** The folders and trips unfolded in the tree, by key; this browser keeps them. The open trip is always unfolded. */
+  const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>(new Set(JSON.parse(readPreference(UNFOLDED) ?? '[]') as string[]));
+  const isUnfolded = (item: Item): boolean => unfolded().has(keyOf(item)) || ('trip' in item && item.trip.id === openTripId());
+  const fold = (keys: readonly string[], unfold: boolean) => {
+    const next = new Set(unfolded());
+    for (const key of keys) {
+      if (unfold) next.add(key);
+      else next.delete(key);
+    }
+    setUnfolded(next);
+    writePreference(UNFOLDED, JSON.stringify([...next]));
+  };
+  // The folders a trip lies in unfold when it opens, so that it is in view.
+  createEffect(
+    on(openTripId, (id) => {
+      const keys: string[] = [];
+      for (let f = folders().find((folder) => folder.id === trips().find((trip) => trip.id === id)?.folderId); f; f = folders().find((folder) => folder.id === f!.parentId)) keys.push(keyOf({ folder: f }));
+      if (keys.length > 0) fold(keys, true);
+    }),
+  );
+  const childFolders = (parent: number | null) => folders().filter((f) => f.parentId === parent);
+  const childTrips = (parent: number | null) => trips().filter((trip) => trip.folderId === parent);
+  /** A click on a folder makes it the one new trips and pasted ones go into, and unfolds it, or folds it where it was both already. */
+  const clickFolder = (f: Folder) => {
+    const key = keyOf({ folder: f });
+    fold([key], !(unfolded().has(key) && shownFolderId() === f.id));
+    showFolder(f.id);
+  };
+  /** A click on a trip opens it; on the open one it shows the trip whole again. */
+  const clickTrip = (trip: TripSummary) => (trip.id === openTripId() ? selectDay(undefined) : props.onOpen(trip));
+  /** Whether what is acted on holds the open trip, which the library must not change behind its back. */
+  const holdsOpen = (items: readonly Item[]): boolean => tripsWithin(items).some((trip) => trip.id === openTripId());
 
   /** Asks to delete the folder and, when it holds anything, whether that moves up or goes with it; undefined when the user cancels. */
   const askFolderDeletion = async (f: Folder): Promise<'move' | 'delete' | undefined> => {
@@ -84,10 +166,6 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
       relistTrips();
     });
   };
-  const emptyText = () => {
-    if (shownFolderId() !== null) return t(shownFolders().length > 0 ? 'No trips in this folder.' : 'Nothing in this folder yet.');
-    return t(folders().length > 0 ? 'No trips outside the folders.' : 'No trips yet. Start one with the new trip icon above.');
-  };
   /** The folders and trips selected to be acted on together, by key, the first selected first; none once another folder is shown. */
   const [selected, setSelected] = createSignal<Selection<string>>(NOTHING_SELECTED);
   createEffect(on(shownFolderId, () => setSelected(NOTHING_SELECTED)));
@@ -98,7 +176,11 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
     if (key.startsWith('folder:')) return itemOfFolder(folders().find((f) => f.id === id));
     return itemOfTrip(trips().find((t) => t.id === id));
   };
-  const shownKeys = () => [...shownFolders().map((f) => keyOf({ folder: f })), ...shownTrips().map((trip) => keyOf({ trip }))];
+  /** The folders and trips in view, top to bottom: those of the top and of every unfolded folder. */
+  const shownKeys = (parent: number | null = null): string[] => [
+    ...childFolders(parent).flatMap((f) => [keyOf({ folder: f }), ...(isUnfolded({ folder: f }) ? shownKeys(f.id) : [])]),
+    ...childTrips(parent).map((trip) => keyOf({ trip })),
+  ];
   /** What a card's menu, or a press on its pad, acts on: the selection where it holds the card, else the card alone. */
   const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.keys.has(keyOf(item)) ? [...selection.keys].flatMap((key) => itemOf(key) ?? []) : [item]);
   const select = (item: Item) => ({
@@ -144,6 +226,7 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
         ? t('Delete the trip “{name}” with all its days?', { name: only.trip.name })
         : t(foldersOf(doomed).length > 0 ? 'Delete {what} with everything in them?' : 'Delete {what} with all their days?', { what: countText(doomed) });
     if (!(await askConfirmation(question, t('Delete')))) return;
+    if (holdsOpen(doomed)) await props.onLeave();
     await runLibrary(() => Promise.all([...tripsOf(doomed).map((trip) => deleteTrip(trip.id)), ...foldersOf(doomed).map((f) => deleteFolder(f.id, 'delete'))]), relist);
   };
   const merge = async (into: TripSummary, others: TripSummary[]) => {
@@ -151,6 +234,7 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
     const where = t(into.kind === 'collection' ? 'Their sections move into it' : 'Their days and journal move into it, a day onto its day of the same date where it has one');
     const question = plural(others.length, 'Merge {what} into “{name}”? {where}, and the merged one is deleted.|Merge {what} into “{name}”? {where}, and the merged ones are deleted.', { what, name: into.name, where });
     if (!(await askConfirmation(question, t('Merge')))) return;
+    if (holdsOpen([{ trip: into }, ...others.map((trip) => ({ trip }))])) await props.onLeave();
     await runLibrary(() => mergeTrips(into.id, others.map((t) => t.id)), relist);
   };
   /** Moves folders and trips into a folder, none for the top, those not in it already; the server refuses a folder inside itself. */
@@ -215,9 +299,14 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
       return libraryPasteItem({ routes: (routes) => runLibrary(async () => pasteInto(await collectionFor(f, routes), routes), relistTrips) });
     }
     const id = item.trip.id;
+    /** The open trip is left, saved, before it is changed on the server. */
+    const left = async (paste: () => Promise<unknown>) => {
+      if (holdsOpen([item])) await props.onLeave();
+      await runLibrary(paste, relistTrips);
+    };
     return libraryPasteItem({
-      routes: (routes) => runLibrary(() => pasteInto(id, routes), relistTrips),
-      days: (days) => runLibrary(() => changeTrip(id, (trip) => pasteDays(trip, days, undefined, newId)), relistTrips),
+      routes: (routes) => left(() => pasteInto(id, routes)),
+      days: (days) => left(() => changeTrip(id, (trip) => pasteDays(trip, days, undefined, newId))),
     });
   };
   /**
@@ -239,8 +328,9 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
     const ids = { tripIds: chosenTrips.map((trip) => trip.id), folderIds: foldersOf(chosen).map((f) => f.id) };
     return [
       ...(several ? [{ label: t('{what} selected', { what: countText(chosen) }), disabled: true, run: nothing }] : []),
-      { label: t('Rename…'), disabled: several, run: () => setDialog('folder' in item ? { kind: 'rename-folder', folder: item.folder } : { kind: 'rename-trip', trip: item.trip }) },
-      { label: t('Duplicate'), disabled: !onlyTrips, run: () => void runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist) },
+      // The open trip is renamed as it is edited; the others on the server.
+      { label: t('Rename…'), disabled: several, run: () => ('folder' in item ? setDialog({ kind: 'rename-folder', folder: item.folder }) : item.trip.id === openTripId() ? setEditTarget({ kind: 'trip' }) : setDialog({ kind: 'rename-trip', trip: item.trip })) },
+      { label: t('Duplicate'), disabled: !onlyTrips, run: () => void flushSave().then(() => runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist)) },
       { label: t('Cut'), run: () => copyLibraryItems({ ...ids, move: true }) },
       { label: t('Copy'), disabled: !onlyTrips, run: () => copyLibraryItems({ ...ids, move: false }) },
       ...(paste.length > 0 ? paste : [{ label: t('Paste'), disabled: true, run: nothing }]),
@@ -252,10 +342,46 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
               : { label: t('Trips and planning material do not merge'), disabled: true, run: nothing },
           ]
         : []),
-      { label: t('Export'), disabled: within.length === 0, run: () => window.location.assign(tripArchiveUrl(within.map((trip) => trip.id))) },
+      { label: t('Export'), disabled: within.length === 0, run: () => void flushSave().then(() => window.location.assign(tripArchiveUrl(within.map((trip) => trip.id)))) },
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
   };
+
+  /** The folders and trips of a folder, each unfolding to what it holds: folders to theirs, a trip to its days. */
+  const Branch = (branch: { parent: number | null }): JSX.Element => (
+    <>
+      <ForById each={childFolders(branch.parent)}>
+        {(f) => (
+          <FolderCard
+            folder={f()}
+            note={heldText(heldOf(f().id))}
+            onOpen={() => clickFolder(f())}
+            items={() => itemMenu({ folder: f() })}
+            select={select({ folder: f() })}
+            fold={{ unfolded: () => isUnfolded({ folder: f() }), toggle: () => fold([keyOf({ folder: f() })], !isUnfolded({ folder: f() })), current: () => shownFolderId() === f().id }}
+          >
+            <Branch parent={f().id} />
+          </FolderCard>
+        )}
+      </ForById>
+      <ForById each={childTrips(branch.parent)}>
+        {(trip) => (
+          <TripCard
+            trip={trip()}
+            onOpen={clickTrip}
+            disabled={props.opening}
+            items={() => itemMenu({ trip: trip() })}
+            select={select({ trip: trip() })}
+            fold={{ unfolded: () => isUnfolded({ trip: trip() }), toggle: () => fold([keyOf({ trip: trip() })], !isUnfolded({ trip: trip() })), current: () => openTripId() === trip().id }}
+          >
+            <Show when={openTripId() === trip().id} fallback={<TripDays trip={trip()} onOpen={(dayId) => props.onOpen(trip(), dayId)} />}>
+              {props.children}
+            </Show>
+          </TripCard>
+        )}
+      </ForById>
+    </>
+  );
 
   return (
     <div class="library">
@@ -278,25 +404,26 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
                 <Show when={libraryClip()}>
                   {(copied) => (
                     <button class="paste-here" onClick={() => pasteLibrary(shownFolderId())}>
-                      {t(copied().move ? 'Move {what} here' : 'Paste a copy of {what} here', { what: clipText(copied()) })}
+                      {t(copied().move ? 'Move {what} to “{where}”' : 'Paste a copy of {what} into “{where}”', { what: clipText(copied()), where: pathOf(shownFolderId()) || ALL_TRIPS })}
                     </button>
                   )}
                 </Show>
-                <ul class="folders">
-                  <ForById each={shownFolders()}>
-                    {(f) => (
-                      <FolderCard folder={f()} note={heldText(heldOf(f().id))} onOpen={props.onOpenFolder} items={() => itemMenu({ folder: f() })} select={select({ folder: f() })} />
-                    )}
-                  </ForById>
+                <ul class="tree">
+                  <li class="card" classList={{ current: shownFolderId() === null }} data-drop-folder="top">
+                    <div class="row">
+                      <button class="text grow" onClick={() => showFolder(null)}>
+                        <HomeIcon />
+                        <span class="lines">
+                          <span class="name">{ALL_TRIPS}</span>
+                          <span class="muted detail">{heldText(heldOf(null))}</span>
+                        </span>
+                      </button>
+                    </div>
+                  </li>
+                  <Branch parent={null} />
                 </ul>
-                <Show when={shownTrips().length > 0} fallback={<p class="muted">{emptyText()}</p>}>
-                  <ul class="trips">
-                    <ForById each={shownTrips()}>
-                      {(trip) => (
-                        <TripCard trip={trip()} onOpen={props.onOpen} disabled={props.opening} items={() => itemMenu({ trip: trip() })} select={select({ trip: trip() })} />
-                      )}
-                    </ForById>
-                  </ul>
+                <Show when={folders().length + trips().length === 0}>
+                  <p class="muted">{t('No trips yet. Start one with the new trip icon above.')}</p>
                 </Show>
               </>
             }
@@ -358,6 +485,8 @@ function TripCard(props: {
   items: () => MenuItem[];
   where?: string;
   select?: CardSelect;
+  fold?: CardFold;
+  children?: JSX.Element;
 }) {
   const shape = () => outlineOf(props.trip.id)?.map((day) => day.lines).filter((lines) => lines.length > 0);
   const meta = () =>
@@ -368,13 +497,14 @@ function TripCard(props: {
       .filter(Boolean)
       .join(' · ');
   return (
-    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut() }} ref={(el) => cardMenu(el, props.items)}>
-      <div class="row">
+    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current() }}>
+      <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Show when={props.select}>
           {(select) => (
             <Pad label={t('Select {name}, or drag it into a folder', { name: props.trip.name })} selected={select().selected()} onToggle={select().onToggle} onPress={select().onDrag} />
           )}
         </Show>
+        <Show when={props.fold}>{(fold) => <FoldButton fold={fold()} />}</Show>
         <button
           class="text grow"
           onClick={(e) => (props.select && (e.metaKey || e.ctrlKey || e.shiftKey) ? props.select.onClick(e) : props.onOpen(props.trip))}
@@ -390,6 +520,9 @@ function TripCard(props: {
           <Show when={shape()?.length ? shape() : undefined}>{(days) => <TripShape days={days()} />}</Show>
         </button>
       </div>
+      <Show when={props.fold?.unfolded()}>
+        <div class="tree-children">{props.children}</div>
+      </Show>
     </li>
   );
 }
@@ -399,15 +532,16 @@ function TripCard(props: {
  * is; its menu renames and deletes it. Trips and folders dragged onto it move into it;
  * where `onDrag` is given, its pad drags it into another.
  */
-function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[]; select?: CardSelect }) {
+function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[]; select?: CardSelect; fold?: CardFold; children?: JSX.Element }) {
   return (
-    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut() }} data-drop-folder={String(props.folder.id)} ref={(el) => cardMenu(el, props.items)}>
-      <div class="row">
+    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current() }}>
+      <div class="row" data-drop-folder={String(props.folder.id)} ref={(el) => cardMenu(el, props.items)}>
         <Show when={props.select}>
           {(select) => (
             <Pad label={t('Select {name}, or drag it into a folder', { name: props.folder.name })} selected={select().selected()} onToggle={select().onToggle} onPress={select().onDrag} />
           )}
         </Show>
+        <Show when={props.fold}>{(fold) => <FoldButton fold={fold()} />}</Show>
         <button class="text grow" onClick={(e) => (props.select && (e.metaKey || e.ctrlKey || e.shiftKey) ? props.select.onClick(e) : props.onOpen(props.folder.id))}>
           <FolderIcon />
           <span class="lines">
@@ -416,6 +550,9 @@ function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) 
           </span>
         </button>
       </div>
+      <Show when={props.fold?.unfolded()}>
+        <ul class="tree-children">{props.children}</ul>
+      </Show>
     </li>
   );
 }

@@ -8,19 +8,21 @@
   reset by mail. `make user EMAIL=…` makes
   an account without an invitation and prints a generated password; at the first
   sign-in the user has to replace it before the planner opens.
-- The panel's explorer, the same from the top of the library down to a trip's day: the
-  library's actions as icons (new trip, new folder, import a folder, import a zip of
-  exported trips, duplicates), the
-  search, a path heading that names where it is (the trip's own icons on its right: edit,
-  export, journal, print and share, and whether it is saved), and a card one level up,
-  always in the same place: "All trips" at the top, else the place above, from a day to
-  its trip, from a trip to its folder, from a folder to its parent. A day opens in place
-  in its trip's list and counts as a level.
+- The library is a tree: under "All trips" the folders and trips as rows, each unfolding
+  in place by its arrowhead, a folder to its folders and trips, a trip to its days, as
+  many at once as wanted; what is unfolded is kept per browser. A click on a folder
+  makes it the one new trips, imports and pasted ones go into, and unfolds it; a click
+  on a trip opens it, and on a day of any trip opens that trip at the day. The open trip
+  stays in the tree with its days under it, the others around it, so that another trip
+  is one click away. Above the tree stand the library's actions as icons (new trip, new
+  folder, import a folder, import a zip of exported trips, duplicates), the search, and
+  the open trip's name with its own icons (edit, export, journal, print and share, and
+  whether it is saved).
 - A library of the user's trips in folders, which may hold folders: create, open, rename,
   duplicate and delete trips, create, rename and delete folders (for a folder that holds
   anything the confirmation asks whether that moves up into its parent or is deleted with it), move a trip between folders from Move… in its menu, create a trip or a folder
-  in the folder shown. Trips and folders are dragged by their pad onto a folder's card,
-  or onto the card one level up, to move them there; selected trips go together, and a
+  in the folder shown. Trips and folders are dragged by their pad onto a folder's row,
+  or onto "All trips", to move them there; selected trips go together, and a
   folder never goes into itself. Folders and trips are cards with the name over a line
   of metadata, each with the icon of its kind: a folder, a trip, a collection of planning
   material; a trip's card also shows its shape, small, each line in the colour its route

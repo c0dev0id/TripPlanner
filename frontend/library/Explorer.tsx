@@ -1,4 +1,4 @@
-import { createMemo, For, Match, Show, Switch } from 'solid-js';
+import { createMemo, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { PlacesList } from '../map/PlacesList';
 import { heldOf, libraryFolders, libraryProblem, query, setQuery, showFolder, shownFolderId, showingDuplicates } from '../state/library';
@@ -7,12 +7,12 @@ import { CollectionPanel } from '../trip/CollectionPanel';
 import { SaveProblem, SaveState } from '../trip/SaveStatus';
 import { TripIcons, TripPanel } from '../trip/TripPanel';
 import { counted } from '../ui/format';
-import { BackIcon, HomeIcon } from '../ui/icons';
+import { BackIcon } from '../ui/icons';
 import { DuplicatesReport } from './DuplicatesReport';
 import { heldText } from './folders';
 import { Library } from './Library';
 import { LibraryActions } from './LibraryActions';
-import { ALL_TRIPS, pathOf, upName, type Place } from './place';
+import { pathOf, upName, type Place } from './place';
 
 /** The explorer's own name, its heading at the top of the library. */
 const EXPLORER = t('Trip Explorer');
@@ -49,9 +49,9 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
     return { name, detail: heldText(heldOf(parent)), go: () => showFolder(parent), dropFolder: parent === null ? 'top' : String(parent) };
   });
   /** Opens a trip in its folder, which the explorer goes to: one found by the list or the search, or one just made in the folder shown. */
-  const openIn = (id: number, folderId: number | null) => {
+  const openIn = (id: number, folderId: number | null, dayId?: string) => {
     showFolder(folderId);
-    props.onOpen(id);
+    props.onOpen(id, dayId);
   };
   /** Shows a folder from the list or the search, leaving an open trip for it. */
   const openFolder = (id: number) => void props.onLeave().then(() => showFolder(id));
@@ -62,20 +62,7 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
       <input class="search" type="search" placeholder={t('Search trips and folders')} aria-label={t('Search trips and folders')} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
       <div class="row explorer-heading">
         <h2 class="path grow" title={path().join(' › ') || EXPLORER}>
-          <Show when={path().length > 0} fallback={<span class="here">{EXPLORER}</span>}>
-            <For each={path()}>
-              {(name, i) => (
-                <>
-                  <Show when={i() > 0}>
-                    <span class="sep" aria-hidden="true">
-                      ›
-                    </span>
-                  </Show>
-                  <span classList={{ here: i() === path().length - 1 }}>{name}</span>
-                </>
-              )}
-            </For>
-          </Show>
+          <span class="here">{openTrip()?.name ?? EXPLORER}</span>
         </h2>
         <Show when={openTrip()}>
           {(trip) => (
@@ -88,22 +75,9 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
           )}
         </Show>
       </div>
-      <Show
-        when={up()}
-        fallback={
-          <div class="card up-card">
-            <div class="row">
-              <HomeIcon />
-              <span class="lines">
-                <span class="name">{ALL_TRIPS}</span>
-                <span class="muted detail">{heldText(heldOf(null))}</span>
-              </span>
-            </div>
-          </div>
-        }
-      >
+      <Show when={showingDuplicates() && !openTrip() ? up() : undefined}>
         {(u) => (
-          <div class="card up-card" data-drop-folder={u().dropFolder}>
+          <div class="card up-card">
             <button class="text" title={t('Back to {name}', { name: u().name })} onClick={() => u().go()}>
               <BackIcon />
               <span class="lines">
@@ -118,17 +92,16 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
       <Show when={openTrip()}>
         <SaveProblem onReload={props.onReload} />
       </Show>
-      <Switch fallback={<TripPanel />}>
-        <Match when={query().trim() || (!openTrip() && !showingDuplicates())}>
-          <Library onOpen={(trip) => openIn(trip.id, trip.folderId)} onOpenFolder={openFolder} opening={props.opening} />
-        </Match>
-        <Match when={!openTrip()}>
-          <DuplicatesReport onOpen={props.onOpen} disabled={props.opening} />
-        </Match>
-        <Match when={openTrip()?.kind === 'collection'}>
-          <CollectionPanel />
-        </Match>
-      </Switch>
+      <Show
+        when={query().trim() || openTrip() || !showingDuplicates()}
+        fallback={<DuplicatesReport onOpen={props.onOpen} disabled={props.opening} />}
+      >
+        <Library onOpen={(trip, dayId) => openIn(trip.id, trip.folderId, dayId)} onOpenFolder={openFolder} onLeave={props.onLeave} opening={props.opening}>
+          <Show when={openTrip()?.kind === 'collection'} fallback={<TripPanel />}>
+            <CollectionPanel />
+          </Show>
+        </Library>
+      </Show>
     </section>
   );
 }

@@ -382,6 +382,15 @@ entries at the end of their section.
   what an outline was made from is kept beside it: an autosave works out only the days
   whose routes changed. The outlines of all trips come from one request of their own,
   so that the list of trips stays as light as it was.
+- **The library is a tree, and the open trip stays in it.** The explorer showed one
+  level at a time and replaced the library by the open trip: to look into another trip
+  or folder meant leaving where one was. As a tree, folders and trips unfold in place,
+  several at once, and the open trip keeps its place among the others. A trip's days are
+  listed without its document from the outlines, so any trip unfolds; only opening one
+  loads it. Since the library is now in reach while a trip is open, what the library
+  does to the open trip on the server (deleting, merging, pasting onto it) leaves the
+  trip first, saved, and renaming it is the edit of the trip itself: the open document
+  is never changed behind its back.
 - **A day has a pane of its own.** A day's routes and stops were listed inside the day's
   card, in the same narrow column as the library, the trip and its other days: on a wide
   screen one level showed and the rest of the width went unused. The day picked now
