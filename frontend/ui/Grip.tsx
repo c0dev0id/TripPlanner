@@ -6,7 +6,7 @@ import { GripIcon } from './icons';
  * item follows the pointer, the others make room, and `onDrop` gets the place it goes to,
  * counted in the list as it will be.
  */
-function dragToSort(e: PointerEvent, onDrop: (to: number) => void): void {
+function dragToSort(e: PointerEvent, onDrop: (to: number) => void, onDrag: () => void): void {
   if (e.button !== 0) return;
   const item = (e.currentTarget as HTMLElement).closest('li')!;
   const items = [...item.parentElement!.children].filter((c): c is HTMLLIElement => c instanceof HTMLLIElement);
@@ -20,6 +20,7 @@ function dragToSort(e: PointerEvent, onDrop: (to: number) => void): void {
   let to = from;
   const follow = (m: PointerEvent) => {
     const dy = m.clientY - startY;
+    if (Math.abs(dy) > 4) onDrag();
     to = middles.filter((middle, i) => i !== from && middle < middles[from]! + dy).length;
     item.style.transform = `translateY(${dy}px)`;
     items.forEach((other, i) => {
@@ -36,15 +37,28 @@ function dragToSort(e: PointerEvent, onDrop: (to: number) => void): void {
   });
 }
 
-/** The handle a list item is dragged by into another place; the arrow keys move it one place, within the list's ends. */
-export function Grip(props: { label: string; index: number; onMove: (to: number) => void }) {
+/**
+ * The handle a list item is dragged by into another place; the arrow keys move it one
+ * place, within the list's ends. A tap or click that drags nothing goes to `onToggle`,
+ * which adds the item to a selection or takes it away.
+ */
+export function Grip(props: { label: string; index: number; onMove: (to: number) => void; onToggle?: () => void }) {
+  let dragged = false;
   const key = (e: KeyboardEvent) => {
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     e.preventDefault();
     props.onMove(props.index + (e.key === 'ArrowUp' ? -1 : 1));
   };
   return (
-    <button type="button" class="icon grip" title={props.label} aria-label={props.label} onPointerDown={(e) => dragToSort(e, props.onMove)} onKeyDown={key}>
+    <button type="button" class="icon grip" title={props.label} aria-label={props.label} onPointerDown={(e) => {
+        dragged = false;
+        dragToSort(e, props.onMove, () => (dragged = true));
+      }}
+      onClick={() => {
+        if (!dragged) props.onToggle?.();
+      }}
+      onKeyDown={key}
+    >
       <GripIcon />
     </button>
   );

@@ -420,6 +420,18 @@ a {
 }
 
 /* A selected trip or duplicate, and the opened recording, are highlighted as a selected day is. */
+/* Parts of a trip selected to be acted on together, and those cut and waiting to be pasted. */
+.picked > .row,
+li.row.picked {
+  background: var(--active);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.cut > .row,
+li.row.cut {
+  opacity: 0.5;
+}
+
 .trips > li.selected > .row,
 .duplicates li.selected > .row,
 .recording.opened > .row {

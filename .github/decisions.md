@@ -372,6 +372,24 @@ entries at the end of their section.
   every field's text is 16 px, below which Safari zooms into the page on focus and
   stays there; heights that follow the screen use `dvh`, which leaves out what the
   browser's own bars cover.
+- **One menu for days, routes and stops, built in one place.** The menus had grown per
+  type: a route could be copied and moved, a stop copied only, a collection's route had
+  two entries where a trip's had eight. `trip/partMenu.ts` now builds the menu of every
+  kind from the same verbs, takes what only one kind has as an addition, and greys out
+  what does not apply instead of leaving it away, so that a menu looks the same wherever
+  it opens.
+- **A selection is of one kind.** Days, routes or stops are selected together, never
+  mixed: the verbs of a mixed selection would be those all kinds share, and what a
+  paste of days and stops together into a route means has no good answer.
+- **Cut within a trip moves, cut across trips copies and then removes.** Within the open
+  trip the parts keep their ids, and with them their journal entries, and the move is
+  one undo step. Into another trip the parts are pasted as copies under new ids, the
+  open trip is saved, and only then are they taken from the trip they came from: if that
+  last step fails they are in both trips, never in neither. The journal of a part that
+  left its trip stays behind with the trip. Only the open trip's side can be undone.
+- **Undo is not bound to editing a route.** Ctrl+Z took back steps only while a route
+  was being edited, although every edit of the trip is recorded; moving and removing in
+  the panel is now as much of the work, so it is undone whenever a trip is open.
 - **Preferences are an object the planner owns.** What a user sets for the planner as a
   whole is kept with the account as JSON the server stores and returns without reading
   it: a new preference needs no change on the server. What depends on the device (base

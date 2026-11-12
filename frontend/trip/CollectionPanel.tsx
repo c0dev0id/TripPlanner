@@ -3,19 +3,19 @@ import { createMemo, createSignal, Show } from 'solid-js';
 import { FREE_COLOR } from '../map/routeOverlay';
 import type { Day, Route, Stop } from '../model/trip';
 import { routeDistance, routePositions, routesDistance } from '../routing/legs';
-import { copyRoute, copyStop } from '../state/clipboard';
+import { isCut } from '../state/clipboard';
 import { panTo, showWhole } from '../state/drawing';
-import { openTrip, removeDay, removeStop, selectDay, selectedDayId, updateDay } from '../state/trip';
+import { clickPart, isPartSelected } from '../state/partSelection';
+import { openTrip, selectDay, selectedDayId, updateDay } from '../state/trip';
 import { symbolLabel } from '../symbols/symbols';
 import { cardMenu } from '../ui/cardMenu';
-import { askConfirmation } from '../ui/confirm';
 import { ForById } from '../ui/ForById';
 import { counted, distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
 import { NameDialog } from '../ui/NameDialog';
 import { StopShape } from '../ui/StopShape';
 import { routeKindLabel, routeLabel } from './labels';
-import { removeRouteAsked } from './remove';
+import { partMenu } from './partMenu';
 
 /**
  * The open collection of planning material: its sections, a file each, with their routes
@@ -44,6 +44,9 @@ export function CollectionPanel() {
   );
 }
 
+/** Whether a click is one that selects: with Cmd, Ctrl or Shift held. */
+const selects = (e: MouseEvent): boolean => e.metaKey || e.ctrlKey || e.shiftKey;
+
 /** A section as a card: its name over what it holds; opened, its routes and waypoints. Its menu renames and removes it. */
 function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
   const selected = () => selectedDayId() === props.day.id;
@@ -52,17 +55,15 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
   const distance = createMemo(() => routesDistance(routes()));
   const meta = () =>
     [counted(routes().length, 'route'), props.day.stops.length > 0 && counted(props.day.stops.length, 'waypoint'), distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
-  const remove = async () => {
-    if (await askConfirmation(t('Remove the section “{name}” with its routes and waypoints?', { name: props.day.name }), t('Remove'))) removeDay(props.day.id);
+  const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
+  const click = (e: MouseEvent) => {
+    if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);
+    else selectDay(selected() ? undefined : props.day.id);
   };
-  const items = (): MenuItem[] => [
-    { label: t('Rename…'), run: () => props.onRename(props.day) },
-    { label: t('Remove'), run: () => void remove() },
-  ];
   return (
-    <li class="day card" classList={{ selected: selected() }}>
+    <li class="day card" classList={{ selected: selected(), picked: isPartSelected('day', props.day.id), cut: isCut(props.day.id) }}>
       <div class="row" ref={(el) => cardMenu(el, items)}>
-        <button class="text grow" onClick={() => selectDay(selected() ? undefined : props.day.id)} aria-pressed={selected()}>
+        <button class="text grow" onClick={click} aria-pressed={selected()}>
           <span class="lines">
             <span class="name">{props.day.name}</span>
             <span class="muted detail">{meta()}</span>
@@ -79,7 +80,7 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
               <h4 class="grow">{t('Waypoints')}</h4>
             </div>
             <ol class="stops">
-              <ForById each={props.day.stops}>{(stop) => <WaypointItem stop={stop()} />}</ForById>
+              <ForById each={props.day.stops}>{(stop) => <WaypointItem stop={stop()} day={props.day} />}</ForById>
             </ol>
           </Show>
         </div>
@@ -92,14 +93,14 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
 function RouteItem(props: { route: Route; day: Day }) {
   const label = createMemo(() => routeLabel(props.route, props.day));
   const distance = createMemo(() => routeDistance(props.route));
-  const items = (): MenuItem[] => [
-    { label: t('Copy'), run: () => copyRoute(props.day, props.route) },
-    { label: t('Remove'), run: () => void removeRouteAsked(props.route) },
-  ];
+  const click = (e: MouseEvent) => {
+    if (selects(e)) clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
+    else showWhole(routePositions(props.route));
+  };
   return (
-    <li class="route">
-      <div class="row" ref={(el) => cardMenu(el, items)}>
-        <button class="text grow" onClick={() => showWhole(routePositions(props.route))}>
+    <li class="route" classList={{ picked: isPartSelected('route', props.route.id), cut: isCut(props.route.id) }}>
+      <div class="row" ref={(el) => cardMenu(el, () => partMenu('route', props.route.id))}>
+        <button class="text grow" onClick={click}>
           <span class="lines">
             <span class="name" title={label()}>
               {label()}
@@ -115,15 +116,15 @@ function RouteItem(props: { route: Route; day: Day }) {
 }
 
 /** A waypoint of a section: a click pans the map there; its menu copies and removes it. */
-function WaypointItem(props: { stop: Stop }) {
+function WaypointItem(props: { stop: Stop; day: Day }) {
   const label = () => symbolLabel(props.stop.symbol);
-  const items = (): MenuItem[] => [
-    { label: t('Copy'), run: () => copyStop(props.stop) },
-    { label: t('Remove'), run: () => removeStop(props.stop.id) },
-  ];
+  const click = (e: MouseEvent) => {
+    if (selects(e)) clickPart('stop', props.day.stops.map((s) => s.id), props.stop.id, e);
+    else panTo(props.stop.lngLat);
+  };
   return (
-    <li class="row sequence-item" ref={(el) => cardMenu(el, items)}>
-      <button class="text grow" onClick={() => panTo(props.stop.lngLat)}>
+    <li class="row sequence-item" classList={{ picked: isPartSelected('stop', props.stop.id), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
+      <button class="text grow" onClick={click}>
         <StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />
         <span class="lines">
           <span class="name">{props.stop.name}</span>

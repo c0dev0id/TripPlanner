@@ -14,20 +14,17 @@ import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
 import { openRouteColors } from '../state/routeColors';
-import { copyRoute, copyStop, pasteItem, stopPasteItem } from '../state/clipboard';
+import { isCut } from '../state/clipboard';
+import { clickPart, isPartSelected, togglePart } from '../state/partSelection';
 import {
   addDay,
   addParts,
   addRoute,
-  duplicateDay,
-  duplicateRoute,
   editingRouteId,
   editRoute,
   moveDay,
   moveRoute,
-  moveRouteToDay,
   openTrip,
-  removeStop,
   selectDay,
   selectedDayId,
   updateRoute,
@@ -43,7 +40,7 @@ import { IconButton } from '../ui/IconButton';
 import { StopShape } from '../ui/StopShape';
 import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 import { addRecordingPicked, DayRecordings, RecordingsToggle } from './Recordings';
-import { removeDayAsked, removeRouteAsked } from './remove';
+import { partMenu } from './partMenu';
 
 /** The journal of a part as an icon, with the number of its entries where it has any. */
 function JournalButton(props: { target: EntryTarget; of: string }) {
@@ -59,11 +56,8 @@ function JournalButton(props: { target: EntryTarget; of: string }) {
   );
 }
 
-/** Move… with the trip's other days as its submenu, to move something there; none in a trip of one day. */
-function moveToDayItem(dayId: string, run: (dayId: string) => void): MenuItem[] {
-  const items = openTrip()!.days.flatMap((day, index) => (day.id === dayId ? [] : [{ label: dayLabel(day, index), run: () => run(day.id) }]));
-  return items.length > 0 ? [{ label: t('Move…'), items }] : [];
-}
+/** Whether a click is one that selects: with Cmd, Ctrl or Shift held. */
+const selects = (e: MouseEvent): boolean => e.metaKey || e.ctrlKey || e.shiftKey;
 
 /** The open trip's own actions, as icons on the explorer's heading: edit, export, journal, print and share. */
 export function TripIcons() {
@@ -112,18 +106,16 @@ function DayItem(props: { day: Day; index: number }) {
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
   const meta = () => [props.day.date ? shortDateText(props.day.date) : t('No date'), distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
-  const more = (): MenuItem[] => [
-    { label: t('Edit…'), run: () => setEditTarget({ kind: 'day', id: props.day.id }) },
-    { label: t('Duplicate'), run: () => duplicateDay(props.day.id) },
-    { label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) },
-    ...pasteItem(props.day.id),
-    { label: t('Remove'), run: () => void removeDayAsked(props.day) },
-  ];
+  const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
+  const click = (e: MouseEvent) => {
+    if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);
+    else selectDay(selected() ? undefined : props.day.id);
+  };
   return (
-    <li class="day card" classList={{ selected: selected() }}>
+    <li class="day card" classList={{ selected: selected(), picked: isPartSelected('day', props.day.id), cut: isCut(props.day.id) }}>
       <div class="row" ref={(el) => cardMenu(el, more)}>
-        <Grip label={t('Drag {what} to another place', { what: label() })} index={props.index} onMove={(to) => moveDay(props.day.id, to)} />
-        <button class="text grow" onClick={() => selectDay(selected() ? undefined : props.day.id)} aria-pressed={selected()}>
+        <Grip label={t('Drag {what} to another place, or tap to select it', { what: label() })} index={props.index} onMove={(to) => moveDay(props.day.id, to)} onToggle={() => togglePart('day', props.day.id)} />
+        <button class="text grow" onClick={click} aria-pressed={selected()}>
           <span class="lines">
             <span class="name">{[t('Day {n}', { n: props.index + 1 }), props.day.name].filter(Boolean).join(' · ')}</span>
             <span class="muted detail">{meta()}</span>
@@ -231,32 +223,33 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
   const entries = createMemo(() => props.sequence.filter((e) => e.stop || e.point));
   const stopCount = createMemo(() => entries().filter((e) => e.stop).length);
   const lateCount = createMemo(() => entries().filter((e) => (selectedTimeline()?.times.get(e.id)?.slackMin ?? 0) < 0).length);
-  const items = (): MenuItem[] => [
-    { label: t('Edit…'), run: () => setEditTarget({ kind: 'route', id: props.route.id }) },
-    { label: t('Duplicate'), run: () => duplicateRoute(props.route.id) },
-    { label: t('Copy'), run: () => copyRoute(props.day, props.route) },
-    ...stopPasteItem(props.route.id),
-    ...moveToDayItem(props.day.id, (dayId) => moveRouteToDay(props.route.id, dayId)),
-    {
-      label: t('Color'),
-      items: [
-        { label: t('Automatic'), checked: props.route.color === null, run: () => updateRoute(props.route.id, { color: null }) },
-        ...ROUTE_PALETTE.map(({ color, label }) => ({ label, swatch: color, checked: props.route.color === color, run: () => updateRoute(props.route.id, { color }) })),
+  const items = (): MenuItem[] =>
+    partMenu('route', props.route.id, {
+      more: [
+        {
+          label: t('Color'),
+          items: [
+            { label: t('Automatic'), checked: props.route.color === null, run: () => updateRoute(props.route.id, { color: null }) },
+            ...ROUTE_PALETTE.map(({ color, label }) => ({ label, swatch: color, checked: props.route.color === color, run: () => updateRoute(props.route.id, { color }) })),
+          ],
+        },
+        ...(props.route.kind === 'track'
+          ? [
+              { label: t('Condense points…'), run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) },
+              { label: t('Convert to route…'), run: () => setTrackAction({ routeId: props.route.id, action: 'convert' }) },
+            ]
+          : []),
       ],
-    },
-    ...(props.route.kind === 'track'
-      ? [
-          { label: t('Condense points…'), run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) },
-          { label: t('Convert to route…'), run: () => setTrackAction({ routeId: props.route.id, action: 'convert' }) },
-        ]
-      : []),
-    { label: t('Remove'), run: () => void removeRouteAsked(props.route) },
-  ];
+    });
+  const click = (e: MouseEvent) => {
+    if (selects(e)) clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
+    else editRoute(editing() ? undefined : props.route.id);
+  };
   return (
-    <li class="route" classList={{ editing: editing() }}>
+    <li class="route" classList={{ editing: editing(), picked: isPartSelected('route', props.route.id), cut: isCut(props.route.id) }}>
       <div class="row" ref={(el) => cardMenu(el, items)}>
-        <Grip label={t('Drag {what} to another place', { what: label() })} index={props.index} onMove={(to) => moveRoute(props.route.id, to)} />
-        <button class="text grow" aria-expanded={editing()} onClick={() => editRoute(editing() ? undefined : props.route.id)}>
+        <Grip label={t('Drag {what} to another place, or tap to select it', { what: label() })} index={props.index} onMove={(to) => moveRoute(props.route.id, to)} onToggle={() => togglePart('route', props.route.id)} />
+        <button class="text grow" aria-expanded={editing()} onClick={click}>
           <span class="lines">
             <span class="name" title={label()}>
               {label()}
@@ -314,8 +307,12 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
           </li>
         )}
       </Show>
-      <li class="row sequence-item" classList={{ point: !stop() }} ref={(el) => props.entry.stop && cardMenu(el, () => stopItems(stop()!))}>
-        <button class="text grow" onClick={() => panTo(props.entry.lngLat)}>
+      <li
+        class="row sequence-item"
+        classList={{ point: !stop(), picked: !!stop() && isPartSelected('stop', stop()!.id), cut: !!stop() && isCut(stop()!.id) }}
+        ref={(el) => props.entry.stop && cardMenu(el, () => partMenu('stop', stop()!.id))}
+      >
+        <button class="text grow" onClick={(e) => (stop() && selects(e) ? clickStop(stop()!, e) : panTo(props.entry.lngLat))}>
           <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
             {(s) => <StopShape symbol={s().symbol} color={s().pointId === null ? FREE_COLOR : BOUND_COLOR} height={22} />}
           </Show>
@@ -342,8 +339,8 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
 /** A stop that stands for itself beside no route, with no place or times on the ride; a click pans the map there. */
 function AloneStopItem(props: { stop: Stop }) {
   return (
-    <li class="row sequence-item" ref={(el) => cardMenu(el, () => stopItems(props.stop))}>
-      <button class="text grow" onClick={() => panTo(props.stop.lngLat)}>
+    <li class="row sequence-item" classList={{ picked: isPartSelected('stop', props.stop.id), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
+      <button class="text grow" onClick={(e) => (selects(e) ? clickStop(props.stop, e) : panTo(props.stop.lngLat))}>
         <StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />
         <span class="lines">
           <span class="name">{props.stop.name}</span>
@@ -357,11 +354,7 @@ function AloneStopItem(props: { stop: Stop }) {
   );
 }
 
-/** A stop's menu, opened from its row by right-click or a long press: edit, copy to paste into a day or a route, remove. */
-function stopItems(stop: Stop): MenuItem[] {
-  return [
-    { label: t('Edit…'), run: () => setEditTarget({ kind: 'stop', id: stop.id }) },
-    { label: t('Copy'), run: () => copyStop(stop) },
-    { label: t('Remove'), run: () => removeStop(stop.id) },
-  ];
+/** A click that selects on a stop of the selected day, among that day's stops in riding order. */
+function clickStop(stop: Stop, e: MouseEvent): void {
+  clickPart('stop', selectedSequence().flatMap((entry) => (entry.stop ? [entry.stop.id] : [])), stop.id, e);
 }

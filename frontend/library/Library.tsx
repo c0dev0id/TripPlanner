@@ -145,7 +145,7 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
   };
   const folderItems = (f: Folder): MenuItem[] => [
     { label: t('Rename…'), run: () => setDialog({ kind: 'rename-folder', folder: f }) },
-    ...routesPasteItem((routes) => void runLibrary(async () => pasteInto(await collectionFor(f, routes), routes), relistTrips)),
+    ...routesPasteItem((routes) => runLibrary(async () => pasteInto(await collectionFor(f, routes), routes), relistTrips)),
     { label: t('Delete'), run: () => void removeFolder(f) },
   ];
   const tripItems = (trip: TripSummary): MenuItem[] => {
@@ -157,7 +157,7 @@ export function Library(props: { onOpen: (trip: TripSummary) => void; onOpenFold
       ...moveItem([trip], t('Move…')),
       { label: t('Duplicate'), run: () => void runLibrary(() => duplicateTrip(trip.id), relistTrips) },
       { label: t('Export'), run: () => exportTrips([trip]) },
-      ...routesPasteItem((routes) => void runLibrary(() => pasteInto(trip.id, routes), relistTrips)),
+      ...routesPasteItem((routes) => runLibrary(() => pasteInto(trip.id, routes), relistTrips)),
       { label: t('Delete'), run: () => void removeTrips([trip]) },
     ];
   };

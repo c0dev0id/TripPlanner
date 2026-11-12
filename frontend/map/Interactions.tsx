@@ -4,7 +4,7 @@ import { currentTool, setTool, spotItems, tapAction, tool, type Tool } from '../
 import { isTextField } from '../ui/form';
 import { menu, setMenu } from '../ui/menu';
 import { pickPoint, setPickedIndex } from '../state/recordingView';
-import { addFreeStop, appendPoint, editingRoute, editRoute, insertPoint, insertStop, redo, undo } from '../state/trip';
+import { addFreeStop, appendPoint, editingRoute, editRoute, insertPoint, insertStop, openTrip, redo, undo } from '../state/trip';
 import { fromMarker, toLngLat } from './markers';
 import { recordingPointAt } from './recordingPick';
 import { hitRouteLine } from './routeTools';
@@ -102,8 +102,9 @@ export function Interactions(props: { map: MapLibreMap }) {
   const onKeyDown = (e: KeyboardEvent) => {
     // Text fields keep their own undo and Escape handling, and an open modal dialog has
     // the keyboard to itself.
-    if (e.defaultPrevented || isTextField(e.target) || document.querySelector('dialog:modal') || !editingRoute()) return;
+    if (e.defaultPrevented || isTextField(e.target) || document.querySelector('dialog:modal') || !openTrip()) return;
     const key = e.key.toLowerCase();
+    // Undo and redo take back any edit of the trip, those made in the panel as well.
     if ((e.ctrlKey || e.metaKey) && !e.altKey && (key === 'z' || key === 'y')) {
       e.preventDefault();
       // An open menu may name a point the step takes away.
@@ -112,6 +113,7 @@ export function Interactions(props: { map: MapLibreMap }) {
       else undo();
       return;
     }
+    if (!editingRoute()) return;
     if (e.key === ' ') {
       // The hand while the space bar is held: the map moves without a tap that adds.
       e.preventDefault();

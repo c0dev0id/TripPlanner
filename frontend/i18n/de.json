@@ -315,7 +315,6 @@
   "Remove point": "Punkt entfernen",
   "Remove route": "Route entfernen",
   "Remove stop": "Stopp entfernen",
-  "Remove the section “{name}” with its routes and waypoints?": "Den Abschnitt „{name}“ mit seinen Routen und Wegpunkten entfernen?",
   "Remove {day} with its routes and stops?": "{day} mit seinen Routen und Stopps entfernen?",
   "Remove {day} with its routes, stops and recordings?": "{day} mit seinen Routen, Stopps und Aufzeichnungen entfernen?",
   "Remove {route} with its {n} points?": "{route} mit seinen {n} Punkten entfernen?",
@@ -549,5 +548,19 @@
   "Export {n} trips": "{n} Touren exportieren",
   "Export": "Exportieren",
   "ids must be the numbers of trips, separated by commas.": "ids müssen die Nummern von Touren sein, durch Kommas getrennt.",
-  "createdAt is not a time.": "createdAt ist keine Zeitangabe."
+  "createdAt is not a time.": "createdAt ist keine Zeitangabe.",
+  "Cut": "Ausschneiden",
+  "Paste": "Einfügen",
+  "Select": "Auswählen",
+  "{what} selected": "{what} ausgewählt",
+  "Remove {what}?": "{what} entfernen?",
+  "Paste stops": "Stopps einfügen",
+  "Paste days": "Tage einfügen",
+  "Paste day": "Tag einfügen",
+  "Paste day “{name}”": "Tag „{name}“ einfügen",
+  "Paste {n} days": "{n} Tage einfügen",
+  "Paste {n} stops": "{n} Stopps einfügen",
+  "Drag {what} to another place, or tap to select it": "{what} an eine andere Stelle ziehen oder zum Auswählen antippen",
+  "The parts are pasted here, but could not be taken from the trip they were cut from: {error}": "Die Teile sind hier eingefügt, konnten aber nicht aus der Tour entfernt werden, aus der sie ausgeschnitten wurden: {error}",
+  "OK": "OK"
 }

@@ -322,14 +322,55 @@ export function pasteRoutes(dayId: string, copied: readonly dayEdit.CopiedRoute[
   edit((trip) => copied.reduce((t, c) => dayEdit.pasteRoute(t, dayId, c, newId), trip), t(copied.length > 1 ? 'Paste routes' : 'Paste route'));
 }
 
-/** Adds a copied stop to a day, free where it stands. */
-export function pasteStop(dayId: string, stop: Stop): void {
-  edit((trip) => dayEdit.pasteStop(trip, dayId, stop, newId()), t('Paste stop'));
+/** Adds copied stops to a day, free where they stand, as one step to undo. */
+export function pasteStops(dayId: string, stops: readonly Stop[]): void {
+  edit((trip) => stops.reduce((next, stop) => dayEdit.pasteStop(next, dayId, stop, newId()), trip), t(stops.length > 1 ? 'Paste stops' : 'Paste stop'));
 }
 
-/** Adds a copied stop to a route, as a point of it where it passes closest; beside a track, free. */
-export function pasteStopIntoRoute(routeId: string, stop: Stop): void {
-  edit((trip) => dayEdit.pasteStopIntoRoute(trip, routeId, { ...stop, lngLat: roundLngLat(stop.lngLat) }, newId(), newId()), t('Paste stop'));
+/** Adds copied stops to a route, each as a point of it where it passes closest; beside a track, free. */
+export function pasteStopsIntoRoute(routeId: string, stops: readonly Stop[]): void {
+  edit(
+    (trip) => stops.reduce((next, stop) => dayEdit.pasteStopIntoRoute(next, routeId, { ...stop, lngLat: roundLngLat(stop.lngLat) }, newId(), newId()), trip),
+    t(stops.length > 1 ? 'Paste stops' : 'Paste stop'),
+  );
+}
+
+/** Adds copied days, with all they hold, after a day or at the trip's end. */
+export function pasteDays(days: readonly Day[], afterId: string | undefined): void {
+  edit((trip) => dayEdit.pasteDays(trip, days, afterId, newId), t(days.length > 1 ? 'Paste days' : 'Paste day'));
+}
+
+/** Shows no day and edits no route that an edit took away. */
+function leaveWhatIsGone(): void {
+  if (selectedDayId() && !selectedDay()) selectDay(undefined);
+  else if (editingRouteId() && !editingRoute()) setEditingRouteId(undefined);
+}
+
+/** Removes days, routes or stops of the trip, as one step to undo. */
+export function removeParts(kind: dayEdit.PartKind, ids: readonly string[]): void {
+  edit((trip) => dayEdit.removeParts(trip, kind, ids), t('Remove'));
+  leaveWhatIsGone();
+}
+
+/** Copies each of the days, routes or stops right after itself, as one step to undo. */
+export function duplicateParts(kind: dayEdit.PartKind, ids: readonly string[]): void {
+  edit((trip) => dayEdit.duplicateParts(trip, kind, ids, newId), t('Duplicate'));
+}
+
+/** Moves routes, with the stops bound to them, or stops, which then stand free, to another day. */
+export function movePartsToDay(kind: 'route' | 'stop', ids: readonly string[], dayId: string): void {
+  edit((trip) => ids.reduce((next, id) => (kind === 'route' ? dayEdit.moveRouteToDay(next, id, dayId) : dayEdit.moveStopToDay(next, id, dayId)), trip), t(kind === 'route' ? 'Move route' : 'Move stop'));
+  leaveWhatIsGone();
+}
+
+/** Moves stops onto a route, of their day or another, each as a point of it where it passes closest. */
+export function moveStopsIntoRoute(ids: readonly string[], routeId: string): void {
+  edit((trip) => ids.reduce((next, id) => dayEdit.moveStopIntoRoute(next, id, routeId, newId()), trip), t('Move stop'));
+}
+
+/** Moves days to right after another. */
+export function moveDaysAfter(ids: readonly string[], afterId: string): void {
+  edit((trip) => dayEdit.moveDaysAfter(trip, ids, afterId), t('Move day'));
 }
 
 /** Removes a day; the day before it, or the first, is selected instead. */
