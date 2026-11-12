@@ -10,10 +10,12 @@
   sign-in the user has to replace it before the planner opens.
 - The library is a tree: under "All trips" the folders and trips as rows, each unfolding
   in place by its arrowhead, a folder to its folders and trips, a trip to its days, as
-  many at once as wanted; what is unfolded is kept per browser. A click on a folder
-  makes it the one new trips, imports and pasted ones go into, and unfolds it, or folds
-  it where it was both already; a click on a trip does the same for the trip: it opens
-  and unfolds it, or folds it where it was both already. A click on a day of any trip
+  many at once as wanted; what is unfolded is kept per browser. The tree has one
+  mark, on the row clicked last. A click on a folder marks it, which makes it the one
+  new trips, imports and pasted ones go into, and unfolds it; marked and unfolded
+  already, it folds. A click on a trip does the same for the trip, and marking a trip
+  opens it. The open trip stays open, its name in bold, while the mark is on a folder;
+  a click on it then marks it again. A click on a day of any trip
   opens that trip at the day. A trip's days are listed only while it is unfolded, the
   open trip's like any other's: opening one trip folds no other. A day reads the same in every trip, open or not: its number
   and name over its date and length, a collection's section over what it holds; the

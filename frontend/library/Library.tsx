@@ -48,11 +48,12 @@ interface CardSelect {
   onDrag: (e: PointerEvent, dragged: () => void) => void;
 }
 
-/** How a card unfolds in the tree, and whether it is the folder new things go into, or the open trip. */
+/** How a card unfolds in the tree, whether it holds the tree's mark, and of a trip whether it is the open one. */
 interface CardFold {
   unfolded: () => boolean;
   toggle: () => void;
   current: () => boolean;
+  open?: () => boolean;
 }
 
 /** The browser's preference that keeps what is unfolded in the tree. */
@@ -153,18 +154,26 @@ export function Library(props: {
   );
   const childFolders = (parent: number | null) => folders().filter((f) => f.parentId === parent);
   const childTrips = (parent: number | null) => trips().filter((trip) => trip.folderId === parent);
-  /** A click on a folder makes it the one new trips and pasted ones go into, and unfolds it, or folds it where it was both already. */
+  /**
+   * The tree has one mark, on the row clicked last: a folder, the top, or the open trip.
+   * Whether it is on the open trip; a trip that opens takes it.
+   */
+  const [tripMarked, setTripMarked] = createSignal(false);
+  createEffect(on(openTripId, (id) => setTripMarked(id !== undefined)));
+  const isMarked = (item: Item | null): boolean => (item !== null && 'trip' in item ? tripMarked() && item.trip.id === openTripId() : !tripMarked() && shownFolderId() === (item?.folder.id ?? null));
+  /** A click on a folder marks it, which makes it the one new trips and pasted ones go into, and unfolds it; marked and unfolded already, it folds. */
   const clickFolder = (f: Folder) => {
     const key = keyOf({ folder: f });
-    fold([key], !(unfolded().has(key) && shownFolderId() === f.id));
+    fold([key], !(unfolded().has(key) && isMarked({ folder: f })));
     showFolder(f.id);
+    setTripMarked(false);
   };
-  /** A click on a trip opens it and unfolds it, or folds it where it was both already: as a click on a folder does. */
+  /** A click on a trip does as one on a folder: it marks the trip, which opens it, and unfolds it; marked and unfolded already, it folds. */
   const clickTrip = (trip: TripSummary) => {
     const key = keyOf({ trip });
-    const open = trip.id === openTripId();
-    fold([key], !(unfolded().has(key) && open));
-    if (!open) props.onOpen(trip);
+    fold([key], !(unfolded().has(key) && isMarked({ trip })));
+    if (trip.id === openTripId()) setTripMarked(true);
+    else props.onOpen(trip);
   };
   /** Whether what is acted on holds the open trip, which the library must not change behind its back. */
   const holdsOpen = (items: readonly Item[]): boolean => tripsWithin(items).some((trip) => trip.id === openTripId());
@@ -396,7 +405,7 @@ export function Library(props: {
             onOpen={() => clickFolder(f())}
             items={() => itemMenu({ folder: f() })}
             select={select({ folder: f() })}
-            fold={{ unfolded: () => isUnfolded({ folder: f() }), toggle: () => fold([keyOf({ folder: f() })], !isUnfolded({ folder: f() })), current: () => shownFolderId() === f().id }}
+            fold={{ unfolded: () => isUnfolded({ folder: f() }), toggle: () => fold([keyOf({ folder: f() })], !isUnfolded({ folder: f() })), current: () => isMarked({ folder: f() }) }}
           >
             <Branch parent={f().id} />
           </FolderCard>
@@ -410,7 +419,7 @@ export function Library(props: {
             disabled={props.opening}
             items={() => itemMenu({ trip: trip() })}
             select={select({ trip: trip() })}
-            fold={{ unfolded: () => isUnfolded({ trip: trip() }), toggle: () => fold([keyOf({ trip: trip() })], !isUnfolded({ trip: trip() })), current: () => openTripId() === trip().id }}
+            fold={{ unfolded: () => isUnfolded({ trip: trip() }), toggle: () => fold([keyOf({ trip: trip() })], !isUnfolded({ trip: trip() })), current: () => isMarked({ trip: trip() }), open: () => openTripId() === trip().id }}
           >
             <Show when={openTripId() === trip().id} fallback={<TripDays trip={trip()} onOpen={(dayId) => props.onOpen(trip(), dayId)} />}>
               {props.children}
@@ -447,9 +456,15 @@ export function Library(props: {
                   )}
                 </Show>
                 <ul class="tree">
-                  <li class="card" classList={{ current: shownFolderId() === null }} data-drop-folder="top">
+                  <li class="card" classList={{ current: isMarked(null) }} data-drop-folder="top">
                     <div class="row">
-                      <button class="text grow" onClick={() => showFolder(null)}>
+                      <button
+                        class="text grow"
+                        onClick={() => {
+                          showFolder(null);
+                          setTripMarked(false);
+                        }}
+                      >
                         <HomeIcon />
                         <span class="lines">
                           <span class="name">{ALL_TRIPS}</span>
@@ -538,7 +553,7 @@ function TripCard(props: {
       .filter(Boolean)
       .join(' · ');
   return (
-    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current() }}>
+    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current(), open: props.fold?.open?.() }}>
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Show when={props.select}>
           {(select) => (
