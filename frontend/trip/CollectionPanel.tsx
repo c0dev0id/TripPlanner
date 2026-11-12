@@ -6,7 +6,7 @@ import { routeDistance, routePositions, routesDistance } from '../routing/legs';
 import { isCut } from '../state/clipboard';
 import { panTo, showWhole } from '../state/drawing';
 import { clickPart, isPartSelected } from '../state/partSelection';
-import { isDayMarked, openTrip, selectDay, selectedDayId, updateDay } from '../state/trip';
+import { isDayMarked, markShownDay, openTrip, selectDay, selectedDayId, updateDay } from '../state/trip';
 import { symbolLabel } from '../symbols/symbols';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
@@ -56,7 +56,9 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
   const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
   const click = (e: MouseEvent) => {
     if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);
-    else selectDay(isDayMarked(props.day.id) ? undefined : props.day.id);
+    // The day shown stays shown: a click on it only takes the mark back from the trip.
+    else if (selected()) markShownDay();
+    else selectDay(props.day.id);
   };
   return (
     <li class="day card" classList={{ open: selected(), current: isDayMarked(props.day.id), picked: isPartSelected('day', props.day.id), cut: isCut(props.day.id) }}>

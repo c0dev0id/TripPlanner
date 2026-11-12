@@ -21,6 +21,7 @@ import {
   addRoute,
   editingRouteId,
   isDayMarked,
+  markShownDay,
   editRoute,
   moveDay,
   moveRoute,
@@ -101,7 +102,9 @@ function DayItem(props: { day: Day; index: number }) {
   const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
   const click = (e: MouseEvent) => {
     if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);
-    else selectDay(isDayMarked(props.day.id) ? undefined : props.day.id);
+    // The day shown stays shown: a click on it only takes the mark back from the trip.
+    else if (selected()) markShownDay();
+    else selectDay(props.day.id);
   };
   return (
     <li class="day card" classList={{ open: selected(), current: isDayMarked(props.day.id), picked: isPartSelected('day', props.day.id), cut: isCut(props.day.id) }}>

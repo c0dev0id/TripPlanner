@@ -17,8 +17,9 @@
   which opens a trip that was not open. A click on a day marks the day and shows it in
   its pane. A click on the trip then gives the mark back to the trip while the day
   stays shown; the next click folds the trip and closes the day; the one after unfolds
-  the trip again. A click on a day that is shown but not marked marks it, and one on
-  the marked day closes it. What is open has its name in bold: the trip on the map and
+  the trip again. A click on the day that is shown changes nothing but
+  the mark, which it takes back from the trip; a day is closed by its pane's button or
+  with its trip. What is open has its name in bold: the trip on the map and
   the day in the pane. A click on a day of any trip
   opens that trip at the day. A trip's days are listed only while it is unfolded, the
   open trip's like any other's: opening one trip folds no other. A day reads the same in every trip, open or not: its number

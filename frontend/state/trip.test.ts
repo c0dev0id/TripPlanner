@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Trip } from '../model/trip';
 import { routedOf } from '../routing/testing';
-import { addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRouteId, isDayMarked, isTripMarked, loadTrip, markSaved, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, undo, undoLabel, updateStop } from './trip';
+import { addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRouteId, isDayMarked, isTripMarked, loadTrip, markSaved, markShownDay, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -118,7 +118,7 @@ describe('the open trip', () => {
     expect(selectedDay()?.id).toBe(dayId);
     expect(isDayMarked(dayId)).toBe(false);
     expect(isTripMarked()).toBe(true);
-    selectDay(dayId);
+    markShownDay();
     expect(isDayMarked(dayId)).toBe(true);
     selectDay(undefined);
     expect(isTripMarked()).toBe(true);

@@ -44,6 +44,9 @@ export const isTripMarked = (): boolean => !dayMarked() || selectedDayId() === u
 /** Gives the mark to the open trip; a day that is shown stays shown. */
 export const markTrip = (): void => void setDayMarked(false);
 
+/** Gives the mark back to the day that is shown. */
+export const markShownDay = (): void => void setDayMarked(true);
+
 /** Shows a day, which takes the mark, or none; whatever was being edited is done. */
 export function selectDay(id: string | undefined): void {
   batch(() => {
