@@ -575,20 +575,17 @@ a {
 /* The tree's one mark, on the row clicked last: a folder, the open trip, or its day that is shown. */
 .tree .card.current > .row {
   background: var(--active);
-  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 /*
- * What is open and not marked is outlined: the folders around the mark, its trip and the
- * top, which stay open above it, and the trip on the map or the day in the pane while the
- * mark is on another of the trip's rows.
+ * The strip runs down what is open: the marked row, the folders around it, its trip and
+ * the top, and the trip on the map or the day in the pane while the mark is elsewhere.
  */
+.tree .card.current > .row,
 .tree .card:has(.card.current) > .row,
-.tree .card.open:not(.current) > .row,
+.tree .card.open > .row,
 .tree:has(> li:not(:first-child).current, > li:not(:first-child) .card.current) > li:first-child > .row {
-  outline: 1px solid var(--accent);
-  outline-offset: -1px;
-  box-shadow: none;
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .tree .card.selected > .row {

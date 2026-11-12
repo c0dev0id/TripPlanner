@@ -20,9 +20,10 @@
   and closes the day; the one after unfolds the trip again. A click on the day that is
   shown changes nothing but the mark, which it takes back; a day is closed by its
   pane's button or with its trip. What folds takes what it holds with it: a folder its
-  folders and trips, a trip its day, a day the lists of its routes. What is open and
-  not marked is outlined: the folders around the mark, its trip and the top, and the
-  open trip and its day while the mark is elsewhere. A click on a day of any trip
+  folders and trips, a trip its day, a day the lists of its routes. The marked row is
+  tinted, and a coloured strip runs down the left of it and of what is open besides:
+  the folders around the mark, its trip and the top, and the open trip and its day
+  while the mark is elsewhere. A click on a day of any trip
   opens that trip at the day. A trip's days are listed only while it is unfolded, the
   open trip's like any other's: opening one trip folds no other. A day reads the same in every trip, open or not: its number
   and name over its date and length, a collection's section over what it holds; the

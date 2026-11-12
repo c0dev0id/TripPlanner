@@ -457,8 +457,8 @@ entries at the end of their section.
   user did not ask for. Only the day that is shown has nothing to fold, so a click on
   it does nothing but take the mark back. What folds takes what it holds with it, a
   folder its folders and trips, a trip its day, a day the lists of its routes: what was
-  closed is closed when it is seen again. What is open above the mark is outlined, as
-  are the open trip and its day while the mark is elsewhere, so that the way down to
+  closed is closed when it is seen again. What is open above the mark carries the mark's strip
+  without its tint, as do the open trip and its day while the mark is elsewhere, so that the way down to
   the mark and what is on the map and in the pane can be told from what is merely
   listed. Earlier versions kept a mark for the folder shown and another for the open
   trip, and tied marking to opening or to folding; each took a step away or showed two
