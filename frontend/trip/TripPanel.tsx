@@ -35,7 +35,7 @@ import {
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { counted, distanceText, timeText } from '../ui/format';
-import { ChevronIcon, ClockIcon, DownloadIcon, FileImportIcon, NotebookIcon, PencilIcon, PlusIcon, ShareIcon } from '../ui/icons';
+import { ClockIcon, DownloadIcon, FileImportIcon, NotebookIcon, PencilIcon, PlusIcon, ShareIcon } from '../ui/icons';
 import { Grip } from '../ui/Grip';
 import { IconButton } from '../ui/IconButton';
 import { MenuButton } from '../ui/MenuButton';
@@ -204,8 +204,9 @@ function DaySummary(props: { timeline: DayTimeline }) {
 }
 
 /**
- * A route of the day: its row, whose menu (right-click or a long press) edits, duplicates,
- * copies, moves, condenses or converts a track, and removes it; and while it is unfolded, its stops
+ * A route of the day: its row, a click on which takes the route up and unfolds it, and
+ * whose menu (right-click or a long press) edits, duplicates, copies, moves, condenses or
+ * converts a track, and removes it; and while it is unfolded, its stops
  * and points in riding order under it, out of `sequence`, its part of the day's.
  */
 function RouteItem(props: { route: Route; index: number; day: Day; sequence: SequenceEntry[] }) {
@@ -235,20 +236,17 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
       ],
     });
   const unfolded = () => isRouteUnfolded(props.route.id);
+  /** A click takes the route up to be edited and lists its stops and points; on the route being edited, it ends that and folds the list away. */
   const click = (e: MouseEvent) => {
     if (selects(e)) return clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
-    // A route taken up to be edited shows what it holds; the user folds it again.
-    if (!editing()) foldRoute(props.route.id, true);
+    foldRoute(props.route.id, !editing());
     editRoute(editing() ? undefined : props.route.id);
   };
   return (
     <li class="route" classList={{ editing: editing(), picked: isPartSelected('route', props.route.id), cut: isCut(props.route.id) }}>
       <div class="row" ref={(el) => cardMenu(el, items)}>
         <Grip label={t('Drag {what} to another place, or tap to select it', { what: label() })} index={props.index} onMove={(to) => moveRoute(props.route.id, to)} onToggle={() => togglePart('route', props.route.id)} />
-        <button class="icon fold" aria-expanded={unfolded()} title={t(unfolded() ? 'Fold the stops and points away' : 'Show the stops and points')} aria-label={t(unfolded() ? 'Fold the stops and points away' : 'Show the stops and points')} onClick={() => foldRoute(props.route.id)}>
-          <ChevronIcon />
-        </button>
-        <button class="text grow" aria-pressed={editing()} onClick={click}>
+        <button class="text grow" aria-pressed={editing()} aria-expanded={unfolded()} onClick={click}>
           <span class="lines">
             <span class="name" title={label()}>
               {label()}

@@ -1,10 +1,10 @@
-import { createSignal } from 'solid-js';
+import { createEffect, createRoot, createSignal, on } from 'solid-js';
 import { googleMapsUrl, streetViewUrl } from '../geo/googleMaps';
 import { t } from '../i18n/t';
 import type { LngLat, Route, RoutePoint } from '../model/trip';
 import type { MenuItem } from '../ui/menu';
 import { openJournal } from './journal';
-import { addFreeStop, appendPoint, editingRoute, openTrip, selectedDay, setStraight } from './trip';
+import { addFreeStop, appendPoint, editingRoute, openTrip, selectedDay, selectedDayId, setStraight } from './trip';
 
 /** Transient state of editing on the map; never kept. */
 
@@ -90,8 +90,9 @@ export function straightLegItem(routeId: string, point: RoutePoint): MenuItem {
   return { label: t(straight ? 'Route the leg to here' : 'Straight leg to here'), run: () => setStraight(routeId, point.id, !straight) };
 }
 
-/** The routes whose stops and points are listed under them: none to start with, each unfolded by the user. */
+/** The routes whose stops and points are listed under them: none to start with, each unfolded by the user, and none again once their day closes. */
 const [unfoldedRoutes, setUnfoldedRoutes] = createSignal<ReadonlySet<string>>(new Set());
+createRoot(() => createEffect(on(selectedDayId, () => setUnfoldedRoutes(new Set<string>()), { defer: true })));
 
 export const isRouteUnfolded = (routeId: string): boolean => unfoldedRoutes().has(routeId);
 

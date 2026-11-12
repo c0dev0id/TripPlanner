@@ -9,18 +9,20 @@
   an account without an invitation and prints a generated password; at the first
   sign-in the user has to replace it before the planner opens.
 - The library is a tree: under "All trips" the folders and trips as rows, each unfolding
-  in place by its arrowhead, a folder to its folders and trips, a trip to its days, as
-  many at once as wanted; what is unfolded is kept per browser. A click on a folder
-  makes it the one new trips, imports and pasted ones go into, and unfolds it, or folds
-  it where it was both already. A trip is a folder of days and answers the same way, with
-  the mark and what is open kept apart. A click on a trip marks it and unfolds it,
-  which opens a trip that was not open. A click on a day marks the day and shows it in
-  its pane. A click on the trip then gives the mark back to the trip while the day
-  stays shown; the next click folds the trip and closes the day; the one after unfolds
-  the trip again. A click on the day that is shown changes nothing but
-  the mark, which it takes back from the trip; a day is closed by its pane's button or
-  with its trip. What is open has its name in bold: the trip on the map and
-  the day in the pane. A click on a day of any trip
+  in place by a click on it, a folder to its folders and trips, a trip to its days, as
+  many at once as wanted; what is unfolded is kept per browser. The tree has one mark,
+  on the row clicked last: a folder, a trip or a day. A click on a folder marks it,
+  which makes it the one new trips, imports and pasted ones go into, and unfolds it;
+  marked and unfolded already, it folds. A trip is a folder of days and answers the
+  same way: a click marks it and unfolds it, which opens a trip that was not open. A
+  click on a day marks the day and shows it in its pane. A click on the trip then gives
+  the mark back to the trip while the day stays shown; the next click folds the trip
+  and closes the day; the one after unfolds the trip again. A click on the day that is
+  shown changes nothing but the mark, which it takes back; a day is closed by its
+  pane's button or with its trip. What folds takes what it holds with it: a folder its
+  folders and trips, a trip its day, a day the lists of its routes. What is open and
+  not marked is outlined: the folders around the mark, its trip and the top, and the
+  open trip and its day while the mark is elsewhere. A click on a day of any trip
   opens that trip at the day. A trip's days are listed only while it is unfolded, the
   open trip's like any other's: opening one trip folds no other. A day reads the same in every trip, open or not: its number
   and name over its date and length, a collection's section over what it holds; the
@@ -124,12 +126,13 @@
   picked, the map. The day's pane has in its heading what acts on the day and its
   trip's days: showing the neighbouring days on the map, the day's dialog, its
   journal. It lists its routes with profile, distance and the number
-  of stops on each, folded: a route's arrowhead unfolds its stops and route points in
-  riding order with the distance from the day's start, each route on its own; free
+  of stops on each, folded: a click on a route takes it up to be edited and unfolds
+  its stops and route points in riding order with the distance from the day's start,
+  and a click on the route being edited ends that and folds them away; a route unfolded
+  stays so while another is taken up; free
   stops within 500 m take the place where the route passes closest, and say how far
   beside it they stand. A click pans the map to the entry. Free stops farther away, or
-  of a day without a route, are listed on their own. A click on a route's name takes it
-  up to be edited, and unfolds it. The button with three lines folds the library away
+  of a day without a route, are listed on their own. The button with three lines folds the library away
   to a strip, which leaves the map the room, and brings it back. The strip keeps the
   open trip's days in reach: a numbered button each, in the colour its routes have
   where each day has one, the day shown ringed; a click shows the day, or the whole

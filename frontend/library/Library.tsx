@@ -8,14 +8,14 @@ import { heldOf, importNote, libraryFolders, libraryTrips, outlineOf, query, rel
 import { countsText, folderPath, heldInAll, heldText } from './folders';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
-import { addDay, isTripMarked, markTrip, openTripId, selectDay } from '../state/trip';
+import { addDay, isMarkInTrip, isTripMarked, markFolder, markTrip, openTripId, selectDay } from '../state/trip';
 import { dayDetail, dayHeading } from '../trip/labels';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
 import { counted, dateText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
-import { ChevronIcon, CollectionIcon, FoldIcon, FolderIcon, HomeIcon, TripIcon } from '../ui/icons';
+import { CollectionIcon, FoldIcon, FolderIcon, HomeIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
@@ -48,10 +48,9 @@ interface CardSelect {
   onDrag: (e: PointerEvent, dragged: () => void) => void;
 }
 
-/** How a card unfolds in the tree, whether it is marked (the folder new things go into, or the open trip while none of its days holds the mark), and of a trip whether it is the open one. */
+/** How a card unfolds in the tree, whether it holds the tree's one mark, and of a trip whether it is the open one. */
 interface CardFold {
   unfolded: () => boolean;
-  toggle: () => void;
   current: () => boolean;
   open?: () => boolean;
 }
@@ -59,15 +58,6 @@ interface CardFold {
 /** The browser's preference that keeps what is unfolded in the tree. */
 const UNFOLDED = 'libraryUnfolded';
 
-/** The arrowhead that unfolds a folder or a trip in the tree, and folds it again. */
-function FoldButton(props: { fold: CardFold }) {
-  const label = () => t(props.fold.unfolded() ? 'Fold away' : 'Unfold');
-  return (
-    <button class="icon fold" aria-expanded={props.fold.unfolded()} title={label()} aria-label={label()} onClick={() => props.fold.toggle()}>
-      <ChevronIcon />
-    </button>
-  );
-}
 
 /**
  * The days of a trip that is not open, as the library knows them, drawn as the open trip
@@ -131,9 +121,11 @@ export function Library(props: {
   /** The folders and trips unfolded in the tree, by key; this browser keeps them. */
   const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>(new Set(JSON.parse(readPreference(UNFOLDED) ?? '[]') as string[]));
   const isUnfolded = (item: Item): boolean => unfolded().has(keyOf(item));
+  /** Folds every folder and trip away, which closes the day shown with its trip. */
   const foldAll = () => {
     setUnfolded(new Set<string>());
     writePreference(UNFOLDED, undefined);
+    selectDay(undefined);
   };
   const fold = (keys: readonly string[], unfold: boolean) => {
     const next = new Set(unfolded());
@@ -154,11 +146,28 @@ export function Library(props: {
   );
   const childFolders = (parent: number | null) => folders().filter((f) => f.parentId === parent);
   const childTrips = (parent: number | null) => trips().filter((trip) => trip.folderId === parent);
-  /** A click on a folder makes it the one new trips and pasted ones go into, and unfolds it, or folds it where it was both already. */
+  /** Whether the folder, null for the top, holds the tree's one mark: it is the folder shown, and the mark is not on the open trip or its day. */
+  const isMarkedFolder = (id: number | null): boolean => shownFolderId() === id && !isMarkInTrip();
+  /** Gives the mark to a folder, null for the top, which makes it the one shown. */
+  const markFolderShown = (id: number | null) => {
+    showFolder(id);
+    markFolder();
+  };
+  /** The keys of all a folder holds, at any depth. */
+  const keysWithin = (id: number): string[] => [...childFolders(id).flatMap((f) => [keyOf({ folder: f }), ...keysWithin(f.id)]), ...childTrips(id).map((trip) => keyOf({ trip }))];
+  /**
+   * A click on a folder marks it, which makes it the one new trips and pasted ones go into,
+   * and unfolds it; marked and unfolded already, it folds. A folder that folds takes all it holds with it:
+   * its folders and trips fold too, and the day shown of an open trip among them closes.
+   */
   const clickFolder = (f: Folder) => {
     const key = keyOf({ folder: f });
-    fold([key], !(unfolded().has(key) && shownFolderId() === f.id));
-    showFolder(f.id);
+    if (unfolded().has(key) && isMarkedFolder(f.id)) {
+      const within = keysWithin(f.id);
+      fold([key, ...within], false);
+      if (within.includes(`trip:${openTripId()}`)) selectDay(undefined);
+    } else fold([key], true);
+    markFolderShown(f.id);
   };
   /** Whether the trip is the open one and holds the mark, rather than the day of it that is shown. */
   const isMarkedTrip = (trip: TripSummary): boolean => trip.id === openTripId() && isTripMarked();
@@ -410,7 +419,7 @@ export function Library(props: {
             onOpen={() => clickFolder(f())}
             items={() => itemMenu({ folder: f() })}
             select={select({ folder: f() })}
-            fold={{ unfolded: () => isUnfolded({ folder: f() }), toggle: () => fold([keyOf({ folder: f() })], !isUnfolded({ folder: f() })), current: () => shownFolderId() === f().id }}
+            fold={{ unfolded: () => isUnfolded({ folder: f() }), current: () => isMarkedFolder(f().id) }}
           >
             <Branch parent={f().id} />
           </FolderCard>
@@ -424,7 +433,7 @@ export function Library(props: {
             disabled={props.opening}
             items={() => itemMenu({ trip: trip() })}
             select={select({ trip: trip() })}
-            fold={{ unfolded: () => isUnfolded({ trip: trip() }), toggle: () => fold([keyOf({ trip: trip() })], !isUnfolded({ trip: trip() })), current: () => isMarkedTrip(trip()), open: () => openTripId() === trip().id }}
+            fold={{ unfolded: () => isUnfolded({ trip: trip() }), current: () => isMarkedTrip(trip()), open: () => openTripId() === trip().id }}
           >
             <Show when={openTripId() === trip().id} fallback={<TripDays trip={trip()} onOpen={(dayId) => props.onOpen(trip(), dayId)} />}>
               {props.children}
@@ -461,9 +470,9 @@ export function Library(props: {
                   )}
                 </Show>
                 <ul class="tree">
-                  <li class="card" classList={{ current: shownFolderId() === null }}>
+                  <li class="card" classList={{ current: isMarkedFolder(null) }}>
                     <div class="row">
-                      <button class="text grow" onClick={() => showFolder(null)}>
+                      <button class="text grow" onClick={() => markFolderShown(null)}>
                         <HomeIcon />
                         <span class="lines">
                           <span class="name">{ALL_TRIPS}</span>
@@ -559,9 +568,9 @@ function TripCard(props: {
             <Pad label={t('Select {name}, or drag it into a folder', { name: props.trip.name })} selected={select().selected()} onToggle={select().onToggle} onPress={select().onDrag} />
           )}
         </Show>
-        <Show when={props.fold}>{(fold) => <FoldButton fold={fold()} />}</Show>
         <button
           class="text grow"
+          aria-expanded={props.fold?.unfolded()}
           onClick={(e) => (props.select && selects(e) ? props.select.onClick(e) : props.onOpen(props.trip))}
           disabled={props.disabled}
         >
@@ -597,8 +606,7 @@ function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) 
             <Pad label={t('Select {name}, or drag it into a folder', { name: props.folder.name })} selected={select().selected()} onToggle={select().onToggle} onPress={select().onDrag} />
           )}
         </Show>
-        <Show when={props.fold}>{(fold) => <FoldButton fold={fold()} />}</Show>
-        <button class="text grow" onClick={(e) => (props.select && selects(e) ? props.select.onClick(e) : props.onOpen(props.folder.id))}>
+        <button class="text grow" aria-expanded={props.fold?.unfolded()} onClick={(e) => (props.select && selects(e) ? props.select.onClick(e) : props.onOpen(props.folder.id))}>
           <FolderIcon />
           <span class="lines">
             <span class="name">{props.folder.name}</span>

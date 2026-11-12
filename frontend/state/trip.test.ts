@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Trip } from '../model/trip';
 import { routedOf } from '../routing/testing';
-import { addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRouteId, isDayMarked, isTripMarked, loadTrip, markSaved, markShownDay, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, undo, undoLabel, updateStop } from './trip';
+import { addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markShownDay, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -122,6 +122,15 @@ describe('the open trip', () => {
     expect(isDayMarked(dayId)).toBe(true);
     selectDay(undefined);
     expect(isTripMarked()).toBe(true);
+    // A folder takes the mark from the trip and its day, which stay open, until one of them is clicked.
+    selectDay(dayId);
+    markFolder();
+    expect([isTripMarked(), isDayMarked(dayId), isMarkInTrip()]).toEqual([false, false, false]);
+    expect(selectedDay()?.id).toBe(dayId);
+    selectDay(undefined);
+    expect(isTripMarked()).toBe(false);
+    markTrip();
+    expect([isTripMarked(), isMarkInTrip()]).toEqual([true, true]);
   });
 
   it('keeps the saved version through an undo', () => {

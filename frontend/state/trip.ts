@@ -30,28 +30,36 @@ const [editingRouteId, setEditingRouteId] = createSignal<string>();
 export { editingRouteId };
 
 /**
- * Whether the mark among the open trip's rows is on the day shown rather than on the trip:
- * a day that is picked takes it, and the trip can take it back while the day stays shown.
+ * Where the mark of the library's tree is, as far as the open trip goes: on the trip, on
+ * its day that is shown, or on a folder. The mark is on the row clicked last; what is
+ * open stays open when the mark moves on.
  */
-const [dayMarked, setDayMarked] = createSignal(false);
+const [mark, setMark] = createSignal<'trip' | 'day' | 'folder'>('trip');
 
 /** Whether the day is shown and holds the mark. */
-export const isDayMarked = (dayId: string): boolean => dayMarked() && selectedDayId() === dayId;
+export const isDayMarked = (dayId: string): boolean => mark() === 'day' && selectedDayId() === dayId;
 
-/** Whether the open trip holds the mark: none of its days is shown, or it took the mark back from the one that is. */
-export const isTripMarked = (): boolean => !dayMarked() || selectedDayId() === undefined;
+/** Whether the open trip holds the mark, rather than its day that is shown or a folder. */
+export const isTripMarked = (): boolean => mark() === 'trip' || (mark() === 'day' && selectedDayId() === undefined);
+
+/** Whether the mark is on the open trip or on its day: not on a folder. */
+export const isMarkInTrip = (): boolean => openTrip() !== undefined && mark() !== 'folder';
 
 /** Gives the mark to the open trip; a day that is shown stays shown. */
-export const markTrip = (): void => void setDayMarked(false);
+export const markTrip = (): void => void setMark('trip');
 
 /** Gives the mark back to the day that is shown. */
-export const markShownDay = (): void => void setDayMarked(true);
+export const markShownDay = (): void => void setMark('day');
 
-/** Shows a day, which takes the mark, or none; whatever was being edited is done. */
+/** Takes the mark from the open trip and its day, for a folder; both stay open. */
+export const markFolder = (): void => void setMark('folder');
+
+/** Shows a day, which takes the mark, or none, which gives it to the trip where the day had it; whatever was being edited is done. */
 export function selectDay(id: string | undefined): void {
   batch(() => {
     setSelectedDayId(id);
-    setDayMarked(id !== undefined);
+    if (id !== undefined) setMark('day');
+    else if (mark() === 'day') setMark('trip');
     setEditingRouteId(undefined);
   });
 }
@@ -145,7 +153,7 @@ export function loadTrip(loaded: Trip, dayId?: string): void {
     setOpenTrip(loaded);
     setHistoryVersion((v) => v + 1);
     setSelectedDayId(dayId);
-    setDayMarked(dayId !== undefined);
+    setMark(dayId !== undefined ? 'day' : 'trip');
     setEditingRouteId(undefined);
   });
 }

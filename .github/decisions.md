@@ -441,22 +441,30 @@ entries at the end of their section.
   again.
 - **What is unfolded in the tree is the user's doing.** The open trip was always
   unfolded: opening a trip listed its days and folded those of the one open before, so
-  the tree moved under the pointer with every trip opened, and the open trip's
-  arrowhead did nothing. A trip now lists its days only while it is unfolded,
-  open or not, by its arrowhead or by a click on it: the click opens and unfolds it and
-  folds it again where it was both already, which is what a click on a folder does: a
-  trip is a folder of days. Being marked and being open are two things, for a trip
-  and for a day alike, as they are for a folder that is marked and unfolded. The mark
-  is where the last click went, among the open trip's rows the trip or one day; open
-  is what is on the map and in the pane. So a click on the trip while its day holds
-  the mark only takes the mark, the day stays shown, and the click after that closes
-  both: one click never does two things the user did not ask for. Two earlier
-  versions tied the two together, folding the trip at once or closing the day at once,
-  and both took a step away. Opening a trip folds no other, and one
-  button folds everything away. One thing still unfolds by
-  itself, to keep something in reach rather than to rearrange the tree: the folders
-  around a trip when it opens, since a trip opened from the search or from the address
-  would otherwise be out of sight.
+  the tree moved under the pointer with every trip opened. A trip now lists its days
+  only while it is unfolded, open or not, and opening a trip folds no other. One thing
+  still unfolds by itself, to keep something in reach rather than to rearrange the
+  tree: the folders around a trip when it opens, since a trip opened from the search or
+  from the address would otherwise be out of sight.
+- **A row unfolds and folds by a click on it; there are no arrowheads.** A folder, a
+  trip and a route each had an arrowhead beside the row that did part of what a click
+  on the row did. They answer to one rule instead. The tree has one mark, on the row
+  clicked last. A click on a row that is not marked marks it and unfolds it, and for a
+  trip that opens it, for a day that shows it; a click on the marked row folds it, or
+  unfolds it where it was folded. Being marked and being open are two things: a click
+  on the trip while its day holds the mark only takes the mark, the day stays shown,
+  and the click after that closes both, so that one click never does two things the
+  user did not ask for. Only the day that is shown has nothing to fold, so a click on
+  it does nothing but take the mark back. What folds takes what it holds with it, a
+  folder its folders and trips, a trip its day, a day the lists of its routes: what was
+  closed is closed when it is seen again. What is open above the mark is outlined, as
+  are the open trip and its day while the mark is elsewhere, so that the way down to
+  the mark and what is on the map and in the pane can be told from what is merely
+  listed. Earlier versions kept a mark for the folder shown and another for the open
+  trip, and tied marking to opening or to folding; each took a step away or showed two
+  marks at once. A route's row follows the same rule with editing as its mark: a click
+  takes the route up and lists what it holds, and a click on the route being edited
+  ends that and folds the list.
 - **A day looks the same whether its trip is open or not.** An unopened trip listed its
   days as one bare line each, the open one as cards of two lines under a heading with
   two buttons, though both said the same. The outlines now carry what the second line
@@ -485,8 +493,7 @@ entries at the end of their section.
   the last save, shows two days of a loop alike and an empty day as nothing. A phone
   has no strip; its sheet steps through the days.
 - **Routes are folded until asked.** A day of a collection may hold hundreds of routes;
-  each unfolds on its own by its arrowhead, and none does by itself, except that taking
-  a route up to be edited unfolds it once, since its points are what is then worked on.
+  each unfolds on its own when it is clicked, and none does by itself.
 - **One menu for days, routes and stops, built in one place.** The menus had grown per
   type: a route could be copied and moved, a stop copied only, a collection's route had
   two entries where a trip's had eight. `trip/partMenu.ts` now builds the menu of every

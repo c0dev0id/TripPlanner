@@ -167,15 +167,6 @@ body {
   left: -3px;
 }
 
-/* An arrowhead points down while what it unfolds is listed. */
-.panel button.icon.fold {
-  color: var(--muted);
-}
-
-button.icon.fold[aria-expanded='true'] svg {
-  transform: rotate(90deg);
-}
-
 a {
   color: var(--accent);
 }
@@ -516,12 +507,6 @@ a {
   color: var(--muted);
 }
 
-/* The day that holds the mark: the one shown, until its trip takes the mark back. */
-.day.current > .row {
-  background: var(--active);
-  border-radius: 7px;
-}
-
 /* A route's colour, before its details in the panel and before a colour's name in the menu. */
 .color-dot {
   display: inline-block;
@@ -587,14 +572,23 @@ a {
   display: block;
 }
 
-/* The mark: on the folder new things go into, and among the open trip's rows on the trip or on the day shown. */
+/* The tree's one mark, on the row clicked last: a folder, the open trip, or its day that is shown. */
 .tree .card.current > .row {
+  background: var(--active);
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
-/* What is open, marked or not: the trip on the map, and the day in the pane. */
-.tree .card.open > .row > .text > .lines > .name {
-  font-weight: 600;
+/*
+ * What is open and not marked is outlined: the folders around the mark, its trip and the
+ * top, which stay open above it, and the trip on the map or the day in the pane while the
+ * mark is on another of the trip's rows.
+ */
+.tree .card:has(.card.current) > .row,
+.tree .card.open:not(.current) > .row,
+.tree:has(> li:not(:first-child).current, > li:not(:first-child) .card.current) > li:first-child > .row {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  box-shadow: none;
 }
 
 .tree .card.selected > .row {
