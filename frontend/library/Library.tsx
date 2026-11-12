@@ -8,7 +8,7 @@ import { heldOf, importNote, libraryFolders, libraryTrips, outlineOf, query, rel
 import { countsText, folderPath, heldInAll, heldText } from './folders';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
-import { addDay, openTripId, selectDay, selectedDayId } from '../state/trip';
+import { addDay, isTripMarked, markTrip, openTripId, selectDay } from '../state/trip';
 import { dayDetail, dayHeading } from '../trip/labels';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
@@ -48,7 +48,7 @@ interface CardSelect {
   onDrag: (e: PointerEvent, dragged: () => void) => void;
 }
 
-/** How a card unfolds in the tree, whether it is marked (the folder new things go into, or the trip shown whole), and of a trip whether it is the open one. */
+/** How a card unfolds in the tree, whether it is marked (the folder new things go into, or the open trip while none of its days holds the mark), and of a trip whether it is the open one. */
 interface CardFold {
   unfolded: () => boolean;
   toggle: () => void;
@@ -160,18 +160,25 @@ export function Library(props: {
     fold([key], !(unfolded().has(key) && shownFolderId() === f.id));
     showFolder(f.id);
   };
-  /** Whether the trip itself is what is shown: it is open, and none of its days is picked. */
-  const isShownWhole = (trip: TripSummary): boolean => trip.id === openTripId() && selectedDayId() === undefined;
+  /** Whether the trip is the open one and holds the mark, rather than the day of it that is shown. */
+  const isMarkedTrip = (trip: TripSummary): boolean => trip.id === openTripId() && isTripMarked();
   /**
-   * A click on a trip, which is a folder of days: it shows the trip, opening it or, where
-   * one of its days was picked, going back from the day to the whole trip, and unfolds it;
-   * shown whole and unfolded already, it folds.
+   * A click on a trip, which is a folder of days. It marks the trip and unfolds it: one
+   * that is not open opens, and one whose day held the mark takes it back while the day
+   * stays shown. Marked already, the trip folds, which closes the day shown with it, and
+   * unfolds again at the next click.
    */
   const clickTrip = (trip: TripSummary) => {
     const key = keyOf({ trip });
-    fold([key], !(unfolded().has(key) && isShownWhole(trip)));
-    if (trip.id === openTripId()) selectDay(undefined);
-    else props.onOpen(trip);
+    if (!isMarkedTrip(trip)) {
+      fold([key], true);
+      if (trip.id === openTripId()) markTrip();
+      else props.onOpen(trip);
+      return;
+    }
+    const unfold = !unfolded().has(key);
+    fold([key], unfold);
+    if (!unfold) selectDay(undefined);
   };
   /** Whether what is acted on holds the open trip, which the library must not change behind its back. */
   const holdsOpen = (items: readonly Item[]): boolean => tripsWithin(items).some((trip) => trip.id === openTripId());
@@ -417,7 +424,7 @@ export function Library(props: {
             disabled={props.opening}
             items={() => itemMenu({ trip: trip() })}
             select={select({ trip: trip() })}
-            fold={{ unfolded: () => isUnfolded({ trip: trip() }), toggle: () => fold([keyOf({ trip: trip() })], !isUnfolded({ trip: trip() })), current: () => isShownWhole(trip()), open: () => openTripId() === trip().id }}
+            fold={{ unfolded: () => isUnfolded({ trip: trip() }), toggle: () => fold([keyOf({ trip: trip() })], !isUnfolded({ trip: trip() })), current: () => isMarkedTrip(trip()), open: () => openTripId() === trip().id }}
           >
             <Show when={openTripId() === trip().id} fallback={<TripDays trip={trip()} onOpen={(dayId) => props.onOpen(trip(), dayId)} />}>
               {props.children}

@@ -20,6 +20,7 @@ import {
   addParts,
   addRoute,
   editingRouteId,
+  isDayMarked,
   editRoute,
   moveDay,
   moveRoute,
@@ -100,10 +101,10 @@ function DayItem(props: { day: Day; index: number }) {
   const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
   const click = (e: MouseEvent) => {
     if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);
-    else selectDay(selected() ? undefined : props.day.id);
+    else selectDay(isDayMarked(props.day.id) ? undefined : props.day.id);
   };
   return (
-    <li class="day card" classList={{ selected: selected(), picked: isPartSelected('day', props.day.id), cut: isCut(props.day.id) }}>
+    <li class="day card" classList={{ open: selected(), current: isDayMarked(props.day.id), picked: isPartSelected('day', props.day.id), cut: isCut(props.day.id) }}>
       <div class="row" ref={(el) => cardMenu(el, more)}>
         <Grip label={t('Drag {what} to another place, or tap to select it', { what: label() })} index={props.index} onMove={(to) => moveDay(props.day.id, to)} onToggle={() => togglePart('day', props.day.id)} />
         <button class="text grow" onClick={click} aria-pressed={selected()}>

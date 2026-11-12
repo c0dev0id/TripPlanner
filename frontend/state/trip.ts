@@ -29,10 +29,26 @@ export { selectedDayId };
 const [editingRouteId, setEditingRouteId] = createSignal<string>();
 export { editingRouteId };
 
-/** Shows a day; whatever was being edited is done. */
+/**
+ * Whether the mark among the open trip's rows is on the day shown rather than on the trip:
+ * a day that is picked takes it, and the trip can take it back while the day stays shown.
+ */
+const [dayMarked, setDayMarked] = createSignal(false);
+
+/** Whether the day is shown and holds the mark. */
+export const isDayMarked = (dayId: string): boolean => dayMarked() && selectedDayId() === dayId;
+
+/** Whether the open trip holds the mark: none of its days is shown, or it took the mark back from the one that is. */
+export const isTripMarked = (): boolean => !dayMarked() || selectedDayId() === undefined;
+
+/** Gives the mark to the open trip; a day that is shown stays shown. */
+export const markTrip = (): void => void setDayMarked(false);
+
+/** Shows a day, which takes the mark, or none; whatever was being edited is done. */
 export function selectDay(id: string | undefined): void {
   batch(() => {
     setSelectedDayId(id);
+    setDayMarked(id !== undefined);
     setEditingRouteId(undefined);
   });
 }
@@ -126,6 +142,7 @@ export function loadTrip(loaded: Trip, dayId?: string): void {
     setOpenTrip(loaded);
     setHistoryVersion((v) => v + 1);
     setSelectedDayId(dayId);
+    setDayMarked(dayId !== undefined);
     setEditingRouteId(undefined);
   });
 }

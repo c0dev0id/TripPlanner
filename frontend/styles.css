@@ -516,9 +516,10 @@ a {
   color: var(--muted);
 }
 
-.day.selected > .row {
+/* The day that holds the mark: the one shown, until its trip takes the mark back. */
+.day.current > .row {
   background: var(--active);
-  border-radius: 7px 7px 0 0;
+  border-radius: 7px;
 }
 
 /* A route's colour, before its details in the panel and before a colour's name in the menu. */
@@ -586,12 +587,12 @@ a {
   display: block;
 }
 
-/* The folder new things go into, and the trip that is shown whole. */
+/* The mark: on the folder new things go into, and among the open trip's rows on the trip or on the day shown. */
 .tree .card.current > .row {
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
-/* The open trip, also while one of its days is what is shown. */
+/* What is open, marked or not: the trip on the map, and the day in the pane. */
 .tree .card.open > .row > .text > .lines > .name {
   font-weight: 600;
 }
