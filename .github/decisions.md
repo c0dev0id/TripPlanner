@@ -584,6 +584,34 @@ entries at the end of their section.
   for, or a recording kept in a collection beside the one in its trip. A first version
   left out every group whose routes were all in trips, which hid exactly the trips
   imported twice.
+- **What is on the map is what has its eye open.** The map drew every route of the day
+  shown and, by a switch on the day, all of its recordings or none, which left no way to
+  put one alternative aside or to look at three rides of ten. Each route and each
+  recording now has an eye, and each of the two groups one that takes the whole group
+  off the map without touching the eyes in it: planning without the rides and comparing
+  the rides are ways of working that alternate, and the rides chosen should come back
+  as they were. Hence also one eye per group for the trip, not per day. Routes start
+  open, since the plan is what the planner is for; recordings start closed, since a day
+  collects many. What is taken up is drawn whatever its eye says, so that a hidden
+  thing is one click away. Two other shapes were weighed and dropped. In the first the
+  eye meant "keep this while another is taken up", with everything hidden by default
+  and the whole day or trip shown while nothing was taken up: every route was then
+  drawn under a closed eye, the neighbouring days showed nothing until eyes were opened
+  on them, and an eye opened on a recording changed nothing until a route was taken
+  up. The second kept the eyes and added switches to show the hidden and to hide the
+  recordings: the first of them makes the eyes say what is not so, the second is the
+  group's eye in another place. Recordings are drawn for the day shown only: each is a
+  file of megabytes, and the trip as a whole is its plan. The eyes are kept with the
+  open trip in the page and no longer: they say what is looked at now, not what the
+  trip is.
+- **A route on the map is taken up by a click on it.** With the whole trip or a day
+  shown, finding the row of a line seen on the map meant opening days and reading
+  names. The line under the pointer is named and drawn wider, by a feature state on the
+  source, whose features carry their route's id for it, and a click does what a click
+  on its row does. While a route is edited a tap belongs to the tool, so neither
+  happens then. A collection's routes are not edited; the one clicked is taken up all
+  the same, in a place of its own beside the route being edited, so that it is drawn
+  and marked without the tools coming up.
 - **A day that is shown has its place in the tree in view.** A day shown from the
   duplicates report, a search or the address opened in its pane while its trip and
   folders stayed folded, so the pane showed a day the tree gave no place to. The tree

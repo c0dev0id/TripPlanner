@@ -84,7 +84,7 @@
   long press), where Move… opens the other days.
 - Days, routes and stops answer to one menu, in a trip and in a collection alike: Edit,
   Duplicate, Cut, Copy, Paste, Move…, what only the kind has (a route's colour, a track's
-  condensing), Select, Remove. What does not apply is greyed out. A stop's menu has
+  condensing), for several routes Show selected and Hide selected, Select, Remove. What does not apply is greyed out. A stop's menu has
   Icon besides: our twelve icons, each drawn before its name and the stop's own marked,
   one of which a click gives to the stop, or to all the stops selected in one step;
   Garmin's symbols stay in the stop's dialog. Several of a kind are
@@ -249,7 +249,7 @@
 - Collections of planning material, such as a long-distance trail by country: listed in
   the library as planning material, opened like a trip but with sections instead of
   days and no dates, times, journal, tools or export. A section lists its routes and
-  waypoints; a click on a route shows it whole on the map, on a waypoint goes there, and
+  waypoints; a click on a route takes it up and shows it whole on the map, on a waypoint goes there, and
   their menus copy them, to be pasted into a day of a trip, or remove them. A section is
   renamed or removed from its menu.
 - Routes and stops can be marked optional, each in its dialog, and are shown so.
@@ -270,9 +270,9 @@
 
 - Recordings on a day: *Add recording…* in the day's menu or under the opened day takes
   a GPX file of one track, such as Ridelink's or Scenic's (waypoints in it are left
-  aside); the file is kept as it is, with every value it measured per point. A day with
-  recordings shows a recording symbol that shows or hides them: listed under the day,
-  each in its own colour, and drawn on the map in that colour under the planned routes.
+  aside); the file is kept as it is, with every value it measured per point. A day's
+  recordings are listed under it, each in its own colour, and those on the map are
+  drawn in that colour under the planned routes.
   A recording's menu renames, cuts, copies, moves it to another day and deletes it;
   several are selected as routes are, and the menu then acts on all of them. Copied
   recordings paste into any day, of this trip or another; cut ones move there. A single
@@ -286,6 +286,21 @@
   along its routes, or its routes along them, a part of the day being enough. Each says
   when it began, its length and why it was found; a click shows its line on the map,
   the plus puts it on the day, as it is, and it waits no longer.
+- What is on the map is chosen as in a layer panel. Every route and every recording has
+  an eye on its row, and the headings Routes and Recordings have one for all of theirs:
+  a thing is drawn while its own eye and its group's are open. Routes start open,
+  recordings closed. A group's eye takes all of its group off the map and leaves their
+  own eyes as they are, shown faint meanwhile, so that opening it brings back what was
+  there. The route taken up and the recording opened are drawn whatever the eyes say.
+  Several selected are shown or hidden from their menu. The eyes are the open trip's,
+  for all of its days, and go when it is left or the page is loaded again. The whole
+  trip shows the routes whose eyes are open, the day shown those and its recordings
+  whose eyes are open, the neighbouring days their routes; recordings are drawn for the
+  day shown only.
+- A route under the pointer on the map is drawn wider and named, after its day while the
+  whole trip is shown; a click or a tap on it shows its day and takes the route up, as a
+  click on its row does, which is brought into view. This holds while no route is being
+  edited, when a tap does the tool's work.
 - A recording's figures: a click on it shows it whole and opens a card over the map with
   its distance, time and moving time, average and top speed, climb and descent, lowest
   and highest point and furthest lean to either side, as far as its file has the values.
