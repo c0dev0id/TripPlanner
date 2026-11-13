@@ -37,6 +37,16 @@ describe('planFolderImport', () => {
     ]);
   });
 
+  it('takes a folder that also holds folders of GPX files for a folder of trips: a trip of each of its own files', () => {
+    expect(plan(['Tours/b.gpx', 'Tours/2024-05-01 a.gpx', 'Tours/Alps/one.gpx', 'Tours/Alps/two.gpx', 'Tours/Alps/photos/x.jpg', 'Tours/Deep/Down/z.gpx'])).toEqual([
+      { folders: ['Tours'], name: 'a', days: [['2024-05-01', '', ['2024-05-01 a.gpx']]] },
+      { folders: ['Tours'], name: 'b', days: [[null, '', ['b.gpx']]] },
+      { folders: ['Tours'], name: 'Alps', days: [[null, 'one', ['one.gpx']], [null, 'two', ['two.gpx']]] },
+      { folders: ['Tours', 'Deep'], name: 'Down', days: [[null, 'z', ['z.gpx']]] },
+    ]);
+    expect(plan(['loose.gpx', 'Alps/one.gpx']).map((t) => [t.folders, t.name])).toEqual([[[], 'loose'], [[], 'Alps']]);
+  });
+
   it('groups dated files into a day per date, in date order', () => {
     expect(plan(['Alps/2024-06-13 pass.gpx', 'Alps/2024-06-12 b.gpx', 'Alps/2024-06-12 a.gpx'])[0]!.days).toEqual([
       ['2024-06-12', '', ['2024-06-12 a.gpx', '2024-06-12 b.gpx']],

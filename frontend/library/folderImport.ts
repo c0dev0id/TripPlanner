@@ -6,9 +6,10 @@ import { addDay, addParts, dayAfter, updateDay } from '../routing/dayEdit';
 import { importArchive } from './tripArchive';
 
 /**
- * How a picked folder tree is organized: a trip per folder of GPX files with a day per
- * file or date; a trip per file, the folders plain folders; or planning material, a
- * collection per folder of GPX files with a section per file.
+ * How a folder tree is organized: a trip per folder that holds GPX files alone, with a
+ * day per file or date, and a trip per file of a folder that also holds folders of them;
+ * a trip per file, the folders plain folders; or planning material, a collection per
+ * folder of GPX files with a section per file.
  */
 export type ImportMode = 'trip-per-folder' | 'trip-per-file' | 'planning-material';
 
@@ -21,7 +22,7 @@ export interface PlannedTrip {
   days: PlannedDay[];
 }
 
-interface PlannedDay {
+export interface PlannedDay {
   date: string | null;
   name: string;
   /** The day's files, as indexes into the paths planned from. */
@@ -89,11 +90,13 @@ export function planFolderImport(paths: readonly string[], mode: ImportMode): Pl
     else byFolder.set(folder, [i]);
   });
   const stem = (i: number) => stems[i]!;
+  /** Whether the folder also holds folders of GPX files, at any depth: it is then no trip itself, but a folder of trips. */
+  const holdsFolders = (folder: string) => [...byFolder.keys()].some((other) => other !== folder && other.startsWith(folder === '' ? '' : `${folder}/`));
   const planned = [...byFolder.keys()].sort(byName).flatMap((folder) => {
     const segments = folder.split('/');
     const files = byFolder.get(folder)!.sort((a, b) => byName(stem(a), stem(b)));
-    if (mode === 'trip-per-file') return files.map((i) => tripOfFile(segments.filter(Boolean), stem(i), i));
     if (mode === 'planning-material') return [collectionOfFolder(segments, files, stem)];
+    if (mode === 'trip-per-file' || holdsFolders(folder)) return files.map((i) => tripOfFile(segments.filter(Boolean), stem(i), i));
     return [tripOfFolder(segments, files, stem)];
   });
   return planned.map((t) => ({ ...t, folders: t.folders.map(asName), name: asName(t.name), days: t.days.map((d) => ({ ...d, name: asName(d.name) })) }));
@@ -141,6 +144,24 @@ function collectionOfFolder(segments: string[], files: number[], stem: (i: numbe
 export function withImportedDay(trip: Trip, day: { name: string; date: string | null }, parts: readonly DayParts[]): Trip {
   const id = newId();
   return parts.reduce((to, p) => addParts(to, id, p), updateDay(addDay(trip, id), id, (d) => ({ ...d, name: day.name, date: day.date })));
+}
+
+/** The planned days with what their GPX files hold, read now; a file that cannot be read is reported, and a day left without one is left out. */
+export async function readPlannedDays(sources: readonly ImportSource[], planned: readonly PlannedDay[], errors: string[]): Promise<{ day: PlannedDay; parts: DayParts[] }[]> {
+  const days: { day: PlannedDay; parts: DayParts[] }[] = [];
+  for (const day of planned) {
+    const parts: DayParts[] = [];
+    for (const i of day.files) {
+      const source = sources[i]!;
+      try {
+        parts.push(await readGpxFile(await source.open(), 'motorcycle'));
+      } catch (error) {
+        errors.push(`${source.path}: ${errorMessage(error)}`);
+      }
+    }
+    if (parts.length > 0) days.push({ day, parts });
+  }
+  return days;
 }
 
 /** What an import did: how many trips or collections it made, and what it could not read or save. */
@@ -192,19 +213,7 @@ export async function importFolder(
   }
   for (const [n, planned] of plan.entries()) {
     onProgress(t('Importing {i} of {n}: {name}', { i: archives.length + n + 1, n: total, name: planned.name }));
-    const days: { day: PlannedDay; parts: DayParts[] }[] = [];
-    for (const day of planned.days) {
-      const parts: DayParts[] = [];
-      for (const i of day.files) {
-        const source = sources[i]!;
-        try {
-          parts.push(await readGpxFile(await source.open(), 'motorcycle'));
-        } catch (error) {
-          result.errors.push(`${source.path}: ${errorMessage(error)}`);
-        }
-      }
-      if (parts.length > 0) days.push({ day, parts });
-    }
+    const days = await readPlannedDays(sources, planned.days, result.errors);
     if (days.length === 0) continue;
     try {
       await changeTrip((await createTrip(planned.name, await folderIn(planned.folders), planned.kind)).id, (trip) => days.reduce((to, { day, parts }) => withImportedDay(to, day, parts), trip));
