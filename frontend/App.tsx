@@ -129,7 +129,7 @@ export function App() {
         <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} error={error()} />
       </aside>
       <Show when={showingDuplicates()} fallback={<DayPane />}>
-        <DuplicatesReport onOpen={(id, dayId) => void open(id, dayId)} />
+        <DuplicatesReport onOpen={(id, dayId) => void open(id, dayId)} onChanged={(tripIds) => tripIds.includes(openTrip()?.id ?? -1) && void reload()} />
       </Show>
       <div class="map-wrap">
         <PanelResizer />

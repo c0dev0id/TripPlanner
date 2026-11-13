@@ -260,6 +260,9 @@ export interface DuplicateGroup {
 
 export const listDuplicates = (): Promise<DuplicateGroup[]> => request('GET', '/api/duplicates');
 
+/** The lines of routes of the library, as polyline6 by the route's id; a route that is gone is left out. */
+export const duplicateLines = (routeIds: readonly string[]): Promise<Record<string, string>> => request('GET', `/api/duplicates/lines?routes=${routeIds.map(encodeURIComponent).join(',')}`);
+
 /** How a trip is written as GPX; the server's ExportOptions, with the packaging. */
 export interface ExportOptions {
   /** One file for the whole scope, or one file per day in a zip. */

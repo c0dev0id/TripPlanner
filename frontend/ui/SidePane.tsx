@@ -45,15 +45,17 @@ function SheetHandle() {
 
 /**
  * The pane between the library and the map, which on a phone is a sheet under the map:
- * its heading, ending in the button that closes it, over what it holds.
+ * its heading, then the pane's own `actions` where it has any, ending in the button that
+ * closes it, over what it holds.
  */
-export function SidePane(props: { label: string; heading: JSX.Element; onClose: () => void; children: JSX.Element }) {
+export function SidePane(props: { label: string; heading: JSX.Element; actions?: JSX.Element; onClose: () => void; children: JSX.Element }) {
   return (
     <aside class={`panel side-pane sheet-${sheet()}`} aria-label={props.label}>
       <PanelResizer />
       <SheetHandle />
       <header class="row side-pane-header">
         {props.heading}
+        {props.actions}
         <IconButton label={t('Close {what}', { what: props.label })} onClick={props.onClose}>
           <CloseIcon />
         </IconButton>

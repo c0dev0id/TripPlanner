@@ -2,6 +2,7 @@ import { GeoJSONSource, LngLatBounds, type Map as MapLibreMap } from 'maplibre-g
 import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
 import type { Day, LngLat } from '../model/trip';
 import { panTarget, showNeighbours } from '../state/drawing';
+import { comparedLines } from '../state/duplicates';
 import { routePositions } from '../routing/legs';
 import { colorRuns } from '../recording/lineColors';
 import { keepsView } from '../state/place';
@@ -17,7 +18,7 @@ import { Interactions } from './Interactions';
 import { EntryMarkers } from './EntryMarkers';
 import { PointMarkers } from './PointMarkers';
 import { PlaceMarkers } from './PlaceMarkers';
-import { OPENED_RECORDING_SOURCE, RECORDINGS_SOURCE, recordingFeatures } from './recordingOverlay';
+import { COMPARED_SOURCE, OPENED_RECORDING_SOURCE, RECORDINGS_SOURCE, recordingFeatures } from './recordingOverlay';
 import { RecordingPoint } from './RecordingPoint';
 import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { SearchBox } from './SearchBox';
@@ -61,6 +62,7 @@ export function MapView() {
           <>
             <RouteLines map={m()} />
             <RecordingLines map={m()} />
+            <ComparedLines map={m()} />
             <RecordingPoint map={m()} />
             <StopMarkers map={m()} />
             <EntryMarkers map={m()} />
@@ -121,6 +123,17 @@ function RecordingLines(props: { map: MapLibreMap }) {
   });
   createEffect(() => props.map.getSource<GeoJSONSource>(RECORDINGS_SOURCE)?.setData(others()));
   createEffect(() => props.map.getSource<GeoJSONSource>(OPENED_RECORDING_SOURCE)?.setData(openedLine()));
+  return null;
+}
+
+/** Draws the routes the duplicates report compares, each in its colour, and brings them into view as they come. */
+function ComparedLines(props: { map: MapLibreMap }) {
+  createEffect(() => {
+    const lines = comparedLines();
+    props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData(recordingFeatures(lines));
+    const bounds = lines.reduce((box, line) => line.points.reduce((b, p) => b.extend(p), box), new LngLatBounds());
+    if (!bounds.isEmpty()) props.map.fitBounds(bounds, { padding: clearOfCards(props.map), maxZoom: 15, duration: 500 });
+  });
   return null;
 }
 

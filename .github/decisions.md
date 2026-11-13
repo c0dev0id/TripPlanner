@@ -575,6 +575,16 @@ entries at the end of their section.
   the light scheme and lightens it in the dark one, whatever that is, and no row needs
   a highlight of its own. A grip and a pad take none at all: they are handles of the
   row, not buttons.
+- **The duplicates report is made once and kept; what is selected in it is drawn.** On
+  a large library the report takes long enough that making it afresh each time it was
+  shown, and after every delete, made it unusable for cleaning up: so it is kept in
+  the page's state, a delete takes the routes out of it, and a button makes it afresh.
+  It is not kept across a reload, where it would outlive what it describes. A click
+  used to select with a mouse and open with a finger; it now selects either way and
+  the map draws the selection, which is what tells two routes apart. Their lines are
+  fetched by id as they are selected rather than sent with the report, which would
+  carry every line of hundreds of groups for the few that are looked at. At most ten
+  are drawn, one per colour of the palette.
 - **A paste empties the clipboard.** A copy used to stay on it to be pasted again, which
   left the library's offer to paste standing after the paste was done, with nothing but
   another copy or cut to take it away. What is on the clipboard is now pasted once,

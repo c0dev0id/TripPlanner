@@ -220,13 +220,16 @@
   and collections, grouped as exact copies (the same points or the same line, whatever
   the date) or as the same ride kept twice (the same way within a kilometre at both
   ends, lengths within a tenth, nine in ten of each line's points within 75 m of the
-  other, on the same date or an undated day). A click selects a route, Cmd or Ctrl one more,
-  Shift a run of them; a route's pad adds it or takes it away; a selected row is highlighted. On a touch screen a
-  tap on the pad selects and a tap on the route opens it. The menu (right-click or long
-  press) opens a single route at its day, which the map shows while the report and the
-  tree stay, and copies or deletes the selected ones, as Ctrl+C and Delete do. A day
-  picked in the tree takes the pane for itself and closes the report. The report is made
-  afresh each time it is shown and after a delete; while it is made, which takes a
+  other, on the same date or an undated day). A click or a tap selects a route, Cmd or Ctrl one more,
+  Shift a run of them; a route's pad adds it or takes it away; a selected row is highlighted.
+  The map draws the selected routes and brings them into view, each in a colour of its
+  own that its row shows as well, the first ten selected, so that they are compared at a
+  glance. The menu (right-click or long press) opens the location of a single route, its
+  trip at its day, whose pane takes the report's place, and copies or deletes the
+  selected ones, as Ctrl+C and Delete do. A day picked in the tree takes the pane for
+  itself as well. The report is made once and kept while the page stands: shown again,
+  it is there at once, where it was scrolled to; what is deleted from it is taken out
+  of it, and the button in its heading makes it afresh. While it is made, which takes a
   while on a large library, a ring turns beside how many routes are compared and the
   seconds gone.
 - Collections of planning material, such as a long-distance trail by country: listed in

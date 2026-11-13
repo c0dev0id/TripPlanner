@@ -1,12 +1,16 @@
 import { t } from '../i18n/t';
-import { createEffect, createMemo, createResource, createSelector, createSignal, For, Match, on, onCleanup, Show, Switch } from 'solid-js';
-import { changeTrip, errorMessage, fetchTrip, listDuplicates, type DuplicateGroup, type DuplicateRoute } from '../api';
+import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, Show, Switch } from 'solid-js';
+import { changeTrip, errorMessage, fetchTrip, type DuplicateGroup, type DuplicateRoute } from '../api';
 import { copiedRoute, removeRoute, type CopiedRoute } from '../routing/dayEdit';
+import { flushSave } from '../state/autosave';
 import { copyRoutes } from '../state/clipboard';
+import { comparedColor, DUPLICATES, duplicateGroups, duplicateKey, forgetDuplicates, refreshDuplicates } from '../state/duplicates';
 import { fetchingTrip, libraryTrips, outlineOf, setShowingDuplicates } from '../state/library';
 import { selectedDayId } from '../state/trip';
 import { dayLabel } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
+import { IconButton } from '../ui/IconButton';
+import { RefreshIcon } from '../ui/icons';
 import { askConfirmation } from '../ui/confirm';
 import { counted, distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
@@ -22,7 +26,6 @@ function whereText(route: DuplicateRoute): string {
   return `${route.tripName} › ${day}`;
 }
 
-const keyOf = (route: DuplicateRoute): string => `${route.tripId}/${route.routeId}`;
 const nameOf = (route: DuplicateRoute): string => route.routeName || t('Unnamed route');
 
 const tripIdsOf = (routes: readonly DuplicateRoute[]): number[] => [...new Set(routes.map((r) => r.tripId))];
@@ -42,19 +45,22 @@ async function removeRoutes(routes: readonly DuplicateRoute[]): Promise<void> {
   await Promise.all(tripIdsOf(routes).map((id) => changeTrip(id, (trip) => routes.filter((r) => r.tripId === id).reduce((t, r) => removeRoute(t, r.dayId, r.routeId), trip))));
 }
 
-const OWNER = 'duplicates';
+/** How far down the report was scrolled when it was last shown, to which it comes back. */
+let scrolled = 0;
 
 /**
  * The routes the library keeps more than once, in the pane between the library and the
- * map, made afresh each time it is shown: exact copies, and the same ride kept from two
- * sources on one day. A click selects a route, with Cmd or Ctrl one more, with Shift a run
- * of them; its pad adds or takes it away. On a touch screen a tap opens the route instead.
- * The menu opens one at its day, which the map then shows beside the report, and copies or
- * deletes the selected ones, as Ctrl+C and Delete do. A day picked elsewhere takes the
- * pane for itself.
+ * map: exact copies, and the same ride kept from two sources on one day. The report is
+ * made once and kept; the button in its heading makes it afresh. A click or a tap selects
+ * a route, with Cmd or Ctrl one more, with Shift a run of them; its pad adds or takes it
+ * away. The map draws what is selected, each route in a colour its row shows too, to
+ * compare them. The menu opens the place of one, its day, whose pane takes the report's
+ * place until the report is shown again, and copies or deletes the selected ones, as
+ * Ctrl+C and Delete do; `onChanged` hears of the trips routes were deleted from. A day
+ * picked elsewhere takes the pane for itself.
  */
-export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void }) {
-  const [groups, { refetch }] = createResource(listDuplicates);
+export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void; onChanged: (tripIds: number[]) => void }) {
+  const groups = duplicateGroups;
   /** How many routes the library holds, which is how many the report compares. */
   const routeCount = () => (libraryTrips() ?? []).reduce((sum, trip) => sum + (outlineOf(trip.id) ?? []).reduce((routes, day) => routes + day.routes, 0), 0);
   /** The seconds the report has been in the making: the server answers only once it is done, so this is all there is to tell meanwhile. */
@@ -66,32 +72,22 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
     onCleanup(() => clearInterval(timer));
   });
   const of = (kind: DuplicateGroup['kind']) => (groups() ?? []).filter((g) => g.kind === kind);
-  const selection = () => selectionOf(OWNER);
-  const setSelection = (rows: Selection<string>) => selectIn(OWNER, rows);
+  const selection = () => selectionOf(DUPLICATES);
+  const setSelection = (rows: Selection<string>) => selectIn(DUPLICATES, rows);
   onCleanup(() => setSelection(NOTHING_SELECTED));
   const [note, setNote] = createSignal<{ text: string; error: boolean }>();
   /** The routes in the order shown, by key; a route in a group of each kind is shown twice but listed once. */
-  const shown = createMemo(() => new Map([...of('copies'), ...of('same ride')].flatMap((g) => g.routes).map((r) => [keyOf(r), r])));
+  const shown = createMemo(() => new Map([...of('copies'), ...of('same ride')].flatMap((g) => g.routes).map((r) => [duplicateKey(r), r])));
   const isSelected = createSelector(() => selection().keys, (key: string, keys) => keys.has(key));
   /** The selected routes, in the order shown. */
-  const selectedRoutes = () => [...shown().values()].filter((r) => selection().keys.has(keyOf(r)));
-  /** The day the report opened itself, which leaves it in the pane. */
-  let opened: string | undefined;
-  const open = (route: DuplicateRoute) => {
-    if (fetchingTrip()) return;
-    opened = route.dayId;
+  const selectedRoutes = () => [...shown().values()].filter((r) => selection().keys.has(duplicateKey(r)));
+  /** Opens the trip of a route at the route's day, whose pane takes the report's place; the report is kept as it stands. */
+  const openLocation = (route: DuplicateRoute) => {
+    setShowingDuplicates(false);
     props.onOpen(route.tripId, route.dayId);
   };
-  createEffect(
-    on(
-      selectedDayId,
-      (id) => {
-        if (id && id !== opened) setShowingDuplicates(false);
-        if (!id) opened = undefined;
-      },
-      { defer: true },
-    ),
-  );
+  // A day picked elsewhere takes the pane too.
+  createEffect(on(selectedDayId, (id) => id && setShowingDuplicates(false), { defer: true }));
   /** Runs a job that reads and writes trips, saying what it is doing and then what it did or why it failed. */
   const work = async (doing: string, job: () => Promise<string>) => {
     setNote({ text: doing, error: false });
@@ -116,20 +112,23 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
         : t('Delete {n} routes from {trips}?', { n: chosen.length, trips: counted(trips, 'trip') });
     if (!(await askConfirmation(question, t('Delete')))) return;
     await work(t('Deleting…'), async () => {
+      // The open trip may be among them: what it has to save goes first, and it is told that it changed.
+      await flushSave();
       await removeRoutes(chosen);
       setSelection(NOTHING_SELECTED);
-      void refetch();
+      forgetDuplicates(chosen);
+      props.onChanged(tripIdsOf(chosen));
       return t('Deleted {what}.', { what: counted(chosen.length, 'route') });
     });
   };
   /** The menu of a route: for the selected routes, or for it alone where it is not selected. */
   const items = (route: DuplicateRoute): MenuItem[] => {
-    setSelection(menuSelection(selection(), keyOf(route)));
+    setSelection(menuSelection(selection(), duplicateKey(route)));
     const chosen = selectedRoutes();
     const one = chosen.length === 1 ? chosen[0] : undefined;
     const n = chosen.length;
     return [
-      ...(one ? [{ label: t('Open'), disabled: fetchingTrip(), run: () => open(one) }] : []),
+      ...(one ? [{ label: t('Open location'), disabled: fetchingTrip(), run: () => openLocation(one) }] : []),
       { label: one ? t('Copy') : t('Copy {n} routes', { n }), run: () => void copy(chosen) },
       { label: one ? t('Delete') : t('Delete {n} routes', { n }), run: () => void remove(chosen) },
     ];
@@ -142,11 +141,24 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   };
   document.addEventListener('keydown', onKey);
   onCleanup(() => document.removeEventListener('keydown', onKey));
+  /** What stands for the report while it is made. */
+  const waiting = () => (
+    <p class="muted row">
+      <span class="spinner" />
+      {t('Comparing {routes} with each other… {seconds} s', { routes: counted(routeCount(), 'route'), seconds: seconds() })}
+    </p>
+  );
+  /** Brings the pane back to where it was scrolled to, and keeps track of where it is. */
+  const keepScroll = (inner: HTMLElement) =>
+    queueMicrotask(() => {
+      const pane = inner.closest<HTMLElement>('.side-pane')!;
+      pane.scrollTop = scrolled;
+      pane.addEventListener('scroll', () => (scrolled = pane.scrollTop));
+    });
   const rows = {
-    selected: (route: DuplicateRoute) => isSelected(keyOf(route)),
-    onClick: (route: DuplicateRoute, e: MouseEvent) => setSelection(clickSelect(selection(), [...shown().keys()], keyOf(route), e)),
-    onToggle: (route: DuplicateRoute) => setSelection(toggled(selection(), keyOf(route))),
-    onOpen: open,
+    selected: (route: DuplicateRoute) => isSelected(duplicateKey(route)),
+    onClick: (route: DuplicateRoute, e: MouseEvent) => setSelection(clickSelect(selection(), [...shown().keys()], duplicateKey(route), e)),
+    onToggle: (route: DuplicateRoute) => setSelection(toggled(selection(), duplicateKey(route))),
     items,
   };
   return (
@@ -156,20 +168,19 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
       heading={
         <span class="lines grow">
           <span class="name">{t('Routes kept more than once')}</span>
-          <Show when={groups()}>{(found) => <span class="muted detail">{counted(found().length, 'group')}</span>}</Show>
+          <Show when={!groups.error && groups()}>{(found) => <span class="muted detail">{counted(found().length, 'group')}</span>}</Show>
         </span>
       }
+      actions={
+        <IconButton label={t('Make the report afresh')} disabled={groups.loading} onClick={refreshDuplicates}>
+          <RefreshIcon />
+        </IconButton>
+      }
     >
-      <div class="day-details">
-        <Switch
-          fallback={
-            <p class="muted row">
-              <span class="spinner" />
-              {t('Comparing {routes} with each other… {seconds} s', { routes: counted(routeCount(), 'route'), seconds: seconds() })}
-            </p>
-          }
-        >
+      <div class="day-details" ref={keepScroll}>
+        <Switch fallback={waiting()}>
           <Match when={groups.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
+          <Match when={groups.loading}>{waiting()}</Match>
           <Match when={groups()?.length === 0}>
             <p class="muted">{t('No route is kept more than once.')}</p>
           </Match>
@@ -191,11 +202,8 @@ function Section(props: {
   selected: (route: DuplicateRoute) => boolean;
   onClick: (route: DuplicateRoute, e: MouseEvent) => void;
   onToggle: (route: DuplicateRoute) => void;
-  onOpen: (route: DuplicateRoute) => void;
   items: (route: DuplicateRoute) => MenuItem[];
 }) {
-  /** What pressed a row last: a mouse click selects, a tap opens. */
-  let pointer = 'mouse';
   return (
     <Show when={props.groups.length > 0}>
       <h3>{props.title}</h3>
@@ -209,11 +217,8 @@ function Section(props: {
                     <li classList={{ selected: props.selected(route) }} ref={(el) => cardMenu(el, () => props.items(route))}>
                       <div class="row">
                         <Pad label={t('Select {name}', { name: nameOf(route) })} selected={props.selected(route)} onToggle={() => props.onToggle(route)} />
-                        <button
-                          class="text grow"
-                          onPointerDown={(e) => (pointer = e.pointerType)}
-                          onClick={(e) => (pointer === 'mouse' ? props.onClick(route, e) : props.onOpen(route))}
-                        >
+                        <button class="text grow" onClick={(e) => props.onClick(route, e)}>
+                          <Show when={comparedColor(route)}>{(color) => <span class="swatch" style={{ background: color() }} />}</Show>
                           <span class="lines">
                             <span class="name">
                               {nameOf(route)} · {distanceText(route.distanceM)}

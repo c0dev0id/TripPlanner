@@ -16,7 +16,8 @@ const SOURCES = [RECORDINGS_SOURCE, OPENED_RECORDING_SOURCE];
 /** The layers whose lines a tap on a recording hits. */
 export const RECORDING_LINE_LAYERS = SOURCES.map((source) => `${source}-line`);
 
-export const RECORDING_LAYERS: LayerSpecification[] = SOURCES.flatMap((source): LayerSpecification[] => [
+/** The layers that draw a source's lines, each in the colour it carries, on a white casing. */
+const lineLayers = (source: string): LayerSpecification[] => [
   {
     id: `${source}-casing`,
     type: 'line',
@@ -31,9 +32,16 @@ export const RECORDING_LAYERS: LayerSpecification[] = SOURCES.flatMap((source): 
     layout: { 'line-join': 'round', 'line-cap': 'round' },
     paint: { 'line-color': ['get', 'color'], 'line-width': 3.5 },
   },
-]);
+];
 
-/** The lines of the recordings, a feature each or, coloured by a measure, a feature per piece of one colour; each with its recording's id. */
+export const RECORDING_LAYERS: LayerSpecification[] = SOURCES.flatMap(lineLayers);
+
+/** The routes the duplicates report compares, each in its colour, over the planned routes. */
+export const COMPARED_SOURCE = 'compared';
+
+export const COMPARED_LAYERS: LayerSpecification[] = lineLayers(COMPARED_SOURCE);
+
+/** Lines as features, each with its colour and an id: the recordings, a feature each or, coloured by a measure, a feature per piece of one colour, with the recording's id; or the routes compared. */
 export function recordingFeatures(lines: readonly { id: number; points: readonly LngLat[]; color: string }[]): FeatureCollection<LineString> {
   return {
     type: 'FeatureCollection',
