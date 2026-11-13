@@ -6,6 +6,7 @@ namespace Planner\Trip;
 
 use PDO;
 use Planner\Database;
+use Planner\Export\LineSamples;
 use Planner\Export\Polyline;
 use Planner\Export\Proximity;
 use Planner\Export\RouteGeometry;
@@ -108,7 +109,7 @@ final class Duplicates
         if (count($line) < 2) {
             return null;
         }
-        $lengthM = self::along($line)[count($line) - 1];
+        $lengthM = LineSamples::along($line)[count($line) - 1];
         $lngs = array_column($line, 0);
         $lats = array_column($line, 1);
         return [
@@ -164,7 +165,7 @@ final class Duplicates
                 }
                 $a = $points[$i] ??= self::pointsAlong($routes[$i]['route']);
                 $b = $points[$j] ??= self::pointsAlong($routes[$j]['route']);
-                if (self::shareNear($a['samples'], $b['outline']) >= self::SHARE_NEAR && self::shareNear($b['samples'], $a['outline']) >= self::SHARE_NEAR) {
+                if (LineSamples::shareNear($a['samples'], [$b['outline']], self::LINE_WITHIN_M) >= self::SHARE_NEAR && LineSamples::shareNear($b['samples'], [$a['outline']], self::LINE_WITHIN_M) >= self::SHARE_NEAR) {
                     $parent[$root($j)] = $root($i);
                 }
             }
@@ -187,56 +188,11 @@ final class Duplicates
             && Proximity::between($a['end'], $b['end']) <= self::ENDS_WITHIN_M;
     }
 
-    /** The share of the points that lie within LINE_WITHIN_M of the line. */
-    private static function shareNear(array $points, array $line): float
-    {
-        $near = 0;
-        foreach ($points as $point) {
-            if (Proximity::toLine($point, $line) <= self::LINE_WITHIN_M) {
-                $near++;
-            }
-        }
-        return $near / count($points);
-    }
-
     /** @return array{samples: list<array{0: float, 1: float}>, outline: list<array{0: float, 1: float}>} points spread evenly along the route's line */
     private static function pointsAlong(array $route): array
     {
         $line = RouteGeometry::line($route);
-        $along = self::along($line);
-        return ['samples' => self::spread($line, $along, self::SAMPLES), 'outline' => self::spread($line, $along, self::OUTLINE)];
-    }
-
-    /** @return list<float> the metres from the start of the line to each of its points */
-    private static function along(array $line): array
-    {
-        $along = [0.0];
-        for ($i = 1, $n = count($line); $i < $n; $i++) {
-            $along[] = $along[$i - 1] + Proximity::between($line[$i - 1], $line[$i]);
-        }
-        return $along;
-    }
-
-    /**
-     * `$count` points spread evenly along the line by length, from its start to its end.
-     *
-     * @param list<float> $along the metres from the start to each point of the line
-     */
-    private static function spread(array $line, array $along, int $count): array
-    {
-        $points = [];
-        $segment = 1;
-        $last = count($line) - 1;
-        for ($k = 0; $k < $count; $k++) {
-            $at = $along[$last] * $k / ($count - 1);
-            while ($segment < $last && $along[$segment] < $at) {
-                $segment++;
-            }
-            $length = $along[$segment] - $along[$segment - 1];
-            $t = $length > 0 ? ($at - $along[$segment - 1]) / $length : 0.0;
-            [$a, $b] = [$line[$segment - 1], $line[$segment]];
-            $points[] = [$a[0] + $t * ($b[0] - $a[0]), $a[1] + $t * ($b[1] - $a[1])];
-        }
-        return $points;
+        $along = LineSamples::along($line);
+        return ['samples' => LineSamples::spread($line, $along, self::SAMPLES), 'outline' => LineSamples::spread($line, $along, self::OUTLINE)];
     }
 }

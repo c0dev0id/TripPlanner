@@ -8,11 +8,12 @@ use DateTimeImmutable;
 use Planner\Account\CurrentUser;
 use Planner\Http\Json;
 use Planner\Name;
+use Planner\Trip\TripDocuments;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\UploadedFileInterface;
 
-/** The recordings API of a trip: the list, adding one to a day, renaming, deleting, and a recording's GPX file. */
+/** The recordings API of a trip: the list, adding one to a day, renaming, moving, deleting, a recording's GPX file, and the recordings that may be a day's. */
 final class RecordingController
 {
     /** The largest file a recording may be, compressed and as GPX: a long day of one point a second with sensor data stays well below. */
@@ -21,6 +22,7 @@ final class RecordingController
 
     public function __construct(
         private readonly Recordings $recordings,
+        private readonly TripDocuments $documents,
         private readonly CurrentUser $currentUser,
     ) {
     }
@@ -31,7 +33,27 @@ final class RecordingController
         return $recordings === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $recordings);
     }
 
-    /** Adds a recording from a multipart form: `dayId`, `name`, and the GPX `file` compressed with gzip. */
+    /**
+     * The recordings waiting in the folder for recordings that may be those of the day
+     * `day`; `offset` is the minutes the user's clock is ahead of UTC.
+     */
+    public function lookup(Request $request, Response $response, array $args): Response
+    {
+        $query = $request->getQueryParams();
+        $userId = $this->currentUser->get()->id;
+        foreach ($this->documents->load($userId, (int) $args['id'])['days'] ?? [] as $day) {
+            if ($day['id'] === ($query['day'] ?? null)) {
+                return Json::of($response, Lookup::of($day, $this->recordings->unassigned($userId), (int) ($query['offset'] ?? 0)));
+            }
+        }
+        return Json::error($response, 404, 'No such trip or day.');
+    }
+
+    /**
+     * Adds a recording from a multipart form: `dayId`, `name`, and the GPX `file`
+     * compressed with gzip. With `unlessKept`, a file the user keeps already is not kept
+     * again, and the answer is empty.
+     */
     public function add(Request $request, Response $response, array $args): Response
     {
         $body = (array) $request->getParsedBody();
@@ -48,11 +70,15 @@ final class RecordingController
         if ($gpx === false || preg_match('/<gpx[\s>]/', substr($gpx, 0, 4096)) !== 1) {
             return Json::error($response, 422, 'A recording is a GPX file compressed with gzip.');
         }
-        $recording = $this->recordings->add($this->currentUser->get()->id, (int) $args['id'], (string) ($body['dayId'] ?? ''), $name, $gzip, new DateTimeImmutable());
+        try {
+            $recording = $this->recordings->add($this->currentUser->get()->id, (int) $args['id'], (string) ($body['dayId'] ?? ''), $name, $gzip, new DateTimeImmutable(), isset($body['unlessKept']));
+        } catch (AlreadyKept) {
+            return $response->withStatus(204);
+        }
         return $recording === null ? Json::error($response, 404, 'No such trip or day.') : Json::of($response->withStatus(201), $recording);
     }
 
-    /** Renames the recording from `name`, or puts it on another day of the trip from `dayId`. */
+    /** Renames the recording from `name`, or puts it on another day, of this trip or another of the user's, from `dayId`. */
     public function change(Request $request, Response $response, array $args): Response
     {
         $dayId = Json::field($request, 'dayId');

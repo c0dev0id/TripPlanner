@@ -82,6 +82,7 @@ final class Routes
             $api->get('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}/file', [JournalController::class, 'file']);
             $api->get('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}/preview', [JournalController::class, 'preview']);
             $api->get('/trips/{id:[0-9]+}/recordings', [RecordingController::class, 'index']);
+            $api->get('/trips/{id:[0-9]+}/recordings/lookup', [RecordingController::class, 'lookup']);
             $api->post('/trips/{id:[0-9]+}/recordings', [RecordingController::class, 'add']);
             $api->patch('/trips/{id:[0-9]+}/recordings/{recording:[0-9]+}', [RecordingController::class, 'change']);
             $api->delete('/trips/{id:[0-9]+}/recordings/{recording:[0-9]+}', [RecordingController::class, 'delete']);
