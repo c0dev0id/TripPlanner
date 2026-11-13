@@ -7,7 +7,7 @@ namespace Planner\Export;
 /** Distances between a position and lines, in metres, on a flat map around the position. */
 final class Proximity
 {
-    private const METRES_PER_DEGREE = 111_195.0;
+    public const METRES_PER_DEGREE = 111_195.0;
 
     /**
      * The distance in metres between two positions, close enough for a few kilometres.

@@ -11,6 +11,9 @@ final readonly class Recording
         public int $id,
         public string $dayId,
         public string $name,
+        /** Its length in metres, and the time of its first point in UTC, null where its file gives none. */
+        public int $distanceM,
+        public ?string $startedAt,
     ) {
     }
 }

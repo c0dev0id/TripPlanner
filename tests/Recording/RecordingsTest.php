@@ -8,6 +8,8 @@ use DateTimeImmutable;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
+use Planner\Export\Polyline;
+use Planner\Recording\AlreadyKept;
 use Planner\Recording\Recordings;
 use Planner\Tests\TestDatabase;
 use Planner\Tests\Trip\TripFixture;
@@ -58,7 +60,53 @@ final class RecordingsTest extends TestCase
         self::assertSame([], $this->recordings->listFor($this->userId, $this->tripId));
     }
 
-    public function testMovesToAnotherDayOfItsTripAndToNoOther(): void
+    public function testKeepsWhatItsFileTellsBesideTheRecording(): void
+    {
+        $recording = $this->recordings->add($this->userId, $this->tripId, 'day1', 'Ride', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], '2027-06-12T08:00:00+02:00')), $this->now);
+        self::assertSame('2027-06-12T06:00:00Z', $recording->startedAt);
+        self::assertEqualsWithDelta(11_120, $recording->distanceM, 10);
+        self::assertEquals([$recording], $this->recordings->listFor($this->userId, $this->tripId));
+
+        $bare = $this->recordings->add($this->userId, $this->tripId, 'day1', 'No times', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], null)), $this->now);
+        self::assertNull($bare->startedAt);
+    }
+
+    public function testKeepsAFileOnceWhereAskedTo(): void
+    {
+        $gzip = gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], null));
+        $this->recordings->add($this->userId, $this->tripId, 'day1', 'Ride', $gzip, $this->now, true);
+        self::assertNotNull($this->recordings->add($this->userId, $this->tripId, 'day1', 'On purpose', $gzip, $this->now));
+        $this->expectException(AlreadyKept::class);
+        $this->recordings->add($this->userId, $this->tripId, 'day1', 'Again', $gzip, $this->now, true);
+    }
+
+    public function testListsTheRecordingsThatWaitInTheFolderForRecordings(): void
+    {
+        $folders = new Folders($this->db);
+        $inbox = array_values(array_filter($folders->listFor($this->userId), fn ($folder) => $folder->kind === 'recordings'))[0]->id;
+        $year = $this->trips->create($this->userId, '2027', $this->now, $folders->create($this->userId, 'Tracker', $inbox, $this->now)->id, 'collection')->id;
+        $document = ['name' => '2027', 'days' => [TripFixture::day('2027-06')]] + TripFixture::document();
+        $this->documents->save($this->userId, $year, TripDocumentValidator::validated($document), 1, $this->now);
+        $waiting = $this->recordings->add($this->userId, $year, '2027-06', 'Waiting', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], '2027-06-12T06:00:00Z')), $this->now);
+        $this->recordings->add($this->userId, $this->tripId, 'day1', 'On its day', gzencode('<gpx/>'), $this->now);
+
+        $unassigned = $this->recordings->unassigned($this->userId);
+        self::assertSame([[$waiting->id, $year, '2027', 'Waiting', '2027-06-12T06:00:00Z']], array_map(fn ($r) => [$r['id'], $r['tripId'], $r['tripName'], $r['name'], $r['startedAt']], $unassigned));
+        self::assertCount(2, Polyline::decode($unassigned[0]['line']));
+        self::assertSame([], $this->recordings->unassigned($this->userId + 1));
+
+        self::assertTrue($this->recordings->move($this->userId, $year, $waiting->id, 'day1'));
+        self::assertSame([], $this->recordings->unassigned($this->userId));
+    }
+
+    /** A GPX file of one track along the points, the first with the time. */
+    private static function gpx(array $points, ?string $time): string
+    {
+        $trackpoints = array_map(fn (array $p, int $i) => "<trkpt lat=\"$p[1]\" lon=\"$p[0]\">" . ($i === 0 && $time !== null ? "<time>$time</time>" : '') . '</trkpt>', $points, array_keys($points));
+        return '<?xml version="1.0"?><gpx><metadata><time>2020-01-01T00:00:00Z</time></metadata><trk><trkseg>' . implode('', $trackpoints) . '</trkseg></trk></gpx>';
+    }
+
+    public function testMovesToAnotherDayOfTheUsersAndToNoOther(): void
     {
         $document = TripFixture::document();
         $document['days'][] = TripFixture::day('day2');
@@ -69,10 +117,12 @@ final class RecordingsTest extends TestCase
         $this->documents->save($this->userId, $otherTrip, TripDocumentValidator::validated($other), 1, $this->now);
         $recording = $this->recordings->add($this->userId, $this->tripId, 'day1', 'Ride', gzencode('<gpx><trk/></gpx>'), $this->now);
 
-        self::assertFalse($this->recordings->move($this->userId, $this->tripId, $recording->id, 'elsewhere'));
+        self::assertFalse($this->recordings->move($this->userId, $this->tripId, $recording->id, 'no-such-day'));
         self::assertFalse($this->recordings->move($this->userId + 1, $this->tripId, $recording->id, 'day2'));
         self::assertTrue($this->recordings->move($this->userId, $this->tripId, $recording->id, 'day2'));
         self::assertSame(['day2'], array_map(fn ($r) => $r->dayId, $this->recordings->listFor($this->userId, $this->tripId)));
+        self::assertTrue($this->recordings->move($this->userId, $this->tripId, $recording->id, 'elsewhere'));
+        self::assertSame(['elsewhere'], array_map(fn ($r) => $r->dayId, $this->recordings->listFor($this->userId, $otherTrip)));
     }
 
     public function testGoesWithItsDayAndIsCopiedWithTheTrip(): void

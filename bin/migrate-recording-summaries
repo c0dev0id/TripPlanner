@@ -1,0 +1,31 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Planner\Database;
+use Planner\Kernel;
+use Planner\Recording\TrackSummary;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Run once on a database made before recordings kept what their files tell, then delete this file.
+$root = dirname(__DIR__);
+$db = Kernel::container($root)->get(PDO::class);
+$db->exec("ALTER TABLE recordings ADD COLUMN line TEXT NOT NULL DEFAULT ''");
+$db->exec('ALTER TABLE recordings ADD COLUMN distance_m INTEGER NOT NULL DEFAULT 0');
+$db->exec('ALTER TABLE recordings ADD COLUMN started_at TEXT');
+$db->exec("ALTER TABLE recordings ADD COLUMN digest TEXT NOT NULL DEFAULT ''");
+Database::applySchema($db, $root . '/db/schema.sql');
+$update = $db->prepare('UPDATE recordings SET line = ?, distance_m = ?, started_at = ?, digest = ? WHERE id = ?');
+$timed = 0;
+$ids = $db->query('SELECT id FROM recordings')->fetchAll(PDO::FETCH_COLUMN);
+$file = $db->prepare('SELECT gpx FROM recordings WHERE id = ?');
+foreach ($ids as $id) {
+    $file->execute([$id]);
+    $gpx = (string) gzdecode((string) $file->fetchColumn());
+    $summary = TrackSummary::of($gpx);
+    $update->execute([$summary->line, $summary->distanceM, $summary->startedAt, hash('sha256', $gpx), $id]);
+    $timed += $summary->startedAt === null ? 0 : 1;
+}
+echo count($ids) . " recordings have their line, length and start beside their file; $timed of them carry times.\n";

@@ -167,15 +167,23 @@ CREATE TABLE IF NOT EXISTS stops (
 CREATE INDEX IF NOT EXISTS stops_day ON stops(day_id);
 
 -- A ride as recorded, kept on a day: the GPX file as uploaded, compressed with gzip; the
--- browser reads its points. A removed day takes its recordings with it.
+-- browser reads its points. A removed day takes its recordings with it. Beside the file
+-- stands what is read from it once, to list and find recordings without their files: its
+-- line thinned, as polyline6, its length, the time of its first point where it has one,
+-- and the file's SHA-256, by which a file kept already is known.
 CREATE TABLE IF NOT EXISTS recordings (
     id INTEGER PRIMARY KEY,
     day_id TEXT NOT NULL REFERENCES days(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     gpx BLOB NOT NULL,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    line TEXT NOT NULL DEFAULT '',
+    distance_m INTEGER NOT NULL DEFAULT 0,
+    started_at TEXT,
+    digest TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS recordings_day ON recordings(day_id);
+CREATE INDEX IF NOT EXISTS recordings_digest ON recordings(digest);
 
 -- The places the map shows of the kinds the planner knows (frontend/poi/places.json),
 -- fetched from OpenStreetMap area by area by `make places` and asked for by the planner

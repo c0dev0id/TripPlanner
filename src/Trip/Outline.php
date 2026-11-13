@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Planner\Trip;
 
 use Planner\Export\Polyline;
+use Planner\Export\Proximity;
 use Planner\Export\RouteGeometry;
 use Planner\Http\Json;
 
@@ -99,6 +100,21 @@ final class Outline
             $tolerance = max($tolerance * 1.5, 1e-6);
         } while (count($line) > self::MAX_POINTS);
         return $line;
+    }
+
+    /**
+     * The line with the points left out that lie within `$toleranceM` metres of what remains.
+     *
+     * @param list<array{0: float, 1: float}> $line
+     * @return list<array{0: float, 1: float}>
+     */
+    public static function thinnedTo(array $line, float $toleranceM): array
+    {
+        if (count($line) < 3) {
+            return $line;
+        }
+        $lats = array_column($line, 1);
+        return self::within($line, $toleranceM / Proximity::METRES_PER_DEGREE, cos(deg2rad((min($lats) + max($lats)) / 2)));
     }
 
     /** One pass of Douglas–Peucker, without recursion: a track has tens of thousands of points. */

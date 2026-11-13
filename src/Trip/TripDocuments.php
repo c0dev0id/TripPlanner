@@ -174,7 +174,7 @@ final class TripDocuments
             $copyId = (int) $this->db->lastInsertId();
             $days = TripCopy::withNewIds($document)['days'];
             $this->saveDays($copyId, $days);
-            $copyRecordings = $this->db->prepare('INSERT INTO recordings (day_id, name, gpx, created_at) SELECT ?, name, gpx, created_at FROM recordings WHERE day_id = ? ORDER BY id');
+            $copyRecordings = $this->db->prepare('INSERT INTO recordings (day_id, name, gpx, created_at, line, distance_m, started_at, digest) SELECT ?, name, gpx, created_at, line, distance_m, started_at, digest FROM recordings WHERE day_id = ? ORDER BY id');
             foreach ($document['days'] as $i => $day) {
                 $copyRecordings->execute([$days[$i]['id'], $day['id']]);
             }
