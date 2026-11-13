@@ -943,9 +943,23 @@ entries at the end of their section.
   time across two points to either side; the slope is measured over 100 m around a point,
   so that a few metres of height noise do not read as a wall; climb and descent count a
   change once it exceeds 3 m from the last turning point. Moving is where the speed at
-  both ends of a stretch averages above 3 km/h, and the average speed is the distance
+  both ends of a stretch averages above 3 km/h and the stretch itself, in the time it
+  took, comes to more than 3 km/h; the average speed is the distance
   moving over the time moving, both over stretches that took time: a file whose
-  timestamps repeat would otherwise divide the whole distance by a few seconds. Heights
+  timestamps repeat would otherwise divide the whole distance by a few seconds. The
+  second test is there for trackers that write no points while standing, as Ridelink
+  does: a stop is then a gap between two points at speed, which the speeds at its ends
+  alone took for riding. Over 156 of Ridelink's rides, 355 hours from first to last
+  point, that had counted 340 hours as moving, 142 of them in gaps of more than half a
+  minute; it is 193 hours with the test. The speeds at the ends stay in the rule for
+  the trackers that do write points while standing, whose positions wander. Ridelink's
+  own summary in its files (`rl:summary`) was held against these figures: its lowest and highest speed are
+  those of the points, as ours are; its distance is 0.14 % below ours at the median,
+  ours being the length along the points; its duration is the session's, which may
+  begin before the first point and end after the last, where ours is the time between
+  them; and its average speed is the mean of the points' speeds, which are written at
+  uneven intervals, so it is neither the average while moving nor that of the ride and
+  nothing to hold ours against. Heights
   or lean angles that are all zero count as missing, as apps write them when they did not
   measure. Lean is shown signed as the file writes it: Ridelink's sign convention is not
   known yet.

@@ -49,6 +49,14 @@ describe('summaryOf', () => {
     expect(s.altitudeRange).toEqual([100, 120]);
     expect(s.leanRange).toEqual([-30, 25]);
   });
+
+  it('counts a gap the tracker left while standing as standing, though both its ends are at speed', () => {
+    // 100 m in 10 s, a stop of ten minutes without a point, on by 5 m, then 100 m in 10 s.
+    const points: LngLat[] = [0, 100, 105, 205].map((metres) => [11, 47 + metres / 111_195]);
+    const s = summaryOf(measuresOf({ points, series: { time: [0, 10_000, 610_000, 620_000], speed: [10, 10, 10, 10] } }));
+    expect([s.durationS, s.movingS]).toEqual([620, 20]);
+    expect(Math.round(s.averageSpeed!)).toBe(36);
+  });
 });
 
 describe('histogram', () => {

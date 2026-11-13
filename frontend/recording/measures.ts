@@ -113,7 +113,12 @@ function climb(altitude: (number | null)[]): { ascent: number; descent: number }
   return { ascent, descent };
 }
 
-/** The time and the distance moving: between points that took time, where the rider went faster than STANDING_KMH on average of both ends. */
+/**
+ * The time and the distance moving: between points that took time, where the rider went
+ * faster than STANDING_KMH on average of both ends and the way between them, in its
+ * time, comes to more as well. A tracker that writes no points while standing leaves a
+ * gap between two points at speed.
+ */
 function moving(m: Measures): { seconds: number; metres: number } | undefined {
   if (!m.time || !m.speed) return undefined;
   let seconds = 0;
@@ -121,9 +126,11 @@ function moving(m: Measures): { seconds: number; metres: number } | undefined {
   for (let i = 1; i < m.time.length; i++) {
     const [t0, t1, v0, v1] = [m.time[i - 1], m.time[i], m.speed[i - 1], m.speed[i]];
     if (t0 === null || t0 === undefined || t1 === null || t1 === undefined || v0 === null || v0 === undefined || v1 === null || v1 === undefined) continue;
-    if (t1 > t0 && (v0 + v1) / 2 > STANDING_KMH) {
-      seconds += (t1 - t0) / 1000;
-      metres += m.distance[i]! - m.distance[i - 1]!;
+    const took = (t1 - t0) / 1000;
+    const went = m.distance[i]! - m.distance[i - 1]!;
+    if (took > 0 && (v0 + v1) / 2 > STANDING_KMH && (went / took) * 3.6 > STANDING_KMH) {
+      seconds += took;
+      metres += went;
     }
   }
   return { seconds, metres };
