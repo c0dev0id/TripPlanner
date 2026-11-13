@@ -220,7 +220,10 @@
   and collections, grouped as exact copies (the same points or the same line, whatever
   the date) or as the same ride kept twice (the same way within a kilometre at both
   ends, lengths within a tenth, nine in ten of each line's points within 75 m of the
-  other, on the same date or an undated day). A click or a tap selects a route, Cmd or Ctrl one more,
+  other, on the same date or an undated day). A group whose routes are all in trips is
+  left out: each has its place there. A group with a route in a collection is listed
+  whole, the routes in trips with it: it is a duplicate, or a ride not yet put into its
+  trip. A click or a tap selects a route, Cmd or Ctrl one more,
   Shift a run of them; a route's pad adds it or takes it away; a selected row is highlighted.
   The map draws the selected routes and brings them into view, each in a colour of its
   own that its row shows as well, the first ten selected, so that they are compared at a

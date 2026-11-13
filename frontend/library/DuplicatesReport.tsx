@@ -50,7 +50,8 @@ let scrolled = 0;
 
 /**
  * The routes the library keeps more than once, in the pane between the library and the
- * map: exact copies, and the same ride kept from two sources on one day. The report is
+ * map: exact copies, and the same ride kept from two sources on one day, where at least
+ * one of them is in a collection rather than in a trip. The report is
  * made once and kept; the button in its heading makes it afresh. A click or a tap selects
  * a route, with Cmd or Ctrl one more, with Shift a run of them; its pad adds or takes it
  * away. The map draws what is selected, each route in a colour its row shows too, to
@@ -182,7 +183,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
           <Match when={groups.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
           <Match when={groups.loading}>{waiting()}</Match>
           <Match when={groups()?.length === 0}>
-            <p class="muted">{t('No route is kept more than once.')}</p>
+            <p class="muted">{t('No route outside the trips is kept more than once.')}</p>
           </Match>
           <Match when={groups()}>
             <Show when={note()}>{(n) => <p classList={{ error: n().error, muted: !n().error, hint: true }}>{n().text}</p>}</Show>

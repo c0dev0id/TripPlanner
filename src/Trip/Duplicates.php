@@ -15,7 +15,9 @@ use Planner\Export\RouteGeometry;
  * points or the same line, and the same ride kept twice (from two apps, or as a planned
  * route and as the track recorded of it), which runs the same way at about the same length
  * along about the same line, on the same date or where a day has none. The same road
- * ridden on different dates is no duplicate.
+ * ridden on different dates is no duplicate. Nor is a ride whose copies are all in trips:
+ * each has its place there. A copy in a collection beside one in a trip is a duplicate, or
+ * a ride that was never put into its trip, so such a group is listed whole.
  */
 final class Duplicates
 {
@@ -35,8 +37,8 @@ final class Duplicates
     }
 
     /**
-     * The groups of duplicates, each `copies` or `same ride`, with the routes in it: where
-     * each is (trip, day) and what it is (name, length).
+     * The groups of duplicates that hold a route of a collection, each `copies` or `same
+     * ride`, with the routes in it: where each is (trip, day) and what it is (name, length).
      *
      * @return list<array{kind: string, routes: list<array<string, mixed>>}>
      */
@@ -56,10 +58,12 @@ final class Duplicates
                 $routes[] = $summary;
             }
         }
+        $inACollection = fn (int $i): bool => $routes[$i]['entry']['tripKind'] === 'collection';
+        $groups = array_filter(self::groups($routes), fn (array $members) => array_filter($members, $inACollection) !== []);
         return array_map(fn (array $members) => [
             'kind' => count(array_unique(array_map(fn (int $i) => $routes[$i]['copy'], $members))) === 1 ? 'copies' : 'same ride',
             'routes' => array_map(fn (int $i) => $routes[$i]['entry'], $members),
-        ], self::groups($routes));
+        ], array_values($groups));
     }
 
     /**

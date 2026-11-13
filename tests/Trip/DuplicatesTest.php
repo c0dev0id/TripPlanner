@@ -37,11 +37,18 @@ final class DuplicatesTest extends TestCase
         $this->documents = new TripDocuments($this->db);
     }
 
-    /** A trip of one day on `date` with the routes, saved for `userId`; its days and routes named after it. */
-    private function trip(string $name, ?string $date, array $routes, ?int $userId = null): int
+    /** A collection of one section with the routes, in the user's folder for collections; undated, as sections are, unless a date is given. */
+    private function collection(string $name, array $routes, ?string $date = null): int
+    {
+        $folder = (int) $this->db->query("SELECT id FROM folders WHERE kind = 'collections' AND user_id = $this->userId")->fetchColumn();
+        return $this->trip($name, $date, $routes, null, $folder);
+    }
+
+    /** A trip of one day on `date` with the routes, saved for `userId`, or a collection where a folder for those is given; its days and routes named after it. */
+    private function trip(string $name, ?string $date, array $routes, ?int $userId = null, ?int $collectionsFolder = null): int
     {
         $userId ??= $this->userId;
-        $id = $this->trips->create($userId, $name, $this->now)->id;
+        $id = $this->trips->create($userId, $name, $this->now, $collectionsFolder, $collectionsFolder === null ? 'trip' : 'collection')->id;
         $day = ['date' => $date, 'name' => "$name day"] + TripFixture::day("$name-d", $routes);
         $this->documents->save($userId, $id, TripDocumentValidator::validated(['name' => $name, 'description' => '', 'state' => 'planned', 'days' => [$day]]), 1, $this->now);
         return $id;
@@ -60,12 +67,12 @@ final class DuplicatesTest extends TestCase
     public function testFindsCopiesWhateverTheirDate(): void
     {
         $alps = $this->trip('Alps', '2027-06-12', [$this->route('r1', 'Pass')]);
-        $this->trip('Later', '2028-01-01', [$this->route('r2')]);
+        $this->collection('Later', [$this->route('r2')]);
         $this->trip('Elsewhere', null, [TripFixture::route('r3', [[8, 50], [8.1, 50.1]])]);
         self::assertSame(
             [['kind' => 'copies', 'routes' => [
                 ['tripId' => $alps, 'tripName' => 'Alps', 'tripKind' => 'trip', 'dayId' => 'Alps-d', 'dayIndex' => 0, 'dayName' => 'Alps day', 'date' => '2027-06-12', 'routeId' => 'r1', 'routeName' => 'Pass', 'distanceM' => 89_300],
-                ['tripId' => $alps + 1, 'tripName' => 'Later', 'tripKind' => 'trip', 'dayId' => 'Later-d', 'dayIndex' => 0, 'dayName' => 'Later day', 'date' => '2028-01-01', 'routeId' => 'r2', 'routeName' => '', 'distanceM' => 89_300],
+                ['tripId' => $alps + 1, 'tripName' => 'Later', 'tripKind' => 'collection', 'dayId' => 'Later-d', 'dayIndex' => 0, 'dayName' => 'Later day', 'date' => null, 'routeId' => 'r2', 'routeName' => '', 'distanceM' => 89_300],
             ]]],
             $this->roundedDistances((new Duplicates($this->db))->of($this->userId)),
         );
@@ -75,7 +82,7 @@ final class DuplicatesTest extends TestCase
     {
         $this->trip('Planned', '2027-06-12', [$this->route('r1')]);
         $this->trip('Recorded', '2027-06-12', [$this->track('t1', self::EAST)]);
-        $this->trip('Reference', null, [$this->track('t2', self::WEST)]);
+        $this->collection('Reference', [$this->track('t2', self::WEST)]);
         $this->trip('Again', '2027-07-01', [$this->track('t3', self::WEST)]);
         $groups = (new Duplicates($this->db))->of($this->userId);
         self::assertSame(['same ride'], array_column($groups, 'kind'));
@@ -83,9 +90,19 @@ final class DuplicatesTest extends TestCase
         self::assertSame(['t3', 'r1', 't1', 't2'], array_column($groups[0]['routes'], 'routeId'));
     }
 
-    public function testLeavesTheSameRoadOnAnotherDateAndOtherUsersAlone(): void
+    public function testLeavesOutARideWhoseCopiesAreAllInTrips(): void
     {
         $this->trip('Planned', '2027-06-12', [$this->route('r1')]);
+        $this->trip('Copied', '2027-06-12', [$this->route('r2')]);
+        $this->trip('Recorded', '2027-06-12', [$this->track('t1', self::EAST)]);
+        self::assertSame([], (new Duplicates($this->db))->of($this->userId));
+        $this->collection('Kept', [$this->track('t2', self::WEST)]);
+        self::assertSame([['r2', 't2', 'r1', 't1']], array_map(fn (array $group) => array_column($group['routes'], 'routeId'), (new Duplicates($this->db))->of($this->userId)));
+    }
+
+    public function testLeavesTheSameRoadOnAnotherDateAndOtherUsersAlone(): void
+    {
+        $this->collection('Planned', [$this->route('r1')], '2027-06-12');
         $this->trip('Again', '2027-07-01', [$this->track('t1', self::EAST)]);
         $other = (new Users($this->db))->create('other@example.com', 'correct horse battery', $this->now)->id;
         $this->trip('Theirs', '2027-06-12', [$this->route('o1')], $other);

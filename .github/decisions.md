@@ -575,6 +575,12 @@ entries at the end of their section.
   the light scheme and lightens it in the dark one, whatever that is, and no row needs
   a highlight of its own. A grip and a pad take none at all: they are handles of the
   row, not buttons.
+- **A ride whose copies are all in trips is no duplicate.** The same track in the trip
+  it was ridden on and in another trip that used it is kept twice on purpose, and
+  hundreds of such groups buried the ones worth looking at. The report lists a group
+  only where a route of a collection is in it, which is a copy to delete or a ride that
+  was never put into its trip, and then lists all of the group so that both can be
+  told.
 - **The duplicates report is made once and kept; what is selected in it is drawn.** On
   a large library the report takes long enough that making it afresh each time it was
   shown, and after every delete, made it unusable for cleaning up: so it is kept in

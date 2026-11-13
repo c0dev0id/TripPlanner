@@ -119,7 +119,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `GET /export-presets` | The user's export presets by name. |
 | `POST /export-presets` | Keeps `{name, options}` as a preset, replacing one of that name. |
 | `DELETE /export-presets/{id}` | Deletes the preset. |
-| `GET /duplicates` | The routes the user's library keeps more than once, in groups of exact copies or of the same ride, each route with its trip, day, name and length. |
+| `GET /duplicates` | The routes the user's library keeps more than once, in groups of exact copies or of the same ride, each route with its trip, day, name and length; only the groups with a route of a collection in them. |
 | `GET /duplicates/lines` | The lines of the user's routes named by `routes=` (comma-separated ids), as polyline6 by the route's id, for the report to draw the routes selected in it. |
 | `GET /folders` | The user's folders, each with the folder it is in (`parentId`, null at the top) and its `kind`: the two special ones first (`recordings`, `collections`), the others (`folder`) by name. |
 | `POST /folders` | Creates a folder from `{name, parentId}`; the parent may be null. |

@@ -222,7 +222,7 @@
   "No folder": "Kein Ordner",
   "No road matched": "Keine Straße zugeordnet",
   "No road matched.": "Keine Straße zugeordnet.",
-  "No route is kept more than once.": "Keine Route ist mehrfach vorhanden.",
+  "No route outside the trips is kept more than once.": "Außerhalb der Touren ist keine Route mehrfach vorhanden.",
   "No such day or route.": "Diesen Tag oder diese Route gibt es nicht.",
   "No such entry.": "Diesen Eintrag gibt es nicht.",
   "No such file.": "Diese Datei gibt es nicht.",
