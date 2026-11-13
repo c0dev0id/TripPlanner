@@ -246,8 +246,13 @@ entries at the end of their section.
   map, and Esri's World Imagery for a look at the ground itself. Each server's attribution rides with its source. The
   choice is a preference of the browser, in localStorage, as the theme is: a matter of
   the device, not of the trip, and it costs no table. The list is fixed in code; adding
-  a service of one's own is Layer Slayer's business, not this planner's. The panel's
-  width, dragged at its edge, is kept the same way: it depends on the screen.
+  a service of one's own is Layer Slayer's business, not this planner's. The widths
+  of the library and of the pane beside it, dragged at their edges, are kept the same
+  way: they depend on the screen. An edge is the left edge of the next column rather
+  than the right one of the column it sizes, because the panels scroll and would take
+  it along; it finds what it sizes as the column before its own, so the map's edge
+  sizes the pane while there is one and the library otherwise. The library may take
+  six tenths of the window and the pane four, so that both edges stay in reach.
 - **Overlays are a fixed list, switched on per browser.** Roadworks and motorcycle
   closures lie between the base map and the trip. An overlay's sources and layers are in
   the style only while it is switched on, put there by the same style transform as the

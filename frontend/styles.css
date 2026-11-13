@@ -155,15 +155,6 @@ body {
   display: none;
 }
 
-/* The edge of the library is dragged where the day's pane begins, while there is one. */
-#root:has(> .side-pane) .map-wrap > .panel-resizer {
-  display: none;
-}
-
-.side-pane > .panel-resizer {
-  left: -3px;
-}
-
 a {
   color: var(--accent);
 }
@@ -835,7 +826,7 @@ fieldset.choices legend {
   min-width: 0;
 }
 
-/* The edge between the panel and the map, dragged to set the panel's width. */
+/* The left edge of the day's pane and of the map, dragged to set the width of what stands before it. */
 .panel-resizer {
   position: absolute;
   top: 0;
@@ -1507,7 +1498,8 @@ fieldset.symbols {
  * library's place while a day is picked.
  */
 @media (min-width: 721px) and (max-width: 1023px) {
-  #root:has(> .side-pane) > .library-panel {
+  #root:has(> .side-pane) > .library-panel,
+  .side-pane > .panel-resizer {
     display: none;
   }
 

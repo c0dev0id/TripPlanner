@@ -149,8 +149,9 @@
   tools are one bar with captions: the tools, undo and done, the rest under More. On a
   touch screen every row with a menu has a button with three dots that opens it. A save
   that failed, or a trip changed elsewhere, is said over the map. The days before and after
-  the selected one are drawn dimmed on the map, switchable. The library is as wide as its
-  edge is dragged, kept per browser; a double click on the edge puts the default back.
+  the selected one are drawn dimmed on the map, switchable. The library and the pane
+  beside it are each as wide as their edge is dragged, kept per browser; a double click
+  on the edge puts the default back.
 - A date per day; a new day after a dated one is dated the day after, and the library
   shows a trip as starting on its first dated day. A stop can have a fixed arrival time
   and a pause. From the first timed stop and the routed legs' durations the panel
