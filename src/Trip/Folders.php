@@ -12,7 +12,8 @@ use Planner\Timestamp;
 /**
  * A user's folders: at the top of the library or inside another folder. The two special
  * ones, for recordings and for collections, are there from the start and are neither
- * renamed, moved nor deleted.
+ * renamed, moved nor deleted. They and the folders in them hold collections and nothing
+ * else; every other folder and the top hold trips.
  */
 final class Folders
 {
@@ -60,6 +61,16 @@ final class Folders
         }
     }
 
+    /** Whether the folder is a special one or lies in one, where collections are kept; the top, null, is not. */
+    public function holdsCollections(int $userId, ?int $folderId): bool
+    {
+        $statement = $this->db->prepare(
+            "WITH RECURSIVE around(parent_id, kind) AS (SELECT parent_id, kind FROM folders WHERE id = ? AND user_id = ? UNION ALL SELECT f.parent_id, f.kind FROM folders f JOIN around ON f.id = around.parent_id) SELECT 1 FROM around WHERE kind <> 'folder'",
+        );
+        $statement->execute([$folderId, $userId]);
+        return $statement->fetchColumn() !== false;
+    }
+
     /** False when the user has no such folder, or it is a special one. */
     public function rename(int $userId, int $folderId, string $name): bool
     {
@@ -74,14 +85,25 @@ final class Folders
      *
      * @throws UnknownFolder for a parent the user does not have
      * @throws FolderInsideItself for a parent that is the folder or inside it
+     * @throws MisplacedTrip for a folder with collections that would leave the special folders, or one with trips that would enter them
      */
     public function move(int $userId, int $folderId, ?int $parentId): bool
     {
         $this->db->beginTransaction();
         try {
             $this->assertOwned($userId, $parentId);
-            if ($parentId !== null && in_array($parentId, $this->withInside($userId, $folderId), true)) {
+            $inside = $this->withInside($userId, $folderId);
+            if ($inside === []) {
+                $this->db->rollBack();
+                return false;
+            }
+            if ($parentId !== null && in_array($parentId, $inside, true)) {
                 throw new FolderInsideItself();
+            }
+            $misplaced = $this->db->prepare('SELECT 1 FROM trips WHERE kind <> ? AND folder_id IN (' . Database::placeholders($inside) . ')');
+            $misplaced->execute([$this->holdsCollections($userId, $parentId) ? 'collection' : 'trip', ...$inside]);
+            if ($misplaced->fetchColumn() !== false) {
+                throw new MisplacedTrip();
             }
             $statement = $this->db->prepare("UPDATE folders SET parent_id = ? WHERE id = ? AND user_id = ? AND kind = 'folder'");
             $statement->execute([$parentId, $folderId, $userId]);

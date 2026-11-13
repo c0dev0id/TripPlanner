@@ -32,13 +32,15 @@ final class Trips
     public const KINDS = ['trip', 'collection'];
 
     /**
-     * Creates a trip, or a collection, in a folder of the user's or in none.
+     * Creates a trip in a folder of the user's or in none, or a collection in one of the folders for them.
      *
      * @throws UnknownFolder for a folder the user does not have
+     * @throws MisplacedTrip for a folder that does not hold the kind
      */
     public function create(int $userId, string $name, DateTimeImmutable $now, ?int $folderId = null, string $kind = 'trip'): TripSummary
     {
         $this->folders->assertOwned($userId, $folderId);
+        $this->assertFits($userId, $kind, $folderId);
         $statement = $this->db->prepare('INSERT INTO trips (user_id, folder_id, kind, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)');
         $statement->execute([$userId, $folderId, $kind, $name, Timestamp::of($now), Timestamp::of($now)]);
         return new TripSummary((int) $this->db->lastInsertId(), $kind, $name, $folderId, 'planned', null, 0, Timestamp::of($now));
@@ -48,13 +50,28 @@ final class Trips
      * Puts the user's trip into a folder, or into none; false when there is no such trip.
      *
      * @throws UnknownFolder for a folder the user does not have
+     * @throws MisplacedTrip for a folder that does not hold the trip's kind
      */
     public function move(int $userId, int $tripId, ?int $folderId): bool
     {
         $this->folders->assertOwned($userId, $folderId);
-        $statement = $this->db->prepare('UPDATE trips SET folder_id = ? WHERE id = ? AND user_id = ?');
-        $statement->execute([$folderId, $tripId, $userId]);
-        return $statement->rowCount() === 1;
+        $kind = $this->db->prepare('SELECT kind FROM trips WHERE id = ? AND user_id = ?');
+        $kind->execute([$tripId, $userId]);
+        $kind = $kind->fetchColumn();
+        if ($kind === false) {
+            return false;
+        }
+        $this->assertFits($userId, $kind, $folderId);
+        $this->db->prepare('UPDATE trips SET folder_id = ? WHERE id = ?')->execute([$folderId, $tripId]);
+        return true;
+    }
+
+    /** @throws MisplacedTrip for a collection outside the folders for collections, or a trip in them */
+    private function assertFits(int $userId, string $kind, ?int $folderId): void
+    {
+        if (($kind === 'collection') !== $this->folders->holdsCollections($userId, $folderId)) {
+            throw new MisplacedTrip();
+        }
     }
 
     /**

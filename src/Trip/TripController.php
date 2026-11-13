@@ -50,8 +50,8 @@ final class TripController
         }
         try {
             $trip = $this->trips->create($this->currentUser->get()->id, $name, new DateTimeImmutable(), $folderId, $kind);
-        } catch (UnknownFolder $unknown) {
-            return Json::error($response, 422, $unknown->getMessage());
+        } catch (UnknownFolder | MisplacedTrip $refused) {
+            return Json::error($response, 422, $refused->getMessage());
         }
         return Json::of($response->withStatus(201), $trip);
     }
@@ -105,8 +105,8 @@ final class TripController
         }
         try {
             $moved = $this->trips->move($this->currentUser->get()->id, (int) $args['id'], $folderId);
-        } catch (UnknownFolder $unknown) {
-            return Json::error($response, 422, $unknown->getMessage());
+        } catch (UnknownFolder | MisplacedTrip $refused) {
+            return Json::error($response, 422, $refused->getMessage());
         }
         return $moved ? $response->withStatus(204) : Json::error($response, 404, 'No such trip.');
     }

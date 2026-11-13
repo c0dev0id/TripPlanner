@@ -36,6 +36,11 @@ final class TripDocumentsTest extends TestCase
         $this->documents = new TripDocuments($this->db);
     }
 
+    private function collectionsFolder(): int
+    {
+        return (int) $this->db->query("SELECT id FROM folders WHERE kind = 'collections' AND user_id = $this->userId")->fetchColumn();
+    }
+
     private function save(array $document, int $version, ?int $tripId = null): ?int
     {
         return $this->documents->save($this->userId, $tripId ?? $this->tripId, $document, $version, $this->now);
@@ -287,7 +292,7 @@ final class TripDocumentsTest extends TestCase
 
     public function testKeepsACollectionAsOneThroughListsLoadsAndCopies(): void
     {
-        $id = $this->trips->create($this->userId, 'TET', $this->now, null, 'collection')->id;
+        $id = $this->trips->create($this->userId, 'TET', $this->now, $this->collectionsFolder(), 'collection')->id;
         self::assertSame('collection', $this->documents->load($this->userId, $id)['kind']);
         $copyId = $this->documents->copy($this->userId, $id, $this->now);
         self::assertSame(['collection', 'collection', 'trip'], array_map(fn ($t) => $t->kind, $this->trips->listFor($this->userId)));
@@ -337,7 +342,7 @@ final class TripDocumentsTest extends TestCase
 
     public function testMergesOnlyTripsOfOneKind(): void
     {
-        $collection = $this->trips->create($this->userId, 'TET', $this->now, null, 'collection')->id;
+        $collection = $this->trips->create($this->userId, 'TET', $this->now, $this->collectionsFolder(), 'collection')->id;
         try {
             $this->documents->merge($this->userId, $this->tripId, [$collection], $this->now);
             self::fail('merged a collection into a trip');
