@@ -1,7 +1,6 @@
 import { createSignal, For, Show } from 'solid-js';
 import { t } from '../i18n/t';
-import type { Recording } from '../api';
-import { lineLength } from '../geo/measure';
+import type { Recording, WaitingRecording } from '../api';
 import type { Day } from '../model/trip';
 import { copyRecordings, isCutRecording } from '../state/clipboard';
 import { clearPartSelection, clickPart, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
@@ -9,7 +8,13 @@ import { showWhole } from '../state/drawing';
 import { opened, openRecording } from '../state/recordingView';
 import {
   addRecording,
+  assignRecording,
+  closeLookup,
+  isPreviewed,
   loadedTrack,
+  lookUp,
+  lookupOf,
+  preview,
   moveRecording,
   recordingAction,
   recordingById,
@@ -23,12 +28,12 @@ import {
   showRecordings,
   trackOf,
 } from '../state/recordings';
-import { openTripId, selectDay } from '../state/trip';
+import { openTrip, openTripId, selectDay } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
-import { counted, distanceText } from '../ui/format';
+import { counted, distanceText, momentText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
-import { PlusIcon, RecordingIcon } from '../ui/icons';
+import { CloseIcon, PlusIcon, RecordingIcon, SearchIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
@@ -67,7 +72,7 @@ export function RecordingsToggle(props: { dayId: string }) {
   );
 }
 
-/** The opened day's recordings: adding one, and while they are shown, a row each with its colour on the map. */
+/** The opened day's recordings: adding one, on a trip's day looking up those that wait for it, and while they are shown, a row each with its colour on the map. */
 export function DayRecordings(props: { day: Day }) {
   const recordings = () => recordingsOf(props.day.id);
   const [renamed, setRenamed] = createSignal<Recording>();
@@ -76,6 +81,11 @@ export function DayRecordings(props: { day: Day }) {
     <>
       <div class="row heading">
         <h4 class="grow">{t('Recordings')}</h4>
+        <Show when={openTrip()?.kind === 'trip'}>
+          <IconButton label={t('Look up recordings…')} onClick={() => void recordingAction(props.day.id, () => lookUp(props.day))}>
+            <SearchIcon />
+          </IconButton>
+        </Show>
         <IconButton label={t('Add recording…')} onClick={() => addRecordingPicked(props.day.id)}>
           <PlusIcon />
         </IconButton>
@@ -93,6 +103,7 @@ export function DayRecordings(props: { day: Day }) {
         </ul>
       </Show>
       <Show when={recordingNote(props.day.id)}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
+      <Show when={lookupOf(props.day.id)}>{(looked) => <FoundRecordings dayId={props.day.id} found={looked().found} />}</Show>
       <NameDialog
         title={t('Rename recording')}
         open={renamed() !== undefined}
@@ -102,6 +113,54 @@ export function DayRecordings(props: { day: Day }) {
         onSubmit={(name) => rename(renamed()!, name)}
       />
     </>
+  );
+}
+
+/**
+ * What a day's lookup found among the recordings that wait for their day: a row each with
+ * when it began, its length and why it was found; a click shows it on the map, the plus
+ * puts it on the day.
+ */
+function FoundRecordings(props: { dayId: string; found: WaitingRecording[] | undefined }) {
+  const said = () => {
+    if (!props.found) return t('Looking through the recordings that wait for their day…');
+    if (props.found.length === 0) return t('None of the recordings that wait for their day began on this day or ran along its routes.');
+    return t('{what} may be of this day:', { what: counted(props.found.length, 'recording') });
+  };
+  const why = (waiting: WaitingRecording) => [waiting.sameDate && t('on this day'), waiting.share > 0 && t('{share} % along the routes', { share: Math.round(waiting.share * 100) })];
+  const assign = (waiting: WaitingRecording) =>
+    void recordingAction(props.dayId, async () => {
+      await assignRecording(props.dayId, waiting);
+      return t('“{name}” added as a recording.', { name: waiting.name });
+    });
+  return (
+    <div class="found-recordings">
+      <div class="row">
+        <p class="muted hint grow">{said()}</p>
+        <IconButton label={t('Close')} onClick={closeLookup}>
+          <CloseIcon />
+        </IconButton>
+      </div>
+      <ul class="recordings">
+        <For each={props.found}>
+          {(waiting) => (
+            <li class="recording" classList={{ opened: isPreviewed(waiting) }}>
+              <div class="row">
+                <button class="text grow" onClick={() => preview(waiting)}>
+                  <span class="lines grow">
+                    <span class="name">{waiting.name}</span>
+                    <span class="muted detail">{[waiting.startedAt && momentText(waiting.startedAt), distanceText(waiting.distanceM), ...why(waiting)].filter(Boolean).join(' · ')}</span>
+                  </span>
+                </button>
+                <IconButton label={t('Add to this day')} onClick={() => assign(waiting)}>
+                  <PlusIcon />
+                </IconButton>
+              </div>
+            </li>
+          )}
+        </For>
+      </ul>
+    </div>
   );
 }
 
@@ -152,16 +211,17 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
 }
 
 /**
- * A recording as a row: its colour, its name over its length; a click shows it whole on
- * the map with its figures, with Cmd, Ctrl or Shift it selects; its menu is recordingMenu.
+ * A recording as a row: its colour, its name over when it began and its length, or over
+ * why its file cannot be read; a click shows it whole on the map with its figures, with
+ * Cmd, Ctrl or Shift it selects; its menu is recordingMenu.
  */
 function RecordingItem(props: { recording: Recording; onRename: (recording: Recording) => void }) {
   const track = () => trackOf(props.recording);
   const detail = () => {
     const loaded = track();
-    if (loaded === undefined) return t('Reading…');
     if (loaded instanceof Error) return loaded.message;
-    return `${distanceText(lineLength(loaded.points))} · ${counted(loaded.points.length, 'point')}`;
+    const { startedAt, distanceM } = props.recording;
+    return `${startedAt ? momentText(startedAt) : t('no times')} · ${distanceText(distanceM)}`;
   };
   const openIt = () => {
     // Opened first, so that it is shown whole beside its cards.

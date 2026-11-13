@@ -28,17 +28,18 @@ final class TripDocuments
 
     /**
      * The outlines of the user's trips, by trip: its days in order, each by its id, name
-     * and date with how many routes and stops it holds, its length and the thinned lines
+     * and date with how many routes, stops and recordings it holds, its length and the thinned lines
      * of its routes (see Outline). Enough to list a trip's days as the open trip lists
      * its own and to draw its shape, without its document.
      *
-     * @return array<int, list<array{id: string, name: string, date: ?string, routes: int, stops: int, distanceM: int, lines: list<array{line: string, color: ?string}>}>>
+     * @return array<int, list<array{id: string, name: string, date: ?string, routes: int, stops: int, recordings: int, distanceM: int, lines: list<array{line: string, color: ?string}>}>>
      */
     public function outlines(int $userId): array
     {
         $outlines = [];
         $days = 'SELECT d.trip_id, d.id, d.name, d.date, d.outline,
-                        (SELECT COUNT(*) FROM routes WHERE day_id = d.id) AS routes, (SELECT COUNT(*) FROM stops WHERE day_id = d.id) AS stops
+                        (SELECT COUNT(*) FROM routes WHERE day_id = d.id) AS routes, (SELECT COUNT(*) FROM stops WHERE day_id = d.id) AS stops,
+                        (SELECT COUNT(*) FROM recordings WHERE day_id = d.id) AS recordings
                  FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.user_id = ? ORDER BY d.trip_id, d.position';
         foreach ($this->rows($days, $userId) as $day) {
             $outlines[(int) $day['trip_id']][] = [
@@ -47,6 +48,7 @@ final class TripDocuments
                 'date' => $day['date'],
                 'routes' => (int) $day['routes'],
                 'stops' => (int) $day['stops'],
+                'recordings' => (int) $day['recordings'],
             ] + Outline::read($day['outline']);
         }
         return $outlines;

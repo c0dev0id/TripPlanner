@@ -13,6 +13,7 @@ import { panTo, pointItems, setEditTarget, setExportScope, setShareOpen, setTrac
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
+import { recordingsOf } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
 import { isCut } from '../state/clipboard';
 import { clickPart, isPartSelected, togglePart } from '../state/partSelection';
@@ -98,7 +99,7 @@ function DayItem(props: { day: Day; index: number }) {
   // The day's routes change less often than the day.
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
-  const meta = () => dayDetail('trip', { date: props.day.date, routes: routes().length, stops: props.day.stops.length, distanceM: distance() });
+  const meta = () => dayDetail('trip', { date: props.day.date, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, distanceM: distance() });
   const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
   const click = (e: MouseEvent) => {
     if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);

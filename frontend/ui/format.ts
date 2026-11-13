@@ -54,6 +54,11 @@ export function takenAtText(local: string): string {
   return Number.isNaN(date.getTime()) ? local : TAKEN_AT.format(date);
 }
 
+const MOMENT = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+/** A moment as ISO 8601 with its zone, as the browser's local date and time of day: "13 Jun 2027, 14:30". */
+export const momentText = (iso: string): string => MOMENT.format(new Date(iso));
+
 const CLOCK = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
 
 /** A moment in milliseconds since the epoch as the browser's local time of day: "14:30:05". */

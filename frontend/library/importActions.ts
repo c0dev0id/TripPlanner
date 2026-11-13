@@ -61,10 +61,10 @@ export function libraryImports(onLeave: () => Promise<void>) {
       const files = await pickFiles({ folder: true });
       if (files.length > 0) void intoFolder(folderId, { files: [], inFolders: files.map(sourceOf) });
     },
-    /** Asks for GPX files and adds them to the trip as days, or to the collection as sections. */
+    /** Asks for GPX files and adds them to the trip as days, to the collection as sections, or to a collection among the recordings as recordings. */
     addToTrip: async (trip: TripSummary) => {
       const files = await pickFiles({ accept: '.gpx,application/gpx+xml' });
-      if (files.length > 0) void run((onProgress) => importIntoTrip(trip, files.map(sourceOf), onProgress));
+      if (files.length > 0) void run((onProgress) => importIntoTrip(trip, files.map(sourceOf), kindAround(libraryFolders() ?? [], trip.folderId) === 'recordings', onProgress));
     },
   };
 }

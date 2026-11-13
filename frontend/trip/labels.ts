@@ -27,9 +27,10 @@ export const dayLabelOf = (trip: Trip, day: Day): string => dayLabel(day, trip.d
 export const dayHeading = (kind: TripKind, index: number, name: string): string => (kind === 'collection' ? name : [t('Day {n}', { n: index + 1 }), name].filter(Boolean).join(' · '));
 
 /** What stands under a day's name: its date and its length; under a section's, what it holds and its length. */
-export function dayDetail(kind: TripKind, day: { date: string | null; routes: number; stops: number; distanceM: number }): string {
+export function dayDetail(kind: TripKind, day: { date: string | null; routes: number; stops: number; recordings: number; distanceM: number }): string {
   const length = day.distanceM > 0 && distanceText(day.distanceM);
-  const parts = kind === 'collection' ? [counted(day.routes, 'route'), day.stops > 0 && counted(day.stops, 'waypoint'), length] : [day.date ? shortDateText(day.date) : t('No date'), length];
+  const held = [(day.routes > 0 || day.recordings === 0) && counted(day.routes, 'route'), day.stops > 0 && counted(day.stops, 'waypoint'), day.recordings > 0 && counted(day.recordings, 'recording')];
+  const parts = kind === 'collection' ? [...held, length] : [day.date ? shortDateText(day.date) : t('No date'), length];
   return parts.filter(Boolean).join(' · ');
 }
 

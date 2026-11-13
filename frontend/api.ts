@@ -61,13 +61,14 @@ export interface OutlineLine {
   color: string | null;
 }
 
-/** A day as the library knows it without its trip's document: what names it, how many routes and stops it holds, its length in metres, and the lines of its routes. */
+/** A day as the library knows it without its trip's document: what names it, how many routes, stops and recordings it holds, its length in metres, and the lines of its routes. */
 export interface OutlineDay {
   id: string;
   name: string;
   date: string | null;
   routes: number;
   stops: number;
+  recordings: number;
   distanceM: number;
   lines: OutlineLine[];
 }
@@ -178,27 +179,60 @@ export const fetchPreferences = (): Promise<Preferences> => request('GET', `/api
 
 export const savePreferences = (preferences: Preferences): Promise<void> => request('PUT', `/api/preferences`, preferences);
 
-/** A ride as recorded, kept on a day; its GPX file is fetched apart. */
+/** A ride as recorded, kept on a day, with its length in metres and the time of its first point, null where its file has no times; its GPX file is fetched apart. */
 export interface Recording {
   id: number;
   dayId: string;
   name: string;
+  distanceM: number;
+  startedAt: string | null;
 }
 
 export const listRecordings = (tripId: number): Promise<Recording[]> => request('GET', `${tripApi(tripId)}/recordings`);
 
-/** Adds a recording to a day: the GPX file goes compressed with gzip, which keeps it within a server's request limits. */
-export async function addRecording(tripId: number, dayId: string, name: string, gpx: string): Promise<Recording> {
+/** The form a recording is added with: the GPX file goes compressed with gzip, which keeps it within a server's request limits. */
+async function recordingForm(dayId: string, name: string, gpx: string): Promise<FormData> {
   const form = new FormData();
   form.set('dayId', dayId);
   form.set('name', name);
   form.set('file', await new Response(new Blob([gpx]).stream().pipeThrough(new CompressionStream('gzip'))).blob(), 'recording.gpx.gz');
+  return form;
+}
+
+/** Adds a recording to a day. */
+export const addRecording = async (tripId: number, dayId: string, name: string, gpx: string): Promise<Recording> => request('POST', `${tripApi(tripId)}/recordings`, await recordingForm(dayId, name, gpx));
+
+/** Adds a recording to a day unless the user keeps its file already, on whatever day; nothing is the answer then. */
+export async function addRecordingOnce(tripId: number, dayId: string, name: string, gpx: string): Promise<Recording | undefined> {
+  const form = await recordingForm(dayId, name, gpx);
+  form.set('unlessKept', '1');
   return request('POST', `${tripApi(tripId)}/recordings`, form);
 }
 
+/**
+ * A recording that waits for its day in the folder for recordings and may be a day's: the
+ * collection it is in, its line thinned as polyline6, whether it began on the day's date,
+ * and the share of it that ran along the day's routes, or of them along it.
+ */
+export interface WaitingRecording {
+  id: number;
+  tripId: number;
+  tripName: string;
+  name: string;
+  line: string;
+  distanceM: number;
+  startedAt: string | null;
+  sameDate: boolean;
+  share: number;
+}
+
+/** The waiting recordings that may be the day's, the likeliest first; `utcOffsetMinutes` is how far the user's clock is ahead of UTC on that day. */
+export const lookUpRecordings = (tripId: number, dayId: string, utcOffsetMinutes: number): Promise<WaitingRecording[]> =>
+  request('GET', `${tripApi(tripId)}/recordings/lookup?day=${encodeURIComponent(dayId)}&offset=${utcOffsetMinutes}`);
+
 export const renameRecording = (tripId: number, id: number, name: string): Promise<void> => request('PATCH', `${tripApi(tripId)}/recordings/${id}`, { name });
 
-/** Puts a recording on another day of its trip. */
+/** Puts a recording of the trip on another day, of that trip or of another. */
 export const moveRecording = (tripId: number, id: number, dayId: string): Promise<void> => request('PATCH', `${tripApi(tripId)}/recordings/${id}`, { dayId });
 
 export const deleteRecording = (tripId: number, id: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/recordings/${id}`);

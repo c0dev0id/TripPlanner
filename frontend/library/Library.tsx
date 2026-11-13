@@ -652,9 +652,10 @@ function TripCard(props: {
   const shape = createMemo(() => outlineOf(props.trip.id)?.map((day) => day.lines).filter((lines) => lines.length > 0));
   /** How far the opening of the trip has come, while it is being opened. */
   const loading = () => (isOpening(props.trip.id) ? opening()?.progress : undefined);
+  const recordings = createMemo(() => (outlineOf(props.trip.id) ?? []).reduce((count, day) => count + day.recordings, 0));
   const meta = () =>
     (props.trip.kind === 'collection'
-      ? [props.where, t('Planning material'), counted(props.trip.dayCount, 'section')]
+      ? [props.where, recordings() > 0 ? counted(recordings(), 'recording') : t('Planning material'), counted(props.trip.dayCount, 'section')]
       : [props.where, counted(props.trip.dayCount, 'day'), props.trip.startsOn && t('from {date}', { date: dateText(props.trip.startsOn) }), props.trip.state === 'done' && t('done')]
     )
       .filter(Boolean)

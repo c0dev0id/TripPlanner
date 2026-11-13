@@ -8,7 +8,7 @@ import { colorRuns } from '../recording/lineColors';
 import { keepsView } from '../state/place';
 import { routeWidth } from '../state/preferences';
 import { opened, openedLineColors } from '../state/recordingView';
-import { loadedTrack, recordingColor, shownRecordings } from '../state/recordings';
+import { loadedTrack, previewedLines, recordingColor, shownRecordings } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
 import { failedLegs } from '../state/routing';
 import { editingRouteId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
@@ -126,9 +126,9 @@ function RecordingLines(props: { map: MapLibreMap }) {
   return null;
 }
 
-/** Draws the routes the duplicates report compares, each in its colour. */
+/** Draws the routes the duplicates report compares, each in its colour, and the recording a day's lookup shows. */
 function ComparedLines(props: { map: MapLibreMap }) {
-  createEffect(() => props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData(recordingFeatures(comparedLines())));
+  createEffect(() => props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData(recordingFeatures([...comparedLines(), ...previewedLines()])));
   return null;
 }
 
