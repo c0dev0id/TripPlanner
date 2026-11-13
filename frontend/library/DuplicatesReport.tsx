@@ -3,7 +3,7 @@ import { createEffect, createMemo, createResource, createSelector, createSignal,
 import { changeTrip, errorMessage, fetchTrip, listDuplicates, type DuplicateGroup, type DuplicateRoute } from '../api';
 import { copiedRoute, removeRoute, type CopiedRoute } from '../routing/dayEdit';
 import { copyRoutes } from '../state/clipboard';
-import { setShowingDuplicates } from '../state/library';
+import { fetchingTrip, setShowingDuplicates } from '../state/library';
 import { selectedDayId } from '../state/trip';
 import { dayLabel } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
@@ -53,7 +53,7 @@ const OWNER = 'duplicates';
  * deletes the selected ones, as Ctrl+C and Delete do. A day picked elsewhere takes the
  * pane for itself.
  */
-export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void; disabled: boolean }) {
+export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void }) {
   const [groups, { refetch }] = createResource(listDuplicates);
   const of = (kind: DuplicateGroup['kind']) => (groups() ?? []).filter((g) => g.kind === kind);
   const selection = () => selectionOf(OWNER);
@@ -68,7 +68,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   /** The day the report opened itself, which leaves it in the pane. */
   let opened: string | undefined;
   const open = (route: DuplicateRoute) => {
-    if (props.disabled) return;
+    if (fetchingTrip()) return;
     opened = route.dayId;
     props.onOpen(route.tripId, route.dayId);
   };
@@ -119,7 +119,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
     const one = chosen.length === 1 ? chosen[0] : undefined;
     const n = chosen.length;
     return [
-      ...(one ? [{ label: t('Open'), disabled: props.disabled, run: () => open(one) }] : []),
+      ...(one ? [{ label: t('Open'), disabled: fetchingTrip(), run: () => open(one) }] : []),
       { label: one ? t('Copy') : t('Copy {n} routes', { n }), run: () => void copy(chosen) },
       { label: one ? t('Delete') : t('Delete {n} routes', { n }), run: () => void remove(chosen) },
     ];

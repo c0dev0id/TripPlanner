@@ -309,7 +309,7 @@ a {
   color: var(--muted);
 }
 
-/* Neither has a highlight of its own: the row shows through under the pointer too. */
+/* Neither is highlighted under the pointer: they are handles of the row, not buttons of their own. */
 .panel button.icon:is(.grip, .pad):hover:not(:disabled) {
   background: none;
 }
@@ -482,7 +482,7 @@ a {
   overflow-wrap: anywhere;
 }
 
-/* The library's pane: its actions and search on top, then the open trip's name over the tree. */
+/* The library's pane: its switches and search on top, then the open trip's name over the tree. */
 .library-actions {
   gap: 2px;
   margin-top: 8px;
@@ -491,10 +491,6 @@ a {
 .panel .library-actions button.icon {
   padding: 6px;
   border-radius: 6px;
-}
-
-.panel .library-actions button.icon:hover:not(:disabled) {
-  background: var(--hover);
 }
 
 .explorer .search {
@@ -605,22 +601,11 @@ a {
  * The strip down the left of a row. In the tree it runs down what is open: the marked
  * row, the folders around it, its trip and the top, and the trip on the map or the day in
  * the pane while the mark is elsewhere. In a trip it marks the parts selected and the
- * route being edited. It lies over the row's buttons, so that the one under the pointer
- * does not paint it out.
+ * route being edited.
  */
 :is(.tree .card.current, .tree .card:has(.card.current), .tree .card.open, .tree:has(.card.current) > li:first-child, .picked, .route.editing) > .row,
 li.row.picked {
-  position: relative;
-}
-
-:is(.tree .card.current, .tree .card:has(.card.current), .tree .card.open, .tree:has(.card.current) > li:first-child, .picked, .route.editing) > .row::after,
-li.row.picked::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
   box-shadow: inset 3px 0 0 var(--accent);
-  pointer-events: none;
 }
 
 /* Where a day's grip would stand, in a trip that is not open: its days line up with those of the open one. */

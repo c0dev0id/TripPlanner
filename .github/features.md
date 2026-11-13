@@ -40,7 +40,7 @@
 - A library of the user's trips in folders, which may hold folders: create, open, rename,
   duplicate and delete trips, create, rename and delete folders (for a folder that holds
   anything the confirmation asks whether that moves up into its parent or is deleted with it), move a trip between folders from Move… in its menu, create a trip or a folder
-  in the folder shown. Trips and folders are dragged by their pad into a folder to move them there: onto its
+  from New in the menu of the folder it goes into. Trips and folders are dragged by their pad into a folder to move them there: onto its
   row or onto anything it holds while unfolded, the folder lighting up; anywhere else in
   the library's pane, "All trips" lights up and the drop goes to the top; selected trips go together, and a
   folder never goes into itself. Folders and trips are cards with the name over a line
@@ -200,8 +200,9 @@
   Collections (yellow). They and the folders in them hold collections and nothing else;
   every other folder and the top hold trips. The server refuses a collection made or
   moved elsewhere, a trip made or moved into them, and a folder moved across with
-  contents of the wrong kind. The library follows: with such a folder shown, the new
-  trip icon makes a collection; Move… offers only folders that take what is moved;
+  contents of the wrong kind. The library follows: New in such a folder's menu offers
+  a collection where others offer a trip; Move… offers only folders that take what is
+  moved;
   copied routes are pasted as a new collection onto these folders only; and a folder's
   card counts collections there.
 - Import by dropping GPX files, zips of exported trips and folders from the computer on

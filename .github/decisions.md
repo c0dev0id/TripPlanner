@@ -202,10 +202,8 @@ entries at the end of their section.
   reused, so an import into an existing tree adds to it; trips are always new. A trip's
   files are read before anything is created, so that a folder of unreadable files leaves
   no empty trip behind. One archive holds rides as folders of days, rides as single files
-  in plain folders, and planning material such as the Trans Euro Trail by country, so the
-  import dialog asks how the picked tree is organized, one way for the whole tree, and
-  shows what each way makes of it; a tree organized in several ways is imported folder by
-  folder.
+  in plain folders, and planning material such as the Trans Euro Trail by country; how a
+  tree is read without asking is the entry on imports further down.
 - **Duplicates are found on demand, on the server, by the routes' lines.** The report
   reads every route of the library, reduces each line to its ends, length, box and
   points spread evenly along it, and compares those. Exact copies share their points
@@ -575,7 +573,8 @@ entries at the end of their section.
   replaced whatever a row showed: the tint of the two special folders, the mark, a
   selection. As a translucent layer of the text's colour it darkens what is there in
   the light scheme and lightens it in the dark one, whatever that is, and no row needs
-  a highlight of its own.
+  a highlight of its own. A grip and a pad take none at all: they are handles of the
+  row, not buttons.
 - **A paste empties the clipboard.** A copy used to stay on it to be pasted again, which
   left the library's offer to paste standing after the paste was done, with nothing but
   another copy or cut to take it away. What is on the clipboard is now pasted once,

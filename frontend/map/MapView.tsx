@@ -24,12 +24,12 @@ import { SearchBox } from './SearchBox';
 import { StopMarkers } from './StopMarkers';
 
 /** The page's map, once it is loaded and while it stands. */
-let shownMap: MapLibreMap | undefined;
+const [shownMap, setShownMap] = createSignal<MapLibreMap>();
 
 /** Resolves once the map has drawn the routes it was last given, whatever its base map still loads; at once while there is no map. */
 export const routesDrawn = (): Promise<void> =>
   new Promise((resolve) => {
-    const map = shownMap;
+    const map = shownMap();
     if (!map) return resolve();
     const check = () => {
       if (!map.isSourceLoaded(ROUTES_SOURCE)) return;
@@ -43,13 +43,12 @@ export const routesDrawn = (): Promise<void> =>
 /** The map with the trip's routes and stops drawn over the base map, and the editing on it. */
 export function MapView() {
   let container!: HTMLDivElement;
-  const [map, setMap] = createSignal<MapLibreMap>();
 
   onMount(() => {
     // The map keeps its view in the address, as `map=`, and starts from it.
-    const m = newBaseMap(container, { hash: 'map' }, (loaded) => setMap((shownMap = loaded)), { routeWidth, overlays: true });
+    const m = newBaseMap(container, { hash: 'map' }, setShownMap, { routeWidth, overlays: true });
     onCleanup(() => {
-      shownMap = undefined;
+      setShownMap(undefined);
       m.remove();
     });
   });
@@ -57,7 +56,7 @@ export function MapView() {
   return (
     <>
       <div class="map" ref={container} />
-      <Show when={map()}>
+      <Show when={shownMap()}>
         {(m) => (
           <>
             <RouteLines map={m()} />

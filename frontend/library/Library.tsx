@@ -4,7 +4,7 @@ import { changeTrip, createFolder, createTrip, deleteFolder, deleteTrip, duplica
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
-import { heldOf, importNote, libraryFolders, libraryTrips, opening, outlineOf, query, relistFolders, relistTrips, runLibrary, showFolder, shownFolderId } from '../state/library';
+import { fetchingTrip, heldOf, importNote, isOpening, libraryFolders, libraryTrips, opening, outlineOf, query, relistFolders, relistTrips, runLibrary, showFolder, shownFolderId } from '../state/library';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
@@ -119,7 +119,6 @@ export function Library(props: {
   onOpenFolder: (id: number) => void;
   /** Leaves the open trip, saved: before the library changes it behind its back. */
   onLeave: () => Promise<void>;
-  opening: boolean;
   /** What stands under the open trip in the tree: its days, or a collection's sections. */
   children: JSX.Element;
 }) {
@@ -167,7 +166,7 @@ export function Library(props: {
   /** The keys of all a folder holds, at any depth. */
   const keysWithin = (id: number): string[] => [...childFolders(id).flatMap((f) => [keyOf({ folder: f }), ...keysWithin(f.id)]), ...childTrips(id).map((trip) => keyOf({ trip }))];
   /**
-   * A click on a folder marks it, which makes it the one new trips and pasted ones go into,
+   * A click on a folder marks it, which makes it the one that takes what is pasted with the keys,
    * and unfolds it; marked and unfolded already, it folds. A folder that folds takes all it holds with it:
    * its folders and trips fold too, and the day shown of an open trip among them closes.
    */
@@ -356,9 +355,14 @@ export function Library(props: {
     const d = dialog();
     return d?.kind === 'new' ? d : undefined;
   };
+  /** How the dialog for something new reads; a folder's while it is closed. */
+  const newTexts = () => NEW_DIALOG[newIn()?.what ?? 'folder'];
+  /** Export, which downloads the trips as a zip once the open one is saved. */
+  const exportItem = (of: readonly TripSummary[]): MenuItem => ({ label: t('Export'), disabled: of.length === 0, run: () => void flushSave().then(() => window.location.assign(tripArchiveUrl(of.map((trip) => trip.id)))) });
   /** Makes a folder, or a trip or collection, which is opened, in a folder, null for the top; the folder unfolds so that what is new is in view. */
   const createNew = (what: NewKind, into: number | null, name: string) => {
-    if (into !== null) fold([`folder:${into}`], true);
+    const parent = folders().find((f) => f.id === into);
+    if (parent) fold([keyOf({ folder: parent })], true);
     if (what === 'folder') void runLibrary(() => createFolder(name, into), relistFolders);
     else void runLibrary(async () => props.onOpen(await createTrip(name, into, what)), relistTrips);
   };
@@ -447,7 +451,7 @@ export function Library(props: {
     const within = tripsWithin(chosen);
     const nothing = () => undefined;
     const pasteEntries = paste.length > 0 ? paste : [{ label: t('Paste'), disabled: true, run: nothing }];
-    const exportEntry = { label: t('Export'), disabled: within.length === 0, run: () => void flushSave().then(() => window.location.assign(tripArchiveUrl(within.map((trip) => trip.id)))) };
+    const exportEntry = exportItem(within);
     const fresh: MenuItem[] = several
       ? []
       : 'folder' in item
@@ -487,7 +491,7 @@ export function Library(props: {
       newItem(null),
       addItem(null),
       { label: t('Paste'), disabled: !copied || !takerOf(clipItems(copied))(null), run: () => pasteLibrary(null) },
-      { label: t('Export'), disabled: trips().length === 0, run: () => void flushSave().then(() => window.location.assign(tripArchiveUrl(trips().map((trip) => trip.id)))) },
+      exportItem(trips()),
     ];
   };
 
@@ -513,7 +517,6 @@ export function Library(props: {
           <TripCard
             trip={trip()}
             onOpen={clickTrip}
-            disabled={props.opening}
             items={() => itemMenu({ trip: trip() })}
             select={select({ trip: trip() })}
             fold={{ unfolded: () => isUnfolded({ trip: trip() }), current: () => isMarkedTrip(trip()), open: () => openTripId() === trip().id }}
@@ -583,7 +586,6 @@ export function Library(props: {
                 trips={trips()}
                 onOpenFolder={props.onOpenFolder}
                 onOpenTrip={props.onOpen}
-                disabled={props.opening}
                 folderNote={(f) => [pathOf(f.parentId), heldText(heldOf(f.id), holdsCollections(f.id) ? 'collection' : 'trip')].filter(Boolean).join(' · ')}
                 tripWhere={(trip) => pathOf(trip.folderId) || t('No folder')}
                 folderItems={(f) => itemMenu({ folder: f })}
@@ -594,10 +596,10 @@ export function Library(props: {
         </Match>
       </Switch>
       <NameDialog
-        title={NEW_DIALOG[newIn()?.what ?? 'folder'].title}
+        title={newTexts().title}
         open={newIn() !== undefined}
-        placeholder={NEW_DIALOG[newIn()?.what ?? 'folder'].placeholder}
-        submit={NEW_DIALOG[newIn()?.what ?? 'folder'].submit}
+        placeholder={newTexts().placeholder}
+        submit={newTexts().submit}
         onClose={() => setDialog(undefined)}
         onSubmit={(name) => createNew(newIn()!.what, newIn()!.into, name)}
       />
@@ -638,7 +640,6 @@ export function Library(props: {
 function TripCard(props: {
   trip: TripSummary;
   onOpen: (trip: TripSummary) => void;
-  disabled: boolean;
   items: () => MenuItem[];
   where?: string;
   select?: CardSelect;
@@ -647,7 +648,7 @@ function TripCard(props: {
 }) {
   const shape = createMemo(() => outlineOf(props.trip.id)?.map((day) => day.lines).filter((lines) => lines.length > 0));
   /** How far the opening of the trip has come, while it is being opened. */
-  const loading = () => (opening()?.tripId === props.trip.id ? opening()!.progress : undefined);
+  const loading = () => (isOpening(props.trip.id) ? opening()?.progress : undefined);
   const meta = () =>
     (props.trip.kind === 'collection'
       ? [props.where, t('Planning material'), counted(props.trip.dayCount, 'section')]
@@ -667,7 +668,7 @@ function TripCard(props: {
           class="text grow"
           aria-expanded={props.fold?.unfolded()}
           onClick={(e) => (props.select && selects(e) ? props.select.onClick(e) : props.onOpen(props.trip))}
-          disabled={props.disabled}
+          disabled={fetchingTrip()}
         >
           <Show when={!loading()} fallback={<span class="spinner" />}>
             <Show when={props.trip.kind === 'collection'} fallback={<TripIcon />}>
@@ -731,7 +732,6 @@ function SearchResults(props: {
   trips: TripSummary[];
   onOpenFolder: (id: number) => void;
   onOpenTrip: (trip: TripSummary) => void;
-  disabled: boolean;
   /** What a found folder's card says: where it is and what it holds. */
   folderNote: (f: Folder) => string;
   /** Where a found trip is. */
@@ -750,7 +750,7 @@ function SearchResults(props: {
           {(f) => <FolderCard folder={f} note={props.folderNote(f)} onOpen={props.onOpenFolder} items={() => props.folderItems(f)} />}
         </For>
         <For each={listedTrips()}>
-          {(trip) => <TripCard trip={trip} onOpen={props.onOpenTrip} disabled={props.disabled} items={() => props.tripItems(trip)} where={props.tripWhere(trip)} />}
+          {(trip) => <TripCard trip={trip} onOpen={props.onOpenTrip} items={() => props.tripItems(trip)} where={props.tripWhere(trip)} />}
         </For>
       </ul>
       <Show when={total() > SEARCH_LIMIT}>

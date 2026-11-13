@@ -110,8 +110,8 @@ export interface Progress {
 export async function fetchTrip(id: number, onProgress?: (progress: Progress) => void): Promise<Trip> {
   const response = await send('GET', tripApi(id));
   if (!onProgress || !response.body) return (await response.json()) as Trip;
-  // The browser unpacks the answer as it reads it, so the length of the packed one says nothing here.
-  const total = Number(response.headers.get('X-Uncompressed-Length') ?? response.headers.get('Content-Length')) || undefined;
+  // The browser unpacks the answer as it reads it, so only the server's word for the unpacked length counts.
+  const total = Number(response.headers.get('X-Uncompressed-Length')) || undefined;
   let received = 0;
   const counted = new TransformStream<Uint8Array, Uint8Array>({
     transform(chunk, controller) {

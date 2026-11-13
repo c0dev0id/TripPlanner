@@ -1,4 +1,4 @@
-import { createMemo, createResource, createRoot, createSignal } from 'solid-js';
+import { createMemo, createResource, createRoot, createSelector, createSignal } from 'solid-js';
 import { t } from '../i18n/t';
 import { listFolders, listTrips, fetchOutlines, type OutlineDay, type Progress } from '../api';
 import { heldCounts } from '../library/folders';
@@ -6,7 +6,7 @@ import { createRequest } from '../ui/request';
 
 /** The library as the server lists it, and where the user is in it. */
 
-/** The folder asked for, null for the top: the one new trips, imports and pasted ones go into. */
+/** The folder asked for, null for the top: the one the tree marks, and that takes what is pasted with the keys or from the line that offers it. */
 const [listFolderId, setListFolderId] = createSignal<number | null>(null);
 
 /** Whether the duplicates report stands in the pane between the library and the map. */
@@ -14,6 +14,17 @@ export const [showingDuplicates, setShowingDuplicates] = createSignal(false);
 
 /** The trip being opened and how far that has come: its document on its way, or arrived and being put on the map. */
 export const [opening, setOpening] = createSignal<{ tripId: number; progress: Progress | 'arrived' }>();
+
+/** Whether the trip is the one being opened; told to that trip's row alone, however often the progress changes. */
+export const isOpening = createRoot(() => createSelector(createMemo(() => opening()?.tripId)));
+
+/** Whether a trip's document is on its way, during which no other is asked for. Once it is here the library answers again, while the map draws. */
+export const fetchingTrip = createRoot(() =>
+  createMemo(() => {
+    const o = opening();
+    return o !== undefined && o.progress !== 'arrived';
+  }),
+);
 
 /** The search typed into the library; while there is one, what it finds stands in for the tree. */
 export const [query, setQuery] = createSignal('');

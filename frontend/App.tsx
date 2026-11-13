@@ -1,5 +1,5 @@
 import { createEffect, createResource, createSignal, onCleanup, onMount, Show } from 'solid-js';
-import { errorMessage, fetchMe, fetchTrip, logout } from './api';
+import { errorMessage, fetchMe, fetchTrip, logout, type Progress } from './api';
 import { DuplicatesReport } from './library/DuplicatesReport';
 import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
@@ -11,7 +11,7 @@ import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { setPreferencesOpen } from './state/drawing';
-import { libraryFolders, opening, relistTrips, setOpening, showFolder, shownFolderId, showingDuplicates } from './state/library';
+import { libraryFolders, relistTrips, setOpening, showFolder, shownFolderId, showingDuplicates } from './state/library';
 import { foldPanel, panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, editRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
@@ -39,31 +39,28 @@ export function App() {
 
   /** Counts the trips asked for and the leavings, so that a trip that arrives after the user went elsewhere is not opened. */
   let latest = 0;
-  /** Whether a trip's document is on its way: nothing else is opened meanwhile. Once it is here the library answers again, while the map draws. */
-  const fetching = () => {
-    const o = opening();
-    return o !== undefined && o.progress !== 'arrived';
-  };
   /** Opens a trip, at the day `dayId` where one is given; a trip open before is saved first. */
   const open = async (id: number, dayId?: string) => {
     const ask = ++latest;
-    setOpening({ tripId: id, progress: { received: 0 } });
+    /** Says on the trip's row how far the opening has come, while it is still the trip asked for. */
+    const say = (progress: Progress | 'arrived') => void (ask === latest && setOpening({ tripId: id, progress }));
+    say({ received: 0 });
     setError(undefined);
     try {
       await flushSave();
-      const trip = await fetchTrip(id, (progress) => ask === latest && setOpening({ tripId: id, progress }));
-      if (ask !== latest) return;
-      // Putting a large trip on the map keeps the browser busy: its row says so first, which takes a frame, and until the map has drawn it.
-      setOpening({ tripId: id, progress: 'arrived' });
-      await new Promise((painted) => requestAnimationFrame(() => setTimeout(painted)));
+      const trip = await fetchTrip(id, say);
+      // Putting a large trip on the map keeps the browser busy: its row says so first, which takes a frame where the page is in view.
+      say('arrived');
+      if (!document.hidden) await new Promise((painted) => requestAnimationFrame(() => setTimeout(painted)));
       if (ask !== latest) return;
       loadTrip(trip, dayId);
       resetSaveState();
-      await routesDrawn();
+      // The trip is open; its row keeps saying that it opens until the map has drawn the routes.
+      void routesDrawn().then(() => ask === latest && setOpening(undefined));
     } catch (e) {
-      if (ask === latest) setError(errorMessage(e));
-    } finally {
-      if (ask === latest) setOpening(undefined);
+      if (ask !== latest) return;
+      setError(errorMessage(e));
+      setOpening(undefined);
     }
   };
   /** Loads the open trip again from the server, after it was changed elsewhere. */
@@ -129,10 +126,10 @@ export function App() {
         <Show when={panelFolded() && openTrip()}>
           <DayStrip />
         </Show>
-        <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} opening={fetching()} error={error()} />
+        <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} error={error()} />
       </aside>
       <Show when={showingDuplicates()} fallback={<DayPane />}>
-        <DuplicatesReport onOpen={(id, dayId) => void open(id, dayId)} disabled={fetching()} />
+        <DuplicatesReport onOpen={(id, dayId) => void open(id, dayId)} />
       </Show>
       <div class="map-wrap">
         <PanelResizer />
