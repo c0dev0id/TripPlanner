@@ -131,22 +131,23 @@ export function standingAlone(day: Day, sequence: readonly SequenceEntry[]): Sto
 }
 
 /**
- * The trip with each day's stops sorted into riding order: how the document is stored, so
- * that the server and the read-only page need no routing. A sort of the day's own list,
- * so that no stop can go missing whatever the sequence lists.
+ * The day with its stops sorted into riding order: how the document is stored, so that
+ * the server and the read-only page need no routing. A sort of the day's own list, so
+ * that no stop can go missing whatever the sequence lists.
  */
-export function withStopsInRidingOrder(trip: Trip): Trip {
-  const days = trip.days.map((day) => {
-    let sorted = sortedDays.get(day);
-    if (!sorted) {
-      const rank = new Map(daySequence(day).map((e, i) => [e.id, i]));
-      sorted = { ...day, stops: [...day.stops].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity)) };
-      sortedDays.set(day, sorted);
-    }
-    return sorted;
-  });
-  return { ...trip, days };
+export function stopsInRidingOrder(day: Day): Day {
+  if (day.stops.length < 2) return day;
+  let sorted = sortedDays.get(day);
+  if (!sorted) {
+    const rank = new Map(daySequence(day).map((e, i) => [e.id, i]));
+    sorted = { ...day, stops: [...day.stops].sort((a, b) => (rank.get(a.id) ?? Infinity) - (rank.get(b.id) ?? Infinity)) };
+    sortedDays.set(day, sorted);
+  }
+  return sorted;
 }
+
+/** The trip with each day's stops in riding order. */
+export const withStopsInRidingOrder = (trip: Trip): Trip => ({ ...trip, days: trip.days.map(stopsInRidingOrder) });
 
 /** Days in riding order by the day they were sorted from: days are never changed in place, so a day an edit left alone is sorted once. */
 const sortedDays = new WeakMap<Day, Day>();

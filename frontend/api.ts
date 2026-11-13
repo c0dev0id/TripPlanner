@@ -4,7 +4,7 @@ import { daysToSend } from './model/delta';
 import type { Entry, EntryTarget } from './model/journal';
 import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Trip, TripKind, TripSummary } from './model/trip';
-import { withStopsInRidingOrder } from './routing/sequence';
+import { stopsInRidingOrder } from './routing/sequence';
 
 /** Requests to the JSON API, and the one form the app posts: sign out. */
 
@@ -201,9 +201,8 @@ export const sharedPageUrl = (token: string): string => `${location.origin}/t/${
  * untouched since go as their ids alone.
  */
 export async function saveTrip(trip: Trip, saved?: Trip, keepalive = false): Promise<number> {
-  const ordered = withStopsInRidingOrder(trip);
-  const days = daysToSend(trip.days, saved, (_, index) => ordered.days[index]!);
-  const { version } = await request<{ version: number }>('PUT', `/api/trips/${trip.id}`, { ...ordered, days }, keepalive);
+  const days = daysToSend(trip.days, saved, stopsInRidingOrder);
+  const { version } = await request<{ version: number }>('PUT', `/api/trips/${trip.id}`, { ...trip, days }, keepalive);
   return version;
 }
 
