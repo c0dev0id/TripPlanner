@@ -407,9 +407,15 @@ entries at the end of their section.
   them through the control's inner workings, the tools stand above them while they are
   spread out.
 - **Small and touch screens by stylesheet rules, with two exceptions.** Between 721 and
-  1023 px, a tablet held upright, the panel takes at most 42 % of the width; on a touch
+  1199 px, a tablet either way up, the panel takes at most 42 % of the width and the
+  day's pane takes the library's place: three panes at 1024 px left the map 324 px, of
+  which an opened recording's cards covered half. The day's heading there stands in two
+  lines, as on a phone, since the steps and the buttons at a finger's size left its
+  name 30 px in one. On a touch
   screen every field's text is 16 px, below which Safari zooms into the page on focus
-  and stays there, and an icon button is at least 36 px; heights that follow the screen
+  and stays there, and an icon button is at least 36 px; a grip or a pad is drawn as
+  narrow as before, since the row's name needs the room, and is hit in an area that
+  reaches a finger's width around it; heights that follow the screen
   use `dvh`, which leaves out what the browser's own bars cover. What the stylesheet
   cannot do is in `state/panel.ts`: a phone folds the library away when a day is
   picked or the duplicates report asked for, and the sheet has a height the user sets

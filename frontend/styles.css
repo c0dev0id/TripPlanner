@@ -139,14 +139,28 @@ body {
   transform: rotate(180deg);
 }
 
-/* A day's name between its steps: a line of its own on a phone, part of the heading's row elsewhere. */
+/* A day's name between its steps: a line of its own where the list of days is not beside it, part of the heading's row elsewhere. */
 .day-title {
   display: contents;
 }
 
-@media (max-width: 1023px) {
+/* Without the list of days beside it, the heading has the steps and stands in two lines: the name between the steps, the buttons under it, which would leave the name no room beside them. */
+@media (max-width: 1199px) {
   .day-step {
     display: contents;
+  }
+
+  .side-pane-header {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .day-title {
+    display: flex;
+    flex: 1 0 100%;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
   }
 }
 
@@ -1541,11 +1555,11 @@ fieldset.symbols {
 }
 
 /*
- * A narrow screen that still has a pane beside the map, such as a tablet held upright: the
- * map keeps the larger part, and without room for three panes the day's pane takes the
- * library's place while a day is picked.
+ * A screen that has room for a pane beside the map but not for two, such as a tablet
+ * either way up: the map keeps the larger part, and the day's pane takes the library's
+ * place while a day is picked.
  */
-@media (min-width: 721px) and (max-width: 1023px) {
+@media (min-width: 721px) and (max-width: 1199px) {
   #root:has(> .side-pane) > .library-panel,
   .side-pane > .panel-resizer {
     display: none;
@@ -1575,6 +1589,17 @@ fieldset.symbols {
   .panel button.icon:not(.grip, .pad) {
     min-width: 36px;
     min-height: 36px;
+  }
+
+  /* A grip or a pad stays as narrow as it is drawn, so that the row keeps its room, and is hit a finger's width around it. */
+  .panel button.icon:is(.grip, .pad) {
+    position: relative;
+  }
+
+  .panel button.icon:is(.grip, .pad)::after {
+    content: '';
+    position: absolute;
+    inset: -7px -8px;
   }
 }
 
@@ -1697,20 +1722,10 @@ fieldset.symbols {
     background: var(--line);
   }
 
-  /* The heading in two lines where its buttons leave a day's name no room: the name between the steps, the buttons under it. */
+  /* The heading stands under the sheet's handle. */
   .side-pane-header {
     top: 18px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
     padding-top: 2px;
-  }
-
-  .day-title {
-    display: flex;
-    flex: 1 0 100%;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
   }
 
   .maplibregl-ctrl-top-right {

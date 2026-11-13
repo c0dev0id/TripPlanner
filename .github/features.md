@@ -150,9 +150,9 @@
   open trip's days in reach: a numbered button each, in the colour its routes have
   where each day has one, the day shown ringed; a click shows the day, or the whole
   trip again where that day is shown. On a screen without
-  room for three panes the day's pane takes the library's place while a day is picked,
+  room for three panes, narrower than 1200 px, the day's pane takes the library's place while a day is picked,
   and its close button gives the library back; its heading then steps to the day before
-  and after. On a phone the map is the page: the day picked is a sheet under it, pulled
+  and after, the day's name between the steps and the buttons under it. On a phone the map is the page: the day picked is a sheet under it, pulled
   up to nearly the whole screen or down to its heading by its top edge, and folded down
   by itself while a route is edited; the library lies over everything and folds away,
   when a day is picked in it, to its button over the map, beside the open trip's name
