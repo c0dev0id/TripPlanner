@@ -233,10 +233,20 @@ entries at the end of their section.
   what would be refused. The import dialog lost planning material as a way to organize
   a tree: among collections a picked folder is imported as a dropped one is, elsewhere
   it can only make trips.
-- **A drop is imported without a dialog; the folder says how.** The import dialog asks
-  how a tree is organized because a picked folder goes into whatever folder is shown.
-  A drop names its folder, and the three kinds of folder each have one sensible
-  reading, so nothing is asked. A recording's year is read from its first track point
+- **What is new or imported is asked for where it goes.** The toolbar's icons for a new
+  trip, a new folder and the two imports acted on "the folder shown", which the user
+  had to set first and could not see in the icon. New and Add are now in the menu of
+  the folder or trip they go into, "All trips" included, and the toolbar keeps only
+  its two switches. New lists what the row can hold, so a collection, which holds
+  nothing that is made empty, has none.
+- **An import is never asked how it is organized; the folder and the tree say.** The
+  dialog offered a trip per folder or a trip per file for the whole tree. One rule
+  now reads every folder by itself: a folder of GPX files alone is a trip with a day
+  per file, and a folder that also holds folders of them is a folder of trips, its own
+  files a trip each. A folder of one trip and a folder of many are told apart that
+  way, which the two modes could only do for the tree as a whole. A browser's file
+  dialog picks files or a folder, never both, hence two entries under Add. The three
+  kinds of folder each have one sensible reading of what is put into them. A recording's year is read from its first track point
   rather than from the file's metadata, which carries the time the file was written,
   often by an export long after the ride.
 - **Planning material is a trip of another kind, not a store of its own.** A collection

@@ -2,10 +2,10 @@ import { t } from '../i18n/t';
 import { changeTrip, createTrip, errorMessage, listTrips } from '../api';
 import { parseGpx, type GpxContent } from '../gpx/gpx';
 import { gpxToDayParts, type DayParts } from '../gpx/import';
-import { asName, newId, type FolderKind } from '../model/trip';
+import { asName, newId, type FolderKind, type TripSummary } from '../model/trip';
 import { counted } from '../ui/format';
 import type { Dropped } from './fileDrop';
-import { dateIn, importFolder, isGpxPath, planFolderImport, withImportedDay, type ImportMode, type ImportSource } from './folderImport';
+import { dateIn, importFolder, isGpxPath, planFolderImport, readPlannedDays, withImportedDay, type ImportMode, type ImportSource } from './folderImport';
 import { archiveFolders, inFolders } from './tripArchive';
 
 /** The year a recording was made in: from its first track point's time, else from a date in the file's name, else from when the file was last changed. */
@@ -63,12 +63,29 @@ function importTree(loose: readonly ImportSource[], inDropped: readonly ImportSo
 }
 
 /**
- * Imports what was dropped on the folder `folderId`, null for the top, as the kind of the
- * top folder around it says. Among recordings, every GPX file becomes a section of the
- * collection of the year it was recorded in. Among collections, files become sections of
- * the collection “Imported” and a folder of files a collection, in the folders above it.
- * Anywhere else a file becomes a trip and a folder of files a trip of its own. The
- * answer says what was made and what could not be read or saved.
+ * Adds GPX files to a trip at its end: to a collection a section per file, to a trip the
+ * days a folder of the files would make. The answer says what was added and what could
+ * not be read.
+ */
+export async function importIntoTrip(trip: TripSummary, files: readonly ImportSource[], onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
+  const errors: string[] = [];
+  const collection = trip.kind === 'collection';
+  onProgress(t('Importing {i} of {n}: {name}', { i: 1, n: 1, name: trip.name }));
+  const [planned] = planFolderImport(files.map((file) => file.path), collection ? 'planning-material' : 'trip-per-folder');
+  const days = await readPlannedDays(files, planned?.days ?? [], errors);
+  if (days.length === 0) return { text: t('No GPX files and no exported trips in there.'), errors };
+  await changeTrip(trip.id, (loaded) => days.reduce((to, { day, parts }) => withImportedDay(to, day, parts), loaded));
+  return { text: t('{trips} imported.', { trips: counted(days.length, collection ? 'section' : 'day') }), errors };
+}
+
+/**
+ * Imports what was dropped on the folder `folderId`, null for the top, or picked for it,
+ * as the kind of the top folder around it says. Among recordings, every GPX file becomes
+ * a section of the collection of the year it was recorded in. Among collections, files
+ * become sections of the collection “Imported” and a folder of files a collection, in the
+ * folders above it. Anywhere else a file becomes a trip, a folder of files a trip of its
+ * own, and a folder that also holds folders a folder of trips. The answer says what was
+ * made and what could not be read or saved.
  */
 export async function importDropped(dropped: Dropped, folderId: number | null, kind: FolderKind, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
   const made: string[] = [];

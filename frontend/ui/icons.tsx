@@ -246,32 +246,6 @@ export const HomeIcon = () => (
   </Icon>
 );
 
-export const MapPlusIcon = () => (
-  <Icon>
-    <path d="M12 19l-3 -2l-6 3v-13l6 -3l6 3l6 -3v7.5" />
-    <path d="M9 4v13" />
-    <path d="M15 7v5" />
-    <path d="M16 19h6" />
-    <path d="M19 16v6" />
-  </Icon>
-);
-
-export const FolderPlusIcon = () => (
-  <Icon>
-    <path d="M12 19h-7a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v3.5" />
-    <path d="M16 19h6" />
-    <path d="M19 16v6" />
-  </Icon>
-);
-
-export const FolderImportIcon = () => (
-  <Icon>
-    <path d="M12 19h-7a2 2 0 0 1 -2 -2v-11a2 2 0 0 1 2 -2h4l3 3h7a2 2 0 0 1 2 2v3.5" />
-    <path d="M19 16v6" />
-    <path d="M22 19l-3 3l-3 -3" />
-  </Icon>
-);
-
 export const FileImportIcon = () => (
   <Icon>
     <path d="M14 3v4a1 1 0 0 0 1 1h4" />

@@ -1,6 +1,6 @@
 import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
-import { changeTrip, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
+import { changeTrip, createFolder, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
@@ -24,6 +24,7 @@ import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
 import { Pad } from '../ui/Pad';
 import { dragToFolder } from './dragToFolder';
+import { libraryImports } from './importActions';
 import { TripShape } from './TripShape';
 
 /** A folder or a trip of the library, as what is selected, cut, moved and deleted together. */
@@ -95,8 +96,18 @@ function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void })
 /** At most this many search results are listed. */
 const SEARCH_LIMIT = 20;
 
-/** The dialog the library has open: a new name for a folder or a trip. */
-type LibraryDialog = { kind: 'rename-folder'; folder: Folder } | { kind: 'rename-trip'; trip: TripSummary };
+/** What a folder's menu makes new in it. */
+type NewKind = 'folder' | 'trip' | 'collection';
+
+/** How the dialog that names a new folder, trip or collection reads. */
+const NEW_DIALOG: Record<NewKind, { title: string; placeholder: string; submit: string }> = {
+  folder: { title: t('New folder'), placeholder: t('Name of the folder'), submit: t('Create') },
+  trip: { title: t('New trip'), placeholder: t('Name of the trip'), submit: t('Start') },
+  collection: { title: t('New collection'), placeholder: t('Name of the collection'), submit: t('Start') },
+};
+
+/** The dialog the library has open: a new name for a folder or a trip, or the name of a new one in a folder, null for the top. */
+type LibraryDialog = { kind: 'rename-folder'; folder: Folder } | { kind: 'rename-trip'; trip: TripSummary } | { kind: 'new'; what: NewKind; into: number | null };
 
 /**
  * The library as a tree: folders and trips unfolding in place, the open trip's days among
@@ -113,6 +124,7 @@ export function Library(props: {
   children: JSX.Element;
 }) {
   const [dialog, setDialog] = createSignal<LibraryDialog>();
+  const imports = libraryImports(props.onLeave);
   const folders = () => libraryFolders() ?? [];
   const trips = () => libraryTrips() ?? [];
   const pathOf = (id: number | null) => folderPath(folders(), id);
@@ -340,6 +352,35 @@ export function Library(props: {
     const d = dialog();
     return d?.kind === 'rename-trip' ? d.trip : undefined;
   };
+  const newIn = () => {
+    const d = dialog();
+    return d?.kind === 'new' ? d : undefined;
+  };
+  /** Makes a folder, or a trip or collection, which is opened, in a folder, null for the top; the folder unfolds so that what is new is in view. */
+  const createNew = (what: NewKind, into: number | null, name: string) => {
+    if (into !== null) fold([`folder:${into}`], true);
+    if (what === 'folder') void runLibrary(() => createFolder(name, into), relistFolders);
+    else void runLibrary(async () => props.onOpen(await createTrip(name, into, what)), relistTrips);
+  };
+  /** New, with what the folder, null for the top, takes as its submenu: a folder, and a trip or, where it holds collections, a collection. */
+  const newItem = (into: number | null): MenuItem => {
+    const what = holdsCollections(into) ? 'collection' : 'trip';
+    return {
+      label: t('New'),
+      items: [
+        { label: t('Folder…'), run: () => setDialog({ kind: 'new', what: 'folder', into }) },
+        { label: t(what === 'trip' ? 'Trip…' : 'Collection…'), run: () => setDialog({ kind: 'new', what, into }) },
+      ],
+    };
+  };
+  /** Add, with what is picked from the computer and imported into the folder, null for the top, as its submenu. */
+  const addItem = (into: number | null): MenuItem => ({
+    label: t('Add'),
+    items: [
+      { label: t('Files…'), run: () => void imports.addFiles(into) },
+      { label: t('Folder…'), run: () => void imports.addFolder(into) },
+    ],
+  });
   /** Pastes copied routes into the trip where an import would put them, and saves it. */
   const pasteInto = (tripId: number, routes: CopiedRoute[]) => changeTrip(tripId, (trip) => pasteIntoTrip(trip, routes, newId));
   /** A new collection in the folder for pasted routes, named after the first; its id. */
@@ -387,9 +428,12 @@ export function Library(props: {
   const addDayTo = (trip: TripSummary) => (trip.id === openTripId() ? addDay() : void runLibrary(() => changeTrip(trip.id, (loaded) => withDayAdded(loaded, newId())), relistTrips));
 
   /**
-   * The menu of a folder or a trip, the same for both: rename, duplicate, cut, copy, paste
-   * into it, move, merge, a trip's new day, export, delete. Opened on a card of the selection it acts on all
-   * of it; what does not apply to what is selected is greyed out.
+   * The menu of a folder or a trip, the same for both: what is new in it and what is added
+   * to it from the computer, rename, duplicate, cut, copy, paste into it, move, merge,
+   * export, delete. New in a folder is a folder, a trip or a collection, in a trip a day;
+   * added to a folder are files or a folder, to a trip or a collection files. Opened on a
+   * card of the selection it acts on all of it; what does not apply to what is selected is
+   * greyed out, and new and add are left out.
    */
   const itemMenu = (item: Item): MenuItem[] => {
     const selection = menuSelection(selected(), keyOf(item));
@@ -404,10 +448,19 @@ export function Library(props: {
     const nothing = () => undefined;
     const pasteEntries = paste.length > 0 ? paste : [{ label: t('Paste'), disabled: true, run: nothing }];
     const exportEntry = { label: t('Export'), disabled: within.length === 0, run: () => void flushSave().then(() => window.location.assign(tripArchiveUrl(within.map((trip) => trip.id)))) };
-    // A special folder stays as it is: it only takes what is pasted and exports what it holds.
-    if ('folder' in item && item.folder.kind !== 'folder') return [...pasteEntries, exportEntry];
+    const fresh: MenuItem[] = several
+      ? []
+      : 'folder' in item
+        ? [newItem(item.folder.id), addItem(item.folder.id)]
+        : [
+            ...(item.trip.kind === 'trip' ? [{ label: t('New'), items: [{ label: t('Day'), run: () => addDayTo(item.trip) }] }] : []),
+            { label: t('Add'), items: [{ label: t('Files…'), run: () => void imports.addToTrip(item.trip) }] },
+          ];
+    // A special folder stays as it is: it takes what is new, added and pasted, and exports what it holds.
+    if ('folder' in item && item.folder.kind !== 'folder') return [...fresh, ...pasteEntries, exportEntry];
     return [
       ...(several ? [{ label: t('{what} selected', { what: countText(chosen) }), disabled: true, run: nothing }] : []),
+      ...fresh,
       // The open trip is renamed as it is edited; the others on the server.
       { label: t('Rename…'), disabled: several, run: () => ('folder' in item ? setDialog({ kind: 'rename-folder', folder: item.folder }) : item.trip.id === openTripId() ? setEditTarget({ kind: 'trip' }) : setDialog({ kind: 'rename-trip', trip: item.trip })) },
       { label: t('Duplicate'), disabled: !onlyTrips, run: () => void flushSave().then(() => runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist)) },
@@ -422,9 +475,19 @@ export function Library(props: {
               : { label: t('Trips and planning material do not merge'), disabled: true, run: nothing },
           ]
         : []),
-      ...(!several && 'trip' in item && item.trip.kind === 'trip' ? [{ label: t('Add day'), run: () => addDayTo(item.trip) }] : []),
       exportEntry,
       { label: t('Delete'), run: () => void remove(chosen) },
+    ];
+  };
+
+  /** The menu of the top of the library: what is new there and added to it, what is pasted, and the export of every trip. */
+  const topMenu = (): MenuItem[] => {
+    const copied = libraryClip();
+    return [
+      newItem(null),
+      addItem(null),
+      { label: t('Paste'), disabled: !copied || !takerOf(clipItems(copied))(null), run: () => pasteLibrary(null) },
+      { label: t('Export'), disabled: trips().length === 0, run: () => void flushSave().then(() => window.location.assign(tripArchiveUrl(trips().map((trip) => trip.id)))) },
     ];
   };
 
@@ -491,7 +554,7 @@ export function Library(props: {
                 </Show>
                 <ul class="tree">
                   <li class="card" classList={{ current: isMarkedFolder(null) }}>
-                    <div class="row">
+                    <div class="row" ref={(el) => cardMenu(el, topMenu)}>
                       <button class="text grow" onClick={() => markFolderShown(null)}>
                         <HomeIcon />
                         <span class="lines">
@@ -502,12 +565,13 @@ export function Library(props: {
                       <IconButton label={t('Fold all folders and trips away')} disabled={unfolded().size === 0} onClick={foldAll}>
                         <FoldIcon />
                       </IconButton>
+                      <MenuButton of={ALL_TRIPS} items={topMenu} />
                     </div>
                   </li>
                   <Branch parent={null} />
                 </ul>
                 <Show when={trips().length === 0 && folders().every((f) => f.kind !== 'folder')}>
-                  <p class="muted">{t('No trips yet. Start one with the new trip icon above.')}</p>
+                  <p class="muted">{t('No trips yet. Start one from the menu of “All trips”, or drop GPX files on it.')}</p>
                 </Show>
               </>
             }
@@ -529,6 +593,14 @@ export function Library(props: {
           </Show>
         </Match>
       </Switch>
+      <NameDialog
+        title={NEW_DIALOG[newIn()?.what ?? 'folder'].title}
+        open={newIn() !== undefined}
+        placeholder={NEW_DIALOG[newIn()?.what ?? 'folder'].placeholder}
+        submit={NEW_DIALOG[newIn()?.what ?? 'folder'].submit}
+        onClose={() => setDialog(undefined)}
+        onSubmit={(name) => createNew(newIn()!.what, newIn()!.into, name)}
+      />
       <NameDialog
         title={t('Rename folder')}
         open={renamedFolder() !== undefined}

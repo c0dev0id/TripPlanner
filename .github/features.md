@@ -32,8 +32,8 @@
   says so. The button on "All trips" folds every
   folder and trip away.
   The open trip stays in the tree, the others around it, so that another trip is one
-  click away. Above the tree stand the library's actions as icons (new trip, new
-  folder, import a folder, import a zip of exported trips, duplicates), the search, and
+  click away. Above the tree stand the library's two switches as icons (the duplicates
+  report, the places on the map), the search, and
   the open trip's name with its own icons (edit, export, journal, print and share,
   whether it is saved, and a button that closes the trip, saved, and leaves the map
   empty).
@@ -49,10 +49,15 @@
   has on the map; right-click or a long press on a card opens its menu. A search by name
   across trips and folders, listing at most twenty results; a trip opened from it stands
   in its own folder.
-- Folders and trips answer to one menu: Rename, Duplicate, Cut, Copy, Paste, Move…,
-  Merge, Export, Delete; what does not apply is greyed out. A trip's menu also adds a
-  day at its end, whether the trip is open or not: in the open one as an edit that can
-  be undone and that shows the day. Several are selected
+- Folders and trips answer to one menu: New, Add, Rename, Duplicate, Cut, Copy, Paste,
+  Move…, Merge, Export, Delete; what does not apply is greyed out. New makes what the
+  row can hold, named in a dialog: in a folder a folder or a trip, a collection where
+  the folder holds those; in a trip a day at its end, whether the trip is open or not,
+  in the open one as an edit that can be undone and that shows the day; a collection
+  has no New. Add takes files from the computer: into a folder GPX files, zips of
+  exported trips or a whole folder, imported as if dropped there; into a trip GPX files
+  as days, into a collection as sections. “All trips” has a menu too, with New and Add
+  for the top, Paste, and Export for every trip there is. Several are selected
   together, folders and trips alike: a tap or click on a card's pad (drawn as a drag
   grip), Cmd or Ctrl with a click, Shift with a click for a run (a plain click or tap
   still opens). The menu then acts on all of them, and a press on a pad drags them all
@@ -179,16 +184,14 @@
   each of its points. Its menu condenses it (Douglas–Peucker at a distance chosen from a
   few, each with the count of points it leaves) or makes a route of it: fewer points,
   every leg routed, with the time the routing will take.
-- Import of a folder tree from disk into the open folder of the library, its folders
-  recreated (existing ones reused by name), organized one of two ways, chosen in the
-  import dialog with what each makes of the tree. A trip per folder: each folder holding
-  GPX files becomes a trip named after it without its date; a date in a file's name
-  (YYYY-MM-DD, YYYY_MM_DD, or YYYYMMDD at its start) puts it on that day, several files
-  of a date on one day; other files are a day each, dated on from a date in the trip
-  folder's name, or undated. A trip per file: each GPX file becomes a trip of one day,
-  named and dated by the file, in its folder. Files that are no GPX are reported and
-  left out. With Recordings, Collections or a folder in them shown there is no dialog:
-  the picked folder is imported as one dropped there is (see below).
+- Import of a folder tree from disk into a folder of the library, its folders recreated
+  (existing ones reused by name), without a dialog. A folder that holds GPX files alone
+  becomes a trip named after it without its date; a date in a file's name (YYYY-MM-DD,
+  YYYY_MM_DD, or YYYYMMDD at its start) puts it on that day, several files of a date
+  on one day; other files are a day each, dated on from a date in the trip folder's
+  name, or undated. A folder that also holds folders of GPX files is a folder of
+  trips: each of its own files becomes a trip of one day, named and dated by the file.
+  Files that are no GPX are reported and left out.
 - Opening a trip says how far it has come on the trip's row: a ring turns where its
   icon stands, and under its name stands how much of its document has arrived of how
   much ("Loading 2.3 of 4.1 MB"), then "Opening…" until the map has drawn its routes.
@@ -201,16 +204,16 @@
   trip icon makes a collection; Move… offers only folders that take what is moved;
   copied routes are pasted as a new collection onto these folders only; and a folder's
   card counts collections there.
-- Import by dropping GPX files and folders from the computer on a folder of the tree,
-  without a dialog; what they become follows from the folder. On Recordings or a folder
+- Import by dropping GPX files, zips of exported trips and folders from the computer on
+  a folder of the tree, or by Add in its menu; what they become follows from the folder. On Recordings or a folder
   in it, every GPX file becomes a section of the collection named after the year it was
   recorded in (its first track point's time, else a date in its name, else the file's
   own date), one collection per year, made where it is missing. On Collections or a
   folder in it, files become sections of the collection “Imported” and a dropped folder
   is imported as planning material: a collection per folder of files, its folders
   recreated. On any other folder or the top, a file becomes a trip and a dropped folder
-  is imported as a trip per folder. Exported trips in dropped folders come back as they
-  were.
+  is imported as the folder tree above says. Exported trips in dropped folders and in
+  zips come back as they were.
 - A duplicates report, switched on by its icon among the library's actions, in the pane
   between the library and the map: the routes kept more than once across all trips
   and collections, grouped as exact copies (the same points or the same line, whatever
@@ -241,7 +244,7 @@
   several selected trips, downloads a zip with a folder per trip. In it stand `trip.json`
   (the trip as the planner holds it, its journal and its recordings), the journal's
   files, the recordings as GPX, and one GPX file per day for other programs. The zip, or
-  the folder it unpacks to, is imported again from the library's icons: each trip comes
+  the folder it unpacks to, is imported again by Add or by dropping it: each trip comes
   back as a new one with its days, routes, stops, journal and recordings, an entry at
   the time it was written. GPX files beside exported trips are imported as before.
 

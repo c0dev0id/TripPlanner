@@ -1,7 +1,7 @@
 import { Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { PlacesList } from '../map/PlacesList';
-import { libraryProblem, query, setQuery, showFolder, shownFolderId } from '../state/library';
+import { libraryProblem, query, setQuery, showFolder } from '../state/library';
 import { openTrip } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
 import { SaveState } from '../trip/SaveStatus';
@@ -15,7 +15,7 @@ import { LibraryActions } from './LibraryActions';
 const EXPLORER = t('Trip Explorer');
 
 /**
- * The library's pane: its actions and search, the open trip's name with the trip's own
+ * The library's pane: its switches and search, the open trip's name with the trip's own
  * actions, and the tree of folders and trips, the open trip's days among them.
  */
 export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; onLeave: () => Promise<void>; opening: boolean; error: string | undefined }) {
@@ -28,7 +28,7 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
   const openFolder = (id: number) => void props.onLeave().then(() => showFolder(id));
   return (
     <section class="explorer">
-      <LibraryActions onOpen={(id) => openIn(id, shownFolderId())} onLeave={props.onLeave} opening={props.opening} />
+      <LibraryActions />
       <PlacesList />
       <input class="search" type="search" placeholder={t('Search trips and folders')} aria-label={t('Search trips and folders')} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
       <div class="row explorer-heading">
