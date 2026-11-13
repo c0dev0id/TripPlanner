@@ -575,14 +575,25 @@ a {
 }
 
 /*
- * The strip runs down what is open: the marked row, the folders around it, its trip and
- * the top, and the trip on the map or the day in the pane while the mark is elsewhere.
+ * The strip down the left of a row. In the tree it runs down what is open: the marked
+ * row, the folders around it, its trip and the top, and the trip on the map or the day in
+ * the pane while the mark is elsewhere. In a trip it marks the parts selected and the
+ * route being edited. It lies over the row's buttons, so that the one under the pointer
+ * does not paint it out.
  */
-.tree .card.current > .row,
-.tree .card:has(.card.current) > .row,
-.tree .card.open > .row,
-.tree:has(.card.current) > li:first-child > .row {
+:is(.tree .card.current, .tree .card:has(.card.current), .tree .card.open, .tree:has(.card.current) > li:first-child, .picked, .route.editing) > .row,
+li.row.picked {
+  position: relative;
+}
+
+:is(.tree .card.current, .tree .card:has(.card.current), .tree .card.open, .tree:has(.card.current) > li:first-child, .picked, .route.editing) > .row::after,
+li.row.picked::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   box-shadow: inset 3px 0 0 var(--accent);
+  pointer-events: none;
 }
 
 /* Where a day's grip would stand, in a trip that is not open: its days line up with those of the open one. */
@@ -615,7 +626,6 @@ a {
 .picked > .row,
 li.row.picked {
   background: var(--active);
-  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .cut > .row,
@@ -661,7 +671,6 @@ li.row.cut {
 /* The selected route: its row marked, its stops and points listed under it. */
 .route.editing > .row {
   background: var(--active);
-  box-shadow: inset 3px 0 0 var(--accent);
   border-radius: 4px;
 }
 
