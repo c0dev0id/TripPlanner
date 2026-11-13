@@ -309,6 +309,11 @@ a {
   color: var(--muted);
 }
 
+/* Neither has a highlight of its own: the row shows through under the pointer too. */
+.panel button.icon:is(.grip, .pad):hover:not(:disabled) {
+  background: none;
+}
+
 /* The trip being opened waits like the others, but is the one worked on: it is not dimmed. */
 .tree .card.opening > .row button:disabled {
   opacity: 1;
