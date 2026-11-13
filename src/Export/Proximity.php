@@ -57,6 +57,17 @@ final class Proximity
     }
 
     /**
+     * Whether two bounds, as `bounds` gives them, share any ground.
+     *
+     * @param array{0: float, 1: float, 2: float, 3: float} $a
+     * @param array{0: float, 1: float, 2: float, 3: float} $b
+     */
+    public static function overlap(array $a, array $b): bool
+    {
+        return $a[0] <= $b[2] && $b[0] <= $a[2] && $a[1] <= $b[3] && $b[1] <= $a[3];
+    }
+
+    /**
      * The distance in metres from a position to the nearest point of a line; infinite for
      * a line without points.
      *

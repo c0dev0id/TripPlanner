@@ -110,15 +110,13 @@ final class Duplicates
             return null;
         }
         $lengthM = LineSamples::along($line)[count($line) - 1];
-        $lngs = array_column($line, 0);
-        $lats = array_column($line, 1);
         return [
             'route' => $route,
             'copy' => $route['kind'] === 'track' ? 'track:' . md5($route['line']) : 'routed:' . md5(json_encode(array_column($route['points'], 'lngLat'))),
             'start' => $line[0],
             'end' => $line[count($line) - 1],
             'lengthM' => $lengthM,
-            'box' => [min($lngs), min($lats), max($lngs), max($lats)],
+            'box' => Proximity::bounds($line),
             'date' => $row['date'],
             'entry' => [
                 'tripId' => (int) $row['trip_id'],
@@ -165,7 +163,7 @@ final class Duplicates
                 }
                 $a = $points[$i] ??= self::pointsAlong($routes[$i]['route']);
                 $b = $points[$j] ??= self::pointsAlong($routes[$j]['route']);
-                if (LineSamples::shareNear($a['samples'], [$b['outline']], self::LINE_WITHIN_M) >= self::SHARE_NEAR && LineSamples::shareNear($b['samples'], [$a['outline']], self::LINE_WITHIN_M) >= self::SHARE_NEAR) {
+                if (LineSamples::shareNear($a['samples'], $b['outline'], self::LINE_WITHIN_M) >= self::SHARE_NEAR && LineSamples::shareNear($b['samples'], $a['outline'], self::LINE_WITHIN_M) >= self::SHARE_NEAR) {
                     $parent[$root($j)] = $root($i);
                 }
             }
@@ -183,7 +181,7 @@ final class Duplicates
     {
         return ($a['date'] === null || $b['date'] === null || $a['date'] === $b['date'])
             && min($a['lengthM'], $b['lengthM']) >= self::LENGTH_RATIO * max($a['lengthM'], $b['lengthM'])
-            && $a['box'][0] <= $b['box'][2] && $b['box'][0] <= $a['box'][2] && $a['box'][1] <= $b['box'][3] && $b['box'][1] <= $a['box'][3]
+            && Proximity::overlap($a['box'], $b['box'])
             && Proximity::between($a['start'], $b['start']) <= self::ENDS_WITHIN_M
             && Proximity::between($a['end'], $b['end']) <= self::ENDS_WITHIN_M;
     }

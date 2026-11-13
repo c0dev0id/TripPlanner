@@ -46,20 +46,17 @@ final class LineSamples
     }
 
     /**
-     * The share of the points that lie within `$withinM` metres of one of the lines.
+     * The share of the points that lie within `$withinM` metres of the line.
      *
      * @param non-empty-list<array{0: float, 1: float}> $points
-     * @param list<list<array{0: float, 1: float}>> $lines
+     * @param list<array{0: float, 1: float}> $line
      */
-    public static function shareNear(array $points, array $lines, float $withinM): float
+    public static function shareNear(array $points, array $line, float $withinM): float
     {
         $near = 0;
         foreach ($points as $point) {
-            foreach ($lines as $line) {
-                if (Proximity::toLine($point, $line) <= $withinM) {
-                    $near++;
-                    break;
-                }
+            if (Proximity::toLine($point, $line) <= $withinM) {
+                $near++;
             }
         }
         return $near / count($points);

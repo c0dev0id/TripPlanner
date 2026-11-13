@@ -7,8 +7,8 @@ namespace Planner\Recording;
 use DateTimeImmutable;
 use Planner\Export\Polyline;
 use Planner\Export\Proximity;
+use Planner\Export\Thinning;
 use Planner\Timestamp;
-use Planner\Trip\Outline;
 use XMLReader;
 
 /**
@@ -57,7 +57,7 @@ final readonly class TrackSummary
         $reader->close();
         libxml_clear_errors();
         libxml_use_internal_errors($errors);
-        return new self(Polyline::encode(Outline::thinnedTo($points, self::THIN_M)), (int) round($distanceM), $startedAt);
+        return new self(Polyline::encode(Thinning::toMetres($points, self::THIN_M)), (int) round($distanceM), $startedAt);
     }
 
     /** The time a point gives, in the database's form; null where it gives none that can be read. */

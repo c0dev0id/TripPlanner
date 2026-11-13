@@ -9,7 +9,7 @@ use Planner\Export\LineSamples;
 use Planner\Export\Polyline;
 use Planner\Export\Proximity;
 use Planner\Export\RouteGeometry;
-use Planner\Trip\Outline;
+use Planner\Export\Thinning;
 
 /**
  * The recordings that may be a day's, among those that wait for their day: one begun on
@@ -44,7 +44,7 @@ final class Lookup
         $routes = [];
         $routesM = 0.0;
         foreach ($day['routes'] as $route) {
-            $line = Outline::thinnedTo(RouteGeometry::line($route), self::THIN_M);
+            $line = Thinning::toMetres(RouteGeometry::line($route), self::THIN_M);
             if (count($line) > 1) {
                 $along = LineSamples::along($line);
                 $routesM += $along[count($line) - 1];
@@ -55,7 +55,8 @@ final class Lookup
         foreach ($recordings as $recording) {
             $sameDate = $day['date'] !== null && $recording['startedAt'] !== null
                 && (new DateTimeImmutable($recording['startedAt']))->modify("$utcOffsetMinutes minutes")->format('Y-m-d') === $day['date'];
-            $share = self::share($recording, $routes, $routesM);
+            // One of the date is listed whatever its share, which is then worked out in full.
+            $share = self::share($recording, $routes, $routesM, $sameDate ? 0.0 : self::SHARE_NEAR);
             if ($sameDate || $share >= self::SHARE_NEAR) {
                 $found[] = $recording + ['sameDate' => $sameDate, 'share' => round($share, 2)];
             }
@@ -64,24 +65,42 @@ final class Lookup
         return $found;
     }
 
-    /** The share of the recording's line that ran along the routes, or of the routes that ran along it, whichever is more; none where they are apart. */
-    private static function share(array $recording, array $routes, float $routesM): float
+    /**
+     * The share of the recording's line that ran along the routes, or of the routes that
+     * ran along it, whichever is more; none where they are apart, or where neither share
+     * comes to `$atLeast`.
+     */
+    private static function share(array $recording, array $routes, float $routesM, float $atLeast): float
     {
         $line = Polyline::decode($recording['line']);
         $bounds = Proximity::bounds($line);
-        $routes = array_values(array_filter($routes, fn (array $route) => self::overlap($route['bounds'], $bounds)));
+        $routes = array_values(array_filter($routes, fn (array $route) => Proximity::overlap($route['bounds'], $bounds)));
         if (count($line) < 2 || $routes === []) {
             return 0.0;
         }
         $along = LineSamples::along($line);
-        $alongRoutes = $along[count($line) - 1] < self::LENGTH_SHARE * $routesM
-            ? 0.0
-            : LineSamples::shareNear(LineSamples::spread($line, $along, self::SAMPLES), array_column($routes, 'line'), self::LINE_WITHIN_M);
-        return max($alongRoutes, LineSamples::shareNear(array_merge(...array_column($routes, 'samples')), [$line], self::LINE_WITHIN_M));
+        $alongRoutes = $along[count($line) - 1] < self::LENGTH_SHARE * $routesM ? 0.0 : self::shareNear(LineSamples::spread($line, $along, self::SAMPLES), $routes, $atLeast);
+        return max($alongRoutes, self::shareNear(array_merge(...array_column($routes, 'samples')), [['line' => $line, 'bounds' => $bounds]], $atLeast));
     }
 
-    private static function overlap(array $a, array $b): bool
+    /**
+     * The share of the points that lie within LINE_WITHIN_M of one of the lines, each given
+     * with its bounds; none as soon as fewer than `$atLeast` of them can.
+     */
+    private static function shareNear(array $points, array $lines, float $atLeast): float
     {
-        return $a[0] <= $b[2] && $b[0] <= $a[2] && $a[1] <= $b[3] && $b[1] <= $a[3];
+        $mayMiss = (1 - $atLeast) * count($points);
+        $missed = 0;
+        foreach ($points as $point) {
+            foreach ($lines as $line) {
+                if (Proximity::reaches($point, $line['line'], $line['bounds'], self::LINE_WITHIN_M)) {
+                    continue 2;
+                }
+            }
+            if (++$missed > $mayMiss) {
+                return 0.0;
+            }
+        }
+        return 1 - $missed / count($points);
     }
 }
