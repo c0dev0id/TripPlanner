@@ -42,6 +42,7 @@ final class GzipJsonTest extends TestCase
         $answer = $this->answer('gzip, deflate, br, zstd', $this->json(500));
         self::assertSame('gzip', $answer->getHeaderLine('Content-Encoding'));
         self::assertSame('Accept-Encoding', $answer->getHeaderLine('Vary'));
+        self::assertSame((string) $this->json(500)->getBody()->getSize(), $answer->getHeaderLine('X-Uncompressed-Length'));
         self::assertSame((string) $this->json(500)->getBody(), gzdecode((string) $answer->getBody()));
         self::assertLessThan(1000, strlen((string) $answer->getBody()));
     }

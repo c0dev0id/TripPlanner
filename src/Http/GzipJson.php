@@ -10,7 +10,11 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface as Handler;
 use Slim\Psr7\Factory\StreamFactory;
 
-/** Compresses JSON answers with gzip for a client that takes it: httpd compresses nothing PHP answers. */
+/**
+ * Compresses JSON answers with gzip for a client that takes it: httpd compresses nothing
+ * PHP answers. The answer says how long it is unpacked, which a client that shows how far
+ * a download has come cannot tell otherwise.
+ */
 final class GzipJson implements MiddlewareInterface
 {
     /** Below this many bytes an answer goes out as it is. */
@@ -25,6 +29,7 @@ final class GzipJson implements MiddlewareInterface
         }
         return $response
             ->withBody((new StreamFactory())->createStream(gzencode((string) $response->getBody(), 6)))
+            ->withHeader('X-Uncompressed-Length', (string) $response->getBody()->getSize())
             ->withHeader('Content-Encoding', 'gzip')
             ->withHeader('Vary', 'Accept-Encoding');
     }
