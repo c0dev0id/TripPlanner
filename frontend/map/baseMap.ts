@@ -25,7 +25,7 @@ setWorkerUrl(workerUrl);
  */
 function withOverlays(previous: StyleSpecification | undefined, next: StyleSpecification, routeWidth: number, shown: readonly Overlay[]): StyleSpecification {
   const empty = (): GeoJSONSourceSpecification => ({ type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-  const sources: StyleSpecification['sources'] = { ...next.sources, [ROUTES_SOURCE]: previous?.sources[ROUTES_SOURCE] ?? { ...empty(), attribution: ROUTING_ATTRIBUTION } };
+  const sources: StyleSpecification['sources'] = { ...next.sources, [ROUTES_SOURCE]: previous?.sources[ROUTES_SOURCE] ?? { ...empty(), attribution: ROUTING_ATTRIBUTION, promoteId: 'route' } };
   for (const id of [RECORDINGS_SOURCE, OPENED_RECORDING_SOURCE, RECORDING_POINT_SOURCE, COMPARED_SOURCE]) sources[id] = previous?.sources[id] ?? empty();
   sources[POI_SOURCE] = previous?.sources[POI_SOURCE] ?? { ...empty(), attribution: PLACES_ATTRIBUTION };
   const sharp = sharpUntil(next);

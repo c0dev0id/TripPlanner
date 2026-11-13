@@ -8,6 +8,9 @@ import { legCoordinates, legState, routeLegs, type LegState } from '../routing/l
 
 export const ROUTES_SOURCE = 'routes';
 
+/** The layer of the routes' lines as they are drawn, by which a route is found under the pointer. */
+export const ROUTE_LINE_LAYER = `${ROUTES_SOURCE}-line`;
+
 /** A day's routes on the map: the one being edited, the others of the selected day, the neighbouring days. */
 export type RouteRole = 'edited' | 'selected' | 'neighbour';
 
@@ -33,9 +36,10 @@ const LINE_LAYOUT: LineLayerSpecification['layout'] = {
  */
 export function routeLayers(width: number, sharpUntil: number): LayerSpecification[] {
   const lineAt = (zoom: number): number => sizeAt(zoom, width, width, width * 1.8, 0.5, sharpUntil);
+  /** The width by the route's role; under the pointer (see RouteHover), as wide as the edited route. */
   const byRole = (zoom: number, casing: number): ExpressionSpecification => {
     const line = lineAt(zoom);
-    return ['match', ['get', 'role'], 'edited', line * 1.4 + casing, 'neighbour', line * 0.7 + casing, line + casing];
+    return ['case', ['boolean', ['feature-state', 'hover'], false], line * 1.4 + casing, ['match', ['get', 'role'], 'edited', line * 1.4 + casing, 'neighbour', line * 0.7 + casing, line + casing]];
   };
   return [
     {
@@ -47,7 +51,7 @@ export function routeLayers(width: number, sharpUntil: number): LayerSpecificati
       paint: { 'line-color': '#ffffff', 'line-width': atZooms((zoom) => byRole(zoom, 3.5)), 'line-opacity': ['match', ['get', 'role'], 'neighbour', 0.5, 0.9] },
     },
     {
-      id: `${ROUTES_SOURCE}-line`,
+      id: ROUTE_LINE_LAYER,
       type: 'line',
       source: ROUTES_SOURCE,
       filter: DRAWN,
@@ -84,7 +88,7 @@ export function routeLayers(width: number, sharpUntil: number): LayerSpecificati
 }
 
 /**
- * The legs of the days shown as lines with their role, their routing state and the colour
+ * The legs of the days shown as lines with their route and its day, their role, their routing state and the colour
  * `colors` holds for their route, consecutive legs of a route in the same state as one
  * line, a mark at each spot given (where a free stop is nearest to the route), and a grey
  * dot at each of `dimStops` (the stops of the days shown that are not selected).
@@ -111,7 +115,7 @@ export function routeFeatures(
       }
       for (const { state, parts } of runs) {
         const coordinates = parts.length === 1 ? parts[0]! : parts.flatMap((part, i) => (i === 0 ? part : part.slice(1)));
-        features.push({ type: 'Feature', properties: { state, role: routeRole, color: colors.get(route.id) }, geometry: { type: 'LineString', coordinates } });
+        features.push({ type: 'Feature', properties: { route: route.id, day: day.id, state, role: routeRole, color: colors.get(route.id) }, geometry: { type: 'LineString', coordinates } });
       }
     }
   }

@@ -7,6 +7,7 @@ import { pickPoint, setPickedIndex } from '../state/recordingView';
 import { addFreeStop, appendPoint, editingRoute, editRoute, insertPoint, insertStop, openTrip, redo, undo } from '../state/trip';
 import { fromMarker, toLngLat } from './markers';
 import { recordingPointAt } from './recordingPick';
+import { routeAt, takeUpRoute } from './RouteHover';
 import { hitRouteLine } from './routeTools';
 import { TapFilter, tapReach, type PointerSample } from './tapFilter';
 import { popupAt } from './tapPopup';
@@ -70,7 +71,7 @@ export function Interactions(props: { map: MapLibreMap }) {
     }
     taps.click(sample(e.originalEvent), () => onTap(e));
   };
-  /** A click that proved to be a tap: it does what the next tap does, or else picks the point of a recording tapped. */
+  /** A click that proved to be a tap: it does what the next tap does, or else picks the point of a recording tapped, or takes up the route tapped. */
   const onTap = (e: MapMouseEvent) => {
     const action = tapAction();
     const route = editingRoute();
@@ -81,8 +82,11 @@ export function Interactions(props: { map: MapLibreMap }) {
       const reach = tapReach(pointerType !== 'mouse');
       if (popupAt(e.point, e.lngLat, reach)) return;
       const hit = recordingPointAt(map, e.point, reach);
-      if (hit) pickPoint(hit.id, hit.index);
-      else setPickedIndex(undefined);
+      if (hit) return pickPoint(hit.id, hit.index);
+      setPickedIndex(undefined);
+      // While none is edited, a tap on a route takes it up.
+      const tapped = route ? undefined : routeAt(map, e.point, reach);
+      if (tapped) takeUpRoute(tapped);
       return;
     }
     setMenu(undefined);

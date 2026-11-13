@@ -21,6 +21,7 @@ import { PointMarkers } from './PointMarkers';
 import { PlaceMarkers } from './PlaceMarkers';
 import { COMPARED_SOURCE, OPENED_RECORDING_SOURCE, RECORDINGS_SOURCE, recordingFeatures } from './recordingOverlay';
 import { RecordingPoint } from './RecordingPoint';
+import { RouteHover } from './RouteHover';
 import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { SearchBox } from './SearchBox';
 import { StopMarkers } from './StopMarkers';
@@ -62,6 +63,7 @@ export function MapView() {
         {(m) => (
           <>
             <RouteLines map={m()} />
+            <RouteHover map={m()} />
             <RecordingLines map={m()} />
             <ComparedLines map={m()} />
             <RecordingPoint map={m()} />
