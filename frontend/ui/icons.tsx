@@ -159,17 +159,6 @@ export const GripIcon = () => (
   </Icon>
 );
 
-/** A recorded ride: a line through its points. */
-export const RecordingIcon = () => (
-  <Icon>
-    <path d="M4 16l6 -7l5 5l5 -6" />
-    <path d="M15 14m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-    <path d="M10 9m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-    <path d="M4 16m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-    <path d="M20 8m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
-  </Icon>
-);
-
 export const NotebookIcon = () => (
   <Icon>
     <path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-11a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1m3 0v16" />
@@ -207,6 +196,23 @@ export const SettingsIcon = () => (
     <path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
     <path d="M4 18l11 0" />
     <path d="M19 18l1 0" />
+  </Icon>
+);
+
+/** An open eye: on the map. */
+export const EyeIcon = () => (
+  <Icon>
+    <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+    <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
+  </Icon>
+);
+
+/** A struck-out eye: not on the map. */
+export const EyeOffIcon = () => (
+  <Icon>
+    <path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" />
+    <path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87" />
+    <path d="M3 3l18 18" />
   </Icon>
 );
 

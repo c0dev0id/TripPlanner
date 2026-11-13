@@ -29,6 +29,15 @@ export { selectedDayId };
 const [editingRouteId, setEditingRouteId] = createSignal<string>();
 export { editingRouteId };
 
+/** The route of a collection's section taken up by a click: a collection is looked through, not edited. */
+const [viewedRouteId, setViewedRouteId] = createSignal<string>();
+
+/** The route taken up: the one being edited in a trip, the one last clicked in a collection. */
+export const activeRouteId = (): string | undefined => editingRouteId() ?? viewedRouteId();
+
+/** Takes up a route of the selected section of a collection, or none for undefined. */
+export const viewRoute = (id: string | undefined): void => void setViewedRouteId(id);
+
 /**
  * Whether the mark of the library's tree is in the open trip: on its day that is shown,
  * or on the trip itself where none is. A folder holds it otherwise.
@@ -64,6 +73,7 @@ export function selectDay(id: string | undefined): void {
     setSelectedDayId(id);
     if (id !== undefined) setMarkInTrip(true);
     setEditingRouteId(undefined);
+    setViewedRouteId(undefined);
   });
 }
 
@@ -158,6 +168,7 @@ export function loadTrip(loaded: Trip, dayId?: string): void {
     setSelectedDayId(dayId);
     setMarkInTrip(true);
     setEditingRouteId(undefined);
+    setViewedRouteId(undefined);
   });
 }
 
@@ -168,6 +179,7 @@ export function closeTrip(): void {
     setOpenTrip(undefined);
     setSelectedDayId(undefined);
     setEditingRouteId(undefined);
+    setViewedRouteId(undefined);
     setHistoryVersion((v) => v + 1);
   });
 }

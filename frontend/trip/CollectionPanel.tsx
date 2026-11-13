@@ -1,13 +1,14 @@
 import { t } from '../i18n/t';
-import { createMemo, createSignal, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, on, Show } from 'solid-js';
 import { FREE_COLOR } from '../map/routeOverlay';
 import type { Day, Route, Stop } from '../model/trip';
 import { routeDistance, routePositions, routesDistance } from '../routing/legs';
 import { isCut } from '../state/clipboard';
 import { panTo, showWhole } from '../state/drawing';
 import { clickPart, isPartSelected } from '../state/partSelection';
+import { groupEye, routeEye, setGroupEye, setRouteEyes } from '../state/eyes';
 import { recordingsOf } from '../state/recordings';
-import { isDayMarked, markShownDay, openTrip, selectDay, selectedDayId, updateDay } from '../state/trip';
+import { activeRouteId, isDayMarked, markShownDay, openTrip, selectDay, selectedDayId, updateDay, viewRoute } from '../state/trip';
 import { symbolLabel } from '../symbols/symbols';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
@@ -19,7 +20,8 @@ import { selects } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, routeKindLabel, routeLabel } from './labels';
 import { partMenu } from './partMenu';
-import { DayRecordings, RecordingsToggle } from './Recordings';
+import { Eye } from './Eye';
+import { DayRecordings } from './Recordings';
 
 /**
  * The open collection: its sections with their routes and waypoints, planning material to
@@ -72,7 +74,6 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
             <span class="muted detail">{meta()}</span>
           </span>
         </button>
-        <RecordingsToggle dayId={props.day.id} />
         <MenuButton of={props.day.name} items={items} />
       </div>
     </li>
@@ -84,6 +85,10 @@ export function SectionDetails(props: { day: Day }) {
   return (
     <div class="day-details">
       <Show when={props.day.routes.length > 0} fallback={<Show when={recordingsOf(props.day.id).length === 0}><p class="muted">{t('No routes in this section yet.')}</p></Show>}>
+        <div class="row heading">
+          <h4 class="grow">{t('Routes')}</h4>
+          <Eye of={t('the routes')} open={groupEye('routes')} onToggle={(open) => setGroupEye('routes', open)} />
+        </div>
         <ul class="routes">
           <ForById each={props.day.routes}>{(route) => <RouteItem route={route()} day={props.day} />}</ForById>
         </ul>
@@ -101,18 +106,33 @@ export function SectionDetails(props: { day: Day }) {
   );
 }
 
-/** A route of a section: a click shows it whole on the map; its menu copies and removes it. */
+/**
+ * A route of a section: a click takes it up, which puts it on the map whatever its eye
+ * says, and shows it whole; a click on the one taken up lets it go. Its menu copies and
+ * removes it.
+ */
 function RouteItem(props: { route: Route; day: Day }) {
   const label = createMemo(() => routeLabel(props.route, props.day));
   const distance = createMemo(() => routeDistance(props.route));
+  const active = () => activeRouteId() === props.route.id;
+  let row!: HTMLDivElement;
+  // A route taken up on the map is brought into view.
+  createEffect(on(active, (is) => is && row.scrollIntoView({ block: 'nearest' })));
   const click = (e: MouseEvent) => {
-    if (selects(e)) clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
-    else showWhole(routePositions(props.route));
+    if (selects(e)) return clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
+    viewRoute(active() ? undefined : props.route.id);
+    if (active()) showWhole(routePositions(props.route));
   };
   return (
-    <li class="route" classList={{ picked: isPartSelected('route', props.route.id), cut: isCut(props.route.id) }}>
-      <div class="row" ref={(el) => cardMenu(el, () => partMenu('route', props.route.id))}>
-        <button class="text grow" onClick={click}>
+    <li class="route" classList={{ editing: active(), picked: isPartSelected('route', props.route.id), cut: isCut(props.route.id) }}>
+      <div
+        class="row"
+        ref={(el) => {
+          row = el;
+          cardMenu(el, () => partMenu('route', props.route.id));
+        }}
+      >
+        <button class="text grow" aria-pressed={active()} onClick={click}>
           <span class="lines">
             <span class="name" title={label()}>
               {label()}
@@ -122,6 +142,7 @@ function RouteItem(props: { route: Route; day: Day }) {
             </span>
           </span>
         </button>
+        <Eye of={label()} open={routeEye(props.route.id)} veiled={!groupEye('routes')} onToggle={(open) => setRouteEyes([props.route.id], open)} />
         <MenuButton of={label()} items={() => partMenu('route', props.route.id)} />
       </div>
     </li>

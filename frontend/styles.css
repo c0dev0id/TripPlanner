@@ -535,9 +535,17 @@ a {
   border-radius: 2px;
 }
 
-.panel button.icon.recordings-toggle[aria-pressed='true'],
 .side-pane-header button.icon[aria-pressed='true'] {
   color: var(--accent);
+}
+
+/* An eye: closed, it is as quiet as what it keeps off the map; open under a closed group's eye, it is faint. */
+button.icon.eye[aria-pressed='false'] {
+  color: var(--muted);
+}
+
+button.icon.eye.veiled {
+  opacity: 0.4;
 }
 
 /* A trip's shape at the end of its card. */
@@ -1310,6 +1318,16 @@ fieldset.choices legend {
 
 .recording-point .figures {
   margin: 0;
+}
+
+/* The name of the route under the pointer: beside it, never under it. */
+.route-name {
+  pointer-events: none;
+}
+
+.route-name .maplibregl-popup-content {
+  padding: 3px 8px;
+  font-size: 12px;
 }
 
 /* What a closure or a place tapped on the map is. */

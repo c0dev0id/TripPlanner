@@ -17,11 +17,12 @@ import { readRecording, type RecordedTrack } from '../recording/track';
 import { decodePolyline } from '../routing/polyline';
 import { flushSave } from './autosave';
 import { showWhole } from './drawing';
-import { openTripId } from './trip';
+import { recordingOnMap, setRecordingEyes } from './eyes';
+import { openTripId, selectedDayId } from './trip';
 
 /**
  * The open trip's recordings, loaded with the trip; changes go to the server at once.
- * Their tracks are read from their files once a day's recordings are shown.
+ * A recording's track is read from its file once it is on the map.
  */
 
 const [list, { mutate }] = createRoot(() => createResource(openTripId, async (tripId) => ({ tripId, recordings: await listRecordings(tripId) })));
@@ -41,21 +42,16 @@ export function recordingColor(recording: Recording): string {
   return COLORS[recordingsOf(recording.dayId).findIndex((r) => r.id === recording.id) % COLORS.length]!;
 }
 
-/** The days whose recordings are shown: listed under the day and drawn on the map. */
-const [shownDays, setShownDays] = createSignal<ReadonlySet<string>>(new Set());
+/** The recording opened for its figures, which is on the map whatever its eye says. */
+const [activeRecordingId, setActiveRecordingId] = createSignal<number>();
+export { activeRecordingId, setActiveRecordingId };
 
-export const recordingsShown = (dayId: string): boolean => shownDays().has(dayId);
-
-export function showRecordings(dayId: string, shown: boolean): void {
-  if (shown === shownDays().has(dayId)) return;
-  const next = new Set(shownDays());
-  if (shown) next.add(dayId);
-  else next.delete(dayId);
-  setShownDays(next);
+/** The recordings on the map: of the day shown, those whose eye and whose group's are open, and the one opened. */
+export function shownRecordings(): Recording[] {
+  const dayId = selectedDayId();
+  const active = activeRecordingId();
+  return allRecordings().filter((r) => r.dayId === dayId && (r.id === active || recordingOnMap(r.id)));
 }
-
-/** The recordings shown, of every day whose recordings are shown. */
-export const shownRecordings = (): Recording[] => allRecordings().filter((r) => shownDays().has(r.dayId));
 
 /** Each read recording's track, or why it could not be read, by recording id. */
 const [tracks, setTracks] = createSignal<ReadonlyMap<number, RecordedTrack | Error>>(new Map());
@@ -74,15 +70,15 @@ const keep = (id: number, track: RecordedTrack | Error) => setTracks(new Map(tra
 const [lookup, setLookup] = createSignal<{ dayId: string; found?: WaitingRecording[]; previewedId?: number }>();
 
 createRoot(() => {
-  // Another trip starts with nothing shown, nothing read and nothing looked up.
+  // Another trip starts with nothing opened, nothing read and nothing looked up.
   createEffect(
     on(openTripId, () => {
-      setShownDays(new Set<string>());
+      setActiveRecordingId(undefined);
       setTracks(new Map());
       setLookup(undefined);
     }),
   );
-  // The tracks of the recordings shown are read once.
+  // The tracks of the recordings on the map are read once; the one opened is shown whole when it arrives.
   const reading = new Set<number>();
   createEffect(() => {
     const tripId = openTripId();
@@ -90,7 +86,11 @@ createRoot(() => {
       if (tripId === undefined || tracks().has(recording.id) || reading.has(recording.id)) continue;
       reading.add(recording.id);
       fetchRecordingGpx(tripId, recording.id)
-        .then((gpx) => keep(recording.id, readRecording(gpx)))
+        .then((gpx) => {
+          const track = readRecording(gpx);
+          keep(recording.id, track);
+          if (recording.id === activeRecordingId()) showWhole(track.points);
+        })
         .catch((fault: unknown) => keep(recording.id, fault instanceof Error ? fault : new Error(String(fault))))
         .finally(() => reading.delete(recording.id));
     }
@@ -99,8 +99,8 @@ createRoot(() => {
 
 /**
  * Adds a GPX file of one track to the day as a recording, under `name`, or else named after
- * its track or, without a name there, `fallback`; and shows the day's recordings. Throws
- * for any other file.
+ * its track or, without a name there, `fallback`; and opens its eye. Throws for any other
+ * file.
  */
 export async function addRecording(dayId: string, gpx: string, naming: { name: string } | { fallback: string }): Promise<Recording> {
   const track = readRecording(gpx);
@@ -109,7 +109,7 @@ export async function addRecording(dayId: string, gpx: string, naming: { name: s
   // Kept before it is listed, so that it is not read again from the file just sent.
   keep(recording.id, track);
   mutate((loaded) => loaded && { ...loaded, recordings: [...loaded.recordings, recording] });
-  showRecordings(dayId, true);
+  setRecordingEyes([recording.id], true);
   return recording;
 }
 
@@ -160,12 +160,13 @@ export function previewedLines(): { id: number; points: LngLat[]; color: string 
   return waiting ? [{ id: waiting.id, points: decodePolyline(waiting.line), color: nextColor(looked!.dayId) }] : [];
 }
 
-/** Puts a found recording on its day of the open trip, as it is: it waits no longer. */
+/** Puts a found recording on its day of the open trip, as it is, its eye open: it waits no longer. */
 export async function assignRecording(dayId: string, waiting: WaitingRecording): Promise<void> {
   await putOnDay(waiting.tripId, waiting.id, dayId);
   const { id, name, distanceM, startedAt } = waiting;
   mutate((loaded) => loaded && { ...loaded, recordings: [...loaded.recordings, { id, dayId, name, distanceM, startedAt }].sort((a, b) => a.id - b.id) });
   setLookup((looked) => looked && { ...looked, found: looked.found?.filter((r) => r.id !== id) });
+  setRecordingEyes([id], true);
 }
 
 /** The open trip's recording of the id. */
@@ -181,7 +182,7 @@ const [note, setNote] = createSignal<{ dayId: string; text: string; error: boole
 
 export const recordingNote = (dayId: string) => (note()?.dayId === dayId ? note() : undefined);
 
-/** Runs an action on a day's recordings, then says under them what it did where it says something, or why it failed, and shows them. */
+/** Runs an action on a day's recordings, then says under them what it did where it says something, or why it failed. */
 export async function recordingAction(dayId: string, job: () => Promise<string | void>): Promise<void> {
   try {
     const text = await job();
@@ -189,7 +190,6 @@ export async function recordingAction(dayId: string, job: () => Promise<string |
   } catch (fault) {
     setNote({ dayId, text: errorMessage(fault), error: true });
   }
-  showRecordings(dayId, true);
 }
 
 /** The recording's GPX file as kept, for copying it. */

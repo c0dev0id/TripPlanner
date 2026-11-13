@@ -8,7 +8,7 @@ import { measuresOf, type Measures } from '../recording/measures';
 import { trackSurfaces } from '../recording/surfaces';
 import type { RecordedTrack } from '../recording/track';
 import { legCoordinates, routeLegs } from '../routing/legs';
-import { loadedTrack, shownRecordings } from './recordings';
+import { activeRecordingId, loadedTrack, setActiveRecordingId, shownRecordings } from './recordings';
 import { openTrip, openTripId } from './trip';
 
 /**
@@ -17,8 +17,6 @@ import { openTrip, openTripId } from './trip';
  * map or in its chart.
  */
 
-const [openedId, setOpenedId] = createSignal<number>();
-
 /** The point under the pointer in the chart, and the point picked on the map or by a click in the chart, by their index in the track. */
 const [hoverIndex, setHoverIndex] = createSignal<number>();
 const [pickedIndex, setPickedIndex] = createSignal<number>();
@@ -26,9 +24,9 @@ export { hoverIndex, pickedIndex, setHoverIndex, setPickedIndex };
 
 /** Opens a recording's figures, or closes them; any point picked before is let go. */
 export function openRecording(id: number | undefined): void {
-  if (id !== openedId()) setPickedIndex(undefined);
+  if (id !== activeRecordingId()) setPickedIndex(undefined);
   setHoverIndex(undefined);
-  setOpenedId(id);
+  setActiveRecordingId(id);
 }
 
 /** Picks a point of a recording, opening it. */
@@ -80,7 +78,7 @@ const view = createRoot(() => {
   // Kept while its recording and track stay the same objects, as they do when other recordings change.
   const opened = createMemo(
     (): Opened | undefined => {
-      const recording = shownRecordings().find((r) => r.id === openedId());
+      const recording = shownRecordings().find((r) => r.id === activeRecordingId());
       const track = recording && loadedTrack(recording);
       return recording && track ? { recording, track, measures: measuresFor(track) } : undefined;
     },

@@ -1,5 +1,5 @@
 import { plural, t } from '../i18n/t';
-import { createMemo, createSignal, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, on, Show } from 'solid-js';
 import { errorMessage } from '../api';
 import { readGpxFile } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
@@ -13,6 +13,7 @@ import { panTo, pointItems, setEditTarget, setExportScope, setShareOpen, setTrac
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
+import { groupEye, routeEye, setGroupEye, setRouteEyes } from '../state/eyes';
 import { recordingsOf } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
 import { isCut } from '../state/clipboard';
@@ -43,7 +44,8 @@ import { MenuButton } from '../ui/MenuButton';
 import { selects } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, dayHeading, dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
-import { addRecordingPicked, DayRecordings, RecordingsToggle } from './Recordings';
+import { Eye } from './Eye';
+import { addRecordingPicked, DayRecordings } from './Recordings';
 import { partMenu } from './partMenu';
 
 /** The journal of a part as an icon, with the number of its entries where it has any. */
@@ -122,7 +124,6 @@ function DayItem(props: { day: Day; index: number }) {
             <PencilIcon />
           </IconButton>
         </Show>
-        <RecordingsToggle dayId={props.day.id} />
         <JournalButton target={{ dayId: props.day.id }} of={label()} />
         <MenuButton of={label()} items={more} />
       </div>
@@ -164,6 +165,7 @@ export function DayDetails(props: { day: Day }) {
       </Show>
       <div class="row heading">
         <h4 class="grow">{t('Routes')}</h4>
+        <Eye of={t('the routes')} open={groupEye('routes')} onToggle={(open) => setGroupEye('routes', open)} />
         <IconButton label={t('Add route')} onClick={addRoute}>
           <PlusIcon />
         </IconButton>
@@ -237,6 +239,15 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
       ],
     });
   const [unfolded, setUnfolded] = createSignal(false);
+  let row!: HTMLDivElement;
+  // A route taken up on the map is unfolded and brought into view as one clicked here is.
+  createEffect(
+    on(editing, (is) => {
+      if (!is) return;
+      setUnfolded(true);
+      row.scrollIntoView({ block: 'nearest' });
+    }),
+  );
   /** A click takes the route up to be edited and lists its stops and points; on the route being edited, it ends that and folds the list away. */
   const click = (e: MouseEvent) => {
     if (selects(e)) return clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
@@ -245,7 +256,13 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
   };
   return (
     <li class="route" classList={{ editing: editing(), picked: isPartSelected('route', props.route.id), cut: isCut(props.route.id) }}>
-      <div class="row" ref={(el) => cardMenu(el, items)}>
+      <div
+        class="row"
+        ref={(el) => {
+          row = el;
+          cardMenu(el, items);
+        }}
+      >
         <Grip label={t('Drag {what} to another place, or tap to select it', { what: label() })} index={props.index} onMove={(to) => moveRoute(props.route.id, to)} onToggle={() => togglePart('route', props.route.id)} />
         <button class="text grow" aria-pressed={editing()} aria-expanded={unfolded()} onClick={click}>
           <span class="lines">
@@ -264,6 +281,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
             </span>
           </span>
         </button>
+        <Eye of={label()} open={routeEye(props.route.id)} veiled={!groupEye('routes')} onToggle={(open) => setRouteEyes([props.route.id], open)} />
         <JournalButton target={{ routeId: props.route.id }} of={label()} />
         <MenuButton of={label()} items={items} />
       </div>

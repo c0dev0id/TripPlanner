@@ -3,6 +3,7 @@ import { FREE_COLOR } from '../map/routeOverlay';
 import { dayOfRoute, dayOfStop, type PartKind } from '../routing/dayEdit';
 import { copyParts, pasteItems } from '../state/clipboard';
 import { setEditTarget, setExportScope } from '../state/drawing';
+import { setRouteEyes } from '../state/eyes';
 import { clearPartSelection, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
 import { duplicateParts, movePartsToDay, openTrip, removeParts, routeById, setStopSymbols } from '../state/trip';
 import { OUR_ICONS, PLAIN_SYMBOL } from '../symbols/symbols';
@@ -53,6 +54,14 @@ function moveItems(kind: PartKind, ids: readonly string[]): MenuItem[] {
   return moveToDayItem(from?.id, (dayId) => movePartsToDay(kind, ids, dayId));
 }
 
+/** The menu items that open and close the eyes of what is selected, which `set` does. */
+export function eyeItems(set: (open: boolean) => void): MenuItem[] {
+  return [
+    { label: t('Show selected'), run: () => set(true) },
+    { label: t('Hide selected'), run: () => set(false) },
+  ];
+}
+
 /** Icon, with our icons as its submenu, each drawn before its name: the one all the stops have is checked, and a pick gives it to all of them. */
 function iconItem(ids: readonly string[]): MenuItem {
   const stops = openTrip()!.days.flatMap((day) => day.stops.filter((stop) => ids.includes(stop.id)));
@@ -65,7 +74,7 @@ function iconItem(ids: readonly string[]): MenuItem {
 /**
  * The menu of a day, a route or a stop of the open trip, the same for each kind and in a
  * trip as in a collection: edit, a stop's icon, duplicate, cut, copy, paste into it, move,
- * export as GPX (days and routes), what only its kind has (`more`), select, remove. Opened on a part of a selection it acts on all of
+ * export as GPX (days and routes), what only its kind has (`more`), for several routes their eyes, select, remove. Opened on a part of a selection it acts on all of
  * them; what takes one part alone is then greyed out. `edit` stands in where a part is
  * edited otherwise than in its dialog.
  */
@@ -85,6 +94,7 @@ export function partMenu(kind: PartKind, id: string, own: { edit?: () => void; m
     ...moveItems(kind, ids),
     ...(kind === 'stop' ? [] : [{ label: t('Export GPX…'), run: () => setExportScope({ kind, ids }) }]),
     ...(several ? [] : (own.more ?? [])),
+    ...(several && kind === 'route' ? eyeItems((open) => setRouteEyes(ids, open)) : []),
     ...(several || isPartSelected(kind, id) ? [] : [{ label: t('Select'), run: () => togglePart(kind, id) }]),
     { label: t('Remove'), run: () => void removeAsked(kind, ids) },
   ];
