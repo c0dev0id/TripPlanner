@@ -3,7 +3,7 @@ import { createEffect, createMemo, createResource, createSelector, createSignal,
 import { changeTrip, errorMessage, fetchTrip, listDuplicates, type DuplicateGroup, type DuplicateRoute } from '../api';
 import { copiedRoute, removeRoute, type CopiedRoute } from '../routing/dayEdit';
 import { copyRoutes } from '../state/clipboard';
-import { fetchingTrip, setShowingDuplicates } from '../state/library';
+import { fetchingTrip, libraryTrips, outlineOf, setShowingDuplicates } from '../state/library';
 import { selectedDayId } from '../state/trip';
 import { dayLabel } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
@@ -55,6 +55,16 @@ const OWNER = 'duplicates';
  */
 export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void }) {
   const [groups, { refetch }] = createResource(listDuplicates);
+  /** How many routes the library holds, which is how many the report compares. */
+  const routeCount = () => (libraryTrips() ?? []).reduce((sum, trip) => sum + (outlineOf(trip.id) ?? []).reduce((routes, day) => routes + day.routes, 0), 0);
+  /** The seconds the report has been in the making: the server answers only once it is done, so this is all there is to tell meanwhile. */
+  const [seconds, setSeconds] = createSignal(0);
+  createEffect(() => {
+    if (!groups.loading) return;
+    setSeconds(0);
+    const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
+    onCleanup(() => clearInterval(timer));
+  });
   const of = (kind: DuplicateGroup['kind']) => (groups() ?? []).filter((g) => g.kind === kind);
   const selection = () => selectionOf(OWNER);
   const setSelection = (rows: Selection<string>) => selectIn(OWNER, rows);
@@ -151,7 +161,14 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
       }
     >
       <div class="day-details">
-        <Switch fallback={<p class="muted">{t('Looking for routes kept more than once…')}</p>}>
+        <Switch
+          fallback={
+            <p class="muted row">
+              <span class="spinner" />
+              {t('Comparing {routes} with each other… {seconds} s', { routes: counted(routeCount(), 'route'), seconds: seconds() })}
+            </p>
+          }
+        >
           <Match when={groups.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
           <Match when={groups()?.length === 0}>
             <p class="muted">{t('No route is kept more than once.')}</p>

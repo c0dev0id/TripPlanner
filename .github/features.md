@@ -226,7 +226,9 @@
   press) opens a single route at its day, which the map shows while the report and the
   tree stay, and copies or deletes the selected ones, as Ctrl+C and Delete do. A day
   picked in the tree takes the pane for itself and closes the report. The report is made
-  afresh each time it is shown and after a delete.
+  afresh each time it is shown and after a delete; while it is made, which takes a
+  while on a large library, a ring turns beside how many routes are compared and the
+  seconds gone.
 - Collections of planning material, such as a long-distance trail by country: listed in
   the library as planning material, opened like a trip but with sections instead of
   days and no dates, times, journal, tools or export. A section lists its routes and
