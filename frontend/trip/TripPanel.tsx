@@ -13,7 +13,6 @@ import { panTo, pointItems, setEditTarget, setExportScope, setShareOpen, setTrac
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
-import { groupEye, routeEye, setGroupEye, setRouteEyes } from '../state/eyes';
 import { recordingsOf } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
 import { isCut } from '../state/clipboard';
@@ -21,10 +20,10 @@ import { clickPart, isPartSelected, togglePart } from '../state/partSelection';
 import {
   addParts,
   addRoute,
-  editingRouteId,
+  isRouteActive,
   isDayMarked,
   markShownDay,
-  editRoute,
+  takeUpRoute,
   moveDay,
   moveRoute,
   openTrip,
@@ -44,7 +43,7 @@ import { MenuButton } from '../ui/MenuButton';
 import { selects } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, dayHeading, dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
-import { Eye } from './Eye';
+import { GroupEye, RouteEye } from './Eye';
 import { addRecordingPicked, DayRecordings } from './Recordings';
 import { partMenu } from './partMenu';
 
@@ -165,7 +164,7 @@ export function DayDetails(props: { day: Day }) {
       </Show>
       <div class="row heading">
         <h4 class="grow">{t('Routes')}</h4>
-        <Eye of={t('the routes')} open={groupEye('routes')} onToggle={(open) => setGroupEye('routes', open)} />
+        <GroupEye group="routes" />
         <IconButton label={t('Add route')} onClick={addRoute}>
           <PlusIcon />
         </IconButton>
@@ -213,7 +212,7 @@ function DaySummary(props: { timeline: DayTimeline }) {
  * and points in riding order under it, out of `sequence`, its part of the day's.
  */
 function RouteItem(props: { route: Route; index: number; day: Day; sequence: SequenceEntry[] }) {
-  const editing = () => editingRouteId() === props.route.id;
+  const editing = () => isRouteActive(props.route.id);
   const label = createMemo(() => routeLabel(props.route, props.day));
   const distance = createMemo(() => routeDistance(props.route));
   /** The route's points and bound stops, and the free stops that stand beside it; not where a track ends, which is no point of its own. */
@@ -252,7 +251,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
   const click = (e: MouseEvent) => {
     if (selects(e)) return clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
     setUnfolded(!editing());
-    editRoute(editing() ? undefined : props.route.id);
+    takeUpRoute(editing() ? undefined : props.route.id);
   };
   return (
     <li class="route" classList={{ editing: editing(), picked: isPartSelected('route', props.route.id), cut: isCut(props.route.id) }}>
@@ -281,7 +280,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
             </span>
           </span>
         </button>
-        <Eye of={label()} open={routeEye(props.route.id)} veiled={!groupEye('routes')} onToggle={(open) => setRouteEyes([props.route.id], open)} />
+        <RouteEye id={props.route.id} of={label()} />
         <JournalButton target={{ routeId: props.route.id }} of={label()} />
         <MenuButton of={label()} items={items} />
       </div>
@@ -310,7 +309,8 @@ const ROUTE_POINT = t('Route point');
 function SequenceItem(props: { entry: SequenceEntry; routeId: string; time: EntryTime | undefined }) {
   const stop = () => props.entry.stop;
   /** The row's menu: the stop's, else the route point's; the end of a track has none. */
-  const menu = (): MenuItem[] | undefined => (stop() ? partMenu('stop', stop()!.id) : props.entry.point && pointItems(props.routeId, props.entry.point));
+  const hasMenu = () => stop() !== undefined || props.entry.point !== undefined;
+  const menu = (): MenuItem[] => (stop() ? partMenu('stop', stop()!.id) : pointItems(props.routeId, props.entry.point!));
   return (
     <>
       <Show when={props.time && offTime(props.time)}>
@@ -329,7 +329,7 @@ function SequenceItem(props: { entry: SequenceEntry; routeId: string; time: Entr
       <li
         class="row sequence-item"
         classList={{ point: !stop(), picked: !!stop() && isPartSelected('stop', stop()!.id), cut: !!stop() && isCut(stop()!.id) }}
-        ref={(el) => menu() && cardMenu(el, () => menu()!)}
+        ref={(el) => hasMenu() && cardMenu(el, menu)}
       >
         <button class="text grow" onClick={(e) => (stop() && selects(e) ? clickStop(stop()!, e) : panTo(props.entry.lngLat))}>
           <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
@@ -350,8 +350,8 @@ function SequenceItem(props: { entry: SequenceEntry; routeId: string; time: Entr
           </span>
         </button>
         <Show when={stop()}>{(s) => <JournalButton target={{ stopId: s().id }} of={s().name} />}</Show>
-        <Show when={menu()}>
-          <MenuButton of={stop()?.name ?? ROUTE_POINT} items={() => menu()!} />
+        <Show when={hasMenu()}>
+          <MenuButton of={stop()?.name ?? ROUTE_POINT} items={menu} />
         </Show>
       </li>
     </>

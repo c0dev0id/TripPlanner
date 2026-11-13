@@ -1,11 +1,11 @@
 import { GeoJSONSource, LngLatBounds, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
-import type { Day, LngLat } from '../model/trip';
+import type { Day, LngLat, Route } from '../model/trip';
 import { panTarget, showNeighbours } from '../state/drawing';
 import { comparedLines } from '../state/duplicates';
 import { routePositions } from '../routing/legs';
 import { colorRuns } from '../recording/lineColors';
-import { routesOnMap } from '../state/eyes';
+import { routeOnMap } from '../state/eyes';
 import { keepsView } from '../state/place';
 import { routeWidth } from '../state/preferences';
 import { opened, openedLineColors } from '../state/recordingView';
@@ -83,23 +83,19 @@ export function MapView() {
 
 type ShownDay = { day: Day; role: RouteRole };
 
-/** The day with the routes that are on the map: the day itself where that is all of them. */
-function onMap(day: Day): Day {
-  const routes = routesOnMap(day.routes);
-  return routes === day.routes ? day : { ...day, routes: [...routes] };
-}
-
-/** The days drawn, each with its routes that are on the map: the selected one, and of a trip with `showNeighbours` the ones before and after; every day while none is selected. */
+/** The days drawn: the selected one, and of a trip with `showNeighbours` the ones before and after; every day while none is selected. */
 function shownDays(): ShownDay[] {
   const day = selectedDay();
-  if (!day) return (openTrip()?.days ?? []).map((d) => ({ day: onMap(d), role: 'selected' as const }));
-  const neighbours = showNeighbours() && openTrip()!.kind === 'trip' ? neighbourDays().map((d) => ({ day: onMap(d), role: 'neighbour' as const })) : [];
-  return [...neighbours, { day: onMap(day), role: 'selected' }];
+  if (!day) return (openTrip()?.days ?? []).map((d) => ({ day: d, role: 'selected' as const }));
+  const neighbours = showNeighbours() && openTrip()!.kind === 'trip' ? neighbourDays().map((d) => ({ day: d, role: 'neighbour' as const })) : [];
+  return [...neighbours, { day, role: 'selected' }];
 }
 
 /** Whether the lines of the days drawn are the same: the same routes in the same roles. */
-const sameLines = (a: ShownDay[], b: ShownDay[]): boolean =>
-  a.length === b.length && a.every((d, i) => d.role === b[i]!.role && d.day.routes.length === b[i]!.day.routes.length && d.day.routes.every((route, r) => route === b[i]!.day.routes[r]));
+const sameLines = (a: ShownDay[], b: ShownDay[]): boolean => a.length === b.length && a.every((d, i) => d.day.routes === b[i]!.day.routes && d.role === b[i]!.role);
+
+/** Whether a route of the days drawn is on the map: by its eye, or as the one taken up. */
+const routeDrawn = (route: Route): boolean => route.id === activeRouteId() || routeOnMap(route.id);
 
 const samePlaces = (a: readonly LngLat[], b: readonly LngLat[]): boolean => a.length === b.length && a.every((p, i) => p[0] === b[i]![0] && p[1] === b[i]![1]);
 
@@ -164,7 +160,7 @@ function RouteLines(props: { map: MapLibreMap }) {
   const days = createMemo(shownDays, [], { equals: sameLines });
   const marks = createMemo(() => selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : [])), [], { equals: samePlaces });
   const dims = createMemo(dimStops, [], { equals: samePlaces });
-  const features = createMemo(() => routeFeatures(days(), openRouteColors(), activeRouteId(), failedLegs(), marks(), dims()));
+  const features = createMemo(() => routeFeatures(days(), openRouteColors(), activeRouteId(), failedLegs(), marks(), dims(), routeDrawn));
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
     on([selectedDayId, openTripId], () => {
@@ -172,12 +168,10 @@ function RouteLines(props: { map: MapLibreMap }) {
       if (keepsView(openTripId())) return;
       const bounds = new LngLatBounds();
       for (const { day } of shownDays().filter((d) => d.role === 'selected')) {
-        for (const route of day.routes) for (const position of routePositions(route)) bounds.extend(position);
+        for (const route of day.routes.filter(routeDrawn)) for (const position of routePositions(route)) bounds.extend(position);
         for (const stop of day.stops) bounds.extend(stop.lngLat);
-        for (const recording of shownRecordings().filter((r) => r.dayId === day.id)) {
-          for (const position of loadedTrack(recording)?.points ?? []) bounds.extend(position);
-        }
       }
+      for (const recording of shownRecordings()) for (const position of loadedTrack(recording)?.points ?? []) bounds.extend(position);
       if (!bounds.isEmpty()) props.map.fitBounds(bounds, { padding: clearOfCards(props.map), maxZoom: 13, duration: 600 });
     }),
   );

@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import { batch, createMemo, createRoot, createSignal } from 'solid-js';
+import { batch, createMemo, createRoot, createSelector, createSignal } from 'solid-js';
 import { newId, withChanges, type Day, type LngLat, type Route, type RoutedLeg, type RoutedRoute, type Stop, type Trip } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { roundLngLat } from '../routing/legs';
@@ -25,18 +25,15 @@ export const openTripId: () => number | undefined = createRoot(() => createMemo(
 const [selectedDayId, setSelectedDayId] = createSignal<string>();
 export { selectedDayId };
 
-/** The route being edited, of the selected day; none while the day is only shown. */
-const [editingRouteId, setEditingRouteId] = createSignal<string>();
-export { editingRouteId };
+/** The route taken up, of the selected day; none while the day is only shown. */
+const [activeRouteId, setActiveRouteId] = createSignal<string>();
+export { activeRouteId };
 
-/** The route of a collection's section taken up by a click: a collection is looked through, not edited. */
-const [viewedRouteId, setViewedRouteId] = createSignal<string>();
+/** Whether the route is the one taken up; only the rows a change concerns hear of it. */
+export const isRouteActive: (id: string) => boolean = createRoot(() => createSelector(activeRouteId));
 
-/** The route taken up: the one being edited in a trip, the one last clicked in a collection. */
-export const activeRouteId = (): string | undefined => editingRouteId() ?? viewedRouteId();
-
-/** Takes up a route of the selected section of a collection, or none for undefined. */
-export const viewRoute = (id: string | undefined): void => void setViewedRouteId(id);
+/** The route being edited: the one taken up, in a trip. A collection's is looked at, not edited. */
+export const editingRouteId: () => string | undefined = createRoot(() => createMemo(() => (openTrip()?.kind === 'trip' ? activeRouteId() : undefined)));
 
 /**
  * Whether the mark of the library's tree is in the open trip: on its day that is shown,
@@ -67,13 +64,12 @@ export const markShownDay = (): void => void setMarkInTrip(true);
 /** Takes the mark from the open trip and its day, for a folder; both stay open. */
 export const markFolder = (): void => void setMarkInTrip(false);
 
-/** Shows a day, which takes the mark, or none; whatever was being edited is done. */
+/** Shows a day, which takes the mark, or none; the route taken up is let go. */
 export function selectDay(id: string | undefined): void {
   batch(() => {
     setSelectedDayId(id);
     if (id !== undefined) setMarkInTrip(true);
-    setEditingRouteId(undefined);
-    setViewedRouteId(undefined);
+    setActiveRouteId(undefined);
   });
 }
 
@@ -98,12 +94,23 @@ export const selectedSequence: () => SequenceEntry[] = createRoot(() =>
 /** The selected day's times, from its first stop with a time on. */
 export const selectedTimeline: () => DayTimeline | undefined = createRoot(() => createMemo(() => dayTimeline(selectedSequence())));
 
-/** Starts editing a route of the selected day, or ends editing for undefined. */
-export function editRoute(id: string | undefined): void {
-  setEditingRouteId(id);
+/** Takes up a route of the selected day, which in a trip starts editing it, or lets go of the one taken up for undefined. */
+export function takeUpRoute(id: string | undefined): void {
+  setActiveRouteId(id);
 }
 
-export const editingRoute = (): Route | undefined => selectedDay()?.routes.find((r) => r.id === editingRouteId());
+/** Shows the route's day and takes the route up. */
+export function takeUpRouteOf(dayId: string, routeId: string): void {
+  batch(() => {
+    if (selectedDayId() !== dayId) selectDay(dayId);
+    setActiveRouteId(routeId);
+  });
+}
+
+/** The route taken up, while its day holds it. */
+const activeRoute = (): Route | undefined => selectedDay()?.routes.find((r) => r.id === activeRouteId());
+
+export const editingRoute = (): Route | undefined => (editingRouteId() ? activeRoute() : undefined);
 
 export function routeById(id: string): Route | undefined {
   for (const day of openTrip()?.days ?? []) {
@@ -150,7 +157,7 @@ function restore(earlier: Trip | undefined, current: Trip): void {
     setOpenTrip({ ...earlier, version: current.version });
     setHistoryVersion((v) => v + 1);
     setChangeCount((c) => c + 1);
-    if (editingRouteId() && !editingRoute()) setEditingRouteId(undefined);
+    if (activeRouteId() && !activeRoute()) setActiveRouteId(undefined);
   });
 }
 
@@ -167,8 +174,7 @@ export function loadTrip(loaded: Trip, dayId?: string): void {
     setHistoryVersion((v) => v + 1);
     setSelectedDayId(dayId);
     setMarkInTrip(true);
-    setEditingRouteId(undefined);
-    setViewedRouteId(undefined);
+    setActiveRouteId(undefined);
   });
 }
 
@@ -178,8 +184,7 @@ export function closeTrip(): void {
   batch(() => {
     setOpenTrip(undefined);
     setSelectedDayId(undefined);
-    setEditingRouteId(undefined);
-    setViewedRouteId(undefined);
+    setActiveRouteId(undefined);
     setHistoryVersion((v) => v + 1);
   });
 }
@@ -214,11 +219,11 @@ function editDay(change: (trip: Trip, dayId: string) => Trip, label: string): vo
   if (dayId) edit((trip) => change(trip, dayId), label);
 }
 
-/** Adds a route to the selected day and starts editing it. */
+/** Adds a route to the selected day and takes it up. */
 export function addRoute(): void {
   const id = newId();
   editDay((trip, dayId) => dayEdit.addRoute(trip, dayId, id), t('Add route'));
-  if (routeById(id)) setEditingRouteId(id);
+  if (routeById(id)) setActiveRouteId(id);
 }
 
 /** Adds routes and stops read from a file to the selected day, as one step. */
@@ -228,7 +233,7 @@ export function addParts(parts: { routes: Route[]; stops: Stop[] }): void {
 
 export function removeRoute(routeId: string): void {
   editDay((trip, dayId) => dayEdit.removeRoute(trip, dayId, routeId), t('Remove route'));
-  if (editingRouteId() === routeId) setEditingRouteId(undefined);
+  if (activeRouteId() === routeId) setActiveRouteId(undefined);
 }
 
 /** Applies a route edit (see routeEdit) to a route; the day's bound stops follow their points. */
@@ -379,10 +384,10 @@ export function pasteDays(days: readonly Day[], afterId: string | undefined): vo
   edit((trip) => dayEdit.pasteDays(trip, days, afterId, newId), t(days.length > 1 ? 'Paste days' : 'Paste day'));
 }
 
-/** Shows no day and edits no route that an edit took away. */
+/** Shows no day and takes up no route that an edit took away. */
 function leaveWhatIsGone(): void {
   if (selectedDayId() && !selectedDay()) selectDay(undefined);
-  else if (editingRouteId() && !editingRoute()) setEditingRouteId(undefined);
+  else if (activeRouteId() && !activeRoute()) setActiveRouteId(undefined);
 }
 
 /** Removes days, routes or stops of the trip, as one step to undo. */

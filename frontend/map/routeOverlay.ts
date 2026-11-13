@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ExpressionSpecification, FilterSpecification, LayerSpecification, LineLayerSpecification } from 'maplibre-gl';
-import type { Day, LngLat } from '../model/trip';
+import type { Day, LngLat, Route } from '../model/trip';
 import { atZooms, lineAt } from './zoomSize';
 import { legCoordinates, legState, routeLegs, type LegState } from '../routing/legs';
 
@@ -90,7 +90,8 @@ export function routeLayers(width: number, sharpUntil: number): LayerSpecificati
  * The legs of the days shown as lines with their route and its day, their role, their routing state and the colour
  * `colors` holds for their route, consecutive legs of a route in the same state as one
  * line, a mark at each spot given (where a free stop is nearest to the route), and a grey
- * dot at each of `dimStops` (the stops of the days shown that are not selected).
+ * dot at each of `dimStops` (the stops of the days shown that are not selected). Only the
+ * routes `drawn` says are on the map get lines.
  */
 export function routeFeatures(
   days: readonly { day: Day; role: RouteRole }[],
@@ -99,10 +100,11 @@ export function routeFeatures(
   failed: ReadonlySet<string>,
   marks: readonly LngLat[],
   dimStops: readonly LngLat[] = [],
+  drawn: (route: Route) => boolean = () => true,
 ): FeatureCollection<Geometry> {
   const features: Feature<Geometry>[] = [];
   for (const { day, role } of days) {
-    for (const route of day.routes) {
+    for (const route of day.routes.filter(drawn)) {
       const routeRole: RouteRole = route.id === editingRouteId ? 'edited' : role;
       // The lines of consecutive legs in the same state; a run of one leg, such as a track, keeps its line as it is.
       const runs: { state: LegState; parts: LngLat[][] }[] = [];

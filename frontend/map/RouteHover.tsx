@@ -1,6 +1,6 @@
 import { Popup, type Map as MapLibreMap, type MapMouseEvent } from 'maplibre-gl';
 import { onCleanup } from 'solid-js';
-import { editingRoute, editRoute, openTrip, selectDay, selectedDayId, viewRoute } from '../state/trip';
+import { editingRoute, openTrip, selectedDayId } from '../state/trip';
 import { dayTitleOf, routeLabel } from '../trip/labels';
 import { ROUTE_LINE_LAYER, ROUTES_SOURCE } from './routeOverlay';
 
@@ -15,13 +15,6 @@ export function routeAt(map: MapLibreMap, { x, y }: { x: number; y: number }, re
   if (!map.getLayer(ROUTE_LINE_LAYER)) return undefined;
   const feature = map.queryRenderedFeatures([[x - reach, y - reach], [x + reach, y + reach]], { layers: [ROUTE_LINE_LAYER] })[0];
   return feature && { routeId: feature.properties.route as string, dayId: feature.properties.day as string };
-}
-
-/** Takes up a route found on the map: shows its day and edits the route, or in a collection looks at it. */
-export function takeUpRoute({ routeId, dayId }: DrawnRoute): void {
-  if (selectedDayId() !== dayId) selectDay(dayId);
-  if (openTrip()?.kind === 'trip') editRoute(routeId);
-  else viewRoute(routeId);
 }
 
 /** What a route is called under the pointer: its label, after its day's while the whole trip is shown. */
@@ -42,23 +35,22 @@ export function RouteHover(props: { map: MapLibreMap }) {
   const { map } = props;
   const popup = new Popup({ closeButton: false, closeOnClick: false, offset: 14, className: 'route-name' });
   let hovered: string | undefined;
-  const hover = (routeId: string | undefined) => {
-    if (routeId === hovered) return;
+  /** Marks the route the pointer came onto and names it, and lets go of the one it left. */
+  const hover = (at: DrawnRoute | undefined, e?: MapMouseEvent) => {
+    if (at?.routeId === hovered) return;
     if (hovered && map.getSource(ROUTES_SOURCE)) map.removeFeatureState({ source: ROUTES_SOURCE, id: hovered }, 'hover');
-    if (routeId) map.setFeatureState({ source: ROUTES_SOURCE, id: routeId }, { hover: true });
-    map.getCanvas().style.cursor = routeId ? 'pointer' : '';
-    hovered = routeId;
+    hovered = at?.routeId;
+    map.getCanvas().style.cursor = at ? 'pointer' : '';
+    if (!at || !e) return void popup.remove();
+    map.setFeatureState({ source: ROUTES_SOURCE, id: at.routeId }, { hover: true });
+    popup.setLngLat(e.lngLat).setText(nameOf(at)).addTo(map);
   };
   const onMove = (e: MapMouseEvent) => {
-    const at = editingRoute() ? undefined : routeAt(map, e.point, HOVER_REACH);
-    hover(at?.routeId);
-    if (at) popup.setLngLat(e.lngLat).setText(nameOf(at)).addTo(map);
-    else popup.remove();
+    hover(editingRoute() ? undefined : routeAt(map, e.point, HOVER_REACH), e);
+    // The name goes along with the pointer.
+    if (hovered) popup.setLngLat(e.lngLat);
   };
-  const onLeave = () => {
-    hover(undefined);
-    popup.remove();
-  };
+  const onLeave = () => hover(undefined);
   map.on('mousemove', onMove);
   map.on('mouseout', onLeave);
   onCleanup(() => {

@@ -6,9 +6,8 @@ import { routeDistance, routePositions, routesDistance } from '../routing/legs';
 import { isCut } from '../state/clipboard';
 import { panTo, showWhole } from '../state/drawing';
 import { clickPart, isPartSelected } from '../state/partSelection';
-import { groupEye, routeEye, setGroupEye, setRouteEyes } from '../state/eyes';
 import { recordingsOf } from '../state/recordings';
-import { activeRouteId, isDayMarked, markShownDay, openTrip, selectDay, selectedDayId, updateDay, viewRoute } from '../state/trip';
+import { isDayMarked, isRouteActive, markShownDay, openTrip, selectDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
 import { symbolLabel } from '../symbols/symbols';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
@@ -20,7 +19,7 @@ import { selects } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, routeKindLabel, routeLabel } from './labels';
 import { partMenu } from './partMenu';
-import { Eye } from './Eye';
+import { GroupEye, RouteEye } from './Eye';
 import { DayRecordings } from './Recordings';
 
 /**
@@ -87,7 +86,7 @@ export function SectionDetails(props: { day: Day }) {
       <Show when={props.day.routes.length > 0} fallback={<Show when={recordingsOf(props.day.id).length === 0}><p class="muted">{t('No routes in this section yet.')}</p></Show>}>
         <div class="row heading">
           <h4 class="grow">{t('Routes')}</h4>
-          <Eye of={t('the routes')} open={groupEye('routes')} onToggle={(open) => setGroupEye('routes', open)} />
+          <GroupEye group="routes" />
         </div>
         <ul class="routes">
           <ForById each={props.day.routes}>{(route) => <RouteItem route={route()} day={props.day} />}</ForById>
@@ -116,13 +115,13 @@ export function SectionDetails(props: { day: Day }) {
 function RouteItem(props: { route: Route; day: Day }) {
   const label = createMemo(() => routeLabel(props.route, props.day));
   const distance = createMemo(() => routeDistance(props.route));
-  const active = () => activeRouteId() === props.route.id;
+  const active = () => isRouteActive(props.route.id);
   let row!: HTMLDivElement;
   // A route taken up on the map is brought into view.
   createEffect(on(active, (is) => is && row.scrollIntoView({ block: 'nearest' })));
   const click = (e: MouseEvent) => {
     if (selects(e)) return clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
-    viewRoute(active() ? undefined : props.route.id);
+    takeUpRoute(active() ? undefined : props.route.id);
     if (active()) showWhole(routePositions(props.route));
   };
   return (
@@ -144,7 +143,7 @@ function RouteItem(props: { route: Route; day: Day }) {
             </span>
           </span>
         </button>
-        <Eye of={label()} open={routeEye(props.route.id)} veiled={!groupEye('routes')} onToggle={(open) => setRouteEyes([props.route.id], open)} />
+        <RouteEye id={props.route.id} of={label()} />
         <MenuButton of={label()} items={() => partMenu('route', props.route.id)} />
       </div>
     </li>

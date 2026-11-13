@@ -614,8 +614,10 @@ entries at the end of their section.
   source, whose features carry their route's id for it, and a click does what a click
   on its row does. While a route is edited a tap belongs to the tool, so neither
   happens then. A collection's routes are not edited; the one clicked is taken up all
-  the same, in a place of its own beside the route being edited, so that it is drawn
-  and marked without the tools coming up.
+  the same. There is one route taken up, and the route being edited is that one while
+  the open trip is a trip: every reader of the edited route means that the tools are
+  up, and a second place for a collection's route had to be kept in step with the
+  first wherever a route is let go.
 - **A day that is shown has its place in the tree in view.** A day shown from the
   duplicates report, a search or the address opened in its pane while its trip and
   folders stayed folded, so the pane showed a day the tree gave no place to. The tree

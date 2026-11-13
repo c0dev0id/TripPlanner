@@ -1,4 +1,5 @@
 import { t } from '../i18n/t';
+import { groupEye, routeEye, setGroupEye, setRouteEyes, type EyeGroup } from '../state/eyes';
 import { EyeIcon, EyeOffIcon } from '../ui/icons';
 
 /**
@@ -13,4 +14,14 @@ export function Eye(props: { of: string; open: boolean; veiled?: boolean; onTogg
       {props.open ? <EyeIcon /> : <EyeOffIcon />}
     </button>
   );
+}
+
+/** The eye of a route, named `of`. */
+export function RouteEye(props: { id: string; of: string }) {
+  return <Eye of={props.of} open={routeEye(props.id)} veiled={!groupEye('routes')} onToggle={(open) => setRouteEyes([props.id], open)} />;
+}
+
+/** The eye of all the routes, or of all the recordings. */
+export function GroupEye(props: { group: EyeGroup }) {
+  return <Eye of={t(props.group === 'routes' ? 'the routes' : 'the recordings')} open={groupEye(props.group)} onToggle={(open) => setGroupEye(props.group, open)} />;
 }

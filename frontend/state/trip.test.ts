@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Trip } from '../model/trip';
 import { routedOf } from '../routing/testing';
-import { addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markShownDay, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, undo, undoLabel, updateStop } from './trip';
+import { activeRouteId, addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markShownDay, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -137,5 +137,14 @@ describe('the open trip', () => {
     undo();
     expect(sent().version).toBe(3);
     expect(sent().days[0]!.routes).toHaveLength(0);
+  });
+
+  it('takes up a route of a collection without editing it', () => {
+    closeTrip();
+    loadTrip({ ...empty(), kind: 'collection', days: [{ id: 'd', name: 'S', date: null, notes: '', routes: [{ id: 'r', name: '', kind: 'track', profile: 'motorcycle', optional: false, color: null, line: '' }], stops: [] }] });
+    takeUpRouteOf('d', 'r');
+    expect([selectedDay()?.id, activeRouteId(), editingRouteId(), editingRoute()]).toEqual(['d', 'r', undefined, undefined]);
+    selectDay(undefined);
+    expect(activeRouteId()).toBeUndefined();
   });
 });

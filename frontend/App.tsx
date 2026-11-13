@@ -14,7 +14,7 @@ import { setPreferencesOpen } from './state/drawing';
 import { libraryFolders, libraryTrips, relistTrips, setOpening, showFolder, shownFolderId, showingDuplicates } from './state/library';
 import { foldPanel, panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
-import { closeTrip, editingRouteId, editRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
+import { closeTrip, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
 import { PreferencesDialog } from './preferences/PreferencesDialog';
 import { DayDialog } from './trip/DayDialog';
 import { DayPane } from './trip/DayPane';
@@ -88,7 +88,7 @@ export function App() {
     if (place.tripId !== undefined) {
       if (/(^#|&)map=/.test(location.hash)) keepViewOf(place.tripId);
       await open(place.tripId, place.dayId);
-      if (selectedDay()?.routes.some((route) => route.id === place.routeId)) editRoute(place.routeId);
+      if (selectedDay()?.routes.some((route) => route.id === place.routeId)) takeUpRoute(place.routeId);
     }
     setReturned(true);
   });

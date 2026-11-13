@@ -4,10 +4,10 @@ import { currentTool, setTool, spotItems, tapAction, tool, type Tool } from '../
 import { isTextField } from '../ui/form';
 import { menu, setMenu } from '../ui/menu';
 import { pickPoint, setPickedIndex } from '../state/recordingView';
-import { addFreeStop, appendPoint, editingRoute, editRoute, insertPoint, insertStop, openTrip, redo, undo } from '../state/trip';
+import { addFreeStop, appendPoint, editingRoute, insertPoint, insertStop, openTrip, redo, takeUpRoute, takeUpRouteOf, undo } from '../state/trip';
 import { fromMarker, toLngLat } from './markers';
 import { recordingPointAt } from './recordingPick';
-import { routeAt, takeUpRoute } from './RouteHover';
+import { routeAt } from './RouteHover';
 import { hitRouteLine } from './routeTools';
 import { TapFilter, tapReach, type PointerSample } from './tapFilter';
 import { popupAt } from './tapPopup';
@@ -86,7 +86,7 @@ export function Interactions(props: { map: MapLibreMap }) {
       setPickedIndex(undefined);
       // While none is edited, a tap on a route takes it up.
       const tapped = route ? undefined : routeAt(map, e.point, reach);
-      if (tapped) takeUpRoute(tapped);
+      if (tapped) takeUpRouteOf(tapped.dayId, tapped.routeId);
       return;
     }
     setMenu(undefined);
@@ -130,7 +130,7 @@ export function Interactions(props: { map: MapLibreMap }) {
     if (e.key !== 'Escape') return;
     // Esc goes back to the hand, then ends editing; an open menu takes it first.
     if (currentTool() !== 'hand') setTool('hand');
-    else editRoute(undefined);
+    else takeUpRoute(undefined);
   };
   const onSpaceUp = (e: KeyboardEvent) => {
     if (e.key === ' ') handBack();

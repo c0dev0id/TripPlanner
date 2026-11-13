@@ -5,7 +5,7 @@ import type { Day } from '../model/trip';
 import { copyRecordings, isCutRecording } from '../state/clipboard';
 import { clearPartSelection, clickPart, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
 import { showWhole } from '../state/drawing';
-import { groupEye, recordingEye, setGroupEye, setRecordingEyes } from '../state/eyes';
+import { groupEye, recordingEye, setRecordingEyes } from '../state/eyes';
 import { openRecording } from '../state/recordingView';
 import {
   activeRecordingId,
@@ -37,7 +37,7 @@ import { CloseIcon, PlusIcon, SearchIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
-import { Eye } from './Eye';
+import { Eye, GroupEye } from './Eye';
 import { eyeItems, moveToDayItem } from './partMenu';
 import { pickFile } from '../ui/pickFile';
 import { selects } from '../ui/selection';
@@ -65,7 +65,7 @@ export function DayRecordings(props: { day: Day }) {
       <div class="row heading">
         <h4 class="grow">{t('Recordings')}</h4>
         <Show when={recordings().length > 0}>
-          <Eye of={t('the recordings')} open={groupEye('recordings')} onToggle={(open) => setGroupEye('recordings', open)} />
+          <GroupEye group="recordings" />
         </Show>
         <Show when={openTrip()?.kind === 'trip'}>
           <IconButton label={t('Look up recordings…')} onClick={() => void recordingAction(props.day.id, () => lookUp(props.day))}>
@@ -111,7 +111,7 @@ function FoundRecordings(props: { dayId: string; found: WaitingRecording[] | und
       return t('“{name}” added as a recording.', { name: waiting.name });
     });
   return (
-    <div class="found-recordings">
+    <div>
       <div class="row">
         <p class="muted hint grow">{said()}</p>
         <IconButton label={t('Close')} onClick={closeLookup}>

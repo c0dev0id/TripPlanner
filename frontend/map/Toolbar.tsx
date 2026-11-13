@@ -4,7 +4,7 @@ import { currentTool, setEditTarget, setTool, toolsOf, TOOLS, type Tool } from '
 import type { Route } from '../model/trip';
 import { routedLegs } from '../routing/legs';
 import { recalculateRoute } from '../state/routing';
-import { editingRoute, editRoute, redo, redoLabel, undo, undoLabel } from '../state/trip';
+import { editingRoute, takeUpRoute, redo, redoLabel, undo, undoLabel } from '../state/trip';
 import { setMenu, type MenuItem } from '../ui/menu';
 import { CheckIcon, DeleteIcon, DotsIcon, HandIcon, InsertIcon, PinIcon, RedoIcon, RefreshIcon, SettingsIcon, UndoIcon } from '../ui/icons';
 
@@ -79,7 +79,7 @@ export function Toolbar() {
             </span>
           </div>
           <div class="toolbar-group" role="group" aria-label={t('Editing')}>
-            <ToolButton label={t('Done')} title={t('Leave the route (Esc)')} onClick={() => editRoute(undefined)}>
+            <ToolButton label={t('Done')} title={t('Leave the route (Esc)')} onClick={() => takeUpRoute(undefined)}>
               <CheckIcon />
             </ToolButton>
           </div>
