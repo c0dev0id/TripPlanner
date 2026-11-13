@@ -161,10 +161,10 @@ entries at the end of their section.
 - **Rows are selected by a pad on touch screens.** A touch screen has no Cmd or Shift, and
   its long press already opens the menu, so a selectable row (a trip of a folder, a route
   of the duplicates report) has a pad drawn as a day's or a route's drag grip: a tap on it
-  selects or deselects the row, a tap elsewhere opens it. The row's highlight is the only
-  mark of the selection; a checkbox in the pad looked dated. The pad works for a mouse
-  too. In the duplicates report a mouse click on the row still selects it, as asked for
-  working through the report at a desk, while a tap opens it.
+  selects or deselects the row, a tap elsewhere on a trip opens it. The row's highlight
+  is the only mark of the selection; a checkbox in the pad looked dated. The pad works
+  for a mouse too. In the duplicates report a click or a tap on the row selects it
+  alone, which is what draws it on the map.
 - **The search runs in the browser.** The library loads all trip summaries and folders of
   the user (a few hundred small rows at most for a personal planner) and filters them by
   name; the results are capped at twenty. A server search would add an endpoint for
@@ -579,8 +579,8 @@ entries at the end of their section.
   planned route and the tracks ridden along it on the same day, and the report listed
   each such day as the same ride kept twice, hundreds of groups that buried the ones
   worth looking at. A group is left out where it lies in one day and holds at most one
-  planned route. Anything beyond that day makes it a duplicate again and lists it
-  whole: the same routes imported twice into two trips, which is what the report is
+  planned route and no route or track twice, since a copy is no recording of anything.
+  Anything beyond that day makes it a duplicate again and lists it whole: the same routes imported twice into two trips, which is what the report is
   for, or a recording kept in a collection beside the one in its trip. A first version
   left out every group whose routes were all in trips, which hid exactly the trips
   imported twice.
@@ -592,8 +592,13 @@ entries at the end of their section.
   used to select with a mouse and open with a finger; it now selects either way and
   the map draws the selection, which is what tells two routes apart. Their lines are
   fetched by id as they are selected rather than sent with the report, which would
-  carry every line of hundreds of groups for the few that are looked at. At most ten
-  are drawn, one per colour of the palette.
+  carry every line of hundreds of groups for the few that are looked at, and only the
+  lines being compared are kept, a track being megabytes. At most eight are drawn, one
+  per colour of the palette. The heading says when the report was made, since what
+  changes in the library afterwards does not reach it. A route deleted from the open
+  trip is taken out of it as an edit of that trip, saved with it and undone like any
+  other, rather than changed on the server behind its back; routes of other trips are
+  deleted on the server.
 - **A paste empties the clipboard.** A copy used to stay on it to be pasted again, which
   left the library's offer to paste standing after the paste was done, with nothing but
   another copy or cut to take it away. What is on the clipboard is now pasted once,
@@ -1008,10 +1013,10 @@ entries at the end of their section.
 - **The duplicates report takes the pane beside the library, not the library's place.**
   It stood where the tree stands, so looking at a route it listed meant leaving the
   report, and the trip had to be left to show it. In the pane between the library and
-  the map the tree stays, a route opened from the report is shown on the map beside
-  it, and the report is still there for the next one. It shares the pane with the day:
-  the report has it while it is switched on, and a day picked anywhere but from the
-  report takes it back, since picking a day asks for its routes. The pane's frame (its
+  the map the tree stays, and the map draws what is selected in the report beside it.
+  It shares the pane with the day: the report has it while it is switched on, and a
+  day that is shown takes it back, since showing a day asks for its routes; opening a
+  route's location from the report does just that. The pane's frame (its
   heading with the close button, the edge that sets its width, the handle that makes it
   a sheet on a phone) is one component for both.
 - **Trips and folders are dragged by their pad.** The pad that selects a trip also drags

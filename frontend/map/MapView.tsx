@@ -126,14 +126,9 @@ function RecordingLines(props: { map: MapLibreMap }) {
   return null;
 }
 
-/** Draws the routes the duplicates report compares, each in its colour, and brings them into view as they come. */
+/** Draws the routes the duplicates report compares, each in its colour. */
 function ComparedLines(props: { map: MapLibreMap }) {
-  createEffect(() => {
-    const lines = comparedLines();
-    props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData(recordingFeatures(lines));
-    const bounds = lines.reduce((box, line) => line.points.reduce((b, p) => b.extend(p), box), new LngLatBounds());
-    if (!bounds.isEmpty()) props.map.fitBounds(bounds, { padding: clearOfCards(props.map), maxZoom: 15, duration: 500 });
-  });
+  createEffect(() => props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData(recordingFeatures(comparedLines())));
   return null;
 }
 

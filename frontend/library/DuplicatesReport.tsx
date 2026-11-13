@@ -1,18 +1,17 @@
 import { t } from '../i18n/t';
-import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, Show, Switch } from 'solid-js';
+import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, onMount, Show, Switch } from 'solid-js';
 import { changeTrip, errorMessage, fetchTrip, type DuplicateGroup, type DuplicateRoute } from '../api';
 import { copiedRoute, removeRoute, type CopiedRoute } from '../routing/dayEdit';
-import { flushSave } from '../state/autosave';
 import { copyRoutes } from '../state/clipboard';
-import { comparedColor, DUPLICATES, duplicateGroups, duplicateKey, forgetDuplicates, refreshDuplicates } from '../state/duplicates';
-import { fetchingTrip, libraryTrips, outlineOf, setShowingDuplicates } from '../state/library';
-import { selectedDayId } from '../state/trip';
+import { comparedColor, DUPLICATES, duplicateGroups, duplicateKey, duplicatesMadeAt, duplicatesStartedAt, forgetDuplicates, refreshDuplicates } from '../state/duplicates';
+import { fetchingTrip, libraryTrips, outlineOf, relistTrips, setShowingDuplicates } from '../state/library';
+import { openTripId, removeParts, selectedDayId } from '../state/trip';
 import { dayLabel } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
 import { IconButton } from '../ui/IconButton';
 import { RefreshIcon } from '../ui/icons';
 import { askConfirmation } from '../ui/confirm';
-import { counted, distanceText } from '../ui/format';
+import { clockText, counted, distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { fileVerb } from '../ui/fileVerb';
@@ -51,28 +50,29 @@ let scrolled = 0;
 /**
  * The routes the library keeps more than once, in the pane between the library and the
  * map: exact copies, and the same ride kept from two sources on one day, but for a day's
- * plan beside its own recordings. The report is
- * made once and kept; the button in its heading makes it afresh. A click or a tap selects
+ * plan beside its own recordings. The report is made once and kept, its heading says
+ * when, and the button there makes it afresh. A click or a tap selects
  * a route, with Cmd or Ctrl one more, with Shift a run of them; its pad adds or takes it
  * away. The map draws what is selected, each route in a colour its row shows too, to
  * compare them. The menu opens the place of one, its day, whose pane takes the report's
  * place until the report is shown again, and copies or deletes the selected ones, as
- * Ctrl+C and Delete do; `onChanged` hears of the trips routes were deleted from. A day
- * picked elsewhere takes the pane for itself.
+ * Ctrl+C and Delete do. A day picked elsewhere takes the pane for itself.
  */
-export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void; onChanged: (tripIds: number[]) => void }) {
+export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void }) {
   const groups = duplicateGroups;
+  /** The groups of the report; none where it failed, since reading a resource that failed throws. */
+  const found = () => (groups.error ? undefined : groups());
   /** How many routes the library holds, which is how many the report compares. */
   const routeCount = () => (libraryTrips() ?? []).reduce((sum, trip) => sum + (outlineOf(trip.id) ?? []).reduce((routes, day) => routes + day.routes, 0), 0);
   /** The seconds the report has been in the making: the server answers only once it is done, so this is all there is to tell meanwhile. */
-  const [seconds, setSeconds] = createSignal(0);
+  const [now, setNow] = createSignal(Date.now());
   createEffect(() => {
     if (!groups.loading) return;
-    setSeconds(0);
-    const timer = setInterval(() => setSeconds((s) => s + 1), 1000);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
     onCleanup(() => clearInterval(timer));
   });
-  const of = (kind: DuplicateGroup['kind']) => (groups() ?? []).filter((g) => g.kind === kind);
+  const seconds = () => Math.max(0, Math.round((now() - duplicatesStartedAt()) / 1000));
+  const of = (kind: DuplicateGroup['kind']) => (found() ?? []).filter((g) => g.kind === kind);
   const selection = () => selectionOf(DUPLICATES);
   const setSelection = (rows: Selection<string>) => selectIn(DUPLICATES, rows);
   onCleanup(() => setSelection(NOTHING_SELECTED));
@@ -113,12 +113,16 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
         : t('Delete {n} routes from {trips}?', { n: chosen.length, trips: counted(trips, 'trip') });
     if (!(await askConfirmation(question, t('Delete')))) return;
     await work(t('Deleting…'), async () => {
-      // The open trip may be among them: what it has to save goes first, and it is told that it changed.
-      await flushSave();
-      await removeRoutes(chosen);
+      // The open trip loses its routes as an edit of it, saved with it and undone like any other; the other trips on the server.
+      const inOpenTrip = chosen.filter((r) => r.tripId === openTripId());
+      const elsewhere = chosen.filter((r) => r.tripId !== openTripId());
+      if (inOpenTrip.length > 0) removeParts('route', inOpenTrip.map((r) => r.routeId));
+      if (elsewhere.length > 0) {
+        await removeRoutes(elsewhere);
+        relistTrips();
+      }
       setSelection(NOTHING_SELECTED);
       forgetDuplicates(chosen);
-      props.onChanged(tripIdsOf(chosen));
       return t('Deleted {what}.', { what: counted(chosen.length, 'route') });
     });
   };
@@ -142,20 +146,13 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   };
   document.addEventListener('keydown', onKey);
   onCleanup(() => document.removeEventListener('keydown', onKey));
-  /** What stands for the report while it is made. */
-  const waiting = () => (
-    <p class="muted row">
-      <span class="spinner" />
-      {t('Comparing {routes} with each other… {seconds} s', { routes: counted(routeCount(), 'route'), seconds: seconds() })}
-    </p>
-  );
-  /** Brings the pane back to where it was scrolled to, and keeps track of where it is. */
-  const keepScroll = (inner: HTMLElement) =>
-    queueMicrotask(() => {
-      const pane = inner.closest<HTMLElement>('.side-pane')!;
-      pane.scrollTop = scrolled;
-      pane.addEventListener('scroll', () => (scrolled = pane.scrollTop));
-    });
+  let details!: HTMLDivElement;
+  // The pane comes back to where it was scrolled to, and keeps track of where it is.
+  onMount(() => {
+    const pane = details.closest<HTMLElement>('.side-pane')!;
+    pane.scrollTop = scrolled;
+    pane.addEventListener('scroll', () => (scrolled = pane.scrollTop));
+  });
   const rows = {
     selected: (route: DuplicateRoute) => isSelected(duplicateKey(route)),
     onClick: (route: DuplicateRoute, e: MouseEvent) => setSelection(clickSelect(selection(), [...shown().keys()], duplicateKey(route), e)),
@@ -167,21 +164,32 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
       label={t('Routes kept more than once')}
       onClose={() => setShowingDuplicates(false)}
       heading={
-        <span class="lines grow">
-          <span class="name">{t('Routes kept more than once')}</span>
-          <Show when={!groups.error && groups()}>{(found) => <span class="muted detail">{counted(found().length, 'group')}</span>}</Show>
-        </span>
-      }
-      actions={
-        <IconButton label={t('Make the report afresh')} disabled={groups.loading} onClick={refreshDuplicates}>
-          <RefreshIcon />
-        </IconButton>
+        <>
+          <span class="lines grow">
+            <span class="name">{t('Routes kept more than once')}</span>
+            <Show when={found()}>
+              {(made) => (
+                <span class="muted detail">
+                  {counted(made().length, 'group')} · {clockText(duplicatesMadeAt()!)}
+                </span>
+              )}
+            </Show>
+          </span>
+          <IconButton label={t('Make the report afresh')} disabled={groups.loading} onClick={refreshDuplicates}>
+            <RefreshIcon />
+          </IconButton>
+        </>
       }
     >
-      <div class="day-details" ref={keepScroll}>
-        <Switch fallback={waiting()}>
+      <div class="day-details" ref={details}>
+        <Switch>
           <Match when={groups.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
-          <Match when={groups.loading}>{waiting()}</Match>
+          <Match when={groups.loading || !groups()}>
+            <p class="muted row">
+              <span class="spinner" />
+              {t('Comparing {routes} with each other… {seconds} s', { routes: counted(routeCount(), 'route'), seconds: seconds() })}
+            </p>
+          </Match>
           <Match when={groups()?.length === 0}>
             <p class="muted">{t('No route is kept more than once.')}</p>
           </Match>
