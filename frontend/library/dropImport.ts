@@ -71,8 +71,8 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
   const errors: string[] = [];
   const collection = trip.kind === 'collection';
   onProgress(t('Importing {i} of {n}: {name}', { i: 1, n: 1, name: trip.name }));
-  const [planned] = planFolderImport(files.map((file) => file.path), collection ? 'planning-material' : 'trip-per-folder');
-  const days = await readPlannedDays(files, planned?.days ?? [], errors);
+  const planned = planFolderImport(files.map((file) => file.path), collection ? 'planning-material' : 'trips');
+  const days = await readPlannedDays(files, planned.flatMap((trip) => trip.days), errors);
   if (days.length === 0) return { text: t('No GPX files and no exported trips in there.'), errors };
   await changeTrip(trip.id, (loaded) => days.reduce((to, { day, parts }) => withImportedDay(to, day, parts), loaded));
   return { text: t('{trips} imported.', { trips: counted(days.length, collection ? 'section' : 'day') }), errors };
@@ -97,7 +97,7 @@ export async function importDropped(dropped: Dropped, folderId: number | null, k
     errors.push(...sections.errors);
   }
   if (kind !== 'recordings') {
-    const trees = await importTree(kind === 'collections' ? [] : dropped.files, dropped.inFolders, kind === 'collections' ? 'planning-material' : 'trip-per-folder', folderId, onProgress);
+    const trees = await importTree(kind === 'collections' ? [] : dropped.files, dropped.inFolders, kind === 'collections' ? 'planning-material' : 'trips', folderId, onProgress);
     if (trees.trips > 0) made.push(counted(trees.trips, kind === 'collections' ? 'collection' : 'trip'));
     errors.push(...trees.errors);
   }

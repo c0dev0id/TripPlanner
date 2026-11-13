@@ -11,7 +11,7 @@ import { importArchive } from './tripArchive';
  * a trip per file, the folders plain folders; or planning material, a collection per
  * folder of GPX files with a section per file.
  */
-export type ImportMode = 'trip-per-folder' | 'trip-per-file' | 'planning-material';
+export type ImportMode = 'trips' | 'trip-per-file' | 'planning-material';
 
 /** A trip or a collection the import makes. */
 export interface PlannedTrip {
@@ -68,6 +68,9 @@ export interface ImportSource {
   open: () => Promise<File>;
 }
 
+/** A picked or dropped file as a source. */
+export const sourceOf = (file: File): ImportSource => ({ path: pickedPath(file), open: async () => file });
+
 /** Whether the path is a GPX file's that is not hidden. */
 export const isGpxPath = (path: string): boolean => /^[^.][^/]*\.gpx$/i.test(path.slice(path.lastIndexOf('/') + 1));
 
@@ -90,9 +93,10 @@ export function planFolderImport(paths: readonly string[], mode: ImportMode): Pl
     else byFolder.set(folder, [i]);
   });
   const stem = (i: number) => stems[i]!;
+  const folders = [...byFolder.keys()].sort(byName);
   /** Whether the folder also holds folders of GPX files, at any depth: it is then no trip itself, but a folder of trips. */
-  const holdsFolders = (folder: string) => [...byFolder.keys()].some((other) => other !== folder && other.startsWith(folder === '' ? '' : `${folder}/`));
-  const planned = [...byFolder.keys()].sort(byName).flatMap((folder) => {
+  const holdsFolders = (folder: string) => folders.some((other) => other !== folder && other.startsWith(folder === '' ? '' : `${folder}/`));
+  const planned = folders.flatMap((folder) => {
     const segments = folder.split('/');
     const files = byFolder.get(folder)!.sort((a, b) => byName(stem(a), stem(b)));
     if (mode === 'planning-material') return [collectionOfFolder(segments, files, stem)];

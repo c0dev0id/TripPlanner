@@ -3,13 +3,11 @@ import { libraryFolders, relistFolders, relistTrips, runLibrary, setImportNote }
 import { pickFiles } from '../ui/pickFile';
 import { importDropped, importIntoTrip } from './dropImport';
 import { droppedSources, onFileDrop, type Dropped } from './fileDrop';
-import { pickedPath, type ImportSource } from './folderImport';
+import { sourceOf, type ImportSource } from './folderImport';
 import { kindAround } from './folders';
 import { zipEntries } from './zip';
 
 type Outcome = { text: string; errors: string[] };
-
-const sourceOf = (file: File): ImportSource => ({ path: pickedPath(file), open: async () => file });
 
 /**
  * What is imported together: the GPX files and the folders as they are, and each zip

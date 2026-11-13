@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { dateIn, pickedPath, planFolderImport, type ImportMode } from './folderImport';
 
 /** The plan with each day as its date, name and file names; trips planned per folder unless the mode says otherwise. */
-const plan = (paths: string[], mode: ImportMode = 'trip-per-folder') =>
+const plan = (paths: string[], mode: ImportMode = 'trips') =>
   planFolderImport(paths, mode).map(({ kind, ...t }) => ({ ...(kind === 'trip' ? {} : { kind }), ...t, days: t.days.map((d) => [d.date, d.name, d.files.map((i) => paths[i]!.split('/').at(-1))]) }));
 
 describe('pickedPath', () => {
