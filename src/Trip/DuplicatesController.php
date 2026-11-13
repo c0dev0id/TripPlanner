@@ -26,7 +26,7 @@ final class DuplicatesController
     /** The lines of the routes named by `routes=` (comma-separated ids), by id; an object, also where it is empty. */
     public function lines(Request $request, Response $response): Response
     {
-        $ids = array_values(array_filter(explode(',', (string) ($request->getQueryParams()['routes'] ?? ''))));
+        $ids = explode(',', (string) ($request->getQueryParams()['routes'] ?? ''));
         return Json::of($response, (object) $this->duplicates->lines($this->currentUser->get()->id, $ids));
     }
 }

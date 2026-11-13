@@ -17,7 +17,8 @@ use Planner\Export\RouteGeometry;
  * along about the same line, on the same date or where a day has none. The same road
  * ridden on different dates is no duplicate. Nor is a day's planned route beside the
  * tracks recorded of it on that day: they belong together. Once anything outside that day
- * is the same ride too, or the day holds the route twice, the group is listed whole.
+ * is the same ride too, or the day holds a route or a track twice, the group is listed
+ * whole.
  */
 final class Duplicates
 {
@@ -58,19 +59,19 @@ final class Duplicates
                 $routes[] = $summary;
             }
         }
-        $groups = array_filter(self::groups($routes), fn (array $members) => !self::planWithItsRecordings(array_map(fn (int $i) => $routes[$i], $members)));
-        return array_map(fn (array $members) => [
-            'kind' => count(array_unique(array_map(fn (int $i) => $routes[$i]['copy'], $members))) === 1 ? 'copies' : 'same ride',
-            'routes' => array_map(fn (int $i) => $routes[$i]['entry'], $members),
-        ], array_values($groups));
+        $groups = array_map(fn (array $members) => array_map(fn (int $i) => $routes[$i], $members), self::groups($routes));
+        return array_map(fn (array $group) => [
+            'kind' => count(array_unique(array_column($group, 'copy'))) === 1 ? 'copies' : 'same ride',
+            'routes' => array_column($group, 'entry'),
+        ], array_values(array_filter($groups, fn (array $group) => !self::planWithItsRecordings($group))));
     }
 
-    /** Whether the routes are one day's alone and at most one of them is planned: the plan, if any, and what was recorded of it. */
+    /** Whether the routes are one day's alone, none a copy of another, and at most one of them planned: the plan, if any, and what was recorded of it. */
     private static function planWithItsRecordings(array $routes): bool
     {
-        $days = array_unique(array_map(fn (array $route) => $route['entry']['dayId'], $routes));
+        $days = array_unique(array_column(array_column($routes, 'entry'), 'dayId'));
         $planned = array_filter($routes, fn (array $route) => $route['route']['kind'] === 'routed');
-        return count($days) === 1 && count($planned) <= 1;
+        return count($days) === 1 && count($planned) <= 1 && count(array_unique(array_column($routes, 'copy'))) === count($routes);
     }
 
     /**
