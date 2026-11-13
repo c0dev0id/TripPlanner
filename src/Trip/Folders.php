@@ -9,19 +9,25 @@ use PDO;
 use Planner\Database;
 use Planner\Timestamp;
 
-/** A user's folders: at the top of the library or inside another folder. */
+/**
+ * A user's folders: at the top of the library or inside another folder. The two special
+ * ones, for recordings and for collections, are there from the start and are neither
+ * renamed, moved nor deleted.
+ */
 final class Folders
 {
     public function __construct(private readonly PDO $db)
     {
     }
 
-    /** @return Folder[] the user's folders by name */
+    /** @return Folder[] the user's folders: the special ones first, recordings before collections, the others by name */
     public function listFor(int $userId): array
     {
-        $statement = $this->db->prepare('SELECT id, name, parent_id FROM folders WHERE user_id = ? ORDER BY name COLLATE NOCASE, id');
+        $statement = $this->db->prepare(
+            "SELECT id, name, parent_id, kind FROM folders WHERE user_id = ? ORDER BY CASE kind WHEN 'recordings' THEN 0 WHEN 'collections' THEN 1 ELSE 2 END, name COLLATE NOCASE, id",
+        );
         $statement->execute([$userId]);
-        return array_map(fn (array $row) => new Folder((int) $row['id'], $row['name'], $row['parent_id'] === null ? null : (int) $row['parent_id']), $statement->fetchAll());
+        return array_map(fn (array $row) => new Folder((int) $row['id'], $row['name'], $row['parent_id'] === null ? null : (int) $row['parent_id'], $row['kind']), $statement->fetchAll());
     }
 
     /**
@@ -54,17 +60,17 @@ final class Folders
         }
     }
 
-    /** False when the user has no such folder. */
+    /** False when the user has no such folder, or it is a special one. */
     public function rename(int $userId, int $folderId, string $name): bool
     {
-        $statement = $this->db->prepare('UPDATE folders SET name = ? WHERE id = ? AND user_id = ?');
+        $statement = $this->db->prepare("UPDATE folders SET name = ? WHERE id = ? AND user_id = ? AND kind = 'folder'");
         $statement->execute([$name, $folderId, $userId]);
         return $statement->rowCount() === 1;
     }
 
     /**
      * Moves a folder to the top or into another of the user's folders. False when the user
-     * has no such folder.
+     * has no such folder, or it is a special one.
      *
      * @throws UnknownFolder for a parent the user does not have
      * @throws FolderInsideItself for a parent that is the folder or inside it
@@ -77,7 +83,7 @@ final class Folders
             if ($parentId !== null && in_array($parentId, $this->withInside($userId, $folderId), true)) {
                 throw new FolderInsideItself();
             }
-            $statement = $this->db->prepare('UPDATE folders SET parent_id = ? WHERE id = ? AND user_id = ?');
+            $statement = $this->db->prepare("UPDATE folders SET parent_id = ? WHERE id = ? AND user_id = ? AND kind = 'folder'");
             $statement->execute([$parentId, $folderId, $userId]);
             $this->db->commit();
             return $statement->rowCount() === 1;
@@ -87,12 +93,12 @@ final class Folders
         }
     }
 
-    /** Deletes a folder; its trips and folders move up into the folder it was in, or to the top. False when the user has no such folder. */
+    /** Deletes a folder; its trips and folders move up into the folder it was in, or to the top. False when the user has no such folder, or it is a special one. */
     public function delete(int $userId, int $folderId): bool
     {
         $this->db->beginTransaction();
         try {
-            $statement = $this->db->prepare('SELECT parent_id FROM folders WHERE id = ? AND user_id = ?');
+            $statement = $this->db->prepare("SELECT parent_id FROM folders WHERE id = ? AND user_id = ? AND kind = 'folder'");
             $statement->execute([$folderId, $userId]);
             $row = $statement->fetch();
             if ($row === false) {
@@ -113,7 +119,7 @@ final class Folders
     /**
      * Deletes a folder with the folders inside it, at any depth, and every trip in them.
      *
-     * @return int[]|null the ids of the deleted trips, for their journal files to go too; null when the user has no such folder
+     * @return int[]|null the ids of the deleted trips, for their journal files to go too; null when the user has no such folder, or it is a special one
      */
     public function deleteWithContents(int $userId, int $folderId): ?array
     {
@@ -137,11 +143,11 @@ final class Folders
         }
     }
 
-    /** @return int[] the user's folder and the folders inside it at any depth; none when the user has no such folder */
+    /** @return int[] the user's folder and the folders inside it at any depth; none when the user has no such folder, or it is a special one */
     private function withInside(int $userId, int $folderId): array
     {
         $statement = $this->db->prepare(
-            'WITH RECURSIVE inside(id) AS (SELECT id FROM folders WHERE id = ? AND user_id = ? UNION ALL SELECT f.id FROM folders f JOIN inside ON f.parent_id = inside.id) SELECT id FROM inside',
+            "WITH RECURSIVE inside(id) AS (SELECT id FROM folders WHERE id = ? AND user_id = ? AND kind = 'folder' UNION ALL SELECT f.id FROM folders f JOIN inside ON f.parent_id = inside.id) SELECT id FROM inside",
         );
         $statement->execute([$folderId, $userId]);
         return array_map('intval', $statement->fetchAll(PDO::FETCH_COLUMN));

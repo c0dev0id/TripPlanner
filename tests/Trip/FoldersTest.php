@@ -39,7 +39,7 @@ final class FoldersTest extends TestCase
         $this->folders->create($this->userId, 'Scotland', null, $this->now);
         $this->folders->create($this->userId, 'alps', null, $this->now);
         $this->folders->create($this->otherUserId, 'Elsewhere', null, $this->now);
-        self::assertSame(['alps', 'Scotland'], array_map(fn ($f) => $f->name, $this->folders->listFor($this->userId)));
+        self::assertSame(['alps', 'Scotland'], array_map(fn ($f) => $f->name, $this->plainFolders()));
     }
 
     public function testRenamesAndDeletesOnlyOwnFolders(): void
@@ -47,10 +47,10 @@ final class FoldersTest extends TestCase
         $folder = $this->folders->create($this->userId, 'Alps', null, $this->now);
         self::assertFalse($this->folders->rename($this->otherUserId, $folder->id, 'Mine'));
         self::assertTrue($this->folders->rename($this->userId, $folder->id, 'Alps 2026'));
-        self::assertSame('Alps 2026', $this->folders->listFor($this->userId)[0]->name);
+        self::assertSame('Alps 2026', $this->plainFolders()[0]->name);
         self::assertFalse($this->folders->delete($this->otherUserId, $folder->id));
         self::assertTrue($this->folders->delete($this->userId, $folder->id));
-        self::assertSame([], $this->folders->listFor($this->userId));
+        self::assertSame([], $this->plainFolders());
     }
 
     public function testMovesAFolderIntoAnotherAndBackToTheTop(): void
@@ -102,7 +102,7 @@ final class FoldersTest extends TestCase
     {
         $rides = $this->folders->create($this->userId, 'Rides', null, $this->now);
         $alps = $this->folders->create($this->userId, 'Alps', $rides->id, $this->now);
-        self::assertSame([[$alps->id, $rides->id], [$rides->id, null]], array_map(fn ($f) => [$f->id, $f->parentId], $this->folders->listFor($this->userId)));
+        self::assertSame([[$alps->id, $rides->id], [$rides->id, null]], array_map(fn ($f) => [$f->id, $f->parentId], $this->plainFolders()));
         $this->expectException(UnknownFolder::class);
         $this->folders->create($this->otherUserId, 'Theirs', $rides->id, $this->now);
     }
@@ -114,7 +114,7 @@ final class FoldersTest extends TestCase
         $alps = $this->folders->create($this->userId, 'Alps', $year->id, $this->now);
         $trip = $this->trips->create($this->userId, 'Weekend', $this->now, $year->id);
         self::assertTrue($this->folders->delete($this->userId, $year->id));
-        self::assertSame([[$alps->id, $rides->id], [$rides->id, null]], array_map(fn ($f) => [$f->id, $f->parentId], $this->folders->listFor($this->userId)));
+        self::assertSame([[$alps->id, $rides->id], [$rides->id, null]], array_map(fn ($f) => [$f->id, $f->parentId], $this->plainFolders()));
         self::assertSame([[$trip->id, $rides->id]], array_map(fn ($t) => [$t->id, $t->folderId], $this->trips->listFor($this->userId)));
     }
 
@@ -133,7 +133,7 @@ final class FoldersTest extends TestCase
         $deleted = $this->folders->deleteWithContents($this->userId, $year->id);
         sort($deleted);
         self::assertSame([$inYear->id, $inAlps->id], $deleted);
-        self::assertSame([$other->id, $rides->id], array_map(fn ($f) => $f->id, $this->folders->listFor($this->userId)));
+        self::assertSame([$other->id, $rides->id], array_map(fn ($f) => $f->id, $this->plainFolders()));
         self::assertSame([$kept->id], array_map(fn ($t) => $t->id, $this->trips->listFor($this->userId)));
         self::assertSame(0, (int) $this->db->query('SELECT COUNT(*) FROM days')->fetchColumn());
         self::assertNull($this->folders->deleteWithContents($this->userId, $year->id));
@@ -172,6 +172,32 @@ final class FoldersTest extends TestCase
         }
         $this->expectException(UnknownFolder::class);
         $this->trips->create($this->userId, 'Another', $this->now, $folder->id);
+    }
+
+    public function testEveryUserHasTheSpecialFoldersFirst(): void
+    {
+        $this->folders->create($this->userId, 'Alps', null, $this->now);
+        self::assertSame([['Recordings', 'recordings', null], ['Collections', 'collections', null], ['Alps', 'folder', null]], array_map(fn ($f) => [$f->name, $f->kind, $f->parentId], $this->folders->listFor($this->userId)));
+    }
+
+    public function testLeavesTheSpecialFoldersAsTheyAre(): void
+    {
+        [$recordings] = $this->folders->listFor($this->userId);
+        $alps = $this->folders->create($this->userId, 'Alps', null, $this->now);
+        $inside = $this->folders->create($this->userId, '2025', $recordings->id, $this->now);
+        self::assertFalse($this->folders->rename($this->userId, $recordings->id, 'Mine'));
+        self::assertFalse($this->folders->move($this->userId, $recordings->id, $alps->id));
+        self::assertFalse($this->folders->delete($this->userId, $recordings->id));
+        self::assertNull($this->folders->deleteWithContents($this->userId, $recordings->id));
+        self::assertSame(['Recordings', null], [$this->folders->listFor($this->userId)[0]->name, $this->parentOf($recordings->id)]);
+        self::assertSame($recordings->id, $this->parentOf($inside->id));
+        self::assertTrue($this->folders->move($this->userId, $alps->id, $recordings->id));
+    }
+
+    /** @return \Planner\Trip\Folder[] the user's folders without the two special ones */
+    private function plainFolders(): array
+    {
+        return array_values(array_filter($this->folders->listFor($this->userId), fn ($f) => $f->kind === 'folder'));
     }
 
     private function parentOf(int $folderId): ?int

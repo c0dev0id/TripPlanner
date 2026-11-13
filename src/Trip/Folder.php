@@ -12,6 +12,8 @@ final readonly class Folder
         public string $name,
         /** The folder it is in; null at the top of the library. */
         public ?int $parentId,
+        /** `folder`, or `recordings` or `collections` for the two every user has, which stay as they are. */
+        public string $kind = 'folder',
     ) {
     }
 }

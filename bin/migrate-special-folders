@@ -1,0 +1,19 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Planner\Database;
+use Planner\Kernel;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Run once on a database made before folders had a kind, then delete this file.
+$root = dirname(__DIR__);
+$db = Kernel::container($root)->get(PDO::class);
+$db->exec("ALTER TABLE folders ADD COLUMN kind TEXT NOT NULL DEFAULT 'folder' CHECK (kind IN ('folder', 'recordings', 'collections'))");
+Database::applySchema($db, $root . '/db/schema.sql');
+$users = $db->exec(
+    "INSERT INTO folders (user_id, name, kind, created_at) SELECT id, 'Recordings', 'recordings', created_at FROM users UNION ALL SELECT id, 'Collections', 'collections', created_at FROM users",
+) / 2;
+echo "Folders have a kind, and $users users their folders for recordings and collections.\n";
