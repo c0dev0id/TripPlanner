@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
+use Planner\Export\Polyline;
 use Planner\Tests\TestDatabase;
 use Planner\Trip\Duplicates;
 use Planner\Trip\Folders;
@@ -89,6 +90,19 @@ final class DuplicatesTest extends TestCase
         $other = (new Users($this->db))->create('other@example.com', 'correct horse battery', $this->now)->id;
         $this->trip('Theirs', '2027-06-12', [$this->route('o1')], $other);
         self::assertSame([], (new Duplicates($this->db))->of($this->userId));
+    }
+
+    public function testGivesTheLinesOfTheUsersRoutesByTheirIds(): void
+    {
+        $this->trip('Planned', null, [$this->route('r1'), $this->track('t1', self::EAST)]);
+        $other = (new Users($this->db))->create('other@example.com', 'correct horse battery', $this->now)->id;
+        $this->trip('Theirs', null, [$this->route('o1')], $other);
+        $lines = (new Duplicates($this->db))->lines($this->userId, ['t1', 'r1', 'o1', 'gone']);
+        ksort($lines);
+        self::assertSame(['r1', 't1'], array_keys($lines));
+        self::assertSame(self::EAST, $lines['t1']);
+        self::assertSame([[11.5, 48.1], [11.45, 47.8], [11.4, 47.3]], Polyline::decode($lines['r1']));
+        self::assertSame([], (new Duplicates($this->db))->lines($this->userId, []));
     }
 
     /** The groups with each route's length to the 100 m, which is all the tests know of it. */

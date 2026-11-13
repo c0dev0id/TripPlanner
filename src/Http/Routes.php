@@ -90,6 +90,7 @@ final class Routes
             $api->post('/export-presets', [ExportPresetController::class, 'save']);
             $api->delete('/export-presets/{id:[0-9]+}', [ExportPresetController::class, 'delete']);
             $api->get('/duplicates', [DuplicatesController::class, 'index']);
+            $api->get('/duplicates/lines', [DuplicatesController::class, 'lines']);
             $api->get('/folders', [FolderController::class, 'index']);
             $api->post('/folders', [FolderController::class, 'create']);
             $api->patch('/folders/{id:[0-9]+}', [FolderController::class, 'change']);

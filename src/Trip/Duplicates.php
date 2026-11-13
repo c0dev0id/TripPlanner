@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Planner\Trip;
 
 use PDO;
+use Planner\Database;
+use Planner\Export\Polyline;
 use Planner\Export\Proximity;
 use Planner\Export\RouteGeometry;
 
@@ -58,6 +60,32 @@ final class Duplicates
             'kind' => count(array_unique(array_map(fn (int $i) => $routes[$i]['copy'], $members))) === 1 ? 'copies' : 'same ride',
             'routes' => array_map(fn (int $i) => $routes[$i]['entry'], $members),
         ], self::groups($routes));
+    }
+
+    /**
+     * The lines of the user's routes among `$routeIds`, for the report to draw them: each
+     * as polyline6 by the route's id, a track's own and a routed route's along its legs.
+     *
+     * @param list<string> $routeIds
+     * @return array<string, string>
+     */
+    public function lines(int $userId, array $routeIds): array
+    {
+        if ($routeIds === []) {
+            return [];
+        }
+        $statement = $this->db->prepare(
+            'SELECT r.id, r.name, r.kind, r.profile, r.highways, r.optional, r.color, r.points, r.legs, r.line
+             FROM routes r JOIN days d ON d.id = r.day_id JOIN trips t ON t.id = d.trip_id
+             WHERE t.user_id = ? AND r.id IN (' . Database::placeholders($routeIds) . ')',
+        );
+        $statement->execute([$userId, ...$routeIds]);
+        $lines = [];
+        foreach ($statement as $row) {
+            $route = TripDocuments::route($row);
+            $lines[$row['id']] = $route['kind'] === 'track' ? $route['line'] : Polyline::encode(RouteGeometry::line($route));
+        }
+        return $lines;
     }
 
     /** What a route is first compared by, with where it is and the route itself; null for a route of less than two points. */
