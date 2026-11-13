@@ -212,9 +212,13 @@
   card counts collections there.
 - Import by dropping GPX files, zips of exported trips and folders from the computer on
   a folder of the tree, or by Add in its menu; what they become follows from the folder. On Recordings or a folder
-  in it, every GPX file becomes a section of the collection named after the year it was
-  recorded in (its first track point's time, else a date in its name, else the file's
-  own date), one collection per year, made where it is missing. On Collections or a
+  in it, every GPX file of one track is kept as a recording, the file as it is: in the
+  collection named after the year it was recorded in, on the section of its month
+  (its first track point's time, else a date in its name, else the file's own date),
+  both made where they are missing. A file the user keeps already, on whatever day, is
+  left out, so the same folder can be dropped again; a file of several tracks is
+  reported and left out. Files added from the menu of a collection in there are kept
+  the same way, in that collection. On Collections or a
   folder in it, files become sections of the collection “Imported” and a dropped folder
   is imported as planning material: a collection per folder of files, its folders
   recreated. On any other folder or the top, a file becomes a trip and a dropped folder
@@ -272,8 +276,16 @@
   A recording's menu renames, cuts, copies, moves it to another day and deletes it;
   several are selected as routes are, and the menu then acts on all of them. Copied
   recordings paste into any day, of this trip or another; cut ones move there. A single
-  copied recording also pastes as a track route, and a single copied track as a
-  recording.
+  copied recording also pastes as a track route, to plan from it; nothing else becomes
+  a recording than a recorded file. A recording's row says when it began and how long
+  it is, or that its file has no times.
+- Recordings that wait for their day: those in the Recordings folder, on the sections of
+  their collections, where they are listed, shown and opened as on a day; a collection
+  there says how many it holds. *Look up recordings…* beside *Add recording…* on a
+  trip's day lists the waiting ones that may be the day's: begun on its date, or run
+  along its routes, or its routes along them, a part of the day being enough. Each says
+  when it began, its length and why it was found; a click shows its line on the map,
+  the plus puts it on the day, as it is, and it waits no longer.
 - A recording's figures: a click on it shows it whole and opens a card over the map with
   its distance, time and moving time, average and top speed, climb and descent, lowest
   and highest point and furthest lean to either side, as far as its file has the values.

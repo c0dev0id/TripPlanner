@@ -36,9 +36,9 @@ share work; sharing between users is on the way.
   pad from one to another, and a search across them. GPX files and folders are added
   from a folder's menu or dropped on it: a folder of files becomes a trip, a folder of
   folders a folder of trips.
-- **Recordings and Collections** — two folders that hold collections: loose recordings
-  sorted by year, and planning material to copy routes from. Every other folder holds
-  trips.
+- **Recordings and Collections** — two folders that hold collections: recorded rides
+  that wait for their day, kept as their files and sorted by year and month, and
+  planning material to copy routes from. Every other folder holds trips.
 - **One way back** — the card under the path leads one level up, from a day to its trip
   to its folder to the top, and never moves.
 - **Duplicates found** — a report lists the routes kept more than once across the
@@ -54,8 +54,9 @@ share work; sharing between users is on the way.
 - **Trips to keep or to move** — export one or several as a zip with journal, photos and
   recordings; import the zip, or its unpacked folder, to get them back.
 - **Recordings beside the plan** — add a day's rides as recorded (Ridelink, Scenic or any
-  GPX track) and see them on the map next to the planned route. Open one for its
-  figures: speed, climb, lean and road surface, charted and coloured on the line.
+  GPX track), or look up the waiting ones that match the day, and see them on the map
+  next to the planned route. Open one for its figures: speed, climb, lean and road
+  surface, charted and coloured on the line.
   Compare it with the plan or another ride.
 - **A journal on everything** — notes, photos, receipts and documents on the trip, a
   day, a stop, a route, or a spot on the map. Photos shrink to a web size before they

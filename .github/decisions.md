@@ -244,7 +244,7 @@ entries at the end of their section.
   files a trip each. A folder of one trip and a folder of many are told apart that
   way, which the two modes could only do for the tree as a whole. A browser's file
   dialog picks files or a folder, never both, hence two entries under Add. The three
-  kinds of folder each have one sensible reading of what is put into them. A recording's year is read from its first track point
+  kinds of folder each have one sensible reading of what is put into them. A recording's year and month are read from its first track point
   rather than from the file's metadata, which carries the time the file was written,
   often by an export long after the ride.
 - **Planning material is a trip of another kind, not a store of its own.** A collection
@@ -907,6 +907,37 @@ entries at the end of their section.
   limit of 1 MB, and the server keeps and serves it compressed; the browser reads a
   day's recordings only once they are shown. A recording belongs to a day and goes with
   it, is copied with its trip, and follows a day that joins another in a merge.
+- **A recording is a document of what happened, and only a recorded file becomes one.**
+  The plan lives among a day's routes, as routes or tracks, which are lines to edit; the
+  ride lives among its recordings, each the file its tracker wrote, never changed, with
+  whatever it measured. The folder for recordings first turned what was dropped on it
+  into tracks, as every other import does, which kept the line and dropped the times,
+  the speed and the lean angle, and a copied track could be pasted as a recording, which
+  wrote a file of positions alone. Both made recordings that had nothing to compare.
+  The folder now keeps the files, as recordings on the sections of its collections, a
+  collection per year and a section per month, so that a section stays a list to look
+  through; and a track no longer becomes a recording. The other way stays: a recording
+  pasted among the routes is a copy to plan from.
+- **What a recording's file tells is kept beside it.** Its line thinned to 10 m, its
+  length, its first point's time and the file's digest are read once, on the server,
+  when the file is added, with a reader that streams the file (XMLReader): a
+  recording is megabytes, a library holds hundreds, and listing them, finding those
+  that match a day and knowing a file again must not unpack them all. The browser
+  still reads the file itself for the map and the figures. The digest makes the import
+  into the folder for recordings repeatable: a tracker's folder is dropped again and
+  again as it grows, and what is kept already, waiting or on its day, is left out. A
+  recording added to a day by hand is kept whatever else there is.
+- **A recording is looked up for a day by its date or by its line, a part of the day
+  being enough.** The same ride kept twice (see the duplicates) is the same from end to
+  end; a recording of a day need not be: it may have been stopped at lunch and started
+  again, or run from the door to the door around the plan. So it is found where four
+  fifths of its points lie within 75 m of the day's routes and it is at least a quarter
+  as long as they are, or where four fifths of the routes' points lie within 75 m of
+  it. A ride that left the plan for longer is found by the day's date alone, taken on
+  the user's clock, since a file's times are UTC. Recordings of the same road in other
+  years are found as well and told apart by the time each row shows; the choice is the
+  user's. The lookup compares against the day as saved, so the trip is saved first.
+  Putting a recording on its day moves its row; the file is not sent again.
 - **A recording's figures are worked out in the browser from its file.** The speed is the
   file's own (metres per second in GPX and in Ridelink's extension), else distance over
   time across two points to either side; the slope is measured over 100 m around a point,
