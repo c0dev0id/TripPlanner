@@ -16,8 +16,9 @@ import { moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, openTripId
 /**
  * What was copied or cut to be pasted: days with all they hold, routes with the stops
  * bound to them, stops, recordings with their GPX files, or trips and folders of the
- * library. Kept while the app runs, from one trip
- * to another. What was cut is taken from where it was once it is pasted.
+ * library. Kept from one trip to another until it is pasted, which empties the
+ * clipboard, or until something else is copied or cut. What was cut is taken from where
+ * it was once it is pasted.
  */
 type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[] } | { recordings: CopiedRecording[]; from?: { tripId: number; ids: number[] } } | { library: LibraryClip }) & {
   /** Where the parts were cut from. */
@@ -50,7 +51,7 @@ export function libraryClip(): LibraryClip | undefined {
   return copied && 'library' in copied ? copied.library : undefined;
 }
 
-/** Empties the clipboard: what was cut is pasted once. */
+/** Empties the clipboard: what is on it is pasted once. */
 export const clearClip = (): void => void setClip(undefined);
 
 /** Copies routes with the stops bound to them. */
@@ -91,7 +92,7 @@ export function isCutRecording(id: number): boolean {
  * otherwise each is added, and what was cut from another trip is then deleted in it.
  */
 async function pasteRecordings(dayId: string, recordings: readonly CopiedRecording[], from: { tripId: number; ids: number[] } | undefined): Promise<void> {
-  if (from) setClip(undefined);
+  setClip(undefined);
   await recordingAction(dayId, async () => {
     if (from && from.tripId === openTripId()) {
       for (const id of from.ids) {
@@ -140,16 +141,15 @@ async function removeFromSource(cut: NonNullable<Clip['cut']>): Promise<void> {
 /**
  * Pastes what is on the clipboard: cut from the open trip the parts move, with `move`,
  * and keep their ids, and with them their journal; otherwise copies are made, with
- * `paste`, and what was cut from another trip is taken from it. What was cut is pasted once.
+ * `paste`, and what was cut from another trip is taken from it.
  */
 function pasted(copied: Clip, move: (ids: string[]) => void, paste: () => void): () => void {
   return () => {
     const cut = copied.cut;
+    setClip(undefined);
     if (cut && cut.tripId === openTripId()) move(cut.ids);
     else paste();
-    if (!cut) return;
-    setClip(undefined);
-    if (cut.tripId !== openTripId()) void removeFromSource(cut);
+    if (cut && cut.tripId !== openTripId()) void removeFromSource(cut);
   };
 }
 
@@ -177,7 +177,7 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
     const [only, ...more] = recordings;
     return [
       { label, run: shown(() => void pasteRecordings(id, recordings, from)) },
-      ...(only && more.length === 0 && !from ? [{ label: t('Paste “{name}” as a route', { name: only.name }), run: shown(() => pasteRoutes(id, recordingAsRoute(id, only.name, only.gpx))) }] : []),
+      ...(only && more.length === 0 && !from ? [{ label: t('Paste “{name}” as a route', { name: only.name }), run: shown(pasted(copied, () => undefined, () => pasteRoutes(id, recordingAsRoute(id, only.name, only.gpx)))) }] : []),
     ];
   }
   const [only, ...more] = copied.routes;
@@ -201,9 +201,8 @@ export function libraryPasteItem(into: { routes?: (routes: CopiedRoute[]) => Pro
   if (!paste) return [];
   const run = async () => {
     await paste();
-    if (!copied.cut) return;
     setClip(undefined);
-    await removeFromSource(copied.cut);
+    if (copied.cut) await removeFromSource(copied.cut);
   };
   return [{ label: pasteLabel(copied), run: () => void run() }];
 }

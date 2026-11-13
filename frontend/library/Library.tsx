@@ -299,12 +299,12 @@ export function Library(props: {
   };
   /** What the clipboard holds of the library, by number: 2 folders and 3 trips. */
   const clipText = (copied: LibraryClip): string => countsText(copied.folderIds.length, copied.tripIds.length);
-  /** Pastes the folders and trips on the clipboard into a folder: cut, they move there; copied, each trip gets a copy there. */
+  /** Pastes the folders and trips on the clipboard into a folder, which empties it: cut, they move there; copied, each trip gets a copy there. */
   const pasteLibrary = (into: number | null) => {
     const copied = libraryClip();
     if (!copied) return;
+    clearClip();
     if (copied.move) {
-      clearClip();
       moveInto([...folders().filter((f) => copied.folderIds.includes(f.id)).map((folder) => ({ folder })), ...trips().filter((trip) => copied.tripIds.includes(trip.id)).map((trip) => ({ trip }))], into);
       return;
     }

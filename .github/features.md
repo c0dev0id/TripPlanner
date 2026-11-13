@@ -57,7 +57,8 @@
   grip), Cmd or Ctrl with a click, Shift with a click for a run (a plain click or tap
   still opens). The menu then acts on all of them, and a press on a pad drags them all
   onto a folder. Cut folders and trips move to where they are pasted, copied trips get a
-  copy there: from Paste in a folder's menu, or from the line that offers it at the top
+  copy there, and either way the clipboard is empty after: what is on it is pasted
+  once, and a new cut or copy takes its place before that: from Paste in a folder's menu, or from the line that offers it at the top
   of the folder shown. Export takes the trips of selected folders along, at any depth;
   Delete asks once for all. Several trips of a kind merge into the one selected first:
   a day joins that trip's day of the same date or goes in among its days by date, an
