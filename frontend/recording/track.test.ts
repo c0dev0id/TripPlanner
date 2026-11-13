@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readRecording, trackGpx } from './track';
+import { readRecording } from './track';
 
 const RIDELINK = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="ridelink" xmlns="http://www.topografix.com/GPX/1/1" xmlns:rl="https://ridelink.com/gpx/extensions/v1">
@@ -35,10 +35,5 @@ describe('readRecording', () => {
     expect(() => readRecording(gpx('<trk/><trk/>'))).toThrow('one track');
     expect(() => readRecording(gpx('<trk/><rte/>'))).toThrow('one track');
     expect(() => readRecording('<kml/>')).toThrow('not a GPX');
-  });
-
-  it('writes a line as a GPX file of one track that reads back the same', () => {
-    const track = readRecording(trackGpx('Pass & valley', [[11.5, 48.1], [11.45, 47.8]]));
-    expect([track.name, track.points, track.series]).toEqual(['Pass & valley', [[11.5, 48.1], [11.45, 47.8]], {}]);
   });
 });

@@ -47,17 +47,3 @@ export function readRecording(xml: string): RecordedTrack {
   });
   return { name: text(tracks[0]!, 'name'), points: trackpoints.map((p) => position(p)!), series };
 }
-
-const escaped = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-/** A GPX file of one track along the points, for a line of the planner kept as a recording. */
-export function trackGpx(name: string, points: readonly LngLat[]): string {
-  const trackpoints = points.map(([lng, lat]) => `<trkpt lat="${lat}" lon="${lng}"/>`).join('\n');
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="Trip Planner" xmlns="http://www.topografix.com/GPX/1/1">
-<trk><name>${escaped(name)}</name><trkseg>
-${trackpoints}
-</trkseg></trk>
-</gpx>
-`;
-}

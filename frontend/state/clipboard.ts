@@ -4,9 +4,7 @@ import { changeTrip, deleteRecording, errorMessage } from '../api';
 import { parseGpx } from '../gpx/gpx';
 import { gpxToDayParts } from '../gpx/import';
 import { newId, type Day, type Stop } from '../model/trip';
-import { trackGpx } from '../recording/track';
 import { copiedRoute, defaultProfile, removeParts, type CopiedRoute, type PartKind } from '../routing/dayEdit';
-import { decodeCached } from '../routing/polyline';
 import { askConfirmation } from '../ui/confirm';
 import type { MenuItem } from '../ui/menu';
 import { flushSave } from './autosave';
@@ -157,7 +155,7 @@ function pasted(copied: Clip, move: (ids: string[]) => void, paste: () => void):
  * The menu items that paste what is on the clipboard into a part of the open trip: into a
  * day, routes, stops and a recording, and days after it; into a route, stops, as points
  * of it. None where the clipboard holds nothing for the part. A recording also pastes as
- * a route, and a single track also as a recording.
+ * a route.
  */
 export function pasteItems(kind: PartKind, id: string): MenuItem[] {
   const copied = clip();
@@ -183,12 +181,7 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
             }) }] : []),
     ];
   }
-  const [only, ...more] = copied.routes;
-  const track = more.length === 0 && only?.route.kind === 'track' ? only.route : undefined;
-  return [
-    { label, run: shown(pasted(copied, (ids) => movePartsToDay('route', ids, id), () => pasteRoutes(id, copied.routes))) },
-    ...(track ? [{ label: t('Paste “{name}” as a recording', { name: track.name || t('track') }), run: shown(() => void pasteRecordings(id, [{ name: track.name || t('Track'), gpx: trackGpx(track.name, decodeCached(track.line)) }], undefined)) }] : []),
-  ];
+  return [{ label, run: shown(pasted(copied, (ids) => movePartsToDay('route', ids, id), () => pasteRoutes(id, copied.routes))) }];
 }
 
 /**
