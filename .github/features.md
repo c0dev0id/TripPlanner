@@ -142,7 +142,9 @@
   and a click on the route being edited ends that and folds them away; a route unfolded
   stays so while another is taken up; free
   stops within 500 m take the place where the route passes closest, and say how far
-  beside it they stand. A click pans the map to the entry. Free stops farther away, or
+  beside it they stand. A click pans the map to the entry. A route point's row has the
+  menu its marker has on the map: Convert to stop, the leg to it straight or routed,
+  Remove point. Free stops farther away, or
   of a day without a route, are listed on their own. The button with three lines folds the library away
   to a strip, which leaves the map the room, and brings it back. The strip keeps the
   open trip's days in reach: a numbered button each, in the colour its routes have

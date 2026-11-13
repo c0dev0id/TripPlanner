@@ -1,9 +1,8 @@
-import { t } from '../i18n/t';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, onCleanup, Show } from 'solid-js';
 import type { RoutePoint } from '../model/trip';
 import { boundPointIds, routePoints } from '../routing/dayEdit';
-import { dragsMarkers, straightLegItem, tapAction } from '../state/drawing';
+import { dragsMarkers, pointItems, tapAction } from '../state/drawing';
 import { convertPoint, editingRoute, movePoint, removePoint, selectedDay } from '../state/trip';
 import { ForById } from '../ui/ForById';
 import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
@@ -40,11 +39,7 @@ function PointMarker(props: { map: MapLibreMap; routeId: string; point: RoutePoi
     if (tapAction() === 'delete') removePoint(routeId, pointId);
     else if (tapAction() === 'stop') convertPoint(pointId);
   });
-  const stopMenu = onMarkerMenu(handle, () => [
-    { label: t('Make a stop here'), run: () => convertPoint(pointId) },
-    straightLegItem(routeId, point()),
-    { label: t('Remove point'), run: () => removePoint(routeId, pointId) },
-  ]);
+  const stopMenu = onMarkerMenu(handle, () => pointItems(routeId, point()));
   onCleanup(() => {
     stopMenu();
     handle.remove();

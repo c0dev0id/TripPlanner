@@ -9,7 +9,7 @@ import { defaultProfile } from '../routing/dayEdit';
 import { pointCount, routeDistance, routesDistance } from '../routing/legs';
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
-import { panTo, setEditTarget, setExportScope, setShareOpen, setTrackAction } from '../state/drawing';
+import { panTo, pointItems, setEditTarget, setExportScope, setShareOpen, setTrackAction } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
@@ -268,7 +268,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
       </div>
       <Show when={unfolded()}>
         <ol class="stops">
-          <SequenceItems entries={entries()} />
+          <SequenceItems entries={entries()} routeId={props.route.id} />
         </ol>
       </Show>
     </li>
@@ -276,20 +276,22 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
 }
 
 /** Rows of sequence entries; an edit makes new entries, and their rows are kept by id. */
-function SequenceItems(props: { entries: SequenceEntry[] }) {
-  return <ForById each={props.entries}>{(entry) => <SequenceItem entry={entry()} time={selectedTimeline()?.times.get(entry().id)} />}</ForById>;
+function SequenceItems(props: { entries: SequenceEntry[]; routeId: string }) {
+  return <ForById each={props.entries}>{(entry) => <SequenceItem entry={entry()} routeId={props.routeId} time={selectedTimeline()?.times.get(entry().id)} />}</ForById>;
 }
 
 /** The name of a sequence row that is a route point, not a stop. */
 const ROUTE_POINT = t('Route point');
 
 /**
- * A stop or a plain route point with its times and distance from the day's start; a click
- * pans the map there. Before a stop whose fixed time the ride misses stands a row of its
+ * A stop or a plain route point with its times and distance from the day's start and its
+ * menu; a click pans the map there. Before a stop whose fixed time the ride misses stands a row of its
  * own that says by how much it is late or early, and when the ride gets there.
  */
-function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined }) {
+function SequenceItem(props: { entry: SequenceEntry; routeId: string; time: EntryTime | undefined }) {
   const stop = () => props.entry.stop;
+  /** The row's menu: the stop's, else the route point's; the end of a track has none. */
+  const menu = (): MenuItem[] | undefined => (stop() ? partMenu('stop', stop()!.id) : props.entry.point && pointItems(props.routeId, props.entry.point));
   return (
     <>
       <Show when={props.time && offTime(props.time)}>
@@ -308,7 +310,7 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
       <li
         class="row sequence-item"
         classList={{ point: !stop(), picked: !!stop() && isPartSelected('stop', stop()!.id), cut: !!stop() && isCut(stop()!.id) }}
-        ref={(el) => props.entry.stop && cardMenu(el, () => partMenu('stop', stop()!.id))}
+        ref={(el) => menu() && cardMenu(el, () => menu()!)}
       >
         <button class="text grow" onClick={(e) => (stop() && selects(e) ? clickStop(stop()!, e) : panTo(props.entry.lngLat))}>
           <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
@@ -328,13 +330,9 @@ function SequenceItem(props: { entry: SequenceEntry; time: EntryTime | undefined
             </span>
           </span>
         </button>
-        <Show when={stop()}>
-          {(s) => (
-            <>
-              <JournalButton target={{ stopId: s().id }} of={s().name} />
-              <MenuButton of={s().name} items={() => partMenu('stop', s().id)} />
-            </>
-          )}
+        <Show when={stop()}>{(s) => <JournalButton target={{ stopId: s().id }} of={s().name} />}</Show>
+        <Show when={menu()}>
+          <MenuButton of={stop()?.name ?? ROUTE_POINT} items={() => menu()!} />
         </Show>
       </li>
     </>

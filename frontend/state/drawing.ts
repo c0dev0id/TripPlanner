@@ -4,7 +4,7 @@ import { t } from '../i18n/t';
 import type { LngLat, Route, RoutePoint } from '../model/trip';
 import type { MenuItem } from '../ui/menu';
 import { openJournal } from './journal';
-import { addFreeStop, appendPoint, editingRoute, openTrip, selectedDay, setStraight } from './trip';
+import { addFreeStop, appendPoint, convertPoint, editingRoute, openTrip, removePoint, selectedDay, setStraight } from './trip';
 
 /** Transient state of editing on the map; never kept. */
 
@@ -91,3 +91,11 @@ export function straightLegItem(routeId: string, point: RoutePoint): MenuItem {
   return { label: t(straight ? 'Route the leg to here' : 'Straight leg to here'), run: () => setStraight(routeId, point.id, !straight) };
 }
 
+/** The menu of a plain point of a route of the selected day, on the map and in the day's pane: a stop made of it, the leg to it straight or routed, the point removed. */
+export function pointItems(routeId: string, point: RoutePoint): MenuItem[] {
+  return [
+    { label: t('Convert to stop'), run: () => convertPoint(point.id) },
+    straightLegItem(routeId, point),
+    { label: t('Remove point'), run: () => removePoint(routeId, point.id) },
+  ];
+}
