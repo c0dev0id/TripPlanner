@@ -187,6 +187,20 @@
   named and dated by the file, in its folder. Planning material: each folder holding GPX
   files becomes a collection with a section per file. Files that are no GPX are reported
   and left out.
+- Two folders every user has, first in the tree and tinted, which are neither renamed,
+  moved nor deleted: Recordings (red), for recordings that belong to no trip, and
+  Collections (yellow). Folders and trips are moved into them and made in them as in
+  any other.
+- Import by dropping GPX files and folders from the computer on a folder of the tree,
+  without a dialog; what they become follows from the folder. On Recordings or a folder
+  in it, every GPX file becomes a section of the collection named after the year it was
+  recorded in (its first track point's time, else a date in its name, else the file's
+  own date), one collection per year, made where it is missing. On Collections or a
+  folder in it, files become sections of the collection “Imported” and a dropped folder
+  is imported as planning material: a collection per folder of files, its folders
+  recreated. On any other folder or the top, a file becomes a trip and a dropped folder
+  is imported as a trip per folder. Exported trips in dropped folders come back as they
+  were.
 - A duplicates report, switched on by its icon among the library's actions, in the pane
   between the library and the map: the routes kept more than once across all trips
   and collections, grouped as exact copies (the same points or the same line, whatever

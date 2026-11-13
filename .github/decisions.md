@@ -217,6 +217,22 @@ entries at the end of their section.
   appears once. Over an archive of 2.8 million points the report takes about 4 s, half of
   it decoding lines in PHP; should libraries grow far beyond that, each route's shape
   can be kept when it is saved instead of worked out for every report.
+- **Two folders are special, by a kind on the folder.** Collections are to live in two
+  places only, a folder for recordings that belong to no trip and one for planning
+  material, and everything else is to hold trips. The two are rows of `folders` with a
+  `kind`, not places of their own: everything a folder does (holding folders, taking
+  what is moved or pasted, the tree) then works for them unchanged. A trigger makes
+  them with the user, so no code that creates a user has to know of the library; the
+  repository refuses to rename, move or delete them by leaving them out of what those
+  statements find. Their names are kept in English and shown in the page's language.
+  Other folders still take collections for now: that goes once the existing ones have
+  been moved.
+- **A drop is imported without a dialog; the folder says how.** The import dialog asks
+  how a tree is organized because a picked folder goes into whatever folder is shown.
+  A drop names its folder, and the three kinds of folder each have one sensible
+  reading, so nothing is asked. A recording's year is read from its first track point
+  rather than from the file's metadata, which carries the time the file was written,
+  often by an export long after the ride.
 - **Planning material is a trip of another kind, not a store of its own.** A collection
   is a trip whose days are its sections, one per file, without dates: it is stored,
   loaded, saved, drawn and searched as a trip is, and its panel leaves out what belongs

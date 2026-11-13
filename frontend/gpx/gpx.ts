@@ -11,7 +11,8 @@ export interface GpxContent {
    * calculated from it on to the next, where the file has them; none otherwise.
    */
   routes: { name?: string; points: LngLat[]; ways: LngLat[][] }[];
-  tracks: { name?: string; segments: LngLat[][] }[];
+  /** `time` is when the track's first point was recorded, as the file writes it. */
+  tracks: { name?: string; segments: LngLat[][]; time?: string }[];
 }
 
 /** A point's position from its `lat` and `lon`; undefined where they are missing or off the world. */
@@ -64,6 +65,10 @@ export function parseGpx(xml: string): GpxContent {
       return lngLat ? [{ lngLat, name: text(w, 'name'), description: text(w, 'desc') ?? text(w, 'cmt'), symbol: text(w, 'sym'), ...garminContact(w) }] : [];
     }),
     routes: children(root, 'rte').map(route),
-    tracks: children(root, 'trk').map((t) => ({ name: text(t, 'name'), segments: children(t, 'trkseg').map((segment) => positions(children(segment, 'trkpt'))) })),
+    tracks: children(root, 'trk').map((t) => {
+      const segments = children(t, 'trkseg').map((segment) => children(segment, 'trkpt'));
+      const first = segments.find((points) => points.length > 0)?.[0];
+      return { name: text(t, 'name'), segments: segments.map(positions), time: first && text(first, 'time') };
+    }),
   };
 }

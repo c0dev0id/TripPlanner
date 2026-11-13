@@ -1,7 +1,9 @@
 import { createSignal } from 'solid-js';
 import { t } from '../i18n/t';
 import { createFolder, createTrip, errorMessage } from '../api';
-import { folderPath } from './folders';
+import { importDropped } from './dropImport';
+import { droppedSources, onFileDrop } from './fileDrop';
+import { folderPath, kindAround } from './folders';
 import { importFolder, pickedPath, planFolderImport, type ImportSource, type PlannedTrip } from './folderImport';
 import { ImportDialog } from './ImportDialog';
 import { archiveFolders, inFolders } from './tripArchive';
@@ -17,7 +19,8 @@ import { pickFile } from '../ui/pickFile';
 /**
  * The library's actions as icons: a new trip or folder in the folder shown, a folder of
  * GPX files or a zip of exported trips imported into it, the duplicates report and the
- * list of places to show on the map, each switched on and off. A new folder and an
+ * list of places to show on the map, each switched on and off. Files and folders dropped
+ * on a folder of the tree are imported into it without asking. A new folder and an
  * import leave an open trip first.
  */
 export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: () => Promise<void>; opening: boolean }) {
@@ -49,17 +52,25 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
       setImportNote({ text: errorMessage(error), errors: [] });
     }
   };
-  const importPicked = async (sources: ImportSource[], plan: PlannedTrip[], archives: string[]) => {
+  /** Runs an import, which says how it goes and then what it made and could not read: the open trip is left first, and the library listed afresh after. */
+  const runImport = async (work: (onProgress: (text: string) => void) => Promise<{ text: string; errors: string[] }>) => {
     await props.onLeave();
     setImporting(true);
-    await runLibrary(async () => {
-      const result = await importFolder(sources, plan, archives, shownFolderId(), (text) => setImportNote({ text, errors: [] }));
-      setImportNote({ text: t('{trips} imported.', { trips: counted(result.trips, plan[0]?.kind ?? 'trip') }), errors: result.errors });
-    });
+    await runLibrary(async () => setImportNote(await work((text) => setImportNote({ text, errors: [] }))));
     setImporting(false);
     relistFolders();
     relistTrips();
   };
+  const importPicked = (sources: ImportSource[], plan: PlannedTrip[], archives: string[]) =>
+    runImport(async (onProgress) => {
+      const result = await importFolder(sources, plan, archives, shownFolderId(), onProgress);
+      return { text: t('{trips} imported.', { trips: counted(result.trips, plan[0]?.kind ?? 'trip') }), errors: result.errors };
+    });
+  onFileDrop((data, folderId) => {
+    if (importing()) return;
+    const dropped = droppedSources(data);
+    void runImport(async (onProgress) => importDropped(await dropped, folderId, kindAround(libraryFolders() ?? [], folderId), onProgress));
+  });
   return (
     <div class="row library-actions" role="toolbar" aria-label={t('Library')}>
       <IconButton label={t('New trip…')} disabled={props.opening} onClick={() => setDialog('trip')}>

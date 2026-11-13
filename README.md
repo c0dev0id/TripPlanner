@@ -35,6 +35,7 @@ share work; sharing between users is on the way.
 - **A library with folders** — trips sorted into folders inside folders, dragged by their
   pad from one to another, and a search across them. Importing a folder turns a tree of
   GPX files into folders and trips: a trip per folder or per file, or planning material.
+  Files and folders dropped on a folder are imported into it without asking.
 - **One way back** — the card under the path leads one level up, from a day to its trip
   to its folder to the top, and never moves.
 - **Duplicates found** — a report lists the routes kept more than once across the
@@ -103,6 +104,7 @@ share work; sharing between users is on the way.
 | Right-click, long press or the three dots on a folder, trip, day, route or stop in the panel | Its menu: rename or edit, move, copy or paste, duplicate, delete |
 | Tap or click the grip pad of a trip or a duplicate; Cmd/Ctrl-click, Shift-click | Select several; their menu moves, deletes or merges trips, or copies or deletes duplicates |
 | Drag a trip's or a folder's pad onto a folder or the card one level up | Move it, or the selected trips, there |
+| Drop GPX files or folders from the computer on a folder | Import them into it |
 | Enter in the search box | Find a place; Esc closes the list |
 | Drag the panel's edge | Set the panel's width; double-click for the default |
 | Drag a day's or a route's grip | Put it in another place; the arrow keys on the grip move it one place |

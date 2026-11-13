@@ -1,7 +1,7 @@
 import { t } from '../i18n/t';
 import { createFolder, createTrip, errorMessage, fetchTrip, listFolders, saveTrip } from '../api';
 import { readGpxFile, type DayParts } from '../gpx/import';
-import { asName, newId, type TripKind } from '../model/trip';
+import { asName, newId, type Trip, type TripKind } from '../model/trip';
 import { addDay, addParts, dayAfter, updateDay } from '../routing/dayEdit';
 import { importArchive } from './tripArchive';
 
@@ -67,6 +67,9 @@ export interface ImportSource {
   open: () => Promise<File>;
 }
 
+/** Whether the path is a GPX file's that is not hidden. */
+export const isGpxPath = (path: string): boolean => /^[^.][^/]*\.gpx$/i.test(path.slice(path.lastIndexOf('/') + 1));
+
 /**
  * The trips or collections a picked folder tree makes, from the files' paths relative to
  * it, organized as `mode` says; hidden files and files that are no GPX are left out, the
@@ -79,7 +82,7 @@ export function planFolderImport(paths: readonly string[], mode: ImportMode): Pl
   paths.forEach((path, i) => {
     const cut = path.lastIndexOf('/');
     const file = path.slice(cut + 1);
-    if (file.startsWith('.') || !/\.gpx$/i.test(file)) return;
+    if (!isGpxPath(path)) return;
     stems[i] = file.slice(0, -'.gpx'.length);
     const folder = path.slice(0, Math.max(0, cut));
     if (byFolder.has(folder)) byFolder.get(folder)!.push(i);
@@ -132,6 +135,12 @@ function tripOfFile(folders: string[], stem: string, file: number): PlannedTrip 
 /** A folder of GPX files as a collection named after it, inside the folders above it, with a section per file named after it. */
 function collectionOfFolder(segments: string[], files: number[], stem: (i: number) => string): PlannedTrip {
   return { kind: 'collection', folders: segments.slice(0, -1), name: segments.at(-1) || t('Imported collection'), days: files.map((i) => ({ date: null, name: stem(i), files: [i] })) };
+}
+
+/** The trip with a day added at its end, named and dated, holding what the GPX files gave. */
+export function withImportedDay(trip: Trip, day: { name: string; date: string | null }, parts: readonly DayParts[]): Trip {
+  const id = newId();
+  return parts.reduce((to, p) => addParts(to, id, p), updateDay(addDay(trip, id), id, (d) => ({ ...d, name: day.name, date: day.date })));
 }
 
 /** What an import did: how many trips or collections it made, and what it could not read or save. */
@@ -197,11 +206,7 @@ export async function importFolder(
     if (days.length === 0) continue;
     try {
       let trip = await fetchTrip((await createTrip(planned.name, await folderIn(planned.folders), planned.kind)).id);
-      for (const { day, parts } of days) {
-        const id = newId();
-        trip = updateDay(addDay(trip, id), id, (d) => ({ ...d, name: day.name, date: day.date }));
-        for (const p of parts) trip = addParts(trip, id, p);
-      }
+      for (const { day, parts } of days) trip = withImportedDay(trip, day, parts);
       await saveTrip(trip);
       result.trips++;
     } catch (error) {
