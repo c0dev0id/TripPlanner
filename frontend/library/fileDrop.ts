@@ -1,5 +1,5 @@
 import { onCleanup } from 'solid-js';
-import type { ImportSource } from './folderImport';
+import { pickedPath, type ImportSource } from './folderImport';
 
 /** What was dropped from the file system: the files dropped themselves, and those in the folders dropped, by their path from the dropped folder down. */
 export interface Dropped {
@@ -34,7 +34,7 @@ export async function droppedSources(data: DataTransfer): Promise<Dropped> {
   const dropped: Dropped = { files: [], inFolders: [] };
   for (const { entry, file } of items) {
     if (entry?.isDirectory) dropped.inFolders.push(...(await filesIn(entry as FileSystemDirectoryEntry)));
-    else if (file) dropped.files.push({ path: file.name.normalize('NFC'), open: async () => file });
+    else if (file) dropped.files.push({ path: pickedPath(file), open: async () => file });
   }
   return dropped;
 }

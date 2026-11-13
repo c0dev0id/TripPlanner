@@ -36,7 +36,7 @@ export const heldText = (held: { folders: number; trips: number }, noun: 'trip' 
 export function countsText(folders: number, trips: number): string {
   const folderText = folders > 0 ? counted(folders, 'folder') : '';
   const tripText = trips > 0 ? counted(trips, 'trip') : '';
-  return folderText && tripText ? t('{folders} and {trips}', { folders: folderText, trips: tripText }) : folderText || tripText;
+  return folderText && tripText ? t('{a} and {b}', { a: folderText, b: tripText }) : folderText || tripText;
 }
 
 /** How many folders and trips a folder holds at any depth, from what each folder holds itself (see heldCounts). */

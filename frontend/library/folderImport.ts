@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import { createFolder, createTrip, errorMessage, fetchTrip, listFolders, saveTrip } from '../api';
+import { changeTrip, createFolder, createTrip, errorMessage, listFolders } from '../api';
 import { readGpxFile, type DayParts } from '../gpx/import';
 import { asName, newId, type Trip, type TripKind } from '../model/trip';
 import { addDay, addParts, dayAfter, updateDay } from '../routing/dayEdit';
@@ -134,7 +134,7 @@ function tripOfFile(folders: string[], stem: string, file: number): PlannedTrip 
 
 /** A folder of GPX files as a collection named after it, inside the folders above it, with a section per file named after it. */
 function collectionOfFolder(segments: string[], files: number[], stem: (i: number) => string): PlannedTrip {
-  return { kind: 'collection', folders: segments.slice(0, -1), name: segments.at(-1) || t('Imported collection'), days: files.map((i) => ({ date: null, name: stem(i), files: [i] })) };
+  return { kind: 'collection', folders: segments.slice(0, -1), name: segments.at(-1) || t('Imported'), days: files.map((i) => ({ date: null, name: stem(i), files: [i] })) };
 }
 
 /** The trip with a day added at its end, named and dated, holding what the GPX files gave. */
@@ -163,18 +163,20 @@ export async function importFolder(
   parentId: number | null,
   onProgress: (text: string) => void,
 ): Promise<ImportResult> {
+  const result: ImportResult = { trips: 0, errors: [] };
+  if (plan.length + archives.length === 0) return result;
   const folders = await listFolders();
   const folderIn = async (names: readonly string[]): Promise<number | null> => {
     let id = parentId;
     for (const name of names) {
-      const found = folders.find((f) => f.parentId === id && f.name === name);
+      // The special folders are no match for a folder of the tree that happens to have their name.
+      const found = folders.find((f) => f.parentId === id && f.name === name && f.kind === 'folder');
       const folder = found ?? (await createFolder(name, id));
       if (!found) folders.push(folder);
       id = folder.id;
     }
     return id;
   };
-  const result: ImportResult = { trips: 0, errors: [] };
   const total = plan.length + archives.length;
   const byPath = new Map(sources.map((source) => [source.path, source]));
   for (const [n, folder] of archives.entries()) {
@@ -205,9 +207,7 @@ export async function importFolder(
     }
     if (days.length === 0) continue;
     try {
-      let trip = await fetchTrip((await createTrip(planned.name, await folderIn(planned.folders), planned.kind)).id);
-      for (const { day, parts } of days) trip = withImportedDay(trip, day, parts);
-      await saveTrip(trip);
+      await changeTrip((await createTrip(planned.name, await folderIn(planned.folders), planned.kind)).id, (trip) => days.reduce((to, { day, parts }) => withImportedDay(to, day, parts), trip));
       result.trips++;
     } catch (error) {
       result.errors.push(`${[...planned.folders, planned.name].join(' / ')}: ${errorMessage(error)}`);

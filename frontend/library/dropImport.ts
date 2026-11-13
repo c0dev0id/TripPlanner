@@ -53,16 +53,12 @@ async function importSections(
   return result;
 }
 
-/** Imports dropped files and folders as picked ones are, the files organized as `files` says and the folders as `folders`; exported trips among the folders come back as they were. */
-function importTree(dropped: Dropped, modes: { files?: ImportMode; folders: ImportMode }, folderId: number | null, onProgress: (text: string) => void) {
-  const loose = modes.files ? dropped.files : [];
-  const sources = [...loose, ...dropped.inFolders];
-  const archives = archiveFolders(dropped.inFolders.map((source) => source.path));
+/** Imports dropped files as a trip each, and the files in dropped folders organized as `foldersAs` says; exported trips among the folders come back as they were. */
+function importTree(loose: readonly ImportSource[], inDropped: readonly ImportSource[], foldersAs: ImportMode, folderId: number | null, onProgress: (text: string) => void) {
+  const sources = [...loose, ...inDropped];
+  const archives = archiveFolders(inDropped.map((source) => source.path));
   const paths = (of: (i: number) => boolean) => sources.map((source, i) => (of(i) ? source.path : ''));
-  const plan = [
-    ...(modes.files ? planFolderImport(paths((i) => i < loose.length), modes.files) : []),
-    ...planFolderImport(paths((i) => i >= loose.length && !inFolders(sources[i]!.path, archives)), modes.folders),
-  ];
+  const plan = [...planFolderImport(paths((i) => i < loose.length), 'trip-per-file'), ...planFolderImport(paths((i) => i >= loose.length && !inFolders(sources[i]!.path, archives)), foldersAs)];
   return importFolder(sources, plan, archives, folderId, onProgress);
 }
 
@@ -75,16 +71,16 @@ function importTree(dropped: Dropped, modes: { files?: ImportMode; folders: Impo
  * answer says what was made and what could not be read or saved.
  */
 export async function importDropped(dropped: Dropped, folderId: number | null, kind: FolderKind, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
-  const gpx = (sources: readonly ImportSource[]) => sources.filter((source) => isGpxPath(source.path));
   const made: string[] = [];
   const errors: string[] = [];
   if (kind !== 'folder') {
-    const sections = await importSections(kind === 'recordings' ? gpx([...dropped.files, ...dropped.inFolders]) : gpx(dropped.files), folderId, kind === 'recordings' ? recordedYear : () => t('Imported'), onProgress);
+    const files = (kind === 'recordings' ? [...dropped.files, ...dropped.inFolders] : dropped.files).filter((source) => isGpxPath(source.path));
+    const sections = await importSections(files, folderId, kind === 'recordings' ? recordedYear : () => t('Imported'), onProgress);
     if (sections.sections > 0) made.push(counted(sections.sections, 'section'));
     errors.push(...sections.errors);
   }
   if (kind !== 'recordings') {
-    const trees = await importTree(dropped, kind === 'collections' ? { folders: 'planning-material' } : { files: 'trip-per-file', folders: 'trip-per-folder' }, folderId, onProgress);
+    const trees = await importTree(kind === 'collections' ? [] : dropped.files, dropped.inFolders, kind === 'collections' ? 'planning-material' : 'trip-per-folder', folderId, onProgress);
     if (trees.trips > 0) made.push(counted(trees.trips, kind === 'collections' ? 'collection' : 'trip'));
     errors.push(...trees.errors);
   }
