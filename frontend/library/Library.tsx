@@ -4,7 +4,7 @@ import { changeTrip, createTrip, deleteFolder, deleteTrip, duplicateTrip, errorM
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
-import { heldOf, importNote, libraryFolders, libraryTrips, outlineOf, query, relistFolders, relistTrips, runLibrary, showFolder, shownFolderId } from '../state/library';
+import { heldOf, importNote, libraryFolders, libraryTrips, opening, outlineOf, query, relistFolders, relistTrips, runLibrary, showFolder, shownFolderId } from '../state/library';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
@@ -13,7 +13,7 @@ import { dayDetail, dayHeading } from '../trip/labels';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
-import { counted, dateText } from '../ui/format';
+import { counted, dateText, openingText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { CollectionIcon, FoldIcon, FolderIcon, HomeIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
@@ -557,7 +557,8 @@ export function Library(props: {
 
 /**
  * A trip as a card: its name over its days, its start and whether it was ridden, or for a
- * collection its sections, after the folder it is in where `where` names it; its menu
+ * collection its sections, after the folder it is in where `where` names it, or, while it
+ * is being opened, over how far its document has come, beside a spinner; its menu
  * renames, moves, copies and deletes it. A click opens it. Where it can be selected, a tap
  * on its pad selects it, a press drags it, and a click with Cmd, Ctrl or Shift held goes
  * to `select.onClick`.
@@ -573,6 +574,8 @@ function TripCard(props: {
   children?: JSX.Element;
 }) {
   const shape = createMemo(() => outlineOf(props.trip.id)?.map((day) => day.lines).filter((lines) => lines.length > 0));
+  /** How far the opening of the trip has come, while it is being opened. */
+  const loading = () => (opening()?.tripId === props.trip.id ? opening()!.progress : undefined);
   const meta = () =>
     (props.trip.kind === 'collection'
       ? [props.where, t('Planning material'), counted(props.trip.dayCount, 'section')]
@@ -581,7 +584,7 @@ function TripCard(props: {
       .filter(Boolean)
       .join(' · ');
   return (
-    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current(), open: props.fold?.open?.() }}>
+    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current(), open: props.fold?.open?.(), opening: loading() !== undefined }}>
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Show when={props.select}>
           {(select) => (
@@ -594,12 +597,18 @@ function TripCard(props: {
           onClick={(e) => (props.select && selects(e) ? props.select.onClick(e) : props.onOpen(props.trip))}
           disabled={props.disabled}
         >
-          <Show when={props.trip.kind === 'collection'} fallback={<TripIcon />}>
-            <CollectionIcon />
+          <Show when={!loading()} fallback={<span class="spinner" />}>
+            <Show when={props.trip.kind === 'collection'} fallback={<TripIcon />}>
+              <CollectionIcon />
+            </Show>
           </Show>
           <span class="lines">
             <span class="name">{props.trip.name}</span>
-            <span class="muted detail">{meta()}</span>
+            <span class="muted detail">
+              <Show when={loading()} fallback={meta()}>
+                {openingText(loading()!)}
+              </Show>
+            </span>
           </span>
           <Show when={shape()?.length ? shape() : undefined}>{(days) => <TripShape days={days()} />}</Show>
         </button>

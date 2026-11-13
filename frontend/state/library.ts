@@ -1,6 +1,6 @@
 import { createMemo, createResource, createRoot, createSignal } from 'solid-js';
 import { t } from '../i18n/t';
-import { listFolders, listTrips, fetchOutlines, type OutlineDay } from '../api';
+import { listFolders, listTrips, fetchOutlines, type OutlineDay, type Progress } from '../api';
 import { heldCounts } from '../library/folders';
 import { createRequest } from '../ui/request';
 
@@ -11,6 +11,9 @@ const [listFolderId, setListFolderId] = createSignal<number | null>(null);
 
 /** Whether the duplicates report stands in the pane between the library and the map. */
 export const [showingDuplicates, setShowingDuplicates] = createSignal(false);
+
+/** The trip being opened and how far that has come: its document on its way, or arrived and being put on the map. */
+export const [opening, setOpening] = createSignal<{ tripId: number; progress: Progress | 'arrived' }>();
 
 /** The search typed into the library; while there is one, what it finds stands in for the tree. */
 export const [query, setQuery] = createSignal('');

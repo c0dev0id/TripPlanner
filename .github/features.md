@@ -189,6 +189,9 @@
   named and dated by the file, in its folder. Files that are no GPX are reported and
   left out. With Recordings, Collections or a folder in them shown there is no dialog:
   the picked folder is imported as one dropped there is (see below).
+- Opening a trip says how far it has come on the trip's row: a ring turns where its
+  icon stands, and under its name stands how much of its document has arrived of how
+  much ("Loading 2.3 of 4.1 MB"), then "Opening…" until the map has drawn its routes.
 - Two folders every user has, first in the tree and tinted, which are neither renamed,
   moved nor deleted: Recordings (red), for recordings that belong to no trip, and
   Collections (yellow). They and the folders in them hold collections and nothing else;

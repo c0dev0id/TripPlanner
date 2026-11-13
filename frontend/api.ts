@@ -100,7 +100,28 @@ export const deleteFolder = (id: number, contents: 'move' | 'delete'): Promise<v
 
 export const tripApi = (id: number): string => `/api/trips/${id}`;
 
-export const fetchTrip = (id: number): Promise<Trip> => fetchTripAt(tripApi(id));
+/** How far a download has come: the bytes read so far, and of the whole where the server says how long it is. */
+export interface Progress {
+  received: number;
+  total?: number;
+}
+
+/** Reads a trip, telling `onProgress` how far its document has come as it arrives. */
+export async function fetchTrip(id: number, onProgress?: (progress: Progress) => void): Promise<Trip> {
+  const response = await send('GET', tripApi(id));
+  if (!onProgress || !response.body) return (await response.json()) as Trip;
+  // The browser unpacks the answer as it reads it, so the length of the packed one says nothing here.
+  const total = Number(response.headers.get('X-Uncompressed-Length') ?? response.headers.get('Content-Length')) || undefined;
+  let received = 0;
+  const counted = new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      received += chunk.byteLength;
+      onProgress({ received, total });
+      controller.enqueue(chunk);
+    },
+  });
+  return (await new Response(response.body.pipeThrough(counted)).json()) as Trip;
+}
 
 /**
  * The read-only page reads a trip and its journal from the owner's trip API or from the

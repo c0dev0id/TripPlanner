@@ -552,6 +552,15 @@ entries at the end of their section.
   selected together, since they share a list and nearly all their verbs. Days, routes
   or stops are selected together, never mixed: the verbs of a mixed selection would be those all kinds share, and what a
   paste of days and stops together into a route means has no good answer.
+- **A trip that is opened says how far that has come, in three steps.** A collection
+  of several megabytes took seconds in which nothing showed. The row first waits for
+  the server, then counts the bytes that arrive, then says that it is opening until
+  the map has drawn the routes. The count is of unpacked bytes, since that is what the
+  browser hands out as it reads; the packed length the server sends says nothing of
+  them, so the server adds the unpacked one in a header of its own. The last step
+  waits for the routes' source rather than for the map to be idle, which would also
+  wait for the base map's tiles on a slow line. The library answers again as soon as
+  the document is here; only the row keeps its ring until the map is done.
 - **A paste empties the clipboard.** A copy used to stay on it to be pasted again, which
   left the library's offer to paste standing after the paste was done, with nothing but
   another copy or cut to take it away. What is on the clipboard is now pasted once,

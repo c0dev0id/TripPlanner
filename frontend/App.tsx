@@ -6,12 +6,12 @@ import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';
 import { PanelResizer } from './ui/PanelResizer';
 import { RoutingBar } from './map/RoutingBar';
-import { MapView } from './map/MapView';
+import { MapView, routesDrawn } from './map/MapView';
 import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { setPreferencesOpen } from './state/drawing';
-import { libraryFolders, relistTrips, showFolder, shownFolderId, showingDuplicates } from './state/library';
+import { libraryFolders, opening, relistTrips, setOpening, showFolder, shownFolderId, showingDuplicates } from './state/library';
 import { foldPanel, panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, editRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
@@ -35,26 +35,35 @@ import { t } from './i18n/t';
 
 export function App() {
   const [me] = createResource(fetchMe);
-  const [opening, setOpening] = createSignal(false);
   const [error, setError] = createSignal<string>();
 
   /** Counts the trips asked for and the leavings, so that a trip that arrives after the user went elsewhere is not opened. */
   let latest = 0;
+  /** Whether a trip's document is on its way: nothing else is opened meanwhile. Once it is here the library answers again, while the map draws. */
+  const fetching = () => {
+    const o = opening();
+    return o !== undefined && o.progress !== 'arrived';
+  };
   /** Opens a trip, at the day `dayId` where one is given; a trip open before is saved first. */
   const open = async (id: number, dayId?: string) => {
     const ask = ++latest;
-    setOpening(true);
+    setOpening({ tripId: id, progress: { received: 0 } });
     setError(undefined);
     try {
       await flushSave();
-      const trip = await fetchTrip(id);
+      const trip = await fetchTrip(id, (progress) => ask === latest && setOpening({ tripId: id, progress }));
+      if (ask !== latest) return;
+      // Putting a large trip on the map keeps the browser busy: its row says so first, which takes a frame, and until the map has drawn it.
+      setOpening({ tripId: id, progress: 'arrived' });
+      await new Promise((painted) => requestAnimationFrame(() => setTimeout(painted)));
       if (ask !== latest) return;
       loadTrip(trip, dayId);
       resetSaveState();
+      await routesDrawn();
     } catch (e) {
       if (ask === latest) setError(errorMessage(e));
     } finally {
-      if (ask === latest) setOpening(false);
+      if (ask === latest) setOpening(undefined);
     }
   };
   /** Loads the open trip again from the server, after it was changed elsewhere. */
@@ -62,7 +71,7 @@ export function App() {
   /** Leaves the open trip, saved, and lists the trips afresh where a save changed one; nothing without one. */
   const leave = async () => {
     latest++;
-    setOpening(false);
+    setOpening(undefined);
     if (!openTrip()) return;
     await flushSave();
     const changed = savedSinceLoad();
@@ -120,10 +129,10 @@ export function App() {
         <Show when={panelFolded() && openTrip()}>
           <DayStrip />
         </Show>
-        <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} opening={opening()} error={error()} />
+        <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} opening={fetching()} error={error()} />
       </aside>
       <Show when={showingDuplicates()} fallback={<DayPane />}>
-        <DuplicatesReport onOpen={(id, dayId) => void open(id, dayId)} disabled={opening()} />
+        <DuplicatesReport onOpen={(id, dayId) => void open(id, dayId)} disabled={fetching()} />
       </Show>
       <div class="map-wrap">
         <PanelResizer />

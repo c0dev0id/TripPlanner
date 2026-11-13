@@ -6,6 +6,18 @@ const ONE_DECIMAL = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, ma
 /** A number with one decimal, "12.5" or "12,5" as the locale writes it. */
 export const decimalText = (n: number): string => ONE_DECIMAL.format(n);
 
+/**
+ * How far the opening of a trip has come, by its document in megabytes: "Loading 2.3 of
+ * 4.1 MB", without the whole where it is not known and without a number before anything
+ * arrived; "Opening…" once all of it is there and the trip is being put on the map.
+ */
+export function openingText(progress: { received: number; total?: number } | 'arrived'): string {
+  const megabytes = (bytes: number) => decimalText(bytes / 1e6);
+  if (progress === 'arrived') return t('Opening…');
+  if (progress.received === 0) return t('Loading…');
+  return progress.total ? t('Loading {received} of {total} MB', { received: megabytes(progress.received), total: megabytes(progress.total) }) : t('Loading {received} MB', { received: megabytes(progress.received) });
+}
+
 /** A distance in metres as text: metres below a kilometre, a decimal below 100 km, whole kilometres above. */
 export function distanceText(metres: number): string {
   if (metres < 1000) return `${Math.round(metres)} m`;

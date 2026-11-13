@@ -309,6 +309,28 @@ a {
   color: var(--muted);
 }
 
+/* The trip being opened waits like the others, but is the one worked on: it is not dimmed. */
+.tree .card.opening > .row button:disabled {
+  opacity: 1;
+}
+
+/* Something is on its way: a ring that turns where the row's icon stands. */
+.spinner {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--line);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .panel button.icon:is(.grip, .pad.drags) {
   cursor: grab;
   touch-action: none;

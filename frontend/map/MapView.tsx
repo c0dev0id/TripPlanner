@@ -23,6 +23,23 @@ import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { SearchBox } from './SearchBox';
 import { StopMarkers } from './StopMarkers';
 
+/** The page's map, once it is loaded and while it stands. */
+let shownMap: MapLibreMap | undefined;
+
+/** Resolves once the map has drawn the routes it was last given, whatever its base map still loads; at once while there is no map. */
+export const routesDrawn = (): Promise<void> =>
+  new Promise((resolve) => {
+    const map = shownMap;
+    if (!map) return resolve();
+    const check = () => {
+      if (!map.isSourceLoaded(ROUTES_SOURCE)) return;
+      map.off('render', check);
+      resolve();
+    };
+    map.on('render', check);
+    map.triggerRepaint();
+  });
+
 /** The map with the trip's routes and stops drawn over the base map, and the editing on it. */
 export function MapView() {
   let container!: HTMLDivElement;
@@ -30,8 +47,11 @@ export function MapView() {
 
   onMount(() => {
     // The map keeps its view in the address, as `map=`, and starts from it.
-    const m = newBaseMap(container, { hash: 'map' }, setMap, { routeWidth, overlays: true });
-    onCleanup(() => m.remove());
+    const m = newBaseMap(container, { hash: 'map' }, (loaded) => setMap((shownMap = loaded)), { routeWidth, overlays: true });
+    onCleanup(() => {
+      shownMap = undefined;
+      m.remove();
+    });
   });
 
   return (
