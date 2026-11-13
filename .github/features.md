@@ -297,7 +297,7 @@
   trip shows the routes whose eyes are open, the day shown those and its recordings
   whose eyes are open, the neighbouring days their routes; recordings are drawn for the
   day shown only.
-- A route under the pointer on the map is drawn wider and named, after its day while the
+- A route under a mouse's pointer on the map is drawn wider and named, after its day while the
   whole trip is shown; a click or a tap on it shows its day and takes the route up, as a
   click on its row does, which is brought into view. This holds while no route is being
   edited, when a tap does the tool's work.

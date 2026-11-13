@@ -1,6 +1,6 @@
-import { Popup, type Map as MapLibreMap, type MapMouseEvent } from 'maplibre-gl';
-import { onCleanup } from 'solid-js';
-import { editingRoute, openTrip, selectedDayId } from '../state/trip';
+import { Popup, type LngLat, type Map as MapLibreMap } from 'maplibre-gl';
+import { createEffect, on, onCleanup } from 'solid-js';
+import { editingRoute, editingRouteId, openTrip, selectedDayId } from '../state/trip';
 import { dayTitleOf, routeLabel } from '../trip/labels';
 import { ROUTE_LINE_LAYER, ROUTES_SOURCE } from './routeOverlay';
 
@@ -27,35 +27,43 @@ function nameOf({ routeId, dayId }: DrawnRoute): string {
 }
 
 /**
- * While no route is being edited, the route under the pointer is drawn as wide as an
+ * While no route is being edited, the route under a mouse's pointer is drawn as wide as an
  * edited one and named beside the pointer, which shows that a click takes the route up
- * (see Interactions).
+ * (see Interactions). A finger has no pointer that rests: a tap takes the route up at
+ * once, and nothing is named.
  */
 export function RouteHover(props: { map: MapLibreMap }) {
   const { map } = props;
+  const surface = map.getCanvasContainer();
   const popup = new Popup({ closeButton: false, closeOnClick: false, offset: 14, className: 'route-name' });
   let hovered: string | undefined;
-  /** Marks the route the pointer came onto and names it, and lets go of the one it left. */
-  const hover = (at: DrawnRoute | undefined, e?: MapMouseEvent) => {
+  /** Marks the route the pointer came onto and names it at `lngLat`, and lets go of the one it left. */
+  const hover = (at: DrawnRoute | undefined, lngLat?: LngLat) => {
     if (at?.routeId === hovered) return;
     if (hovered && map.getSource(ROUTES_SOURCE)) map.removeFeatureState({ source: ROUTES_SOURCE, id: hovered }, 'hover');
     hovered = at?.routeId;
     map.getCanvas().style.cursor = at ? 'pointer' : '';
-    if (!at || !e) return void popup.remove();
+    if (!at || !lngLat) return void popup.remove();
     map.setFeatureState({ source: ROUTES_SOURCE, id: at.routeId }, { hover: true });
-    popup.setLngLat(e.lngLat).setText(nameOf(at)).addTo(map);
+    popup.setLngLat(lngLat).setText(nameOf(at)).addTo(map);
   };
-  const onMove = (e: MapMouseEvent) => {
-    hover(editingRoute() ? undefined : routeAt(map, e.point, HOVER_REACH), e);
+  const onMove = (e: PointerEvent) => {
+    if (e.pointerType !== 'mouse') return;
+    const box = surface.getBoundingClientRect();
+    const point = { x: e.clientX - box.left, y: e.clientY - box.top };
+    const lngLat = map.unproject([point.x, point.y]);
+    hover(editingRoute() ? undefined : routeAt(map, point, HOVER_REACH), lngLat);
     // The name goes along with the pointer.
-    if (hovered) popup.setLngLat(e.lngLat);
+    if (hovered) popup.setLngLat(lngLat);
   };
   const onLeave = () => hover(undefined);
-  map.on('mousemove', onMove);
-  map.on('mouseout', onLeave);
+  // The route taken up by the click is edited, and no longer one to point at.
+  createEffect(on(editingRouteId, (id) => id && onLeave()));
+  surface.addEventListener('pointermove', onMove);
+  surface.addEventListener('pointerleave', onLeave);
   onCleanup(() => {
-    map.off('mousemove', onMove);
-    map.off('mouseout', onLeave);
+    surface.removeEventListener('pointermove', onMove);
+    surface.removeEventListener('pointerleave', onLeave);
     onLeave();
   });
   return null;

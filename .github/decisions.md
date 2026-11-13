@@ -613,7 +613,9 @@ entries at the end of their section.
   names. The line under the pointer is named and drawn wider, by a feature state on the
   source, whose features carry their route's id for it, and a click does what a click
   on its row does. While a route is edited a tap belongs to the tool, so neither
-  happens then. A collection's routes are not edited; the one clicked is taken up all
+  happens then. Only a mouse points: a tap sends a mouse's move and never its leaving,
+  which left the name of the route tapped standing on the map, so the pointer's kind is
+  asked and a finger's tap takes the route up without naming it. A collection's routes are not edited; the one clicked is taken up all
   the same. There is one route taken up, and the route being edited is that one while
   the open trip is a trip: every reader of the edited route means that the tools are
   up, and a second place for a collection's route had to be kept in step with the
