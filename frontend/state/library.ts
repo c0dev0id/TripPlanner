@@ -1,4 +1,5 @@
 import { createMemo, createResource, createRoot, createSignal } from 'solid-js';
+import { t } from '../i18n/t';
 import { listFolders, listTrips, fetchOutlines, type OutlineDay } from '../api';
 import { heldCounts } from '../library/folders';
 import { createRequest } from '../ui/request';
@@ -14,9 +15,12 @@ export const [showingDuplicates, setShowingDuplicates] = createSignal(false);
 /** The search typed into the library; while there is one, what it finds stands in for the tree. */
 export const [query, setQuery] = createSignal('');
 
+/** The two special folders are named in the page's language. */
+const SPECIAL_NAMES = { recordings: t('Recordings'), collections: t('Collections') };
+
 const library = createRoot(() => {
   const [trips, { refetch: refetchTrips }] = createResource(listTrips);
-  const [folders, { refetch: refetchFolders }] = createResource(listFolders);
+  const [folders, { refetch: refetchFolders }] = createResource(async () => (await listFolders()).map((f) => (f.kind === 'folder' ? f : { ...f, name: SPECIAL_NAMES[f.kind] })));
   const [outlines, { refetch: refetchOutlines }] = createResource(fetchOutlines);
   /** The folder sent to while it exists, else the top: a folder deleted elsewhere leaves the explorer at the top. */
   const shownFolderId = createMemo(() => (folders()?.some((f) => f.id === listFolderId()) ? listFolderId() : null));

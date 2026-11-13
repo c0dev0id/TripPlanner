@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import type { Folder, TripSummary } from '../model/trip';
+import type { Folder, FolderKind, TripSummary } from '../model/trip';
 import { counted } from '../ui/format';
 
 /** The names of the folders from the top of the library down to the folder `id`; none for the top. */
@@ -11,6 +11,13 @@ function folderNames(folders: readonly Folder[], id: number | null): string[] {
 
 /** The names of the folders from the top of the library down to the folder `id`, joined; empty for none. */
 export const folderPath = (folders: readonly Folder[], id: number | null): string => folderNames(folders, id).join(' / ');
+
+/** The kind of the top folder the folder `id` is or lies in, which says what a file dropped there becomes; a plain folder's for the top of the library. */
+export function kindAround(folders: readonly Folder[], id: number | null): FolderKind {
+  let folder = folders.find((f) => f.id === id);
+  while (folder && folder.parentId !== null) folder = folders.find((f) => f.id === folder!.parentId);
+  return folder?.kind ?? 'folder';
+}
 
 /** How many folders and trips each folder holds itself, by its id; null stands for the top of the library. */
 export function heldCounts(folders: readonly Folder[], trips: readonly TripSummary[]): (id: number | null) => { folders: number; trips: number } {

@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { TripSummary } from '../model/trip';
-import { countsText, folderPath, heldCounts, heldInAll } from './folders';
+import type { Folder } from '../model/trip';
+import { countsText, folderPath, heldCounts, heldInAll, kindAround } from './folders';
 
-const folders = [
-  { id: 1, name: 'Rides', parentId: null },
-  { id: 2, name: '2023', parentId: 1 },
-  { id: 3, name: 'Alps', parentId: 2 },
+const folders: Folder[] = [
+  { id: 1, name: 'Rides', parentId: null, kind: 'folder' },
+  { id: 2, name: '2023', parentId: 1, kind: 'folder' },
+  { id: 3, name: 'Alps', parentId: 2, kind: 'folder' },
 ];
 
 describe('folderPath', () => {
@@ -13,6 +14,13 @@ describe('folderPath', () => {
     expect(folderPath(folders, 3)).toBe('Rides / 2023 / Alps');
     expect(folderPath(folders, 1)).toBe('Rides');
     expect(folderPath(folders, null)).toBe('');
+  });
+});
+
+describe('kindAround', () => {
+  it('is the kind of the top folder a folder lies in, a plain one for the top of the library', () => {
+    const all: Folder[] = [...folders, { id: 4, name: 'Collections', parentId: null, kind: 'collections' }, { id: 5, name: 'Passes', parentId: 4, kind: 'folder' }];
+    expect([kindAround(all, 4), kindAround(all, 5), kindAround(all, 3), kindAround(all, null)]).toEqual(['collections', 'collections', 'folder', 'folder']);
   });
 });
 

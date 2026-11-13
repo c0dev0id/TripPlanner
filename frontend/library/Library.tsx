@@ -220,9 +220,9 @@ export function Library(props: {
     if (key.startsWith('folder:')) return itemOfFolder(folders().find((f) => f.id === id));
     return itemOfTrip(trips().find((t) => t.id === id));
   };
-  /** The folders and trips in view, top to bottom: those of the top and of every unfolded folder. */
+  /** The folders and trips in view that can be selected, top to bottom: those of the top and of every unfolded folder, without the special folders. */
   const shownKeys = (parent: number | null = null): string[] => [
-    ...childFolders(parent).flatMap((f) => [keyOf({ folder: f }), ...(isUnfolded({ folder: f }) ? shownKeys(f.id) : [])]),
+    ...childFolders(parent).flatMap((f) => [...(f.kind === 'folder' ? [keyOf({ folder: f })] : []), ...(isUnfolded({ folder: f }) ? shownKeys(f.id) : [])]),
     ...childTrips(parent).map((trip) => keyOf({ trip })),
   ];
   /** What a card's menu, or a press on its pad, acts on: the selection where it holds the card, else the card alone. */
@@ -378,6 +378,10 @@ export function Library(props: {
     const paste = several ? [] : pasteItems(item);
     const within = tripsWithin(chosen);
     const nothing = () => undefined;
+    const pasteEntries = paste.length > 0 ? paste : [{ label: t('Paste'), disabled: true, run: nothing }];
+    const exportEntry = { label: t('Export'), disabled: within.length === 0, run: () => void flushSave().then(() => window.location.assign(tripArchiveUrl(within.map((trip) => trip.id)))) };
+    // A special folder stays as it is: it only takes what is pasted and exports what it holds.
+    if ('folder' in item && item.folder.kind !== 'folder') return [...pasteEntries, exportEntry];
     return [
       ...(several ? [{ label: t('{what} selected', { what: countText(chosen) }), disabled: true, run: nothing }] : []),
       // The open trip is renamed as it is edited; the others on the server.
@@ -385,7 +389,7 @@ export function Library(props: {
       { label: t('Duplicate'), disabled: !onlyTrips, run: () => void flushSave().then(() => runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist)) },
       { label: t('Cut'), run: () => clip(chosen, true) },
       { label: t('Copy'), disabled: !onlyTrips, run: () => clip(chosen, false) },
-      ...(paste.length > 0 ? paste : [{ label: t('Paste'), disabled: true, run: nothing }]),
+      ...pasteEntries,
       ...moveItem(chosen),
       ...(onlyTrips && several
         ? [
@@ -395,7 +399,7 @@ export function Library(props: {
           ]
         : []),
       ...(!several && 'trip' in item && item.trip.kind === 'trip' ? [{ label: t('Add day'), run: () => addDayTo(item.trip) }] : []),
-      { label: t('Export'), disabled: within.length === 0, run: () => void flushSave().then(() => window.location.assign(tripArchiveUrl(within.map((trip) => trip.id)))) },
+      exportEntry,
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
   };
@@ -410,7 +414,7 @@ export function Library(props: {
             note={heldText(heldOf(f().id))}
             onOpen={() => clickFolder(f())}
             items={() => itemMenu({ folder: f() })}
-            select={select({ folder: f() })}
+            select={f().kind === 'folder' ? select({ folder: f() }) : undefined}
             fold={{ unfolded: () => isUnfolded({ folder: f() }), current: () => isMarkedFolder(f().id) }}
           >
             <Branch parent={f().id} />
@@ -478,7 +482,7 @@ export function Library(props: {
                   </li>
                   <Branch parent={null} />
                 </ul>
-                <Show when={folders().length + trips().length === 0}>
+                <Show when={trips().length === 0 && folders().every((f) => f.kind !== 'folder')}>
                   <p class="muted">{t('No trips yet. Start one with the new trip icon above.')}</p>
                 </Show>
               </>
@@ -587,11 +591,12 @@ function TripCard(props: {
 /**
  * A folder as a card: its name over `note`, what it holds and in search results where it
  * is; its menu is the library's. Trips and folders dragged onto it move into it; with
- * `select`, its pad selects it or drags it into another.
+ * `select`, its pad selects it or drags it into another. The two special folders are
+ * tinted and have no pad.
  */
 function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[]; select?: CardSelect; fold?: CardFold; children?: JSX.Element }) {
   return (
-    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current() }} data-drop-folder={String(props.folder.id)}>
+    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current() }} data-kind={props.folder.kind} data-drop-folder={String(props.folder.id)}>
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Show when={props.select}>
           {(select) => (

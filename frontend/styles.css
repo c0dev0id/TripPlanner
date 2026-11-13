@@ -565,6 +565,15 @@ a {
   background: var(--active);
 }
 
+/* The folders every user has for recordings and for collections keep their own tint, marked or not. */
+.tree .card[data-kind='recordings'] > .row {
+  background: var(--recordings);
+}
+
+.tree .card[data-kind='collections'] > .row {
+  background: var(--collections);
+}
+
 /*
  * The strip runs down what is open: the marked row, the folders around it, its trip and
  * the top, and the trip on the map or the day in the pane while the mark is elsewhere.
