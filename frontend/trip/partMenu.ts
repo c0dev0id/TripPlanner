@@ -1,9 +1,11 @@
 import { t } from '../i18n/t';
+import { FREE_COLOR } from '../map/routeOverlay';
 import { dayOfRoute, dayOfStop, type PartKind } from '../routing/dayEdit';
 import { copyParts, pasteItems } from '../state/clipboard';
 import { setEditTarget, setExportScope } from '../state/drawing';
 import { clearPartSelection, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
-import { duplicateParts, movePartsToDay, openTrip, removeParts, routeById } from '../state/trip';
+import { duplicateParts, movePartsToDay, openTrip, removeParts, routeById, setStopSymbols } from '../state/trip';
+import { OUR_ICONS, PLAIN_SYMBOL } from '../symbols/symbols';
 import { askConfirmation } from '../ui/confirm';
 import { counted } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
@@ -51,10 +53,19 @@ function moveItems(kind: PartKind, ids: readonly string[]): MenuItem[] {
   return moveToDayItem(from?.id, (dayId) => movePartsToDay(kind, ids, dayId));
 }
 
+/** Icon, with our icons as its submenu, each drawn before its name: the one all the stops have is checked, and a pick gives it to all of them. */
+function iconItem(ids: readonly string[]): MenuItem {
+  const stops = openTrip()!.days.flatMap((day) => day.stops.filter((stop) => ids.includes(stop.id)));
+  return {
+    label: t('Icon'),
+    items: OUR_ICONS.map(({ label, symbol }) => ({ label, symbol: { name: symbol, color: FREE_COLOR }, checked: stops.every((stop) => (stop.symbol ?? PLAIN_SYMBOL) === symbol), run: () => setStopSymbols(ids, symbol) })),
+  };
+}
+
 /**
  * The menu of a day, a route or a stop of the open trip, the same for each kind and in a
- * trip as in a collection: edit, duplicate, cut, copy, paste into it, move, export as GPX
- * (days and routes), what only its kind has (`more`), select, remove. Opened on a part of a selection it acts on all of
+ * trip as in a collection: edit, a stop's icon, duplicate, cut, copy, paste into it, move,
+ * export as GPX (days and routes), what only its kind has (`more`), select, remove. Opened on a part of a selection it acts on all of
  * them; what takes one part alone is then greyed out. `edit` stands in where a part is
  * edited otherwise than in its dialog.
  */
@@ -66,6 +77,7 @@ export function partMenu(kind: PartKind, id: string, own: { edit?: () => void; m
   return [
     ...(several ? [{ label: t('{what} selected', { what: counted(ids.length, NOUNS[kind][openTrip()!.kind]) }), disabled: true, run: nothing }] : []),
     { label: t('Edit…'), disabled: several, run: own.edit ?? (() => setEditTarget({ kind, id })) },
+    ...(kind === 'stop' ? [iconItem(ids)] : []),
     { label: t('Duplicate'), run: () => duplicateParts(kind, ids) },
     { label: t('Cut'), run: () => copyParts(kind, ids, true) },
     { label: t('Copy'), run: () => copyParts(kind, ids) },

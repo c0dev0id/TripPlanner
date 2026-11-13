@@ -84,7 +84,10 @@
   long press), where Move… opens the other days.
 - Days, routes and stops answer to one menu, in a trip and in a collection alike: Edit,
   Duplicate, Cut, Copy, Paste, Move…, what only the kind has (a route's colour, a track's
-  condensing), Select, Remove. What does not apply is greyed out. Several of a kind are
+  condensing), Select, Remove. What does not apply is greyed out. A stop's menu has
+  Icon besides: our twelve icons, each drawn before its name and the stop's own marked,
+  one of which a click gives to the stop, or to all the stops selected in one step;
+  Garmin's symbols stay in the stop's dialog. Several of a kind are
   selected with Cmd or Ctrl and a click, Shift for a run, a tap on the grip, or Select in
   the menu; the menu then acts on all of them. Pasted into a day go routes with the stops
   bound to them, stops, which stand free, and days, which follow it; pasted into a route,

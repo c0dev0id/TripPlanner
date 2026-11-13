@@ -1,5 +1,6 @@
 import { createSignal, For, onCleanup, onMount, Show } from 'solid-js';
 import { menu, setMenu, type MenuItem } from './menu';
+import { StopShape } from './StopShape';
 
 /** The open menu, kept inside the viewport; a press or a scroll elsewhere, or Esc, closes it. */
 export function ContextMenu() {
@@ -106,6 +107,7 @@ function MenuList(props: {
                 }}
               >
                 <Show when={item.swatch}>{(color) => <span class="color-dot" style={{ background: color() }} />}</Show>
+                <Show when={item.symbol}>{(symbol) => <StopShape symbol={symbol().name} color={symbol().color} height={20} />}</Show>
                 {item.label}
               </button>
               <Show when={submenu && open()?.index === index() && open()}>{(at) => <MenuList items={submenu!} at={at()} armed={props.armed} back={{ label: item.label, close: () => setOpen(undefined) }} />}</Show>

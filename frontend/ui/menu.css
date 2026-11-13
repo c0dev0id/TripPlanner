@@ -62,6 +62,13 @@
   margin-right: 0.5em;
 }
 
+/* A stop's symbol before an item's label. */
+.context-menu button > svg {
+  flex: none;
+  margin-right: 0.6em;
+  vertical-align: middle;
+}
+
 /* The row that names a submenu and leads back from it, only where the submenu takes the list's place. */
 .context-menu .menu-back {
   display: none;

@@ -323,6 +323,11 @@ export function updateStop(stopId: string, change: Partial<Omit<Stop, 'id' | 'po
   editDay((trip, dayId) => dayEdit.updateStop(trip, dayId, stopId, change), label);
 }
 
+/** Gives stops of the selected day a symbol, as one step to undo. */
+export function setStopSymbols(stopIds: readonly string[], symbol: string): void {
+  editDay((trip, dayId) => stopIds.reduce((to, id) => dayEdit.updateStop(to, dayId, id, { symbol }), trip), t('Edit stop'));
+}
+
 export function addDay(): void {
   const id = newId();
   edit((trip) => dayEdit.addDay(trip, id), t('Add day'));
