@@ -376,7 +376,8 @@
 - Route lines in colour: one colour for each day, or the palette's next colour for each
   route of the trip, as the preferences say; a route's menu gives it a colour of its own,
   which it keeps wherever it is drawn. A route's row shows its colour. Lines are 5 pixels
-  wide unless set otherwise, and grow wider when zoomed in.
+  wide unless set otherwise, and grow wider when zoomed in: those of routes, of
+  recordings and of the routes the duplicates report and a day's lookup draw alike.
 - A spot of the map opened in Google Maps, OpenStreetMap or Google Street View, from the map's menu.
 - Loading the page again comes back to where it was: the folder shown, the open trip, its
   selected day, the route being edited and the map's view are kept in the address, which

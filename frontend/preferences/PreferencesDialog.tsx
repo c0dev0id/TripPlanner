@@ -47,7 +47,7 @@ export function PreferencesDialog() {
             </select>
           </label>
           <label>
-            {t('Width of route lines, in pixels')}
+            {t('Width of the lines of routes and recordings, in pixels')}
             <input type="number" name="routeWidth" min={ROUTE_WIDTHS.min} max={ROUTE_WIDTHS.max} step={0.5} value={routeWidth()} />
           </label>
           <label>

@@ -1,7 +1,7 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ExpressionSpecification, FilterSpecification, LayerSpecification, LineLayerSpecification } from 'maplibre-gl';
 import type { Day, LngLat } from '../model/trip';
-import { atZooms, sizeAt } from './zoomSize';
+import { atZooms, lineAt } from './zoomSize';
 import { legCoordinates, legState, routeLegs, type LegState } from '../routing/legs';
 
 /** The source and layers of the route lines, the free stops' marks and the other days' stops, and their features. */
@@ -35,10 +35,9 @@ const LINE_LAYOUT: LineLayerSpecification['layout'] = {
  * route wider than the others, the neighbouring days' narrower and paler.
  */
 export function routeLayers(width: number, sharpUntil: number): LayerSpecification[] {
-  const lineAt = (zoom: number): number => sizeAt(zoom, width, width, width * 1.8, 0.5, sharpUntil);
   /** The width by the route's role; under the pointer (see RouteHover), as wide as the edited route. */
   const byRole = (zoom: number, casing: number): ExpressionSpecification => {
-    const line = lineAt(zoom);
+    const line = lineAt(zoom, width, sharpUntil);
     return ['case', ['boolean', ['feature-state', 'hover'], false], line * 1.4 + casing, ['match', ['get', 'role'], 'edited', line * 1.4 + casing, 'neighbour', line * 0.7 + casing, line + casing]];
   };
   return [
@@ -65,7 +64,7 @@ export function routeLayers(width: number, sharpUntil: number): LayerSpecificati
       filter: ['all', ['==', ['geometry-type'], 'LineString'], ['in', ['get', 'state'], ['literal', ['pending', 'failed']]]],
       paint: {
         'line-color': ['match', ['get', 'state'], 'failed', '#e03131', '#495057'],
-        'line-width': atZooms((zoom) => lineAt(zoom) * 0.6),
+        'line-width': atZooms((zoom) => lineAt(zoom, width, sharpUntil) * 0.6),
         'line-dasharray': [2, 2],
       },
     },

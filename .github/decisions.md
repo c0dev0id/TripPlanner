@@ -395,7 +395,11 @@ entries at the end of their section.
 - **Route lines widen with the zoom.** A line of constant width is lost beside a road
   that the base map draws ever wider; the line grows to 1.8 times its width by zoom 18
   and, over raster tiles blown up, stays at half a road's width, by the sizing the
-  overlays use.
+  overlays use. Recordings and the routes drawn to compare them had a fixed 3.5 pixels,
+  a hairline on a road blown up to forty, at the very zoom a ride is held against its
+  plan; they take the width routes have, set once for all lines of the trip. A recording
+  under a route of its width is covered where both run alike, as it was under the
+  wider route before; the routes' group eye takes the plan away.
 - **The map's credits stay MapLibre's, and the tools step aside.** On a small map
   MapLibre shows its credits spread out until the map is first dragged, as
   OpenStreetMap's attribution guidelines ask, and offers no way to start them folded.

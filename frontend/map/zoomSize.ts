@@ -20,6 +20,13 @@ export function sizeAt(zoom: number, far: number, mid: number, near: number, ofR
   return Math.max(own, ofRoad * road);
 }
 
+/**
+ * How wide a line of the trip is at a zoom, a route's or a recording's: `width` pixels at
+ * the zooms a trip is planned at, wider closer in, and at least half a road's width where
+ * the base map is blown up.
+ */
+export const lineAt = (zoom: number, width: number, sharpUntil: number): number => sizeAt(zoom, width, width, width * 1.8, 0.5, sharpUntil);
+
 /** A style expression of the zoom that has the value `of` gives at each of the zooms, a number or an expression for one. */
 export const atZooms = (of: (zoom: number) => number | ExpressionSpecification): ExpressionSpecification => ['interpolate', ['linear'], ['zoom'], ...ZOOMS.flatMap((zoom) => [zoom, of(zoom)])];
 
