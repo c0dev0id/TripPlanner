@@ -571,6 +571,11 @@ entries at the end of their section.
   waits for the routes' source rather than for the map to be idle, which would also
   wait for the base map's tiles on a slow line. The library answers again as soon as
   the document is here; only the row keeps its ring until the map is done.
+- **The highlight under the pointer is a veil, not a colour.** As an opaque grey it
+  replaced whatever a row showed: the tint of the two special folders, the mark, a
+  selection. As a translucent layer of the text's colour it darkens what is there in
+  the light scheme and lightens it in the dark one, whatever that is, and no row needs
+  a highlight of its own.
 - **A paste empties the clipboard.** A copy used to stay on it to be pasted again, which
   left the library's offer to paste standing after the paste was done, with nothing but
   another copy or cut to take it away. What is on the clipboard is now pasted once,

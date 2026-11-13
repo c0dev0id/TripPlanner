@@ -601,15 +601,6 @@ a {
   background: var(--collections);
 }
 
-/* Under the pointer their buttons darken the tint rather than take the plain highlight. */
-.tree .card[data-kind='recordings'] > .row button:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--recordings) 88%, var(--fg));
-}
-
-.tree .card[data-kind='collections'] > .row button:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--collections) 88%, var(--fg));
-}
-
 /*
  * The strip down the left of a row. In the tree it runs down what is open: the marked
  * row, the folders around it, its trip and the top, and the trip on the map or the day in
