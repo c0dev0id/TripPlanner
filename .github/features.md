@@ -228,7 +228,8 @@
   The map draws the selected routes and brings them into view, each in a colour of its
   own that its row shows as well, the first eight selected, so that they are compared at a
   glance. The menu (right-click or long press) opens the location of a single route, its
-  trip at its day, whose pane takes the report's place, and copies or deletes the
+  trip at its day, whose pane takes the report's place while the tree unfolds down to
+  the day as if it had been clicked there, and copies or deletes the
   selected ones, as Ctrl+C and Delete do. A day picked in the tree takes the pane for
   itself as well. The report is made once and kept while the page stands: shown again,
   it is there at once, where it was scrolled to; what is deleted from it is taken out

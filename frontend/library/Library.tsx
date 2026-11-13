@@ -8,7 +8,7 @@ import { fetchingTrip, heldOf, importNote, isOpening, libraryFolders, libraryTri
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
-import { addDay, isMarkInTrip, isTripMarked, markFolder, markTrip, openTripId, selectDay } from '../state/trip';
+import { addDay, isMarkInTrip, isTripMarked, markFolder, markTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
 import { dayDetail, dayHeading } from '../trip/labels';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
@@ -146,12 +146,15 @@ export function Library(props: {
     setUnfolded(next);
     writePreference(UNFOLDED, JSON.stringify([...next]));
   };
-  // The folders a trip lies in unfold when it opens, so that it is in view.
+  // The folders a trip lies in unfold when it opens, so that it is in view, and the trip itself once a day of it is shown, wherever that was asked for: the day's row is then in view as if it had been clicked.
   createEffect(
-    on(openTripId, (id) => {
-      const keys: string[] = [];
-      for (let f = folders().find((folder) => folder.id === trips().find((trip) => trip.id === id)?.folderId); f; f = folders().find((folder) => folder.id === f!.parentId)) keys.push(keyOf({ folder: f }));
-      if (keys.length > 0) fold(keys, true);
+    on([openTripId, selectedDayId], ([id, dayId], before) => {
+      // A day that closes leaves the tree as it is: it may have closed because its folder was folded.
+      if (dayId === undefined && before?.[0] === id) return;
+      const trip = trips().find((candidate) => candidate.id === id);
+      const keys = trip && dayId !== undefined ? [keyOf({ trip })] : [];
+      for (let f = folders().find((folder) => folder.id === trip?.folderId); f; f = folders().find((folder) => folder.id === f!.parentId)) keys.push(keyOf({ folder: f }));
+      if (keys.some((key) => !unfolded().has(key))) fold(keys, true);
     }),
   );
   const childFolders = (parent: number | null) => folders().filter((f) => f.parentId === parent);

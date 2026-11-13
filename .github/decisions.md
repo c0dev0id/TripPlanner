@@ -584,6 +584,12 @@ entries at the end of their section.
   for, or a recording kept in a collection beside the one in its trip. A first version
   left out every group whose routes were all in trips, which hid exactly the trips
   imported twice.
+- **A day that is shown has its place in the tree in view.** A day shown from the
+  duplicates report, a search or the address opened in its pane while its trip and
+  folders stayed folded, so the pane showed a day the tree gave no place to. The tree
+  now unfolds the trip and the folders around it whenever a day comes to be shown, by
+  whatever way. A day that closes leaves the tree alone: it may have closed because
+  its folder was folded.
 - **The duplicates report is made once and kept; what is selected in it is drawn.** On
   a large library the report takes long enough that making it afresh each time it was
   shown, and after every delete, made it unusable for cleaning up: so it is kept in

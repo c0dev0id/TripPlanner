@@ -11,7 +11,7 @@ import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { setPreferencesOpen } from './state/drawing';
-import { libraryFolders, relistTrips, setOpening, showFolder, shownFolderId, showingDuplicates } from './state/library';
+import { libraryFolders, libraryTrips, relistTrips, setOpening, showFolder, shownFolderId, showingDuplicates } from './state/library';
 import { foldPanel, panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, editRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
@@ -129,7 +129,13 @@ export function App() {
         <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} error={error()} />
       </aside>
       <Show when={showingDuplicates()} fallback={<DayPane />}>
-        <DuplicatesReport onOpen={(id, dayId) => void open(id, dayId)} />
+        <DuplicatesReport
+          onOpen={(id, dayId) => {
+            // As a trip opened in the tree, it makes its folder the one shown.
+            showFolder(libraryTrips()?.find((trip) => trip.id === id)?.folderId ?? null);
+            void open(id, dayId);
+          }}
+        />
       </Show>
       <div class="map-wrap">
         <PanelResizer />
