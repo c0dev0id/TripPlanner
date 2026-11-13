@@ -225,8 +225,14 @@ entries at the end of their section.
   them with the user, so no code that creates a user has to know of the library; the
   repository refuses to rename, move or delete them by leaving them out of what those
   statements find. Their names are kept in English and shown in the page's language.
-  Other folders still take collections for now: that goes once the existing ones have
-  been moved.
+- **Collections live in the special folders only, trips only outside them.** A library
+  where any folder could hold either left it to the user to keep planning material and
+  rides apart. The rule is one sentence both ways, so a folder's place says what it
+  holds, and it is checked on the server where a trip is created or moved and where a
+  folder is moved with what it holds; the library only keeps the user from asking for
+  what would be refused. The import dialog lost planning material as a way to organize
+  a tree: among collections a picked folder is imported as a dropped one is, elsewhere
+  it can only make trips.
 - **A drop is imported without a dialog; the folder says how.** The import dialog asks
   how a tree is organized because a picked folder goes into whatever folder is shown.
   A drop names its folder, and the three kinds of folder each have one sensible
@@ -242,7 +248,7 @@ entries at the end of their section.
   trips and between days; the stop's former *Copy…* to another day became the same Copy.
   Pasted onto a whole trip, routes go where a file import would put them: onto the day of
   the date they were copied from, or a new day of that date, undated ones onto a new day
-  each. Pasted onto a folder they make a collection, since a set of copied routes from
+  each. Pasted onto a folder that holds collections they make a collection, since a set of copied routes from
   different trips is planning material rather than a ride. The duplicates report selects
   rows with a click, since its rows are worked on in bulk, and opens one from its menu.
   A collection's map shows only the section opened, and no stop dots while none is: the

@@ -99,8 +99,8 @@
   type, and a copy while text is selected copies the text.
   Copied routes are also pasted
   from a trip's menu in the library, each onto the day of its date or a new day (into a
-  collection as a new section each), and from a folder's menu as a new collection with a
-  section per route.
+  collection as a new section each), and from the menu of a folder that holds
+  collections as a new collection with a section per route.
 - Routes as geometry: points in order with routed legs between them, one profile (road,
   bike, foot) per route. A click on a route's row selects it and shows the tools over
   the map. The hand, the default, moves the map and opens a stop's details, and neither
@@ -179,19 +179,24 @@
   few, each with the count of points it leaves) or makes a route of it: fewer points,
   every leg routed, with the time the routing will take.
 - Import of a folder tree from disk into the open folder of the library, its folders
-  recreated (existing ones reused by name), organized one of three ways, chosen in the
+  recreated (existing ones reused by name), organized one of two ways, chosen in the
   import dialog with what each makes of the tree. A trip per folder: each folder holding
   GPX files becomes a trip named after it without its date; a date in a file's name
   (YYYY-MM-DD, YYYY_MM_DD, or YYYYMMDD at its start) puts it on that day, several files
   of a date on one day; other files are a day each, dated on from a date in the trip
   folder's name, or undated. A trip per file: each GPX file becomes a trip of one day,
-  named and dated by the file, in its folder. Planning material: each folder holding GPX
-  files becomes a collection with a section per file. Files that are no GPX are reported
-  and left out.
+  named and dated by the file, in its folder. Files that are no GPX are reported and
+  left out. With Recordings, Collections or a folder in them shown there is no dialog:
+  the picked folder is imported as one dropped there is (see below).
 - Two folders every user has, first in the tree and tinted, which are neither renamed,
   moved nor deleted: Recordings (red), for recordings that belong to no trip, and
-  Collections (yellow). Folders and trips are moved into them and made in them as in
-  any other.
+  Collections (yellow). They and the folders in them hold collections and nothing else;
+  every other folder and the top hold trips. The server refuses a collection made or
+  moved elsewhere, a trip made or moved into them, and a folder moved across with
+  contents of the wrong kind. The library follows: with such a folder shown, the new
+  trip icon makes a collection; Move… offers only folders that take what is moved;
+  copied routes are pasted as a new collection onto these folders only; and a folder's
+  card counts collections there.
 - Import by dropping GPX files and folders from the computer on a folder of the tree,
   without a dialog; what they become follows from the folder. On Recordings or a folder
   in it, every GPX file becomes a section of the collection named after the year it was

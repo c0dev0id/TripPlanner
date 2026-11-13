@@ -34,8 +34,11 @@ share work; sharing between users is on the way.
   trip, a whole trip is duplicated, trips imported one file each are merged into one.
 - **A library with folders** — trips sorted into folders inside folders, dragged by their
   pad from one to another, and a search across them. Importing a folder turns a tree of
-  GPX files into folders and trips: a trip per folder or per file, or planning material.
-  Files and folders dropped on a folder are imported into it without asking.
+  GPX files into folders and trips: a trip per folder or per file. Files and folders
+  dropped on a folder are imported into it without asking.
+- **Recordings and Collections** — two folders that hold collections: loose recordings
+  sorted by year, and planning material to copy routes from. Every other folder holds
+  trips.
 - **One way back** — the card under the path leads one level up, from a day to its trip
   to its folder to the top, and never moves.
 - **Duplicates found** — a report lists the routes kept more than once across the

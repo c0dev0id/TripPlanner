@@ -5,7 +5,7 @@ import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
 import { heldOf, importNote, libraryFolders, libraryTrips, outlineOf, query, relistFolders, relistTrips, runLibrary, showFolder, shownFolderId } from '../state/library';
-import { countsText, folderPath, heldInAll, heldText } from './folders';
+import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
 import { addDay, isMarkInTrip, isTripMarked, markFolder, markTrip, openTripId, selectDay } from '../state/trip';
@@ -277,21 +277,39 @@ export function Library(props: {
     if (holdsOpen([{ trip: into }, ...others.map((trip) => ({ trip }))])) await props.onLeave();
     await runLibrary(() => mergeTrips(into.id, others.map((t) => t.id)), relist);
   };
+  /** Whether the folder, null for the top, holds collections: the special folders and the folders in them do, everything else holds trips. */
+  const holdsCollections = (id: number | null): boolean => kindAround(folders(), id) !== 'folder';
+  /** Says of a folder, null for the top, whether it takes the items: all their trips, at any depth, are of the kind it holds. */
+  const takerOf = (items: readonly Item[]) => {
+    const within = tripsWithin(items);
+    return (into: number | null): boolean => {
+      const collections = holdsCollections(into);
+      return within.every((trip) => (trip.kind === 'collection') === collections);
+    };
+  };
+  /** Refuses, as the server would, to put the items into a folder that does not hold their kind. */
+  const assertFits = (items: readonly Item[], into: number | null) => {
+    if (!takerOf(items)(into)) throw new Error(t('Collections are kept in the folders for recordings and collections, trips in the others.'));
+  };
   /** Moves folders and trips into a folder, none for the top, those not in it already; the server refuses a folder inside itself. */
   const moveInto = (moved: readonly Item[], into: number | null) => {
     const goingTrips = tripsOf(moved).filter((trip) => trip.folderId !== into);
     const goingFolders = foldersOf(moved).filter((f) => f.id !== into && f.parentId !== into);
     if (goingTrips.length + goingFolders.length === 0) return;
-    void runLibrary(() => Promise.all([...goingTrips.map((trip) => moveTrip(trip.id, into)), ...goingFolders.map((f) => moveFolder(f.id, into))]), relist);
+    void runLibrary(async () => {
+      assertFits(moved, into);
+      await Promise.all([...goingTrips.map((trip) => moveTrip(trip.id, into)), ...goingFolders.map((f) => moveFolder(f.id, into))]);
+    }, relist);
   };
-  /** Move… with the folders to move into as its submenu, and none for the top; none where there is nowhere to go. */
+  /** Move… with the folders that take what is moved as its submenu, and none for the top; none where there is nowhere to go. */
   const moveItem = (moved: readonly Item[]): MenuItem[] => {
     const from = 'folder' in moved[0]! ? moved[0].folder.parentId : moved[0]!.trip.folderId;
     const movedFolders = new Set(foldersOf(moved).map((f) => f.id));
+    const takes = takerOf(moved);
     const places: MenuItem[] = [
-      ...(from === null ? [] : [{ label: t('No folder'), run: () => moveInto(moved, null) }]),
+      ...(from === null || !takes(null) ? [] : [{ label: t('No folder'), run: () => moveInto(moved, null) }]),
       ...folders()
-        .filter((f) => f.id !== from && !movedFolders.has(f.id))
+        .filter((f) => f.id !== from && !movedFolders.has(f.id) && takes(f.id))
         .map((f) => ({ label: pathOf(f.id), run: () => moveInto(moved, f.id) }))
         .sort((x, y) => x.label.localeCompare(y.label)),
     ];
@@ -304,11 +322,12 @@ export function Library(props: {
     const copied = libraryClip();
     if (!copied) return;
     clearClip();
-    if (copied.move) {
-      moveInto([...folders().filter((f) => copied.folderIds.includes(f.id)).map((folder) => ({ folder })), ...trips().filter((trip) => copied.tripIds.includes(trip.id)).map((trip) => ({ trip }))], into);
-      return;
-    }
-    void runLibrary(() => Promise.all(copied.tripIds.map(async (id) => moveTrip((await duplicateTrip(id)).id, into))), relist);
+    const items: Item[] = [...folders().filter((f) => copied.folderIds.includes(f.id)).map((folder) => ({ folder })), ...trips().filter((trip) => copied.tripIds.includes(trip.id)).map((trip) => ({ trip }))];
+    if (copied.move) return moveInto(items, into);
+    void runLibrary(async () => {
+      assertFits(items, into);
+      await Promise.all(copied.tripIds.map(async (id) => moveTrip((await duplicateTrip(id)).id, into)));
+    }, relist);
   };
   const renamedFolder = () => {
     const d = dialog();
@@ -325,11 +344,12 @@ export function Library(props: {
     const first = routes[0]!.route.name || t('Pasted routes');
     return (await createTrip(asName(routes.length > 1 ? t('{name} and {n} more', { name: first, n: routes.length - 1 }) : first), f.id, 'collection')).id;
   };
-  /** What is pasted into the one folder or trip: folders and trips into a folder, routes into either, days into a trip. */
+  /** What is pasted into the one folder or trip: folders and trips into a folder, routes into a trip or, as a new collection, into a folder that holds collections, days into a trip. */
   const pasteItems = (item: Item): MenuItem[] => {
     if ('folder' in item) {
       const f = item.folder;
       if (libraryClip()) return [{ label: t('Paste'), run: () => pasteLibrary(f.id) }];
+      if (!holdsCollections(f.id)) return [];
       return libraryPasteItem({ routes: (routes) => runLibrary(async () => pasteInto(await collectionFor(f, routes), routes), relistTrips) });
     }
     const id = item.trip.id;
@@ -411,7 +431,7 @@ export function Library(props: {
         {(f) => (
           <FolderCard
             folder={f()}
-            note={heldText(heldOf(f().id))}
+            note={heldText(heldOf(f().id), holdsCollections(f().id) ? 'collection' : 'trip')}
             onOpen={() => clickFolder(f())}
             items={() => itemMenu({ folder: f() })}
             select={f().kind === 'folder' ? select({ folder: f() }) : undefined}
@@ -496,7 +516,7 @@ export function Library(props: {
                 onOpenFolder={props.onOpenFolder}
                 onOpenTrip={props.onOpen}
                 disabled={props.opening}
-                folderNote={(f) => [pathOf(f.parentId), heldText(heldOf(f.id))].filter(Boolean).join(' · ')}
+                folderNote={(f) => [pathOf(f.parentId), heldText(heldOf(f.id), holdsCollections(f.id) ? 'collection' : 'trip')].filter(Boolean).join(' · ')}
                 tripWhere={(trip) => pathOf(trip.folderId) || t('No folder')}
                 folderItems={(f) => itemMenu({ folder: f })}
                 tripItems={(trip) => itemMenu({ trip })}

@@ -19,9 +19,11 @@ import { pickFile } from '../ui/pickFile';
 /**
  * The library's actions as icons: a new trip or folder in the folder shown, a folder of
  * GPX files or a zip of exported trips imported into it, the duplicates report and the
- * list of places to show on the map, each switched on and off. Files and folders dropped
- * on a folder of the tree are imported into it without asking. A new folder and an
- * import leave an open trip first.
+ * list of places to show on the map, each switched on and off. Where the folder shown
+ * holds collections, the new trip is a collection, and what is picked for import is
+ * imported as if dropped on the folder. Files and folders dropped on a folder of the tree
+ * are imported into it without asking. A new folder and an import leave an open trip
+ * first.
  */
 export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: () => Promise<void>; opening: boolean }) {
   const [dialog, setDialog] = createSignal<'trip' | 'folder'>();
@@ -29,8 +31,12 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
   /** What was picked for import, while the dialog asks how its GPX files are organized: the files, the paths of those to plan from, and the folders of exported trips. */
   const [picked, setPicked] = createSignal<{ sources: ImportSource[]; paths: string[]; archives: string[] }>();
   let folderInput!: HTMLInputElement;
-  /** Imports the sources into the folder shown: exported trips as they were, GPX files beside them as the dialog then says. */
+  /** What the folder shown holds: collections in the special folders and the folders in them, trips elsewhere. */
+  const shownKind = () => kindAround(libraryFolders() ?? [], shownFolderId());
+  /** Imports the sources into the folder shown: among collections as a dropped folder is; elsewhere exported trips as they were, GPX files beside them as the dialog then says. */
   const pick = (sources: ImportSource[]) => {
+    const kind = shownKind();
+    if (kind !== 'folder') return void runImport((onProgress) => importDropped({ files: [], inFolders: sources }, shownFolderId(), kind, onProgress));
     const archives = archiveFolders(sources.map((source) => source.path));
     // An exported trip's own GPX files are its trip once more, for other programs.
     const paths = sources.map((source) => (inFolders(source.path, archives) ? '' : source.path));
@@ -73,7 +79,7 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
   });
   return (
     <div class="row library-actions" role="toolbar" aria-label={t('Library')}>
-      <IconButton label={t('New trip…')} disabled={props.opening} onClick={() => setDialog('trip')}>
+      <IconButton label={t(shownKind() === 'folder' ? 'New trip…' : 'New collection…')} disabled={props.opening} onClick={() => setDialog('trip')}>
         <MapPlusIcon />
       </IconButton>
       <IconButton label={t('New folder…')} onClick={() => setDialog('folder')}>
@@ -107,12 +113,12 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
         onImport={(plan) => void importPicked(picked()!.sources, plan, picked()!.archives)}
       />
       <NameDialog
-        title={t('New trip')}
+        title={t(shownKind() === 'folder' ? 'New trip' : 'New collection')}
         open={dialog() === 'trip'}
-        placeholder={t('Name of the trip')}
+        placeholder={t(shownKind() === 'folder' ? 'Name of the trip' : 'Name of the collection')}
         submit={t('Start')}
         onClose={() => setDialog(undefined)}
-        onSubmit={(name) => void runLibrary(async () => props.onOpen((await createTrip(name, shownFolderId())).id), relistTrips)}
+        onSubmit={(name) => void runLibrary(async () => props.onOpen((await createTrip(name, shownFolderId(), shownKind() === 'folder' ? 'trip' : 'collection')).id), relistTrips)}
       />
       <NameDialog
         title={t('New folder')}

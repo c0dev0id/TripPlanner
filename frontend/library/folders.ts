@@ -12,7 +12,7 @@ function folderNames(folders: readonly Folder[], id: number | null): string[] {
 /** The names of the folders from the top of the library down to the folder `id`, joined; empty for none. */
 export const folderPath = (folders: readonly Folder[], id: number | null): string => folderNames(folders, id).join(' / ');
 
-/** The kind of the top folder the folder `id` is or lies in, which says what a file dropped there becomes; a plain folder's for the top of the library. */
+/** The kind of the top folder the folder `id` is or lies in: the special ones and the folders in them hold collections, the others and the top of the library, a plain folder's kind, trips. */
 export function kindAround(folders: readonly Folder[], id: number | null): FolderKind {
   let folder = folders.find((f) => f.id === id);
   while (folder && folder.parentId !== null) folder = folders.find((f) => f.id === folder!.parentId);
@@ -28,9 +28,9 @@ export function heldCounts(folders: readonly Folder[], trips: readonly TripSumma
   return (id) => counts.get(id) ?? { folders: 0, trips: 0 };
 }
 
-/** What a folder holds, as its card says it: "2 folders · 1 trip". */
-export const heldText = (held: { folders: number; trips: number }): string =>
-  [held.folders > 0 && counted(held.folders, 'folder'), counted(held.trips, 'trip')].filter(Boolean).join(' · ');
+/** What a folder holds, as its card says it: "2 folders · 1 trip", or collections where it holds those. */
+export const heldText = (held: { folders: number; trips: number }, noun: 'trip' | 'collection' = 'trip'): string =>
+  [held.folders > 0 && counted(held.folders, 'folder'), counted(held.trips, noun)].filter(Boolean).join(' · ');
 
 /** How many folders and trips, as a sentence says it: "2 folders and 3 trips", "1 trip"; empty for none. */
 export function countsText(folders: number, trips: number): string {
