@@ -140,7 +140,8 @@ function ComparedLines(props: { map: MapLibreMap }) {
 
 /**
  * The padding of a view fitted to the map: a margin around what it shows, and beyond each
- * card over the map, the stretch it covers from the edge it covers least from.
+ * card over the map, the stretch it covers from the edge where that takes the smallest
+ * share of the map: a card in a corner of a tall map is cleared below it, not beside it.
  */
 function clearOfCards(map: MapLibreMap) {
   const area = map.getContainer().getBoundingClientRect();
@@ -148,7 +149,8 @@ function clearOfCards(map: MapLibreMap) {
   for (const card of map.getContainer().parentElement!.querySelectorAll('.map-card')) {
     const box = card.getBoundingClientRect();
     const cover = { top: box.bottom - area.top, right: area.right - box.left, bottom: area.bottom - box.top, left: box.right - area.left };
-    const edge = (Object.keys(cover) as (keyof typeof cover)[]).reduce((least, e) => (cover[e] < cover[least] ? e : least));
+    const share = (e: keyof typeof cover) => cover[e] / (e === 'top' || e === 'bottom' ? area.height : area.width);
+    const edge = (Object.keys(cover) as (keyof typeof cover)[]).reduce((least, e) => (share(e) < share(least) ? e : least));
     padding[edge] = Math.max(padding[edge], 80 + cover[edge]);
   }
   return padding;
