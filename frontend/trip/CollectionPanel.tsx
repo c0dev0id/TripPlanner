@@ -80,7 +80,7 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
   );
 }
 
-/** What a section holds, in the pane beside the list: its routes, its waypoints and its recordings. */
+/** What a section holds, in the pane beside the list: its routes, its waypoints and, where it has any, its recordings. */
 export function SectionDetails(props: { day: Day }) {
   return (
     <div class="day-details">
@@ -101,7 +101,9 @@ export function SectionDetails(props: { day: Day }) {
           <ForById each={props.day.stops}>{(stop) => <WaypointItem stop={stop()} day={props.day} />}</ForById>
         </ol>
       </Show>
-      <DayRecordings day={props.day} />
+      <Show when={recordingsOf(props.day.id).length > 0}>
+        <DayRecordings day={props.day} />
+      </Show>
     </div>
   );
 }
