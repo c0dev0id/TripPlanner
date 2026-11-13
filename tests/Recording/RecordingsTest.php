@@ -85,13 +85,13 @@ final class RecordingsTest extends TestCase
         $folders = new Folders($this->db);
         $inbox = array_values(array_filter($folders->listFor($this->userId), fn ($folder) => $folder->kind === 'recordings'))[0]->id;
         $year = $this->trips->create($this->userId, '2027', $this->now, $folders->create($this->userId, 'Tracker', $inbox, $this->now)->id, 'collection')->id;
-        $document = ['name' => '2027', 'days' => [TripFixture::day('2027-06')]] + TripFixture::document();
+        $document = ['days' => [TripFixture::day('2027-06')]] + TripFixture::document();
         $this->documents->save($this->userId, $year, TripDocumentValidator::validated($document), 1, $this->now);
         $waiting = $this->recordings->add($this->userId, $year, '2027-06', 'Waiting', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], '2027-06-12T06:00:00Z')), $this->now);
         $this->recordings->add($this->userId, $this->tripId, 'day1', 'On its day', gzencode('<gpx/>'), $this->now);
 
         $unassigned = $this->recordings->unassigned($this->userId);
-        self::assertSame([[$waiting->id, $year, '2027', 'Waiting', '2027-06-12T06:00:00Z']], array_map(fn ($r) => [$r['id'], $r['tripId'], $r['tripName'], $r['name'], $r['startedAt']], $unassigned));
+        self::assertSame([[$waiting->id, $year, 'Waiting', '2027-06-12T06:00:00Z']], array_map(fn ($r) => [$r['id'], $r['tripId'], $r['name'], $r['startedAt']], $unassigned));
         self::assertCount(2, Polyline::decode($unassigned[0]['line']));
         self::assertSame([], $this->recordings->unassigned($this->userId + 1));
 

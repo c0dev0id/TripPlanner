@@ -211,13 +211,12 @@ export async function addRecordingOnce(tripId: number, dayId: string, name: stri
 
 /**
  * A recording that waits for its day in the folder for recordings and may be a day's: the
- * collection it is in, its line thinned as polyline6, whether it began on the day's date,
+ * collection it is in, by its id, its line thinned as polyline6, whether it began on the day's date,
  * and the share of it that ran along the day's routes, or of them along it.
  */
 export interface WaitingRecording {
   id: number;
   tripId: number;
-  tripName: string;
   name: string;
   line: string;
   distanceM: number;

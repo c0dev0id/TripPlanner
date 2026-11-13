@@ -69,15 +69,16 @@ final class Recordings
 
     /**
      * The recordings that wait for their day: those kept in the user's folder for
-     * recordings and the folders in it, each with its line and the collection it is in.
+     * recordings and the folders in it, each with its line and the id of the collection
+     * it is in.
      *
-     * @return list<array{id: int, tripId: int, tripName: string, name: string, line: string, distanceM: int, startedAt: ?string}>
+     * @return list<array{id: int, tripId: int, name: string, line: string, distanceM: int, startedAt: ?string}>
      */
     public function unassigned(int $userId): array
     {
         $statement = $this->db->prepare(
             "WITH RECURSIVE inside(id) AS (SELECT id FROM folders WHERE user_id = ? AND kind = 'recordings' UNION ALL SELECT f.id FROM folders f JOIN inside ON f.parent_id = inside.id)
-             SELECT r.id, t.id AS trip_id, t.name AS trip_name, r.name, r.line, r.distance_m, r.started_at
+             SELECT r.id, t.id AS trip_id, r.name, r.line, r.distance_m, r.started_at
              FROM recordings r JOIN days d ON d.id = r.day_id JOIN trips t ON t.id = d.trip_id
              WHERE t.folder_id IN (SELECT id FROM inside) ORDER BY r.started_at, r.id",
         );
@@ -85,7 +86,6 @@ final class Recordings
         return array_map(fn (array $row) => [
             'id' => (int) $row['id'],
             'tripId' => (int) $row['trip_id'],
-            'tripName' => $row['trip_name'],
             'name' => $row['name'],
             'line' => $row['line'],
             'distanceM' => (int) $row['distance_m'],
