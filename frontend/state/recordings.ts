@@ -14,7 +14,7 @@ import {
 } from '../api';
 import { asName, type Day, type LngLat } from '../model/trip';
 import { readRecording, type RecordedTrack } from '../recording/track';
-import { decodePolyline } from '../routing/polyline';
+import { decodeCached } from '../routing/polyline';
 import { flushSave } from './autosave';
 import { showWhole } from './drawing';
 import { recordingOnMap, setRecordingEyes } from './eyes';
@@ -70,10 +70,9 @@ const keep = (id: number, track: RecordedTrack | Error) => setTracks(new Map(tra
 const [lookup, setLookup] = createSignal<{ dayId: string; found?: WaitingRecording[]; previewedId?: number }>();
 
 createRoot(() => {
-  // Another trip starts with nothing opened, nothing read and nothing looked up.
+  // Another trip starts with nothing read and nothing looked up.
   createEffect(
     on(openTripId, () => {
-      setActiveRecordingId(undefined);
       setTracks(new Map());
       setLookup(undefined);
     }),
@@ -145,7 +144,7 @@ export async function lookUp(day: Day): Promise<void> {
 /** Shows a found recording on the map, whole. */
 export function preview(waiting: WaitingRecording): void {
   setLookup((looked) => looked && { ...looked, previewedId: waiting.id });
-  showWhole(decodePolyline(waiting.line));
+  showWhole(decodeCached(waiting.line));
 }
 
 export const isPreviewed = (waiting: WaitingRecording): boolean => lookup()?.previewedId === waiting.id;
@@ -157,7 +156,7 @@ const nextColor = (dayId: string): string => COLORS[recordingsOf(dayId).length %
 export function previewedLines(): { id: number; points: LngLat[]; color: string }[] {
   const looked = lookup();
   const waiting = looked?.found?.find((r) => r.id === looked.previewedId);
-  return waiting ? [{ id: waiting.id, points: decodePolyline(waiting.line), color: nextColor(looked!.dayId) }] : [];
+  return waiting ? [{ id: waiting.id, points: decodeCached(waiting.line), color: nextColor(looked!.dayId) }] : [];
 }
 
 /** Puts a found recording on its day of the open trip, as it is, its eye open: it waits no longer. */

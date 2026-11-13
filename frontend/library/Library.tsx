@@ -652,10 +652,15 @@ function TripCard(props: {
   const shape = createMemo(() => outlineOf(props.trip.id)?.map((day) => day.lines).filter((lines) => lines.length > 0));
   /** How far the opening of the trip has come, while it is being opened. */
   const loading = () => (isOpening(props.trip.id) ? opening()?.progress : undefined);
-  const recordings = createMemo(() => (outlineOf(props.trip.id) ?? []).reduce((count, day) => count + day.recordings, 0));
+  /** What a collection is: the recordings it holds in the folder for them, planning material elsewhere. */
+  const held = createMemo(() =>
+    kindAround(libraryFolders() ?? [], props.trip.folderId) === 'recordings'
+      ? counted((outlineOf(props.trip.id) ?? []).reduce((count, day) => count + day.recordings, 0), 'recording')
+      : t('Planning material'),
+  );
   const meta = () =>
     (props.trip.kind === 'collection'
-      ? [props.where, recordings() > 0 ? counted(recordings(), 'recording') : t('Planning material'), counted(props.trip.dayCount, 'section')]
+      ? [props.where, held(), counted(props.trip.dayCount, 'section')]
       : [props.where, counted(props.trip.dayCount, 'day'), props.trip.startsOn && t('from {date}', { date: dateText(props.trip.startsOn) }), props.trip.state === 'done' && t('done')]
     )
       .filter(Boolean)

@@ -29,9 +29,10 @@ export const dayHeading = (kind: TripKind, index: number, name: string): string 
 /** What stands under a day's name: its date and its length; under a section's, what it holds and its length. */
 export function dayDetail(kind: TripKind, day: { date: string | null; routes: number; stops: number; recordings: number; distanceM: number }): string {
   const length = day.distanceM > 0 && distanceText(day.distanceM);
-  const held = [(day.routes > 0 || day.recordings === 0) && counted(day.routes, 'route'), day.stops > 0 && counted(day.stops, 'waypoint'), day.recordings > 0 && counted(day.recordings, 'recording')];
-  const parts = kind === 'collection' ? [...held, length] : [day.date ? shortDateText(day.date) : t('No date'), length];
-  return parts.filter(Boolean).join(' · ');
+  if (kind === 'trip') return [day.date ? shortDateText(day.date) : t('No date'), length].filter(Boolean).join(' · ');
+  // A section says how many routes it holds also where it holds none, unless recordings are what it holds.
+  const routes = (day.routes > 0 || day.recordings === 0) && counted(day.routes, 'route');
+  return [routes, day.stops > 0 && counted(day.stops, 'waypoint'), day.recordings > 0 && counted(day.recordings, 'recording'), length].filter(Boolean).join(' · ');
 }
 
 /** What a day is called within its trip: its label, or in a collection the section's name. */

@@ -3,6 +3,7 @@ import { addRecordingOnce, changeTrip, createTrip, errorMessage, fetchTrip, list
 import { parseGpx } from '../gpx/gpx';
 import { gpxToDayParts, type DayParts } from '../gpx/import';
 import { asName, newId, type FolderKind, type TripSummary } from '../model/trip';
+import { moveDay } from '../routing/dayEdit';
 import { readRecording, type RecordedTrack } from '../recording/track';
 import { counted } from '../ui/format';
 import type { Dropped } from './fileDrop';
@@ -15,38 +16,38 @@ export function recordedMonth(track: RecordedTrack, file: File): string {
   return (time != null ? new Date(time).toISOString() : (dateIn(file.name) ?? new Date(file.lastModified).toISOString())).slice(0, 7);
 }
 
+/** The collection of the name in the folder: the one among the trips listed, or a new one. */
+const collectionIn = async (trips: readonly TripSummary[], folderId: number | null, name: string): Promise<number> =>
+  trips.find((trip) => trip.kind === 'collection' && trip.folderId === folderId && trip.name === name)?.id ?? (await createTrip(name, folderId, 'collection')).id;
+
 /**
- * Keeps GPX files of one track each as recordings, the files as they are: in the
- * collection `tripId`, or in the folder `folderId` in the collection of the year a ride was
- * recorded in, there on the section of its month; collection and section are made where
- * they are missing. A file the user keeps already, on whatever day, is left out and
- * counted as known. What cannot be read or kept is reported, and the import goes on.
+ * Keeps the GPX files among `files`, of one track each, as recordings, the files as they
+ * are: in the collection `tripId`, or in the folder `folderId` in the collection of the
+ * year a ride was recorded in, there on the section of its month; collection and section
+ * are made where they are missing. A file the user keeps already, on whatever day, is
+ * left out. The answer says how many were kept and how many were there already, and
+ * what could not be read or kept; the import goes on past those.
  */
-async function importRecordings(
-  sources: readonly ImportSource[],
-  into: { folderId: number | null } | { tripId: number },
-  onProgress: (text: string) => void,
-): Promise<{ recordings: number; known: number; errors: string[] }> {
-  const result = { recordings: 0, known: 0, errors: [] as string[] };
+async function importRecordings(files: readonly ImportSource[], into: { folderId: number | null } | { tripId: number }, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
+  const sources = files.filter((source) => isGpxPath(source.path));
+  const errors: string[] = [];
+  let kept = 0;
+  let known = 0;
   const trips = 'tripId' in into || sources.length === 0 ? [] : await listTrips();
   const collections = new Map<string, number>();
   const sections = new Map<string, { tripId: number; dayId: string }>();
   const sectionOf = async (month: string) => {
     const year = month.slice(0, 4);
-    const tripId =
-      'tripId' in into
-        ? into.tripId
-        : (collections.get(year) ?? trips.find((trip) => trip.kind === 'collection' && trip.folderId === into.folderId && trip.name === year)?.id ?? (await createTrip(year, into.folderId, 'collection')).id);
+    const tripId = 'tripId' in into ? into.tripId : (collections.get(year) ?? (await collectionIn(trips, into.folderId, year)));
     collections.set(year, tripId);
     const trip = await fetchTrip(tripId);
     let dayId = trip.days.find((day) => day.name === month)?.id;
     if (!dayId) {
       const withSection = withImportedDay(trip, { name: month, date: null }, []);
-      const section = withSection.days.at(-1)!;
+      dayId = withSection.days.at(-1)!.id;
       // The months stand in their order: the new one before the first section that comes after it.
       const at = trip.days.findIndex((day) => day.name > month);
-      await saveTrip(at < 0 ? withSection : { ...withSection, days: [...trip.days.slice(0, at), section, ...trip.days.slice(at)] }, trip);
-      dayId = section.id;
+      await saveTrip(at < 0 ? withSection : moveDay(withSection, dayId, at), trip);
     }
     return { tripId, dayId };
   };
@@ -59,23 +60,14 @@ async function importRecordings(
       const month = recordedMonth(track, file);
       const section = sections.get(month) ?? (await sectionOf(month));
       sections.set(month, section);
-      const kept = await addRecordingOnce(section.tripId, section.dayId, asName(track.name ?? file.name.replace(/\.gpx$/i, '')) || t('Recording'), gpx);
-      if (kept) result.recordings++;
-      else result.known++;
+      if (await addRecordingOnce(section.tripId, section.dayId, asName(track.name ?? file.name.replace(/\.gpx$/i, '')) || t('Recording'), gpx)) kept++;
+      else known++;
     } catch (error) {
-      result.errors.push(`${source.path}: ${errorMessage(error)}`);
+      errors.push(`${source.path}: ${errorMessage(error)}`);
     }
   }
-  return result;
-}
-
-/** What an import of recordings came to, in words. */
-function recordingsText(outcome: { recordings: number; known: number }): string {
-  const texts = [
-    outcome.recordings > 0 && t('{trips} imported.', { trips: counted(outcome.recordings, 'recording') }),
-    outcome.known > 0 && t('{what} kept already.', { what: counted(outcome.known, 'recording') }),
-  ].filter(Boolean);
-  return texts.length > 0 ? texts.join(' ') : t('No GPX files and no exported trips in there.');
+  const texts = [kept > 0 && t('{trips} imported.', { trips: counted(kept, 'recording') }), known > 0 && t('{what} kept already.', { what: counted(known, 'recording') })].filter(Boolean);
+  return { text: texts.length > 0 ? texts.join(' ') : t('No GPX files and no exported trips in there.'), errors };
 }
 
 /**
@@ -99,8 +91,7 @@ async function importSections(sources: readonly ImportSource[], folderId: number
   if (sections.length === 0) return result;
   const collection = t('Imported');
   try {
-    const existing = (await listTrips()).find((trip) => trip.kind === 'collection' && trip.folderId === folderId && trip.name === collection);
-    await changeTrip(existing?.id ?? (await createTrip(collection, folderId, 'collection')).id, (trip) => sections.reduce((to, section) => withImportedDay(to, { name: section.name, date: null }, [section.parts]), trip));
+    await changeTrip(await collectionIn(await listTrips(), folderId, collection), (trip) => sections.reduce((to, section) => withImportedDay(to, { name: section.name, date: null }, [section.parts]), trip));
     result.sections = sections.length;
   } catch (error) {
     result.errors.push(`${collection}: ${errorMessage(error)}`);
@@ -124,10 +115,7 @@ function importTree(loose: readonly ImportSource[], inDropped: readonly ImportSo
  * added and what could not be read.
  */
 export async function importIntoTrip(trip: TripSummary, files: readonly ImportSource[], recordings: boolean, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
-  if (recordings) {
-    const outcome = await importRecordings(files.filter((source) => isGpxPath(source.path)), { tripId: trip.id }, onProgress);
-    return { text: recordingsText(outcome), errors: outcome.errors };
-  }
+  if (recordings) return importRecordings(files, { tripId: trip.id }, onProgress);
   const errors: string[] = [];
   const collection = trip.kind === 'collection';
   onProgress(t('Importing {i} of {n}: {name}', { i: 1, n: 1, name: trip.name }));
@@ -148,10 +136,7 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
  * made and what could not be read or saved.
  */
 export async function importDropped(dropped: Dropped, folderId: number | null, kind: FolderKind, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
-  if (kind === 'recordings') {
-    const outcome = await importRecordings([...dropped.files, ...dropped.inFolders].filter((source) => isGpxPath(source.path)), { folderId }, onProgress);
-    return { text: recordingsText(outcome), errors: outcome.errors };
-  }
+  if (kind === 'recordings') return importRecordings([...dropped.files, ...dropped.inFolders], { folderId }, onProgress);
   const made: string[] = [];
   const errors: string[] = [];
   if (kind === 'collections') {
