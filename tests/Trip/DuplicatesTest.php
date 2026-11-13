@@ -90,14 +90,20 @@ final class DuplicatesTest extends TestCase
         self::assertSame(['t3', 'r1', 't1', 't2'], array_column($groups[0]['routes'], 'routeId'));
     }
 
-    public function testLeavesOutARideWhoseCopiesAreAllInTrips(): void
+    public function testLeavesADaysPlanAndWhatWasRecordedOfItTogether(): void
     {
-        $this->trip('Planned', '2027-06-12', [$this->route('r1')]);
-        $this->trip('Copied', '2027-06-12', [$this->route('r2')]);
-        $this->trip('Recorded', '2027-06-12', [$this->track('t1', self::EAST)]);
-        self::assertSame([], (new Duplicates($this->db))->of($this->userId));
-        $this->collection('Kept', [$this->track('t2', self::WEST)]);
-        self::assertSame([['r2', 't2', 'r1', 't1']], array_map(fn (array $group) => array_column($group['routes'], 'routeId'), (new Duplicates($this->db))->of($this->userId)));
+        $ids = fn (): array => array_map(fn (array $group) => array_column($group['routes'], 'routeId'), (new Duplicates($this->db))->of($this->userId));
+        $this->trip('Ridden', '2027-06-12', [$this->route('r1'), $this->track('t1', self::EAST), $this->track('t2', self::WEST)]);
+        self::assertSame([], $ids());
+        // The same routes imported once more are a trip kept twice, whatever the first one recorded.
+        $this->trip('Ridden again', '2027-06-12', [$this->route('r2')]);
+        self::assertSame([['r1', 't1', 't2', 'r2']], $ids());
+    }
+
+    public function testListsARouteADayHoldsTwice(): void
+    {
+        $this->trip('Doubled', null, [$this->route('r1'), $this->route('r2')]);
+        self::assertSame(['copies'], array_column((new Duplicates($this->db))->of($this->userId), 'kind'));
     }
 
     public function testLeavesTheSameRoadOnAnotherDateAndOtherUsersAlone(): void
