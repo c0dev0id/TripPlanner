@@ -317,12 +317,15 @@ export function Library(props: {
   };
   /** What the clipboard holds of the library, by number: 2 folders and 3 trips. */
   const clipText = (copied: LibraryClip): string => countsText(copied.folderIds.length, copied.tripIds.length);
+  /** The folders and trips on the clipboard, those still there. */
+  const clipItems = (copied: LibraryClip): Item[] => [...folders().filter((f) => copied.folderIds.includes(f.id)).map((folder) => ({ folder })), ...trips().filter((trip) => copied.tripIds.includes(trip.id)).map((trip) => ({ trip }))];
   /** Pastes the folders and trips on the clipboard into a folder, which empties it: cut, they move there; copied, each trip gets a copy there. */
   const pasteLibrary = (into: number | null) => {
     const copied = libraryClip();
     if (!copied) return;
-    clearClip();
-    const items: Item[] = [...folders().filter((f) => copied.folderIds.includes(f.id)).map((folder) => ({ folder })), ...trips().filter((trip) => copied.tripIds.includes(trip.id)).map((trip) => ({ trip }))];
+    const items = clipItems(copied);
+    // A paste the folder refuses leaves the clipboard as it was.
+    if (takerOf(items)(into)) clearClip();
     if (copied.move) return moveInto(items, into);
     void runLibrary(async () => {
       assertFits(items, into);
@@ -348,7 +351,8 @@ export function Library(props: {
   const pasteItems = (item: Item): MenuItem[] => {
     if ('folder' in item) {
       const f = item.folder;
-      if (libraryClip()) return [{ label: t('Paste'), run: () => pasteLibrary(f.id) }];
+      const copied = libraryClip();
+      if (copied) return takerOf(clipItems(copied))(f.id) ? [{ label: t('Paste'), run: () => pasteLibrary(f.id) }] : [];
       if (!holdsCollections(f.id)) return [];
       return libraryPasteItem({ routes: (routes) => runLibrary(async () => pasteInto(await collectionFor(f, routes), routes), relistTrips) });
     }

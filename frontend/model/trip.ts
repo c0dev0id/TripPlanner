@@ -157,10 +157,10 @@ export interface TripSummary {
   updatedAt: string;
 }
 
-/** A folder of the library, one level deep. */
 /** A folder of the user's making, or one of the two every user has at the top of the library, which stay as they are. */
 export type FolderKind = 'folder' | 'recordings' | 'collections';
 
+/** A folder of the library. */
 export interface Folder {
   id: number;
   name: string;

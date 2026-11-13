@@ -105,10 +105,9 @@ final class Folders
             if ($misplaced->fetchColumn() !== false) {
                 throw new MisplacedTrip();
             }
-            $statement = $this->db->prepare("UPDATE folders SET parent_id = ? WHERE id = ? AND user_id = ? AND kind = 'folder'");
-            $statement->execute([$parentId, $folderId, $userId]);
+            $this->db->prepare('UPDATE folders SET parent_id = ? WHERE id = ?')->execute([$parentId, $folderId]);
             $this->db->commit();
-            return $statement->rowCount() === 1;
+            return true;
         } catch (\Throwable $error) {
             $this->db->rollBack();
             throw $error;

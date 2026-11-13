@@ -556,6 +556,7 @@ entries at the end of their section.
   left the library's offer to paste standing after the paste was done, with nothing but
   another copy or cut to take it away. What is on the clipboard is now pasted once,
   copied or cut, in the library and in a trip alike: one rule for the one clipboard.
+  A paste the folder refuses is no paste and leaves it as it was.
 - **Cut within a trip moves, cut across trips copies and then removes.** Within the open
   trip the parts keep their ids, and with them their journal entries, and the move is
   one undo step. Into another trip the parts are pasted as copies under new ids, the

@@ -177,7 +177,10 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
     const [only, ...more] = recordings;
     return [
       { label, run: shown(() => void pasteRecordings(id, recordings, from)) },
-      ...(only && more.length === 0 && !from ? [{ label: t('Paste “{name}” as a route', { name: only.name }), run: shown(pasted(copied, () => undefined, () => pasteRoutes(id, recordingAsRoute(id, only.name, only.gpx)))) }] : []),
+      ...(only && more.length === 0 && !from ? [{ label: t('Paste “{name}” as a route', { name: only.name }), run: shown(() => {
+              setClip(undefined);
+              pasteRoutes(id, recordingAsRoute(id, only.name, only.gpx));
+            }) }] : []),
     ];
   }
   const [only, ...more] = copied.routes;

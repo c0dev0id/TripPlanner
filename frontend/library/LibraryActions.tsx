@@ -70,7 +70,7 @@ export function LibraryActions(props: { onOpen: (id: number) => void; onLeave: (
   const importPicked = (sources: ImportSource[], plan: PlannedTrip[], archives: string[]) =>
     runImport(async (onProgress) => {
       const result = await importFolder(sources, plan, archives, shownFolderId(), onProgress);
-      return { text: t('{trips} imported.', { trips: counted(result.trips, plan[0]?.kind ?? 'trip') }), errors: result.errors };
+      return { text: t('{trips} imported.', { trips: counted(result.trips, 'trip') }), errors: result.errors };
     });
   onFileDrop((data, folderId) => {
     if (importing()) return;
