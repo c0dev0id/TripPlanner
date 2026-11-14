@@ -55,7 +55,8 @@ share work; sharing between users is on the way.
   recordings; import the zip, or its unpacked folder, to get them back.
 - **Recordings beside the plan** — put rides as recorded (Ridelink, Scenic or any GPX
   track) on a day, or look up the ones that match it, and see them on the map next to
-  the planned route. A ride can be on several days; a day can take several rides. Open one for its figures: speed, climb, lean and road
+  the planned route. A ride can be on several days; a day can take several rides. One
+  run suggests days for the rides that have none, to accept or decline. Open one for its figures: speed, climb, lean and road
   surface, charted and coloured on the line.
   Compare it with the plan or another ride.
 - **Documents with the day** — keep PDFs, pictures, any other file and links with a

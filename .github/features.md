@@ -377,6 +377,15 @@
   known: dropped again, they are kept already. Before it merges, the planner says how
   many it merges and, for a joint after a pause of more than six hours or over more
   than 150 m, the pause and the way, across which the merged ride is a straight line.
+- Suggested days: the magnifier over the rides looks through every day of every trip
+  for the rides that are on no day, as a day's lookup does for one, and lists what it
+  finds above the rides, those of a day's date first, then the nearest: the trip and
+  its day over the date of the riding, its ride or how many files, its length and why
+  it was found. A click shows the rides on the map and the day in its pane with its
+  routes, without leaving the tab; the tick puts the rides on the day, the cross says
+  they are not of it, which is remembered, so that they are not suggested for it
+  again. Either way the suggestion leaves the list. While it looks, it says how many
+  days it has looked through.
 - Looking up a day's rides: *Look up recordings…* beside *Add recording…* on a trip's
   day goes through all the user's rides and lists the days of riding that may be the
   day's: begun on its date, or ridden along its routes, or its routes along them, a

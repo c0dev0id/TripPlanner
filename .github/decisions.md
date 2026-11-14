@@ -292,6 +292,21 @@ entries at the end of their section.
   user's clock on the day looked up: the files of one date together, so that pieces
   that each cover a part of the plan are found as the day they are, and are put on
   the day together.
+- **Days are suggested for rides, never given.** A ride and a plan are linked by hand,
+  but with hundreds of rides on no day the hand needs a list to work from. The
+  suggestions are what a day's lookup finds, run for every day of every trip, for the
+  rides that are on no day: one rule, so that what is suggested is what looking up
+  the day would have listed. They are worked out when asked for and not kept; what is
+  kept is a decline (`recording_declines`), since a suggestion that comes back after
+  it was turned down makes the list useless, and putting the ride on the day after
+  all forgets it. Rides that are on a day already are left out: they are assigned,
+  and a trip that was copied would otherwise have every ride suggested again. The
+  lookup is an object for this: the rides are sorted into days of riding and their
+  lines read once for all days, where reading them anew for each day took a hundred
+  times as long. Measured on 348 rides and 500 days in one region, with no match,
+  it takes eleven seconds here and several times that on the server, so an answer
+  looks through the days for three seconds and the planner asks on from where it
+  stopped, saying how far it is; no library is then too large for a request.
 - **Rides are merged on the server, as text, and the pieces stay known.** A tracker
   starts a new file after a break, and though the list of rides and the lookup group a
   day's files, a ride's figures and its comparison with the plan take one file. Merging
