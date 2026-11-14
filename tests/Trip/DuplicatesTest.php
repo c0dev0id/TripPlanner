@@ -64,8 +64,8 @@ final class DuplicatesTest extends TestCase
         $this->trip('Elsewhere', null, [TripFixture::route('r3', [[8, 50], [8.1, 50.1]])]);
         self::assertSame(
             [['kind' => 'copies', 'routes' => [
-                ['tripId' => $alps, 'tripName' => 'Alps', 'tripKind' => 'trip', 'dayId' => 'Alps-d', 'dayIndex' => 0, 'dayName' => 'Alps day', 'date' => '2027-06-12', 'routeId' => 'r1', 'routeName' => 'Pass', 'distanceM' => 89_300],
-                ['tripId' => $alps + 1, 'tripName' => 'Later', 'tripKind' => 'trip', 'dayId' => 'Later-d', 'dayIndex' => 0, 'dayName' => 'Later day', 'date' => '2028-01-01', 'routeId' => 'r2', 'routeName' => '', 'distanceM' => 89_300],
+                ['tripId' => $alps, 'tripName' => 'Alps', 'tripKind' => 'trip', 'dayId' => 'Alps-d', 'dayIndex' => 0, 'dayName' => 'Alps day', 'date' => '2027-06-12', 'routeId' => 'r1', 'routeName' => 'Pass', 'routeKind' => 'routed', 'distanceM' => 89_300],
+                ['tripId' => $alps + 1, 'tripName' => 'Later', 'tripKind' => 'trip', 'dayId' => 'Later-d', 'dayIndex' => 0, 'dayName' => 'Later day', 'date' => '2028-01-01', 'routeId' => 'r2', 'routeName' => '', 'routeKind' => 'routed', 'distanceM' => 89_300],
             ]]],
             $this->roundedDistances((new Duplicates($this->db))->of($this->userId)),
         );

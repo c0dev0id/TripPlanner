@@ -136,7 +136,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `GET /export-presets` | The user's export presets by name. |
 | `POST /export-presets` | Keeps `{name, options}` as a preset, replacing one of that name. |
 | `DELETE /export-presets/{id}` | Deletes the preset. |
-| `GET /duplicates` | The routes the user's library keeps more than once, in groups of exact copies or of the same ride, each route with its trip, day, name and length; a day's planned route with the tracks recorded of it is no group. |
+| `GET /duplicates` | The routes the user's library keeps more than once, in groups of exact copies or of the same ride, each route with its trip, day, name, kind (`routeKind`: `routed` or `track`) and length; a day's planned route with the tracks recorded of it is no group. |
 | `GET /duplicates/lines` | The lines of the user's routes named by `routes=` (comma-separated ids), as polyline6 by the route's id, for the report to draw the routes selected in it. |
 | `GET /stash` | The files of the user's Stash by name: `id`, `folderId`, `name`, `createdAt`, how many `waypoints` the file holds, and its routes and tracks as `items`, each with its `kind`, its `position` among the file's routes or tracks, `name`, `line` (thinned, polyline6), `distanceM`, `points` and, of a track, `startedAt`. |
 | `POST /stash/files` | Keeps a file from a multipart form: `name`, `folderId`, a folder of the Stash, and `file`, a GPX file compressed with gzip. Answers 201 with the file as it is listed, or 200 with the one kept already where the user keeps the same file anywhere in the Stash. |

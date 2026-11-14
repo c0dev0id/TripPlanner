@@ -391,6 +391,7 @@ export interface DuplicateRoute {
   date: string | null;
   routeId: string;
   routeName: string;
+  routeKind: Route['kind'];
   distanceM: number;
 }
 

@@ -301,7 +301,8 @@
   holds a route or a track twice. Once the same ride is anywhere else as well, in another trip or in a collection, the group is
   listed whole. A click or a tap selects a route, Cmd or Ctrl one more,
   Shift a run of them; a route's pad adds it or takes it away; a selected row is highlighted.
-  A row says where its route is by the folders its trip is in, the trip and the day,
+  A row says whether it is a route or a track, since a planned route and the track of
+  the same way are often both wanted, and where it is by the folders its trip is in, the trip and the day,
   so that routes of one trip or of one folder read alike and a whole trip or folder
   kept twice shows as such.
   The map draws the selected routes and brings them into view, each in a colour of its

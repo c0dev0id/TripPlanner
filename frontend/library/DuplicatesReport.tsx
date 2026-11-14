@@ -223,7 +223,9 @@ function Section(props: {
                             <span class="name">
                               {nameOf(route)} · {distanceText(route.distanceM)}
                             </span>
-                            <span class="muted detail">{whereText(route)}</span>
+                            <span class="muted detail">
+                              {route.routeKind === 'track' ? t('Track') : t('Route')} · {whereText(route)}
+                            </span>
                           </span>
                         </button>
                         <MenuButton of={nameOf(route)} items={() => props.items(route)} />

@@ -128,6 +128,7 @@ final class Duplicates
                 'date' => $row['date'],
                 'routeId' => $row['id'],
                 'routeName' => $row['name'],
+                'routeKind' => $route['kind'],
                 'distanceM' => (int) round($lengthM),
             ],
         ];
