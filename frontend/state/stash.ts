@@ -31,7 +31,7 @@ export const isShownItem = (fileId: number, item: Pick<StashItem, 'kind' | 'posi
 export const stashColor = (file: StashFile, item: StashItem): string => paletteColor(file.items.indexOf(item));
 
 const stash = createRoot(() => {
-  const [files, { refetch }] = createResource(listStash);
+  const [files, { refetch, mutate }] = createResource(listStash);
   /**
    * The file shown as it is listed, by what tells its content apart: the same while the
    * list says the same of it, so that the file is read again once it was rewritten and
@@ -68,7 +68,7 @@ const stash = createRoot(() => {
     const points = [...lines().flatMap((line) => line.points), ...waypoints()];
     if (points.length > 0) showWhole(points);
   });
-  return { files, refetch, lines, waypoints, failed: () => (listed() ? (read.error as unknown) : undefined) };
+  return { files, refetch, mutate, lines, waypoints, failed: () => (listed() ? (read.error as unknown) : undefined) };
 });
 
 /** The files of the Stash as the server last listed them. */
@@ -76,6 +76,9 @@ export const stashFiles = stash.files;
 
 /** Lists the Stash's files afresh after they changed. */
 export const relistStash = (): void => void stash.refetch();
+
+/** Lists files just kept after those listed, as the server answered with them, until the Stash is listed afresh. */
+export const listKeptFiles = (kept: readonly StashFile[]): void => void stash.mutate((files) => [...(files ?? []), ...kept]);
 
 /** The lines of the Stash on the map, and the waypoints of a file shown whole. */
 export const stashLines = stash.lines;

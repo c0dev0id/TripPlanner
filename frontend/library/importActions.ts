@@ -1,6 +1,7 @@
 import type { TripSummary } from '../model/trip';
 import { libraryFolders, relistFolders, relistTrips, runLibrary, setImportNote, showTab } from '../state/library';
-import { relistStash } from '../state/stash';
+import type { StashFile } from '../model/stash';
+import { listKeptFiles, relistStash } from '../state/stash';
 import { runRidesJob } from '../state/rides';
 import { pickFiles } from '../ui/pickFile';
 import { importDropped, importIntoTrip, importRides } from './dropImport';
@@ -49,21 +50,24 @@ export function addRides(dropped: Dropped | Promise<Dropped>): Promise<void> {
  */
 export function libraryImports(onLeave: () => Promise<void>) {
   let running = false;
+  /** The files the Stash kept since they were last listed. */
+  const kept: StashFile[] = [];
   const run = async (work: (onProgress: (text: string) => void) => Promise<Outcome>) => {
     if (running) return;
     running = true;
     await onLeave();
-    // A long import shows what it has kept so far: the folders and the Stash's files are listed afresh now and then while it runs.
+    // A long import shows what it has kept so far: now and then while it runs, the folders are listed afresh and the files the Stash kept meanwhile are listed after the others.
     let listedAt = Date.now();
     const onProgress = (text: string) => {
       setImportNote({ text, errors: [] });
       if (Date.now() - listedAt < RELIST_EVERY_MS) return;
       listedAt = Date.now();
       relistFolders();
-      relistStash();
+      listKeptFiles(kept.splice(0));
     };
     await runLibrary(async () => setImportNote(await work(onProgress)));
     running = false;
+    kept.length = 0;
     relistFolders();
     relistTrips();
     relistStash();
@@ -72,7 +76,7 @@ export function libraryImports(onLeave: () => Promise<void>) {
   const intoFolder = (folderId: number | null, dropped: Dropped | Promise<Dropped>) =>
     run(async (onProgress) => {
       const outcomes: Outcome[] = [];
-      for (const part of await unpacked(await dropped)) outcomes.push(await importDropped(part, folderId, kindAround(libraryFolders() ?? [], folderId), onProgress));
+      for (const part of await unpacked(await dropped)) outcomes.push(await importDropped(part, folderId, kindAround(libraryFolders() ?? [], folderId), onProgress, (file) => kept.push(file)));
       return { text: outcomes.map((outcome) => outcome.text).join(' '), errors: outcomes.flatMap((outcome) => outcome.errors) };
     });
   onFileDrop(

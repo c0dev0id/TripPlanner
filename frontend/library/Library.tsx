@@ -201,7 +201,14 @@ export function Library(props: {
   /** The folders in a folder, null for the top of the trips; the special folders are in none, each the top of its own tree. */
   const childFolders = (parent: number | null) => folders().filter((f) => f.parentId === parent && f.kind === 'folder');
   const childTrips = (parent: number | null) => trips().filter((trip) => trip.folderId === parent);
-  const childFiles = (parent: number | null) => files().filter((file) => file.folderId === parent);
+  /** The Stash's files by the folder they are in, and by their id. */
+  const filesIn = createMemo(() => {
+    const by = new Map<number, StashFile[]>();
+    for (const file of files()) (by.get(file.folderId) ?? by.set(file.folderId, []).get(file.folderId)!).push(file);
+    return by;
+  });
+  const fileOf = createMemo(() => new Map(files().map((file) => [file.id, file])));
+  const childFiles = (parent: number | null) => (parent === null ? [] : (filesIn().get(parent) ?? []));
   /** Whether the folder, null for the top of the trips, holds its tree's one mark: it is the folder marked there, and the mark is not on the open trip or its day. */
   const isMarkedFolder = (id: number | null): boolean => markedFolderOf(treeOf(id)) === id && !(isMarkInTrip() && openTree() === treeOf(id));
   /** Gives its tree's mark to a folder, null for the top of the trips, which makes it the one shown; the mark on the open trip in another tree stays. */
@@ -285,11 +292,7 @@ export function Library(props: {
   const removeFolder = async (f: Folder) => {
     const contents = await askFolderDeletion(f);
     if (!contents) return;
-    await runLibrary(() => deleteFolder(f.id, contents), () => {
-      relistFolders();
-      relistTrips();
-      relistStash();
-    });
+    await runLibrary(() => deleteFolder(f.id, contents), relist);
   };
   /** The tree shown; none while the rides are. */
   const shownTree = (): TreeTab | undefined => TREE_TABS.find((tree) => tree === libraryTab());
@@ -314,7 +317,7 @@ export function Library(props: {
   const itemOf = (key: string): Item | undefined => {
     const id = Number(key.slice(key.indexOf(':') + 1));
     if (key.startsWith('folder:')) return itemOfFolder(folders().find((f) => f.id === id));
-    if (key.startsWith('file:')) return files().flatMap((file) => (file.id === id ? [{ file }] : []))[0];
+    if (key.startsWith('file:')) return fileOf().has(id) ? { file: fileOf().get(id)! } : undefined;
     return key.startsWith('trip:') ? itemOfTrip(trips().find((t) => t.id === id)) : undefined;
   };
   /** A trip's days with their routes: the open trip's as it is edited, another's with those that have a name, as its outline lists them. */
@@ -354,7 +357,12 @@ export function Library(props: {
   ];
   /** The routes and tracks of files among the rows selected. */
   const itemsIn = (keys: Selection<string>): FileItem[] =>
-    [...keys].some((key) => key.startsWith('item:')) ? files().flatMap((file) => file.items.map((item) => ({ file, item })).filter((at) => keys.has(itemKey(at)))) : [];
+    [...keys].flatMap((key) => {
+      const [is, fileId, kind, position] = key.split(':');
+      const file = is === 'item' ? fileOf().get(Number(fileId)) : undefined;
+      const item = file?.items.find((listed) => listed.kind === kind && listed.position === Number(position));
+      return file && item ? [{ file, item }] : [];
+    });
   /** The routes among the rows selected, as the search found them. */
   const routesIn = (keys: Selection<string>): FoundRoute[] => found().routes.filter((route) => keys.has(routeKey(route)));
   /** The rows in view under a folder, top to bottom: its folders with those of every unfolded folder in it, its trips, and its files with the routes and tracks of every unfolded one. */
@@ -391,8 +399,9 @@ export function Library(props: {
   const relist = () => {
     setSelected(NOTHING_SELECTED);
     relistFolders();
-    relistTrips();
-    relistStash();
+    // What is changed lies in the tree shown: the trips and lists are listed afresh for theirs, the files for the Stash.
+    if (shownTree() === 'stash') relistStash();
+    else relistTrips();
   };
   /** The trips among the items and those in their folders, at any depth. */
   const tripsWithin = (items: readonly Item[]): TripSummary[] => {

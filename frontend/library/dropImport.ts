@@ -3,6 +3,7 @@ import { changeTrip, createTrip, errorMessage, keepRide, keepStashFile, listTrip
 import { readRouteFile, ROUTE_FILE, waypointStops } from '../gpx/import';
 import { isGpxText } from '../gpx/gpx';
 import { gpxText } from '../gpx/write';
+import type { StashFile } from '../model/stash';
 import { asName, newId, type FolderKind, type Stop, type Trip, type TripSummary } from '../model/trip';
 import { addParts } from '../routing/dayEdit';
 import { recordingName } from '../recording/track';
@@ -97,9 +98,10 @@ function withPlaces(list: Trip, places: readonly KindedPlace[]): Trip {
  * named after its file. The files of a dropped folder go into folders as their paths
  * say, made where the Stash has none of the name. A file kept already, wherever in the
  * Stash, is left out, and so is any other kind of file. The answer says how many were
- * kept and how many were there already, and what could not be read or kept.
+ * kept and how many were there already, and what could not be read or kept; `onKept`
+ * is handed each file as the server answers with it.
  */
-export async function importIntoStash(dropped: Dropped, folderId: number, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
+export async function importIntoStash(dropped: Dropped, folderId: number, onProgress: (text: string) => void, onKept: (file: StashFile) => void): Promise<{ text: string; errors: string[] }> {
   const errors: string[] = [];
   let kept = 0;
   let known = 0;
@@ -111,9 +113,11 @@ export async function importIntoStash(dropped: Dropped, folderId: number, onProg
     const gpx = isGpxText(text) ? text : gpxText(await readRouteFile(file));
     // A file dropped loose has no folders in its path and goes into the folder itself.
     const folder = await folderIn(source.path.split('/').slice(0, -1).map(asName));
-    const { added } = await keepStashFile(folder, asName(file.name.replace(ROUTE_FILE, '')) || t('File'), gpx);
-    if (added) kept++;
-    else known++;
+    const answer = await keepStashFile(folder, asName(file.name.replace(ROUTE_FILE, '')) || t('File'), gpx);
+    if (answer.added) {
+      kept++;
+      onKept(answer.file);
+    } else known++;
   });
   return { text: keptText(kept, known, 'file', t('No GPX or KML files in there.')), errors };
 }
@@ -183,11 +187,17 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
  * kept as files. Among places, the waypoints of every GPX file become places of a list.
  * Anywhere else a file becomes a trip, a folder of files a trip of its own, and a folder
  * that also holds folders a folder of trips. The answer says what was made and what
- * could not be read or saved.
+ * could not be read or saved; `onKept` is handed each file the Stash keeps.
  */
-export async function importDropped(dropped: Dropped, folderId: number | null, kind: FolderKind, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
+export async function importDropped(
+  dropped: Dropped,
+  folderId: number | null,
+  kind: FolderKind,
+  onProgress: (text: string) => void,
+  onKept: (file: StashFile) => void,
+): Promise<{ text: string; errors: string[] }> {
   if (kind === 'places') return importPlaces([...dropped.files, ...dropped.inFolders], { folderId }, onProgress);
-  if (kind === 'collections') return importIntoStash(dropped, folderId!, onProgress);
+  if (kind === 'collections') return importIntoStash(dropped, folderId!, onProgress, onKept);
   const trees = await importTree(dropped.files, dropped.inFolders, folderId, onProgress);
   if (trees.trips === 0) return { text: t('No GPX or KML files and no exported trips in there.'), errors: trees.errors };
   return { text: importedText([counted(trees.trips, 'trip')]), errors: trees.errors };
