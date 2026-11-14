@@ -1,11 +1,11 @@
 import { t } from '../i18n/t';
 import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, onMount, Show, Switch } from 'solid-js';
-import { changeTrip, errorMessage, fetchTrip, type DuplicateGroup, type DuplicateRoute } from '../api';
-import { copiedRoute, removeRoute, type CopiedRoute } from '../routing/dayEdit';
+import { errorMessage, fetchTrip, type DuplicateGroup, type DuplicateRoute } from '../api';
+import { copiedRoute, type CopiedRoute } from '../routing/dayEdit';
 import { copyRoutes } from '../state/clipboard';
 import { comparedColor, DUPLICATES, duplicateGroups, duplicateKey, duplicatesMadeAt, duplicatesStartedAt, forgetDuplicates, refreshDuplicates } from '../state/duplicates';
-import { fetchingTrip, libraryTrips, outlineOf, relistTrips, setShowingDuplicates } from '../state/library';
-import { openTripId, removeParts, selectedDayId } from '../state/trip';
+import { deleteRoutes, fetchingTrip, libraryTrips, outlineOf, setShowingDuplicates } from '../state/library';
+import { selectedDayId } from '../state/trip';
 import { dayLabel } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
 import { IconButton } from '../ui/IconButton';
@@ -37,11 +37,6 @@ async function copiesOf(routes: readonly DuplicateRoute[]): Promise<CopiedRoute[
     const route = day?.routes.find((x) => x.id === r.routeId);
     return day && route ? [copiedRoute(day, route)] : [];
   });
-}
-
-/** Removes the routes from their trips, each trip changed once, side by side; the stops bound to them stay, free. */
-async function removeRoutes(routes: readonly DuplicateRoute[]): Promise<void> {
-  await Promise.all(tripIdsOf(routes).map((id) => changeTrip(id, (trip) => routes.filter((r) => r.tripId === id).reduce((t, r) => removeRoute(t, r.dayId, r.routeId), trip))));
 }
 
 /** How far down the report was scrolled when it was last shown, to which it comes back. */
@@ -113,14 +108,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
         : t('Delete {n} routes from {trips}?', { n: chosen.length, trips: counted(trips, 'trip') });
     if (!(await askConfirmation(question, t('Delete')))) return;
     await work(t('Deleting…'), async () => {
-      // The open trip loses its routes as an edit of it, saved with it and undone like any other; the other trips on the server.
-      const inOpenTrip = chosen.filter((r) => r.tripId === openTripId());
-      const elsewhere = chosen.filter((r) => r.tripId !== openTripId());
-      if (inOpenTrip.length > 0) removeParts('route', inOpenTrip.map((r) => r.routeId));
-      if (elsewhere.length > 0) {
-        await removeRoutes(elsewhere);
-        relistTrips();
-      }
+      await deleteRoutes(chosen);
       setSelection(NOTHING_SELECTED);
       forgetDuplicates(chosen);
       return t('Deleted {what}.', { what: counted(chosen.length, 'route') });

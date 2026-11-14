@@ -1,10 +1,11 @@
 import { createMemo, createResource, createRoot, createSelector, createSignal } from 'solid-js';
 import { t } from '../i18n/t';
-import { listFolders, listTrips, fetchOutlines, type OutlineDay, type Progress } from '../api';
+import { changeTrip, listFolders, listTrips, fetchOutlines, type OutlineDay, type Progress } from '../api';
 import { heldCounts, kindAround } from '../library/folders';
 import type { FolderKind } from '../model/trip';
+import { removeRoute } from '../routing/dayEdit';
 import { createRequest } from '../ui/request';
-import { openTripId } from './trip';
+import { openTripId, removeParts } from './trip';
 
 /** The library as the server lists it, and where the user is in it. */
 
@@ -145,6 +146,28 @@ export const runLibrary = (work: () => Promise<unknown>, then?: () => void): Pro
     await work();
     then?.();
   });
+
+/** A route by where it is kept. */
+export interface RoutePlace {
+  tripId: number;
+  dayId: string;
+  routeId: string;
+}
+
+/**
+ * Deletes routes from their trips: from the open trip as an edit of it, saved with it
+ * and undone like any other, from the others on the server, each trip changed once,
+ * side by side. The stops bound to them stay, free.
+ */
+export async function deleteRoutes(routes: readonly RoutePlace[]): Promise<void> {
+  const inOpenTrip = routes.filter((route) => route.tripId === openTripId());
+  const elsewhere = routes.filter((route) => route.tripId !== openTripId());
+  if (inOpenTrip.length > 0) removeParts('route', inOpenTrip.map((route) => route.routeId));
+  if (elsewhere.length === 0) return;
+  const tripIds = [...new Set(elsewhere.map((route) => route.tripId))];
+  await Promise.all(tripIds.map((id) => changeTrip(id, (trip) => elsewhere.filter((route) => route.tripId === id).reduce((next, route) => removeRoute(next, route.dayId, route.routeId), trip))));
+  relistTrips();
+}
 
 /** How the last folder import goes or went, and what it could not read or save. */
 export const [importNote, setImportNote] = createSignal<{ text: string; errors: string[] }>();
