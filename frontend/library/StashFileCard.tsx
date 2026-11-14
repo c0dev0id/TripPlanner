@@ -1,7 +1,7 @@
-import { For, Show } from 'solid-js';
+import { Show, type JSX } from 'solid-js';
 import { t } from '../i18n/t';
 import type { StashFile, StashItem } from '../model/stash';
-import { isShownItem, shownInStash, stashColor } from '../state/stash';
+import { isShownItem, isShownWhole, stashColor } from '../state/stash';
 import { cardMenu } from '../ui/cardMenu';
 import { counted, distanceText, momentText } from '../ui/format';
 import { FileIcon } from '../ui/icons';
@@ -52,27 +52,13 @@ export function StashItemRow(props: { file: StashFile; item: StashItem; where?: 
 }
 
 /**
- * A file of the Stash as a card: its name over what it holds, with its shape, small.
- * Unfolded, it lists its routes and tracks, and says how many waypoints it holds. It is
- * marked while the map shows it whole, as its route or track is that is shown alone.
+ * A file of the Stash as a card: its name over what it holds, with its shape, small. It
+ * is marked while the map shows it whole. With `children`, the rows of its routes and
+ * tracks, it is unfolded: they stand under it, over how many waypoints it holds.
  */
-export function StashFileCard(props: {
-  file: StashFile;
-  where?: string;
-  onOpen: (file: StashFile) => void;
-  onShow: (item: StashItem) => void;
-  items: () => MenuItem[];
-  /** The menu of one of its routes or tracks, and how it is selected. */
-  itemItems: (item: StashItem) => MenuItem[];
-  itemSelect: (item: StashItem) => RowSelect;
-  select: CardSelect;
-  /** Whether its routes and tracks are listed under it; not among what a search found. */
-  unfolded?: boolean;
-}) {
-  /** Whether the map shows the file whole. */
-  const shown = () => shownInStash()?.fileId === props.file.id && !shownInStash()!.item;
+export function StashFileCard(props: { file: StashFile; where?: string; onOpen: (file: StashFile) => void; items: () => MenuItem[]; select: CardSelect; unfolded?: boolean; children?: JSX.Element }) {
   return (
-    <li class="card" classList={{ selected: props.select.selected(), cut: props.select.cut(), opened: shown() }}>
+    <li class="card" classList={{ selected: props.select.selected(), opened: isShownWhole(props.file.id) }}>
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Pad label={t('Select {name}, or drag it into a folder', { name: props.file.name })} selected={props.select.selected()} onToggle={props.select.onToggle} onPress={props.select.onDrag} />
         <button class="text grow" aria-expanded={props.unfolded} onClick={(e) => props.select.onClick(e) || props.onOpen(props.file)}>
@@ -89,7 +75,7 @@ export function StashFileCard(props: {
       </div>
       <Show when={props.unfolded}>
         <ul class="tree-children">
-          <For each={props.file.items}>{(item) => <StashItemRow file={props.file} item={item} onShow={props.onShow} items={() => props.itemItems(item)} select={props.itemSelect(item)} />}</For>
+          {props.children}
           <Show when={props.file.waypoints > 0}>
             <li class="muted detail">{counted(props.file.waypoints, 'waypoint')}</li>
           </Show>

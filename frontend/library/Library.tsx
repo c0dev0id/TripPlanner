@@ -5,11 +5,11 @@ import type { StashFile, StashItem } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip, copyRoutes, copyStops } from '../state/clipboard';
-import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, opening, openTree, outlineOf, query, relistFolders, relistStash, searchedFor, relistTrips, stashFiles, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
+import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, opening, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
-import { showInStash, shownInStash, stashEdited, stashProblem } from '../state/stash';
+import { isShownItem, isShownWhole, relistStash, showInStash, shownInStash, stashFiles, stashProblem } from '../state/stash';
 import { ridesChanged } from '../state/rides';
 import { setEditTarget } from '../state/drawing';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
@@ -88,7 +88,7 @@ export interface CardSelect {
 export type RowSelect = Pick<CardSelect, 'selected' | 'onToggle' | 'onClick'>;
 
 /** How a card unfolds in the tree, whether it holds the tree's one mark, and of a trip whether it is the open one. */
-export interface CardFold {
+interface CardFold {
   unfolded: () => boolean;
   current: () => boolean;
   open?: () => boolean;
@@ -105,7 +105,6 @@ const UNFOLDED = 'libraryUnfolded';
 function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void }) {
   const collection = () => props.trip.kind === 'collection';
   const days = () => outlineOf(props.trip.id) ?? [];
-  const places = createMemo(() => kindAround(libraryFolders() ?? [], props.trip.folderId) === 'places');
   return (
     <ol class="days">
       <ForById each={days()}>
@@ -118,7 +117,7 @@ function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void })
               <button class="text grow" onClick={() => props.onOpen(day().id)}>
                 <span class="lines">
                   <span class="name">{dayHeading(props.trip.kind, index(), day().name)}</span>
-                  <span class="muted detail">{dayDetail(props.trip.kind, day(), places())}</span>
+                  <span class="muted detail">{dayDetail(props.trip.kind, day(), collection())}</span>
                 </span>
               </button>
             </div>
@@ -146,8 +145,8 @@ const NEW_DIALOG: Record<NewKind, { title: string; placeholder: string; submit: 
   kind: { title: t('New kind of place'), placeholder: t('Name of the kind'), submit: t('Create') },
 };
 
-/** The dialog the library has open: a new name for a folder, a trip or a file, or the name of a new one in a folder, null for the top; of a new kind of place, in the list `into`. */
-type LibraryDialog = { kind: 'rename-folder'; folder: Folder } | { kind: 'rename-trip'; trip: TripSummary } | { kind: 'rename-file'; file: StashFile } | { kind: 'rename-item'; at: FileItem } | { kind: 'new'; what: NewKind; into: number | null };
+/** The dialog the library has open: a new name for something of it, with how the dialog reads and what saves the name, or the name of a new one in a folder, null for the top; of a new kind of place, in the list `into`. */
+type LibraryDialog = { kind: 'rename'; title: string; placeholder: string; name: string; save: (name: string) => Promise<unknown>; saved: () => void } | { kind: 'new'; what: NewKind; into: number | null };
 
 /**
  * The library as a tree: folders and trips unfolding in place, the open trip's days among
@@ -251,13 +250,12 @@ export function Library(props: {
   /** A click on a file unfolds it and shows it whole on the map; shown whole already, it folds and leaves the map. */
   const clickFile = (file: StashFile) => {
     const key = keyOf({ file });
-    const whole = shownInStash()?.fileId === file.id && !shownInStash()!.item;
-    fold([key], !(whole && unfolded().has(key)));
-    showInStash(whole && unfolded().has(key) ? undefined : { fileId: file.id });
+    const folds = isShownWhole(file.id) && unfolded().has(key);
+    fold([key], !folds);
+    showInStash(folds ? undefined : { fileId: file.id });
   };
   /** A click on a route or a track of a file shows it alone on the map; shown alone already, it gives way to its file whole. */
-  const showItem = (file: StashFile, item: StashItem) =>
-    showInStash(shownInStash()?.fileId === file.id && shownInStash()!.item?.kind === item.kind && shownInStash()!.item?.position === item.position ? { fileId: file.id } : { fileId: file.id, item });
+  const showItem = (file: StashFile, item: StashItem) => showInStash(isShownItem(file.id, item) ? { fileId: file.id } : { fileId: file.id, item });
   /** Shows a file the search found where it is in the tree, unfolded, and on the map: whole, or the one route or track of it. */
   const revealFile = (file: StashFile, item?: StashItem) => {
     fold([keyOf({ file }), ...keysAround(file.folderId)], true);
@@ -346,7 +344,7 @@ export function Library(props: {
     const upTo = <Row,>(rows: Row[]): Row[] => rows.slice(0, left).map((row) => (left--, row));
     return { folders: upTo(found().folders), trips: upTo(found().trips), files: upTo(found().files), routes: upTo(found().routes), items: upTo(found().items) };
   });
-  /** The rows the search lists that are selected, top to bottom, by key. */
+  /** The rows the search lists that can be selected, top to bottom, by key. */
   const listedKeys = (): string[] => [
     ...listed().folders.map((folder) => keyOf({ folder })),
     ...listed().trips.map((trip) => keyOf({ trip })),
@@ -367,39 +365,28 @@ export function Library(props: {
   ];
   /** What a card's menu, or a press on its pad, acts on: the selection where it holds the card, else the card alone. */
   const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.has(keyOf(item)) ? [...selection].flatMap((key) => itemOf(key) ?? []) : [item]);
-  /** How a folder's or a trip's card is selected, among the rows of the tree or, found by the search, among those it lists. */
-  const select = (item: Item, order: () => string[] = () => shownKeys(rootOf(shownTree()!))): CardSelect => ({
-    selected: () => isSelected(keyOf(item)),
+  /** How a row is selected by its key, among the rows of the tree or, with `order`, among those the search lists. */
+  const rowSelect = (key: string, order: () => string[] = () => shownKeys(rootOf(shownTree()!))): RowSelect => ({
+    selected: () => isSelected(key),
+    // A row is clicked in the tree shown, which is its own.
+    onToggle: () => toggleRow(ownerOf(shownTree()!), key),
+    onClick: (e: MouseEvent) => clickRow(ownerOf(shownTree()!), order(), key, e),
+  });
+  /** How a folder's, a trip's or a file's card is selected, cut and dragged into a folder. */
+  const select = (item: Item, order?: () => string[]): CardSelect => ({
+    ...rowSelect(keyOf(item), order),
     cut: () => isCut(item),
-    // A card is clicked in the tree shown, which is its own.
-    onToggle: () => toggleRow(ownerOf(shownTree()!), keyOf(item)),
-    onClick: (e: MouseEvent) => clickRow(ownerOf(shownTree()!), order(), keyOf(item), e),
     onDrag: (e: PointerEvent, dragged: () => void) => {
       const moved = chosenWith(item);
       dragToFolder(e, moved.length === 1 ? nameOf(item) : countText(moved), (into) => moveInto(moved, into), dragged);
     },
   });
-  /** How a route or a track of a file is selected, among the rows of the tree or those the search lists. */
-  const selectItem = (at: FileItem, order: () => string[] = () => shownKeys(rootOf(shownTree()!))): RowSelect => ({
-    selected: () => isSelected(itemKey(at)),
-    onToggle: () => toggleRow(ownerOf(shownTree()!), itemKey(at)),
-    onClick: (e: MouseEvent) => clickRow(ownerOf(shownTree()!), order(), itemKey(at), e),
-  });
-  /** How a route the search found is selected, among the rows it lists. */
-  const selectRoute = (route: FoundRoute): RowSelect => ({
-    selected: () => isSelected(routeKey(route)),
-    onToggle: () => toggleRow(ownerOf(shownTree()!), routeKey(route)),
-    onClick: (e: MouseEvent) => clickRow(ownerOf(shownTree()!), listedKeys(), routeKey(route), e),
-  });
   const isCut = (item: Item): boolean => {
     const cut = libraryClip();
     return cut !== undefined && cut.move && ('folder' in item ? cut.folderIds.includes(item.folder.id) : 'trip' in item && cut.tripIds.includes(item.trip.id));
   };
-  /** How many folders, trips and files: 2 folders and 3 trips. */
-  const countText = (items: readonly Item[]): string => {
-    const parts = ([[foldersOf(items).length, 'folder'], [tripsOf(items).length, 'trip'], [filesOf(items).length, 'file']] as const).flatMap(([n, noun]) => (n > 0 ? [counted(n, noun)] : []));
-    return parts.length > 1 ? t('{a} and {b}', { a: parts.slice(0, -1).join(', '), b: parts.at(-1)! }) : (parts[0] ?? '');
-  };
+  /** How many folders and trips, or files, which no tree holds beside trips: 2 folders and 3 trips. */
+  const countText = (items: readonly Item[]): string => countsText(foldersOf(items).length, tripsOf(items).length || filesOf(items).length, filesOf(items).length > 0 ? 'file' : 'trip');
   /** Lists the library afresh, nothing selected: after folders or trips were moved, merged, pasted or deleted. */
   const relist = () => {
     setSelected(NOTHING_SELECTED);
@@ -423,7 +410,6 @@ export function Library(props: {
     const all = foldersOf(doomed).length > 0 ? 'Delete {what} with everything in them?' : tripsOf(doomed).length > 0 ? 'Delete {what} with all their days?' : 'Delete {what}?';
     if (!(await askConfirmation(one || t(all, { what: countText(doomed) }), t('Delete')))) return;
     if (holdsOpen(doomed)) await props.onLeave();
-    if (filesOf(doomed).some((file) => file.id === shownInStash()?.fileId)) showInStash(undefined);
     await runLibrary(
       () => Promise.all([...tripsOf(doomed).map((trip) => deleteTrip(trip.id)), ...foldersOf(doomed).map((f) => deleteFolder(f.id, 'delete')), ...filesOf(doomed).map((file) => deleteStashFile(file.id))]),
       relist,
@@ -526,21 +512,9 @@ export function Library(props: {
       await Promise.all(copied.tripIds.map(async (id) => moveTrip((await duplicateTrip(id)).id, into)));
     }, relist);
   };
-  const renamedFolder = () => {
+  const renamed = () => {
     const d = dialog();
-    return d?.kind === 'rename-folder' ? d.folder : undefined;
-  };
-  const renamedTrip = () => {
-    const d = dialog();
-    return d?.kind === 'rename-trip' ? d.trip : undefined;
-  };
-  const renamedFile = () => {
-    const d = dialog();
-    return d?.kind === 'rename-file' ? d.file : undefined;
-  };
-  const renamedItem = () => {
-    const d = dialog();
-    return d?.kind === 'rename-item' ? d.at : undefined;
+    return d?.kind === 'rename' ? d : undefined;
   };
   const newIn = () => {
     const d = dialog();
@@ -621,7 +595,9 @@ export function Library(props: {
       e.preventDefault();
       return void (routes.length > 0 ? removeRoutes(routes) : removeItems(parts));
     }
-    if (!shownTree() || (verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0)) return;
+    // Files of the Stash are deleted and moved, not cut or copied.
+    const clips = verb === 'cut' || verb === 'copy';
+    if (!shownTree() || (verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0) || (clips && filesOf(chosen).length > 0)) return;
     e.preventDefault();
     if (verb === 'paste') pasteLibrary(shownFolderId());
     else if (verb === 'delete') void remove(chosen);
@@ -633,6 +609,9 @@ export function Library(props: {
   /** Adds a day at the end of a trip: of the open one as an edit that can be undone, which shows the day; of another on the server. */
   const addDayTo = (trip: TripSummary) => (trip.id === openTripId() ? addDay() : void runLibrary(() => changeTrip(trip.id, (loaded) => withDayAdded(loaded, newId())), relistTrips));
 
+  /** Asks for a new name for something of the library, which `save` then gives it; `saved` lists afresh what it is among. */
+  const rename = (title: string, placeholder: string, name: string, save: (name: string) => Promise<unknown>, saved: () => void) =>
+    setDialog({ kind: 'rename', title, placeholder, name, save, saved });
   /** Takes something out of the Stash and says, where the imports say what they did, what came of it. */
   const takeOut = (work: () => Promise<string>) => void runLibrary(async () => setImportNote({ text: await work(), errors: [] }));
   /** Copies routes and tracks of the Stash, to be pasted into a day. */
@@ -678,7 +657,7 @@ export function Library(props: {
       { label: t('Copy routes and tracks'), disabled: !onlyFiles || chosenFiles.every((file) => file.items.length === 0), run: () => copyOut(whole) },
       { label: t('Copy waypoints'), disabled: !onlyFiles || chosenFiles.every((file) => file.waypoints === 0), run: () => copyWaypoints(chosenFiles) },
       { label: t('Keep tracks as rides'), disabled: !onlyFiles || !chosenFiles.some((file) => file.items.some((item) => item.kind === 'track')), run: () => keepRides(whole) },
-      { label: t('Rename…'), disabled: several, run: () => setDialog({ kind: 'rename-file', file: chosenFiles[0]! }) },
+      { label: t('Rename…'), disabled: several, run: () => rename(t('Rename file'), t('Name of the file'), chosenFiles[0]!.name, (name) => renameStashFile(chosenFiles[0]!.id, name), relistStash) },
       ...moveItem(chosen),
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
@@ -697,7 +676,6 @@ export function Library(props: {
     await runLibrary(() => Promise.all(picked.map(({ file, items }) => removeStashItems(file.id, items!))), () => {
       const shown = shownInStash();
       if (shown?.item && picked.some(({ file }) => file.id === shown.fileId)) showInStash({ fileId: shown.fileId });
-      stashEdited();
       relist();
     });
   };
@@ -717,7 +695,7 @@ export function Library(props: {
       ...(one ? [] : [{ label: t('{what} selected', { what: t('{n} routes and tracks', { n: parts.length }) }), disabled: true, run: nothing }]),
       { label: t('Copy'), run: () => copyOut(pickedOf(parts)) },
       { label: t(one ? 'Keep as ride' : 'Keep tracks as rides'), disabled: tracks.length === 0, run: () => keepRides(pickedOf(tracks)) },
-      { label: t('Rename…'), disabled: !one, run: () => setDialog({ kind: 'rename-item', at: one! }) },
+      { label: t('Rename…'), disabled: !one, run: () => rename(one!.item.kind === 'track' ? t('Rename track') : t('Rename route'), t('Name'), one!.item.name, (name) => renameStashItem(one!.file.id, one!.item, name), relistStash) },
       { label: t('Delete'), run: () => void removeItems(parts) },
     ];
   };
@@ -731,10 +709,12 @@ export function Library(props: {
   /**
    * The menu of a folder or a trip, the same for both: what is new in it and what is added
    * to it from the computer, rename, duplicate, cut, copy, paste into it, move, merge,
-   * for planning material the trip made from it, export, delete. New in a folder is a folder and a trip, a collection or a list of places, in a trip a day, in a list of places a kind;
-   * added to a folder are files or a folder, to a trip or a collection files. Opened on a
-   * card of the selection it acts on all of it; what does not apply to what is selected is
-   * greyed out, and new and add are left out.
+   * export, delete. New in a folder is a folder and a trip or, among the Places, a list;
+   * in a trip a day, in a list of places a kind. Added to a folder are files or a
+   * folder, to a trip files. Opened on a card of the selection it acts on all of it;
+   * what does not apply to what is selected is greyed out, and new and add are left
+   * out. With files of the Stash, or routes and tracks, among what is selected, the menu
+   * is theirs.
    */
   const itemMenu = (item: Item): MenuItem[] => {
     const selection = menuSelection(selected(), keyOf(item));
@@ -767,18 +747,23 @@ export function Library(props: {
       ...(several ? [{ label: t('{what} selected', { what: countText(chosen) }), disabled: true, run: nothing }] : []),
       ...fresh,
       // The open trip is renamed as it is edited; the others on the server.
-      { label: t('Rename…'), disabled: several, run: () => ('folder' in item ? setDialog({ kind: 'rename-folder', folder: item.folder }) : item.trip.id === openTripId() ? setEditTarget({ kind: 'trip' }) : setDialog({ kind: 'rename-trip', trip: item.trip })) },
+      {
+        label: t('Rename…'),
+        disabled: several,
+        run: () =>
+          'folder' in item
+            ? rename(t('Rename folder'), t('Name of the folder'), item.folder.name, (name) => renameFolder(item.folder.id, name), relistFolders)
+            : item.trip.id === openTripId()
+              ? setEditTarget({ kind: 'trip' })
+              : rename(t('Rename trip'), t('Name of the trip'), item.trip.name, (name) => renameTrip(item.trip.id, name), relistTrips),
+      },
       { label: t('Duplicate'), disabled: !onlyTrips, run: () => void flushSave().then(() => runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist)) },
       { label: t('Cut'), run: () => clip(chosen, true) },
       { label: t('Copy'), disabled: !onlyTrips, run: () => clip(chosen, false) },
       ...pasteEntries,
       ...moveItem(chosen),
       ...(onlyTrips && several
-        ? [
-            others.every((trip) => trip.kind === first!.kind)
-              ? { label: t('Merge into “{name}”', { name: first!.name }), run: () => void merge(first!, others) }
-              : { label: t('Trips and planning material do not merge'), disabled: true, run: nothing },
-          ]
+        ? [{ label: t('Merge into “{name}”', { name: first!.name }), run: () => void merge(first!, others) }]
         : []),
       exportEntry,
       { label: t('Delete'), run: () => void remove(chosen) },
@@ -830,16 +815,14 @@ export function Library(props: {
       </ForById>
       <ForById each={childFiles(branch.parent)}>
         {(file) => (
-          <StashFileCard
-            file={file()}
-            onOpen={clickFile}
-            onShow={(item) => showItem(file(), item)}
-            items={() => itemMenu({ file: file() })}
-            itemItems={(item) => stashItemMenu({ file: file(), item })}
-            itemSelect={(item) => selectItem({ file: file(), item })}
-            select={select({ file: file() })}
-            unfolded={isUnfolded({ file: file() })}
-          />
+          <StashFileCard file={file()} onOpen={clickFile} items={() => itemMenu({ file: file() })} select={select({ file: file() })} unfolded={isUnfolded({ file: file() })}>
+            <For each={file().items}>
+              {(item) => {
+                const at = { file: file(), item };
+                return <StashItemRow file={at.file} item={item} onShow={(shown) => showItem(at.file, shown)} items={() => stashItemMenu(at)} select={rowSelect(itemKey(at))} />;
+              }}
+            </For>
+          </StashFileCard>
         )}
       </ForById>
     </>
@@ -905,11 +888,11 @@ export function Library(props: {
           </For>
           <For each={listed().files}>
             {(file) => (
-              <StashFileCard file={file} where={pathOf(file.folderId)} onOpen={revealFile} onShow={(item) => revealFile(file, item)} items={() => itemMenu({ file })} itemItems={(item) => stashItemMenu({ file, item })} itemSelect={(item) => selectItem({ file, item }, listedKeys)} select={select({ file }, listedKeys)} />
+              <StashFileCard file={file} where={pathOf(file.folderId)} onOpen={revealFile} items={() => itemMenu({ file })} select={select({ file }, listedKeys)} />
             )}
           </For>
-          <For each={listed().routes}>{(route) => <RouteCard found={route} onOpen={props.onOpenRoute} items={() => routeMenu(route)} select={selectRoute(route)} />}</For>
-          <For each={listed().items}>{(at) => <StashItemRow file={at.file} item={at.item} where={at.file.name} onShow={(item) => revealFile(at.file, item)} items={() => stashItemMenu(at)} select={selectItem(at, listedKeys)} />}</For>
+          <For each={listed().routes}>{(route) => <RouteCard found={route} onOpen={props.onOpenRoute} items={() => routeMenu(route)} select={rowSelect(routeKey(route), listedKeys)} />}</For>
+          <For each={listed().items}>{(at) => <StashItemRow file={at.file} item={at.item} where={at.file.name} onShow={(item) => revealFile(at.file, item)} items={() => stashItemMenu(at)} select={rowSelect(itemKey(at), listedKeys)} />}</For>
         </ul>
         <Show when={total() > SEARCH_LIMIT}>
           <p class="muted">{t('{n} more; narrow the search.', { n: total() - SEARCH_LIMIT })}</p>
@@ -960,47 +943,14 @@ export function Library(props: {
         onSubmit={(name) => createNew(newIn()!.what, newIn()!.into, name)}
       />
       <NameDialog
-        title={t('Rename folder')}
-        open={renamedFolder() !== undefined}
-        placeholder={t('Name of the folder')}
-        initial={renamedFolder()?.name}
+        title={renamed()?.title ?? ''}
+        open={renamed() !== undefined}
+        placeholder={renamed()?.placeholder ?? ''}
+        initial={renamed()?.name}
         onClose={() => setDialog(undefined)}
         onSubmit={(name) => {
-          const f = renamedFolder()!;
-          if (name !== f.name) void runLibrary(() => renameFolder(f.id, name), relistFolders);
-        }}
-      />
-      <NameDialog
-        title={t('Rename file')}
-        open={renamedFile() !== undefined}
-        placeholder={t('Name of the file')}
-        initial={renamedFile()?.name}
-        onClose={() => setDialog(undefined)}
-        onSubmit={(name) => {
-          const file = renamedFile()!;
-          if (name !== file.name) void runLibrary(() => renameStashFile(file.id, name), relistStash);
-        }}
-      />
-      <NameDialog
-        title={renamedItem()?.item.kind === 'track' ? t('Rename track') : t('Rename route')}
-        open={renamedItem() !== undefined}
-        placeholder={t('Name')}
-        initial={renamedItem()?.item.name}
-        onClose={() => setDialog(undefined)}
-        onSubmit={(name) => {
-          const { file, item } = renamedItem()!;
-          if (name !== item.name) void runLibrary(() => renameStashItem(file.id, item, name), () => (stashEdited(), relistStash()));
-        }}
-      />
-      <NameDialog
-        title={t('Rename trip')}
-        open={renamedTrip() !== undefined}
-        placeholder={t('Name of the trip')}
-        initial={renamedTrip()?.name}
-        onClose={() => setDialog(undefined)}
-        onSubmit={(name) => {
-          const trip = renamedTrip()!;
-          if (name !== trip.name) void runLibrary(() => renameTrip(trip.id, name), relistTrips);
+          const { name: before, save, saved } = renamed()!;
+          if (name !== before) void runLibrary(() => save(name), saved);
         }}
       />
     </div>
@@ -1027,12 +977,11 @@ function TripCard(props: {
   const shape = createMemo(() => outlineOf(props.trip.id)?.map((day) => day.lines).filter((lines) => lines.length > 0));
   /** How far the opening of the trip has come, while it is being opened. */
   const loading = () => (isOpening(props.trip.id) ? opening()?.progress : undefined);
-  const folderKind = createMemo(() => kindAround(libraryFolders() ?? [], props.trip.folderId));
-  /** What a collection is: the places it holds in the folder for them, planning material elsewhere. */
+  /** How many places a list holds. */
   const held = createMemo(() => counted((outlineOf(props.trip.id) ?? []).reduce((sum, day) => sum + day.stops, 0), 'place'));
   const meta = () =>
     (props.trip.kind === 'collection'
-      ? [props.where, held(), counted(props.trip.dayCount, folderKind() === 'places' ? 'kind' : 'section')]
+      ? [props.where, held(), counted(props.trip.dayCount, 'kind')]
       : [props.where, counted(props.trip.dayCount, 'day'), props.trip.startsOn && t('from {date}', { date: dateText(props.trip.startsOn) }), props.trip.state === 'done' && t('done')]
     )
       .filter(Boolean)

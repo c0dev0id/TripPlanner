@@ -322,6 +322,10 @@ entries at the end of their section.
   - A file's waypoints are counted, copied together and go with their file; they
     are not listed, renamed or deleted one by one yet. A file of places can hold
     thousands, and the Places are where single places are worked on.
+  - The list of files is the one signal that a file changed. The file the map shows
+    is read again when the list says something else of its routes and tracks, and
+    leaves the map when the list no longer has it; nothing has to be told that a
+    file was rewritten or deleted.
   - KML and KMZ are turned into GPX in the browser before they are kept. The user's
     devices write GPX, and what such files hold beyond what GPX can say is little.
 - **A ride is kept once, for itself, and is on days by a link.** The library is a tree
