@@ -79,7 +79,7 @@ final class TripDocumentsTest extends TestCase
     public function testKeepsAnOutlineOfEachDayForTheUsersTrips(): void
     {
         $document = TripFixture::document();
-        $document['days'][0]['routes'][] = TripFixture::track('t1');
+        $document['days'][0]['routes'][] = ['name' => 'Timmelsjoch'] + TripFixture::track('t1');
         $document['days'][] = TripFixture::day('empty');
         $this->save($document, 1);
         $outlines = $this->documents->outlines($this->userId);
@@ -88,9 +88,11 @@ final class TripDocumentsTest extends TestCase
         self::assertSame([$document['days'][0]['id'], $document['days'][0]['name'], '2027-06-12'], [$first['id'], $first['name'], $first['date']]);
         self::assertCount(count($document['days'][0]['routes']), $first['lines']);
         self::assertSame([2, 3], [$first['routes'], $first['stops']]);
+        // Of the two, the track alone has a name.
+        self::assertSame([['id' => 't1', 'name' => 'Timmelsjoch', 'kind' => 'track']], $first['namedRoutes']);
         // The route's two legs as the crow flies, 89.3 km, and the track south of it, 23.5 km.
         self::assertSame(112_777, $first['distanceM']);
-        self::assertSame(['id' => 'empty', 'name' => '', 'date' => null, 'routes' => 0, 'stops' => 0, 'recordings' => 0, 'media' => 0, 'distanceM' => 0, 'lines' => []], $outlines[$this->tripId][count($document['days']) - 1]);
+        self::assertSame(['id' => 'empty', 'name' => '', 'date' => null, 'routes' => 0, 'stops' => 0, 'recordings' => 0, 'media' => 0, 'namedRoutes' => [], 'distanceM' => 0, 'lines' => []], $outlines[$this->tripId][count($document['days']) - 1]);
         self::assertSame([], $this->documents->outlines($this->userId + 1));
     }
 

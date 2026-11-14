@@ -3,7 +3,7 @@ import { t } from './i18n/t';
 import { daysToSend } from './model/delta';
 import type { Entry, EntryTarget } from './model/journal';
 import type { RouteColoring } from './model/routeLook';
-import type { Folder, LngLat, Trip, TripKind, TripSummary } from './model/trip';
+import type { Folder, LngLat, Route, Trip, TripKind, TripSummary } from './model/trip';
 import type { OwnPlace } from './poi/ownPlaces';
 import type { Joint, Ride, Suggestion } from './recording/rides';
 import { stopsInRidingOrder } from './routing/sequence';
@@ -63,7 +63,14 @@ export interface OutlineLine {
   color: string | null;
 }
 
-/** A day as the library knows it without its trip's document: what names it, how many routes, stops, recordings and media it holds, its length in metres, and the lines of its routes. */
+/** A route or a track of a day that has a name, as the search of the library finds it. */
+export interface NamedRoute {
+  id: string;
+  name: string;
+  kind: Route['kind'];
+}
+
+/** A day as the library knows it without its trip's document: what names it, how many routes, stops, recordings and media it holds, those of its routes that have a name, its length in metres, and the lines of its routes. */
 export interface OutlineDay {
   id: string;
   name: string;
@@ -72,6 +79,7 @@ export interface OutlineDay {
   stops: number;
   recordings: number;
   media: number;
+  namedRoutes: NamedRoute[];
   distanceM: number;
   lines: OutlineLine[];
 }

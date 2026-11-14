@@ -28,15 +28,22 @@ final class TripDocuments
 
     /**
      * The outlines of the user's trips, by trip: its days in order, each by its id, name
-     * and date with how many routes, stops and recordings it holds, its length and the thinned lines
-     * of its routes (see Outline). Enough to list a trip's days as the open trip lists
-     * its own and to draw its shape, without its document.
+     * and date with how many routes, stops and recordings it holds, those of its routes
+     * that have a name, its length and the thinned lines of its routes (see Outline).
+     * Enough to list a trip's days as the open trip lists its own, to draw its shape and
+     * to find a route by its name, without its document.
      *
-     * @return array<int, list<array{id: string, name: string, date: ?string, routes: int, stops: int, recordings: int, distanceM: int, lines: list<array{line: string, color: ?string}>}>>
+     * @return array<int, list<array{id: string, name: string, date: ?string, routes: int, stops: int, recordings: int, namedRoutes: list<array{id: string, name: string, kind: string}>, distanceM: int, lines: list<array{line: string, color: ?string}>}>>
      */
     public function outlines(int $userId): array
     {
         $outlines = [];
+        $named = [];
+        $routes = 'SELECT r.day_id, r.id, r.name, r.kind FROM routes r JOIN days d ON d.id = r.day_id JOIN trips t ON t.id = d.trip_id
+                   WHERE t.user_id = ? AND r.name <> \'\' ORDER BY r.position';
+        foreach ($this->rows($routes, $userId) as $route) {
+            $named[$route['day_id']][] = ['id' => $route['id'], 'name' => $route['name'], 'kind' => $route['kind']];
+        }
         $days = 'SELECT d.trip_id, d.id, d.name, d.date, d.outline,
                         (SELECT COUNT(*) FROM routes WHERE day_id = d.id) AS routes, (SELECT COUNT(*) FROM stops WHERE day_id = d.id) AS stops,
                         (SELECT COUNT(*) FROM recording_days WHERE day_id = d.id) AS recordings,
@@ -51,6 +58,7 @@ final class TripDocuments
                 'stops' => (int) $day['stops'],
                 'recordings' => (int) $day['recordings'],
                 'media' => (int) $day['media'],
+                'namedRoutes' => $named[$day['id']] ?? [],
             ] + Outline::read($day['outline']);
         }
         return $outlines;
