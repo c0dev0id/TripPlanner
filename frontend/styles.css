@@ -685,10 +685,6 @@ li.row.cut {
   color: var(--muted);
 }
 
-.heading {
-  gap: 10px;
-}
-
 .toggle {
   display: flex;
   align-items: center;

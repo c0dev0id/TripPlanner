@@ -164,11 +164,11 @@ export function DayDetails(props: { day: Day }) {
       </Show>
       <div class="row heading">
         <h4 class="grow">{t('Routes')}</h4>
-        <IconButton label={t('Add route')} onClick={addRoute}>
-          <PlusIcon />
-        </IconButton>
         <IconButton label={t('Import GPX…')} onClick={() => fileInput.click()}>
           <FileImportIcon />
+        </IconButton>
+        <IconButton label={t('Add route')} onClick={addRoute}>
+          <PlusIcon />
         </IconButton>
         <input ref={fileInput} type="file" accept=".gpx,application/gpx+xml" hidden onChange={(e) => void importFile(e.currentTarget.files?.[0])} />
       </div>
@@ -279,8 +279,8 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
             </span>
           </span>
         </button>
-        <RoutePin id={props.route.id} of={label()} />
         <JournalButton target={{ routeId: props.route.id }} of={label()} />
+        <RoutePin id={props.route.id} of={label()} />
         <MenuButton of={label()} items={items} />
       </div>
       <Show when={unfolded()}>
