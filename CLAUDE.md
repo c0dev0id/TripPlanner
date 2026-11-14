@@ -74,6 +74,11 @@ Layers, each depending only on the ones below:
   `symbols/`, `model/`.
 - `api.ts` is the only module that knows the API's URLs.
 
+The library has a tab for each of its views (`state/library.ts`, `LibraryTab`): Stash,
+Trips, Places and Recordings. The folders of kind `collections` and `places` are the
+tops of the Stash's and the Places' trees and are never rows; each tree keeps its own
+mark and selection while another tab is shown.
+
 ### The trip document
 
 - A trip is days; a day has routes and stops. A stop is bound to a route point (same

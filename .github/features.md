@@ -8,7 +8,16 @@
   reset by mail. `make user EMAIL=…` makes
   an account without an invitation and prints a generated password; at the first
   sign-in the user has to replace it before the planner opens.
-- The library is a tree: under "All trips" the folders and trips as rows, each unfolding
+- The library has four tabs under its search, which stay in view while it scrolls:
+  Stash, for the collections of planning material, Trips, Places, for the lists of the
+  user's own places, and Recordings, for the rides. A tab only shows its view: what is
+  unfolded, marked and selected in the others stays as it is, each keeps how far it
+  was scrolled, and so does the open trip, whose name and day stay where they are.
+  Under the tabs a line says what the view holds, with the button that folds its tree
+  away and the menu of its top; the address keeps the tab, so that loading the page
+  again comes back to it. Opening a trip from the search, from a ride or from the
+  duplicates shows the tab it is in.
+- Stash, Trips and Places are each a tree: its folders and trips as rows, each unfolding
   in place by a click on it, a folder to its folders and trips, a trip to its days, as
   many at once as wanted; what is unfolded is kept per browser. The tree has one mark,
   on the row clicked last: a folder, a trip or a day. A click on a folder marks it,
@@ -29,8 +38,8 @@
   and name over its date and length, a collection's section over what it holds; the
   open trip's days have in addition the grip that reorders them, their recordings and
   their journal. The days stand under their trip without a heading; a trip without days
-  says so. The button on "All trips" folds every
-  folder and trip away.
+  says so. The button in the line under the tabs folds every
+  folder and trip of the tree shown away.
   The open trip stays in the tree, the others around it, so that another trip is one
   click away. Above the tree stand the library's two switches as icons (the duplicates
   report, the places on the map), the search, and
@@ -42,7 +51,7 @@
   anything the confirmation asks whether that moves up into its parent or is deleted with it), move a trip between folders from Move… in its menu, create a trip or a folder
   from New in the menu of the folder it goes into. Trips and folders are dragged by their pad into a folder to move them there: onto its
   row or onto anything it holds while unfolded, the folder lighting up; anywhere else in
-  the library's pane, "All trips" lights up and the drop goes to the top; selected trips go together, and a
+  the library's pane, the line under the tabs lights up and the drop goes to the top of the tree shown; selected trips go together, and a
   folder never goes into itself. Folders and trips are cards with the name over a line
   of metadata, each with the icon of its kind: a folder, a trip, a collection of planning
   material; a trip's card also shows its shape, small, each line in the colour its route
@@ -56,8 +65,8 @@
   in the open one as an edit that can be undone and that shows the day; a collection
   has no New. Add takes files from the computer: into a folder GPX files, zips of
   exported trips or a whole folder, imported as if dropped there; into a trip GPX files
-  as days, into a collection as sections. “All trips” has a menu too, with New and Add
-  for the top, Paste, and Export for every trip there is. Several are selected
+  as days, into a collection as sections. The line under the tabs has a menu too, with New and Add
+  for the top of the tree shown, Paste, and Export for what the tree holds, every trip there is in the trips' case. Several are selected
   together, folders and trips alike: a tap or click on a card's pad (drawn as a drag
   grip), Cmd or Ctrl with a click, Shift with a click for a run: the cards from the one
   clicked last to the one clicked now, and no others. A plain click or tap
@@ -214,10 +223,8 @@
 - Opening a trip says how far it has come on the trip's row: a ring turns where its
   icon stands, and under its name stands how much of its document has arrived of how
   much ("Loading 2.3 of 4.1 MB"), then "Opening…" until the map has drawn its routes.
-- Two folders every user has, first in the tree and tinted, which are neither renamed,
-  moved nor deleted: Collections (yellow), and Places (green), for lists of the user's own places. They
-  and the folders in them hold collections and nothing else;
-  every other folder and the top hold trips. The server refuses a collection made or
+- The Stash (its tab yellow) and Places (green) hold collections and nothing else, in
+  folders of their own; the Trips hold trips. The server refuses a collection made or
   moved elsewhere, a trip made or moved into them, and a folder moved across with
   contents of the wrong kind. The library follows: New in such a folder's menu offers
   a collection where others offer a trip; Move… offers only folders that take what is
@@ -335,29 +342,28 @@
   it; nothing else becomes a recording than a recorded file. A recording's row says
   when it began and how long it is, or that its file has no times. Removing a day, a
   trip or a collection takes its rides off it and deletes none.
-- Rides, the library by when it was ridden: the clock among the library's switches puts
-  every ride the user keeps into the pane between the library and the map, by when it
-  began. Years, the latest unfolded, hold months, and a month the days ridden on, each
+- Recordings, the library by when it was ridden: the tab lists every ride the user
+  keeps by when it began, while the pane of the day picked stays beside it. Years, the latest unfolded, hold months, and a month the days ridden on, each
   heading with its days and its length; a day is a card with its date and length over
   its rides, since a tracker starts a new file after a break: when each began, its
   name, its length and the days it is on, each as a trip and its day, or "On no day
   yet". Rides without times stand in a card of their own at the end. The plus in the
-  pane's heading, and GPX files or folders dropped on the pane, keep files as rides: a
+  line under the tabs, and GPX files or folders dropped on the library while the tab is shown, keep files as rides: a
   file kept already is left out, so a tracker's folder can be dropped again as it
-  grows, and the pane says how many were kept and how many were there already. A
+  grows, and it is said above the rides how many were kept and how many were there already. A
   click or tap selects a ride, Cmd or Ctrl one more, Shift a run, its pad adds it or
   takes it away; a day's or a month's heading selects all its rides. The map draws the
   selected rides, each in a colour its row shows, and brings them into view, so that
   rides of different years are looked at together. A ride's menu renames it, copies it
   to be pasted onto a day, puts it on a day of the open trip, opens a day it is on,
-  whose pane takes the rides' place, and deletes it with its file, from every day it
+  in the tab its trip is in, and deletes it with its file, from every day it
   is on, after a question; with several selected it copies, adds and deletes all of
-  them. A recording's menu on its day has "Show in the rides", which comes back with
-  it selected and in view.
+  them. A recording's menu on its day has "Show in the rides", which shows the tab
+  with it selected and in view. The rides selected stay drawn while another tab is shown.
 - Autoname, in a ride's menu: the selected rides are named after the places they began
   and ended in, as "Hockenheim - Walldorf", for files an app names all alike. The
-  places are asked of Nominatim, one a second, each position once; the pane says how
-  far it is and which rides it could not name.
+  places are asked of Nominatim, one a second, each position once; it is said above
+  the rides how far it is and which rides it could not name.
 - Merge, in a ride's menu: the selected rides, where they follow one another with no
   other ride between them and all tell their times, become one, for a tracker that
   starts a new file after every break. The files are joined as the segments of one

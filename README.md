@@ -36,9 +36,9 @@ share work; sharing between users is on the way.
   pad from one to another, and a search across them. GPX files and folders are added
   from a folder's menu or dropped on it: a folder of files becomes a trip, a folder of
   folders a folder of trips.
-- **Collections and Places** — two folders of their own: planning material to copy
-  routes from, and lists of your own places, loaded from GPX files and added to a day
-  from the map.
+- **Four tabs** — Stash for planning material to copy routes from, Trips, Places for
+  lists of your own places, and Recordings. Each keeps what you unfolded and selected
+  while you look at another.
 - **One way back** — the card under the path leads one level up, from a day to its trip
   to its folder to the top, and never moves.
 - **Duplicates found** — a report lists the routes kept more than once across the

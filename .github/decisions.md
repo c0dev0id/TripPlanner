@@ -232,6 +232,27 @@ entries at the end of their section.
   them with the user, so no code that creates a user has to know of the library; the
   repository refuses to rename, move or delete them by leaving them out of what those
   statements find. Their names are kept in English and shown in the page's language.
+- **The special folders are the tops of tabs, not rows of a tree.** The three kinds of
+  thing the library holds are used apart: planning material is dumped and sorted,
+  trips are planned, places are kept, and rides are looked through by date. As rows of
+  one tree they pushed each other out of view, and copying from a collection into a
+  trip meant scrolling past everything between them; the rides hid behind an icon and
+  took the pane a day needs. So the library has a tab for each, and the rides the
+  fourth: a tab is what "All trips", "Collections" and "Places" were as rows, and
+  those rows are gone. Nothing changes below the library: the special folders remain
+  rows of `folders`, each the top of its tab's tree, and the server's rule of what goes
+  where is as it was. What a row at the top did, a line under the tabs does: it says
+  what the view holds, takes the mark of the top, folds the tree away and holds the
+  menu of the top, as a button also with a mouse, since a line that names nothing does
+  not invite a right-click. A tab only shows: each tree keeps its mark and its
+  selection, held by a list of its own so that the keys never act on rows that are not
+  shown, and a folder marked in one tree leaves the mark on the open trip in another.
+  The trees stay in the page while another is shown, so nothing is rebuilt; the panel
+  scrolls as a whole, so each tab's scroll is kept and given back, and the tabs stay at
+  the top of it, since a tab that scrolled away would have to be scrolled back to. The
+  search stays above the tabs and across all of them, and opening what it finds shows
+  the tab that holds it. The address names the tab by the folder shown and, for the
+  rides, by `view=recordings`.
 - **Collections live in the special folders only, trips only outside them.** A library
   where any folder could hold either left it to the user to keep planning material and
   rides apart. The rule is one sentence both ways, so a folder's place says what it
@@ -250,8 +271,8 @@ entries at the end of their section.
   (unique by user and digest), and `recording_days` names the days it is on. Putting a
   ride on a day, moving, cutting and pasting it change rows of that table and never
   the file; removing a day, a trip or a collection removes links and leaves the ride.
-  Only the rides' pane deletes one. The folder for recordings, which was a time index
-  built by hand for rides nobody had claimed, is gone: the pane lists every ride by
+  Only the list of rides deletes one. The folder for recordings, which was a time index
+  built by hand for rides nobody had claimed, is gone: the rides are listed by
   when it began, takes new files, and says for each the days it is on.
 - **A day of riding is the unit, not the file.** The user's tracker starts a new file
   when the bike moves again after a break, so one outing is two or three recordings.
@@ -261,7 +282,7 @@ entries at the end of their section.
   that each cover a part of the plan are found as the day they are, and are put on
   the day together.
 - **Rides are merged on the server, as text, and the pieces stay known.** A tracker
-  starts a new file after a break, and though the rides' pane and the lookup group a
+  starts a new file after a break, and though the list of rides and the lookup group a
   day's files, a ride's figures and its comparison with the plan take one file. Merging
   writes a file no tracker wrote, which the rule that a recording is its file as
   recorded does not allow for; it is bent as little as can be: the first file stays as
@@ -411,7 +432,7 @@ entries at the end of their section.
 - **What is new or imported is asked for where it goes.** The toolbar's icons for a new
   trip, a new folder and the two imports acted on "the folder shown", which the user
   had to set first and could not see in the icon. New and Add are now in the menu of
-  the folder or trip they go into, "All trips" included, and the toolbar keeps only
+  the folder or trip they go into, the top of a tab's tree included, and the toolbar keeps only
   its two switches. New lists what the row can hold, so a collection, which holds
   nothing that is made empty, has none.
 - **An import is never asked how it is organized; the folder and the tree say.** The
