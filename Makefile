@@ -8,15 +8,18 @@ PASS != pass Internet/planner.codevoid.de | head -1
 
 # Builds the application for deployment: PHP dependencies without development packages
 # and the frontend bundle in public/build. Run after git pull on the server.
-build:
+build: node_modules/.package-lock.json
 	$(COMPOSER) install --no-dev --no-interaction --optimize-autoloader
-	$(NPM) ci
 	$(NPM) run build
 
-# Installs everything needed for development and testing.
-install:
-	$(COMPOSER) install --no-interaction
+# The frontend's dependencies, installed afresh when the lock file is newer than what
+# npm last installed from it.
+node_modules/.package-lock.json: package-lock.json
 	$(NPM) ci
+
+# Installs everything needed for development and testing.
+install: node_modules/.package-lock.json
+	$(COMPOSER) install --no-interaction
 
 init:
 	doas -u www $(PHP) bin/planner db:init

@@ -1233,6 +1233,15 @@ entries at the end of their section.
   WFS, ArcGIS and PMTiles layers is Layer Slayer's purpose, not a trip planner's. The route
   model, edits, legs, routing pump, undo history, markers and GPX code are ported with
   their tests; the layer store, the service readers and the composed style are not.
+- **The build installs npm's packages only when the lock file changed.** `npm ci` deletes
+  and unpacks every package on each deploy, a third of the build's time on the server
+  for nothing where the lock is as it was. `make` compares `package-lock.json` with the
+  lock npm writes into `node_modules`. The Vite build itself has no switch to turn on:
+  measured, its time is Rollup's tree-shaking and the Solid transform, each on one
+  thread; minifying, the size report and bundling libheif as a file instead made no
+  difference, and `make -j` only runs targets side by side, of which there is one.
+  MapLibre is two fifths of it, and keeping it out of the bundle is not worth a second
+  way of loading it.
 - **The server builds; CI only checks.** The server has Node.js and Composer and deploys
   with `git pull` followed by `make build`, which installs the PHP dependencies without
   development packages and builds the frontend into `public/build`. A first draft had
