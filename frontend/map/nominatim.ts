@@ -12,13 +12,16 @@ const NOMINATIM_URL = 'https://nominatim.openstreetmap.org';
 export const NOMINATIM_ATTRIBUTION = t('Search: Nominatim, © OpenStreetMap contributors');
 const NOMINATIM_MIN_INTERVAL_MS = 1000;
 
+const TIMEOUT_MS = 15_000;
+
 let nextTurn = 0;
 
-/** Waits until Nominatim may be asked again: one request per second, whoever asks; those who wait are served in turn. */
-export async function nominatimTurn(): Promise<void> {
+/** Nominatim's answer to a request, as JSON, asked once it may be asked again: one request per second, whoever asks; those who wait are served in turn. */
+async function ask(url: string): Promise<unknown> {
   const at = Math.max(Date.now(), nextTurn);
   nextTurn = at + NOMINATIM_MIN_INTERVAL_MS;
   if (at > Date.now()) await new Promise((resolve) => setTimeout(resolve, at - Date.now()));
+  return (await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) })).json();
 }
 const RESULT_LIMIT = 5;
 
@@ -68,4 +71,17 @@ export function parsePlaces(json: unknown): Place[] {
     const bounds: Bounds | undefined = box.length === 4 && box.every(Number.isFinite) && box[0]! < box[1]! && box[2]! < box[3]! ? [box[2]!, box[0]!, box[3]!, box[1]!] : undefined;
     return [{ label: typeof p.display_name === 'string' ? p.display_name : `${lat}, ${lng}`, lngLat: [lng, lat], ...(bounds && { bounds }) }];
   });
+}
+
+/** The places Nominatim finds for `query`, those within `near` first. */
+export const searchPlaces = async (query: string, near?: Bounds): Promise<Place[]> => parsePlaces(await ask(searchUrl(query, near)));
+
+/** The names asked for, by position to some hundred metres, kept while the page stands: many rides begin where others began. */
+const names = new Map<string, string | undefined>();
+
+/** The town, city or village a position is in, as Nominatim names it; none where it knows no place. */
+export async function placeNameAt(lngLat: LngLat): Promise<string | undefined> {
+  const key = lngLat.map((value) => value.toFixed(3)).join(',');
+  if (!names.has(key)) names.set(key, parsePlaceName(await ask(reverseUrl(lngLat))));
+  return names.get(key);
 }
