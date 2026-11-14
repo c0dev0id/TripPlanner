@@ -1,21 +1,21 @@
 import { createEffect, createMemo, createSelector, createSignal, For, Show } from 'solid-js';
 import { t } from '../i18n/t';
-import { deleteRide, errorMessage, mergeRides, renameRide, rideJoints } from '../api';
+import { declineRideDay, deleteRide, errorMessage, mergeRides, renameRide, rideJoints, suggestRideDays } from '../api';
 import { GPX_FILE_TYPES } from '../gpx/import';
-import type { Ride } from '../recording/rides';
+import type { Ride, Suggestion } from '../recording/rides';
 import { FAR_APART_M, isOddJoint, ridingYears, totalDistance } from '../recording/rides';
 import { copyRecordings } from '../state/clipboard';
 import { fetchingTrip, libraryTrips, outlineOf } from '../state/library';
 import { activeRecordingId, putOnDay } from '../state/recordings';
 import { toggleRide } from '../state/recordingView';
-import { allRides, changeRides, revealedRide, revealRide, rideColor, RIDES, ridesError, ridesLoading, ridesNote, runRidesJob } from '../state/rides';
+import { allRides, changeRides, revealedRide, revealRide, rideColor, RIDES, rideSuggestions, ridesError, ridesLoading, ridesNote, runRidesJob, setRideSuggestions } from '../state/rides';
 import { openTrip } from '../state/trip';
 import { dayLabel, dayTitleOf } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { counted, dateText, distanceText, durationText, momentText, monthText, timeOfDayText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
-import { ChevronIcon, PlusIcon } from '../ui/icons';
+import { CheckIcon, ChevronIcon, CloseIcon, PlusIcon, SearchIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
@@ -41,9 +41,12 @@ const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>();
  * in a colour its row shows too. A ride's
  * menu renames it, names it after where it began and ended, copies it to be pasted
  * onto a day, puts it on a day of the open trip, merges it with the selected rides it
- * follows or that follow it, opens a day it is on, and deletes it.
+ * follows or that follow it, opens a day it is on, and deletes it. The magnifier above
+ * them asks for the days of trips the rides on no day may be of, which are then listed
+ * over the rides to be gone through: a click shows the rides on the map and the day in
+ * its pane, the tick puts them on the day, the cross says they are not of it.
  */
-export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }) {
+export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; onShow: (tripId: number, dayId: string) => void }) {
   const years = createMemo(() => ridingYears(allRides()));
   const untimed = createMemo(() => allRides().filter((ride) => ride.startedAt === null));
   const shown = () => unfolded() ?? new Set(years()[0] ? [years()[0]!.year] : []);
@@ -59,12 +62,12 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
     if (year && !shown().has(year.year)) setUnfolded(new Set([...shown(), year.year]));
   });
   /** A day a ride is on: its trip and day, or its collection and section. */
-  const dayText = (on: Ride['days'][number]): string => {
+  const dayText = (on: { tripId: number; dayId: string }): string => {
     const trip = (libraryTrips() ?? []).find((kept) => kept.id === on.tripId);
     const days = outlineOf(on.tripId) ?? [];
     const index = days.findIndex((day) => day.id === on.dayId);
     const day = days[index];
-    return `${on.trip} › ${!day ? '' : trip?.kind === 'collection' ? day.name : dayLabel(day, index)}`;
+    return `${trip?.name ?? ''} › ${!day ? '' : trip?.kind === 'collection' ? day.name : dayLabel(day, index)}`;
   };
   /** The days a ride is on, or that it is on none. */
   const whereOf = (ride: Ride): string => (ride.days.length > 0 ? ride.days.map(dayText).join(', ') : t('On no day yet'));
@@ -116,6 +119,41 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
       { label: t('Delete'), run: () => void deleteAsked(chosen) },
     ];
   };
+  /** Looks through the user's trips for the days the rides on no day may be of, to be gone through above the rides. */
+  const suggest = () =>
+    runRidesJob(async (onProgress) => {
+      onProgress(t('Looking through your trips for the days your rides may be of…'));
+      const found = await suggestRideDays(-new Date().getTimezoneOffset(), (done, of) => onProgress(t('Looked through {done} of {n} days of your trips…', { done, n: of })));
+      setRideSuggestions(found.length > 0 ? found : undefined);
+      return { text: found.length > 0 ? '' : t('No ride that is on no day began on the date of a trip’s day or ran along its routes.'), errors: [] };
+    });
+  const ridesOf = (suggestion: Suggestion): Ride[] => allRides().filter((ride) => suggestion.rideIds.includes(ride.id));
+  /** What is suggested, and why: the riding by its date or its one ride's name, how many files and how far, and what it has in common with the day. */
+  const suggestionDetail = (suggestion: Suggestion): string => {
+    const rides = ridesOf(suggestion);
+    return [
+      suggestion.date === null ? rides[0]?.name : dateText(suggestion.date),
+      rides.length > 1 ? counted(rides.length, 'recording') : suggestion.date !== null && rides[0]?.name,
+      distanceText(totalDistance(rides)),
+      suggestion.sameDate && t('on this day'),
+      suggestion.share > 0 && t('{share} % along the routes', { share: Math.round(suggestion.share * 100) }),
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  };
+  /** Shows what is suggested: the rides on the map, and the day in its pane with its routes. */
+  const showSuggestion = (suggestion: Suggestion) => {
+    select(ridesOf(suggestion));
+    props.onShow(suggestion.tripId, suggestion.dayId);
+  };
+  /** Puts the suggested rides on the day, or remembers that they are not of it; either way the suggestion is gone through. */
+  const settle = (suggestion: Suggestion, accept: boolean) =>
+    void changeRides(async () => {
+      if (accept) for (const ride of ridesOf(suggestion)) await putOnDay(ride, suggestion.dayId);
+      else await Promise.all(suggestion.rideIds.map((id) => declineRideDay(id, suggestion.dayId)));
+      const left = (rideSuggestions() ?? []).filter((other) => other !== suggestion);
+      setRideSuggestions(left.length > 0 ? left : undefined);
+    });
   const card = (heading: string, rides: Ride[], distanceM: number) => (
     <RidingDayCard heading={heading} rides={rides} distanceM={distanceM} where={whereOf} selected={isSelected} onSelectDay={() => select(rides)} onClick={(ride, e) => clickRow(RIDES, order(), String(ride.id), e) || toggleRide(ride)} onToggle={(ride) => toggleRow(RIDES, String(ride.id))} items={items} />
   );
@@ -131,6 +169,9 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
             {counted(allRides().length, 'ride')} · {distanceText(totalDistance(allRides()))}
           </Show>
         </span>
+        <IconButton label={t('Suggest days for the rides on no day')} onClick={() => void suggest()}>
+          <SearchIcon />
+        </IconButton>
         <IconButton label={t('Add rides…')} onClick={() => void addPicked()}>
           <PlusIcon />
         </IconButton>
@@ -143,6 +184,40 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
               <p class="muted hint">{said().text}</p>
             </Show>
             <For each={said().errors}>{(error) => <p class="error">{error}</p>}</For>
+          </>
+        )}
+      </Show>
+      <Show when={rideSuggestions()}>
+        {(suggestions) => (
+          <>
+            <div class="row">
+              <h4 class="grow">{t('{what} to go through', { what: counted(suggestions().length, 'suggestion') })}</h4>
+              <IconButton label={t('Put the suggestions away')} onClick={() => setRideSuggestions(undefined)}>
+                <CloseIcon />
+              </IconButton>
+            </div>
+            <ul class="recordings">
+              <For each={suggestions()}>
+                {(suggestion) => (
+                  <li class="recording">
+                    <div class="row">
+                      <button class="text grow" onClick={() => showSuggestion(suggestion)}>
+                        <span class="lines grow">
+                          <span class="name">{dayText(suggestion)}</span>
+                          <span class="muted detail">{suggestionDetail(suggestion)}</span>
+                        </span>
+                      </button>
+                      <IconButton label={t('Put on this day')} onClick={() => settle(suggestion, true)}>
+                        <CheckIcon />
+                      </IconButton>
+                      <IconButton label={t('Not of this day')} onClick={() => settle(suggestion, false)}>
+                        <CloseIcon />
+                      </IconButton>
+                    </div>
+                  </li>
+                )}
+              </For>
+            </ul>
           </>
         )}
       </Show>

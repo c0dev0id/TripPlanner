@@ -24,6 +24,16 @@ export const FAR_APART_M = 150;
 
 export const isOddJoint = (joint: Joint): boolean => (joint.pauseS ?? 0) > LONG_PAUSE_S || joint.distanceM > FAR_APART_M;
 
+/** A day of a trip that rides on no day may be of: the day, the date they began on, null for a ride without times, whether that is the day's, the share along its routes, and the rides. */
+export interface Suggestion {
+  tripId: number;
+  dayId: string;
+  date: string | null;
+  sameDate: boolean;
+  share: number;
+  rideIds: number[];
+}
+
 /** A day of riding: the rides that began on one date, the earliest first. A tracker starts a new file after a break, so a day is often several. */
 export interface RidingDay {
   /** As YYYY-MM-DD. */

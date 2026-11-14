@@ -3,7 +3,7 @@ import { t } from '../i18n/t';
 import { PlacesList } from '../map/PlacesList';
 import type { TripSummary } from '../model/trip';
 import { LIBRARY_TABS, libraryProblem, libraryTab, libraryTrips, openTree, query, setQuery, showFolder, showTab, TAB_NAMES, type LibraryTab } from '../state/library';
-import { openTrip } from '../state/trip';
+import { openTrip, openTripId, selectDay } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
 import { SaveState } from '../trip/SaveStatus';
 import { TripIcons, TripPanel } from '../trip/TripPanel';
@@ -37,6 +37,8 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
     const trip = libraryTrips()?.find((kept) => kept.id === tripId);
     if (trip) openIn(trip, dayId);
   };
+  /** Shows a day in its pane, opening its trip where another is open, without leaving the tab shown. */
+  const showDay = (tripId: number, dayId: string) => (tripId === openTripId() ? selectDay(dayId) : props.onOpen(tripId, dayId));
   /** The open trip where the tab shown is the one it is in, which its name and its actions then stand over; one not listed yet counts as in the tab shown. */
   const headed = () => ((openTree() ?? libraryTab()) === libraryTab() ? openTrip() : undefined);
   /** Shows a tab, which ends a search: what it found stood in the tabs' place. */
@@ -93,7 +95,7 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
         </Show>
       </Library>
       <div hidden={libraryTab() !== 'recordings' || query().trim() !== ''}>
-        <Rides onOpen={openDay} />
+        <Rides onOpen={openDay} onShow={showDay} />
       </div>
     </section>
   );

@@ -5,7 +5,7 @@ import type { Entry, EntryTarget } from './model/journal';
 import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Trip, TripKind, TripSummary } from './model/trip';
 import type { OwnPlace } from './poi/ownPlaces';
-import type { Joint, Ride } from './recording/rides';
+import type { Joint, Ride, Suggestion } from './recording/rides';
 import { stopsInRidingOrder } from './routing/sequence';
 
 /** Requests to the JSON API, and the one form the app posts: sign out. */
@@ -260,6 +260,27 @@ export interface FoundRidingDay {
 /** The days of riding that may be the day's, the likeliest first; `utcOffsetMinutes` is how far the user's clock is ahead of UTC on that day. */
 export const lookUpRides = (tripId: number, dayId: string, utcOffsetMinutes: number): Promise<FoundRidingDay[]> =>
   request('GET', `${tripApi(tripId)}/recordings/lookup?day=${encodeURIComponent(dayId)}&offset=${utcOffsetMinutes}`);
+
+/**
+ * The days of the user's trips that rides on no day may be of, without what was declined,
+ * those of the day's date first, then the nearest; `utcOffsetMinutes` is how far the
+ * user's clock is ahead of UTC. The server looks through the days a few seconds'
+ * worth at a time; `onProgress` hears how many are done of all.
+ */
+export async function suggestRideDays(utcOffsetMinutes: number, onProgress: (done: number, of: number) => void): Promise<Suggestion[]> {
+  const found: Suggestion[] = [];
+  for (let from = 0; ; ) {
+    const part = await request<{ suggestions: Suggestion[]; done: number; of: number }>('GET', `/api/rides/suggestions?offset=${utcOffsetMinutes}&from=${from}`);
+    found.push(...part.suggestions);
+    onProgress(part.done, part.of);
+    if (part.done >= part.of || part.done <= from) break;
+    from = part.done;
+  }
+  return found.sort((a, b) => Number(b.sameDate) - Number(a.sameDate) || b.share - a.share);
+}
+
+/** Says that a ride is not of a day it was suggested for, which is remembered. */
+export const declineRideDay = (id: number, dayId: string): Promise<void> => request('PUT', `/api/rides/${id}/days/${encodeURIComponent(dayId)}/declined`);
 
 /** Where a merge would join the rides, in the order they began: one joint for each ride after the first. */
 export const rideJoints = (ids: readonly number[]): Promise<Joint[]> => request('GET', `/api/rides/joints?ids=${ids.join(',')}`);

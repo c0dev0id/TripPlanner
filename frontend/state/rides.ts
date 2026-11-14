@@ -2,7 +2,7 @@ import { batch, createEffect, createMemo, createResource, createRoot, createSign
 import { errorMessage, fetchRides } from '../api';
 import { ROUTE_PALETTE } from '../model/routeLook';
 import type { LngLat } from '../model/trip';
-import type { Ride } from '../recording/rides';
+import type { Ride, Suggestion } from '../recording/rides';
 import { decodePolyline } from '../routing/polyline';
 import { selectIn, selectionOf } from '../ui/selection';
 import { showWhole } from './drawing';
@@ -72,6 +72,9 @@ export function showRide(id: number): void {
     revealRide(id);
   });
 }
+
+/** The days suggested for rides on no day, to be gone through; none until they are asked for, or once they are put away. */
+export const [rideSuggestions, setRideSuggestions] = createSignal<Suggestion[]>();
 
 /** What a change to rides came to: a sentence, and what it could not do. */
 export interface RidesNote {
