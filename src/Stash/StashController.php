@@ -69,6 +69,31 @@ final class StashController
         return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'No such file.');
     }
 
+    /** Renames a route or a track of the file, by its kind and its place among the file's routes or tracks, with `{name}`. */
+    public function renameItem(Request $request, Response $response, array $args): Response
+    {
+        $name = Name::of(Json::field($request, 'name'));
+        if ($name === null) {
+            return Json::error($response, 422, 'A route needs a name of up to 200 characters.');
+        }
+        $renamed = $this->files->renameItem($this->currentUser->get()->id, (int) $args['file'], $args['kind'], (int) $args['position'], $name);
+        return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'No such route or track in the file.');
+    }
+
+    /** Removes routes and tracks from the file: `items=` names them, comma-separated, each as its kind and its place among the file's routes or tracks, as `track:0`. */
+    public function removeItems(Request $request, Response $response, array $args): Response
+    {
+        $items = [];
+        foreach (array_filter(explode(',', (string) ($request->getQueryParams()['items'] ?? ''))) as $item) {
+            if (preg_match('/^(route|track):([0-9]+)$/', $item, $found) !== 1) {
+                return Json::error($response, 422, 'No such route or track in the file.');
+            }
+            $items[] = ['kind' => $found[1], 'position' => (int) $found[2]];
+        }
+        $removed = $items !== [] && $this->files->removeItems($this->currentUser->get()->id, (int) $args['file'], $items);
+        return $removed ? $response->withStatus(204) : Json::error($response, 404, 'No such route or track in the file.');
+    }
+
     /** Keeps the file's tracks as rides: all of them, or with `{tracks}` those at these places among its tracks. Answers how many were `kept` and how many the user kept already, `known`. */
     public function keepRides(Request $request, Response $response, array $args): Response
     {

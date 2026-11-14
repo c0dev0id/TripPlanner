@@ -30,6 +30,55 @@ final class GpxEdit
         return (string) $document->saveXML();
     }
 
+    /**
+     * The file with one of its routes or tracks under a new name, by its kind and its
+     * place among the file's elements of the kind; null where the file has none there.
+     */
+    public static function renamed(string $gpx, string $kind, int $position, string $name): ?string
+    {
+        $document = self::read($gpx);
+        $element = self::elements($document, self::ELEMENTS[$kind])[$position] ?? null;
+        if ($element === null) {
+            return null;
+        }
+        $named = null;
+        foreach ($element->childNodes as $node) {
+            if ($node instanceof DOMElement && $node->localName === 'name') {
+                $named = $node;
+                break;
+            }
+        }
+        // A route's and a track's name is their first element.
+        $named ??= $element->insertBefore($document->createElementNS((string) $element->namespaceURI, 'name'), $element->firstChild);
+        while ($named->firstChild !== null) {
+            $named->removeChild($named->firstChild);
+        }
+        $named->appendChild($document->createTextNode($name));
+        return (string) $document->saveXML();
+    }
+
+    /**
+     * The file without the routes and tracks named, each by its kind and its place among
+     * the file's elements of the kind; null where the file lacks one of them.
+     *
+     * @param list<array{kind: string, position: int}> $items
+     */
+    public static function without(string $gpx, array $items): ?string
+    {
+        $document = self::read($gpx);
+        $doomed = [];
+        foreach ($items as $item) {
+            $doomed[] = self::elements($document, self::ELEMENTS[$item['kind']])[$item['position']] ?? null;
+        }
+        if (in_array(null, $doomed, true)) {
+            return null;
+        }
+        foreach ($doomed as $element) {
+            $element->parentNode?->removeChild($element);
+        }
+        return (string) $document->saveXML();
+    }
+
     private static function read(string $gpx): DOMDocument
     {
         $document = new DOMDocument();

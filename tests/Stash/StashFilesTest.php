@@ -83,6 +83,33 @@ final class StashFilesTest extends TestCase
         self::assertSame(0, (int) $this->db->query('SELECT COUNT(*) FROM stash_items')->fetchColumn());
     }
 
+    public function testRenamingARouteOrATrackRewritesTheFileAndLeavesTheRestAsItWas(): void
+    {
+        $id = $this->keep(StashFixture::gpx())['file']['id'];
+        self::assertTrue($this->files->renameItem($this->userId, $id, 'track', 1, 'Evening <late>'));
+        self::assertTrue($this->files->renameItem($this->userId, $id, 'route', 0, 'Pass'));
+        self::assertSame(['Pass', 'Morning', 'Evening <late>'], array_column($this->files->listFor($this->userId)[0]['items'], 'name'));
+        $gpx = (string) gzdecode($this->files->gzip($this->userId, $id));
+        self::assertStringContainsString('<trk><name>Evening &lt;late&gt;</name>', preg_replace('/>\s+</', '><', $gpx));
+        self::assertStringContainsString('<trkpt lat="49.4" lon="8.8"><ele>130</ele><time>2025-07-08T15:34:36Z</time></trkpt>', $gpx);
+        self::assertStringContainsString('<gpxx:rpt lat="49.45" lon="8.75"/>', $gpx);
+        self::assertFalse($this->files->renameItem($this->userId, $id, 'track', 2, 'None there'));
+        self::assertFalse($this->files->renameItem($this->userId + 1, $id, 'track', 0, 'Mine'));
+    }
+
+    public function testRemovingRoutesAndTracksRewritesTheFileAndKeepsItKnownAsTheOneImported(): void
+    {
+        $id = $this->keep(StashFixture::gpx())['file']['id'];
+        self::assertFalse($this->files->removeItems($this->userId, $id, [['kind' => 'track', 'position' => 0], ['kind' => 'route', 'position' => 3]]));
+        self::assertCount(3, $this->files->listFor($this->userId)[0]['items']);
+        self::assertTrue($this->files->removeItems($this->userId, $id, [['kind' => 'track', 'position' => 0], ['kind' => 'route', 'position' => 0]]));
+        $file = $this->files->listFor($this->userId)[0];
+        self::assertSame([['track', 0, '']], array_map(fn (array $item) => [$item['kind'], $item['position'], $item['name']], $file['items']));
+        self::assertSame(2, $file['waypoints']);
+        self::assertStringNotContainsString('Morning', (string) gzdecode($this->files->gzip($this->userId, $id)));
+        self::assertFalse($this->keep(StashFixture::gpx())['added']);
+    }
+
     public function testAFolderDeletedGivesItsFilesToTheFolderAroundItOrTakesThemAlong(): void
     {
         $year = $this->folders->create($this->userId, '2025', $this->stash, $this->now)->id;

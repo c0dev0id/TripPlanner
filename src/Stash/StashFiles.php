@@ -118,6 +118,45 @@ final class StashFiles
         return $statement->rowCount() === 1;
     }
 
+    /**
+     * Renames a route or a track of a file, by its kind and its place among the file's
+     * elements of the kind, which rewrites the file. False when the user has no such
+     * file, or it has no such route or track.
+     */
+    public function renameItem(int $userId, int $id, string $kind, int $position, string $name): bool
+    {
+        return $this->rewrite($userId, $id, fn (string $gpx) => GpxEdit::renamed($gpx, $kind, $position, $name));
+    }
+
+    /**
+     * Removes routes and tracks from a file, each by its kind and its place among the
+     * file's elements of the kind, which rewrites the file. False when the user has no
+     * such file, or it lacks one of them.
+     *
+     * @param list<array{kind: string, position: int}> $items
+     */
+    public function removeItems(int $userId, int $id, array $items): bool
+    {
+        return $this->rewrite($userId, $id, fn (string $gpx) => GpxEdit::without($gpx, $items));
+    }
+
+    /** Puts the file a change makes of the stored one in its place, with what is read from it; false where there is no such file or the change does not apply. */
+    private function rewrite(int $userId, int $id, callable $change): bool
+    {
+        $gzip = $this->gzip($userId, $id);
+        $gpx = $gzip === null ? null : $change((string) gzdecode($gzip));
+        if ($gpx === null) {
+            return false;
+        }
+        $index = GpxIndex::of($gpx);
+        $this->db->beginTransaction();
+        $this->db->prepare('UPDATE stash_files SET waypoints = ?, gpx = ? WHERE id = ?')->execute([$index->waypoints, gzencode($gpx), $id]);
+        $this->db->prepare('DELETE FROM stash_items WHERE file_id = ?')->execute([$id]);
+        $this->index($id, $index);
+        $this->db->commit();
+        return true;
+    }
+
     private function index(int $id, GpxIndex $index): void
     {
         $insert = $this->db->prepare('INSERT INTO stash_items (file_id, kind, position, name, line, distance_m, points, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
