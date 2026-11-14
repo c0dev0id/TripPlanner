@@ -110,6 +110,8 @@ CREATE TABLE IF NOT EXISTS trips (
     updated_at TEXT NOT NULL
 );
 
+CREATE INDEX IF NOT EXISTS trips_folder ON trips(folder_id);
+
 CREATE TABLE IF NOT EXISTS days (
     id TEXT PRIMARY KEY,
     trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,

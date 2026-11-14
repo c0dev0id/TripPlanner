@@ -4,7 +4,8 @@ import { newId } from '../model/trip';
 import { type OwnKind, type OwnPlace, ownKindsOf } from '../poi/ownPlaces';
 import { newStop } from '../routing/dayEdit';
 import { readPreference, writePreference } from '../ui/preferences';
-import { libraryTrips } from './library';
+import { kindAround } from '../library/folders';
+import { libraryFolders, libraryTrips } from './library';
 import { placesListOpen } from './places';
 import { addParts, openTripId } from './trip';
 
@@ -18,12 +19,18 @@ const [shownIds, setShownIds] = createSignal<readonly string[]>((readPreference(
 const own = createRoot(() => {
   /** Whether the places are wanted: for the list of kinds, or for the map. */
   const wanted = createMemo(() => placesListOpen() || shownIds().length > 0);
-  // Read once the library is listed, and again when it is listed afresh or another trip is opened: a list may have been edited or loaded since.
+  /** The lists of places as the library lists them, each with when it last changed; empty without any. */
+  const lists = createMemo(() => {
+    const folders = libraryFolders.error ? [] : (libraryFolders() ?? []);
+    const trips = libraryTrips.error ? [] : (libraryTrips() ?? []);
+    return trips.flatMap((trip) => (kindAround(folders, trip.folderId) === 'places' ? `${trip.id}:${trip.updatedAt}` : [])).join(',');
+  });
+  // Read when a list is new, gone or changed, and not for what else the library lists afresh.
   const [places] = createResource(
-    () => (wanted() && libraryTrips() ? ([libraryTrips(), openTripId()] as const) : undefined),
+    () => wanted() && lists(),
     () => fetchOwnPlaces(),
   );
-  const all = createMemo((): OwnPlace[] => (places.error ? [] : (places.latest ?? [])));
+  const all = createMemo((): OwnPlace[] => (lists() && !places.error ? (places.latest ?? []) : []));
   const kinds = createMemo(() => ownKindsOf(all()));
   const shown = createMemo(() => {
     const colors = new Map(kinds().filter((kind) => shownIds().includes(kind.dayId)).map((kind) => [kind.dayId, kind.color]));

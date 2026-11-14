@@ -48,6 +48,8 @@ export function App() {
     setError(undefined);
     try {
       await flushSave();
+      // The trip left for this one is listed as it was saved, as when it is left for none.
+      if (savedSinceLoad()) relistTrips();
       const trip = await fetchTrip(id, say);
       // Putting a large trip on the map keeps the browser busy: its row says so first, which takes a frame where the page is in view.
       say('arrived');

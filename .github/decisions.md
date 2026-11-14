@@ -265,8 +265,10 @@ entries at the end of their section.
 - **The user's places are read in one request, not by tile.** A user keeps hundreds of
   places, not the hundreds of thousands the store of OpenStreetMap holds; one list
   answers the map, the list of kinds and the tap alike. It is read again when the
-  library is listed afresh and when another trip is opened, which covers a list
-  edited in the meantime.
+  library lists a list of places as new, gone or changed, and not for what else it
+  lists afresh; for that a trip left for another is listed again as it was saved. The
+  query starts from the user's folder for places, which needs the index on a trip's
+  folder: without it SQLite read every stop of every user.
 - **Own places are dots in the colour of their kind.** The kinds are the user's words,
   so no icon can stand for them, and the stop's own symbol is unset in most imported
   files. Names are not drawn: the raster base maps bring no glyphs, and a hundred
