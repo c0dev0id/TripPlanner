@@ -47,6 +47,12 @@ const MAX_SYMBOL = 100;
 /** A waypoint symbol's name from a file: trimmed, at most MAX_SYMBOL characters; null for none. */
 export const asSymbol = (text: string | undefined): string | null => clipped(text?.trim() ?? '', MAX_SYMBOL) || null;
 
+/** The longest address of a website a stop keeps; the server holds the same limit. */
+export const MAX_WEBSITE = 2000;
+
+/** A link from a file as a stop's website: at most MAX_WEBSITE characters. */
+export const asWebsite = (link: string): string => clipped(link, MAX_WEBSITE);
+
 /**
  * A point to stop at. Bound to a point of a routed route of its day (`pointId`), it stands
  * at that point and moves with it; free, it stands where it is and is ordered by where the
@@ -159,7 +165,7 @@ export interface TripSummary {
   updatedAt: string;
 }
 
-/** A folder of the user's making, or one of the two every user has at the top of the library, which stay as they are. */
+/** A folder of the user's making, or one of the three every user has at the top of the library, which stay as they are. */
 export type FolderKind = 'folder' | 'recordings' | 'collections' | 'places';
 
 /** A folder of the library. */

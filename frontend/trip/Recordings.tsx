@@ -61,7 +61,7 @@ export function DayRecordings(props: { day: Day }) {
   const rename = (recording: Recording, name: string) => void recordingAction(recording.dayId, () => renameRecording(recording, name));
   return (
     <>
-      <div class="row heading">
+      <div class="row">
         <h4 class="grow">{t('Recordings')}</h4>
         <Show when={openTrip()?.kind === 'trip'}>
           <IconButton label={t('Look up recordings…')} onClick={() => void recordingAction(props.day.id, () => lookUp(props.day))}>

@@ -161,7 +161,7 @@ export function DayDetails(props: { day: Day }) {
           {(timeline) => <DaySummary timeline={timeline()} />}
         </Show>
       </Show>
-      <div class="row heading">
+      <div class="row">
         <h4 class="grow">{t('Routes')}</h4>
         <IconButton label={t('Import GPX…')} onClick={() => fileInput.click()}>
           <FileImportIcon />
@@ -176,7 +176,7 @@ export function DayDetails(props: { day: Day }) {
       </ul>
       <Show when={importNote()}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
       <Show when={unplaced().length > 0}>
-        <div class="row heading">
+        <div class="row">
           <h4 class="grow">{t('Stops beside no route')}</h4>
         </div>
         <ol class="stops">

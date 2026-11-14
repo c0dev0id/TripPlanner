@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { createMemo, Show } from 'solid-js';
-import type { Stop } from '../model/trip';
+import { MAX_WEBSITE, type Stop } from '../model/trip';
 import { webAddress } from '../poi/details';
 import { editTarget, setEditTarget } from '../state/drawing';
 import { openTrip, removeStop, selectedDay, updateStop } from '../state/trip';
@@ -89,7 +89,7 @@ export function StopDialog() {
                 )}
               </Show>
             </span>
-            <input name="website" inputmode="url" value={s.website} maxlength={2000} />
+            <input name="website" inputmode="url" value={s.website} maxlength={MAX_WEBSITE} />
           </label>
           <label>
             {t('Notes')}

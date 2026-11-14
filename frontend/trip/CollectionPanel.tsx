@@ -30,10 +30,11 @@ import { DayRecordings } from './Recordings';
 export function CollectionPanel() {
   const collection = () => openTrip()!;
   const [renamed, setRenamed] = createSignal<Day>();
+  const places = createMemo(() => isPlaceList(openTripId()));
   return (
     <section class="trip">
       <ol class="days">
-        <ForById each={collection().days}>{(day) => <SectionItem day={day()} onRename={setRenamed} />}</ForById>
+        <ForById each={collection().days}>{(day) => <SectionItem day={day()} places={places()} onRename={setRenamed} />}</ForById>
       </ol>
       <NameDialog
         title={t('Rename section')}
@@ -50,13 +51,13 @@ export function CollectionPanel() {
   );
 }
 
-/** A section as a card: its name over what it holds; opened, its routes and waypoints. Its menu renames and removes it. */
-function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
+/** A section as a card: its name over what it holds, which in a list of places (`places`) are places; opened, its routes and waypoints. Its menu renames and removes it. */
+function SectionItem(props: { day: Day; places: boolean; onRename: (day: Day) => void }) {
   const selected = () => selectedDayId() === props.day.id;
   // The section's routes change less often than the section.
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
-  const meta = () => dayDetail('collection', { date: null, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, distanceM: distance() }, isPlaceList(openTripId()));
+  const meta = () => dayDetail('collection', { date: null, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, distanceM: distance() }, props.places);
   const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
   const click = (e: MouseEvent) => {
     if (clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e)) return;
@@ -82,22 +83,20 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
 /** What a section holds, in the pane beside the list: its routes, its waypoints, which in a list of places are places, and, where it has any, its recordings. */
 export function SectionDetails(props: { day: Day }) {
   const places = () => isPlaceList(openTripId());
+  /** Whether the section holds nothing of what it is for: no route, no recording and, in a list of places, no place. */
+  const empty = () => props.day.routes.length + recordingsOf(props.day.id).length + (places() ? props.day.stops.length : 0) === 0;
   return (
     <div class="day-details">
-      <Show
-        when={props.day.routes.length > 0}
-        fallback={
-          <Show when={recordingsOf(props.day.id).length === 0 && !(places() && props.day.stops.length > 0)}>
-            <p class="muted">{places() ? t('No places of this kind yet: right-click the map where one is, or add a GPX file to the list.') : t('No routes in this section yet.')}</p>
-          </Show>
-        }
-      >
+      <Show when={empty()}>
+        <p class="muted">{places() ? t('No places of this kind yet: right-click the map where one is, or add a GPX file to the list.') : t('No routes in this section yet.')}</p>
+      </Show>
+      <Show when={props.day.routes.length > 0}>
         <ul class="routes">
           <ForById each={props.day.routes}>{(route) => <RouteItem route={route()} day={props.day} />}</ForById>
         </ul>
       </Show>
       <Show when={props.day.stops.length > 0}>
-        <div class="row heading">
+        <div class="row">
           <h4 class="grow">{places() ? t('Places') : t('Waypoints')}</h4>
         </div>
         <ol class="stops">

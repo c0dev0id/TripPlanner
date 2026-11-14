@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { lineLength } from '../geo/measure';
-import { asName, asNotes, asSymbol, newId, type LngLat, type Profile, type Route, type RoutedLeg, type Stop } from '../model/trip';
+import { asName, asNotes, asSymbol, asWebsite, newId, type LngLat, type Profile, type Route, type RoutedLeg, type Stop } from '../model/trip';
 import { newStop, routePoints } from '../routing/dayEdit';
 import { legKey, roundLngLat } from '../routing/legs';
 import { encodePolyline } from '../routing/polyline';
@@ -98,7 +98,7 @@ export function waypointStops(gpx: GpxContent, newId: () => string, pointAt: (ln
   return gpx.waypoints.map((w, i) => {
     const lngLat = roundLngLat(w.lngLat);
     const stop = newStop(newId(), asName(w.name ?? t('Waypoint {n}', { n: i + 1 })), lngLat, pointAt(lngLat));
-    return { ...stop, symbol: asSymbol(w.symbol), address: asNotes(w.address ?? ''), contact: asNotes(w.phone ?? ''), website: websites[i]!.slice(0, 2000), notes: asNotes(w.description ?? '') };
+    return { ...stop, symbol: asSymbol(w.symbol), address: asNotes(w.address ?? ''), contact: asNotes(w.phone ?? ''), website: asWebsite(websites[i]!), notes: asNotes(w.description ?? '') };
   });
 }
 
