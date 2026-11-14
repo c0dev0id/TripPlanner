@@ -40,7 +40,7 @@ final class TripDocuments
         $outlines = [];
         $named = [];
         $routes = 'SELECT r.day_id, r.id, r.name, r.kind FROM routes r JOIN days d ON d.id = r.day_id JOIN trips t ON t.id = d.trip_id
-                   WHERE t.user_id = ? AND r.name <> \'\' ORDER BY r.position';
+                   WHERE t.user_id = ? AND r.name <> \'\' ORDER BY r.day_id, r.position';
         foreach ($this->rows($routes, $userId) as $route) {
             $named[$route['day_id']][] = ['id' => $route['id'], 'name' => $route['name'], 'kind' => $route['kind']];
         }

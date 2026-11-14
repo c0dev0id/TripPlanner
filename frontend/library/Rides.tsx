@@ -5,7 +5,7 @@ import { GPX_FILE_TYPES } from '../gpx/import';
 import type { Ride, Suggestion } from '../recording/rides';
 import { FAR_APART_M, isOddJoint, likelierFirst, ridingYears, totalDistance } from '../recording/rides';
 import { copyRecordings } from '../state/clipboard';
-import { fetchingTrip, isSearchedFor, libraryTrips, outlineOf, query } from '../state/library';
+import { fetchingTrip, libraryTab, libraryTrips, outlineOf, searchedFor } from '../state/library';
 import { activeRecordingId, putOnDay } from '../state/recordings';
 import { toggleRecording } from '../state/recordingView';
 import { allRides, askOfRides, changeRides, compareWithDay, revealedRide, revealRide, rideColor, RIDES, ridesCompared, ridesError, ridesLoading, ridesNote, runRidesJob } from '../state/rides';
@@ -54,9 +54,11 @@ const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>();
  * them on the day, the cross says they are not of it.
  */
 export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; onShow: (tripId: number, dayId: string) => void }) {
+  /** What the rides are searched for: nothing while another tab is shown, where they need not follow what is typed. */
+  const searched = () => (libraryTab() === 'recordings' ? searchedFor() : '');
+  const searching = () => searched() !== '';
   /** The rides listed: all of them, or those the search finds. */
-  const listed = createMemo(() => allRides().filter((ride) => isSearchedFor(ride.name)));
-  const searching = () => query().trim() !== '';
+  const listed = createMemo(() => allRides().filter((ride) => ride.name.toLowerCase().includes(searched())));
   const years = createMemo(() => ridingYears(listed()));
   const untimed = createMemo(() => listed().filter((ride) => ride.startedAt === null));
   /** The years unfolded: the latest until one is folded or unfolded, and every year of what a search found. */

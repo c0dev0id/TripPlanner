@@ -4,7 +4,7 @@ import { changeTrip, type NamedRoute, createFolder, createTrip, deleteFolder, de
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
-import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, opening, openTree, outlineOf, query, relistFolders, relistTrips, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, isSearchedFor, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
+import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, opening, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
@@ -69,9 +69,11 @@ interface CardSelect {
   onToggle: () => void;
   /** Whether the click selected, and so opens nothing. */
   onClick: (e: MouseEvent) => boolean;
-  /** Drags the card into a folder; none for what stays where it is. */
-  onDrag?: (e: PointerEvent, dragged: () => void) => void;
+  onDrag: (e: PointerEvent, dragged: () => void) => void;
 }
+
+/** How a route the search found is selected: as a card is, but it is neither cut nor dragged. */
+type RouteSelect = Pick<CardSelect, 'selected' | 'onToggle' | 'onClick'>;
 
 /** How a card unfolds in the tree, whether it holds the tree's one mark, and of a trip whether it is the open one. */
 interface CardFold {
@@ -282,15 +284,16 @@ export function Library(props: {
     trip.id === openTripId() ? openTrip()!.days : (outlineOf(trip.id) ?? []).map((day) => ({ id: day.id, name: day.name, routes: day.namedRoutes }));
   /** What the search finds in the tree shown: its folders and trips by name, whatever folder they are in, and the routes and tracks of its trips by theirs. */
   const found = createMemo(() => {
-    if (!query().trim()) return { folders: [], trips: [], routes: [] };
-    const inTree = trips().filter((trip) => treeOf(trip.folderId) === libraryTab());
+    const text = searchedFor();
+    const tree = shownTree();
+    if (!text || !tree) return { folders: [], trips: [], routes: [] };
+    const isFound = (named: { name: string }) => named.name.toLowerCase().includes(text);
+    const inTree = trips().filter((trip) => treeOf(trip.folderId) === tree);
     return {
-      folders: folders().filter((f) => f.kind === 'folder' && treeOf(f.id) === libraryTab() && isSearchedFor(f.name)),
-      trips: inTree.filter((trip) => isSearchedFor(trip.name)),
+      folders: folders().filter((f) => f.kind === 'folder' && treeOf(f.id) === tree && isFound(f)),
+      trips: inTree.filter(isFound),
       routes: inTree.flatMap((trip) =>
-        routeDaysOf(trip).flatMap((day, index) =>
-          day.routes.filter((route) => isSearchedFor(route.name)).map((route): FoundRoute => ({ within: trip, dayId: day.id, day: dayHeading(trip.kind, index, day.name), route })),
-        ),
+        routeDaysOf(trip).flatMap((day, index) => day.routes.filter(isFound).map((route): FoundRoute => ({ within: trip, dayId: day.id, day: dayHeading(trip.kind, index, day.name), route }))),
       ),
     };
   });
@@ -324,9 +327,8 @@ export function Library(props: {
     },
   });
   /** How a route the search found is selected, among the rows it lists. */
-  const selectRoute = (route: FoundRoute): CardSelect => ({
+  const selectRoute = (route: FoundRoute): RouteSelect => ({
     selected: () => isSelected(routeKey(route)),
-    cut: () => false,
     onToggle: () => toggleRow(ownerOf(shownTree()!), routeKey(route)),
     onClick: (e: MouseEvent) => clickRow(ownerOf(shownTree()!), listedKeys(), routeKey(route), e),
   });
@@ -370,14 +372,15 @@ export function Library(props: {
         ? t('Delete the route “{name}” from {where}?', { name: only!.route.name, where: `${only!.within.name} › ${only!.day}` })
         : t('Delete {n} routes from {trips}?', { n: doomed.length, trips: counted(new Set(doomed.map((route) => route.within.id)).size, 'trip') });
     if (!(await askConfirmation(question, t('Delete')))) return;
-    await runLibrary(() => deleteRoutes(doomed.map((route) => ({ tripId: route.within.id, dayId: route.dayId, routeId: route.route.id }))), () => setSelected(NOTHING_SELECTED));
+    await runLibrary(() => deleteRoutes(doomed.map((route) => ({ tripId: route.within.id, routeId: route.route.id }))), () => setSelected(NOTHING_SELECTED));
   };
   /**
    * The menu of what is selected once routes the search found are among it: it deletes
    * them, and where folders or trips are selected besides, says that they are not
    * deleted together.
    */
-  const routesMenu = (selection: Selection<string>, routes: readonly FoundRoute[]): MenuItem[] => {
+  const routesMenu = (selection: Selection<string>): MenuItem[] => {
+    const routes = routesIn(selection);
     const others = [...selection].flatMap((key) => itemOf(key) ?? []);
     const what = [others.length > 0 && countText(others), counted(routes.length, 'route')].filter(Boolean).join(', ');
     const nothing = () => undefined;
@@ -390,7 +393,7 @@ export function Library(props: {
   const routeMenu = (route: FoundRoute): MenuItem[] => {
     const selection = menuSelection(selected(), routeKey(route));
     setSelected(selection.size > 1 ? selection : NOTHING_SELECTED);
-    return routesMenu(selection, selection.size > 1 ? routesIn(selection) : [route]);
+    return routesMenu(selection);
   };
   const merge = async (into: TripSummary, others: TripSummary[]) => {
     const what = counted(others.length, into.kind);
@@ -580,8 +583,7 @@ export function Library(props: {
   const itemMenu = (item: Item): MenuItem[] => {
     const selection = menuSelection(selected(), keyOf(item));
     setSelected(selection.size > 1 ? selection : NOTHING_SELECTED);
-    const routes = routesIn(selection);
-    if (routes.length > 0) return routesMenu(selection, routes);
+    if (routesIn(selection).length > 0) return routesMenu(selection);
     const chosen = chosenWith(item, selection);
     const several = chosen.length > 1;
     const chosenTrips = tripsOf(chosen);
@@ -753,7 +755,7 @@ export function Library(props: {
         <Match when={libraryTrips.error ?? libraryFolders.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
         <Match when={libraryTrips() && libraryFolders()}>
           <Show
-            when={query().trim()}
+            when={searchedFor()}
             fallback={
               <>
                 <Show when={libraryClip()}>
@@ -905,7 +907,7 @@ function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) 
 }
 
 /** A route or a track the search found, as a card: its name over what it is and where, its trip and day; a click opens it there. */
-function RouteCard(props: { found: FoundRoute; onOpen: (found: FoundRoute) => void; items: () => MenuItem[]; select: CardSelect }) {
+function RouteCard(props: { found: FoundRoute; onOpen: (found: FoundRoute) => void; items: () => MenuItem[]; select: RouteSelect }) {
   return (
     <li class="card" classList={{ selected: props.select.selected() }}>
       <div class="row" ref={(el) => cardMenu(el, props.items)}>

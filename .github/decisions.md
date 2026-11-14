@@ -993,7 +993,7 @@ entries at the end of their section.
   preference in one line of inline script before the first paint, so a dark choice never
   flashes light. The pairs themselves live in one stylesheet both bundles load.
 - **Texts are English in the code and German in one dictionary, read by both sides.**
-  The code says `t('Search trips and folders')`; `frontend/i18n/de.json` maps that English
+  The code says `t('Search rides')`; `frontend/i18n/de.json` maps that English
   text to its German, and the server's `t()` reads the same file, so a message the server
   sends and a label the planner shows are translated in one place. The API's controllers
   and exceptions speak the English keys; `Json::error` translates every message on its

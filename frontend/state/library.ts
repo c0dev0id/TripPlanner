@@ -3,7 +3,7 @@ import { t } from '../i18n/t';
 import { changeTrip, listFolders, listTrips, fetchOutlines, type OutlineDay, type Progress } from '../api';
 import { heldCounts, kindAround } from '../library/folders';
 import type { FolderKind } from '../model/trip';
-import { removeRoute } from '../routing/dayEdit';
+import * as dayEdit from '../routing/dayEdit';
 import { createRequest } from '../ui/request';
 import { openTripId, removeParts } from './trip';
 
@@ -56,8 +56,8 @@ export const fetchingTrip = createRoot(() =>
 /** The search typed into the library, which limits the tab shown to what it finds there. */
 export const [query, setQuery] = createSignal('');
 
-/** Whether the search finds a name: every name while nothing is typed. */
-export const isSearchedFor = (name: string): boolean => name.toLowerCase().includes(query().trim().toLowerCase());
+/** What the search looks for, as it is compared with names in lower case; empty while nothing is typed. */
+export const searchedFor = createRoot(() => createMemo(() => query().trim().toLowerCase()));
 
 /** The special folders are named as the tabs they are the tops of. */
 const SPECIAL_NAMES = { collections: TAB_NAMES.stash, places: TAB_NAMES.places };
@@ -147,25 +147,17 @@ export const runLibrary = (work: () => Promise<unknown>, then?: () => void): Pro
     then?.();
   });
 
-/** A route by where it is kept. */
-export interface RoutePlace {
-  tripId: number;
-  dayId: string;
-  routeId: string;
-}
-
 /**
  * Deletes routes from their trips: from the open trip as an edit of it, saved with it
  * and undone like any other, from the others on the server, each trip changed once,
  * side by side. The stops bound to them stay, free.
  */
-export async function deleteRoutes(routes: readonly RoutePlace[]): Promise<void> {
-  const inOpenTrip = routes.filter((route) => route.tripId === openTripId());
-  const elsewhere = routes.filter((route) => route.tripId !== openTripId());
-  if (inOpenTrip.length > 0) removeParts('route', inOpenTrip.map((route) => route.routeId));
-  if (elsewhere.length === 0) return;
-  const tripIds = [...new Set(elsewhere.map((route) => route.tripId))];
-  await Promise.all(tripIds.map((id) => changeTrip(id, (trip) => elsewhere.filter((route) => route.tripId === id).reduce((next, route) => removeRoute(next, route.dayId, route.routeId), trip))));
+export async function deleteRoutes(routes: readonly { tripId: number; routeId: string }[]): Promise<void> {
+  const idsIn = (tripId: number) => routes.filter((route) => route.tripId === tripId).map((route) => route.routeId);
+  const tripIds = new Set(routes.map((route) => route.tripId));
+  if (tripIds.delete(openTripId()!)) removeParts('route', idsIn(openTripId()!));
+  if (tripIds.size === 0) return;
+  await Promise.all([...tripIds].map((id) => changeTrip(id, (trip) => dayEdit.removeParts(trip, 'route', idsIn(id)))));
   relistTrips();
 }
 
