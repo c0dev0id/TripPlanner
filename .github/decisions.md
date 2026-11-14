@@ -911,6 +911,12 @@ entries at the end of their section.
   the light scheme and lightens it in the dark one, whatever that is, and no row needs
   a highlight of its own. A grip and a pad take none at all: they are handles of the
   row, not buttons.
+- **A duplicate's location is opened beside the report.** Opening it gave the pane to
+  the day, so each look at where a route lies cost the report, and going through ten
+  alike meant showing it again ten times. The trip now opens at the day with the
+  report still in the pane: the library marks the day and brings it into view, which
+  is what says where the route is, and the day's own pane is one click on it away.
+  Any other day picked takes the pane as before.
 - **A route and a track are never duplicates of each other.** The report compared
   lines whatever they were of, so a planned route and a track of the same way made a
   group, and a comment in the code called that a ride kept twice. It was never asked

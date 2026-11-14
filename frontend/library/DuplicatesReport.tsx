@@ -51,10 +51,11 @@ let scrolled = 0;
  * when, and the button there makes it afresh. A click or a tap selects
  * a route, with Cmd or Ctrl one more, with Shift a run of them; its pad adds or takes it
  * away. The map draws what is selected, each route in a colour its row shows too, to
- * compare them. The menu opens the place of one, its day, whose pane takes the report's
- * place until the report is shown again, scrolled and selected as it was left, and
- * copies or deletes the selected ones, as
- * Ctrl+C and Delete do. A day picked elsewhere takes the pane for itself.
+ * compare them. The menu opens the place of one: its trip at its day, marked and in view
+ * in the library, with the report still in the pane, which a click on that day or on
+ * another gives to the day; shown again, the report is scrolled and selected as it was
+ * left. The menu also copies or deletes the selected ones, as
+ * Ctrl+C and Delete do.
  */
 export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void }) {
   const groups = duplicateGroups;
@@ -79,13 +80,15 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   const isSelected = createSelector(selection, (key: string, keys) => keys.has(key));
   /** The selected routes, in the order shown. */
   const selectedRoutes = () => [...shown().values()].filter((r) => selection().has(duplicateKey(r)));
-  /** Opens the trip of a route at the route's day, whose pane takes the report's place; the report is kept as it stands. */
+  /** The day of the location opened last from here, which does not take the pane. */
+  let located: string | undefined;
+  /** Opens the trip of a route at the route's day, which the library then marks and brings into view, while the report stays in the pane. */
   const openLocation = (route: DuplicateRoute) => {
-    setShowingDuplicates(false);
+    located = route.dayId;
     props.onOpen(route.tripId, route.dayId);
   };
-  // A day picked elsewhere takes the pane too.
-  createEffect(on(selectedDayId, (id) => id && setShowingDuplicates(false), { defer: true }));
+  // A day picked elsewhere takes the pane for itself.
+  createEffect(on(selectedDayId, (id) => id && id !== located && setShowingDuplicates(false), { defer: true }));
   /** Runs a job that reads and writes trips, saying what it is doing and then what it did or why it failed. */
   const work = async (doing: string, job: () => Promise<string>) => {
     setNote({ text: doing, error: false });

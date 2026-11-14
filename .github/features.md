@@ -306,9 +306,10 @@
   kept twice shows as such.
   The map draws the selected routes and brings them into view, each in a colour of its
   own that its row shows as well, the first eight selected, so that they are compared at a
-  glance. The menu (right-click or long press) opens the location of a single route, its
-  trip at its day, whose pane takes the report's place while the tree unfolds down to
-  the day as if it had been clicked there, and copies or deletes the
+  glance. The menu (right-click or long press) opens the location of a single route: its
+  trip opens at its day, the library shows the trip's tab, unfolds down to the day,
+  marks it and brings it into view, and the report stays in the pane beside it; a
+  click on that day gives the pane to the day. The menu also copies or deletes the
   selected ones, as Ctrl+C and Delete do. A day picked in the tree takes the pane for
   itself as well. The report is made once and kept while the page stands: shown again,
   it is there at once, where it was scrolled to and with what was selected still

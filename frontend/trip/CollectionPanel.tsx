@@ -8,7 +8,7 @@ import { panTo, showWhole } from '../state/drawing';
 import { clickPart, isPartSelected } from '../state/partSelection';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
-import { isPlaceList } from '../state/library';
+import { isPlaceList, setShowingDuplicates } from '../state/library';
 import { isDayMarked, isRouteActive, markShownDay, openTrip, openTripId, selectDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
 import { symbolLabel } from '../symbols/symbols';
 import { cardMenu } from '../ui/cardMenu';
@@ -63,12 +63,17 @@ function SectionItem(props: { day: Day; places: boolean; onRename: (day: Day) =>
   const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
   const click = (e: MouseEvent) => {
     if (clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e)) return;
-    // The day shown stays shown: a click on it only takes the mark back from a folder.
-    if (selected()) markShownDay();
-    else selectDay(props.day.id);
+    // The day shown stays shown: a click on it takes the mark back from a folder, and the pane back from the duplicates' report.
+    if (selected()) {
+      markShownDay();
+      setShowingDuplicates(false);
+    } else selectDay(props.day.id);
   };
+  let row!: HTMLLIElement;
+  // The day shown is brought into view: one opened from elsewhere may lie far down its trip.
+  createEffect(on(selected, (is) => is && requestAnimationFrame(() => row.scrollIntoView({ block: 'nearest' }))));
   return (
-    <li class="day card" classList={{ open: selected(), current: isDayMarked(props.day.id), picked: isPartSelected('day', props.day.id), cut: isCut(props.day.id) }}>
+    <li ref={row} class="day card" classList={{ open: selected(), current: isDayMarked(props.day.id), picked: isPartSelected('day', props.day.id), cut: isCut(props.day.id) }}>
       <div class="row" ref={(el) => cardMenu(el, items)}>
         <button class="text grow" onClick={click} aria-pressed={selected()}>
           <span class="lines">
