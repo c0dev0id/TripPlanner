@@ -1,7 +1,7 @@
 import { t } from '../i18n/t';
 import { addMedia, changeTrip, createFolder, createTrip, errorMessage, listFolders } from '../api';
 import { readDayParts, ROUTE_FILE, type DayParts } from '../gpx/import';
-import { asName, newId, type Trip, type TripKind } from '../model/trip';
+import { asName, newId, type Trip } from '../model/trip';
 import { addDay, addParts, dayAfter, updateDay } from '../routing/dayEdit';
 import { importArchive } from './tripArchive';
 
@@ -12,9 +12,8 @@ import { importArchive } from './tripArchive';
  */
 export type ImportMode = 'trips' | 'trip-per-file';
 
-/** A trip or a collection the import makes. */
+/** A trip the import makes. */
 export interface PlannedTrip {
-  kind: TripKind;
   /** The names of the folders it goes into, from the picked folder down. */
   folders: string[];
   name: string;
@@ -102,9 +101,9 @@ export const isRoutePath = (path: string): boolean => /^[^.][^/]*$/.test(path.sl
 export const isMediaPath = (path: string): boolean => /^[^.][^/]*$/.test(path.slice(path.lastIndexOf('/') + 1)) && !ROUTE_FILE.test(path);
 
 /**
- * The trips or collections a picked folder tree makes, from the files' paths relative to
+ * The trips a picked folder tree makes, from the files' paths relative to
  * it, organized as `mode` says: the GPX files in name order, hidden files left out. The
- * other files of a folder that makes one trip or collection are its media; beside trips
+ * other files of a folder that makes one trip are its media; beside trips
  * made a file each they are left out. The names are fitted to what the library holds.
  */
 export function planFolderImport(paths: readonly string[], mode: ImportMode): PlannedTrip[] {
@@ -142,7 +141,7 @@ export function planFolderImport(paths: readonly string[], mode: ImportMode): Pl
  * dated on from the folder's date after the dated days, or undated where the folder has
  * none. Days follow their dates, undated ones last.
  */
-export function tripOfFolder(segments: string[], files: number[], stem: (i: number) => string): PlannedTrip {
+function tripOfFolder(segments: string[], files: number[], stem: (i: number) => string): PlannedTrip {
   const folderName = segments.at(-1)!;
   const dated = new Map<string, number[]>();
   const undated: number[] = [];
@@ -161,12 +160,12 @@ export function tripOfFolder(segments: string[], files: number[], stem: (i: numb
     days.push(dayOf(next ?? null, [i]));
     if (next) next = dayAfter(next);
   }
-  return { kind: 'trip', folders: segments.slice(0, -1), name: withoutDate(folderName) || folderName || t('Imported trip'), days, media: [] };
+  return { folders: segments.slice(0, -1), name: withoutDate(folderName) || folderName || t('Imported trip'), days, media: [] };
 }
 
 /** A GPX file as a trip of one day, named after the file without its date, dated by it; in the folders it is in. */
 function tripOfFile(folders: string[], stem: string, file: number): PlannedTrip {
-  return { kind: 'trip', folders, name: withoutDate(stem) || stem, days: [{ date: dateIn(stem) ?? null, name: '', files: [file] }], media: [] };
+  return { folders, name: withoutDate(stem) || stem, days: [{ date: dateIn(stem) ?? null, name: '', files: [file] }], media: [] };
 }
 
 /** The trip with a day added at its end, named and dated, holding what the GPX files gave. */
@@ -176,30 +175,16 @@ export function withImportedDay(trip: Trip, day: { name: string; date: string | 
 }
 
 /**
- * Where the files that come with a trip are kept: with a trip's first day, none where it
- * has no day; in a collection in the section for them, found by its name or added at the end.
- */
-export function withMediaDay(trip: Trip): { trip: Trip; dayId: string | undefined } {
-  const named = t('Additional Media');
-  const found = trip.kind === 'trip' ? trip.days[0] : trip.days.find((day) => day.name === named);
-  if (found || trip.kind === 'trip') return { trip, dayId: found?.id };
-  const made = withImportedDay(trip, { name: named, date: null }, []);
-  return { trip: made, dayId: made.days.at(-1)!.id };
-}
-
-/**
- * Adds the days read from files to the trip and keeps the other files with it, where
- * withMediaDay says; a file the server does not take is reported, and the rest goes on.
- * Whether a day was there to keep them with.
+ * Adds the days read from files to the trip and keeps the other files with its first
+ * day; a file the server does not take is reported, and the rest goes on. Whether a day
+ * was there to keep them with.
  */
 export async function addDaysAndMedia(tripId: number, days: readonly { day: PlannedDay; parts: DayParts[] }[], media: readonly ImportSource[], errors: string[]): Promise<boolean> {
   let mediaDay: string | undefined;
   await changeTrip(tripId, (trip) => {
     const filled = days.reduce((to, { day, parts }) => withImportedDay(to, day, parts), trip);
-    if (media.length === 0) return filled;
-    const kept = withMediaDay(filled);
-    mediaDay = kept.dayId;
-    return kept.trip;
+    mediaDay = filled.days[0]?.id;
+    return filled;
   });
   if (!mediaDay) return media.length === 0;
   for (const source of media) {
@@ -214,10 +199,10 @@ export async function addDaysAndMedia(tripId: number, days: readonly { day: Plan
 
 /**
  * The planned days with what their GPX files hold, read now; a file that cannot be read is
- * reported, and a day left without one is left out. For a trip (`ofTrip`), so is a file of
- * waypoints alone: it is a list of places, and no day to ride.
+ * reported, and a day left without one is left out. So is a file of waypoints alone: it
+ * is a list of places, and no day to ride.
  */
-export async function readPlannedDays(sources: readonly ImportSource[], planned: readonly PlannedDay[], ofTrip: boolean, errors: string[]): Promise<{ day: PlannedDay; parts: DayParts[] }[]> {
+export async function readPlannedDays(sources: readonly ImportSource[], planned: readonly PlannedDay[], errors: string[]): Promise<{ day: PlannedDay; parts: DayParts[] }[]> {
   const days: { day: PlannedDay; parts: DayParts[] }[] = [];
   for (const day of planned) {
     const parts: DayParts[] = [];
@@ -225,7 +210,7 @@ export async function readPlannedDays(sources: readonly ImportSource[], planned:
       const source = sources[i]!;
       try {
         const read = await readDayParts(await source.open(), 'motorcycle');
-        if (ofTrip && read.routes.length === 0 && read.stops.length > 0) throw new Error(t('This file holds places and no route: add it to the folder for places.'));
+        if (read.routes.length === 0 && read.stops.length > 0) throw new Error(t('This file holds places and no route: add it to the folder for places.'));
         parts.push(read);
       } catch (error) {
         errors.push(`${source.path}: ${errorMessage(error)}`);
@@ -236,7 +221,7 @@ export async function readPlannedDays(sources: readonly ImportSource[], planned:
   return days;
 }
 
-/** What an import did: how many trips or collections it made, and what it could not read or save. */
+/** What an import did: how many trips it made, and what it could not read or save. */
 interface ImportResult {
   trips: number;
   errors: string[];
@@ -275,10 +260,10 @@ export async function importFolder(
   }
   for (const [n, planned] of plan.entries()) {
     onProgress(t('Importing {i} of {n}: {name}', { i: archives.length + n + 1, n: total, name: planned.name }));
-    const days = await readPlannedDays(sources, planned.days, planned.kind === 'trip', result.errors);
+    const days = await readPlannedDays(sources, planned.days, result.errors);
     if (days.length === 0) continue;
     try {
-      const tripId = (await createTrip(planned.name, await folderIn(planned.folders), planned.kind)).id;
+      const tripId = (await createTrip(planned.name, await folderIn(planned.folders))).id;
       await addDaysAndMedia(tripId, days, planned.media.map((i) => sources[i]!), result.errors);
       result.trips++;
     } catch (error) {

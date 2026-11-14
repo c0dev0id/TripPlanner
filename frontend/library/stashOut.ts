@@ -31,6 +31,6 @@ export async function stashCopies(picked: readonly Picked[]): Promise<CopiedRout
 /** The waypoints of files of the Stash as stops to paste into a day or a list of places, each standing free. */
 export async function stashStops(files: readonly StashFile[]): Promise<Stop[]> {
   const stops: Stop[] = [];
-  for (const file of files) stops.push(...waypointStops(parseGpx(await fetchStashGpx(file.id)), newId, () => null));
+  for (const file of files) stops.push(...waypointStops(parseGpx(await fetchStashGpx(file.id)), newId));
   return stops;
 }

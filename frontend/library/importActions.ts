@@ -1,5 +1,6 @@
 import type { TripSummary } from '../model/trip';
-import { libraryFolders, relistFolders, relistStash, relistTrips, runLibrary, setImportNote, showTab } from '../state/library';
+import { libraryFolders, relistFolders, relistTrips, runLibrary, setImportNote, showTab } from '../state/library';
+import { relistStash } from '../state/stash';
 import { runRidesJob } from '../state/rides';
 import { pickFiles } from '../ui/pickFile';
 import { importDropped, importIntoTrip, importRides } from './dropImport';
@@ -79,10 +80,9 @@ export function libraryImports(onLeave: () => Promise<void>) {
     (data) => void addRides(droppedSources(data)),
   );
   return {
-    /** Asks for files of routes and zips of exported trips, among the collections for any file, and imports them into the folder. */
+    /** Asks for files of routes and zips, of exported trips or of such files, and imports them into the folder. */
     addFiles: async (folderId: number | null) => {
-      const kind = kindAround(libraryFolders() ?? [], folderId);
-      const files = await pickFiles(kind === 'collections' ? {} : { accept: `${ROUTE_FILE_TYPES},.zip,application/zip` });
+      const files = await pickFiles({ accept: `${ROUTE_FILE_TYPES},.zip,application/zip` });
       if (files.length > 0) void intoFolder(folderId, { files: files.map(sourceOf), inFolders: [] });
     },
     /** Asks for a folder and imports all it holds into the folder. */
@@ -91,9 +91,8 @@ export function libraryImports(onLeave: () => Promise<void>) {
       if (files.length > 0) void intoFolder(folderId, { files: [], inFolders: files.map(sourceOf) });
     },
     /**
-     * Asks for files and adds them to the trip: files of routes as days, to a collection
-     * as sections, and any other file as media; to a list of places the waypoints of
-     * files of routes as places.
+     * Asks for files and adds them to the trip: files of routes as days and any other
+     * file as media; to a list of places the waypoints of files of routes as places.
      */
     addToTrip: async (trip: TripSummary) => {
       const kind = kindAround(libraryFolders() ?? [], trip.folderId);

@@ -8,14 +8,14 @@ import { addParts } from '../routing/dayEdit';
 import { recordingName } from '../recording/track';
 import { counted } from '../ui/format';
 import type { Dropped } from './fileDrop';
-import { addDaysAndMedia, foldersUnder, importFolder, isGpxPath, isMediaPath, isRoutePath, planFolderImport, readPlannedDays, withImportedDay, type ImportMode, type ImportSource } from './folderImport';
+import { addDaysAndMedia, foldersUnder, importFolder, isGpxPath, isMediaPath, isRoutePath, planFolderImport, readPlannedDays, withImportedDay, type ImportSource } from './folderImport';
 import { archiveFolders, inFolders } from './tripArchive';
 
 /** The collection of the name in the folder: the one among the trips listed, or a new one. */
 const collectionIn = async (trips: readonly TripSummary[], folderId: number | null, name: string): Promise<number> =>
   trips.find((trip) => trip.kind === 'collection' && trip.folderId === folderId && trip.name === name)?.id ?? (await createTrip(name, folderId, 'collection')).id;
 
-/** What an import brought, in a sentence: "3 sections, 2 attachments and 1 collection imported." */
+/** What an import brought, in a sentence: "3 days and 2 attachments imported." */
 function importedText(made: readonly (string | false)[]): string {
   const said = made.filter((part) => part !== false);
   const last = said.at(-1)!;
@@ -92,14 +92,6 @@ function withPlaces(list: Trip, places: readonly KindedPlace[]): Trip {
 }
 
 /**
- * Keeps the waypoints of the files of routes among `files` as places: in the list `tripId`, or
- * in the folder `folderId` in a list per file, named as the file names itself or after
- * the file, made where the folder has none of that name. In a list, a place goes to the
- * section of its kind, as the file sorts its waypoints, or to “Places” where it has
- * none. A place the list holds already is left out, so that a file can be loaded again
- * when it has grown. Routes and tracks are no places and are left out, which is said.
- */
-/**
  * Keeps the files of routes among what was dropped on a folder of the Stash, or picked
  * for it: a GPX file as it is, a KML or KMZ file as the GPX it is turned into, each
  * named after its file. The files of a dropped folder go into folders as their paths
@@ -111,22 +103,29 @@ export async function importIntoStash(dropped: Dropped, folderId: number, onProg
   const errors: string[] = [];
   let kept = 0;
   let known = 0;
-  const sources = [...dropped.files.map((source) => ({ source, above: [] as string[] })), ...dropped.inFolders.map((source) => ({ source, above: source.path.split('/').slice(0, -1).map(asName) }))];
-  const routeFiles = sources.filter(({ source }) => isRoutePath(source.path));
-  const folderIn = routeFiles.some(({ above }) => above.length > 0) ? await foldersUnder(folderId) : async () => folderId;
-  const aboveOf = new Map(routeFiles.map(({ source, above }) => [source, above]));
-  await eachFile([...aboveOf.keys()], onProgress, errors, async (source) => {
+  const folderIn = await foldersUnder(folderId);
+  await eachFile([...dropped.files, ...dropped.inFolders].filter((source) => isRoutePath(source.path)), onProgress, errors, async (source) => {
     const file = await source.open();
     // A file named as GPX is kept as it is where it is one; one that holds KML under that name is turned into GPX as a KML file is.
     const text = isGpxPath(source.path) ? await file.text() : '';
     const gpx = isGpxText(text) ? text : gpxText(await readRouteFile(file));
-    const { added } = await keepStashFile(await folderIn(aboveOf.get(source)!), asName(file.name.replace(ROUTE_FILE, '')) || t('File'), gpx);
+    // A file dropped loose has no folders in its path and goes into the folder itself.
+    const folder = await folderIn(source.path.split('/').slice(0, -1).map(asName));
+    const { added } = await keepStashFile(folder, asName(file.name.replace(ROUTE_FILE, '')) || t('File'), gpx);
     if (added) kept++;
     else known++;
   });
   return { text: keptText(kept, known, 'file', t('No GPX or KML files in there.')), errors };
 }
 
+/**
+ * Keeps the waypoints of the files of routes among `files` as places: in the list `tripId`, or
+ * in the folder `folderId` in a list per file, named as the file names itself or after
+ * the file, made where the folder has none of that name. In a list, a place goes to the
+ * section of its kind, as the file sorts its waypoints, or to “Places” where it has
+ * none. A place the list holds already is left out, so that a file can be loaded again
+ * when it has grown. Routes and tracks are no places and are left out, which is said.
+ */
 async function importPlaces(files: readonly ImportSource[], into: { folderId: number | null } | { tripId: number }, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
   const sources = files.filter((source) => isRoutePath(source.path));
   const errors: string[] = [];
@@ -151,12 +150,12 @@ async function importPlaces(files: readonly ImportSource[], into: { folderId: nu
   return { text: keptText(kept, known, 'place', t('No places in there.')), errors };
 }
 
-/** Imports dropped files as a trip each, and the files in dropped folders organized as `foldersAs` says; exported trips among the folders come back as they were. */
-function importTree(loose: readonly ImportSource[], inDropped: readonly ImportSource[], foldersAs: ImportMode, folderId: number | null, onProgress: (text: string) => void) {
+/** Imports dropped files as a trip each, and the files in dropped folders as trips by their folders; exported trips among the folders come back as they were. */
+function importTree(loose: readonly ImportSource[], inDropped: readonly ImportSource[], folderId: number | null, onProgress: (text: string) => void) {
   const sources = [...loose, ...inDropped];
   const archives = archiveFolders(inDropped.map((source) => source.path));
   const paths = (of: (i: number) => boolean) => sources.map((source, i) => (of(i) ? source.path : ''));
-  const plan = [...planFolderImport(paths((i) => i < loose.length), 'trip-per-file'), ...planFolderImport(paths((i) => i >= loose.length && !inFolders(sources[i]!.path, archives)), foldersAs)];
+  const plan = [...planFolderImport(paths((i) => i < loose.length), 'trip-per-file'), ...planFolderImport(paths((i) => i >= loose.length && !inFolders(sources[i]!.path, archives)), 'trips')];
   return importFolder(sources, plan, archives, folderId, onProgress);
 }
 
@@ -171,7 +170,7 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
   const errors: string[] = [];
   onProgress(t('Importing {i} of {n}: {name}', { i: 1, n: 1, name: trip.name }));
   const planned = planFolderImport(files.map((file) => file.path), 'trips');
-  const days = await readPlannedDays(files, planned.flatMap((trip) => trip.days), true, errors);
+  const days = await readPlannedDays(files, planned.flatMap((trip) => trip.days), errors);
   const media = files.filter((file) => isMediaPath(file.path));
   if (days.length + media.length === 0) return { text: t('No GPX or KML files and no exported trips in there.'), errors };
   if (!(await addDaysAndMedia(trip.id, days, media, errors))) errors.push(t('The trip has no day to keep files with.'));
@@ -189,7 +188,7 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
 export async function importDropped(dropped: Dropped, folderId: number | null, kind: FolderKind, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
   if (kind === 'places') return importPlaces([...dropped.files, ...dropped.inFolders], { folderId }, onProgress);
   if (kind === 'collections') return importIntoStash(dropped, folderId!, onProgress);
-  const trees = await importTree(dropped.files, dropped.inFolders, 'trips', folderId, onProgress);
+  const trees = await importTree(dropped.files, dropped.inFolders, folderId, onProgress);
   if (trees.trips === 0) return { text: t('No GPX or KML files and no exported trips in there.'), errors: trees.errors };
   return { text: importedText([counted(trees.trips, 'trip')]), errors: trees.errors };
 }

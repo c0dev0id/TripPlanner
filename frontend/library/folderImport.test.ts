@@ -1,11 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { Trip } from '../model/trip';
-import { dateIn, pickedPath, planFolderImport, withMediaDay, type ImportMode } from './folderImport';
+import { dateIn, pickedPath, planFolderImport, type ImportMode } from './folderImport';
 
 /** The plan with each day as its date, name and file names, and the names of its media where it has any; trips planned per folder unless the mode says otherwise. */
 const plan = (paths: string[], mode: ImportMode = 'trips') => {
   const names = (files: number[]) => files.map((i) => paths[i]!.split('/').at(-1));
-  return planFolderImport(paths, mode).map(({ kind, media, ...t }) => ({ ...(kind === 'trip' ? {} : { kind }), ...t, ...(media.length > 0 ? { media: names(media) } : {}), days: t.days.map((d) => [d.date, d.name, names(d.files)]) }));
+  return planFolderImport(paths, mode).map(({ media, ...t }) => ({ ...t, ...(media.length > 0 ? { media: names(media) } : {}), days: t.days.map((d) => [d.date, d.name, names(d.files)]) }));
 };
 
 describe('pickedPath', () => {
@@ -127,22 +126,6 @@ describe('the other files of a folder', () => {
   it('are left out beside trips made a file each', () => {
     expect(plan(['a.gpx', 'ticket.pdf'], 'trip-per-file').map((t) => t.media)).toEqual([undefined]);
     expect(plan(['Tours/a.gpx', 'Tours/ticket.pdf', 'Tours/Alps/b.gpx']).map((t) => t.media)).toEqual([undefined, undefined]);
-  });
-});
-
-describe('where the files that come with a trip are kept', () => {
-  const trip = (kind: 'trip' | 'collection', names: string[]): Trip => ({ id: 1, kind, name: 'T', description: '', state: 'planned', version: 1, days: names.map((name) => ({ id: name, name, date: null, notes: '', routes: [], stops: [] })) });
-
-  it('is a trip\'s first day, and nowhere without a day', () => {
-    expect(withMediaDay(trip('trip', ['a', 'b'])).dayId).toBe('a');
-    expect(withMediaDay(trip('trip', [])).dayId).toBeUndefined();
-  });
-
-  it('is a collection\'s section for them, added at the end where there is none', () => {
-    const made = withMediaDay(trip('collection', ['a', 'b']));
-    expect([made.trip.days.map((day) => day.name), made.dayId]).toEqual([['a', 'b', 'Additional Media'], made.trip.days[2]!.id]);
-    const again = withMediaDay(made.trip);
-    expect([again.trip, again.dayId]).toEqual([made.trip, made.dayId]);
   });
 });
 
