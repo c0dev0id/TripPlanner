@@ -7,6 +7,7 @@ import { BaseMapControl } from './BaseMapControl';
 import { OverlayControl } from './OverlayControl';
 import { chosenBaseMap, sharpUntil } from './baseMaps';
 import { provideImages } from './mapImages';
+import { ridesOpacity } from '../state/preferences';
 import { OVERLAYS, shownOverlays, type Overlay } from './overlays';
 import { POI_IMAGES } from './poiImages';
 import { OWN_PLACES_LAYERS, OWN_PLACES_SOURCE } from './ownPlacesOverlay';
@@ -57,8 +58,8 @@ export function newBaseMap(container: HTMLElement, options: Partial<MapOptions>,
   if (overlays) map.addControl(new OverlayControl(), 'top-right');
   map.addControl(new ScaleControl(), 'bottom-left');
   provideImages(map, new Map([...POI_IMAGES, ...OVERLAYS.flatMap((overlay) => [...overlay.images])]));
-  // The style follows the base map chosen, the overlays switched on and the width of the routes.
-  createEffect(on([chosenBaseMap, shown, routeWidth], () => map.setStyle(chosenBaseMap().style), { defer: true }));
+  // The style follows the base map chosen, the overlays switched on, the width of the routes and how opaque the rides are.
+  createEffect(on([chosenBaseMap, shown, routeWidth, ridesOpacity], () => map.setStyle(chosenBaseMap().style), { defer: true }));
   map.once('load', () => ready(map));
   return map;
 }

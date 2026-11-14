@@ -18,6 +18,11 @@ export const placeReachM = (kind: PoiCategoryId): number => preferences().placeR
 /** The width of a route's line in pixels. */
 export const routeWidth = createRoot(() => createMemo((): number => preferences().routeWidth ?? DEFAULT_ROUTE_WIDTH));
 
+/** How opaque one ride is where the map draws them all: translucent enough that a few rides on a road still read as fewer than many. */
+export const DEFAULT_RIDES_OPACITY = 0.4;
+
+export const ridesOpacity = createRoot(() => createMemo((): number => preferences().ridesOpacity ?? DEFAULT_RIDES_OPACITY));
+
 /** How routes without a colour of their own get one. */
 export const routeColoring = createRoot(() => createMemo((): RouteColoring => preferences().routeColoring ?? DEFAULT_ROUTE_COLORING));
 

@@ -206,6 +206,8 @@ export interface Preferences {
   routeWidth?: number;
   /** Whether routes without a colour of their own get one per day or one per route. */
   routeColoring?: RouteColoring;
+  /** How opaque a ride is drawn in the overlay of all rides, from 0 to 1. */
+  ridesOpacity?: number;
 }
 
 export const fetchPreferences = (): Promise<Preferences> => request('GET', `/api/preferences`);

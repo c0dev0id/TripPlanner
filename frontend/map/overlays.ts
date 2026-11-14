@@ -3,11 +3,13 @@ import { createSignal } from 'solid-js';
 import { readPreference, writePreference } from '../ui/preferences';
 import { CLOSURES } from './closuresOverlay';
 import type { MapImage } from './mapImages';
+import { RIDES } from './ridesOverlay';
 import { ROADWORKS } from './roadworksOverlay';
 
 /**
  * What the map draws between the base map and the trip while switched on: the roadworks
- * two German states' services list, and the roads closed to motorcycles.
+ * two German states' services list, the roads closed to motorcycles, and every ride the
+ * user has recorded.
  */
 
 /** What a feature tapped on the map says about itself. */
@@ -34,7 +36,7 @@ export interface Overlay {
   taps: { layers: string[]; info: (properties: Record<string, unknown>) => TapInfo }[];
 }
 
-export const OVERLAYS: readonly Overlay[] = [ROADWORKS, CLOSURES];
+export const OVERLAYS: readonly Overlay[] = [ROADWORKS, CLOSURES, RIDES];
 
 /** The ids of the overlays this browser switched on. */
 const [shownIds, setShownIds] = createSignal<readonly string[]>((readPreference('overlays') ?? '').split(',').filter((id) => OVERLAYS.some((o) => o.id === id)));

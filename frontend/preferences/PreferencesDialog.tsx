@@ -5,7 +5,7 @@ import { poiBadgeUrl } from '../map/poiImages';
 import { DEFAULT_ROUTE_WIDTH, ROUTE_WIDTHS } from '../model/routeLook';
 import { POI_CATEGORIES } from '../poi/categories';
 import { preferencesOpen, setPreferencesOpen } from '../state/drawing';
-import { changePreferences, placeReachM, routeColoring, routeWidth } from '../state/preferences';
+import { changePreferences, DEFAULT_RIDES_OPACITY, placeReachM, ridesOpacity, routeColoring, routeWidth } from '../state/preferences';
 import { EditDialog } from '../ui/EditDialog';
 import { chooseTheme, theme, THEMES, type Theme } from '../ui/theme';
 
@@ -15,7 +15,8 @@ const MAX_KM = 20;
 /**
  * What the user sets for the planner as a whole: for this browser its language and its
  * light or dark colours, and for the account how wide routes are drawn, how they get
- * their colours, and how far from a route a place of each kind is still shown along it.
+ * their colours, how opaque a ride is in the overlay of all rides, and how far from a
+ * route a place of each kind is still shown along it.
  */
 export function PreferencesDialog() {
   const save = async (form: FormData) => {
@@ -25,6 +26,7 @@ export function PreferencesDialog() {
       placeReachM: Object.fromEntries(reaches),
       routeWidth: Math.max(ROUTE_WIDTHS.min, Math.min(ROUTE_WIDTHS.max, Number(form.get('routeWidth')) || DEFAULT_ROUTE_WIDTH)),
       routeColoring: form.get('routeColoring') === 'route' ? 'route' : 'day',
+      ridesOpacity: Math.max(0.05, Math.min(1, Number(form.get('ridesOpacity')) / 100 || DEFAULT_RIDES_OPACITY)),
     });
     // Last, since another language loads the page again.
     const chosen = form.get('language') as Language | 'auto';
@@ -56,6 +58,10 @@ export function PreferencesDialog() {
               <option value="day">{t('One color for each day')}</option>
               <option value="route">{t('One color for each route')}</option>
             </select>
+          </label>
+          <label>
+            {t('My rides on the map: how opaque one ride is, in percent')}
+            <input type="range" name="ridesOpacity" min={5} max={100} step={5} value={Math.round(ridesOpacity() * 100)} />
           </label>
           <fieldset class="choices place-reaches">
             <legend>{t('Places along a route: how far from it, in km')}</legend>

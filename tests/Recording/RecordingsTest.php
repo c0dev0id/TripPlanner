@@ -71,6 +71,25 @@ final class RecordingsTest extends TestCase
         self::assertNull($bare->startedAt);
     }
 
+    public function testGivesEveryRideOfTheUsersWithItsLineByWhenItBegan(): void
+    {
+        $other = $this->trips->create($this->userId, 'Vosges', $this->now)->id;
+        $this->documents->save($this->userId, $other, TripDocumentValidator::validated(['name' => 'Vosges', 'days' => [TripFixture::day('other-day')]] + TripFixture::document()), 1, $this->now);
+        $theirs = (new Users($this->db))->create('other@example.com', 'correct horse battery', $this->now)->id;
+        $theirTrip = $this->trips->create($theirs, 'Theirs', $this->now)->id;
+        $this->documents->save($theirs, $theirTrip, TripDocumentValidator::validated(['days' => [TripFixture::day('their-day')]] + TripFixture::document()), 1, $this->now);
+
+        $this->recordings->add($this->userId, $this->tripId, 'day1', 'Later', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], '2027-06-13T08:00:00Z')), $this->now);
+        $this->recordings->add($this->userId, $other, 'other-day', 'Earlier', gzencode(self::gpx([[7.1, 48.0], [7.2, 48.1]], '2027-06-12T08:00:00Z')), $this->now);
+        $this->recordings->add($this->userId, $this->tripId, 'day1', 'No points', gzencode('<gpx><trk/></gpx>'), $this->now);
+        $this->recordings->add($theirs, $theirTrip, 'their-day', 'Not mine', gzencode(self::gpx([[9.0, 47.0], [9.1, 47.1]], '2027-06-11T08:00:00Z')), $this->now);
+
+        $rides = $this->recordings->rides($this->userId);
+        self::assertSame([['Earlier', '2027-06-12T08:00:00Z', 'Vosges'], ['Later', '2027-06-13T08:00:00Z', 'Alps']], array_map(fn (array $ride) => [$ride['name'], $ride['startedAt'], $ride['trip']], $rides));
+        self::assertEqualsWithDelta([[7.1, 48.0], [7.2, 48.1]], Polyline::decode($rides[0]['line']), 1e-6);
+        self::assertEqualsWithDelta(11_120, $rides[1]['distanceM'], 10);
+    }
+
     public function testKeepsAFileOnceWhereAskedTo(): void
     {
         $gzip = gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], null));

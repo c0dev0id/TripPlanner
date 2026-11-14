@@ -239,6 +239,16 @@ entries at the end of their section.
   what would be refused. The import dialog lost planning material as a way to organize
   a tree: among collections a picked folder is imported as a dropped one is, elsewhere
   it can only make trips.
+- **The overlay of all rides draws the lines that are kept already.** A recording's line
+  is kept beside its file, thinned to ten metres, for the lookup and the duplicates.
+  Measured on 164 of the user's rides, 10,800 km, those lines are 51,000 points and a
+  quarter of a megabyte; five hundred rides stay under one. So the overlay is one
+  request for all of them and one line layer: no grid of counts, nothing computed
+  ahead and nothing to update by hand, which were the plan before the numbers were in.
+  How often a road was ridden is what overlapping translucent lines add up to. It is
+  an overlay like the roadworks, read by the map itself and anew whenever it is
+  switched on, and drawn in a colour apart from the base maps' roads and the routes'
+  palette.
 - **A day's media are journal entries of another kind.** A day already took a PDF, as a
   journal entry with a file; what was missing was a list of its own in the day's pane,
   links, and collections, which have no journal. A table of its own would have needed

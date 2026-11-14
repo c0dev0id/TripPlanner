@@ -439,6 +439,14 @@
   Switzerland, the Netherlands and Belgium as mintelonline.de collects them, a motorcycle
   in a red ring where one begins, where a tap says when and for whom it holds. Signs and
   lines of both grow with the zoom, so that they stay wider than the road under them.
+- "My rides", a third overlay: every recording the user keeps, on whatever day or
+  waiting in the folder for recordings, drawn at once as a translucent line each. A
+  road ridden often is drawn darker, one ridden once lightly, and where nothing is
+  drawn the user has not been. A tap on a line says which ride it is: its name, when
+  it began, its length and the trip or collection it is kept in. The overlay is under
+  the trip's own lines, so that it can stay on while planning, and how opaque one ride
+  is drawn is set in the preferences. It reads the rides anew each time it is switched
+  on.
 - Places on the map from the planner's own store of OpenStreetMap data: fuel stations,
   hotels, restaurants, cafes, viewpoints and parking, each kind a layer to tick in the
   list the places icon of the panel opens. Shown are those along the selected day's routes,
@@ -448,7 +456,7 @@
   the areas to pick from when run without one, and names those of which a kind of place
   is behind the others or missing.
 - Preferences in one dialog. Kept with the account: how wide route lines are drawn, how
-  routes get their colours, and how far from a route a place of each kind is still shown
+  routes get their colours, how opaque a ride is in the overlay of all rides, and how far from a route a place of each kind is still shown
   along it, 200 m to begin with. Kept in the browser: the language, and light or dark
   colours.
 - Route lines in colour: one colour for each day, or the palette's next colour for each

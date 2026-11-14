@@ -31,6 +31,22 @@ final class Recordings
     }
 
     /**
+     * Every recording of the user's that has a line, by when it began, with the trip or
+     * collection it is kept in: the rides the map draws all at once.
+     *
+     * @return list<array{name: string, startedAt: ?string, distanceM: int, line: string, trip: string}>
+     */
+    public function rides(int $userId): array
+    {
+        $statement = $this->db->prepare(
+            "SELECT r.name, r.started_at, r.distance_m, r.line, t.name AS trip FROM recordings r JOIN days d ON d.id = r.day_id JOIN trips t ON t.id = d.trip_id
+             WHERE t.user_id = ? AND r.line <> '' ORDER BY r.started_at, r.id",
+        );
+        $statement->execute([$userId]);
+        return array_map(fn (array $row) => ['name' => $row['name'], 'startedAt' => $row['started_at'], 'distanceM' => (int) $row['distance_m'], 'line' => $row['line'], 'trip' => $row['trip']], $statement->fetchAll());
+    }
+
+    /**
      * A new recording on the day of the user's trip, with what is read from its file
      * beside it; null when the user has no such day. With `$unlessKept`, a file the user
      * keeps already, on whatever day, is not kept again.

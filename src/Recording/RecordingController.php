@@ -6,6 +6,7 @@ namespace Planner\Recording;
 
 use DateTimeImmutable;
 use Planner\Account\CurrentUser;
+use Planner\Export\Polyline;
 use Planner\Http\Json;
 use Planner\Name;
 use Planner\Trip\TripDocuments;
@@ -31,6 +32,17 @@ final class RecordingController
     {
         $recordings = $this->recordings->listFor($this->currentUser->get()->id, (int) $args['id']);
         return $recordings === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $recordings);
+    }
+
+    /** Every ride of the user's as GeoJSON, a line each with its name, when it began, its length and where it is kept: what the map's overlay of the rides reads. */
+    public function rides(Request $request, Response $response): Response
+    {
+        $features = array_map(fn (array $ride) => [
+            'type' => 'Feature',
+            'properties' => ['name' => $ride['name'], 'startedAt' => $ride['startedAt'], 'distanceM' => $ride['distanceM'], 'trip' => $ride['trip']],
+            'geometry' => ['type' => 'LineString', 'coordinates' => Polyline::decode($ride['line'])],
+        ], $this->recordings->rides($this->currentUser->get()->id));
+        return Json::of($response, ['type' => 'FeatureCollection', 'features' => $features]);
     }
 
     /**
