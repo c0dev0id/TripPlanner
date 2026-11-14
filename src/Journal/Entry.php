@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Planner\Journal;
 
-/** A journal entry: a note, a file, or both, on the trip or one of its parts; its public properties are its JSON. */
+/**
+ * A journal entry: a note, a file, or both, on the trip or one of its parts. Or, of the
+ * kind `media`, something kept with a day: a file or a link (`url`), named by `text`.
+ * Its public properties are its JSON.
+ */
 final readonly class Entry
 {
     /**
@@ -23,6 +27,8 @@ final readonly class Entry
         public ?string $takenAt,
         public ?array $lngLat,
         public string $createdAt,
+        public string $kind,
+        public ?string $url,
     ) {
     }
 
@@ -39,6 +45,8 @@ final readonly class Entry
             $row['taken_at'],
             $row['lng'] === null ? null : [(float) $row['lng'], (float) $row['lat']],
             $row['created_at'],
+            $row['kind'],
+            $row['url'],
         );
     }
 }

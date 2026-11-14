@@ -36,6 +36,7 @@ final class EntryFiles
             ->withBody((new StreamFactory())->createStreamFromFile($path))
             ->withHeader('Content-Type', $entry->file['mediaType'])
             ->withHeader('Content-Disposition', "$disposition; filename*=UTF-8''" . rawurlencode($entry->file['name']))
+            ->withHeader('X-Content-Type-Options', 'nosniff')
             ->withHeader('Cache-Control', self::CACHE);
     }
 

@@ -90,7 +90,7 @@ final class TripDocumentsTest extends TestCase
         self::assertSame([2, 3], [$first['routes'], $first['stops']]);
         // The route's two legs as the crow flies, 89.3 km, and the track south of it, 23.5 km.
         self::assertSame(112_777, $first['distanceM']);
-        self::assertSame(['id' => 'empty', 'name' => '', 'date' => null, 'routes' => 0, 'stops' => 0, 'recordings' => 0, 'distanceM' => 0, 'lines' => []], $outlines[$this->tripId][count($document['days']) - 1]);
+        self::assertSame(['id' => 'empty', 'name' => '', 'date' => null, 'routes' => 0, 'stops' => 0, 'recordings' => 0, 'media' => 0, 'distanceM' => 0, 'lines' => []], $outlines[$this->tripId][count($document['days']) - 1]);
         self::assertSame([], $this->documents->outlines($this->userId + 1));
     }
 

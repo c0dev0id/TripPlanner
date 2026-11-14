@@ -7,6 +7,7 @@ namespace Planner\Export;
 use DateTimeImmutable;
 use Planner\Http\Json;
 use Planner\Journal\Entries;
+use Planner\Journal\Entry;
 use Planner\Journal\FileStore;
 use Planner\Recording\Recordings;
 use Planner\Trip\TripDocuments;
@@ -61,6 +62,7 @@ final class TripArchive
                 'format' => 'trip-planner',
                 'trip' => array_intersect_key($document, array_flip(['kind', 'name', 'description', 'state', 'days'])),
                 'journal' => $this->addJournal($zip, $folder, $userId, $tripId),
+                'media' => $this->addMedia($zip, $folder, $userId, $tripId),
                 'recordings' => $this->addRecordings($addText, $folder, $userId, $tripId),
             ]));
             foreach (array_keys($document['days']) as $index) {
@@ -72,19 +74,39 @@ final class TripArchive
         return $names;
     }
 
+    /** Adds an entry's file, where it has one, under `$dir` of the trip's folder, and gives its path there. */
+    private function addFile(ZipArchive $zip, string $folder, string $dir, Entry $entry): ?string
+    {
+        $stored = $this->files->path($entry->tripId, $entry->id);
+        if ($entry->file === null || !is_file($stored)) {
+            return null;
+        }
+        $path = "$dir/$entry->id-" . TripGpx::fileName($entry->file['name']);
+        $zip->addFile($stored, "$folder/$path");
+        // Photos and documents are compressed as they are.
+        $zip->setCompressionName("$folder/$path", ZipArchive::CM_STORE);
+        return $path;
+    }
+
+    /** Adds the files kept with the trip's days and gives its media, each naming its file in the folder or its link. */
+    private function addMedia(ZipArchive $zip, string $folder, int $userId, int $tripId): array
+    {
+        $media = [];
+        foreach ($this->entries->listFor($userId, $tripId, Entries::MEDIA) as $entry) {
+            $path = $this->addFile($zip, $folder, 'media', $entry);
+            if ($path !== null || $entry->url !== null) {
+                $media[] = ['dayId' => $entry->dayId, 'name' => $entry->text, 'url' => $entry->url, 'file' => $path, 'fileName' => $path === null ? null : $entry->file['name']];
+            }
+        }
+        return $media;
+    }
+
     /** Adds the files of the trip's journal and gives its entries, each naming its file in the folder. */
     private function addJournal(ZipArchive $zip, string $folder, int $userId, int $tripId): array
     {
         $journal = [];
         foreach ($this->entries->listFor($userId, $tripId) as $entry) {
-            $path = null;
-            $stored = $this->files->path($tripId, $entry->id);
-            if ($entry->file !== null && is_file($stored)) {
-                $path = "journal/$entry->id-" . TripGpx::fileName($entry->file['name']);
-                $zip->addFile($stored, "$folder/$path");
-                // Photos are compressed as they are.
-                $zip->setCompressionName("$folder/$path", ZipArchive::CM_STORE);
-            }
+            $path = $this->addFile($zip, $folder, 'journal', $entry);
             $journal[] = [
                 'dayId' => $entry->dayId,
                 'stopId' => $entry->stopId,

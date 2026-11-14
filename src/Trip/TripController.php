@@ -7,6 +7,7 @@ namespace Planner\Trip;
 use DateTimeImmutable;
 use Planner\Account\CurrentUser;
 use Planner\Http\Json;
+use Planner\Journal\Entries;
 use Planner\Journal\FileStore;
 use Planner\Name;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -18,6 +19,7 @@ final class TripController
     public function __construct(
         private readonly Trips $trips,
         private readonly TripDocuments $documents,
+        private readonly Entries $entries,
         private readonly FileStore $files,
         private readonly CurrentUser $currentUser,
     ) {
@@ -56,11 +58,19 @@ final class TripController
         return Json::of($response->withStatus(201), $trip);
     }
 
-    /** A copy of the trip with all its days, named after it, in its folder; the answer is the copy's id. */
+    /** A copy of the trip with all its days and their media, named after it, in its folder; the answer is the copy's id. */
     public function duplicate(Request $request, Response $response, array $args): Response
     {
-        $copyId = $this->documents->copy($this->currentUser->get()->id, (int) $args['id'], new DateTimeImmutable());
-        return $copyId === null ? Json::error($response, 404, 'No such trip.') : Json::of($response->withStatus(201), ['id' => $copyId]);
+        $tripId = (int) $args['id'];
+        $now = new DateTimeImmutable();
+        $copyId = $this->documents->copy($this->currentUser->get()->id, $tripId, $now);
+        if ($copyId === null) {
+            return Json::error($response, 404, 'No such trip.');
+        }
+        foreach ($this->entries->copyMediaOfTrip($tripId, $copyId, $now) as [$entry, $copy]) {
+            $this->files->copy($tripId, $entry->id, $copyId, $copy->id);
+        }
+        return Json::of($response->withStatus(201), ['id' => $copyId]);
     }
 
     /** Merges the trips `tripIds` lists into this one (see TripDocuments::merge) and moves their journal files; the answer is its new version. */
@@ -151,7 +161,14 @@ final class TripController
         } catch (VersionConflict $conflict) {
             return Json::of($response->withStatus(409), ['error' => t($conflict->getMessage()), 'version' => $conflict->currentVersion]);
         }
-        return $saved === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, ['version' => $saved]);
+        if ($saved === null) {
+            return Json::error($response, 404, 'No such trip.');
+        }
+        // A day the document no longer holds takes its media along.
+        foreach ($this->entries->takeMediaWithoutDay((int) $args['id']) as $entry) {
+            $this->files->delete($entry->tripId, $entry->id);
+        }
+        return Json::of($response, ['version' => $saved]);
     }
 
     /** Deletes the trip with everything in it, its journal's files included. */

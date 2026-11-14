@@ -57,6 +57,9 @@ final class TripArchiveTest extends TestCase
         mkdir("$this->dir/$tripId", 0750, true);
         file_put_contents($files->path($tripId, $photo->id), 'photo');
         $entries->add($userId, $tripId, [], 'A note', null, $now);
+        $ticket = $entries->addMedia($userId, $tripId, $dayId, 'Ferry', ['name' => 'ferry.pdf', 'mediaType' => 'application/pdf', 'size' => 3], null, $now);
+        file_put_contents($files->path($tripId, $ticket->id), 'pdf');
+        $entries->addMedia($userId, $tripId, $dayId, 'Hotel', null, 'https://example.org/hotel', $now);
         $recording = $recordings->add($userId, $tripId, $dayId, 'Morning ride', gzencode('<gpx><trk/></gpx>'), $now);
         $sameName = $trips->create($userId, 'Alps', $now)->id;
         $foreign = $trips->create($otherId, 'Theirs', $now)->id;
@@ -72,6 +75,12 @@ final class TripArchiveTest extends TestCase
         $path = "journal/$photo->id-pass-höhe.jpg";
         self::assertSame([$dayId, 'At the pass', $path, 'pass höhe.jpg', '2026-11-11T10:00:00Z'], [$archive['journal'][0]['dayId'], $archive['journal'][0]['text'], $archive['journal'][0]['file'], $archive['journal'][0]['fileName'], $archive['journal'][0]['createdAt']]);
         self::assertNull($archive['journal'][1]['file']);
+        self::assertCount(2, $archive['journal']);
+        self::assertSame([
+            ['dayId' => $dayId, 'name' => 'Ferry', 'url' => null, 'file' => "media/$ticket->id-ferry.pdf", 'fileName' => 'ferry.pdf'],
+            ['dayId' => $dayId, 'name' => 'Hotel', 'url' => 'https://example.org/hotel', 'file' => null, 'fileName' => null],
+        ], $archive['media']);
+        self::assertSame('pdf', $zip->getFromName("Alps/media/$ticket->id-ferry.pdf"));
         self::assertSame('photo', $zip->getFromName("Alps/$path"));
         self::assertSame([['dayId' => $dayId, 'name' => 'Morning ride', 'file' => "recordings/$recording->id-Morning-ride.gpx"]], $archive['recordings']);
         self::assertSame('<gpx><trk/></gpx>', $zip->getFromName("Alps/recordings/$recording->id-Morning-ride.gpx"));

@@ -39,7 +39,8 @@ final class TripDocuments
         $outlines = [];
         $days = 'SELECT d.trip_id, d.id, d.name, d.date, d.outline,
                         (SELECT COUNT(*) FROM routes WHERE day_id = d.id) AS routes, (SELECT COUNT(*) FROM stops WHERE day_id = d.id) AS stops,
-                        (SELECT COUNT(*) FROM recordings WHERE day_id = d.id) AS recordings
+                        (SELECT COUNT(*) FROM recordings WHERE day_id = d.id) AS recordings,
+                        (SELECT COUNT(*) FROM entries WHERE day_id = d.id AND kind = \'media\') AS media
                  FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.user_id = ? ORDER BY d.trip_id, d.position';
         foreach ($this->rows($days, $userId) as $day) {
             $outlines[(int) $day['trip_id']][] = [
@@ -49,6 +50,7 @@ final class TripDocuments
                 'routes' => (int) $day['routes'],
                 'stops' => (int) $day['stops'],
                 'recordings' => (int) $day['recordings'],
+                'media' => (int) $day['media'],
             ] + Outline::read($day['outline']);
         }
         return $outlines;

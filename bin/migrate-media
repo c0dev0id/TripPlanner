@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Planner\Database;
+use Planner\Kernel;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Run once on a database made before a day could keep additional media, then delete this file.
+$root = dirname(__DIR__);
+$db = Kernel::container($root)->get(PDO::class);
+$db->beginTransaction();
+$db->exec("ALTER TABLE entries ADD COLUMN kind TEXT NOT NULL DEFAULT 'journal' CHECK (kind IN ('journal', 'media'))");
+$db->exec('ALTER TABLE entries ADD COLUMN url TEXT');
+Database::applySchema($db, $root . '/db/schema.sql');
+$db->commit();
+$entries = $db->query("SELECT COUNT(*) FROM entries WHERE kind = 'journal'")->fetchColumn();
+echo "The journal's $entries entries are of the journal's kind, and days can keep media beside them.\n";

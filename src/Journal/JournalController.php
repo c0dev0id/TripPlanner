@@ -41,11 +41,9 @@ final class JournalController
             return Json::error($response, 422, 'The text is too long.');
         }
         $upload = $request->getUploadedFiles()['file'] ?? null;
-        if ($upload !== null && !$upload instanceof UploadedFileInterface) {
-            return Json::error($response, 422, 'One file at a time.');
-        }
-        if ($upload !== null && $upload->getError() !== UPLOAD_ERR_OK) {
-            return Json::error($response, 422, $upload->getError() === UPLOAD_ERR_INI_SIZE || $upload->getError() === UPLOAD_ERR_FORM_SIZE ? 'The file is too large for the server.' : 'The upload failed.');
+        $problem = FileStore::problemOf($upload);
+        if ($problem !== null) {
+            return Json::error($response, 422, $problem);
         }
         if ($upload === null && $text === '') {
             return Json::error($response, 422, 'An entry needs a text or a file.');
@@ -121,22 +119,10 @@ final class JournalController
         return [$lng, $lat];
     }
 
-    /**
-     * What the entry keeps about the upload: its name, its type as its content says (not as
-     * the browser claims), its size, and a photo's EXIF time and position, read from the
-     * upload where it still lies.
-     */
+    /** What the entry keeps about the upload, with a photo's EXIF time and position, read from the upload where it still lies. */
     private static function fileOf(UploadedFileInterface $upload): array
     {
-        $stream = $upload->getStream();
-        $type = (new \finfo(FILEINFO_MIME_TYPE))->buffer((string) $stream->read(8192));
-        $stream->rewind();
-        $mediaType = $type === false ? 'application/octet-stream' : $type;
-        return [
-            'name' => mb_substr(basename($upload->getClientFilename() ?? 'file'), 0, 200),
-            'mediaType' => $mediaType,
-            'size' => (int) $upload->getSize(),
-            ...Exif::read((string) $stream->getMetadata('uri'), $mediaType),
-        ];
+        $file = FileStore::describe($upload);
+        return [...$file, ...Exif::read((string) $upload->getStream()->getMetadata('uri'), $file['mediaType'])];
     }
 }

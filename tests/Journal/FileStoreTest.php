@@ -65,6 +65,34 @@ final class FileStoreTest extends TestCase
         $this->files->moveAll(9, 7);
     }
 
+    public function testMovesAndCopiesAnEntrysFileWithItsPreview(): void
+    {
+        $this->files->store($this->upload(self::jpeg(64, 48)), 8, 3);
+        $this->files->preview(8, 3, 'image/jpeg');
+        $this->files->copy(8, 3, 7, 5);
+        self::assertSame(['5', '5.preview.jpg'], array_values(array_diff(scandir("$this->dir/7"), ['.', '..'])));
+        self::assertFileEquals("$this->dir/8/3", "$this->dir/7/5");
+        $this->files->move(8, 3, 9);
+        self::assertSame(['3', '3.preview.jpg'], array_values(array_diff(scandir("$this->dir/9"), ['.', '..'])));
+        self::assertSame([], array_values(array_diff(scandir("$this->dir/8"), ['.', '..'])));
+        $this->files->move(9, 3, 9);
+        self::assertFileExists("$this->dir/9/3");
+        $this->files->deleteAll(7);
+        $this->files->deleteAll(8);
+        $this->files->deleteAll(9);
+    }
+
+    public function testSaysWhatAnUploadIsByItsContentAndWhyOneCannotBeTaken(): void
+    {
+        $upload = $this->upload(self::jpeg(8, 8));
+        self::assertSame(['name' => 'photo.jpg', 'mediaType' => 'image/jpeg', 'size' => strlen(self::jpeg(8, 8))], FileStore::describe($upload));
+        self::assertNull(FileStore::problemOf($upload));
+        self::assertNull(FileStore::problemOf(null));
+        self::assertSame('One file at a time.', FileStore::problemOf([$upload]));
+        self::assertSame('The file is too large for the server.', FileStore::problemOf(new UploadedFile('', 'big.pdf', 'application/pdf', 0, UPLOAD_ERR_INI_SIZE)));
+        unlink((string) $upload->getStream()->getMetadata('uri'));
+    }
+
     private function upload(string $content): UploadedFile
     {
         $path = tempnam(sys_get_temp_dir(), 'upload');

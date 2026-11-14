@@ -55,7 +55,7 @@ final class EntriesTest extends TestCase
         self::assertNull($this->entries->add($this->otherUserId, $this->tripId, [], 'Mine', null, $this->now));
         self::assertNull($this->entries->add($this->userId, $this->tripId, ['dayId' => 'nope'], 'Nowhere', null, $this->now));
         self::assertNull($this->entries->find($this->userId, $this->tripId + 1, $note->id));
-        self::assertSame('{"id":' . $note->id . ',"tripId":' . $this->tripId . ',"dayId":null,"stopId":null,"routeId":null,"text":"Packed the bags.","file":null,"takenAt":null,"lngLat":null,"createdAt":"2026-10-27T10:00:00Z"}', json_encode($note));
+        self::assertSame('{"id":' . $note->id . ',"tripId":' . $this->tripId . ',"dayId":null,"stopId":null,"routeId":null,"text":"Packed the bags.","file":null,"takenAt":null,"lngLat":null,"createdAt":"2026-10-27T10:00:00Z","kind":"journal","url":null}', json_encode($note));
     }
 
     public function testPlacesAPhotoOnTheDayOfItsDate(): void
@@ -103,6 +103,82 @@ final class EntriesTest extends TestCase
         $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated($document), 2, $this->now);
         self::assertNull($this->entries->find($this->userId, $this->tripId, $onStop->id)->stopId);
         self::assertSame('Great cake', $this->entries->find($this->userId, $this->tripId, $onStop->id)->text);
+    }
+
+    public function testKeepsADaysMediaApartFromTheJournalAndFromASharedTrip(): void
+    {
+        $note = $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], 'Packed the bags.', null, $this->now);
+        $ticket = $this->entries->addMedia($this->userId, $this->tripId, 'day1', '', ['name' => 'ferry.pdf', 'mediaType' => 'application/pdf', 'size' => 99], null, $this->now);
+        $link = $this->entries->addMedia($this->userId, $this->tripId, 'day1', 'Hotel', null, 'https://example.org/hotel', $this->now);
+        self::assertSame(['media', 'day1', '', 'ferry.pdf', null], [$ticket->kind, $ticket->dayId, $ticket->text, $ticket->file['name'], $ticket->url]);
+        self::assertSame(['media', 'Hotel', null, 'https://example.org/hotel'], [$link->kind, $link->text, $link->file, $link->url]);
+        self::assertSame([$note->id], array_map(fn ($e) => $e->id, $this->entries->listFor($this->userId, $this->tripId)));
+        self::assertSame([$ticket->id, $link->id], array_map(fn ($e) => $e->id, $this->entries->listFor($this->userId, $this->tripId, Entries::MEDIA)));
+        self::assertNull($this->entries->find($this->userId, $this->tripId, $ticket->id));
+        self::assertSame($ticket->id, $this->entries->find($this->userId, $this->tripId, $ticket->id, Entries::MEDIA)->id);
+        self::assertNull($this->entries->addMedia($this->userId, $this->tripId, 'nope', '', null, 'https://example.org', $this->now));
+        self::assertNull($this->entries->addMedia($this->otherUserId, $this->tripId, 'day1', '', null, 'https://example.org', $this->now));
+        self::assertNull($this->entries->delete($this->userId, $this->tripId, $ticket->id));
+        $token = (new Trips($this->db, new Folders($this->db)))->share($this->userId, $this->tripId);
+        self::assertSame([$note->id], array_map(fn ($e) => $e->id, $this->entries->listShared($token)));
+        self::assertNull($this->entries->findShared($token, $ticket->id));
+    }
+
+    public function testNamesMediaAnewAndGivesOnlyALinkAnAddress(): void
+    {
+        $ticket = $this->entries->addMedia($this->userId, $this->tripId, 'day1', '', ['name' => 'ferry.pdf', 'mediaType' => 'application/pdf', 'size' => 99], null, $this->now);
+        $link = $this->entries->addMedia($this->userId, $this->tripId, 'day1', 'Hotel', null, 'https://example.org/hotel', $this->now);
+        self::assertTrue($this->entries->changeMedia($this->userId, $this->tripId, $ticket->id, 'Ferry', 'https://example.org/no'));
+        self::assertTrue($this->entries->changeMedia($this->userId, $this->tripId, $link->id, 'Hotel Post', 'https://example.org/post'));
+        self::assertTrue($this->entries->changeMedia($this->userId, $this->tripId, $link->id, 'Hotel Post', null));
+        self::assertFalse($this->entries->changeMedia($this->otherUserId, $this->tripId, $link->id, 'Theirs', null));
+        $media = $this->entries->listFor($this->userId, $this->tripId, Entries::MEDIA);
+        self::assertSame([['Ferry', null], ['Hotel Post', 'https://example.org/post']], array_map(fn ($e) => [$e->text, $e->url], $media));
+    }
+
+    public function testMovesAndCopiesMediaToADayOfAnotherTripOfTheUsers(): void
+    {
+        $trips = new Trips($this->db, new Folders($this->db));
+        $otherTrip = $trips->create($this->userId, 'Vosges', $this->now)->id;
+        $this->documents->save($this->userId, $otherTrip, TripDocumentValidator::validated(['name' => 'Vosges', 'days' => [TripFixture::day('other-day')]] + TripFixture::document()), 1, $this->now);
+        $theirs = $trips->create($this->otherUserId, 'Theirs', $this->now)->id;
+        $this->documents->save($this->otherUserId, $theirs, TripDocumentValidator::validated(['days' => [TripFixture::day('their-day')]] + TripFixture::document()), 1, $this->now);
+        $ticket = $this->entries->addMedia($this->userId, $this->tripId, 'day1', 'Ferry', ['name' => 'ferry.pdf', 'mediaType' => 'application/pdf', 'size' => 99], null, $this->now);
+
+        $copy = $this->entries->copyMedia($this->userId, $this->tripId, $ticket->id, 'other-day', $this->now);
+        self::assertSame([$otherTrip, 'other-day', 'Ferry', 'ferry.pdf'], [$copy->tripId, $copy->dayId, $copy->text, $copy->file['name']]);
+        self::assertNotSame($ticket->id, $copy->id);
+        self::assertNull($this->entries->copyMedia($this->userId, $this->tripId, $ticket->id, 'their-day', $this->now));
+        self::assertNull($this->entries->moveMedia($this->userId, $this->tripId, $ticket->id, 'their-day'));
+        self::assertNull($this->entries->moveMedia($this->otherUserId, $this->tripId, $ticket->id, 'their-day'));
+
+        $moved = $this->entries->moveMedia($this->userId, $this->tripId, $ticket->id, 'other-day');
+        self::assertSame([$ticket->id, $otherTrip, 'other-day'], [$moved->id, $moved->tripId, $moved->dayId]);
+        self::assertSame([], $this->entries->listFor($this->userId, $this->tripId, Entries::MEDIA));
+        self::assertCount(2, $this->entries->listFor($this->userId, $otherTrip, Entries::MEDIA));
+    }
+
+    public function testTakesTheMediaOfADayThatIsGoneAndCopiesThoseOfATripsDaysToItsCopy(): void
+    {
+        $document = TripFixture::document();
+        $document['days'][] = TripFixture::day('day2');
+        $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated($document), 2, $this->now);
+        $kept = $this->entries->addMedia($this->userId, $this->tripId, 'day1', 'Map', ['name' => 'map.pdf', 'mediaType' => 'application/pdf', 'size' => 5], null, $this->now);
+        $lost = $this->entries->addMedia($this->userId, $this->tripId, 'day2', 'Ferry', null, 'https://example.org/ferry', $this->now);
+        $note = $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day2'], 'A note', null, $this->now);
+
+        $copyId = $this->documents->copy($this->userId, $this->tripId, $this->now);
+        $copies = $this->entries->copyMediaOfTrip($this->tripId, $copyId, $this->now);
+        self::assertSame([[$kept->id, 'Map'], [$lost->id, 'Ferry']], array_map(fn ($pair) => [$pair[0]->id, $pair[1]->text], $copies));
+        $copiedDays = array_column($this->documents->load($this->userId, $copyId)['days'], 'id');
+        self::assertSame($copiedDays, array_map(fn ($pair) => $pair[1]->dayId, $copies));
+        self::assertSame([], $this->entries->listFor($this->userId, $copyId));
+
+        self::assertSame([], $this->entries->takeMediaWithoutDay($this->tripId));
+        $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated(TripFixture::document()), 3, $this->now);
+        self::assertSame([$lost->id], array_map(fn ($e) => $e->id, $this->entries->takeMediaWithoutDay($this->tripId)));
+        self::assertSame([$kept->id], array_map(fn ($e) => $e->id, $this->entries->listFor($this->userId, $this->tripId, Entries::MEDIA)));
+        self::assertNull($this->entries->find($this->userId, $this->tripId, $note->id)->dayId);
     }
 
     public function testListsTheEntriesOfASharedTrip(): void
