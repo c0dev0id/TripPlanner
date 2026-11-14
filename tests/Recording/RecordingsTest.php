@@ -115,6 +115,12 @@ final class RecordingsTest extends TestCase
         $untimed = $this->recordings->keep($this->userId, 'No times', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], null)), $this->now)['recording'];
         $this->recordings->link($this->userId, $rides[1]->id, 'day1');
 
+        self::assertSame([['startedAt' => '2027-06-12T11:00:00Z', 'pauseS' => 10_800, 'distanceM' => 0]], $this->recordings->joints($this->userId, [$rides[1]->id, $rides[0]->id]));
+        [$apart] = $this->recordings->joints($this->userId, [$rides[0]->id, $rides[3]->id]);
+        self::assertSame(['2027-06-13T08:00:00Z', 86_400], [$apart['startedAt'], $apart['pauseS']]);
+        self::assertEqualsWithDelta(22_240, $apart['distanceM'], 20);
+        self::assertNull($this->recordings->joints($this->userId, [$rides[0]->id, $untimed->id])[0]['pauseS']);
+        self::assertNull($this->recordings->joints($this->userId + 1, [$rides[0]->id, $rides[1]->id]));
         self::assertNull($this->recordings->merge($this->userId + 1, [$rides[0]->id, $rides[1]->id], $this->now));
         foreach ([[$rides[0]->id, $rides[2]->id], [$rides[0]->id, $untimed->id]] as $refused) {
             try {

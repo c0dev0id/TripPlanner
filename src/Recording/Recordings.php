@@ -7,6 +7,8 @@ namespace Planner\Recording;
 use DateTimeImmutable;
 use PDO;
 use Planner\Database;
+use Planner\Export\Polyline;
+use Planner\Export\Proximity;
 use Planner\Timestamp;
 
 /**
@@ -98,6 +100,38 @@ final class Recordings
     }
 
     /**
+     * Where the user's rides, in the order they began, would be joined by a merge: for
+     * each ride after the first, when it began, the seconds since the ride before it
+     * ended, null where a file tells no times, and the metres from where that one
+     * ended to where it begins. Null when the user lacks one of them.
+     *
+     * @param list<int> $ids
+     * @return ?list<array{startedAt: ?string, pauseS: ?int, distanceM: int}>
+     */
+    public function joints(int $userId, array $ids): ?array
+    {
+        $pieces = $this->pieces($userId, $ids);
+        if ($pieces === null) {
+            return null;
+        }
+        $joints = [];
+        $before = null;
+        foreach ($pieces as $piece) {
+            $summary = TrackSummary::of((string) gzdecode($piece['gpx']));
+            $line = Polyline::decode($summary->line);
+            if ($before !== null) {
+                $joints[] = [
+                    'startedAt' => $summary->startedAt,
+                    'pauseS' => $before['endedAt'] === null || $summary->startedAt === null ? null : strtotime($summary->startedAt) - strtotime($before['endedAt']),
+                    'distanceM' => $before['end'] === null || $line === [] ? 0 : (int) round(Proximity::between($before['end'], $line[0])),
+                ];
+            }
+            $before = ['endedAt' => $summary->endedAt, 'end' => $line === [] ? null : $line[count($line) - 1]];
+        }
+        return $joints;
+    }
+
+    /**
      * Merges rides of the user's that follow one another into one, named as the first:
      * their files joined in the order they began, on every day one of them was on. The
      * rides merged are deleted, and their files stay known as kept, as parts of the new
@@ -109,10 +143,8 @@ final class Recordings
     public function merge(int $userId, array $ids, DateTimeImmutable $now): ?int
     {
         $in = Database::placeholders($ids);
-        $statement = $this->db->prepare("SELECT r.name, r.started_at, r.gpx FROM recordings r WHERE r.user_id = ? AND r.id IN ($in) " . self::BY_START);
-        $statement->execute([$userId, ...$ids]);
-        $pieces = $statement->fetchAll();
-        if (count($pieces) !== count($ids)) {
+        $pieces = $this->pieces($userId, $ids);
+        if ($pieces === null) {
             return null;
         }
         $began = array_column($pieces, 'started_at');
@@ -185,6 +217,15 @@ final class Recordings
         $statement->execute([$recordingId, $userId]);
         $gzip = $statement->fetchColumn();
         return $gzip === false ? null : (string) $gzip;
+    }
+
+    /** @return ?list<array{name: string, started_at: ?string, gpx: string}> the user's rides of the ids with their files, in the order they began; null when the user lacks one */
+    private function pieces(int $userId, array $ids): ?array
+    {
+        $statement = $this->db->prepare('SELECT r.name, r.started_at, r.gpx FROM recordings r WHERE r.user_id = ? AND r.id IN (' . Database::placeholders($ids) . ') ' . self::BY_START);
+        $statement->execute([$userId, ...$ids]);
+        $pieces = $statement->fetchAll();
+        return count($pieces) === count($ids) ? $pieces : null;
     }
 
     /** Keeps a file as a new ride of the user's and gives its id. */

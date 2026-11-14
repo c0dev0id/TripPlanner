@@ -25,6 +25,8 @@ final readonly class TrackSummary
         public string $line,
         public int $distanceM,
         public ?string $startedAt,
+        /** The time of its last point that has one; not kept, read where a ride's end matters. */
+        public ?string $endedAt = null,
     ) {
     }
 
@@ -33,6 +35,7 @@ final readonly class TrackSummary
     {
         $points = [];
         $startedAt = null;
+        $lastTime = null;
         $pointDepth = null;
         $distanceM = 0.0;
         $errors = libxml_use_internal_errors(true);
@@ -50,14 +53,15 @@ final readonly class TrackSummary
                     $distanceM += $points === [] ? 0.0 : Proximity::between($points[count($points) - 1], $point);
                     $points[] = $point;
                 }
-            } elseif ($startedAt === null && $reader->localName === 'time' && $pointDepth !== null && $reader->depth === $pointDepth + 1) {
-                $startedAt = self::time($reader->readString());
+            } elseif ($reader->localName === 'time' && $pointDepth !== null && $reader->depth === $pointDepth + 1) {
+                $lastTime = $reader->readString();
+                $startedAt ??= self::time($lastTime);
             }
         }
         $reader->close();
         libxml_clear_errors();
         libxml_use_internal_errors($errors);
-        return new self(Polyline::encode(Thinning::toMetres($points, self::THIN_M)), (int) round($distanceM), $startedAt);
+        return new self(Polyline::encode(Thinning::toMetres($points, self::THIN_M)), (int) round($distanceM), $startedAt, $lastTime === null ? null : self::time($lastTime));
     }
 
     /** The time a point gives, in the database's form; null where it gives none that can be read. */

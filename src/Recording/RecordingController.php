@@ -95,6 +95,14 @@ final class RecordingController
         return $kept === null ? Json::error($response, 404, 'No such day.') : Json::of($response->withStatus($kept['added'] ? 201 : 200), $kept['recording']);
     }
 
+    /** Where the rides `ids=` (comma-separated) would be joined by a merge, with the pause and the way between them at each joint. */
+    public function joints(Request $request, Response $response): Response
+    {
+        $ids = array_values(array_unique(array_map('intval', explode(',', (string) ($request->getQueryParams()['ids'] ?? '')))));
+        $joints = $this->recordings->joints($this->currentUser->get()->id, $ids);
+        return $joints === null ? Json::error($response, 404, 'No such recording.') : Json::of($response, $joints);
+    }
+
     /**
      * Merges the user's rides `{ids}`, which follow one another, into one, which takes
      * their place on their days, and answers with it as the list of rides gives it.

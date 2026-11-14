@@ -93,6 +93,7 @@ final class Routes
             $api->get('/rides', [RecordingController::class, 'rides']);
             $api->get('/rides/lines', [RecordingController::class, 'rideLines']);
             $api->post('/rides', [RecordingController::class, 'add']);
+            $api->get('/rides/joints', [RecordingController::class, 'joints']);
             $api->post('/rides/merge', [RecordingController::class, 'merge']);
             $api->patch('/rides/{recording:[0-9]+}', [RecordingController::class, 'rename']);
             $api->delete('/rides/{recording:[0-9]+}', [RecordingController::class, 'delete']);
