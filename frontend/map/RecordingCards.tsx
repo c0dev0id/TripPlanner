@@ -1,7 +1,9 @@
+import { locale } from '../i18n/language';
 import { t } from '../i18n/t';
 import { createEffect, createMemo, createSignal, For, Match, Show, Switch } from 'solid-js';
 import uPlot from 'uplot';
 import { deltaSummaryOf, type Delta } from '../recording/delta';
+import { fileFacts, type FileFacts } from '../recording/file';
 import { DIFFERENCE_FIGURES, FIGURES, type Figure } from '../recording/figures';
 import { kmBySurface, NO_VALUE, SURFACES, surfaceLabel, type Coloring } from '../recording/lineColors';
 import { histogram, summaryOf, type Measures, type Metric } from '../recording/measures';
@@ -63,6 +65,25 @@ function coloringLabel(c: Coloring): string {
 
 const textOf = <T,>(value: T | undefined, text: (value: T) => string): string | undefined => (value === undefined ? undefined : text(value));
 
+/** What a point has in a file beside its position, where the planner has a word for the file's. */
+const VALUE_NAMES: Record<string, string> = { time: t('time'), ele: t('altitude') };
+
+/** The rows that say what the recording's file is like: what wrote it, how densely, in how many pieces, and what it tells of each point. */
+function fileRows(file: FileFacts): [string, string | undefined][] {
+  const density = [
+    file.points.toLocaleString(locale),
+    file.intervalS !== undefined && t('every {n} s', { n: (Math.round(file.intervalS * 10) / 10).toLocaleString(locale) }),
+    file.spacingM !== undefined && t('{distance} apart', { distance: distanceText(file.spacingM) }),
+  ];
+  const values = file.values.map(({ name, share }) => (share < 0.995 ? t('{name} ({share} %)', { name: VALUE_NAMES[name] ?? name, share: Math.round(share * 100) }) : (VALUE_NAMES[name] ?? name)));
+  return [
+    [t('Recorded by'), file.creator],
+    [t('Points'), density.filter(Boolean).join(' · ')],
+    [t('Segments'), file.segments > 1 ? String(file.segments) : undefined],
+    [t('Values'), values.length > 0 ? values.join(', ') : undefined],
+  ];
+}
+
 /** The recording in figures, what it is compared with, the colouring of its line with its legend; folded at first on a narrow screen. */
 function SummaryCard(props: { opened: Opened }) {
   const rows = createMemo((): [string, string | undefined][] => {
@@ -78,6 +99,7 @@ function SummaryCard(props: { opened: Opened }) {
       [t('Descent'), textOf(s.descentM, altitude.text)],
       [t('Altitude'), textOf(s.altitudeRange, ([low, high]) => `${altitude.text(low)} – ${altitude.text(high)}`)],
       [t('Lean'), textOf(s.leanRange, ([left, right]) => t('{left} to {right}', { left: lean.text(left), right: lean.text(right) }))],
+      ...fileRows(fileFacts(props.opened.track, s.distanceM)),
     ];
   });
   return (

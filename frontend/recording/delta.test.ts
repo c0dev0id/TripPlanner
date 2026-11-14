@@ -48,7 +48,7 @@ describe('valueAt', () => {
 describe('deltaToTrack', () => {
   const ride = (seconds: number, speed: number, lean: number[]) => {
     const points = east(5);
-    const measures = measuresOf({ points, series: { time: points.map((_, i) => i * seconds * 1000), speed: points.map(() => speed / 3.6), lean_angle: lean } });
+    const measures = measuresOf({ segments: 1, points, series: { time: points.map((_, i) => i * seconds * 1000), speed: points.map(() => speed / 3.6), lean_angle: lean } });
     return { points, measures };
   };
 
@@ -64,7 +64,7 @@ describe('deltaToTrack', () => {
   });
 
   it('counts the distance off the other and how far it went', () => {
-    const track = { points: [at(0), at(100), at(200, 300), at(300)], measures: measuresOf({ points: [at(0), at(100), at(200, 300), at(300)], series: {} }) };
+    const track = { points: [at(0), at(100), at(200, 300), at(300)], measures: measuresOf({ segments: 1, points: [at(0), at(100), at(200, 300), at(300)], series: {} }) };
     const s = deltaSummaryOf(track.measures, { offset: offsetsFrom(track.points, [east(4)]) });
     expect([Math.round(s.offM), Math.round(s.furthestM)]).toEqual([316, 300]);
   });

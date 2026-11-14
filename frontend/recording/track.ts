@@ -6,6 +6,10 @@ import type { LngLat } from '../model/trip';
 /** A recording as its GPX file holds it: the track's positions in order, and per point what the file measured there. */
 export interface RecordedTrack {
   name?: string;
+  /** What wrote the file, as the file says: an app or a device. */
+  creator?: string;
+  /** How many of its segments hold points: a recorder starts a new one where it lost the track or was paused. */
+  segments: number;
   points: LngLat[];
   /**
    * Values per point, aligned with `points`, null where a point lacks one: `time` in
@@ -37,9 +41,10 @@ export const recordingName = (xml: string): string | undefined => text(trackIn(x
  */
 export function readRecording(xml: string): RecordedTrack {
   const track = trackIn(xml);
-  const trackpoints = children(track, 'trkseg')
-    .flatMap((segment) => children(segment, 'trkpt'))
-    .filter((p) => position(p) !== undefined);
+  const segments = children(track, 'trkseg')
+    .map((segment) => children(segment, 'trkpt').filter((p) => position(p) !== undefined))
+    .filter((points) => points.length > 0);
+  const trackpoints = segments.flat();
   const series: RecordedTrack['series'] = {};
   const put = (key: string, i: number, value: number) => {
     (series[key] ??= new Array<number | null>(trackpoints.length).fill(null))[i] = value;
@@ -54,5 +59,5 @@ export function readRecording(xml: string): RecordedTrack {
       if (Number.isFinite(value)) put(leaf.localName, i, value);
     }
   });
-  return { name: text(track, 'name'), points: trackpoints.map((p) => position(p)!), series };
+  return { name: text(track, 'name'), creator: track.parentElement?.getAttribute('creator')?.trim() || undefined, segments: segments.length, points: trackpoints.map((p) => position(p)!), series };
 }
