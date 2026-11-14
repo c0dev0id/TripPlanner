@@ -279,8 +279,11 @@ entries at the end of their section.
   opened for its figures there as on a day: the recording opened, where it is none of
   the day shown, is the ride of that id from the list, so the cards, the colouring and
   the charts are the ones a day's recording has, and nothing of them knows the
-  difference but the comparison with a plan, which a ride on no day has none of. Its
-  track is kept only while it is shown, since the list is long. The rides are
+  difference but the comparison with a plan, which a ride on no day has none of. What
+  is on the map is typed as a ride that may have a day, not as a recording with an
+  empty one, so that what needs the day says so. Its track is kept only while it is
+  opened there, since the list is long; the tracks of the open trip's recordings stay.
+  The rides are
   shown in two lists, all of them in their tab and those on its days with the open
   trip, and either can change them; whatever does says so once it is done, once for
   all it did (`ridesChanged`), and both lists read again. A list that changed them
@@ -303,10 +306,17 @@ entries at the end of their section.
   and a trip that was copied would otherwise have every ride suggested again. The
   lookup is an object for this: the rides are sorted into days of riding and their
   lines read once for all days, where reading them anew for each day took a hundred
-  times as long. Measured on 348 rides and 500 days in one region, with no match,
-  it takes eleven seconds here and several times that on the server, so an answer
-  looks through the days for three seconds and the planner asks on from where it
-  stopped, saying how far it is; no library is then too large for a request.
+  times as long, and a day of riding without a ride that may be suggested is left
+  out before its lines are read. Whether a line comes near a point is asked of the
+  line cut into runs of 32 segments with their bounds (`LineReach`): a point walks
+  only the runs it can be near and stops at the first segment within reach, where
+  it walked the whole line before, which had to be thinned to be bearable. On 348
+  rides and 500 days in one region, with no match, that brought the run from eleven
+  seconds to one here; the server is several times slower and a library larger, so
+  an answer still looks through the days for three seconds at most and the planner
+  asks on from where it stopped, saying how far it is; no library is then too large
+  for a request. The order the suggestions are gone through in is the planner's:
+  an answer is a part, so the server does not sort.
 - **A recording's card says what its file is like.** The same ride recorded by two apps
   gives two files that differ in what they are worth: one has a point every second,
   another every three; one has lean and acceleration, another speed alone. The card

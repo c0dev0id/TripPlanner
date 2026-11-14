@@ -419,8 +419,8 @@
   Under them the card says what the file is like, to tell which of two recordings of
   one ride is the better: what wrote it, how many points it has, the usual time and
   the average way from one to the next, its segments where it has more than one, and
-  what it tells of each point, with the share of the points that have it where not
-  all do.
+  what it tells of each point, by the names the file has for it, with the share of the
+  points that have it where not all do.
   Its line can be coloured by speed, altitude, slope, lean angle or the road surface,
   with a legend; the surfaces, matched once by the routing server, are listed with the
   distance on each. A card along the bottom charts altitude and speed along the way, and
