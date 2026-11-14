@@ -296,7 +296,8 @@
   and collections, grouped as exact copies (the same points or the same line, whatever
   the date) or as the same ride kept twice (the same way within a kilometre at both
   ends, lengths within a tenth, nine in ten of each line's points within 75 m of the
-  other, on the same date or an undated day). What one day holds is left out, even
+  other, on the same date or an undated day). Like is compared with like: a planned
+  route and a track of the same way are never duplicates of each other. What one day holds is left out, even
   twice: its planned route, the tracks recorded of it and what else runs alike there
   belong together. Once the same ride is on another day as well, of the trip or of
   another, the group is listed whole. A click or a tap selects a route, Cmd or Ctrl one more,

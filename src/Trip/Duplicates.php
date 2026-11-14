@@ -13,12 +13,12 @@ use Planner\Export\RouteGeometry;
 
 /**
  * The routes of a user's library that are kept more than once: exact copies, with the same
- * points or the same line, and the same ride kept twice (from two apps, or as a planned
- * route and as the track recorded of it), which runs the same way at about the same length
- * along about the same line, on the same date or where a day has none. The same road
- * ridden on different dates is no duplicate. Nor is what one day holds: its planned route,
- * the tracks recorded of it and what else runs alike there belong together. Once anything
- * outside that day is the same ride too, the group is listed whole.
+ * points or the same line, and the same ride kept twice, as from two apps, which runs the
+ * same way at about the same length along about the same line, on the same date or where
+ * a day has none. Like is compared with like: a planned route and a track of the same way
+ * are a plan and a line, kept both on purpose, and never duplicates of each other. The
+ * same road ridden on different dates is no duplicate. Nor is what one day holds alone.
+ * Once anything outside that day is the same ride too, the group is listed whole.
  */
 final class Duplicates
 {
@@ -168,10 +168,11 @@ final class Duplicates
         return array_values(array_filter($groups, fn (array $members) => count($members) > 1));
     }
 
-    /** Whether two routes could be the same ride by their dates, lengths, boxes and ends. */
+    /** Whether two routes could be the same ride: both planned routes or both tracks, and alike by their dates, lengths, boxes and ends. */
     private static function alike(array $a, array $b): bool
     {
-        return ($a['date'] === null || $b['date'] === null || $a['date'] === $b['date'])
+        return $a['route']['kind'] === $b['route']['kind']
+            && ($a['date'] === null || $b['date'] === null || $a['date'] === $b['date'])
             && min($a['lengthM'], $b['lengthM']) >= self::LENGTH_RATIO * max($a['lengthM'], $b['lengthM'])
             && Proximity::overlap($a['box'], $b['box'])
             && Proximity::between($a['start'], $b['start']) <= self::ENDS_WITHIN_M

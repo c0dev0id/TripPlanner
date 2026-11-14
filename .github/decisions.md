@@ -911,6 +911,12 @@ entries at the end of their section.
   the light scheme and lightens it in the dark one, whatever that is, and no row needs
   a highlight of its own. A grip and a pad take none at all: they are handles of the
   row, not buttons.
+- **A route and a track are never duplicates of each other.** The report compared
+  lines whatever they were of, so a planned route and a track of the same way made a
+  group, and a comment in the code called that a ride kept twice. It was never asked
+  for and is wrong: one is a plan and the other a line, a trip often keeps both on
+  purpose, and holding a track against a route is what the recordings' lookup and
+  comparison are for. Only routes are compared with routes and tracks with tracks.
 - **What one day holds is no duplicate.** A trip keeps the planned route and the tracks
   ridden along it on the same day, and the report listed each such day as the same ride
   kept twice, hundreds of groups that buried the ones worth looking at. A group is left

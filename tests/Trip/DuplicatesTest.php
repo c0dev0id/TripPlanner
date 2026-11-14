@@ -79,8 +79,8 @@ final class DuplicatesTest extends TestCase
         $this->trip('Again', '2027-07-01', [$this->track('t3', self::WEST)]);
         $groups = (new Duplicates($this->db))->of($this->userId);
         self::assertSame(['same ride'], array_column($groups, 'kind'));
-        // In the order of their trips' names; the ride a month later is the same road ridden again, but a copy of the undated reference.
-        self::assertSame(['t3', 'r1', 't1', 't2'], array_column($groups[0]['routes'], 'routeId'));
+        // In the order of their trips' names; the ride a month later is the same road ridden again, but a copy of the undated reference. The route planned along them is no track and none of them.
+        self::assertSame(['t3', 't1', 't2'], array_column($groups[0]['routes'], 'routeId'));
     }
 
     public function testLeavesADaysPlanAndWhatWasRecordedOfItTogether(): void
@@ -88,26 +88,32 @@ final class DuplicatesTest extends TestCase
         $ids = fn (): array => array_map(fn (array $group) => array_column($group['routes'], 'routeId'), (new Duplicates($this->db))->of($this->userId));
         $this->trip('Ridden', '2027-06-12', [$this->route('r1'), $this->track('t1', self::EAST), $this->track('t2', self::WEST)]);
         self::assertSame([], $ids());
-        // The same routes imported once more are a trip kept twice, whatever the first one recorded.
+        // The same route imported once more is a route kept twice; the tracks along it are none of its duplicates.
         $this->trip('Ridden again', '2027-06-12', [$this->route('r2')]);
-        self::assertSame([['r1', 't1', 't2', 'r2']], $ids());
+        self::assertSame([['r1', 'r2']], $ids());
     }
 
     public function testLeavesWhatOneDayHoldsTogetherEvenTwice(): void
     {
         $ids = fn (): array => array_map(fn (array $group) => array_column($group['routes'], 'routeId'), (new Duplicates($this->db))->of($this->userId));
         $this->trip('Doubled', null, [$this->route('r1'), $this->route('r2')]);
-        self::assertSame([], $ids());
-        // The tracks of another day run along the routes, so all four are one ride, listed whole.
         $this->trip('Recorded twice', null, [$this->track('t1', self::EAST), $this->track('t2', self::EAST)]);
-        self::assertSame([['r1', 'r2', 't1', 't2']], $ids());
-        $this->db->exec("DELETE FROM trips WHERE name = 'Doubled'");
         self::assertSame([], $ids());
+        // The same route on another day makes the day's two its duplicates as well, listed whole.
+        $this->trip('Elsewhere', null, [$this->route('r3')]);
+        self::assertSame([['r1', 'r2', 'r3']], $ids());
+    }
+
+    public function testAPlannedRouteAndATrackOfTheSameWayAreNoDuplicates(): void
+    {
+        $this->trip('Planned', null, [$this->route('r1')]);
+        $this->trip('Drawn', null, [$this->track('t1', self::EAST)]);
+        self::assertSame([], (new Duplicates($this->db))->of($this->userId));
     }
 
     public function testLeavesTheSameRoadOnAnotherDateAndOtherUsersAlone(): void
     {
-        $this->trip('Planned', '2027-06-12', [$this->route('r1')]);
+        $this->trip('Ridden', '2027-06-12', [$this->track('t0', self::WEST), $this->route('r1')]);
         $this->trip('Again', '2027-07-01', [$this->track('t1', self::EAST)]);
         $other = (new Users($this->db))->create('other@example.com', 'correct horse battery', $this->now)->id;
         $this->trip('Theirs', '2027-06-12', [$this->route('o1')], $other);
