@@ -50,3 +50,25 @@ export function heldInAll(folders: readonly Folder[], held: ReturnType<typeof he
   visit(id);
   return total;
 }
+
+/**
+ * Where something in the folder `from` can be moved from there, each with what a menu
+ * calls it: the top of its tree, `root`, as "/", the folder around its own as "..", the
+ * folders beside it and the folders in those, by name. Left out are ".." where it is the
+ * top, the folders that are moved themselves, and what does not take what is moved.
+ */
+export function moveTargets(
+  folders: readonly Folder[],
+  from: number | null,
+  root: number | null,
+  moved: ReadonlySet<number>,
+  takes: (into: number | null) => boolean,
+): { label: string; into: number | null }[] {
+  const beside = (parent: number | null) => folders.filter((f) => f.parentId === parent && f.kind === 'folder' && !moved.has(f.id)).sort((x, y) => x.name.localeCompare(y.name));
+  const above = folders.find((f) => f.id === from)?.parentId ?? null;
+  return [
+    ...(from === root ? [] : [{ label: '/', into: root }]),
+    ...(from === root || above === root ? [] : [{ label: '..', into: above }]),
+    ...beside(from).flatMap((f) => [{ label: f.name, into: f.id }, ...beside(f.id).map((inner) => ({ label: `${f.name} / ${inner.name}`, into: inner.id }))]),
+  ].filter((target) => takes(target.into));
+}

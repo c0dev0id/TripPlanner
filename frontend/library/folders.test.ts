@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TripSummary } from '../model/trip';
 import type { Folder } from '../model/trip';
-import { countsText, folderPath, heldCounts, heldInAll, kindAround } from './folders';
+import { countsText, folderPath, heldCounts, heldInAll, kindAround, moveTargets } from './folders';
 
 const folders: Folder[] = [
   { id: 1, name: 'Rides', parentId: null, kind: 'folder' },
@@ -62,5 +62,38 @@ describe('countsText', () => {
     expect(countsText(1, 0)).toBe('1 folder');
     expect(countsText(0, 1)).toBe('1 trip');
     expect(countsText(0, 0)).toBe('');
+  });
+});
+
+describe('moveTargets', () => {
+  const tree: Folder[] = [
+    ...folders,
+    { id: 4, name: 'Vosges', parentId: 2, kind: 'folder' },
+    { id: 5, name: 'Day trips', parentId: null, kind: 'folder' },
+    { id: 6, name: 'Stash', parentId: null, kind: 'collections' },
+    { id: 7, name: 'Dump', parentId: 6, kind: 'folder' },
+    { id: 8, name: 'Old', parentId: 7, kind: 'folder' },
+  ];
+  const all = () => true;
+  const labels = (from: number | null, root: number | null, moved: number[] = [], takes: (into: number | null) => boolean = all) => moveTargets(tree, from, root, new Set(moved), takes).map((target) => `${target.label}→${target.into}`);
+
+  it('offers the folders beside what is moved and the folders in those, by name', () => {
+    expect(labels(null, null)).toEqual(['Day trips→5', 'Rides→1', 'Rides / 2023→2']);
+  });
+
+  it('offers the top as "/" and the folder around as "..", which is left out where it is the top', () => {
+    expect(labels(1, null)).toEqual(['/→null', '2023→2', '2023 / Alps→3', '2023 / Vosges→4']);
+    expect(labels(2, null)).toEqual(['/→null', '..→1', 'Alps→3', 'Vosges→4']);
+  });
+
+  it('takes the folder a tree is in for its top', () => {
+    expect(labels(6, 6)).toEqual(['Dump→7', 'Dump / Old→8']);
+    expect(labels(7, 6)).toEqual(['/→6', 'Old→8']);
+    expect(labels(8, 6)).toEqual(['/→6', '..→7']);
+  });
+
+  it('leaves out the folders that are moved, with what is in them, and what does not take what is moved', () => {
+    expect(labels(1, null, [2])).toEqual(['/→null']);
+    expect(labels(2, null, [], (into) => into !== 1 && into !== 4)).toEqual(['/→null', 'Alps→3']);
   });
 });
