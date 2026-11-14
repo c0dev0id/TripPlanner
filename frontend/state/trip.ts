@@ -228,7 +228,7 @@ export function addRoute(): void {
 
 /** Adds routes and stops read from a file to the selected day, as one step. */
 export function addParts(parts: { routes: Route[]; stops: Stop[] }): void {
-  editDay((trip, dayId) => dayEdit.addParts(trip, dayId, parts), t('Import GPX'));
+  editDay((trip, dayId) => dayEdit.addParts(trip, dayId, parts), t('Import file'));
 }
 
 /** Makes a route of stops of a day, which become its points, as one step to undo. */

@@ -5,6 +5,8 @@ import { newStop, routePoints } from '../routing/dayEdit';
 import { legKey, roundLngLat } from '../routing/legs';
 import { encodePolyline } from '../routing/polyline';
 import { parseGpx, type GpxContent } from './gpx';
+import { parseKml } from './kml';
+import { zipEntries } from './zip';
 
 /** What a GPX file becomes in a day: routes, and stops for its waypoints. */
 export interface DayParts {
@@ -102,7 +104,24 @@ export function waypointStops(gpx: GpxContent, newId: () => string, pointAt: (ln
   });
 }
 
-/** A GPX file read into routes and stops, the routes named after the file where they have no name. */
-export async function readGpxFile(file: File, profile: Profile): Promise<DayParts> {
-  return gpxToDayParts(parseGpx(await file.text()), { fileName: file.name.replace(/\.gpx$/i, ''), profile, newId });
+/** How the files routes are read from end: GPX, KML, and KMZ, which is a KML in a zip. */
+export const ROUTE_FILE = /\.(gpx|kml|kmz)$/i;
+
+/** What a file picker is told to offer for them. */
+export const ROUTE_FILE_TYPES = '.gpx,.kml,.kmz,application/gpx+xml,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz';
+
+/** A file of routes by what its name says it is, read as what a GPX file holds; throws for one that is not what it says. */
+export async function readRouteFile(file: File): Promise<GpxContent> {
+  if (/\.kmz$/i.test(file.name)) {
+    // The KML of a KMZ lies at its top; what else it packs, icons and pictures, is left.
+    const kmls = (await zipEntries(file)).filter((entry) => /\.kml$/i.test(entry.path)).sort((a, b) => a.path.split('/').length - b.path.split('/').length);
+    if (!kmls[0]) throw new Error(t('This KMZ file holds no KML.'));
+    return parseKml(await (await kmls[0].read()).text());
+  }
+  return /\.kml$/i.test(file.name) ? parseKml(await file.text()) : parseGpx(await file.text());
+}
+
+/** A file of routes read into routes and stops, the routes named after the file where they have no name. */
+export async function readDayParts(file: File, profile: Profile): Promise<DayParts> {
+  return gpxToDayParts(await readRouteFile(file), { fileName: file.name.replace(ROUTE_FILE, ''), profile, newId });
 }

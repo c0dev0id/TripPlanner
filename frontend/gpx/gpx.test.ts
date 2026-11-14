@@ -4,7 +4,7 @@ import { parseGpx, type GpxContent } from './gpx';
 import { pointCount } from '../routing/legs';
 import { decodePolyline } from '../routing/polyline';
 import { routedOf } from '../routing/testing';
-import { gpxToDayParts, ownWebsites, waypointStops } from './import';
+import { gpxToDayParts, ownWebsites, readDayParts, readRouteFile, waypointStops } from './import';
 
 const GPX_11 = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="test" xmlns="http://www.topografix.com/GPX/1/1">
@@ -176,5 +176,39 @@ describe('a file of places', () => {
     const chain = file(place('North', ['https://chain.example/north']), place('South', ['https://chain.example/south']));
     expect(ownWebsites(chain.waypoints)).toEqual(['https://chain.example/north', 'https://chain.example/south']);
     expect(ownWebsites(file(place('Odd', ['not a link'])).waypoints)).toEqual(['']);
+  });
+});
+
+describe('a file of routes', () => {
+  const kml = '<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Vosges</name><Placemark><LineString><coordinates>7.1,48.5 7.2,48.6</coordinates></LineString></Placemark></Document></kml>';
+  /** A zip that stores one file under a path, which is all a KMZ needs to be. */
+  function stored(path: string, content: string): Blob {
+    const name = new TextEncoder().encode(path);
+    const data = new TextEncoder().encode(content);
+    const header = (signature: number, more: number[]) => {
+      const bytes = new DataView(new ArrayBuffer(4 + more.length * 2));
+      bytes.setUint32(0, signature, true);
+      more.forEach((value, i) => bytes.setUint16(4 + i * 2, value, true));
+      return bytes;
+    };
+    const sizes = [data.length & 0xffff, data.length >>> 16, data.length & 0xffff, data.length >>> 16];
+    const local = header(0x04034b50, [20, 0, 0, 0, 0, 0, 0, ...sizes, name.length, 0]);
+    const central = header(0x02014b50, [20, 20, 0, 0, 0, 0, 0, 0, ...sizes, name.length, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const start = local.byteLength + name.length + data.length;
+    const size = central.byteLength + name.length;
+    const end = header(0x06054b50, [0, 0, 1, 1, size & 0xffff, size >>> 16, start & 0xffff, start >>> 16, 0]);
+    return new Blob([local, name, data, central, name, end]);
+  }
+
+  it('is read as what its name says it is', async () => {
+    expect((await readRouteFile(new File([kml], 'Vosges.KML'))).tracks[0]!.segments).toEqual([[[7.1, 48.5], [7.2, 48.6]]]);
+    expect((await readRouteFile(new File(['<gpx version="1.1"><wpt lat="48" lon="7"/></gpx>'], 'places.gpx'))).waypoints.length).toBe(1);
+    await expect(readRouteFile(new File([kml], 'Vosges.gpx'))).rejects.toThrow('not a GPX file');
+  });
+
+  it('is read from a KMZ, whose KML lies at its top', async () => {
+    const parts = await readDayParts(new File([stored('doc.kml', kml)], 'Vosges.kmz'), 'motorcycle');
+    expect(parts.routes.map((route) => [route.kind, route.name])).toEqual([['track', 'Vosges']]);
+    await expect(readRouteFile(new File([stored('readme.txt', 'none')], 'empty.kmz'))).rejects.toThrow('holds no KML');
   });
 });

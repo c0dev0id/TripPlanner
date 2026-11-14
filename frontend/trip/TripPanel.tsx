@@ -1,7 +1,7 @@
 import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSignal, on, Show } from 'solid-js';
 import { errorMessage } from '../api';
-import { readGpxFile } from '../gpx/import';
+import { readDayParts, ROUTE_FILE_TYPES } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR } from '../map/routeOverlay';
 import { ROUTE_PALETTE } from '../model/routeLook';
 import type { Day, Route, Stop } from '../model/trip';
@@ -145,7 +145,7 @@ export function DayDetails(props: { day: Day }) {
     fileInput.value = '';
     if (!file) return;
     try {
-      const parts = await readGpxFile(file, defaultProfile(props.day));
+      const parts = await readDayParts(file, defaultProfile(props.day));
       addParts(parts);
       setImportNote({ text: t('{file}: {routes}, {stops} added.', { file: file.name, routes: counted(parts.routes.length, 'route'), stops: counted(parts.stops.length, 'stop') }), error: false });
     } catch (fault) {
@@ -164,13 +164,13 @@ export function DayDetails(props: { day: Day }) {
       </Show>
       <div class="row">
         <h4 class="grow">{t('Planning')}</h4>
-        <IconButton label={t('Import GPX…')} onClick={() => fileInput.click()}>
+        <IconButton label={t('Import GPX or KML…')} onClick={() => fileInput.click()}>
           <FileImportIcon />
         </IconButton>
         <IconButton label={t('Add route')} onClick={addRoute}>
           <PlusIcon />
         </IconButton>
-        <input ref={fileInput} type="file" accept=".gpx,application/gpx+xml" hidden onChange={(e) => void importFile(e.currentTarget.files?.[0])} />
+        <input ref={fileInput} type="file" accept={ROUTE_FILE_TYPES} hidden onChange={(e) => void importFile(e.currentTarget.files?.[0])} />
       </div>
       <ul class="routes">
         <ForById each={props.day.routes}>{(route, index) => <RouteItem route={route()} index={index()} day={props.day} sequence={byRoute()[index()] ?? []} />}</ForById>

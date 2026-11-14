@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { addMedia, changeTrip, createFolder, createTrip, errorMessage, listFolders } from '../api';
-import { readGpxFile, type DayParts } from '../gpx/import';
+import { readDayParts, ROUTE_FILE, type DayParts } from '../gpx/import';
 import { asName, newId, type Trip, type TripKind } from '../model/trip';
 import { addDay, addParts, dayAfter, updateDay } from '../routing/dayEdit';
 import { importArchive } from './tripArchive';
@@ -76,8 +76,11 @@ export const sourceOf = (file: File): ImportSource => ({ path: pickedPath(file),
 /** Whether the path is a GPX file's that is not hidden. */
 export const isGpxPath = (path: string): boolean => /^[^.][^/]*\.gpx$/i.test(path.slice(path.lastIndexOf('/') + 1));
 
-/** Whether the path names a file kept as media: any that is neither hidden nor a GPX file. */
-export const isMediaPath = (path: string): boolean => /^[^.][^/]*$/.test(path.slice(path.lastIndexOf('/') + 1)) && !isGpxPath(path);
+/** Whether the path is that of a file routes are read from, GPX, KML or KMZ, that is not hidden. */
+export const isRoutePath = (path: string): boolean => /^[^.][^/]*$/.test(path.slice(path.lastIndexOf('/') + 1)) && ROUTE_FILE.test(path);
+
+/** Whether the path names a file kept as media: any that is neither hidden nor a file of routes. */
+export const isMediaPath = (path: string): boolean => /^[^.][^/]*$/.test(path.slice(path.lastIndexOf('/') + 1)) && !ROUTE_FILE.test(path);
 
 /**
  * The trips or collections a picked folder tree makes, from the files' paths relative to
@@ -95,8 +98,8 @@ export function planFolderImport(paths: readonly string[], mode: ImportMode): Pl
     const file = path.slice(cut + 1);
     const folder = path.slice(0, Math.max(0, cut));
     if (isMediaPath(path)) mediaIn.set(folder, [...(mediaIn.get(folder) ?? []), i]);
-    if (!isGpxPath(path)) return;
-    stems[i] = file.slice(0, -'.gpx'.length);
+    if (!isRoutePath(path)) return;
+    stems[i] = file.replace(ROUTE_FILE, '');
     if (byFolder.has(folder)) byFolder.get(folder)!.push(i);
     else byFolder.set(folder, [i]);
   });
@@ -208,7 +211,7 @@ export async function readPlannedDays(sources: readonly ImportSource[], planned:
     for (const i of day.files) {
       const source = sources[i]!;
       try {
-        const read = await readGpxFile(await source.open(), 'motorcycle');
+        const read = await readDayParts(await source.open(), 'motorcycle');
         if (ofTrip && read.routes.length === 0 && read.stops.length > 0) throw new Error(t('This file holds places and no route: add it to the folder for places.'));
         parts.push(read);
       } catch (error) {

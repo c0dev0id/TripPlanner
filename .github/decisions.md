@@ -327,6 +327,17 @@ entries at the end of their section.
   beside the place's own; the stop has one website. Where a file's waypoints link to
   several hosts, the links to the most frequent one are dropped and the last link left
   is kept; a file whose waypoints all link to one host keeps those links.
+- **A KML file is read into what a GPX file holds.** Everything that takes a file takes
+  what the GPX reader gives: a name, waypoints, routes and tracks. The KML reader gives
+  the same, so that days, sections, places and the refusal of a file of waypoints
+  alone work for it unchanged, and the format is told by the file's name in one place.
+  It is written here, like the GPX reader, on the browser's XML parser: the part of KML
+  that holds routes is small, and a library would have brought GeoJSON to be turned
+  into the same thing. A line is a track and never a route, since KML has no points to
+  route between; Convert makes one where it is wanted. A KMZ is opened with the zip
+  reader the exported trips are read with, which moved beside the readers for that.
+  Recordings stay GPX: a recording is kept as its file, and the server reads that
+  file for its line and its start.
 - **A file of waypoints alone is no trip.** Dropped on a folder of trips it made a trip
   of one day with a hundred stops and no route, which nothing in the planner is made
   for. It is refused there with the pointer to the Places folder.

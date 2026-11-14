@@ -46,7 +46,7 @@ share work; sharing between users is on the way.
 - **Planning material** — a trail or a tour collection, such as the TET by country, kept
   as a collection to browse on the map and copy routes from into your own days.
 - **GPX in as well as out** — a file from the device or BaseCamp drops into a day: its
-  routes, tracks and waypoints become routes and stops. A recorded track keeps every
+  routes, tracks and waypoints become routes and stops. KML and KMZ files are read too. A recorded track keeps every
   point; condense it or turn it into a route from its menu.
 - **GPX export the way the device wants it** — the trip or a day, one file or one per
   day, routes as tracks or as points for the device to route, with or without the

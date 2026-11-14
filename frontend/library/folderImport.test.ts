@@ -155,3 +155,13 @@ describe('where the files that come with a trip are kept', () => {
     expect([again.trip, again.dayId]).toEqual([made.trip, made.dayId]);
   });
 });
+
+describe('files of routes', () => {
+  it('are GPX, KML and KMZ files alike, and none of them is media', () => {
+    const paths = ['Alps/day 1.gpx', 'Alps/day 2.KML', 'Alps/day 3.kmz', 'Alps/ferry.pdf', 'Alps/.hidden.kml'];
+    const [trip] = plan(paths);
+    expect(trip!.days.map((day) => day[1])).toEqual(['day 1', 'day 2', 'day 3']);
+    expect(trip!.media).toEqual(['ferry.pdf']);
+    expect(plan(['Tours/Vosges.kml'], 'planning-material').map((c) => [c.name, c.days])).toEqual([['Tours', [[null, 'Vosges', ['Vosges.kml']]]]]);
+  });
+});

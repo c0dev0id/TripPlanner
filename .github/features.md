@@ -192,6 +192,15 @@
   each of its points. Its menu condenses it (Douglas–Peucker at a distance chosen from a
   few, each with the count of points it leaves), and Convert in it makes a route of it:
   fewer points, every leg routed, with the time the routing will take.
+- KML and KMZ files are read wherever a GPX file is, but among the recordings, which are
+  kept as the GPX files they are: into a day, as the days of a trip, the sections of a
+  collection or the places of a list, picked or dropped, alone or in a folder. A
+  placemark's point is a waypoint with its name, its address and phone number, and its
+  description as notes; a description written as HTML is read as text, and a page it
+  links to is the waypoint's website. A placemark's lines, and a track recorded with
+  times, are a track, which Convert makes a route of. The folder a point is in is the
+  kind of place it is in a list of places; the document's name names the list. Areas
+  are left out. A KMZ is read for the KML at its top.
 - Import of a folder tree from disk into a folder of the library, its folders recreated
   (existing ones reused by name), without a dialog. A folder that holds GPX files alone
   becomes a trip named after it without its date; a date in a file's name (YYYY-MM-DD,
