@@ -314,7 +314,7 @@
   itself as well. The report is made once and kept while the page stands: shown again,
   it is there at once, where it was scrolled to and with what was selected still
   selected, which the map draws only while the report is shown; what is deleted from it is taken out
-  of it, its heading says when it was made, and the button there makes it afresh. A
+  of it, and with it a group that is left within one day, its heading says when it was made, and the button there makes it afresh. A
   route deleted from the open trip leaves it as an edit that can be undone. While it is made, which takes a
   while on a large library, a ring turns beside how many routes are compared and the
   seconds gone.
