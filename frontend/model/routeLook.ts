@@ -41,3 +41,6 @@ export function lineColors(days: readonly (readonly { color: string | null }[])[
   let place = 0;
   return days.map((lines, dayIndex) => lines.map((line) => line.color ?? dayColor(dayIndex, coloring) ?? ROUTE_PALETTE[place++ % ROUTE_PALETTE.length]!.color));
 }
+
+/** How opaque one ride is where the map draws them all, from 0 to 1: translucent enough that a few rides on a road still read as fewer than many. */
+export const DEFAULT_RIDES_OPACITY = 0.4;

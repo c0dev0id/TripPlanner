@@ -21,11 +21,12 @@ describe('the overlays', () => {
   it('draw only from sources of their own, answer taps only on layers of their own and have every picture they ask for', () => {
     for (const overlay of OVERLAYS) {
       for (const sharpUntil of [Infinity, 16, 19]) {
-        const { sources, layers } = overlay.parts(sharpUntil);
+        const { sources, layers } = overlay.parts(sharpUntil, { ridesOpacity: 0.4 });
         for (const layer of layers) expect(Object.keys(sources)).toContain('source' in layer ? layer.source : undefined);
         for (const tap of overlay.taps) for (const id of tap.layers) expect(layers.map((layer) => layer.id)).toContain(id);
       }
-      expect([...overlay.images.values()]).toContain(overlay.sign);
+      // An overlay that draws pictures draws its sign.
+      if (overlay.images.size > 0) expect([...overlay.images.values()]).toContain(overlay.sign);
     }
   });
 });

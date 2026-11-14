@@ -20,14 +20,21 @@ export interface TapInfo {
   note?: string | undefined;
 }
 
+/** What the user sets for how overlays are drawn. */
+export interface OverlayLook {
+  /** How opaque one ride is where all are drawn, from 0 to 1. */
+  ridesOpacity: number;
+}
+
 export interface Overlay {
   id: string;
   label: string;
   /**
    * Its sources and layers over a base map that is drawn sharp up to the zoom `sharpUntil`
    * and blown up beyond it, as raster tiles are; Infinity for a base map sharp at every zoom.
+   * `look` is what the user set for how overlays are drawn.
    */
-  parts: (sharpUntil: number) => { sources: Record<string, SourceSpecification>; layers: LayerSpecification[] };
+  parts: (sharpUntil: number, look: OverlayLook) => { sources: Record<string, SourceSpecification>; layers: LayerSpecification[] };
   /** The picture on its button. */
   sign: MapImage;
   /** The pictures its layers draw, by the id they ask for them. */

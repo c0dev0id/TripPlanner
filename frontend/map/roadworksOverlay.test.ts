@@ -3,7 +3,7 @@ import { BW, RLP, ROADWORKS, siteInfo } from './roadworksOverlay';
 
 describe('the roadworks', () => {
   it('ask each service for its features, and leave Baden-Württemberg to its own', () => {
-    const requests = Object.values(ROADWORKS.parts(Infinity).sources).map((source) => new URL((source as { data: string }).data).searchParams);
+    const requests = Object.values(ROADWORKS.parts(Infinity, { ridesOpacity: 0.4 }).sources).map((source) => new URL((source as { data: string }).data).searchParams);
     expect(requests.map((request) => request.get('TYPENAMES'))).toEqual(['mwvlw:umleitung', 'mwvlw:verlauf', 'mwvlw:baustelle', 'MobiData-BW:roadworks']);
     expect(requests.map((request) => request.get('CQL_FILTER'))).toEqual([null, "quelle<>'Verkehrsministerium Baden-Württemberg'", "quelle<>'Verkehrsministerium Baden-Württemberg'", null]);
   });

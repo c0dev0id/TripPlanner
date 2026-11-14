@@ -2,10 +2,10 @@ import { For } from 'solid-js';
 import { chooseLanguage, LANGUAGES, languageChoice, type Language } from '../i18n/language';
 import { t } from '../i18n/t';
 import { poiBadgeUrl } from '../map/poiImages';
-import { DEFAULT_ROUTE_WIDTH, ROUTE_WIDTHS } from '../model/routeLook';
+import { DEFAULT_RIDES_OPACITY, DEFAULT_ROUTE_WIDTH, ROUTE_WIDTHS } from '../model/routeLook';
 import { POI_CATEGORIES } from '../poi/categories';
 import { preferencesOpen, setPreferencesOpen } from '../state/drawing';
-import { changePreferences, DEFAULT_RIDES_OPACITY, placeReachM, ridesOpacity, routeColoring, routeWidth } from '../state/preferences';
+import { changePreferences, placeReachM, ridesOpacity, routeColoring, routeWidth } from '../state/preferences';
 import { EditDialog } from '../ui/EditDialog';
 import { chooseTheme, theme, THEMES, type Theme } from '../ui/theme';
 

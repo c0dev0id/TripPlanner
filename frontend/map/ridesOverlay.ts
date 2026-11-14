@@ -1,5 +1,4 @@
 import { t } from '../i18n/t';
-import { ridesOpacity } from '../state/preferences';
 import { distanceText, momentText } from '../ui/format';
 import type { Overlay } from './overlays';
 import { sign } from './overlaySigns';
@@ -16,7 +15,7 @@ const RIDE_COLOR = '#5f3dc4';
 export const RIDES: Overlay = {
   id: 'rides',
   label: t('My rides'),
-  parts: (sharpUntil) => ({
+  parts: (sharpUntil, look) => ({
     // The lines the planner keeps beside the recordings' files, read anew each time the overlay is switched on.
     sources: { rides: { type: 'geojson', data: '/api/rides' } },
     layers: [
@@ -25,7 +24,7 @@ export const RIDES: Overlay = {
         type: 'line',
         source: 'rides',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
-        paint: { 'line-color': RIDE_COLOR, 'line-width': byZoom(2.5, 3.5, 6, 0.5, sharpUntil), 'line-opacity': ridesOpacity() },
+        paint: { 'line-color': RIDE_COLOR, 'line-width': byZoom(2.5, 3.5, 6, 0.5, sharpUntil), 'line-opacity': look.ridesOpacity },
       },
     ],
   }),

@@ -7,7 +7,7 @@ import { routePositions } from '../routing/legs';
 import { colorRuns } from '../recording/lineColors';
 import { isRoutePinned } from '../state/pins';
 import { keepsView } from '../state/place';
-import { routeWidth } from '../state/preferences';
+import { ridesOpacity, routeWidth } from '../state/preferences';
 import { opened, openedLineColors } from '../state/recordingView';
 import { activeRecordingId, loadedTrack, previewedLines, recordingColor, shownRecordings } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
@@ -50,7 +50,7 @@ export function MapView() {
 
   onMount(() => {
     // The map keeps its view in the address, as `map=`, and starts from it.
-    const m = newBaseMap(container, { hash: 'map' }, setShownMap, { routeWidth, overlays: true });
+    const m = newBaseMap(container, { hash: 'map' }, setShownMap, { routeWidth, overlays: true, ridesOpacity });
     onCleanup(() => {
       setShownMap(undefined);
       m.remove();
