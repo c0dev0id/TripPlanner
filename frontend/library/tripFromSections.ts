@@ -4,7 +4,7 @@ import { newId, type Day } from '../model/trip';
 import { withNewPartIds } from '../routing/dayEdit';
 import { flushSave } from '../state/autosave';
 import type { TripSource } from '../state/library';
-import { openTripId, removeParts } from '../state/trip';
+import { openTrip, openTripId, removeParts } from '../state/trip';
 import { tripOfFolder } from './folderImport';
 
 /**
@@ -38,20 +38,19 @@ export function tripFromSections(name: string, sections: readonly Day[], newId: 
  */
 export async function createTripFrom(source: TripSource, name: string, folderId: number | null, move: boolean, leave: () => Promise<void>): Promise<string> {
   await flushSave();
-  const collection = await fetchTrip(source.id);
+  const open = source.id === openTripId();
+  const collection = open ? openTrip()! : await fetchTrip(source.id);
   const sections = source.dayIds ? collection.days.filter((day) => source.dayIds!.includes(day.id)) : collection.days;
   const made = tripFromSections(name, sections, newId);
   const trip = await createTrip(made.name, folderId);
   await changeTrip(trip.id, (empty) => ({ ...empty, days: made.days }));
   if (move) {
-    for (const recording of await listRecordings(collection.id)) {
-      const dayId = made.dayOf.get(recording.dayId);
-      if (dayId) await moveRecording(collection.id, recording.id, dayId);
-    }
+    const recordings = (await listRecordings(collection.id)).filter((recording) => made.dayOf.has(recording.dayId));
+    await Promise.all(recordings.map((recording) => moveRecording(collection.id, recording.id, made.dayOf.get(recording.dayId)!)));
     // Sections are only ever named of the open collection, where taking them out is an edit like any other.
     if (sections.length < collection.days.length) removeParts('day', sections.map((section) => section.id));
     else {
-      if (collection.id === openTripId()) await leave();
+      if (open) await leave();
       await deleteTrip(collection.id);
     }
   }
