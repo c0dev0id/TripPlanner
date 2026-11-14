@@ -143,6 +143,8 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `PATCH /stash/files/{id}` | Renames the file with `{name}`, or moves it into another folder of the Stash with `{folderId}`. |
 | `DELETE /stash/files/{id}` | Deletes the file. |
 | `GET /stash/files/{id}/gpx` | The file as it is kept, compressed with gzip. |
+| `PATCH /stash/files/{id}/items/{kind}/{position}` | Renames the file's route or track at that place among its routes or tracks (`kind`: `route` or `track`) with `{name}`, which rewrites the file. |
+| `DELETE /stash/files/{id}/items?items=` | Removes routes and tracks from the file, named comma-separated as kind and place (`track:0,route:2`), which rewrites the file. |
 | `POST /stash/files/{id}/rides` | Keeps the file's tracks as rides, all of them or with `{tracks}` those at these places among its tracks, each named after itself or else its file. Answers `{kept, known}`: how many rides were kept, and how many the user kept already. |
 | `GET /folders` | The user's folders, each with the folder it is in (`parentId`, null at the top) and its `kind`: the two special ones first (`collections`, `places`), the others (`folder`) by name. |
 | `POST /folders` | Creates a folder from `{name, parentId}`; the parent may be null. |

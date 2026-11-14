@@ -14,6 +14,12 @@ export interface ShownStash {
 
 const [shown, setShown] = createSignal<ShownStash>();
 
+/** How often files of the Stash were rewritten: the file shown is read again after each time. */
+const [edits, setEdits] = createSignal(0);
+
+/** Says that a file of the Stash was rewritten. */
+export const stashEdited = (): void => void setEdits(edits() + 1);
+
 /** What of the Stash the map shows; nothing until a file or one of its routes or tracks is picked. */
 export const shownInStash = shown;
 
@@ -28,10 +34,13 @@ export const isShownItem = (fileId: number, item: Pick<StashItem, 'kind' | 'posi
 export const stashColor = (file: StashFile, item: StashItem): string => ROUTE_PALETTE[file.items.indexOf(item) % ROUTE_PALETTE.length]!.color;
 
 const stash = createRoot(() => {
-  /** The file shown as it is read, fetched when it is picked, with the file it is of. */
+  /** The file shown as it is read, with the file it is of: fetched when it is picked and again once it was rewritten, not when another of its lines is. */
   const [read] = createResource(
-    () => shown()?.fileId,
-    async (fileId) => ({ fileId, content: parseGpx(await fetchStashGpx(fileId)) }),
+    () => shown() && `${shown()!.fileId}:${edits()}`,
+    async (key) => {
+      const fileId = Number(key.split(':')[0]);
+      return { fileId, content: parseGpx(await fetchStashGpx(fileId)) };
+    },
   );
   /** The routes, by their points and the ways between them, and the tracks of the file shown, in the order the file is listed in; none until it is read. */
   const all = createMemo(() => {

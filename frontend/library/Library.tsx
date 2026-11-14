@@ -1,6 +1,6 @@
 import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
-import { changeTrip, keepStashRides, type NamedRoute, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, renameStashFile, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
+import { changeTrip, keepStashRides, removeStashItems, renameStashItem, type NamedRoute, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, renameStashFile, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import type { StashFile, StashItem } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
@@ -9,7 +9,7 @@ import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMat
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
-import { showInStash, shownInStash, stashProblem } from '../state/stash';
+import { showInStash, shownInStash, stashEdited, stashProblem } from '../state/stash';
 import { ridesChanged } from '../state/rides';
 import { setEditTarget } from '../state/drawing';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
@@ -31,7 +31,7 @@ import { dragToFolder } from './dragToFolder';
 import { libraryImports } from './importActions';
 import { TripFromDialog } from './TripFromDialog';
 import { createTripFrom } from './tripFromSections';
-import { StashFileCard, StashItemRow } from './StashFileCard';
+import { StashFileCard, StashItemRow, stashItemName } from './StashFileCard';
 import { stashCopies, stashStops, type Picked } from './stashOut';
 import { keptText } from './dropImport';
 import { TripShape } from './TripShape';
@@ -61,6 +61,13 @@ export interface FoundRoute {
 }
 const routeKey = (found: FoundRoute): string => `route:${found.route.id}`;
 
+/** A route or a track of a file of the Stash, with its file. */
+interface FileItem {
+  file: StashFile;
+  item: StashItem;
+}
+const itemKey = ({ file, item }: FileItem): string => `item:${file.id}:${item.kind}:${item.position}`;
+
 const keyOf = (item: Item): string => ('folder' in item ? `folder:${item.folder.id}` : 'trip' in item ? `trip:${item.trip.id}` : `file:${item.file.id}`);
 const nameOf = (item: Item): string => ('folder' in item ? item.folder : 'trip' in item ? item.trip : item.file).name;
 const itemOfFolder = (folder: Folder | undefined): Item | undefined => folder && { folder };
@@ -79,8 +86,8 @@ export interface CardSelect {
   onDrag: (e: PointerEvent, dragged: () => void) => void;
 }
 
-/** How a route the search found is selected: as a card is, but it is neither cut nor dragged. */
-type RouteSelect = Pick<CardSelect, 'selected' | 'onToggle' | 'onClick'>;
+/** How a row that stays where it is is selected, a route the search found or a route or track of a file: as a card is, but it is neither cut nor dragged. */
+export type RowSelect = Pick<CardSelect, 'selected' | 'onToggle' | 'onClick'>;
 
 /** How a card unfolds in the tree, whether it holds the tree's one mark, and of a trip whether it is the open one. */
 export interface CardFold {
@@ -142,7 +149,7 @@ const NEW_DIALOG: Record<NewKind, { title: string; placeholder: string; submit: 
 };
 
 /** The dialog the library has open: a new name for a folder, a trip or a file, or the name of a new one in a folder, null for the top; of a new kind of place, in the list `into`. */
-type LibraryDialog = { kind: 'rename-folder'; folder: Folder } | { kind: 'rename-trip'; trip: TripSummary } | { kind: 'rename-file'; file: StashFile } | { kind: 'new'; what: NewKind; into: number | null };
+type LibraryDialog = { kind: 'rename-folder'; folder: Folder } | { kind: 'rename-trip'; trip: TripSummary } | { kind: 'rename-file'; file: StashFile } | { kind: 'rename-item'; at: FileItem } | { kind: 'new'; what: NewKind; into: number | null };
 
 /**
  * The library as a tree: folders and trips unfolding in place, the open trip's days among
@@ -347,14 +354,18 @@ export function Library(props: {
     ...listed().trips.map((trip) => keyOf({ trip })),
     ...listed().files.map((file) => keyOf({ file })),
     ...listed().routes.map(routeKey),
+    ...listed().items.map(itemKey),
   ];
+  /** The routes and tracks of files among the rows selected. */
+  const itemsIn = (keys: Selection<string>): FileItem[] =>
+    [...keys].some((key) => key.startsWith('item:')) ? files().flatMap((file) => file.items.map((item) => ({ file, item })).filter((at) => keys.has(itemKey(at)))) : [];
   /** The routes among the rows selected, as the search found them. */
   const routesIn = (keys: Selection<string>): FoundRoute[] => found().routes.filter((route) => keys.has(routeKey(route)));
-  /** The folders and trips in view under a folder, top to bottom: its own and those of every unfolded folder in it. */
+  /** The rows in view under a folder, top to bottom: its folders with those of every unfolded folder in it, its trips, and its files with the routes and tracks of every unfolded one. */
   const shownKeys = (parent: number | null): string[] => [
     ...childFolders(parent).flatMap((f) => [keyOf({ folder: f }), ...(isUnfolded({ folder: f }) ? shownKeys(f.id) : [])]),
     ...childTrips(parent).map((trip) => keyOf({ trip })),
-    ...childFiles(parent).map((file) => keyOf({ file })),
+    ...childFiles(parent).flatMap((file) => [keyOf({ file }), ...(isUnfolded({ file }) ? file.items.map((item) => itemKey({ file, item })) : [])]),
   ];
   /** What a card's menu, or a press on its pad, acts on: the selection where it holds the card, else the card alone. */
   const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.has(keyOf(item)) ? [...selection].flatMap((key) => itemOf(key) ?? []) : [item]);
@@ -370,8 +381,14 @@ export function Library(props: {
       dragToFolder(e, moved.length === 1 ? nameOf(item) : countText(moved), (into) => moveInto(moved, into), dragged);
     },
   });
+  /** How a route or a track of a file is selected, among the rows of the tree or those the search lists. */
+  const selectItem = (at: FileItem, order: () => string[] = () => shownKeys(rootOf(shownTree()!))): RowSelect => ({
+    selected: () => isSelected(itemKey(at)),
+    onToggle: () => toggleRow(ownerOf(shownTree()!), itemKey(at)),
+    onClick: (e: MouseEvent) => clickRow(ownerOf(shownTree()!), order(), itemKey(at), e),
+  });
   /** How a route the search found is selected, among the rows it lists. */
-  const selectRoute = (route: FoundRoute): RouteSelect => ({
+  const selectRoute = (route: FoundRoute): RowSelect => ({
     selected: () => isSelected(routeKey(route)),
     onToggle: () => toggleRow(ownerOf(shownTree()!), routeKey(route)),
     onClick: (e: MouseEvent) => clickRow(ownerOf(shownTree()!), listedKeys(), routeKey(route), e),
@@ -534,6 +551,10 @@ export function Library(props: {
     const d = dialog();
     return d?.kind === 'rename-file' ? d.file : undefined;
   };
+  const renamedItem = () => {
+    const d = dialog();
+    return d?.kind === 'rename-item' ? d.at : undefined;
+  };
   const newIn = () => {
     const d = dialog();
     return d?.kind === 'new' ? d : undefined;
@@ -599,18 +620,19 @@ export function Library(props: {
   /**
    * The keys that cut, copy and delete the selected folders and trips, and paste those on
    * the clipboard into the folder shown, as the menu does; none while the rides are
-   * shown. With routes the search found selected, Delete deletes them where nothing else
-   * is selected, and the other keys do nothing.
+   * shown. With routes the search found selected, or routes and tracks of files,
+   * Delete deletes them where nothing else is selected, and the other keys do nothing.
    */
   const onKey = (e: KeyboardEvent) => {
     const verb = fileVerb(e);
     if (!verb) return;
     const chosen = [...selected()].flatMap((key) => itemOf(key) ?? []);
     const routes = routesIn(selected());
-    if (routes.length > 0) {
+    const parts = itemsIn(selected());
+    if (routes.length + parts.length > 0) {
       if (verb !== 'delete' || chosen.length > 0) return;
       e.preventDefault();
-      return void removeRoutes(routes);
+      return void (routes.length > 0 ? removeRoutes(routes) : removeItems(parts));
     }
     if (!shownTree() || (verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0)) return;
     e.preventDefault();
@@ -674,11 +696,50 @@ export function Library(props: {
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
   };
-  /** The menu of a route or a track of a file: it is copied to be pasted into a day, and a track kept as a ride. */
-  const stashItemMenu = (file: StashFile, item: StashItem): MenuItem[] => [
-    { label: t('Copy'), run: () => copyOut([{ file, items: [item] }]) },
-    ...(item.kind === 'track' ? [{ label: t('Keep as ride'), run: () => keepRides([{ file, items: [item] }]) }] : []),
-  ];
+  /** Routes and tracks by their files, as what is taken of each. */
+  const pickedOf = (parts: readonly FileItem[]): Picked[] => [...new Set(parts.map((at) => at.file))].map((file) => ({ file, items: parts.filter((at) => at.file === file).map((at) => at.item) }));
+  /** Deletes routes and tracks from their files, once that is confirmed, which rewrites the files; one of them shown alone on the map gives way to its file. */
+  const removeItems = async (doomed: readonly FileItem[]) => {
+    const [only] = doomed;
+    const picked = pickedOf(doomed);
+    const question =
+      doomed.length === 1
+        ? t('Delete “{name}” from the file “{file}”?', { name: stashItemName(only!.item), file: only!.file.name })
+        : t('Delete {n} routes and tracks from {files}?', { n: doomed.length, files: counted(picked.length, 'file') });
+    if (!(await askConfirmation(question, t('Delete')))) return;
+    await runLibrary(() => Promise.all(picked.map(({ file, items }) => removeStashItems(file.id, items!))), () => {
+      const shown = shownInStash();
+      if (shown?.item && picked.some(({ file }) => file.id === shown.fileId)) showInStash({ fileId: shown.fileId });
+      stashEdited();
+      relist();
+    });
+  };
+  /**
+   * The menu of what is selected once routes and tracks of files are among it. They
+   * are copied to be pasted into a day, the tracks kept as rides, one renamed, and
+   * deleted from their files. With anything else selected besides, it says that they
+   * are not acted on together.
+   */
+  const itemsMenu = (selection: Selection<string>): MenuItem[] => {
+    const parts = itemsIn(selection);
+    const nothing = () => undefined;
+    if (parts.length < selection.size) return [{ label: t('Routes and tracks of files are not acted on together with files and folders'), disabled: true, run: nothing }];
+    const one = parts.length === 1 ? parts[0]! : undefined;
+    const tracks = parts.filter((at) => at.item.kind === 'track');
+    return [
+      ...(one ? [] : [{ label: t('{what} selected', { what: t('{n} routes and tracks', { n: parts.length }) }), disabled: true, run: nothing }]),
+      { label: t('Copy'), run: () => copyOut(pickedOf(parts)) },
+      { label: t(one ? 'Keep as ride' : 'Keep tracks as rides'), disabled: tracks.length === 0, run: () => keepRides(pickedOf(tracks)) },
+      { label: t('Rename…'), disabled: !one, run: () => setDialog({ kind: 'rename-item', at: one! }) },
+      { label: t('Delete'), run: () => void removeItems(parts) },
+    ];
+  };
+  /** The menu of a route or a track of a file: for the selected rows, or for it alone where it is not selected. */
+  const stashItemMenu = (at: FileItem): MenuItem[] => {
+    const selection = menuSelection(selected(), itemKey(at));
+    setSelected(selection.size > 1 ? selection : NOTHING_SELECTED);
+    return itemsMenu(selection);
+  };
 
   /**
    * The menu of a folder or a trip, the same for both: what is new in it and what is added
@@ -692,6 +753,7 @@ export function Library(props: {
     const selection = menuSelection(selected(), keyOf(item));
     setSelected(selection.size > 1 ? selection : NOTHING_SELECTED);
     if (routesIn(selection).length > 0) return routesMenu(selection);
+    if (itemsIn(selection).length > 0) return itemsMenu(selection);
     const chosen = chosenWith(item, selection);
     const several = chosen.length > 1;
     if ('file' in item || filesOf(chosen).length > 0) return filesMenu(chosen);
@@ -787,7 +849,8 @@ export function Library(props: {
             onOpen={clickFile}
             onShow={(item) => showItem(file(), item)}
             items={() => itemMenu({ file: file() })}
-            itemItems={(item) => stashItemMenu(file(), item)}
+            itemItems={(item) => stashItemMenu({ file: file(), item })}
+            itemSelect={(item) => selectItem({ file: file(), item })}
             select={select({ file: file() })}
             unfolded={isUnfolded({ file: file() })}
           />
@@ -856,11 +919,11 @@ export function Library(props: {
           </For>
           <For each={listed().files}>
             {(file) => (
-              <StashFileCard file={file} where={pathOf(file.folderId)} onOpen={revealFile} onShow={(item) => revealFile(file, item)} items={() => itemMenu({ file })} itemItems={(item) => stashItemMenu(file, item)} select={select({ file }, listedKeys)} />
+              <StashFileCard file={file} where={pathOf(file.folderId)} onOpen={revealFile} onShow={(item) => revealFile(file, item)} items={() => itemMenu({ file })} itemItems={(item) => stashItemMenu({ file, item })} itemSelect={(item) => selectItem({ file, item }, listedKeys)} select={select({ file }, listedKeys)} />
             )}
           </For>
           <For each={listed().routes}>{(route) => <RouteCard found={route} onOpen={props.onOpenRoute} items={() => routeMenu(route)} select={selectRoute(route)} />}</For>
-          <For each={listed().items}>{(at) => <StashItemRow file={at.file} item={at.item} where={at.file.name} onShow={(item) => revealFile(at.file, item)} items={() => stashItemMenu(at.file, at.item)} />}</For>
+          <For each={listed().items}>{(at) => <StashItemRow file={at.file} item={at.item} where={at.file.name} onShow={(item) => revealFile(at.file, item)} items={() => stashItemMenu(at)} select={selectItem(at, listedKeys)} />}</For>
         </ul>
         <Show when={total() > SEARCH_LIMIT}>
           <p class="muted">{t('{n} more; narrow the search.', { n: total() - SEARCH_LIMIT })}</p>
@@ -930,6 +993,17 @@ export function Library(props: {
         onSubmit={(name) => {
           const file = renamedFile()!;
           if (name !== file.name) void runLibrary(() => renameStashFile(file.id, name), relistStash);
+        }}
+      />
+      <NameDialog
+        title={renamedItem()?.item.kind === 'track' ? t('Rename track') : t('Rename route')}
+        open={renamedItem() !== undefined}
+        placeholder={t('Name')}
+        initial={renamedItem()?.item.name}
+        onClose={() => setDialog(undefined)}
+        onSubmit={(name) => {
+          const { file, item } = renamedItem()!;
+          if (name !== item.name) void runLibrary(() => renameStashItem(file.id, item, name), () => (stashEdited(), relistStash()));
         }}
       />
       <NameDialog
@@ -1047,7 +1121,7 @@ function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) 
 }
 
 /** A route or a track the search found, as a card: its name over what it is and where, its trip and day; a click opens it there. */
-function RouteCard(props: { found: FoundRoute; onOpen: (found: FoundRoute) => void; items: () => MenuItem[]; select: RouteSelect }) {
+function RouteCard(props: { found: FoundRoute; onOpen: (found: FoundRoute) => void; items: () => MenuItem[]; select: RowSelect }) {
   return (
     <li class="card" classList={{ selected: props.select.selected() }}>
       <div class="row" ref={(el) => cardMenu(el, props.items)}>

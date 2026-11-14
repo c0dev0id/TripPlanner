@@ -264,6 +264,14 @@
   is all its file holds of routes and tracks as the file itself, so that it is known as
   the ride the same file was kept as before, any other alone, without the file's
   other tracks, routes and waypoints. The file stays in the Stash either way.
+- A file of the Stash is cleaned up by whole routes and tracks: one is renamed, and one
+  or the selected ones, of any files, are deleted from their files, from the menu or
+  with the Delete key, after a question. Either rewrites the stored file and leaves the
+  rest of it as it was; the same file imported again is still known as kept. Routes
+  and tracks are selected with their pads, Cmd or Ctrl and Shift as files are; selected
+  together with files or folders they are not acted on, and the menu says so. Nothing
+  finer is changed in the Stash: no geometry, no symbols, and waypoints only with
+  their file.
 - Import by dropping GPX files, zips of exported trips and folders from the computer on
   a folder of the tree, or by Add in its menu; what they become follows from the folder.
   On Places or a folder in it, a GPX file's waypoints

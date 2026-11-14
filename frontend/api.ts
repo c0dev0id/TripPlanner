@@ -4,7 +4,7 @@ import { daysToSend } from './model/delta';
 import type { Entry, EntryTarget } from './model/journal';
 import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Route, Trip, TripKind, TripSummary } from './model/trip';
-import type { StashFile } from './model/stash';
+import type { StashFile, StashItem } from './model/stash';
 import type { OwnPlace } from './poi/ownPlaces';
 import type { Joint, Ride, Suggestion } from './recording/rides';
 import { stopsInRidingOrder } from './routing/sequence';
@@ -284,6 +284,13 @@ export const deleteStashFile = (id: number): Promise<void> => request('DELETE', 
 
 /** Keeps the tracks of a file of the Stash as rides: all of them, or those at the places given among its tracks. Answers how many were kept and how many the user kept already. */
 export const keepStashRides = (id: number, tracks?: readonly number[]): Promise<{ kept: number; known: number }> => request('POST', `/api/stash/files/${id}/rides`, tracks ? { tracks } : {});
+
+/** Renames a route or a track of a file of the Stash, which rewrites the file. */
+export const renameStashItem = (id: number, item: Pick<StashItem, 'kind' | 'position'>, name: string): Promise<void> => request('PATCH', `/api/stash/files/${id}/items/${item.kind}/${item.position}`, { name });
+
+/** Removes routes and tracks from a file of the Stash, which rewrites the file. */
+export const removeStashItems = (id: number, items: readonly Pick<StashItem, 'kind' | 'position'>[]): Promise<void> =>
+  request('DELETE', `/api/stash/files/${id}/items?items=${items.map((item) => `${item.kind}:${item.position}`).join(',')}`);
 
 /** A file of the Stash as it is kept. */
 export const fetchStashGpx = async (id: number): Promise<string> => (await send('GET', `/api/stash/files/${id}/gpx`)).text();

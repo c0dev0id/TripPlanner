@@ -8,7 +8,7 @@ import { FileIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { Pad } from '../ui/Pad';
-import type { CardSelect } from './Library';
+import type { CardSelect, RowSelect } from './Library';
 import { TripShape } from './TripShape';
 
 /** What a route or a track of a file is called: its name, or what it is where it has none. */
@@ -29,11 +29,12 @@ function heldIn(file: StashFile): string {
 }
 
 /** A route or a track of a file as a row: its name over what it is, how far it goes and, of a track with times, when it began; a click shows it alone on the map, in the colour its row has, and its menu takes it out of the Stash. */
-export function StashItemRow(props: { file: StashFile; item: StashItem; where?: string; onShow: (item: StashItem) => void; items: () => MenuItem[] }) {
+export function StashItemRow(props: { file: StashFile; item: StashItem; where?: string; onShow: (item: StashItem) => void; items: () => MenuItem[]; select: RowSelect }) {
   return (
-    <li class="card" classList={{ opened: isShownItem(props.file.id, props.item) }}>
+    <li class="card" classList={{ selected: props.select.selected(), opened: isShownItem(props.file.id, props.item) }}>
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
-        <button class="text grow" onClick={() => props.onShow(props.item)}>
+        <Pad label={t('Select {name}', { name: stashItemName(props.item) })} selected={props.select.selected()} onToggle={props.select.onToggle} />
+        <button class="text grow" onClick={(e) => props.select.onClick(e) || props.onShow(props.item)}>
           <span class="swatch" style={{ background: stashColor(props.file, props.item) }} />
           <span class="lines">
             <span class="name">{stashItemName(props.item)}</span>
@@ -61,8 +62,9 @@ export function StashFileCard(props: {
   onOpen: (file: StashFile) => void;
   onShow: (item: StashItem) => void;
   items: () => MenuItem[];
-  /** The menu of one of its routes or tracks. */
+  /** The menu of one of its routes or tracks, and how it is selected. */
   itemItems: (item: StashItem) => MenuItem[];
+  itemSelect: (item: StashItem) => RowSelect;
   select: CardSelect;
   /** Whether its routes and tracks are listed under it; not among what a search found. */
   unfolded?: boolean;
@@ -87,7 +89,7 @@ export function StashFileCard(props: {
       </div>
       <Show when={props.unfolded}>
         <ul class="tree-children">
-          <For each={props.file.items}>{(item) => <StashItemRow file={props.file} item={item} onShow={props.onShow} items={() => props.itemItems(item)} />}</For>
+          <For each={props.file.items}>{(item) => <StashItemRow file={props.file} item={item} onShow={props.onShow} items={() => props.itemItems(item)} select={props.itemSelect(item)} />}</For>
           <Show when={props.file.waypoints > 0}>
             <li class="muted detail">{counted(props.file.waypoints, 'waypoint')}</li>
           </Show>
