@@ -19,7 +19,7 @@ import { selects } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, routeKindLabel, routeLabel } from './labels';
 import { partMenu } from './partMenu';
-import { GroupEye, RouteEye } from './Eye';
+import { RoutePin } from './Pin';
 import { DayRecordings } from './Recordings';
 
 /**
@@ -84,10 +84,6 @@ export function SectionDetails(props: { day: Day }) {
   return (
     <div class="day-details">
       <Show when={props.day.routes.length > 0} fallback={<Show when={recordingsOf(props.day.id).length === 0}><p class="muted">{t('No routes in this section yet.')}</p></Show>}>
-        <div class="row heading">
-          <h4 class="grow">{t('Routes')}</h4>
-          <GroupEye group="routes" />
-        </div>
         <ul class="routes">
           <ForById each={props.day.routes}>{(route) => <RouteItem route={route()} day={props.day} />}</ForById>
         </ul>
@@ -108,9 +104,9 @@ export function SectionDetails(props: { day: Day }) {
 }
 
 /**
- * A route of a section: a click takes it up, which puts it on the map whatever its eye
- * says, and shows it whole; a click on the one taken up lets it go. Its menu copies and
- * removes it.
+ * A route of a section: a click takes it up, which draws it alone among the section's
+ * routes but for the pinned ones, and shows it whole; a click on the one taken up lets
+ * it go. Its menu copies and removes it.
  */
 function RouteItem(props: { route: Route; day: Day }) {
   const label = createMemo(() => routeLabel(props.route, props.day));
@@ -143,7 +139,7 @@ function RouteItem(props: { route: Route; day: Day }) {
             </span>
           </span>
         </button>
-        <RouteEye id={props.route.id} of={label()} />
+        <RoutePin id={props.route.id} of={label()} />
         <MenuButton of={label()} items={() => partMenu('route', props.route.id)} />
       </div>
     </li>

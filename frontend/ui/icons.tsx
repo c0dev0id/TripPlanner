@@ -199,20 +199,21 @@ export const SettingsIcon = () => (
   </Icon>
 );
 
-/** An open eye: on the map. */
-export const EyeIcon = () => (
+/** A tack lying ready: not pinned to the map. */
+export const TackIcon = () => (
   <Icon>
-    <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
-    <path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" />
+    <path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4" />
+    <path d="M9 15l-4.5 4.5" />
+    <path d="M14.5 4l5.5 5.5" />
   </Icon>
 );
 
-/** A struck-out eye: not on the map. */
-export const EyeOffIcon = () => (
+/** A tack stuck in: pinned to the map. */
+export const TackedIcon = () => (
   <Icon>
-    <path d="M10.585 10.587a2 2 0 0 0 2.829 2.828" />
-    <path d="M16.681 16.673a8.717 8.717 0 0 1 -4.681 1.327c-3.6 0 -6.6 -2 -9 -6c1.272 -2.12 2.712 -3.678 4.32 -4.674m2.86 -1.146a9.055 9.055 0 0 1 1.82 -.18c3.6 0 6.6 2 9 6c-.666 1.11 -1.379 2.067 -2.138 2.87" />
-    <path d="M3 3l18 18" />
+    <path d="M9 4v6l-2 4v2h10v-2l-2 -4v-6" />
+    <path d="M12 16l0 5" />
+    <path d="M8 4l8 0" />
   </Icon>
 );
 

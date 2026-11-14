@@ -553,13 +553,13 @@ a {
   color: var(--accent);
 }
 
-/* An eye: closed, it is as quiet as what it keeps off the map; open under a closed group's eye, it is faint. */
-button.icon.eye[aria-pressed='false'] {
+/* A pin: quiet while it lies ready, in the accent's colour while it holds. */
+button.icon.pin {
   color: var(--muted);
 }
 
-button.icon.eye.veiled {
-  opacity: 0.4;
+button.icon.pin[aria-pressed='true'] {
+  color: var(--accent);
 }
 
 /* A trip's shape at the end of its card. */

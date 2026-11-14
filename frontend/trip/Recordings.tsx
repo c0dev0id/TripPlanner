@@ -5,7 +5,7 @@ import type { Day } from '../model/trip';
 import { copyRecordings, isCutRecording } from '../state/clipboard';
 import { clearPartSelection, clickPart, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
 import { showWhole } from '../state/drawing';
-import { groupEye, recordingEye, setRecordingEyes } from '../state/eyes';
+import { isRecordingPinned, pinRecordings } from '../state/pins';
 import { openRecording } from '../state/recordingView';
 import {
   activeRecordingId,
@@ -37,8 +37,8 @@ import { CloseIcon, PlusIcon, SearchIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
-import { Eye, GroupEye } from './Eye';
-import { eyeItems, moveToDayItem } from './partMenu';
+import { moveToDayItem, pinItems } from './partMenu';
+import { Pin } from './Pin';
 import { pickFile } from '../ui/pickFile';
 import { selects } from '../ui/selection';
 
@@ -55,7 +55,7 @@ export function addRecordingPicked(dayId: string): void {
   });
 }
 
-/** The opened day's recordings, a row each with its eye and its colour on the map: adding one, on a trip's day looking up those that wait for it, and the eye of them all. */
+/** The opened day's recordings, a row each with its pin and its colour on the map: adding one, and on a trip's day looking up those that wait for it. */
 export function DayRecordings(props: { day: Day }) {
   const recordings = () => recordingsOf(props.day.id);
   const [renamed, setRenamed] = createSignal<Recording>();
@@ -64,9 +64,6 @@ export function DayRecordings(props: { day: Day }) {
     <>
       <div class="row heading">
         <h4 class="grow">{t('Recordings')}</h4>
-        <Show when={recordings().length > 0}>
-          <GroupEye group="recordings" />
-        </Show>
         <Show when={openTrip()?.kind === 'trip'}>
           <IconButton label={t('Look up recordings…')} onClick={() => void recordingAction(props.day.id, () => lookUp(props.day))}>
             <SearchIcon />
@@ -164,7 +161,7 @@ export async function deleteRecordingsAsked(chosen: readonly Recording[]): Promi
 
 /**
  * The menu of a recording, or of the selected recordings it is one of: rename, cut, copy,
- * move to another day, for several their eyes, select, delete. What takes one recording
+ * move to another day, for several their pins, select, delete. What takes one recording
  * alone is greyed out for several.
  */
 function recordingMenu(recording: Recording, onRename: (recording: Recording) => void): MenuItem[] {
@@ -182,7 +179,7 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
     { label: t('Cut'), run: () => clipRecordings(chosen, true) },
     { label: t('Copy'), run: () => clipRecordings(chosen, false) },
     ...moveToDayItem(dayId, move),
-    ...(several ? eyeItems((open) => setRecordingEyes(chosen.map((r) => r.id), open)) : []),
+    ...(several ? pinItems((pinned) => pinRecordings(chosen.map((r) => r.id), pinned)) : []),
     ...(several || isPartSelected('recording', String(recording.id)) ? [] : [{ label: t('Select'), run: () => togglePart('recording', String(recording.id)) }]),
     { label: t('Delete'), run: () => void deleteRecordingsAsked(chosen) },
   ];
@@ -190,8 +187,8 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
 
 /**
  * A recording as a row: its colour, its name over when it began and its length, or over
- * why its file cannot be read, and its eye; a click opens it, which shows it whole on the
- * map with its figures whatever its eye says, and a click on the opened one closes it;
+ * why its file cannot be read, and its pin; a click opens it, which shows it whole on the
+ * map with its figures, and a click on the opened one closes it;
  * with Cmd, Ctrl or Shift it selects; its menu is recordingMenu.
  */
 function RecordingItem(props: { recording: Recording; onRename: (recording: Recording) => void }) {
@@ -228,7 +225,7 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
             <span class="muted detail">{detail()}</span>
           </span>
         </button>
-        <Eye of={props.recording.name} open={recordingEye(props.recording.id)} veiled={!groupEye('recordings')} onToggle={(open) => setRecordingEyes([props.recording.id], open)} />
+        <Pin of={props.recording.name} pinned={isRecordingPinned(props.recording.id)} onToggle={(pinned) => pinRecordings([props.recording.id], pinned)} />
         <MenuButton of={props.recording.name} items={() => recordingMenu(props.recording, props.onRename)} />
       </div>
     </li>

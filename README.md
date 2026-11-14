@@ -104,7 +104,7 @@ share work; sharing between users is on the way.
 | Esc | Closes a menu; back to the Hand; leaves the route |
 | Space, held | The Hand while a drawing tool is picked |
 | Click or tap a route on the map | Shows its day and takes the route up |
-| The eye on a route, a recording or their heading | Puts it on the map or takes it off |
+| The pin on a route or a recording | Keeps it on the map while another is taken up |
 | Right-click or long press on a stop or point on the map | Convert to stop, connect, disconnect, straight leg, remove |
 | Right-click or long press on the map | Add a point or a free stop here, a journal entry, or open the spot in Google Maps, OpenStreetMap or Street View |
 | Right-click, long press or the three dots on a folder, trip, day, route or stop in the panel | Its menu: new, add, rename or edit, move, copy or paste, duplicate, delete |

@@ -84,7 +84,7 @@
   long press), where Move… opens the other days.
 - Days, routes and stops answer to one menu, in a trip and in a collection alike: Edit,
   Duplicate, Cut, Copy, Paste, Move…, what only the kind has (a route's colour, a track's
-  condensing), for several routes Show selected and Hide selected, Select, Remove. What does not apply is greyed out. A stop's menu has
+  condensing), for several routes pinning them to the map or letting go of them, Select, Remove. What does not apply is greyed out. A stop's menu has
   Icon besides: our twelve icons, each drawn before its name and the stop's own marked,
   one of which a click gives to the stop, or to all the stops selected in one step;
   Garmin's symbols stay in the stop's dialog. Several of a kind are
@@ -286,17 +286,16 @@
   along its routes, or its routes along them, a part of the day being enough. Each says
   when it began, its length and why it was found; a click shows its line on the map,
   the plus puts it on the day, as it is, and it waits no longer.
-- What is on the map is chosen as in a layer panel. Every route and every recording has
-  an eye on its row, and the headings Routes and Recordings have one for all of theirs:
-  a thing is drawn while its own eye and its group's are open. Routes start open,
-  recordings closed. A group's eye takes all of its group off the map and leaves their
-  own eyes as they are, shown faint meanwhile, so that opening it brings back what was
-  there. The route taken up and the recording opened are drawn whatever the eyes say.
-  Several selected are shown or hidden from their menu. The eyes are the open trip's,
-  for all of its days, and go when it is left or the page is loaded again. The whole
-  trip shows the routes whose eyes are open, the day shown those and its recordings
-  whose eyes are open, the neighbouring days their routes; recordings are drawn for the
-  day shown only.
+- What is on the map follows what is taken up. With the whole trip shown, or a day and
+  nothing taken up, the planned routes and tracks are all drawn, and no recordings.
+  Taking up a route or opening a recording draws that one alone; a route being edited
+  and a recording opened are both drawn. Every route and every recording has a pin on
+  its row: pinned, it stays on the map of its day whatever else is taken up, and a
+  pinned recording is drawn also while nothing is. Several selected are pinned or let
+  go from their menu. The neighbouring days draw their pinned routes. The pins are the
+  open trip's, for all of its days, and go when it is left or the page is loaded
+  again. A recording added to a day, or put on it by the lookup, is pinned. Another
+  day closes the recording opened, as it lets go of the route taken up.
 - A route under a mouse's pointer on the map is drawn wider and named, after its day while the
   whole trip is shown; a click or a tap on it shows its day and takes the route up, as a
   click on its row does, which is brought into view. This holds while no route is being

@@ -9,7 +9,7 @@ import { trackSurfaces } from '../recording/surfaces';
 import type { RecordedTrack } from '../recording/track';
 import { legCoordinates, routeLegs } from '../routing/legs';
 import { activeRecordingId, loadedTrack, setActiveRecordingId, shownRecordings } from './recordings';
-import { openTrip, openTripId } from './trip';
+import { openTrip, openTripId, selectedDayId } from './trip';
 
 /**
  * The recording opened for its figures: its cards over the map, its line coloured by a
@@ -161,6 +161,8 @@ const view = createRoot(() => {
       setComparand(undefined);
     }),
   );
+  // Another day starts with none opened, as it starts with no route taken up.
+  createEffect(on(selectedDayId, () => openRecording(undefined)));
   // The surfaces are matched once a line is coloured by them.
   createEffect(() => {
     const o = opened();

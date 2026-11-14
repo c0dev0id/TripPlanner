@@ -43,7 +43,7 @@ import { MenuButton } from '../ui/MenuButton';
 import { selects } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, dayHeading, dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
-import { GroupEye, RouteEye } from './Eye';
+import { RoutePin } from './Pin';
 import { addRecordingPicked, DayRecordings } from './Recordings';
 import { partMenu } from './partMenu';
 
@@ -164,7 +164,6 @@ export function DayDetails(props: { day: Day }) {
       </Show>
       <div class="row heading">
         <h4 class="grow">{t('Routes')}</h4>
-        <GroupEye group="routes" />
         <IconButton label={t('Add route')} onClick={addRoute}>
           <PlusIcon />
         </IconButton>
@@ -280,7 +279,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
             </span>
           </span>
         </button>
-        <RouteEye id={props.route.id} of={label()} />
+        <RoutePin id={props.route.id} of={label()} />
         <JournalButton target={{ routeId: props.route.id }} of={label()} />
         <MenuButton of={label()} items={items} />
       </div>

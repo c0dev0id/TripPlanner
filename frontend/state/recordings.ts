@@ -17,7 +17,7 @@ import { readRecording, type RecordedTrack } from '../recording/track';
 import { decodeCached } from '../routing/polyline';
 import { flushSave } from './autosave';
 import { showWhole } from './drawing';
-import { recordingOnMap, setRecordingEyes } from './eyes';
+import { isRecordingPinned, pinRecordings } from './pins';
 import { openTripId, selectedDayId } from './trip';
 
 /**
@@ -42,15 +42,15 @@ export function recordingColor(recording: Recording): string {
   return COLORS[recordingsOf(recording.dayId).findIndex((r) => r.id === recording.id) % COLORS.length]!;
 }
 
-/** The recording opened for its figures, which is on the map whatever its eye says. */
+/** The recording opened for its figures. */
 const [activeRecordingId, setActiveRecordingId] = createSignal<number>();
 export { activeRecordingId, setActiveRecordingId };
 
-/** The recordings on the map: of the day shown, those whose eye and whose group's are open, and the one opened. */
+/** The recordings on the map: of the day shown, the pinned ones and the one opened. */
 export function shownRecordings(): Recording[] {
   const dayId = selectedDayId();
   const active = activeRecordingId();
-  return allRecordings().filter((r) => r.dayId === dayId && (r.id === active || recordingOnMap(r.id)));
+  return allRecordings().filter((r) => r.dayId === dayId && (r.id === active || isRecordingPinned(r.id)));
 }
 
 /** Each read recording's track, or why it could not be read, by recording id. */
@@ -98,8 +98,8 @@ createRoot(() => {
 
 /**
  * Adds a GPX file of one track to the day as a recording, under `name`, or else named after
- * its track or, without a name there, `fallback`; and opens its eye. Throws for any other
- * file.
+ * its track or, without a name there, `fallback`; and pins it to the map, where it is
+ * to be seen. Throws for any other file.
  */
 export async function addRecording(dayId: string, gpx: string, naming: { name: string } | { fallback: string }): Promise<Recording> {
   const track = readRecording(gpx);
@@ -108,7 +108,7 @@ export async function addRecording(dayId: string, gpx: string, naming: { name: s
   // Kept before it is listed, so that it is not read again from the file just sent.
   keep(recording.id, track);
   mutate((loaded) => loaded && { ...loaded, recordings: [...loaded.recordings, recording] });
-  setRecordingEyes([recording.id], true);
+  pinRecordings([recording.id], true);
   return recording;
 }
 
@@ -159,13 +159,13 @@ export function previewedLines(): { id: number; points: LngLat[]; color: string 
   return waiting ? [{ id: waiting.id, points: decodeCached(waiting.line), color: nextColor(looked!.dayId) }] : [];
 }
 
-/** Puts a found recording on its day of the open trip, as it is, its eye open: it waits no longer. */
+/** Puts a found recording on its day of the open trip, as it is, and pins it to the map: it waits no longer. */
 export async function assignRecording(dayId: string, waiting: WaitingRecording): Promise<void> {
   await putOnDay(waiting.tripId, waiting.id, dayId);
   const { id, name, distanceM, startedAt } = waiting;
   mutate((loaded) => loaded && { ...loaded, recordings: [...loaded.recordings, { id, dayId, name, distanceM, startedAt }].sort((a, b) => a.id - b.id) });
   setLookup((looked) => looked && { ...looked, found: looked.found?.filter((r) => r.id !== id) });
-  setRecordingEyes([id], true);
+  pinRecordings([id], true);
 }
 
 /** The open trip's recording of the id. */

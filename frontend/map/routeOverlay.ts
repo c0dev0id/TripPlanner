@@ -91,7 +91,7 @@ export function routeLayers(width: number, sharpUntil: number): LayerSpecificati
  * `colors` holds for their route, consecutive legs of a route in the same state as one
  * line, a mark at each spot given (where a free stop is nearest to the route), and a grey
  * dot at each of `dimStops` (the stops of the days shown that are not selected). Only the
- * routes `drawn` says are on the map get lines.
+ * routes `drawn` says are on the map, by the role of their day, get lines.
  */
 export function routeFeatures(
   days: readonly { day: Day; role: RouteRole }[],
@@ -100,11 +100,11 @@ export function routeFeatures(
   failed: ReadonlySet<string>,
   marks: readonly LngLat[],
   dimStops: readonly LngLat[] = [],
-  drawn: (route: Route) => boolean = () => true,
+  drawn: (route: Route, role: RouteRole) => boolean = () => true,
 ): FeatureCollection<Geometry> {
   const features: Feature<Geometry>[] = [];
   for (const { day, role } of days) {
-    for (const route of day.routes.filter(drawn)) {
+    for (const route of day.routes.filter((r) => drawn(r, role))) {
       const routeRole: RouteRole = route.id === editingRouteId ? 'edited' : role;
       // The lines of consecutive legs in the same state; a run of one leg, such as a track, keeps its line as it is.
       const runs: { state: LegState; parts: LngLat[][] }[] = [];

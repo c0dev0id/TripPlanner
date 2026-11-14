@@ -5,11 +5,11 @@ import { panTarget, showNeighbours } from '../state/drawing';
 import { comparedLines } from '../state/duplicates';
 import { routePositions } from '../routing/legs';
 import { colorRuns } from '../recording/lineColors';
-import { routeOnMap } from '../state/eyes';
+import { isRoutePinned } from '../state/pins';
 import { keepsView } from '../state/place';
 import { routeWidth } from '../state/preferences';
 import { opened, openedLineColors } from '../state/recordingView';
-import { loadedTrack, previewedLines, recordingColor, shownRecordings } from '../state/recordings';
+import { activeRecordingId, loadedTrack, previewedLines, recordingColor, shownRecordings } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
 import { failedLegs } from '../state/routing';
 import { activeRouteId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
@@ -94,8 +94,15 @@ function shownDays(): ShownDay[] {
 /** Whether the lines of the days drawn are the same: the same routes in the same roles. */
 const sameLines = (a: ShownDay[], b: ShownDay[]): boolean => a.length === b.length && a.every((d, i) => d.day.routes === b[i]!.day.routes && d.role === b[i]!.role);
 
-/** Whether a route of the days drawn is on the map: by its eye, or as the one taken up. */
-const routeDrawn = (route: Route): boolean => route.id === activeRouteId() || routeOnMap(route.id);
+/**
+ * Whether a route of a day drawn is on the map. The one taken up and the pinned ones
+ * always are; the others of the day shown, or of the whole trip, while nothing is taken
+ * up, which draws what is taken up alone among them. Of a neighbouring day, the pinned.
+ */
+function routeDrawn(route: Route, role: RouteRole): boolean {
+  if (route.id === activeRouteId() || isRoutePinned(route.id)) return true;
+  return role !== 'neighbour' && activeRouteId() === undefined && activeRecordingId() === undefined;
+}
 
 const samePlaces = (a: readonly LngLat[], b: readonly LngLat[]): boolean => a.length === b.length && a.every((p, i) => p[0] === b[i]![0] && p[1] === b[i]![1]);
 
@@ -170,7 +177,7 @@ function RouteLines(props: { map: MapLibreMap }) {
       if (keepsView(openTripId())) return;
       const bounds = new LngLatBounds();
       for (const { day } of shownDays().filter((d) => d.role === 'selected')) {
-        for (const route of day.routes.filter(routeDrawn)) for (const position of routePositions(route)) bounds.extend(position);
+        for (const route of day.routes.filter((r) => routeDrawn(r, 'selected'))) for (const position of routePositions(route)) bounds.extend(position);
         for (const stop of day.stops) bounds.extend(stop.lngLat);
       }
       for (const recording of shownRecordings()) for (const position of loadedTrack(recording)?.points ?? []) bounds.extend(position);

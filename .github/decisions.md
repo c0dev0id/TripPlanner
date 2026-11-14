@@ -399,7 +399,7 @@ entries at the end of their section.
   a hairline on a road blown up to forty, at the very zoom a ride is held against its
   plan; they take the width routes have, set once for all lines of the trip. A recording
   under a route of its width is covered where both run alike, as it was under the
-  wider route before; the routes' group eye takes the plan away.
+  wider route before; a recording opened is drawn without the plan.
 - **The map's credits stay MapLibre's, and the tools step aside.** On a small map
   MapLibre shows its credits spread out until the map is first dragged, as
   OpenStreetMap's attribution guidelines ask, and offers no way to start them folded.
@@ -594,26 +594,28 @@ entries at the end of their section.
   for, or a recording kept in a collection beside the one in its trip. A first version
   left out every group whose routes were all in trips, which hid exactly the trips
   imported twice.
-- **What is on the map is what has its eye open.** The map drew every route of the day
-  shown and, by a switch on the day, all of its recordings or none, which left no way to
-  put one alternative aside or to look at three rides of ten. Each route and each
-  recording now has an eye, and each of the two groups one that takes the whole group
-  off the map without touching the eyes in it: planning without the rides and comparing
-  the rides are ways of working that alternate, and the rides chosen should come back
-  as they were. Hence also one eye per group for the trip, not per day. Routes start
-  open, since the plan is what the planner is for; recordings start closed, since a day
-  collects many. What is taken up is drawn whatever its eye says, so that a hidden
-  thing is one click away. Two other shapes were weighed and dropped. In the first the
-  eye meant "keep this while another is taken up", with everything hidden by default
-  and the whole day or trip shown while nothing was taken up: every route was then
-  drawn under a closed eye, the neighbouring days showed nothing until eyes were opened
-  on them, and an eye opened on a recording changed nothing until a route was taken
-  up. The second kept the eyes and added switches to show the hidden and to hide the
-  recordings: the first of them makes the eyes say what is not so, the second is the
-  group's eye in another place. Recordings are drawn for the day shown only: each is a
-  file of megabytes, and the trip as a whole is its plan. The eyes are kept with the
-  open trip in the page and no longer: they say what is looked at now, not what the
-  trip is.
+- **What is taken up is drawn alone, but for what is pinned.** The map drew every route
+  of the day shown and, by a switch on the day, all of its recordings or none, which
+  left no way to look at one route of several or at three rides of ten. With the whole
+  trip or a day shown and nothing taken up, the planned routes are all drawn, since the
+  plan as a whole is what those two views are for; recordings are not, since a day
+  collects many. Taking up a route or opening a recording draws that one alone: the
+  work is on it, and the others are in its way. What is to stay beside it is pinned,
+  route or recording, and a pinned thing is on the map of its day whatever else is
+  taken up. A route being edited and a recording opened are both taken up and both
+  drawn, which is how a plan is held against a ride. A first version gave every route
+  and recording an eye that said whether it is on the map, routes open and recordings
+  closed, with an eye over each of the two groups. It kept every route on the map while
+  one was taken up, so the wish to see one thing alone was not met, and hiding the
+  others meant closing their eyes one by one and opening them again afterwards. The
+  eye was right about one thing and that is kept in the name: a mark that is off while
+  its route is drawn must not read as "hidden", so it is a pin and not an eye. The
+  neighbouring days draw their pinned routes only, by the same reading: they are
+  context for what is taken up, chosen like the rest of it. Recordings are drawn for
+  the day shown only: each is a file of megabytes. The pins are kept with the open
+  trip in the page and no longer: they say what is looked at now, not what the trip
+  is. A recording added to a day or put on it by the lookup is pinned, so that it is
+  seen where it was just put.
 - **A route on the map is taken up by a click on it.** With the whole trip or a day
   shown, finding the row of a line seen on the map meant opening days and reading
   names. The line under the pointer is named and drawn wider, by a feature state on the
