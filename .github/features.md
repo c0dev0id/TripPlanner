@@ -99,8 +99,8 @@
   the trip it keeps its journal; into another trip or out of a collection it is copied
   there and then taken from where it was. Every such step is undone with Ctrl+Z.
 - The keys of a file manager do what the menus do: Ctrl or Cmd with X and C cut and
-  copy what is selected, Delete or Backspace removes it after the menu's question, and
-  Ctrl or Cmd with V pastes. In the open trip they act on the selected days, routes,
+  copy what is selected, Delete or Backspace removes it after the menu's question, a
+  recording by taking it off its day, and Ctrl or Cmd with V pastes. In the open trip they act on the selected days, routes,
   stops or recordings; with nothing selected, cut and copy take the route being edited.
   A paste goes into the route being edited where it takes what was copied (stops, as
   its points), else into the day picked, days after it. In the library they act on the
@@ -192,7 +192,7 @@
   each of its points. Its menu condenses it (Douglas–Peucker at a distance chosen from a
   few, each with the count of points it leaves), and Convert in it makes a route of it:
   fewer points, every leg routed, with the time the routing will take.
-- KML and KMZ files are read wherever a GPX file is, but among the recordings, which are
+- KML and KMZ files are read wherever a GPX file is, but as recordings, which are
   kept as the GPX files they are: into a day, as the days of a trip, the sections of a
   collection or the places of a list, picked or dropped, alone or in a folder. A
   placemark's point is a waypoint with its name, its address and phone number, and its
@@ -214,9 +214,8 @@
 - Opening a trip says how far it has come on the trip's row: a ring turns where its
   icon stands, and under its name stands how much of its document has arrived of how
   much ("Loading 2.3 of 4.1 MB"), then "Opening…" until the map has drawn its routes.
-- Three folders every user has, first in the tree and tinted, which are neither renamed,
-  moved nor deleted: Recordings (red), for recordings that belong to no trip,
-  Collections (yellow), and Places (green), for lists of the user's own places. They
+- Two folders every user has, first in the tree and tinted, which are neither renamed,
+  moved nor deleted: Collections (yellow), and Places (green), for lists of the user's own places. They
   and the folders in them hold collections and nothing else;
   every other folder and the top hold trips. The server refuses a collection made or
   moved elsewhere, a trip made or moved into them, and a folder moved across with
@@ -226,14 +225,8 @@
   copied routes are pasted as a new collection onto these folders only; and a folder's
   card counts collections there.
 - Import by dropping GPX files, zips of exported trips and folders from the computer on
-  a folder of the tree, or by Add in its menu; what they become follows from the folder. On Recordings or a folder
-  in it, every GPX file of one track is kept as a recording, the file as it is: in the
-  collection named after the year it was recorded in, on the section of its month
-  (its first track point's time, else a date in its name, else the file's own date),
-  both made where they are missing. A file the user keeps already, on whatever day, is
-  left out, so the same folder can be dropped again; a file of several tracks is
-  reported and left out. Files added from the menu of a collection in there are kept
-  the same way, in that collection. On Places or a folder in it, a GPX file's waypoints
+  a folder of the tree, or by Add in its menu; what they become follows from the folder.
+  On Places or a folder in it, a GPX file's waypoints
   become the places of a list named as the file names itself, else after the file, each
   under the kind its waypoint is of (`<type>`), else under "Places"; a place the list
   holds already, by name and position, is left out, so a newer file of the same list
@@ -291,8 +284,9 @@
   trip is made as a folder of GPX files makes one: named without the date in its
   name, a section with a date in its name on the day of that date, several of a date
   on one day, the others a day each, dated on from the name's date or undated. A tick,
-  set at first, takes the sections out of the collection once the trip is saved, their
-  recordings going to their days; a collection left without sections is deleted.
+  set at first, takes the sections out of the collection once the trip is saved;
+  a collection left without sections is deleted. The rides on a section are on its
+  day in the trip either way.
   Without it the trip holds copies. The collection stays the one shown.
 - Lists of the user's own places, in the Places folder: a list is opened like a
   collection, its sections are the kinds of its places ("Kind of place…" under New in
@@ -326,37 +320,48 @@
   back as a new one with its days, routes, stops, journal and recordings, an entry at
   the time it was written. GPX files beside exported trips are imported as before.
 
-- Recordings on a day: *Add recording…* in the day's menu or under the opened day takes
-  a GPX file of one track, such as Ridelink's or Scenic's (waypoints in it are left
-  aside); the file is kept as it is, with every value it measured per point. A day's
-  recordings are listed under it, each in its own colour, and those on the map are
-  drawn in that colour under the planned routes.
-  A recording's menu renames, cuts, copies, moves it to another day and deletes it;
-  several are selected as routes are, and the menu then acts on all of them. Copied
-  recordings paste into any day, of this trip or another; cut ones move there. A single
-  copied recording also pastes as a track route, to plan from it; nothing else becomes
-  a recording than a recorded file. A recording's row says when it began and how long
-  it is, or that its file has no times.
+- Recordings on a day: a ride is kept once, as the GPX file its tracker wrote, and is
+  on any number of days of any trips or collections. *Add recording…* in the day's
+  menu or under the opened day takes a GPX file of one track, such as Ridelink's or
+  Scenic's (waypoints in it are left aside); the file is kept as it is, with every
+  value it measured per point, and one kept already is put on the day as the ride it
+  is. A day's recordings are listed under it by when they began, each in its own
+  colour, and those on the map are drawn in that colour under the planned routes.
+  A recording's menu renames the ride, cuts, copies and moves it to another day, and
+  takes it off the day, which leaves it among the rides; several are selected as
+  routes are, and the menu then acts on all of them. Copied recordings paste onto any
+  day, of this trip or another, and are then on both; cut ones leave the day they
+  were cut from. A single copied recording also pastes as a track route, to plan from
+  it; nothing else becomes a recording than a recorded file. A recording's row says
+  when it began and how long it is, or that its file has no times. Removing a day, a
+  trip or a collection takes its rides off it and deletes none.
 - Rides, the library by when it was ridden: the clock among the library's switches puts
-  every recording the user keeps into the pane between the library and the map, on
-  whatever day it is or waiting in the folder for recordings, by when it began. Years,
-  the latest unfolded, hold months, and a month the days ridden on, each heading with
-  its days and its length; a day is a card with its date and length over its rides,
-  since a tracker starts a new file after a break: when each began, its name, its
-  length and where it is kept, a trip and its day or "On no day yet". A click or tap
-  selects a ride, Cmd or Ctrl one more, Shift a run, its pad adds it or takes it away;
-  a day's or a month's heading selects all its rides. The map draws the selected rides,
-  each in a colour its row shows, and brings them into view, so that rides of different
-  years are looked at together. A ride's menu opens the day that keeps it, whose pane
-  takes the rides' place; a recording's menu on its day has "Show in the rides", which
-  comes back with it selected and in view. Nothing is changed from there.
-- Recordings that wait for their day: those in the Recordings folder, on the sections of
-  their collections, where they are listed, shown and opened as on a day; a collection
-  there says how many it holds. *Look up recordings…* beside *Add recording…* on a
-  trip's day lists the waiting ones that may be the day's: begun on its date, or run
-  along its routes, or its routes along them, a part of the day being enough. Each says
-  when it began, its length and why it was found; a click shows its line on the map,
-  the plus puts it on the day, as it is, and it waits no longer.
+  every ride the user keeps into the pane between the library and the map, by when it
+  began. Years, the latest unfolded, hold months, and a month the days ridden on, each
+  heading with its days and its length; a day is a card with its date and length over
+  its rides, since a tracker starts a new file after a break: when each began, its
+  name, its length and the days it is on, each as a trip and its day, or "On no day
+  yet". Rides without times stand in a card of their own at the end. The plus in the
+  pane's heading, and GPX files or folders dropped on the pane, keep files as rides: a
+  file kept already is left out, so a tracker's folder can be dropped again as it
+  grows, and the pane says how many were kept and how many were there already. A
+  click or tap selects a ride, Cmd or Ctrl one more, Shift a run, its pad adds it or
+  takes it away; a day's or a month's heading selects all its rides. The map draws the
+  selected rides, each in a colour its row shows, and brings them into view, so that
+  rides of different years are looked at together. A ride's menu renames it, copies it
+  to be pasted onto a day, puts it on a day of the open trip, opens a day it is on,
+  whose pane takes the rides' place, and deletes it with its file, from every day it
+  is on, after a question; with several selected it copies, adds and deletes all of
+  them. A recording's menu on its day has "Show in the rides", which comes back with
+  it selected and in view.
+- Looking up a day's rides: *Look up recordings…* beside *Add recording…* on a trip's
+  day goes through all the user's rides and lists the days of riding that may be the
+  day's: begun on its date, or ridden along its routes, or its routes along them, a
+  part of the day being enough. The files of one date are judged together, so that a
+  day recorded in pieces is found as one. A row says its date, its ride or how many
+  files it has, its length and why it was found; a click shows its lines on the map,
+  the plus puts its rides on the day. Rides that are on the day already are not listed
+  again, and a ride on another day is found as any other.
 - What is on the map follows what is taken up. With the whole trip shown, or a day and
   nothing taken up, the planned routes and tracks are all drawn, and no recordings.
   Taking up a route or opening a recording draws that one alone; a route being edited
@@ -452,11 +457,11 @@
   Switzerland, the Netherlands and Belgium as mintelonline.de collects them, a motorcycle
   in a red ring where one begins, where a tap says when and for whom it holds. Signs and
   lines of both grow with the zoom, so that they stay wider than the road under them.
-- "My rides", a third overlay: every recording the user keeps, on whatever day or
-  waiting in the folder for recordings, drawn at once as a translucent line each. A
+- "My rides", a third overlay: every ride the user keeps, on a day or on none,
+  drawn at once as a translucent line each. A
   road ridden often is drawn darker, one ridden once lightly, and where nothing is
   drawn the user has not been. A tap on a line says which ride it is: its name, when
-  it began, its length and the trip or collection it is kept in. The overlay is under
+  it began, its length and the trips or collections it is on a day of. The overlay is under
   the trip's own lines, so that it can stay on while planning, and how opaque one ride
   is drawn is set in the preferences. It reads the rides anew each time it is switched
   on.

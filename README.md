@@ -36,9 +36,9 @@ share work; sharing between users is on the way.
   pad from one to another, and a search across them. GPX files and folders are added
   from a folder's menu or dropped on it: a folder of files becomes a trip, a folder of
   folders a folder of trips.
-- **Recordings, Collections and Places** — three folders of their own: recorded rides
-  that wait for their day, planning material to copy routes from, and lists of your
-  own places, loaded from GPX files and added to a day from the map.
+- **Collections and Places** — two folders of their own: planning material to copy
+  routes from, and lists of your own places, loaded from GPX files and added to a day
+  from the map.
 - **One way back** — the card under the path leads one level up, from a day to its trip
   to its folder to the top, and never moves.
 - **Duplicates found** — a report lists the routes kept more than once across the
@@ -53,9 +53,9 @@ share work; sharing between users is on the way.
   optional parts; the settings kept as named presets.
 - **Trips to keep or to move** — export one or several as a zip with journal, photos and
   recordings; import the zip, or its unpacked folder, to get them back.
-- **Recordings beside the plan** — add a day's rides as recorded (Ridelink, Scenic or any
-  GPX track), or look up the waiting ones that match the day, and see them on the map
-  next to the planned route. Open one for its figures: speed, climb, lean and road
+- **Recordings beside the plan** — put rides as recorded (Ridelink, Scenic or any GPX
+  track) on a day, or look up the ones that match it, and see them on the map next to
+  the planned route. A ride can be on several days; a day can take several rides. Open one for its figures: speed, climb, lean and road
   surface, charted and coloured on the line.
   Compare it with the plan or another ride.
 - **Documents with the day** — keep PDFs, pictures, any other file and links with a
@@ -72,8 +72,9 @@ share work; sharing between users is on the way.
   for what and until when.
 - **Where you have been** — a third button draws every recorded ride at once: the roads
   you ride often dark, the ones you never took not at all. It stays on while planning.
-- **Rides by date** — every recording in years, months and days of riding, whatever
-  trip keeps it; select some and compare them on the map.
+- **Rides by date** — every recording in years, months and days of riding, kept once
+  whatever plans it followed; drop your tracker's files there, select some and compare
+  them on the map.
 - **Fuel, beds and food** — fuel stations, hotels, restaurants, cafes, viewpoints and
   parking as a layer: along the day's routes, each kind within its own distance, or all
   in view.

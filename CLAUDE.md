@@ -84,6 +84,9 @@ Layers, each depending only on the ones below:
   saved (`state/trip.ts` `savedTrip`) is sent as `{id, unchanged: true}`
   (`model/delta.ts`); the server fills such routes from its rows before validating and
   leaves unchanged rows alone. This relies on parts never being changed in place.
+- A ride as recorded is not part of the document: it is kept once for its user
+  (`recordings`), and `recording_days` names the days it is on, of any of the user's
+  trips. Removing a day or a trip removes links, never a ride.
 - Days, routes and stops carry client-generated ids. The server upserts them by id and
   deletes the rows the document no longer holds, because journal entries reference them.
   `Trip/TripDocumentValidator` checks the document, including that no id belongs to
