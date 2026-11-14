@@ -281,7 +281,8 @@
   this folder. On the Stash or a folder in it, every GPX file is kept as a file, as it
   is, a KML or KMZ file as the GPX it is turned into, and the folders of a dropped
   folder are made as they are; a file the Stash keeps already, wherever, is left out
-  and counted, and so is a file of any other kind. On any other folder or the top, a file becomes a trip and a dropped folder
+  and counted, and so is a file of any other kind. While a long import runs, the Stash
+  lists every ten seconds what it has kept so far. On any other folder or the top, a file becomes a trip and a dropped folder
   is imported as the folder tree above says. Exported trips in dropped folders and in
   zips come back as they were.
 - A duplicates report, switched on by its icon among the library's actions, in the pane

@@ -11,6 +11,9 @@ import { zipEntries } from '../gpx/zip';
 
 type Outcome = { text: string; errors: string[] };
 
+/** How often a running import lists what it has kept so far. */
+const RELIST_EVERY_MS = 10_000;
+
 /**
  * What is imported together: the GPX files and the folders as they are, and each zip
  * among the files as the folders it holds, apart from the rest, since two zips may hold
@@ -49,7 +52,16 @@ export function libraryImports(onLeave: () => Promise<void>) {
     if (running) return;
     running = true;
     await onLeave();
-    await runLibrary(async () => setImportNote(await work((text) => setImportNote({ text, errors: [] }))));
+    // A long import shows what it has kept so far: the folders and the Stash's files are listed afresh now and then while it runs.
+    let listedAt = Date.now();
+    const onProgress = (text: string) => {
+      setImportNote({ text, errors: [] });
+      if (Date.now() - listedAt < RELIST_EVERY_MS) return;
+      listedAt = Date.now();
+      relistFolders();
+      relistStash();
+    };
+    await runLibrary(async () => setImportNote(await work(onProgress)));
     running = false;
     relistFolders();
     relistTrips();
