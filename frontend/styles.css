@@ -611,11 +611,7 @@ button.icon.pin[aria-pressed='true'] {
   background: var(--active);
 }
 
-/* The folders every user has for recordings, for collections and for places keep their own tint, marked or not. */
-.tree .card[data-kind='recordings'] > .row {
-  background: var(--recordings);
-}
-
+/* The folders every user has for collections and for places keep their own tint, marked or not. */
 .tree .card[data-kind='collections'] > .row {
   background: var(--collections);
 }

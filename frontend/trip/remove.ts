@@ -8,10 +8,10 @@ import { openTrip, removeDay, removeRoute } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
 import { dayLabelOf, routeLabelOf } from './labels';
 
-/** Removes the day, after asking where routes, stops, recordings or media would go with it; whether it was removed. */
+/** Removes the day, after asking where routes, stops or media would go with it, or rides would be taken off it, which stay rides; whether it was removed. */
 export async function removeDayAsked(day: Day): Promise<boolean> {
   const kept = recordingsOf(day.id).length + mediaOf(day.id).length;
-  const question = t(kept > 0 ? 'Remove {day} with its routes, stops, recordings and media?' : 'Remove {day} with its routes and stops?', { day: dayLabelOf(openTrip()!, day) });
+  const question = t(kept > 0 ? 'Remove {day} with its routes, stops and media? Its recordings stay among the rides.' : 'Remove {day} with its routes and stops?', { day: dayLabelOf(openTrip()!, day) });
   if (day.routes.length + day.stops.length + kept > 0 && !(await askConfirmation(question, t('Remove')))) return false;
   removeDay(day.id);
   return true;

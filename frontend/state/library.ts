@@ -38,7 +38,7 @@ export const fetchingTrip = createRoot(() =>
 export const [query, setQuery] = createSignal('');
 
 /** The special folders are named in the page's language. */
-const SPECIAL_NAMES = { recordings: t('Recordings'), collections: t('Collections'), places: t('Places') };
+const SPECIAL_NAMES = { collections: t('Collections'), places: t('Places') };
 
 const library = createRoot(() => {
   const [trips, { refetch: refetchTrips }] = createResource(listTrips);

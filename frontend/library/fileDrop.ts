@@ -42,10 +42,11 @@ export async function droppedSources(data: DataTransfer): Promise<Dropped> {
 /**
  * Takes files dragged in from outside the browser: the folder they are over is marked as
  * for a dragged trip (see dragToFolder), and dropped there, `onDrop` gets the drop and the
- * folder, null for the top. Anywhere else the drop is refused, so that the browser does
+ * folder, null for the top; over the rides' pane, marked with `data-drop-rides`, the
+ * drop goes to `onRides`. Anywhere else the drop is refused, so that the browser does
  * not open the file in the planner's place.
  */
-export function onFileDrop(onDrop: (data: DataTransfer, folderId: number | null) => void): void {
+export function onFileDrop(onDrop: (data: DataTransfer, folderId: number | null) => void, onRides: (data: DataTransfer) => void): void {
   let target: HTMLElement | undefined;
   const mark = (to: HTMLElement | undefined) => {
     if (to === target) return;
@@ -56,7 +57,7 @@ export function onFileDrop(onDrop: (data: DataTransfer, folderId: number | null)
   const over = (e: DragEvent) => {
     if (!e.dataTransfer?.types.includes('Files')) return;
     e.preventDefault();
-    mark((e.target instanceof Element && e.target.closest<HTMLElement>('[data-drop-folder]')) || undefined);
+    mark((e.target instanceof Element && e.target.closest<HTMLElement>('[data-drop-folder], [data-drop-rides]')) || undefined);
     e.dataTransfer.dropEffect = target ? 'copy' : 'none';
   };
   /** The drag left the window. */
@@ -66,9 +67,10 @@ export function onFileDrop(onDrop: (data: DataTransfer, folderId: number | null)
   const drop = (e: DragEvent) => {
     if (!e.dataTransfer?.types.includes('Files')) return;
     e.preventDefault();
-    const folder = target?.dataset.dropFolder;
+    const { dropFolder: folder, dropRides: rides } = target?.dataset ?? {};
     mark(undefined);
-    if (folder !== undefined) onDrop(e.dataTransfer, folder === 'top' ? null : Number(folder));
+    if (rides !== undefined) onRides(e.dataTransfer);
+    else if (folder !== undefined) onDrop(e.dataTransfer, folder === 'top' ? null : Number(folder));
   };
   document.addEventListener('dragover', over);
   document.addEventListener('dragleave', leave);

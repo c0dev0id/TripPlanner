@@ -1,39 +1,47 @@
 import { t } from '../i18n/t';
 import { createEffect, createResource, createRoot, createSignal, on } from 'solid-js';
-import {
-  addRecording as postRecording,
-  deleteRecording,
-  errorMessage,
-  fetchRecordingGpx,
-  listRecordings,
-  lookUpRecordings,
-  moveRecording as putOnDay,
-  renameRecording as patchRecording,
-  type Recording,
-  type WaitingRecording,
-} from '../api';
+import { errorMessage, fetchRideGpx, keepRide, listRecordings, lookUpRides, putRideOnDay, renameRide, takeRideOffDay, type FoundRidingDay, type KeptRide, type Recording } from '../api';
 import { asName, type Day, type LngLat } from '../model/trip';
 import { readRecording, type RecordedTrack } from '../recording/track';
 import { decodeCached } from '../routing/polyline';
 import { flushSave } from './autosave';
 import { showWhole } from './drawing';
 import { isRecordingPinned, pinRecordings } from './pins';
+import { refreshRides } from './rides';
 import { openTripId, selectedDayId } from './trip';
 
 /**
- * The open trip's recordings, loaded with the trip; changes go to the server at once.
- * A recording's track is read from its file once it is on the map.
+ * The rides on the open trip's days, loaded with the trip; changes go to the server at
+ * once. A ride is kept for itself and is on a day by a link, so it may be on several.
+ * Its track is read from its file once it is on the map.
  */
 
-const [list, { mutate }] = createRoot(() => createResource(openTripId, async (tripId) => ({ tripId, recordings: await listRecordings(tripId) })));
+const [list, { mutate, refetch }] = createRoot(() => createResource(openTripId, async (tripId) => ({ tripId, recordings: await listRecordings(tripId) })));
 
-/** The recordings of the open trip, in the order they were added; none until they are loaded. */
+/** Reads the open trip's recordings again: after rides were changed where the trip does not see it. */
+export const relistRecordings = (): void => void refetch();
+
+/** The recordings of the open trip, once for each day a ride is on, by when they began; none until they are loaded. */
 function allRecordings(): Recording[] {
   const loaded = list();
   return loaded && loaded.tripId === openTripId() ? loaded.recordings : [];
 }
 
+/** The order the server lists them in: by when they began, those without times first. */
+const byStart = (a: Recording, b: Recording): number => (a.startedAt ?? '').localeCompare(b.startedAt ?? '') || a.id - b.id;
+
+/** Changes the list of the open trip's recordings, and has the rides read again where they are shown. */
+function change(to: (recordings: Recording[]) => Recording[]): void {
+  mutate((loaded) => loaded && { ...loaded, recordings: to(loaded.recordings) });
+  refreshRides();
+}
+
+const isOn = (dayId: string, id: number) => (r: Recording): boolean => r.id === id && r.dayId === dayId;
+
 export const recordingsOf = (dayId: string): Recording[] => allRecordings().filter((r) => r.dayId === dayId);
+
+/** The day's recordings among the ids, as a selection names them. */
+export const recordingsAmong = (dayId: string, ids: readonly string[]): Recording[] => recordingsOf(dayId).filter((r) => ids.includes(String(r.id)));
 
 /** The colours recordings are drawn in, apart from the planned routes', by their place on their day. */
 const COLORS = ['#7048e8', '#0c8599', '#c2255c', '#5c940d', '#e67700', '#3b5bdb'];
@@ -66,8 +74,8 @@ export function loadedTrack(recording: Recording): RecordedTrack | undefined {
 
 const keep = (id: number, track: RecordedTrack | Error) => setTracks(new Map(tracks()).set(id, track));
 
-/** What was looked up for a day among the recordings that wait for theirs: `found` once the answer is there, and the one of them shown on the map. */
-const [lookup, setLookup] = createSignal<{ dayId: string; found?: WaitingRecording[]; previewedId?: number }>();
+/** What was looked up for a day among the user's rides: `found` once the answer is there, and the day of riding among them shown on the map. */
+const [lookup, setLookup] = createSignal<{ dayId: string; found?: FoundRidingDay[]; previewed?: FoundRidingDay }>();
 
 createRoot(() => {
   // Another trip starts with nothing read and nothing looked up.
@@ -84,7 +92,7 @@ createRoot(() => {
     for (const recording of shownRecordings()) {
       if (tripId === undefined || tracks().has(recording.id) || reading.has(recording.id)) continue;
       reading.add(recording.id);
-      fetchRecordingGpx(tripId, recording.id)
+      fetchRideGpx(recording.id)
         .then((gpx) => {
           const track = readRecording(gpx);
           keep(recording.id, track);
@@ -96,44 +104,62 @@ createRoot(() => {
   });
 });
 
+/** Lists a ride as on a day of the open trip, where it is not yet, and pins it to the map, where it is to be seen. */
+function listOnDay({ id, name, distanceM, startedAt }: KeptRide, dayId: string): void {
+  change((recordings) => (recordings.some(isOn(dayId, id)) ? recordings : [...recordings, { id, dayId, name, distanceM, startedAt }].sort(byStart)));
+  pinRecordings([id], true);
+}
+
+/** Puts a ride on a day of the open trip, which leaves it on the days it is on. */
+export async function putOnDay(ride: KeptRide, dayId: string): Promise<void> {
+  await putRideOnDay(ride.id, dayId);
+  listOnDay(ride, dayId);
+}
+
+/** Takes a ride off a day, of the open trip or another; it stays a ride. */
+export async function takeOffDay(id: number, dayId: string): Promise<void> {
+  await takeRideOffDay(id, dayId);
+  change((recordings) => recordings.filter((r) => !isOn(dayId, id)(r)));
+}
+
 /**
- * Adds a GPX file of one track to the day as a recording, under `name`, or else named after
- * its track or, without a name there, `fallback`; and pins it to the map, where it is
- * to be seen. Throws for any other file.
+ * Keeps a GPX file of one track as a ride on the day, under `name`, or else named after
+ * its track or, without a name there, `fallback`; a file kept already is put on the day
+ * as the ride it is. Throws for any other file.
  */
 export async function addRecording(dayId: string, gpx: string, naming: { name: string } | { fallback: string }): Promise<Recording> {
   const track = readRecording(gpx);
   const name = 'name' in naming ? naming.name : (track.name ?? naming.fallback);
-  const recording = await postRecording(openTripId()!, dayId, asName(name) || t('Recording'), gpx);
+  const { ride } = await keepRide(asName(name) || t('Recording'), gpx, dayId);
   // Kept before it is listed, so that it is not read again from the file just sent.
-  keep(recording.id, track);
-  mutate((loaded) => loaded && { ...loaded, recordings: [...loaded.recordings, recording] });
-  pinRecordings([recording.id], true);
-  return recording;
+  keep(ride.id, track);
+  listOnDay(ride, dayId);
+  return { ...ride, dayId };
 }
 
+/** Renames the ride, on every day it is on. */
 export async function renameRecording(recording: Recording, name: string): Promise<void> {
-  await patchRecording(openTripId()!, recording.id, name);
-  mutate((loaded) => loaded && { ...loaded, recordings: loaded.recordings.map((r) => (r.id === recording.id ? { ...r, name } : r)) });
+  await renameRide(recording.id, name);
+  change((recordings) => recordings.map((r) => (r.id === recording.id ? { ...r, name } : r)));
 }
 
-/** Puts the recording on another day of the open trip. */
+/** Puts the recording on another day of the open trip instead of the one it is on. */
 export async function moveRecording(recording: Recording, dayId: string): Promise<void> {
-  await putOnDay(openTripId()!, recording.id, dayId);
-  mutate((loaded) => loaded && { ...loaded, recordings: loaded.recordings.map((r) => (r.id === recording.id ? { ...r, dayId } : r)) });
+  await putOnDay(recording, dayId);
+  await takeOffDay(recording.id, recording.dayId);
 }
 
 export const lookupOf = (dayId: string) => (lookup()?.dayId === dayId ? lookup() : undefined);
 
 export const closeLookup = (): void => void setLookup(undefined);
 
-/** Looks up the waiting recordings that may be the day's, by the day as it is saved: began on its date, or ran along its routes. */
+/** Looks up the days of riding that may be the day's, by the day as it is saved: begun on its date, or ridden along its routes. */
 export async function lookUp(day: Day): Promise<void> {
   setLookup({ dayId: day.id });
   try {
     await flushSave();
     // The date a ride began on is the one on the user's clock; the offset is that of the day's noon.
-    const found = await lookUpRecordings(openTripId()!, day.id, day.date ? -new Date(`${day.date}T12:00`).getTimezoneOffset() : 0);
+    const found = await lookUpRides(openTripId()!, day.id, day.date ? -new Date(`${day.date}T12:00`).getTimezoneOffset() : 0);
     if (lookup()?.dayId === day.id) setLookup({ dayId: day.id, found });
   } catch (fault) {
     closeLookup();
@@ -141,39 +167,26 @@ export async function lookUp(day: Day): Promise<void> {
   }
 }
 
-/** Shows a found recording on the map, whole. */
-export function preview(waiting: WaitingRecording): void {
-  setLookup((looked) => looked && { ...looked, previewedId: waiting.id });
-  showWhole(decodeCached(waiting.line));
+/** Shows a found day of riding on the map, whole. */
+export function preview(ridingDay: FoundRidingDay): void {
+  setLookup((looked) => looked && { ...looked, previewed: ridingDay });
+  showWhole(ridingDay.rides.flatMap((ride) => decodeCached(ride.line)));
 }
 
-export const isPreviewed = (waiting: WaitingRecording): boolean => lookup()?.previewedId === waiting.id;
+export const isPreviewed = (ridingDay: FoundRidingDay): boolean => lookup()?.previewed === ridingDay;
 
-/** The colour the next recording of the day is drawn in. */
-const nextColor = (dayId: string): string => COLORS[recordingsOf(dayId).length % COLORS.length]!;
-
-/** The line of the found recording shown on the map, in the colour it would have on its day. */
+/** The lines of the found day of riding shown on the map, in the colours its rides would have on the day. */
 export function previewedLines(): { id: number; points: LngLat[]; color: string }[] {
   const looked = lookup();
-  const waiting = looked?.found?.find((r) => r.id === looked.previewedId);
-  return waiting ? [{ id: waiting.id, points: decodeCached(waiting.line), color: nextColor(looked!.dayId) }] : [];
+  if (!looked?.previewed) return [];
+  const taken = recordingsOf(looked.dayId).length;
+  return looked.previewed.rides.map((ride, i) => ({ id: ride.id, points: decodeCached(ride.line), color: COLORS[(taken + i) % COLORS.length]! }));
 }
 
-/** Puts a found recording on its day of the open trip, as it is, and pins it to the map: it waits no longer. */
-export async function assignRecording(dayId: string, waiting: WaitingRecording): Promise<void> {
-  await putOnDay(waiting.tripId, waiting.id, dayId);
-  const { id, name, distanceM, startedAt } = waiting;
-  mutate((loaded) => loaded && { ...loaded, recordings: [...loaded.recordings, { id, dayId, name, distanceM, startedAt }].sort((a, b) => a.id - b.id) });
-  setLookup((looked) => looked && { ...looked, found: looked.found?.filter((r) => r.id !== id) });
-  pinRecordings([id], true);
-}
-
-/** The open trip's recording of the id. */
-export const recordingById = (id: number): Recording | undefined => allRecordings().find((r) => r.id === id);
-
-export async function removeRecording(recording: Recording): Promise<void> {
-  await deleteRecording(openTripId()!, recording.id);
-  mutate((loaded) => loaded && { ...loaded, recordings: loaded.recordings.filter((r) => r.id !== recording.id) });
+/** Puts the rides of a found day of riding on the day of the open trip and pins them to the map; it is found no longer. */
+export async function assignRidingDay(dayId: string, ridingDay: FoundRidingDay): Promise<void> {
+  for (const ride of ridingDay.rides) await putOnDay(ride, dayId);
+  setLookup((looked) => looked && { dayId: looked.dayId, found: looked.found?.filter((found) => found !== ridingDay) });
 }
 
 /** What the last action on a day's recordings came to, said under them. */
@@ -190,6 +203,3 @@ export async function recordingAction(dayId: string, job: () => Promise<string |
     setNote({ dayId, text: errorMessage(fault), error: true });
   }
 }
-
-/** The recording's GPX file as kept, for copying it. */
-export const recordingGpx = (recording: Recording): Promise<string> => fetchRecordingGpx(openTripId()!, recording.id);

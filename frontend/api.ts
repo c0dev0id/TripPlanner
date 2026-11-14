@@ -215,68 +215,65 @@ export const fetchPreferences = (): Promise<Preferences> => request('GET', `/api
 
 export const savePreferences = (preferences: Preferences): Promise<void> => request('PUT', `/api/preferences`, preferences);
 
-/** Every ride of the user's, by when it began: the recordings, whatever day keeps them. */
+/** Every ride of the user's, by when it began, each with the days it is on. */
 export const fetchRides = (): Promise<Ride[]> => request('GET', '/api/rides');
 
-/** A ride as recorded, kept on a day, with its length in metres and the time of its first point, null where its file has no times; its GPX file is fetched apart. */
-export interface Recording {
+/** A ride for itself: its name, its length in metres and the time of its first point, null where its file has no times. Its GPX file is fetched apart. */
+export interface KeptRide {
   id: number;
-  dayId: string;
   name: string;
   distanceM: number;
   startedAt: string | null;
 }
 
+/** A ride as it is on a day. */
+export interface Recording extends KeptRide {
+  dayId: string;
+}
+
+/** The rides on the trip's days, once for each day a ride is on, by when they began. */
 export const listRecordings = (tripId: number): Promise<Recording[]> => request('GET', `${tripApi(tripId)}/recordings`);
 
-/** The form a recording is added with: the GPX file goes compressed with gzip, which keeps it within a server's request limits. */
-async function recordingForm(dayId: string, name: string, gpx: string): Promise<FormData> {
+/**
+ * Keeps a GPX file as a ride under the name, on the day where one is given. A file kept
+ * already is not kept again: the answer is then the ride it is kept as, under the name
+ * it has, and `added` is false. The file goes compressed with gzip, which keeps it
+ * within a server's request limits.
+ */
+export async function keepRide(name: string, gpx: string, dayId?: string): Promise<{ ride: KeptRide; added: boolean }> {
   const form = new FormData();
-  form.set('dayId', dayId);
+  if (dayId !== undefined) form.set('dayId', dayId);
   form.set('name', name);
   form.set('file', await new Response(new Blob([gpx]).stream().pipeThrough(new CompressionStream('gzip'))).blob(), 'recording.gpx.gz');
-  return form;
+  const response = await send('POST', '/api/rides', form);
+  return { ride: (await response.json()) as KeptRide, added: response.status === 201 };
 }
 
-/** Adds a recording to a day. */
-export const addRecording = async (tripId: number, dayId: string, name: string, gpx: string): Promise<Recording> => request('POST', `${tripApi(tripId)}/recordings`, await recordingForm(dayId, name, gpx));
-
-/** Adds a recording to a day unless the user keeps its file already, on whatever day; nothing is the answer then. */
-export async function addRecordingOnce(tripId: number, dayId: string, name: string, gpx: string): Promise<Recording | undefined> {
-  const form = await recordingForm(dayId, name, gpx);
-  form.set('unlessKept', '1');
-  return request('POST', `${tripApi(tripId)}/recordings`, form);
-}
-
-/**
- * A recording that waits for its day in the folder for recordings and may be a day's: the
- * collection it is in, by its id, its line thinned as polyline6, whether it began on the day's date,
- * and the share of it that ran along the day's routes, or of them along it.
- */
-export interface WaitingRecording {
-  id: number;
-  tripId: number;
-  name: string;
-  line: string;
-  distanceM: number;
-  startedAt: string | null;
+/** A day of riding that may be a day's: its date, null for a ride without times, whether that is the day's, the share of it that ran along the day's routes, or of them along it, and those of its rides that are not on the day yet. */
+export interface FoundRidingDay {
+  date: string | null;
   sameDate: boolean;
   share: number;
+  rides: Ride[];
 }
 
-/** The waiting recordings that may be the day's, the likeliest first; `utcOffsetMinutes` is how far the user's clock is ahead of UTC on that day. */
-export const lookUpRecordings = (tripId: number, dayId: string, utcOffsetMinutes: number): Promise<WaitingRecording[]> =>
+/** The days of riding that may be the day's, the likeliest first; `utcOffsetMinutes` is how far the user's clock is ahead of UTC on that day. */
+export const lookUpRides = (tripId: number, dayId: string, utcOffsetMinutes: number): Promise<FoundRidingDay[]> =>
   request('GET', `${tripApi(tripId)}/recordings/lookup?day=${encodeURIComponent(dayId)}&offset=${utcOffsetMinutes}`);
 
-export const renameRecording = (tripId: number, id: number, name: string): Promise<void> => request('PATCH', `${tripApi(tripId)}/recordings/${id}`, { name });
+export const renameRide = (id: number, name: string): Promise<void> => request('PATCH', `/api/rides/${id}`, { name });
 
-/** Puts a recording of the trip on another day, of that trip or of another. */
-export const moveRecording = (tripId: number, id: number, dayId: string): Promise<void> => request('PATCH', `${tripApi(tripId)}/recordings/${id}`, { dayId });
+/** Deletes a ride with its file, from every day it is on. */
+export const deleteRide = (id: number): Promise<void> => request('DELETE', `/api/rides/${id}`);
 
-export const deleteRecording = (tripId: number, id: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/recordings/${id}`);
+/** Puts a ride on a day, which leaves it on the days it is on. */
+export const putRideOnDay = (id: number, dayId: string): Promise<void> => request('PUT', `/api/rides/${id}/days/${encodeURIComponent(dayId)}`);
 
-/** A recording's GPX file; the browser undoes the compression it is sent with. */
-export const fetchRecordingGpx = async (tripId: number, id: number): Promise<string> => (await send('GET', `${tripApi(tripId)}/recordings/${id}/gpx`)).text();
+/** Takes a ride off a day; it stays a ride. */
+export const takeRideOffDay = (id: number, dayId: string): Promise<void> => request('DELETE', `/api/rides/${id}/days/${encodeURIComponent(dayId)}`);
+
+/** A ride's GPX file; the browser undoes the compression it is sent with. */
+export const fetchRideGpx = async (id: number): Promise<string> => (await send('GET', `/api/rides/${id}/gpx`)).text();
 
 /** The token the trip's read-only page is public under, or null. */
 export const shareToken = (tripId: number): Promise<{ token: string | null }> => request('GET', `${tripApi(tripId)}/share`);

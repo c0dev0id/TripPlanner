@@ -1,5 +1,5 @@
 import { plural } from '../i18n/t';
-import { changeTrip, copyMedia, createTrip, deleteTrip, fetchTrip, listMedia, listRecordings, moveMedia, moveRecording } from '../api';
+import { changeTrip, copyMedia, createTrip, deleteTrip, fetchTrip, listMedia, listRecordings, moveMedia, putRideOnDay } from '../api';
 import { newId, type Day } from '../model/trip';
 import { withNewPartIds } from '../routing/dayEdit';
 import { flushSave } from '../state/autosave';
@@ -34,9 +34,9 @@ export function tripFromSections(name: string, sections: readonly Day[], newId: 
  * Makes a trip in a folder from a collection, whole or the sections named, and says what
  * it made. The media kept with the sections come along, each with its section's day; a
  * section that holds media and nothing to ride makes no day, and its media go with the
- * first. With `move` the sections leave the collection once the trip is saved, their
- * media and recordings going to their days instead of copies of the media, and a
- * collection left without sections is deleted, after `leave` where it is the open one.
+ * first. The rides on a section are on its day too. With `move` the sections leave the
+ * collection once the trip is saved, their media going to their days instead of copies,
+ * and a collection left without sections is deleted, after `leave` where it is the open one.
  */
 export async function createTripFrom(source: TripSource, name: string, folderId: number | null, move: boolean, leave: () => Promise<void>): Promise<string> {
   await flushSave();
@@ -49,9 +49,9 @@ export async function createTripFrom(source: TripSource, name: string, folderId:
   const trip = await createTrip(made.name, folderId);
   await changeTrip(trip.id, (empty) => ({ ...empty, days: made.days }));
   for (const kept of media) await (move ? moveMedia : copyMedia)(collection.id, kept.id, made.dayOf.get(kept.dayId!) ?? made.days[0]!.id);
+  const recordings = (await listRecordings(collection.id)).filter((recording) => made.dayOf.has(recording.dayId));
+  await Promise.all(recordings.map((recording) => putRideOnDay(recording.id, made.dayOf.get(recording.dayId)!)));
   if (move) {
-    const recordings = (await listRecordings(collection.id)).filter((recording) => made.dayOf.has(recording.dayId));
-    await Promise.all(recordings.map((recording) => moveRecording(collection.id, recording.id, made.dayOf.get(recording.dayId)!)));
     // Sections are only ever named of the open collection, where taking them out is an edit like any other.
     if (chosen.length < collection.days.length) removeParts('day', chosen.map((section) => section.id));
     else {

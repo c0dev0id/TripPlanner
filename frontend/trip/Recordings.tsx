@@ -1,6 +1,6 @@
 import { createSignal, For, Show } from 'solid-js';
 import { t } from '../i18n/t';
-import type { Recording, WaitingRecording } from '../api';
+import type { FoundRidingDay, Recording } from '../api';
 import type { Day } from '../model/trip';
 import { copyRecordings, isCutRecording } from '../state/clipboard';
 import { clearPartSelection, clickPart, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
@@ -11,7 +11,7 @@ import { showRide } from '../state/rides';
 import {
   activeRecordingId,
   addRecording,
-  assignRecording,
+  assignRidingDay,
   closeLookup,
   isPreviewed,
   loadedTrack,
@@ -20,19 +20,17 @@ import {
   preview,
   moveRecording,
   recordingAction,
-  recordingById,
   recordingColor,
-  recordingGpx,
   recordingNote,
+  recordingsAmong,
   recordingsOf,
-  removeRecording,
+  takeOffDay,
   renameRecording,
   trackOf,
 } from '../state/recordings';
-import { openTrip, openTripId } from '../state/trip';
+import { openTrip } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
-import { askConfirmation } from '../ui/confirm';
-import { counted, distanceText, momentText } from '../ui/format';
+import { counted, dateText, distanceText, momentText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { CloseIcon, PlusIcon, SearchIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
@@ -42,7 +40,7 @@ import { moveToDayItem, pinItems } from './partMenu';
 import { Pin } from './Pin';
 import { pickFile } from '../ui/pickFile';
 
-/** Adds a GPX file of one track the user picks to the day as a recording, and shows it whole on the map. */
+/** Keeps a GPX file of one track the user picks as a ride on the day, and shows it whole on the map. */
 export function addRecordingPicked(dayId: string): void {
   void pickFile('.gpx,application/gpx+xml').then((file) => {
     if (!file) return;
@@ -55,7 +53,7 @@ export function addRecordingPicked(dayId: string): void {
   });
 }
 
-/** The opened day's recordings, a row each with its pin and its colour on the map: adding one, and on a trip's day looking up those that wait for it. */
+/** The rides on the opened day, a row each with its pin and its colour on the map: adding one, and on a trip's day looking up those that may be its. */
 export function DayRecordings(props: { day: Day }) {
   const recordings = () => recordingsOf(props.day.id);
   const [renamed, setRenamed] = createSignal<Recording>();
@@ -91,21 +89,30 @@ export function DayRecordings(props: { day: Day }) {
 }
 
 /**
- * What a day's lookup found among the recordings that wait for their day: a row each with
- * when it began, its length and why it was found; a click shows it on the map, the plus
- * puts it on the day.
+ * What a day's lookup found among the user's rides: a row for each day of riding with
+ * its date, its rides, how far it went and why it was found; a click shows it on the
+ * map, the plus puts its rides on the day.
  */
-function FoundRecordings(props: { dayId: string; found: WaitingRecording[] | undefined }) {
+function FoundRecordings(props: { dayId: string; found: FoundRidingDay[] | undefined }) {
   const said = () => {
-    if (!props.found) return t('Looking through the recordings that wait for their day…');
-    if (props.found.length === 0) return t('None of the recordings that wait for their day began on this day or ran along its routes.');
-    return t('{what} may be of this day:', { what: counted(props.found.length, 'recording') });
+    if (!props.found) return t('Looking through your rides…');
+    if (props.found.length === 0) return t('No ride that is not on this day began on its date or ran along its routes.');
+    return t('{what} may be of this day:', { what: counted(props.found.length, 'riding day') });
   };
-  const why = (waiting: WaitingRecording) => [waiting.sameDate && t('on this day'), waiting.share > 0 && t('{share} % along the routes', { share: Math.round(waiting.share * 100) })];
-  const assign = (waiting: WaitingRecording) =>
+  const detail = (ridingDay: FoundRidingDay) =>
+    [
+      ridingDay.rides.length > 1 ? counted(ridingDay.rides.length, 'recording') : ridingDay.date !== null && ridingDay.rides[0]!.name,
+      distanceText(ridingDay.rides.reduce((sum, ride) => sum + ride.distanceM, 0)),
+      ridingDay.sameDate && t('on this day'),
+      ridingDay.share > 0 && t('{share} % along the routes', { share: Math.round(ridingDay.share * 100) }),
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  const assign = (ridingDay: FoundRidingDay) =>
     void recordingAction(props.dayId, async () => {
-      await assignRecording(props.dayId, waiting);
-      return t('“{name}” added as a recording.', { name: waiting.name });
+      await assignRidingDay(props.dayId, ridingDay);
+      const [first] = ridingDay.rides;
+      return ridingDay.rides.length === 1 ? t('“{name}” added as a recording.', { name: first!.name }) : t('{n} recordings added.', { n: ridingDay.rides.length });
     });
   return (
     <div>
@@ -117,16 +124,16 @@ function FoundRecordings(props: { dayId: string; found: WaitingRecording[] | und
       </div>
       <ul class="recordings">
         <For each={props.found}>
-          {(waiting) => (
-            <li class="recording" classList={{ opened: isPreviewed(waiting) }}>
+          {(ridingDay) => (
+            <li class="recording" classList={{ opened: isPreviewed(ridingDay) }}>
               <div class="row">
-                <button class="text grow" onClick={() => preview(waiting)}>
+                <button class="text grow" onClick={() => preview(ridingDay)}>
                   <span class="lines grow">
-                    <span class="name">{waiting.name}</span>
-                    <span class="muted detail">{[waiting.startedAt && momentText(waiting.startedAt), distanceText(waiting.distanceM), ...why(waiting)].filter(Boolean).join(' · ')}</span>
+                    <span class="name">{ridingDay.date === null ? ridingDay.rides[0]!.name : dateText(ridingDay.date)}</span>
+                    <span class="muted detail">{detail(ridingDay)}</span>
                   </span>
                 </button>
-                <IconButton label={t('Add to this day')} onClick={() => assign(waiting)}>
+                <IconButton label={t('Add to this day')} onClick={() => assign(ridingDay)}>
                   <PlusIcon />
                 </IconButton>
               </div>
@@ -138,36 +145,30 @@ function FoundRecordings(props: { dayId: string; found: WaitingRecording[] | und
   );
 }
 
-/** Copies recordings of a day of the open trip, each with its GPX file; cut, they leave it when they are pasted. */
+/** Copies rides on a day of the open trip, to be put on the day they are pasted onto; cut, they are taken off theirs then. */
 export function clipRecordings(chosen: readonly Recording[], cut: boolean): void {
-  if (chosen.length === 0) return;
-  void recordingAction(chosen[0]!.dayId, async () => {
-    const copied = await Promise.all(chosen.map(async (r) => ({ name: r.name, gpx: await recordingGpx(r) })));
-    copyRecordings(copied, cut ? { tripId: openTripId()!, ids: chosen.map((r) => r.id) } : undefined);
-  });
+  if (chosen.length > 0) copyRecordings([...chosen], cut ? chosen[0]!.dayId : undefined);
 }
 
-/** Deletes recordings of a day of the open trip, once the user agrees. */
-export async function deleteRecordingsAsked(chosen: readonly Recording[]): Promise<void> {
+/** Takes rides off their day of the open trip; they stay rides. */
+export async function takeRecordingsOff(chosen: readonly Recording[]): Promise<void> {
   const [first] = chosen;
   if (!first) return;
-  const question = chosen.length > 1 ? t('Delete {what}?', { what: counted(chosen.length, 'recording') }) : t('Delete the recording “{name}”?', { name: first.name });
-  if (!(await askConfirmation(question, t('Delete')))) return;
   await recordingAction(first.dayId, async () => {
-    for (const r of chosen) await removeRecording(r);
+    for (const r of chosen) await takeOffDay(r.id, r.dayId);
     clearPartSelection();
   });
 }
 
 /**
  * The menu of a recording, or of the selected recordings it is one of: rename, cut, copy,
- * move to another day, show it among the rides, for several their pins, select, delete. What takes one recording
- * alone is greyed out for several.
+ * move to another day, show it among the rides, for several their pins, select, take off
+ * the day. What takes one recording alone is greyed out for several.
  */
 function recordingMenu(recording: Recording, onRename: (recording: Recording) => void): MenuItem[] {
-  const chosen = partsOfMenu('recording', String(recording.id)).flatMap((id) => recordingById(Number(id)) ?? []);
-  const several = chosen.length > 1;
   const dayId = recording.dayId;
+  const chosen = recordingsAmong(dayId, partsOfMenu('recording', String(recording.id)));
+  const several = chosen.length > 1;
   const move = (to: string) =>
     void recordingAction(dayId, async () => {
       for (const r of chosen) await moveRecording(r, to);
@@ -182,7 +183,7 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
     { label: t('Show in the rides'), disabled: several, run: () => showRide(recording.id) },
     ...(several ? pinItems((pinned) => pinRecordings(chosen.map((r) => r.id), pinned)) : []),
     ...(several || isPartSelected('recording', String(recording.id)) ? [] : [{ label: t('Select'), run: () => togglePart('recording', String(recording.id)) }]),
-    { label: t('Delete'), run: () => void deleteRecordingsAsked(chosen) },
+    { label: t('Take off this day'), run: () => void takeRecordingsOff(chosen) },
   ];
 }
 
@@ -215,7 +216,7 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
   return (
     <li
       class="recording"
-      classList={{ opened: isOpened(), picked: isPartSelected('recording', String(props.recording.id)), cut: isCutRecording(props.recording.id) }}
+      classList={{ opened: isOpened(), picked: isPartSelected('recording', String(props.recording.id)), cut: isCutRecording(props.recording) }}
       ref={(el) => cardMenu(el, () => recordingMenu(props.recording, props.onRename))}
     >
       <div class="row">

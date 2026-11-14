@@ -1,15 +1,14 @@
-/** The rides: every recording the user keeps, looked at by when it was ridden instead of by the plan it is kept with. */
+/** The rides: every recording the user keeps, looked at by when it was ridden instead of by the plans it followed. */
 
-/** A ride: a recording with the day that keeps it, the trip or collection that day is in, and its line as polyline6. */
+/** A ride: a recording with its line as polyline6 and the days it is on, each with the trip or collection it is in. */
 export interface Ride {
   id: number;
-  tripId: number;
-  dayId: string;
   name: string;
   /** When its first point was recorded, as ISO 8601 with its zone; null for a file without times. */
   startedAt: string | null;
   distanceM: number;
   line: string;
+  days: { tripId: number; dayId: string; trip: string }[];
 }
 
 /** A day of riding: the rides that began on one date, the earliest first. A tracker starts a new file after a break, so a day is often several. */

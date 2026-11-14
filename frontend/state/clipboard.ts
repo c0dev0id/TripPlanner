@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { createSignal } from 'solid-js';
-import { changeTrip, deleteRecording, errorMessage } from '../api';
+import { changeTrip, errorMessage, fetchRideGpx, type KeptRide, type Recording } from '../api';
 import { parseGpx } from '../gpx/gpx';
 import { gpxToDayParts } from '../gpx/import';
 import { newId, type Day, type Stop } from '../model/trip';
@@ -9,26 +9,20 @@ import { askConfirmation } from '../ui/confirm';
 import type { MenuItem } from '../ui/menu';
 import { flushSave } from './autosave';
 import { bringMedia, mediaAction } from './media';
-import { addRecording, moveRecording, recordingAction, recordingById } from './recordings';
+import { putOnDay, recordingAction, takeOffDay } from './recordings';
 import { moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, openTripId, pasteDays, pasteRoutes, pasteStops, pasteStopsIntoRoute, selectDay } from './trip';
 
 /**
  * What was copied or cut to be pasted: days with all they hold, routes with the stops
- * bound to them, stops, recordings with their GPX files, the files and links kept with
+ * bound to them, stops, rides, the files and links kept with
  * days, or trips and folders of the library. Kept from one trip to another until it is pasted, which empties the
  * clipboard, or until something else is copied or cut. What was cut is taken from where
  * it was once it is pasted.
  */
-type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[] } | { recordings: CopiedRecording[]; from?: { tripId: number; ids: number[] } } | { media: CopiedMedia } | { library: LibraryClip }) & {
+type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[] } | { recordings: KeptRide[]; cutFrom?: string } | { media: CopiedMedia } | { library: LibraryClip }) & {
   /** Where the parts were cut from. */
   cut?: { tripId: number; kind: PartKind; ids: string[] };
 };
-
-/** A recording as copied: its name and its GPX file. */
-export interface CopiedRecording {
-  name: string;
-  gpx: string;
-}
 
 /** Files and links kept with days of a trip, by id, with their names: copied, or cut to be moved where they are pasted. The server holds the files. */
 export interface CopiedMedia {
@@ -82,16 +76,15 @@ export function isCut(id: string): boolean {
   return cut !== undefined && cut.tripId === openTripId() && cut.ids.includes(id);
 }
 
-/** Copies recordings, each with its GPX file; cut from the trip `from.tripId`, they leave it when they are pasted. */
-export function copyRecordings(recordings: CopiedRecording[], from?: { tripId: number; ids: number[] }): void {
-  setClip({ recordings, ...(from ? { from } : {}) });
+/** Copies rides, to be put on the day they are pasted onto; cut from the day `cutFrom`, they are taken off it then. */
+export function copyRecordings(recordings: KeptRide[], cutFrom?: string): void {
+  setClip({ recordings, ...(cutFrom === undefined ? {} : { cutFrom }) });
 }
 
-/** Whether the recording of the open trip is cut and waits to be pasted. */
-export function isCutRecording(id: number): boolean {
+/** Whether the recording is cut from its day and waits to be pasted. */
+export function isCutRecording(recording: Recording): boolean {
   const copied = clip();
-  const from = copied && 'recordings' in copied ? copied.from : undefined;
-  return from !== undefined && from.tripId === openTripId() && from.ids.includes(id);
+  return copied !== undefined && 'recordings' in copied && copied.cutFrom === recording.dayId && copied.recordings.some((ride) => ride.id === recording.id);
 }
 
 /** Copies or cuts files and links of days of a trip. */
@@ -105,22 +98,14 @@ export function isCutMedia(id: number): boolean {
   return copied !== undefined && 'media' in copied && copied.media.move && copied.media.tripId === openTripId() && copied.media.ids.includes(id);
 }
 
-/**
- * Pastes recordings onto a day of the open trip: cut from this trip they move there;
- * otherwise each is added, and what was cut from another trip is then deleted in it.
- */
-async function pasteRecordings(dayId: string, recordings: readonly CopiedRecording[], from: { tripId: number; ids: number[] } | undefined): Promise<void> {
+/** Pastes rides onto a day of the open trip: each is put on it, and what was cut is taken off the day it was cut from. */
+async function pasteRecordings(dayId: string, recordings: readonly KeptRide[], cutFrom: string | undefined): Promise<void> {
   setClip(undefined);
   await recordingAction(dayId, async () => {
-    if (from && from.tripId === openTripId()) {
-      for (const id of from.ids) {
-        const recording = recordingById(id);
-        if (recording && recording.dayId !== dayId) await moveRecording(recording, dayId);
-      }
-      return;
+    for (const ride of recordings) {
+      await putOnDay(ride, dayId);
+      if (cutFrom !== undefined && cutFrom !== dayId) await takeOffDay(ride.id, cutFrom);
     }
-    for (const { name, gpx } of recordings) await addRecording(dayId, gpx, { name });
-    if (from) await Promise.all(from.ids.map((id) => deleteRecording(from.tripId, id)));
     return recordings.length === 1 ? t('“{name}” added as a recording.', { name: recordings[0]!.name }) : t('{n} recordings added.', { n: recordings.length });
   });
 }
@@ -174,7 +159,7 @@ function pasted(copied: Clip, move: (ids: string[]) => void, paste: () => void):
 
 /**
  * The menu items that paste what is on the clipboard into a part of the open trip: into a
- * day, routes, stops, a recording and a day's files and links, and days after it; into a route, stops, as points
+ * day, routes, stops, rides and a day's files and links, and days after it; into a route, stops, as points
  * of it. None where the clipboard holds nothing for the part. A recording also pastes as
  * a route.
  */
@@ -199,13 +184,13 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
         }) }];
   }
   if ('recordings' in copied) {
-    const { recordings, from } = copied;
+    const { recordings, cutFrom } = copied;
     const [only, ...more] = recordings;
     return [
-      { label, run: shown(() => void pasteRecordings(id, recordings, from)) },
-      ...(only && more.length === 0 && !from ? [{ label: t('Paste “{name}” as a route', { name: only.name }), run: shown(() => {
+      { label, run: shown(() => void pasteRecordings(id, recordings, cutFrom)) },
+      ...(only && more.length === 0 && cutFrom === undefined ? [{ label: t('Paste “{name}” as a route', { name: only.name }), run: shown(() => {
               setClip(undefined);
-              pasteRoutes(id, recordingAsRoute(id, only.name, only.gpx));
+              void recordingAction(id, async () => pasteRoutes(id, recordingAsRoute(id, only.name, await fetchRideGpx(only.id))));
             }) }] : []),
     ];
   }

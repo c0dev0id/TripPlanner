@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ridingYears, type Ride } from './rides';
 
-const ride = (id: number, startedAt: string | null, km: number): Ride => ({ id, tripId: 1, dayId: 'd', name: `Ride ${id}`, startedAt, distanceM: km * 1000, line: '' });
+const ride = (id: number, startedAt: string | null, km: number): Ride => ({ id, name: `Ride ${id}`, startedAt, distanceM: km * 1000, line: '', days: [] });
 /** The date a moment falls on in UTC, so that the test holds wherever it runs. */
 const utc = (iso: string) => iso.slice(0, 10);
 

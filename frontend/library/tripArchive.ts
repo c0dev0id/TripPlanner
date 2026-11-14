@@ -1,4 +1,4 @@
-import { addEntry, addMedia, addRecording, createTrip, errorMessage, fetchTrip, saveTrip } from '../api';
+import { addEntry, addMedia, createTrip, errorMessage, fetchTrip, keepRide, saveTrip } from '../api';
 import type { EntryTarget } from '../model/journal';
 import { newId, type LngLat, type Trip } from '../model/trip';
 import { withNewPartIds } from '../routing/dayEdit';
@@ -75,7 +75,7 @@ export async function importArchive(read: (path: string) => Promise<Blob | undef
       const dayId = ids.get(recording.dayId);
       const gpx = await read(recording.file);
       if (!dayId || !gpx) throw new Error('its day or its file is missing');
-      await addRecording(made.id, dayId, recording.name, await gpx.text());
+      await keepRide(recording.name, await gpx.text(), dayId);
     } catch (error) {
       note(recording.name, error);
     }

@@ -1,19 +1,13 @@
 import { t } from '../i18n/t';
-import { addRecordingOnce, changeTrip, createTrip, errorMessage, fetchTrip, listTrips, saveTrip } from '../api';
+import { changeTrip, createTrip, errorMessage, keepRide, listTrips } from '../api';
 import { gpxToDayParts, readRouteFile, ROUTE_FILE, waypointStops, type DayParts } from '../gpx/import';
 import { asName, newId, type FolderKind, type Stop, type Trip, type TripSummary } from '../model/trip';
-import { addParts, moveDay } from '../routing/dayEdit';
-import { readRecording, type RecordedTrack } from '../recording/track';
+import { addParts } from '../routing/dayEdit';
+import { readRecording } from '../recording/track';
 import { counted } from '../ui/format';
 import type { Dropped } from './fileDrop';
-import { addDaysAndMedia, dateIn, importFolder, isGpxPath, isMediaPath, isRoutePath, planFolderImport, readPlannedDays, withImportedDay, type ImportMode, type ImportSource, type PlannedDay } from './folderImport';
+import { addDaysAndMedia, importFolder, isGpxPath, isMediaPath, isRoutePath, planFolderImport, readPlannedDays, withImportedDay, type ImportMode, type ImportSource, type PlannedDay } from './folderImport';
 import { archiveFolders, inFolders } from './tripArchive';
-
-/** The month a ride was recorded in, as YYYY-MM: from the time of its first point that has one, else from a date in the file's name, else from when the file was last changed. */
-export function recordedMonth(track: RecordedTrack, file: File): string {
-  const time = track.series.time?.find((ms) => ms !== null);
-  return (time != null ? new Date(time).toISOString() : (dateIn(file.name) ?? new Date(file.lastModified).toISOString())).slice(0, 7);
-}
 
 /** The collection of the name in the folder: the one among the trips listed, or a new one. */
 const collectionIn = async (trips: readonly TripSummary[], folderId: number | null, name: string): Promise<number> =>
@@ -45,47 +39,23 @@ function keptText(kept: number, known: number, noun: string, none: string): stri
 }
 
 /**
- * Keeps the GPX files among `files`, of one track each, as recordings, the files as they
- * are: in the collection `tripId`, or in the folder `folderId` in the collection of the
- * year a ride was recorded in, there on the section of its month; collection and section
- * are made where they are missing. A file the user keeps already, on whatever day, is
- * left out. The answer says how many were kept and how many were there already, and
- * what could not be read or kept; the import goes on past those.
+ * Keeps the GPX files among `files`, of one track each, as rides, the files as they are,
+ * each named after its track or else its file. A file the user keeps already is left
+ * out. The answer says how many were kept and how many were there already, and what
+ * could not be read or kept; the import goes on past those.
  */
-async function importRecordings(files: readonly ImportSource[], into: { folderId: number | null } | { tripId: number }, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
-  const sources = files.filter((source) => isGpxPath(source.path));
+export async function importRides(files: readonly ImportSource[], onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
   const errors: string[] = [];
   let kept = 0;
   let known = 0;
-  const trips = 'tripId' in into || sources.length === 0 ? [] : await listTrips();
-  const collections = new Map<string, number>();
-  const sections = new Map<string, { tripId: number; dayId: string }>();
-  const sectionOf = async (month: string) => {
-    const year = month.slice(0, 4);
-    const tripId = 'tripId' in into ? into.tripId : (collections.get(year) ?? (await collectionIn(trips, into.folderId, year)));
-    collections.set(year, tripId);
-    const trip = await fetchTrip(tripId);
-    let dayId = trip.days.find((day) => day.name === month)?.id;
-    if (!dayId) {
-      const withSection = withImportedDay(trip, { name: month, date: null }, []);
-      dayId = withSection.days.at(-1)!.id;
-      // The months stand in their order: the new one before the first section that comes after it.
-      const at = trip.days.findIndex((day) => day.name > month);
-      await saveTrip(at < 0 ? withSection : moveDay(withSection, dayId, at), trip);
-    }
-    return { tripId, dayId };
-  };
-  await eachFile(sources, onProgress, errors, async (source) => {
+  await eachFile(files.filter((source) => isGpxPath(source.path)), onProgress, errors, async (source) => {
     const file = await source.open();
     const gpx = await file.text();
-    const track = readRecording(gpx);
-    const month = recordedMonth(track, file);
-    const section = sections.get(month) ?? (await sectionOf(month));
-    sections.set(month, section);
-    if (await addRecordingOnce(section.tripId, section.dayId, asName(track.name ?? file.name.replace(/\.gpx$/i, '')) || t('Recording'), gpx)) kept++;
+    const { added } = await keepRide(asName(readRecording(gpx).name ?? file.name.replace(/\.gpx$/i, '')) || t('Recording'), gpx);
+    if (added) kept++;
     else known++;
   });
-  return { text: keptText(kept, known, 'recording', t('No GPX files and no exported trips in there.')), errors };
+  return { text: keptText(kept, known, 'ride', t('No GPX files in there.')), errors };
 }
 
 /** A place to be kept, with the kind it is of. */
@@ -189,13 +159,11 @@ function importTree(loose: readonly ImportSource[], inDropped: readonly ImportSo
 /**
  * Adds files to a trip: GPX files at its end, to a collection a section per file, to a
  * trip the days a folder of the files would make, and any other file as media, with a
- * trip's first day or in a collection's section for them; to a collection among the recordings, as the
- * `kind` of the top folder around it says, as recordings on the sections of their months,
- * and to a list of places as places. The answer says what was added and what could not
- * be read.
+ * trip's first day or in a collection's section for them; to a list of places, as the
+ * `kind` of the top folder around it says, as places. The answer says what was added and
+ * what could not be read.
  */
 export async function importIntoTrip(trip: TripSummary, files: readonly ImportSource[], kind: FolderKind, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
-  if (kind === 'recordings') return importRecordings(files, { tripId: trip.id }, onProgress);
   if (kind === 'places') return importPlaces(files, { tripId: trip.id }, onProgress);
   const errors: string[] = [];
   const collection = trip.kind === 'collection';
@@ -210,8 +178,7 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
 
 /**
  * Imports what was dropped on the folder `folderId`, null for the top, or picked for it,
- * as the kind of the top folder around it says. Among recordings, every GPX file is kept
- * as a recording in the collection of the year it was recorded in. Among collections, files
+ * as the kind of the top folder around it says. Among collections, files
  * become sections of the collection “Imported”, other files its media, and a folder of
  * files a collection with the folder's other files as its media, in the folders above it. Among places, the waypoints of every GPX file become places of a list.
  * Anywhere else a file becomes a trip, a folder of files a trip of its
@@ -219,7 +186,6 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
  * made and what could not be read or saved.
  */
 export async function importDropped(dropped: Dropped, folderId: number | null, kind: FolderKind, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
-  if (kind === 'recordings') return importRecordings([...dropped.files, ...dropped.inFolders], { folderId }, onProgress);
   if (kind === 'places') return importPlaces([...dropped.files, ...dropped.inFolders], { folderId }, onProgress);
   const made: string[] = [];
   const errors: string[] = [];

@@ -5,13 +5,11 @@ import { importDropped, importIntoTrip } from './dropImport';
 import { droppedSources, onFileDrop, type Dropped } from './fileDrop';
 import { sourceOf, type ImportSource } from './folderImport';
 import { kindAround } from './folders';
+import { addRides } from './RidesPane';
 import { ROUTE_FILE_TYPES } from '../gpx/import';
 import { zipEntries } from '../gpx/zip';
 
 type Outcome = { text: string; errors: string[] };
-
-/** What a file picker is told to offer for recordings, which are GPX files kept as they are. */
-const GPX_TYPES = '.gpx,application/gpx+xml';
 
 /**
  * What is imported together: the GPX files and the folders as they are, and each zip
@@ -31,7 +29,8 @@ async function unpacked(dropped: Dropped): Promise<Dropped[]> {
 
 /**
  * The imports the library starts: what is dropped on a folder of the tree, and what is
- * picked from a folder's or a trip's menu. Each says how it goes and then what it made
+ * picked from a folder's or a trip's menu; GPX files dropped on the rides' pane are
+ * handed to it. Each says how it goes and then what it made
  * and could not read. The open trip is left first and the library listed afresh after;
  * while one import runs, another is not started.
  */
@@ -53,12 +52,15 @@ export function libraryImports(onLeave: () => Promise<void>) {
       for (const part of await unpacked(await dropped)) outcomes.push(await importDropped(part, folderId, kindAround(libraryFolders() ?? [], folderId), onProgress));
       return { text: outcomes.map((outcome) => outcome.text).join(' '), errors: outcomes.flatMap((outcome) => outcome.errors) };
     });
-  onFileDrop((data, folderId) => void intoFolder(folderId, droppedSources(data)));
+  onFileDrop(
+    (data, folderId) => void intoFolder(folderId, droppedSources(data)),
+    (data) => void addRides(droppedSources(data)),
+  );
   return {
-    /** Asks for files of routes and zips of exported trips, among the collections for any file, among the recordings for GPX files, and imports them into the folder. */
+    /** Asks for files of routes and zips of exported trips, among the collections for any file, and imports them into the folder. */
     addFiles: async (folderId: number | null) => {
       const kind = kindAround(libraryFolders() ?? [], folderId);
-      const files = await pickFiles(kind === 'collections' ? {} : { accept: `${kind === 'recordings' ? GPX_TYPES : ROUTE_FILE_TYPES},.zip,application/zip` });
+      const files = await pickFiles(kind === 'collections' ? {} : { accept: `${ROUTE_FILE_TYPES},.zip,application/zip` });
       if (files.length > 0) void intoFolder(folderId, { files: files.map(sourceOf), inFolders: [] });
     },
     /** Asks for a folder and imports all it holds into the folder. */
@@ -68,12 +70,12 @@ export function libraryImports(onLeave: () => Promise<void>) {
     },
     /**
      * Asks for files and adds them to the trip: files of routes as days, to a collection
-     * as sections, and any other file as media; to a collection among the recordings GPX
-     * files as recordings, to a list of places the waypoints of files of routes as places.
+     * as sections, and any other file as media; to a list of places the waypoints of
+     * files of routes as places.
      */
     addToTrip: async (trip: TripSummary) => {
       const kind = kindAround(libraryFolders() ?? [], trip.folderId);
-      const files = await pickFiles(kind === 'recordings' ? { accept: GPX_TYPES } : kind === 'places' ? { accept: ROUTE_FILE_TYPES } : {});
+      const files = await pickFiles(kind === 'places' ? { accept: ROUTE_FILE_TYPES } : {});
       if (files.length > 0) void run((onProgress) => importIntoTrip(trip, files.map(sourceOf), kind, onProgress));
     },
   };

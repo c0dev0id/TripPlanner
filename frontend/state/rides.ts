@@ -9,16 +9,16 @@ import { showWhole } from './drawing';
 import { libraryTrips, shownReport, showReport } from './library';
 
 /**
- * The rides: every recording the user keeps, read while their pane is shown and again
- * when the library is listed afresh, and the lines of the rides selected there, which
- * the map draws.
+ * The rides: every recording the user keeps, read while their pane is shown, again when
+ * the library is listed afresh and when one of them changes, and the lines of the rides
+ * selected there, which the map draws.
  */
 
 /** The owner of the pane's selection, whose rows are rides by their id. */
 export const RIDES = 'rides';
 
 const rides = createRoot(() => {
-  const [list] = createResource(
+  const [list, { refetch }] = createResource(
     () => shownReport() === 'rides' && (libraryTrips.error ? [] : libraryTrips()),
     () => fetchRides(),
   );
@@ -33,8 +33,11 @@ const rides = createRoot(() => {
     const points = lines().flatMap((line) => line.points);
     if (points.length > 0) showWhole(points);
   });
-  return { list, all, drawn, lines };
+  return { list, all, drawn, lines, refetch };
 });
+
+/** Reads the rides again where they are shown: after one was added, changed, deleted, or put on or taken off a day. */
+export const refreshRides = (): void => void rides.refetch();
 
 /** Every ride, by when it began; none until they are read. */
 export const allRides = rides.all;

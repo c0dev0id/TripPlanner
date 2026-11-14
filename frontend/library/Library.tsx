@@ -301,7 +301,7 @@ export function Library(props: {
   /** Whether the folder, null for the top, holds collections: the special folders and the folders in them do, everything else holds trips. */
   const holdsCollections = (id: number | null): boolean => kindAround(folders(), id) !== 'folder';
   /** What a folder's trips are called where they are counted: trips, collections or, among the places, lists. */
-  const heldNoun = (id: number | null) => ({ folder: 'trip', recordings: 'collection', collections: 'collection', places: 'list' } as const)[kindAround(folders(), id)];
+  const heldNoun = (id: number | null) => ({ folder: 'trip', collections: 'collection', places: 'list' } as const)[kindAround(folders(), id)];
   /** Says of a folder, null for the top, whether it takes the items: all their trips, at any depth, are of the kind it holds. */
   const takerOf = (items: readonly Item[]) => {
     const within = tripsWithin(items);
@@ -312,7 +312,7 @@ export function Library(props: {
   };
   /** Refuses, as the server would, to put the items into a folder that does not hold their kind. */
   const assertFits = (items: readonly Item[], into: number | null) => {
-    if (!takerOf(items)(into)) throw new Error(t('Collections are kept in the folders for recordings and collections, trips in the others.'));
+    if (!takerOf(items)(into)) throw new Error(t('Collections are kept in the folders for collections and places, trips in the others.'));
   };
   /** Moves folders and trips into a folder, none for the top, those not in it already; the server refuses a folder inside itself. */
   const moveInto = (moved: readonly Item[], into: number | null) => {
@@ -678,12 +678,8 @@ function TripCard(props: {
   /** How far the opening of the trip has come, while it is being opened. */
   const loading = () => (isOpening(props.trip.id) ? opening()?.progress : undefined);
   const folderKind = createMemo(() => kindAround(libraryFolders() ?? [], props.trip.folderId));
-  /** What a collection is: the recordings or the places it holds in the folder for them, planning material elsewhere. */
-  const held = createMemo(() => {
-    const kind = folderKind();
-    const count = (of: 'recordings' | 'stops') => (outlineOf(props.trip.id) ?? []).reduce((sum, day) => sum + day[of], 0);
-    return kind === 'recordings' ? counted(count('recordings'), 'recording') : kind === 'places' ? counted(count('stops'), 'place') : t('Planning material');
-  });
+  /** What a collection is: the places it holds in the folder for them, planning material elsewhere. */
+  const held = createMemo(() => (folderKind() === 'places' ? counted((outlineOf(props.trip.id) ?? []).reduce((sum, day) => sum + day.stops, 0), 'place') : t('Planning material')));
   const meta = () =>
     (props.trip.kind === 'collection'
       ? [props.where, held(), counted(props.trip.dayCount, folderKind() === 'places' ? 'kind' : 'section')]
