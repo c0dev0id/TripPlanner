@@ -4,7 +4,7 @@ import { changeTrip, createFolder, createTrip, deleteFolder, deleteTrip, duplica
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
-import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTab, libraryTrips, markedFolderOf, opening, outlineOf, query, relistFolders, relistTrips, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
+import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTab, libraryTrips, markedFolderOf, opening, openTree, outlineOf, query, relistFolders, relistTrips, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
@@ -171,11 +171,6 @@ export function Library(props: {
   /** The folders in a folder, null for the top of the trips; the special folders are in none, each the top of its own tree. */
   const childFolders = (parent: number | null) => folders().filter((f) => f.parentId === parent && f.kind === 'folder');
   const childTrips = (parent: number | null) => trips().filter((trip) => trip.folderId === parent);
-  /** The tree the open trip is in; none while no trip is open. */
-  const openTree = createMemo(() => {
-    const trip = trips().find((candidate) => candidate.id === openTripId());
-    return trip && treeOf(trip.folderId);
-  });
   /** Whether the folder, null for the top of the trips, holds its tree's one mark: it is the folder marked there, and the mark is not on the open trip or its day. */
   const isMarkedFolder = (id: number | null): boolean => markedFolderOf(treeOf(id)) === id && !(isMarkInTrip() && openTree() === treeOf(id));
   /** Gives its tree's mark to a folder, null for the top of the trips, which makes it the one shown; the mark on the open trip in another tree stays. */

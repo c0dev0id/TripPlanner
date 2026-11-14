@@ -2,7 +2,7 @@ import { createEffect, For, on, onCleanup, onMount, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { PlacesList } from '../map/PlacesList';
 import type { TripSummary } from '../model/trip';
-import { LIBRARY_TABS, libraryProblem, libraryTab, libraryTrips, query, setQuery, showFolder, showTab, TAB_NAMES, type LibraryTab } from '../state/library';
+import { LIBRARY_TABS, libraryProblem, libraryTab, libraryTrips, openTree, query, setQuery, showFolder, showTab, TAB_NAMES, type LibraryTab } from '../state/library';
 import { openTrip } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
 import { SaveState } from '../trip/SaveStatus';
@@ -19,7 +19,7 @@ const EXPLORER = t('Trip Explorer');
 /**
  * The library's pane: its switches and search, a tab for each of its views (the
  * collections, the trips, the lists of places and the rides), the open trip's name
- * with the trip's own actions, and what the tab shown holds: a tree of folders and
+ * with the trip's own actions while its tab is the one shown, and what the tab shown holds: a tree of folders and
  * trips, the open trip's days among them, or the rides. A tab only shows its view:
  * what is unfolded, marked and selected in the others stays, and how far each was
  * scrolled.
@@ -37,6 +37,8 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
     const trip = libraryTrips()?.find((kept) => kept.id === tripId);
     if (trip) openIn(trip, dayId);
   };
+  /** The open trip where the tab shown is the one it is in, which its name and its actions then stand over; one not listed yet counts as in the tab shown. */
+  const headed = () => ((openTree() ?? libraryTab()) === libraryTab() ? openTrip() : undefined);
   /** Shows a tab, which ends a search: what it found stood in the tabs' place. */
   const switchTo = (tab: LibraryTab) => {
     showTab(tab);
@@ -67,10 +69,10 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
         </For>
       </div>
       <div class="row explorer-heading">
-        <h2 class="path grow" title={openTrip()?.name ?? EXPLORER}>
-          {openTrip()?.name ?? EXPLORER}
+        <h2 class="path grow" title={headed()?.name ?? EXPLORER}>
+          {headed()?.name ?? EXPLORER}
         </h2>
-        <Show when={openTrip()}>
+        <Show when={headed()}>
           {(trip) => (
             <>
               <Show when={trip().kind === 'trip'}>

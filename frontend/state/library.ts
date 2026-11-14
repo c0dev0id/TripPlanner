@@ -4,6 +4,7 @@ import { listFolders, listTrips, fetchOutlines, type OutlineDay, type Progress }
 import { heldCounts, kindAround } from '../library/folders';
 import type { FolderKind } from '../model/trip';
 import { createRequest } from '../ui/request';
+import { openTripId } from './trip';
 
 /** The library as the server lists it, and where the user is in it. */
 
@@ -105,6 +106,14 @@ export const rootOf = (tree: TreeTab): number | null => library.roots()[tree];
 
 /** The tree a folder is in, null for the top of the trips'. */
 export const treeOf = (folderId: number | null): TreeTab => TAB_OF[kindAround(library.folders.error ? [] : (library.folders() ?? []), folderId)];
+
+/** The tree the open trip is in; none while no trip is open, or the open one is not listed yet. */
+export const openTree = createRoot(() =>
+  createMemo(() => {
+    const trip = (library.trips.error ? undefined : library.trips())?.find((listed) => listed.id === openTripId());
+    return trip && treeOf(trip.folderId);
+  }),
+);
 
 /** The folder marked in a tree: the one asked for while it exists, else the tree's top. */
 export const markedFolderOf = (tree: TreeTab): number | null => library.marked()[tree];

@@ -247,6 +247,8 @@ entries at the end of their section.
   not invite a right-click. A tab only shows: each tree keeps its mark and its
   selection, held by a list of its own so that the keys never act on rows that are not
   shown, and a folder marked in one tree leaves the mark on the open trip in another.
+  The open trip's name with its actions stands over its own tab alone: over another it
+  named and closed something that was not in view, a list of places over the trips.
   The trees stay in the page while another is shown, so nothing is rebuilt; the panel
   scrolls as a whole, so each tab's scroll is kept and given back, and the tabs stay at
   the top of it, since a tab that scrolled away would have to be scrolled back to. The
