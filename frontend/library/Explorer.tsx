@@ -2,7 +2,7 @@ import { createEffect, For, on, onCleanup, onMount, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { PlacesList } from '../map/PlacesList';
 import type { TripSummary } from '../model/trip';
-import { LIBRARY_TABS, libraryProblem, libraryTab, libraryTrips, query, setQuery, showFolder, showTab, type LibraryTab } from '../state/library';
+import { LIBRARY_TABS, libraryProblem, libraryTab, libraryTrips, query, setQuery, showFolder, showTab, TAB_NAMES, type LibraryTab } from '../state/library';
 import { openTrip } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
 import { SaveState } from '../trip/SaveStatus';
@@ -15,9 +15,6 @@ import { Rides } from './Rides';
 
 /** The explorer's own name, its heading at the top of the library. */
 const EXPLORER = t('Trip Explorer');
-
-/** What the tabs are called. */
-const TAB_NAMES: Record<LibraryTab, string> = { stash: t('Stash'), trips: t('Trips'), places: t('Places'), recordings: t('Recordings') };
 
 /**
  * The library's pane: its switches and search, a tab for each of its views (the

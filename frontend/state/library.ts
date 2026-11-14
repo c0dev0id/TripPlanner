@@ -17,10 +17,13 @@ export const LIBRARY_TABS: readonly LibraryTab[] = [...TREE_TABS, 'recordings'];
 /** The tab whose tree a folder of the kind is in. */
 const TAB_OF: Record<FolderKind, TreeTab> = { collections: 'stash', folder: 'trips', places: 'places' };
 
+/** What the tabs are called. */
+export const TAB_NAMES: Record<LibraryTab, string> = { stash: t('Stash'), trips: t('Trips'), places: t('Places'), recordings: t('Recordings') };
+
 /** The tab shown, and the tree last shown, which stays the one the address names while the rides are. */
-const [tab, setTab] = createSignal<LibraryTab>('trips');
+const [libraryTab, setTab] = createSignal<LibraryTab>('trips');
 const [treeTab, setTreeTab] = createSignal<TreeTab>('trips');
-export const libraryTab = tab;
+export { libraryTab };
 
 /** Shows a tab; what the others show stays as it is. */
 export function showTab(to: LibraryTab): void {
@@ -51,8 +54,8 @@ export const fetchingTrip = createRoot(() =>
 /** The search typed into the library; while there is one, what it finds stands in for the tree. */
 export const [query, setQuery] = createSignal('');
 
-/** The special folders are named in the page's language. */
-const SPECIAL_NAMES = { collections: t('Stash'), places: t('Places') };
+/** The special folders are named as the tabs they are the tops of. */
+const SPECIAL_NAMES = { collections: TAB_NAMES.stash, places: TAB_NAMES.places };
 
 const library = createRoot(() => {
   const [trips, { refetch: refetchTrips }] = createResource(listTrips);
@@ -137,8 +140,7 @@ export const [importNote, setImportNote] = createSignal<{ text: string; errors: 
 /** Makes a folder the one shown, null for the top of the trips: its tree is shown with the folder marked, and a search ends. */
 export function showFolder(id: number | null): void {
   const tree = treeOf(id);
-  if (id !== null) setMarkedFolders({ ...markedFolders(), [tree]: id });
-  else setMarkedFolders({ ...markedFolders(), trips: undefined });
+  setMarkedFolders({ ...markedFolders(), [tree]: id ?? undefined });
   showTab(tree);
   setQuery('');
 }

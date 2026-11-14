@@ -668,11 +668,11 @@ button.icon.pin[aria-pressed='true'] {
 
 /*
  * The strip down the left of a row. In the tree it runs down what is open: the marked
- * row, the folders around it, its trip and the top, and the trip on the map or the day in
+ * row, the folders around it and its trip, and the trip on the map or the day in
  * the pane while the mark is elsewhere. In a trip it marks the parts selected and the
  * route being edited.
  */
-:is(.tree .card.current, .tree .card:has(.card.current), .tree .card.open, .tree:has(.card.current) > li:first-child, .picked, .route.editing) > .row,
+:is(.tree .card.current, .tree .card:has(.card.current), .tree .card.open, .picked, .route.editing) > .row,
 li.row.picked {
   box-shadow: inset 3px 0 0 var(--accent);
 }

@@ -4,7 +4,7 @@ import { changeTrip, createFolder, createTrip, deleteFolder, deleteTrip, duplica
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
-import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTab, libraryTrips, markedFolderOf, opening, outlineOf, query, relistFolders, relistTrips, rootOf, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
+import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTab, libraryTrips, markedFolderOf, opening, outlineOf, query, relistFolders, relistTrips, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
@@ -34,7 +34,7 @@ import { TripShape } from './TripShape';
 type Item = { folder: Folder } | { trip: TripSummary };
 
 /** The top of the trips, as a place to paste into. */
-const ALL_TRIPS = t('Trips');
+const ALL_TRIPS = TAB_NAMES.trips;
 
 /** What a tree says while it holds nothing. */
 const EMPTY: Record<TreeTab, string> = {
@@ -273,15 +273,14 @@ export function Library(props: {
     ...childFolders(parent).flatMap((f) => [keyOf({ folder: f }), ...(isUnfolded({ folder: f }) ? shownKeys(f.id) : [])]),
     ...childTrips(parent).map((trip) => keyOf({ trip })),
   ];
-  /** The tree a folder or a trip is in. */
-  const treeOfItem = (item: Item): TreeTab => treeOf('folder' in item ? item.folder.id : item.trip.folderId);
   /** What a card's menu, or a press on its pad, acts on: the selection where it holds the card, else the card alone. */
   const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.has(keyOf(item)) ? [...selection].flatMap((key) => itemOf(key) ?? []) : [item]);
   const select = (item: Item) => ({
     selected: () => isSelected(keyOf(item)),
     cut: () => isCut(item),
-    onToggle: () => toggleRow(ownerOf(treeOfItem(item)), keyOf(item)),
-    onClick: (e: MouseEvent) => clickRow(ownerOf(treeOfItem(item)), shownKeys(rootOf(treeOfItem(item))), keyOf(item), e),
+    // A card is clicked in the tree shown, which is its own.
+    onToggle: () => toggleRow(ownerOf(shownTree()!), keyOf(item)),
+    onClick: (e: MouseEvent) => clickRow(ownerOf(shownTree()!), shownKeys(rootOf(shownTree()!)), keyOf(item), e),
     onDrag: (e: PointerEvent, dragged: () => void) => {
       const moved = chosenWith(item);
       dragToFolder(e, moved.length === 1 ? nameOf(item) : countText(moved), (into) => moveInto(moved, into), dragged);
@@ -561,7 +560,7 @@ export function Library(props: {
             note={heldText(heldOf(f().id), heldNoun(f().id))}
             onOpen={() => clickFolder(f())}
             items={() => itemMenu({ folder: f() })}
-            select={f().kind === 'folder' ? select({ folder: f() }) : undefined}
+            select={select({ folder: f() })}
             fold={{ unfolded: () => isUnfolded({ folder: f() }), current: () => isMarkedFolder(f().id) }}
           >
             <Branch parent={f().id} />
@@ -770,12 +769,11 @@ function TripCard(props: {
 /**
  * A folder as a card: its name over `note`, what it holds and in search results where it
  * is; its menu is the library's. Trips and folders dragged onto it move into it; with
- * `select`, its pad selects it or drags it into another. The special folders are
- * tinted and have no pad.
+ * `select`, its pad selects it or drags it into another.
  */
 function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[]; select?: CardSelect; fold?: CardFold; children?: JSX.Element }) {
   return (
-    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current() }} data-kind={props.folder.kind} data-drop-folder={String(props.folder.id)}>
+    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current() }} data-drop-folder={String(props.folder.id)}>
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Show when={props.select}>
           {(select) => (
