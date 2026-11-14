@@ -714,8 +714,10 @@ li.row.cut {
   opacity: 0.5;
 }
 
-/* A selected duplicate and the opened recording are tinted as the tree's mark is. */
+/* A selected duplicate, the opened recording and what the map shows of the Stash are tinted as the tree's mark is. */
 .duplicates li:is(.selected, .opened) > .row,
+.tree .card.opened > .row,
+.results .card.opened > .row,
 .recording.opened > .row {
   background: var(--active);
   border-radius: 7px;

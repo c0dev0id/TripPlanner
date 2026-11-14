@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import type { Folder, FolderKind, TripSummary } from '../model/trip';
+import type { Folder, FolderKind } from '../model/trip';
 import { counted } from '../ui/format';
 
 /** The names of the folders from the top of the library down to the folder `id`; none for the top. */
@@ -19,8 +19,8 @@ export function kindAround(folders: readonly Folder[], id: number | null): Folde
   return folder?.kind ?? 'folder';
 }
 
-/** How many folders and trips each folder holds itself, by its id; null stands for the top of the trips, where the special folders, each a tree's own top, are not counted. */
-export function heldCounts(folders: readonly Folder[], trips: readonly TripSummary[]): (id: number | null) => { folders: number; trips: number } {
+/** How many folders and trips, or files where it holds those, each folder holds itself, by its id; null stands for the top of the trips, where the special folders, each a tree's own top, are not counted. */
+export function heldCounts(folders: readonly Folder[], trips: readonly { folderId: number | null }[]): (id: number | null) => { folders: number; trips: number } {
   const counts = new Map<number | null, { folders: number; trips: number }>();
   const of = (id: number | null) => counts.get(id) ?? counts.set(id, { folders: 0, trips: 0 }).get(id)!;
   for (const f of folders) if (f.kind === 'folder') of(f.parentId).folders++;
@@ -28,14 +28,14 @@ export function heldCounts(folders: readonly Folder[], trips: readonly TripSumma
   return (id) => counts.get(id) ?? { folders: 0, trips: 0 };
 }
 
-/** What a folder holds, as its card says it: "2 folders · 1 trip", or collections or lists where it holds those. */
-export const heldText = (held: { folders: number; trips: number }, noun: 'trip' | 'collection' | 'list' = 'trip'): string =>
+/** What a folder holds, as its card says it: "2 folders · 1 trip", or files or lists where it holds those. */
+export const heldText = (held: { folders: number; trips: number }, noun: 'trip' | 'file' | 'list' = 'trip'): string =>
   [held.folders > 0 && counted(held.folders, 'folder'), counted(held.trips, noun)].filter(Boolean).join(' · ');
 
-/** How many folders and trips, as a sentence says it: "2 folders and 3 trips", "1 trip"; empty for none. */
-export function countsText(folders: number, trips: number): string {
+/** How many folders and trips, or files or lists where a folder holds those, as a sentence says it: "2 folders and 3 trips", "1 trip"; empty for none. */
+export function countsText(folders: number, trips: number, noun: 'trip' | 'file' | 'list' = 'trip'): string {
   const folderText = folders > 0 ? counted(folders, 'folder') : '';
-  const tripText = trips > 0 ? counted(trips, 'trip') : '';
+  const tripText = trips > 0 ? counted(trips, noun) : '';
   return folderText && tripText ? t('{a} and {b}', { a: folderText, b: tripText }) : folderText || tripText;
 }
 

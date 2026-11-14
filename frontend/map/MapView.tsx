@@ -4,6 +4,7 @@ import type { Day, LngLat, Route } from '../model/trip';
 import { panTarget, showNeighbours, viewLocked } from '../state/drawing';
 import { comparedLines } from '../state/duplicates';
 import { ridesOnMap } from '../state/rides';
+import { stashLines, stashWaypoints } from '../state/stash';
 import { routePositions } from '../routing/legs';
 import { colorRuns } from '../recording/lineColors';
 import { isRoutePinned } from '../state/pins';
@@ -21,7 +22,7 @@ import { EntryMarkers } from './EntryMarkers';
 import { PointMarkers } from './PointMarkers';
 import { OwnPlaceMarkers } from './OwnPlaceMarkers';
 import { PlaceMarkers } from './PlaceMarkers';
-import { COMPARED_SOURCE, OPENED_RECORDING_SOURCE, RECORDINGS_SOURCE, recordingFeatures } from './recordingOverlay';
+import { COMPARED_SOURCE, dotFeatures, OPENED_RECORDING_SOURCE, RECORDINGS_SOURCE, recordingFeatures } from './recordingOverlay';
 import { RecordingPoint } from './RecordingPoint';
 import { RouteHover } from './RouteHover';
 import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
@@ -148,7 +149,10 @@ function RecordingLines(props: { map: MapLibreMap }) {
 
 /** Draws the routes the duplicates report compares, each in its colour, and the recording a day's lookup shows. */
 function ComparedLines(props: { map: MapLibreMap }) {
-  createEffect(() => props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData(recordingFeatures([...comparedLines(), ...previewedLines(), ...ridesOnMap()])));
+  createEffect(() => {
+    const lines = recordingFeatures([...comparedLines(), ...previewedLines(), ...ridesOnMap(), ...stashLines()]);
+    props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData({ type: 'FeatureCollection', features: [...lines.features, ...dotFeatures(stashWaypoints())] });
+  });
   return null;
 }
 

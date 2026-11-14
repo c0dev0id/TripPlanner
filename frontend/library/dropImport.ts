@@ -1,12 +1,13 @@
 import { t } from '../i18n/t';
-import { changeTrip, createTrip, errorMessage, keepRide, listTrips } from '../api';
-import { gpxToDayParts, readRouteFile, ROUTE_FILE, waypointStops, type DayParts } from '../gpx/import';
+import { changeTrip, createTrip, errorMessage, keepRide, keepStashFile, listTrips } from '../api';
+import { readRouteFile, ROUTE_FILE, waypointStops } from '../gpx/import';
+import { gpxText } from '../gpx/write';
 import { asName, newId, type FolderKind, type Stop, type Trip, type TripSummary } from '../model/trip';
 import { addParts } from '../routing/dayEdit';
 import { recordingName } from '../recording/track';
 import { counted } from '../ui/format';
 import type { Dropped } from './fileDrop';
-import { addDaysAndMedia, importFolder, isGpxPath, isMediaPath, isRoutePath, planFolderImport, readPlannedDays, withImportedDay, type ImportMode, type ImportSource, type PlannedDay } from './folderImport';
+import { addDaysAndMedia, foldersUnder, importFolder, isGpxPath, isMediaPath, isRoutePath, planFolderImport, readPlannedDays, withImportedDay, type ImportMode, type ImportSource } from './folderImport';
 import { archiveFolders, inFolders } from './tripArchive';
 
 /** The collection of the name in the folder: the one among the trips listed, or a new one. */
@@ -97,6 +98,32 @@ function withPlaces(list: Trip, places: readonly KindedPlace[]): Trip {
  * none. A place the list holds already is left out, so that a file can be loaded again
  * when it has grown. Routes and tracks are no places and are left out, which is said.
  */
+/**
+ * Keeps the files of routes among what was dropped on a folder of the Stash, or picked
+ * for it: a GPX file as it is, a KML or KMZ file as the GPX it is turned into, each
+ * named after its file. The files of a dropped folder go into folders as their paths
+ * say, made where the Stash has none of the name. A file kept already, wherever in the
+ * Stash, is left out, and so is any other kind of file. The answer says how many were
+ * kept and how many were there already, and what could not be read or kept.
+ */
+export async function importIntoStash(dropped: Dropped, folderId: number, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
+  const errors: string[] = [];
+  let kept = 0;
+  let known = 0;
+  const sources = [...dropped.files.map((source) => ({ source, above: [] as string[] })), ...dropped.inFolders.map((source) => ({ source, above: source.path.split('/').slice(0, -1).map(asName) }))];
+  const routeFiles = sources.filter(({ source }) => isRoutePath(source.path));
+  const folderIn = routeFiles.some(({ above }) => above.length > 0) ? await foldersUnder(folderId) : async () => folderId;
+  const aboveOf = new Map(routeFiles.map(({ source, above }) => [source, above]));
+  await eachFile([...aboveOf.keys()], onProgress, errors, async (source) => {
+    const file = await source.open();
+    const gpx = isGpxPath(source.path) ? await file.text() : gpxText(await readRouteFile(file));
+    const { added } = await keepStashFile(await folderIn(aboveOf.get(source)!), asName(file.name.replace(ROUTE_FILE, '')) || t('File'), gpx);
+    if (added) kept++;
+    else known++;
+  });
+  return { text: keptText(kept, known, 'file', t('No GPX or KML files in there.')), errors };
+}
+
 async function importPlaces(files: readonly ImportSource[], into: { folderId: number | null } | { tripId: number }, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
   const sources = files.filter((source) => isRoutePath(source.path));
   const errors: string[] = [];
@@ -119,32 +146,6 @@ async function importPlaces(files: readonly ImportSource[], into: { folderId: nu
     known += places.length - added.length;
   });
   return { text: keptText(kept, known, 'place', t('No places in there.')), errors };
-}
-
-/**
- * Adds files of routes as sections, each named after its file, to the collection “Imported” in
- * the folder `folderId`, made where the folder has none, and keeps the other files with
- * it as media. What cannot be read or saved is reported, and the import goes on.
- */
-async function importSections(sources: readonly ImportSource[], folderId: number | null, onProgress: (text: string) => void): Promise<{ sections: number; media: number; errors: string[] }> {
-  const result = { sections: 0, media: 0, errors: [] as string[] };
-  const sections: { day: PlannedDay; parts: DayParts[] }[] = [];
-  await eachFile(sources.filter((source) => isRoutePath(source.path)), onProgress, result.errors, async (source) => {
-    const file = await source.open();
-    const name = file.name.replace(ROUTE_FILE, '');
-    sections.push({ day: { name: asName(name), date: null, files: [] }, parts: [gpxToDayParts(await readRouteFile(file), { fileName: name, profile: 'motorcycle', newId })] });
-  });
-  const media = sources.filter((source) => isMediaPath(source.path));
-  if (sections.length + media.length === 0) return result;
-  const collection = t('Imported');
-  try {
-    await addDaysAndMedia(await collectionIn(await listTrips(), folderId, collection), sections, media, result.errors);
-    result.sections = sections.length;
-    result.media = media.length;
-  } catch (error) {
-    result.errors.push(`${collection}: ${errorMessage(error)}`);
-  }
-  return result;
 }
 
 /** Imports dropped files as a trip each, and the files in dropped folders organized as `foldersAs` says; exported trips among the folders come back as they were. */
@@ -178,26 +179,16 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
 
 /**
  * Imports what was dropped on the folder `folderId`, null for the top, or picked for it,
- * as the kind of the top folder around it says. Among collections, files
- * become sections of the collection “Imported”, other files its media, and a folder of
- * files a collection with the folder's other files as its media, in the folders above it. Among places, the waypoints of every GPX file become places of a list.
- * Anywhere else a file becomes a trip, a folder of files a trip of its
- * own, and a folder that also holds folders a folder of trips. The answer says what was
- * made and what could not be read or saved.
+ * as the kind of the top folder around it says. In the Stash the files of routes are
+ * kept as files. Among places, the waypoints of every GPX file become places of a list.
+ * Anywhere else a file becomes a trip, a folder of files a trip of its own, and a folder
+ * that also holds folders a folder of trips. The answer says what was made and what
+ * could not be read or saved.
  */
 export async function importDropped(dropped: Dropped, folderId: number | null, kind: FolderKind, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
   if (kind === 'places') return importPlaces([...dropped.files, ...dropped.inFolders], { folderId }, onProgress);
-  const made: string[] = [];
-  const errors: string[] = [];
-  if (kind === 'collections') {
-    const sections = await importSections(dropped.files, folderId, onProgress);
-    if (sections.sections > 0) made.push(counted(sections.sections, 'section'));
-    if (sections.media > 0) made.push(counted(sections.media, 'attachment'));
-    errors.push(...sections.errors);
-  }
-  const trees = await importTree(kind === 'collections' ? [] : dropped.files, dropped.inFolders, kind === 'collections' ? 'planning-material' : 'trips', folderId, onProgress);
-  if (trees.trips > 0) made.push(counted(trees.trips, kind === 'collections' ? 'collection' : 'trip'));
-  errors.push(...trees.errors);
-  if (made.length === 0) return { text: t('No GPX or KML files and no exported trips in there.'), errors };
-  return { text: importedText(made), errors };
+  if (kind === 'collections') return importIntoStash(dropped, folderId!, onProgress);
+  const trees = await importTree(dropped.files, dropped.inFolders, 'trips', folderId, onProgress);
+  if (trees.trips === 0) return { text: t('No GPX or KML files and no exported trips in there.'), errors: trees.errors };
+  return { text: importedText([counted(trees.trips, 'trip')]), errors: trees.errors };
 }

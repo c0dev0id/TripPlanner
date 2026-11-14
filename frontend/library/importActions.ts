@@ -1,5 +1,5 @@
 import type { TripSummary } from '../model/trip';
-import { libraryFolders, relistFolders, relistTrips, runLibrary, setImportNote, showTab } from '../state/library';
+import { libraryFolders, relistFolders, relistStash, relistTrips, runLibrary, setImportNote, showTab } from '../state/library';
 import { runRidesJob } from '../state/rides';
 import { pickFiles } from '../ui/pickFile';
 import { importDropped, importIntoTrip, importRides } from './dropImport';
@@ -53,6 +53,7 @@ export function libraryImports(onLeave: () => Promise<void>) {
     running = false;
     relistFolders();
     relistTrips();
+    relistStash();
   };
   /** Imports into a folder, null for the top, as the folder's kind says. */
   const intoFolder = (folderId: number | null, dropped: Dropped | Promise<Dropped>) =>

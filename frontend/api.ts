@@ -4,6 +4,7 @@ import { daysToSend } from './model/delta';
 import type { Entry, EntryTarget } from './model/journal';
 import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Route, Trip, TripKind, TripSummary } from './model/trip';
+import type { StashFile } from './model/stash';
 import type { OwnPlace } from './poi/ownPlaces';
 import type { Joint, Ride, Suggestion } from './recording/rides';
 import { stopsInRidingOrder } from './routing/sequence';
@@ -245,17 +246,44 @@ export const listRecordings = (tripId: number): Promise<Recording[]> => request(
 /**
  * Keeps a GPX file as a ride under the name, on the day where one is given. A file kept
  * already is not kept again: the answer is then the ride it is kept as, under the name
- * it has, and `added` is false. The file goes compressed with gzip, which keeps it
- * within a server's request limits.
+ * it has, and `added` is false.
  */
 export async function keepRide(name: string, gpx: string, dayId?: string): Promise<{ ride: KeptRide; added: boolean }> {
   const form = new FormData();
   if (dayId !== undefined) form.set('dayId', dayId);
   form.set('name', name);
-  form.set('file', await new Response(new Blob([gpx]).stream().pipeThrough(new CompressionStream('gzip'))).blob(), 'recording.gpx.gz');
+  form.set('file', await gzipped(gpx), 'recording.gpx.gz');
   const response = await send('POST', '/api/rides', form);
   return { ride: (await response.json()) as KeptRide, added: response.status === 201 };
 }
+
+/** A GPX file as an upload: compressed with gzip, which keeps it within a server's request limits. */
+const gzipped = async (gpx: string): Promise<Blob> => new Response(new Blob([gpx]).stream().pipeThrough(new CompressionStream('gzip'))).blob();
+
+export const listStash = (): Promise<StashFile[]> => request('GET', '/api/stash');
+
+/**
+ * Keeps a GPX file in a folder of the Stash under the name. A file kept already,
+ * wherever in the Stash, is not kept again: the answer is then the file as it is kept,
+ * and `added` is false.
+ */
+export async function keepStashFile(folderId: number, name: string, gpx: string): Promise<{ file: StashFile; added: boolean }> {
+  const form = new FormData();
+  form.set('folderId', String(folderId));
+  form.set('name', name);
+  form.set('file', await gzipped(gpx), 'file.gpx.gz');
+  const response = await send('POST', '/api/stash/files', form);
+  return { file: (await response.json()) as StashFile, added: response.status === 201 };
+}
+
+export const renameStashFile = (id: number, name: string): Promise<void> => request('PATCH', `/api/stash/files/${id}`, { name });
+
+export const moveStashFile = (id: number, folderId: number): Promise<void> => request('PATCH', `/api/stash/files/${id}`, { folderId });
+
+export const deleteStashFile = (id: number): Promise<void> => request('DELETE', `/api/stash/files/${id}`);
+
+/** A file of the Stash as it is kept. */
+export const fetchStashGpx = async (id: number): Promise<string> => (await send('GET', `/api/stash/files/${id}/gpx`)).text();
 
 /** A day of riding that may be a day's: its date, null for a ride without times, whether that is the day's, the share of it that ran along the day's routes, or of them along it, and those of its rides that are not on the day yet. */
 export interface FoundRidingDay {

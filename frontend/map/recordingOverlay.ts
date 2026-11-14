@@ -1,4 +1,4 @@
-import type { FeatureCollection, LineString, Point } from 'geojson';
+import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
 import type { LayerSpecification } from 'maplibre-gl';
 import type { LngLat } from '../model/trip';
 import { atZooms, lineAt } from './zoomSize';
@@ -47,12 +47,16 @@ export const COMPARED_SOURCE = 'compared';
 /** How wide a ride held against a day's routes is drawn, as a share of a route's width: narrow enough that the route under it shows on both sides. */
 const HELD_SHARE = 0.4;
 
-/** The layers of what is compared: lines as wide as routes on their casing, and those held against a day's routes narrow and bare over them. */
+/** The layers of what is compared: lines as wide as routes on their casing, those held against a day's routes narrow and bare over them, and dots for single positions. */
 export function comparedLayers(width: number, sharpUntil: number): LayerSpecification[] {
   const held = ['==', ['get', 'held'], true];
   const [, narrow] = lineLayers(COMPARED_SOURCE, width * HELD_SHARE, sharpUntil);
-  return [...lineLayers(COMPARED_SOURCE, width, sharpUntil).map((layer) => ({ ...layer, filter: ['!', held] })), { ...narrow!, id: `${COMPARED_SOURCE}-held`, filter: held }] as LayerSpecification[];
+  const dots = { id: `${COMPARED_SOURCE}-dots`, type: 'circle', source: COMPARED_SOURCE, filter: ['==', ['geometry-type'], 'Point'], paint: { 'circle-radius': 5, 'circle-color': '#1c7ed6', 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 1.5 } };
+  return [...lineLayers(COMPARED_SOURCE, width, sharpUntil).map((layer) => ({ ...layer, filter: ['!', held] })), { ...narrow!, id: `${COMPARED_SOURCE}-held`, filter: held }, dots] as LayerSpecification[];
 }
+
+/** Positions as features, drawn as dots among what is compared: the waypoints of a file of the Stash. */
+export const dotFeatures = (positions: readonly LngLat[]): Feature<Point>[] => positions.map((coordinates) => ({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: coordinates as LngLat } }));
 
 /** Lines as features, each with its colour and an id: the recordings, a feature each or, coloured by a measure, a feature per piece of one colour, with the recording's id; or the routes compared, where `held` marks a ride held against a day's routes. */
 export function recordingFeatures(lines: readonly { id: number; points: readonly LngLat[]; color: string; held?: boolean }[]): FeatureCollection<LineString> {

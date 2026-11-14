@@ -238,11 +238,22 @@
 - The Stash (its tab yellow) and Places (green) hold collections and nothing else, in
   folders of their own; the Trips hold trips. The server refuses a collection made or
   moved elsewhere, a trip made or moved into them, and a folder moved across with
-  contents of the wrong kind. The library follows: New in such a folder's menu offers
-  a collection where others offer a trip; Move… offers only folders that take what is
-  moved;
-  copied routes are pasted as a new collection onto these folders only; and a folder's
-  card counts collections there.
+  contents of the wrong kind. The library follows: New in a folder's menu offers a
+  list among the Places where others offer a trip, and in the Stash a folder alone;
+  Move… offers only folders that take what is moved; and a folder's card counts files
+  in the Stash and lists among the Places.
+- The Stash is folders of files: every file is kept whole, as it was imported, so that
+  nothing it holds is lost before it is worked on. A file's card says what it holds,
+  its routes, tracks and waypoints and how far they go, and shows its shape; a click
+  unfolds it to its routes and tracks, each with its length and, a track with times,
+  when it began, and shows the file whole on the map, each line in the colour its row
+  has and the waypoints as dots; a click on a route or a track shows that one alone,
+  another click the file again. Files are selected as folders are, dragged or moved
+  into the Stash's folders, renamed and deleted from their menu; a folder deleted
+  takes its files with it or gives them to the folder around it. Nothing is started
+  in the Stash and nothing is pasted into it: a folder is all that is made there. The
+  search finds files by name and their routes and tracks by theirs, and shows what it
+  found in its folder and on the map.
 - Import by dropping GPX files, zips of exported trips and folders from the computer on
   a folder of the tree, or by Add in its menu; what they become follows from the folder.
   On Places or a folder in it, a GPX file's waypoints
@@ -251,10 +262,10 @@
   holds already, by name and position, is left out, so a newer file of the same list
   adds only what is new. Routes and tracks in such a file are left out and said so.
   A file that holds waypoints and no route is refused elsewhere, with the pointer to
-  this folder. On Collections or a
-  folder in it, files become sections of the collection “Imported” and a dropped folder
-  is imported as planning material: a collection per folder of files, its folders
-  recreated. On any other folder or the top, a file becomes a trip and a dropped folder
+  this folder. On the Stash or a folder in it, every GPX file is kept as a file, as it
+  is, a KML or KMZ file as the GPX it is turned into, and the folders of a dropped
+  folder are made as they are; a file the Stash keeps already, wherever, is left out
+  and counted, and so is a file of any other kind. On any other folder or the top, a file becomes a trip and a dropped folder
   is imported as the folder tree above says. Exported trips in dropped folders and in
   zips come back as they were.
 - A duplicates report, switched on by its icon among the library's actions, in the pane

@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { comparedLayers, recordingLayers } from './recordingOverlay';
+import { comparedLayers, dotFeatures, recordingLayers } from './recordingOverlay';
 import { lineAt } from './zoomSize';
 
 /** The width a line layer has at a zoom its expression names. */
@@ -21,8 +21,13 @@ it('draws recordings and compared routes as wide as routes, keeping pace with th
 
 it('draws a ride held against a day narrow and bare, apart from what is compared as wide as routes', () => {
   const layers = comparedLayers(5, 17);
-  expect(layers.map((layer) => layer.id)).toEqual(['compared-casing', 'compared-line', 'compared-held']);
+  expect(layers.map((layer) => layer.id)).toEqual(['compared-casing', 'compared-line', 'compared-held', 'compared-dots']);
   expect(widthAt(layers[2]!, 12)).toBe(2);
   expect((layers[2] as { filter?: unknown }).filter).toEqual(['==', ['get', 'held'], true]);
   expect((layers[1] as { filter?: unknown }).filter).toEqual(['!', ['==', ['get', 'held'], true]]);
+});
+
+it('draws single positions as dots, the lines left to the line layers', () => {
+  expect(comparedLayers(5, 17)[3]).toMatchObject({ type: 'circle', filter: ['==', ['geometry-type'], 'Point'] });
+  expect(dotFeatures([[8.7, 49.4]])).toEqual([{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [8.7, 49.4] } }]);
 });

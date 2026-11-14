@@ -64,6 +64,26 @@ const byName = new Intl.Collator(undefined, { numeric: true }).compare;
  */
 export const pickedPath = (file: File): string => (file.webkitRelativePath || file.name).normalize('NFC');
 
+/**
+ * Finds the folder the names lead to from the folder `parentId` down, null for the top,
+ * making each one the library has none of; it lists the folders once and remembers
+ * those it makes.
+ */
+export async function foldersUnder<Top extends number | null>(parentId: Top): Promise<(names: readonly string[]) => Promise<number | Top>> {
+  const folders = await listFolders();
+  return async (names) => {
+    let id: number | Top = parentId;
+    for (const name of names) {
+      // The special folders are no match for a folder of the tree that happens to have their name.
+      const found = folders.find((f) => f.parentId === id && f.name === name && f.kind === 'folder');
+      const folder = found ?? (await createFolder(name, id));
+      if (!found) folders.push(folder);
+      id = folder.id;
+    }
+    return id;
+  };
+}
+
 /** A file to import by its path in the folder picked or in the zip, read when it is needed. */
 export interface ImportSource {
   path: string;
@@ -246,18 +266,7 @@ export async function importFolder(
 ): Promise<ImportResult> {
   const result: ImportResult = { trips: 0, errors: [] };
   if (plan.length + archives.length === 0) return result;
-  const folders = await listFolders();
-  const folderIn = async (names: readonly string[]): Promise<number | null> => {
-    let id = parentId;
-    for (const name of names) {
-      // The special folders are no match for a folder of the tree that happens to have their name.
-      const found = folders.find((f) => f.parentId === id && f.name === name && f.kind === 'folder');
-      const folder = found ?? (await createFolder(name, id));
-      if (!found) folders.push(folder);
-      id = folder.id;
-    }
-    return id;
-  };
+  const folderIn = await foldersUnder(parentId);
   const total = plan.length + archives.length;
   const byPath = new Map(sources.map((source) => [source.path, source]));
   for (const [n, folder] of archives.entries()) {

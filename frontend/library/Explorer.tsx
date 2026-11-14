@@ -18,7 +18,7 @@ const EXPLORER = t('Trip Explorer');
 
 /** What the search says it looks through, by the tab shown. */
 const SEARCHES: Record<LibraryTab, string> = {
-  stash: t('Search collections, routes and tracks'),
+  stash: t('Search files, routes and tracks'),
   trips: t('Search trips, routes and tracks'),
   places: t('Search lists of places'),
   recordings: t('Search rides'),

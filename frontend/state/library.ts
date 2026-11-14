@@ -1,6 +1,6 @@
 import { createMemo, createResource, createRoot, createSelector, createSignal } from 'solid-js';
 import { t } from '../i18n/t';
-import { changeTrip, listFolders, listTrips, fetchOutlines, type OutlineDay, type Progress } from '../api';
+import { changeTrip, listFolders, listStash, listTrips, fetchOutlines, type OutlineDay, type Progress } from '../api';
 import { heldCounts, kindAround } from '../library/folders';
 import type { FolderKind } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
@@ -66,6 +66,7 @@ const library = createRoot(() => {
   const [trips, { refetch: refetchTrips }] = createResource(listTrips);
   const [folders, { refetch: refetchFolders }] = createResource(async () => (await listFolders()).map((f) => (f.kind === 'folder' ? f : { ...f, name: SPECIAL_NAMES[f.kind] })));
   const [outlines, { refetch: refetchOutlines }] = createResource(fetchOutlines);
+  const [files, { refetch: refetchFiles }] = createResource(listStash);
   /** The top of each tree: none for the trips', the folder of their kind for the others' once the folders are listed. */
   const roots = createMemo((): Record<TreeTab, number | null> => {
     const special = (kind: FolderKind) => folders()?.find((f) => f.kind === kind)?.id ?? null;
@@ -76,13 +77,16 @@ const library = createRoot(() => {
     const of = (tree: TreeTab) => (folders()?.some((f) => f.id === markedFolders()[tree]) ? markedFolders()[tree]! : roots()[tree]);
     return { stash: of('stash'), trips: of('trips'), places: of('places') };
   });
-  const heldOf = createMemo(() => heldCounts(folders() ?? [], trips() ?? []));
-  return { trips, folders, outlines, refetchTrips, refetchFolders, refetchOutlines, roots, marked, heldOf };
+  const heldOf = createMemo(() => heldCounts(folders() ?? [], [...(trips() ?? []), ...(files() ?? [])]));
+  return { trips, folders, outlines, files, refetchTrips, refetchFolders, refetchOutlines, refetchFiles, roots, marked, heldOf };
 });
 
 /** The user's trips and folders as the server last listed them. */
 export const libraryTrips = library.trips;
 export const libraryFolders = library.folders;
+
+/** The files of the Stash as the server last listed them. */
+export const stashFiles = library.files;
 
 /** The outline of a trip, day by day, as last fetched: none while they load, or where they could not be had. */
 export const outlineOf = (tripId: number): OutlineDay[] | undefined => (library.outlines.error ? undefined : library.outlines()?.[tripId]);
@@ -134,6 +138,7 @@ export const relistTrips = (): void => {
   void library.refetchOutlines();
 };
 export const relistFolders = (): void => void library.refetchFolders();
+export const relistStash = (): void => void library.refetchFiles();
 
 const requests = createRequest();
 
