@@ -131,6 +131,8 @@ final class RecordingsTest extends TestCase
         self::assertSame([$this->tripId, $document['days'][0]['date']], [$days[0]['tripId'], $days[0]['date']]);
         self::assertSame(array_column($document['days'][0]['routes'], 'id'), array_column($days[0]['routes'], 'id'));
         self::assertSame([], iterator_to_array($this->documents->tripDays($this->userId + 1), false));
+        self::assertSame(array_slice(array_column($document['days'], 'id'), 1), array_column(iterator_to_array($this->documents->tripDays($this->userId, 1), false), 'id'));
+        self::assertSame([count($document['days']), 0], [$this->documents->tripDayCount($this->userId), $this->documents->tripDayCount($this->userId + 1)]);
     }
 
     public function testMergesRidesThatFollowOneAnotherAndRemembersTheirFiles(): void

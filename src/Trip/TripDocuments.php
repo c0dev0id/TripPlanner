@@ -57,18 +57,28 @@ final class TripDocuments
     }
 
     /**
-     * The days of the user's trips, collections left out, one after the other, each with
-     * its trip, its date and its routes as its document has them.
+     * The days of the user's trips, collections left out, one after the other from the
+     * `$from`th on, each with its trip, its date and its routes as its document has them.
      *
      * @return iterable<array{id: string, tripId: int, date: ?string, routes: list<array<string, mixed>>}>
      */
-    public function tripDays(int $userId): iterable
+    public function tripDays(int $userId, int $from = 0): iterable
     {
         $routes = $this->db->prepare('SELECT id, name, kind, profile, highways, optional, color, points, legs, line FROM routes WHERE day_id = ? ORDER BY position');
-        foreach ($this->rows("SELECT d.id, d.trip_id, d.date FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.user_id = ? AND t.kind = 'trip' ORDER BY d.trip_id, d.position", $userId) as $day) {
+        $days = $this->db->prepare("SELECT d.id, d.trip_id, d.date FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.user_id = ? AND t.kind = 'trip' ORDER BY d.trip_id, d.position LIMIT -1 OFFSET ?");
+        $days->execute([$userId, $from]);
+        foreach ($days->fetchAll() as $day) {
             $routes->execute([$day['id']]);
             yield ['id' => $day['id'], 'tripId' => (int) $day['trip_id'], 'date' => $day['date'], 'routes' => array_map(self::route(...), $routes->fetchAll())];
         }
+    }
+
+    /** How many days the user's trips have, collections left out. */
+    public function tripDayCount(int $userId): int
+    {
+        $statement = $this->db->prepare("SELECT COUNT(*) FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.user_id = ? AND t.kind = 'trip'");
+        $statement->execute([$userId]);
+        return (int) $statement->fetchColumn();
     }
 
     /** The trip shared under the token, or null when none is. */

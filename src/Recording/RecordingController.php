@@ -20,6 +20,8 @@ final class RecordingController
     /** The largest file a recording may be, compressed and as GPX: a long day of one point a second with sensor data stays well below. */
     private const MAX_COMPRESSED = 20_000_000;
     private const MAX_GPX = 200_000_000;
+    /** How long one answer looks through days for suggestions, in nanoseconds: well within what a server lets a request take. */
+    private const SUGGESTING_NS = 3_000_000_000;
 
     public function __construct(
         private readonly Recordings $recordings,
@@ -73,13 +75,27 @@ final class RecordingController
      * The days of the user's trips that rides on no day may be of, as a lookup finds them
      * for each day, without what the user declined: the trip and the day, the date of
      * the riding, whether it is the day's, the share along the routes, and the rides.
-     * `offset` is the minutes the user's clock is ahead of UTC.
+     * `offset` is the minutes the user's clock is ahead of UTC. A library's days are
+     * many, so an answer covers those from the `from`th on that a few seconds take, and
+     * says how many are `done` `of` all; the next request takes up from there.
      */
     public function suggestions(Request $request, Response $response): Response
     {
+        $query = $request->getQueryParams();
         $userId = $this->currentUser->get()->id;
-        $offset = (int) ($request->getQueryParams()['offset'] ?? 0);
-        return Json::of($response, Suggestions::of($this->documents->tripDays($userId), $this->recordings->rides($userId), $this->recordings->declined($userId), $offset));
+        $done = max(0, (int) ($query['from'] ?? 0));
+        $days = (function () use ($userId, &$done) {
+            $until = hrtime(true) + self::SUGGESTING_NS;
+            foreach ($this->documents->tripDays($userId, $done) as $day) {
+                yield $day;
+                $done++;
+                if (hrtime(true) > $until) {
+                    return;
+                }
+            }
+        })();
+        $suggestions = Suggestions::of($days, $this->recordings->rides($userId), $this->recordings->declined($userId), (int) ($query['offset'] ?? 0));
+        return Json::of($response, ['suggestions' => $suggestions, 'done' => $done, 'of' => $this->documents->tripDayCount($userId)]);
     }
 
     /**
