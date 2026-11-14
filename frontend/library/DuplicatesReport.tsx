@@ -46,8 +46,8 @@ let scrolled = 0;
 
 /**
  * The routes the library keeps more than once, in the pane between the library and the
- * map: exact copies, and the same ride kept from two sources on one date, but for what
- * one day holds alone. The report is made once and kept, its heading says
+ * map: exact copies, and the same ride kept from two sources on one date, routes among
+ * routes and tracks among tracks. The report is made once and kept, its heading says
  * when, and the button there makes it afresh. A click or a tap selects
  * a route, with Cmd or Ctrl one more, with Shift a run of them; its pad adds or takes it
  * away. The map draws what is selected, each route in a colour its row shows too, to

@@ -116,14 +116,14 @@ export const duplicatesMadeAt = report.madeAt;
 /** Makes the report afresh. */
 export const refreshDuplicates = report.refresh;
 
-/** Takes routes out of the report as it stands, after they were deleted: a group left within one day, as with one route, is none any more, as in a report made afresh, and the groups they were not in stay as they are. */
+/** Takes routes out of the report as it stands, after they were deleted: a group left with one route is none any more, and the groups they were not in stay as they are. */
 export function forgetDuplicates(gone: readonly DuplicateRoute[]): void {
   const keys = new Set(gone.map(duplicateKey));
   report.mutate((groups) =>
     groups?.flatMap((group) => {
       if (!group.routes.some((route) => keys.has(duplicateKey(route)))) return [group];
       const routes = group.routes.filter((route) => !keys.has(duplicateKey(route)));
-      return new Set(routes.map((route) => route.dayId)).size > 1 ? [{ ...group, routes }] : [];
+      return routes.length > 1 ? [{ ...group, routes }] : [];
     }),
   );
 }

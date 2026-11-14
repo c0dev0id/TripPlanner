@@ -917,17 +917,15 @@ entries at the end of their section.
   for and is wrong: one is a plan and the other a line, a trip often keeps both on
   purpose, and holding a track against a route is what the recordings' lookup and
   comparison are for. Only routes are compared with routes and tracks with tracks.
-- **What one day holds is no duplicate.** A trip keeps the planned route and the tracks
-  ridden along it on the same day, and the report listed each such day as the same ride
-  kept twice, hundreds of groups that buried the ones worth looking at. A group is left
-  out where all of it lies in one day. Anything beyond that day makes it a duplicate
-  again and lists it whole: the same routes imported twice into two trips, which is
-  what the report is for. A first version left out every group whose routes were all
-  in trips, which hid exactly the trips imported twice. A second kept a day's group
-  where it held two planned routes or an exact copy; in a day that is planned with a
-  route and a track of it, and with the same way kept in more than one form, those
-  were mostly false alarms too, so a day now never reports against itself, at the
-  price that a route really kept twice in one day is not found.
+- **A day reports against itself.** For a while a group that lay in one day was left
+  out: a trip keeps the planned route and the track of it on the same day, and each
+  such day was listed as a ride kept twice, hundreds of groups that buried the ones
+  worth looking at. Rules were added to tell a plan with its recordings from a real
+  duplicate, by how many planned routes and exact copies the day held, and then every
+  day's own group was dropped. All of that treated the symptom. Since a route and a
+  track are never held against each other (the entry above), what is alike within a
+  day is the same route twice or the same track twice, which is a duplicate, and the
+  rules are gone.
 - **What is taken up is drawn alone, but for what is pinned.** The map drew every route
   of the day shown and, by a switch on the day, all of its recordings or none, which
   left no way to look at one route of several or at three rides of ten. With the whole

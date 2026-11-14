@@ -297,10 +297,8 @@
   the date) or as the same ride kept twice (the same way within a kilometre at both
   ends, lengths within a tenth, nine in ten of each line's points within 75 m of the
   other, on the same date or an undated day). Like is compared with like: a planned
-  route and a track of the same way are never duplicates of each other. What one day holds is left out, even
-  twice: its planned route, the tracks recorded of it and what else runs alike there
-  belong together. Once the same ride is on another day as well, of the trip or of
-  another, the group is listed whole. A click or a tap selects a route, Cmd or Ctrl one more,
+  route and a track of the same way are never duplicates of each other. A day that holds
+  the same route twice, or the same track, is listed as any other. A click or a tap selects a route, Cmd or Ctrl one more,
   Shift a run of them; a route's pad adds it or takes it away; a selected row is highlighted.
   A row says whether it is a route or a track, since a planned route and the track of
   the same way are often both wanted, and where it is by the folders its trip is in, the trip and the day,
@@ -315,7 +313,7 @@
   itself as well. The report is made once and kept while the page stands: shown again,
   it is there at once, where it was scrolled to and with what was selected still
   selected, which the map draws only while the report is shown; what is deleted from it is taken out
-  of it, and with it a group that is left within one day, its heading says when it was made, and the button there makes it afresh. A
+  of it, its heading says when it was made, and the button there makes it afresh. A
   route deleted from the open trip leaves it as an edit that can be undone. While it is made, which takes a
   while on a large library, a ring turns beside how many routes are compared and the
   seconds gone.

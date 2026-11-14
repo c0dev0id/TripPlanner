@@ -17,8 +17,8 @@ use Planner\Export\RouteGeometry;
  * same way at about the same length along about the same line, on the same date or where
  * a day has none. Like is compared with like: a planned route and a track of the same way
  * are a plan and a line, kept both on purpose, and never duplicates of each other. The
- * same road ridden on different dates is no duplicate. Nor is what one day holds alone.
- * Once anything outside that day is the same ride too, the group is listed whole.
+ * same road ridden on different dates is no duplicate. A day that holds the same route
+ * twice, or the same track, is listed as any other.
  */
 final class Duplicates
 {
@@ -63,7 +63,7 @@ final class Duplicates
         return array_map(fn (array $group) => [
             'kind' => count(array_unique(array_column($group, 'copy'))) === 1 ? 'copies' : 'same ride',
             'routes' => array_column($group, 'entry'),
-        ], array_values(array_filter($groups, fn (array $group) => count(array_unique(array_column(array_column($group, 'entry'), 'dayId'))) > 1)));
+        ], $groups);
     }
 
     /**
