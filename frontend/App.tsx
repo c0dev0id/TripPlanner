@@ -1,6 +1,7 @@
-import { createEffect, createResource, createSignal, onCleanup, onMount, Show } from 'solid-js';
+import { createEffect, createResource, createSignal, Match, onCleanup, onMount, Show, Switch } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout, type Progress } from './api';
 import { DuplicatesReport } from './library/DuplicatesReport';
+import { RidesPane } from './library/RidesPane';
 import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';
@@ -11,7 +12,7 @@ import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { setPreferencesOpen } from './state/drawing';
-import { libraryFolders, libraryTrips, relistTrips, setOpening, showFolder, shownFolderId, showingDuplicates } from './state/library';
+import { libraryFolders, libraryTrips, relistTrips, setOpening, showFolder, shownFolderId, shownReport } from './state/library';
 import { foldPanel, panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
@@ -79,6 +80,12 @@ export function App() {
     if (changed) relistTrips();
   };
 
+  /** Opens a trip at a day from a report in the pane; as a trip opened in the tree, it makes its folder the one shown. */
+  const openLocation = (id: number, dayId: string) => {
+    showFolder(libraryTrips()?.find((trip) => trip.id === id)?.folderId ?? null);
+    void open(id, dayId);
+  };
+
   document.addEventListener('keydown', partKeys);
   onCleanup(() => document.removeEventListener('keydown', partKeys));
 
@@ -130,15 +137,14 @@ export function App() {
         </Show>
         <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} error={error()} />
       </aside>
-      <Show when={showingDuplicates()} fallback={<DayPane />}>
-        <DuplicatesReport
-          onOpen={(id, dayId) => {
-            // As a trip opened in the tree, it makes its folder the one shown.
-            showFolder(libraryTrips()?.find((trip) => trip.id === id)?.folderId ?? null);
-            void open(id, dayId);
-          }}
-        />
-      </Show>
+      <Switch fallback={<DayPane />}>
+        <Match when={shownReport() === 'duplicates'}>
+          <DuplicatesReport onOpen={openLocation} />
+        </Match>
+        <Match when={shownReport() === 'rides'}>
+          <RidesPane onOpen={openLocation} />
+        </Match>
+      </Switch>
       <div class="map-wrap">
         <PanelResizer />
         <MapView />

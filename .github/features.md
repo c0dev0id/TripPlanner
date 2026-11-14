@@ -337,6 +337,19 @@
   copied recording also pastes as a track route, to plan from it; nothing else becomes
   a recording than a recorded file. A recording's row says when it began and how long
   it is, or that its file has no times.
+- Rides, the library by when it was ridden: the clock among the library's switches puts
+  every recording the user keeps into the pane between the library and the map, on
+  whatever day it is or waiting in the folder for recordings, by when it began. Years,
+  the latest unfolded, hold months, and a month the days ridden on, each heading with
+  its days and its length; a day is a card with its date and length over its rides,
+  since a tracker starts a new file after a break: when each began, its name, its
+  length and where it is kept, a trip and its day or "On no day yet". A click or tap
+  selects a ride, Cmd or Ctrl one more, Shift a run, its pad adds it or takes it away;
+  a day's or a month's heading selects all its rides. The map draws the selected rides,
+  each in a colour its row shows, and brings them into view, so that rides of different
+  years are looked at together. A ride's menu opens the day that keeps it, whose pane
+  takes the rides' place; a recording's menu on its day has "Show in the rides", which
+  comes back with it selected and in view. Nothing is changed from there.
 - Recordings that wait for their day: those in the Recordings folder, on the sections of
   their collections, where they are listed, shown and opened as on a day; a collection
   there says how many it holds. *Look up recordings…* beside *Add recording…* on a

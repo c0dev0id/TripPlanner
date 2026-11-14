@@ -34,8 +34,14 @@ final class RecordingController
         return $recordings === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $recordings);
     }
 
-    /** Every ride of the user's as GeoJSON, a line each with its name, when it began, its length and where it is kept: what the map's overlay of the rides reads. */
+    /** Every ride of the user's, by when it began: its recording's id, the trip and day that keep it, its name, its length and its line as polyline6. */
     public function rides(Request $request, Response $response): Response
+    {
+        return Json::of($response, $this->recordings->rides($this->currentUser->get()->id));
+    }
+
+    /** Every ride of the user's as GeoJSON, a line each with its name, when it began, its length and where it is kept: what the map's overlay of the rides reads. */
+    public function rideLines(Request $request, Response $response): Response
     {
         $features = array_map(fn (array $ride) => [
             'type' => 'Feature',

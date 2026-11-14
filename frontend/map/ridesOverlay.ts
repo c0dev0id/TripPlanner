@@ -17,7 +17,7 @@ export const RIDES: Overlay = {
   label: t('My rides'),
   parts: (sharpUntil, look) => ({
     // The lines the planner keeps beside the recordings' files, read anew each time the overlay is switched on.
-    sources: { rides: { type: 'geojson', data: '/api/rides' } },
+    sources: { rides: { type: 'geojson', data: '/api/rides/lines' } },
     layers: [
       {
         id: 'rides-line',

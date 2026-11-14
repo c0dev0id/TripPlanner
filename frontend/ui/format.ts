@@ -59,6 +59,16 @@ const MOMENT = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short',
 /** A moment as ISO 8601 with its zone, as the browser's local date and time of day: "13 Jun 2027, 14:30". */
 export const momentText = (iso: string): string => MOMENT.format(new Date(iso));
 
+const TIME = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+
+/** A moment as ISO 8601 with its zone, as the browser's local time of day: "14:30". */
+export const timeOfDayText = (iso: string): string => TIME.format(new Date(iso));
+
+const MONTH = new Intl.DateTimeFormat(locale, { month: 'long' });
+
+/** A month as YYYY-MM by its name in the browser's language: "November". */
+export const monthText = (month: string): string => MONTH.format(new Date(`${month}-01T00:00:00`));
+
 const CLOCK = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
 
 /** A moment in milliseconds since the epoch as the browser's local time of day: "14:30:05". */

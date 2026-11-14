@@ -5,6 +5,7 @@ import type { Entry, EntryTarget } from './model/journal';
 import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Trip, TripKind, TripSummary } from './model/trip';
 import type { OwnPlace } from './poi/ownPlaces';
+import type { Ride } from './recording/rides';
 import { stopsInRidingOrder } from './routing/sequence';
 
 /** Requests to the JSON API, and the one form the app posts: sign out. */
@@ -213,6 +214,9 @@ export interface Preferences {
 export const fetchPreferences = (): Promise<Preferences> => request('GET', `/api/preferences`);
 
 export const savePreferences = (preferences: Preferences): Promise<void> => request('PUT', `/api/preferences`, preferences);
+
+/** Every ride of the user's, by when it began: the recordings, whatever day keeps them. */
+export const fetchRides = (): Promise<Ride[]> => request('GET', '/api/rides');
 
 /** A ride as recorded, kept on a day, with its length in metres and the time of its first point, null where its file has no times; its GPX file is fetched apart. */
 export interface Recording {

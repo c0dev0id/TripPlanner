@@ -72,6 +72,8 @@ share work; sharing between users is on the way.
   for what and until when.
 - **Where you have been** — a third button draws every recorded ride at once: the roads
   you ride often dark, the ones you never took not at all. It stays on while planning.
+- **Rides by date** — every recording in years, months and days of riding, whatever
+  trip keeps it; select some and compare them on the map.
 - **Fuel, beds and food** — fuel stations, hotels, restaurants, cafes, viewpoints and
   parking as a layer: along the day's routes, each kind within its own distance, or all
   in view.

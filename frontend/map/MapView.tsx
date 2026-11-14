@@ -3,6 +3,7 @@ import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } 
 import type { Day, LngLat, Route } from '../model/trip';
 import { panTarget, showNeighbours } from '../state/drawing';
 import { comparedLines } from '../state/duplicates';
+import { ridesOnMap } from '../state/rides';
 import { routePositions } from '../routing/legs';
 import { colorRuns } from '../recording/lineColors';
 import { isRoutePinned } from '../state/pins';
@@ -145,7 +146,7 @@ function RecordingLines(props: { map: MapLibreMap }) {
 
 /** Draws the routes the duplicates report compares, each in its colour, and the recording a day's lookup shows. */
 function ComparedLines(props: { map: MapLibreMap }) {
-  createEffect(() => props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData(recordingFeatures([...comparedLines(), ...previewedLines()])));
+  createEffect(() => props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData(recordingFeatures([...comparedLines(), ...previewedLines(), ...ridesOnMap()])));
   return null;
 }
 

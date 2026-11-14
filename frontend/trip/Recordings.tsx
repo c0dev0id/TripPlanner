@@ -7,6 +7,7 @@ import { clearPartSelection, clickPart, isPartSelected, partsOfMenu, togglePart 
 import { showWhole } from '../state/drawing';
 import { isRecordingPinned, pinRecordings } from '../state/pins';
 import { openRecording } from '../state/recordingView';
+import { showRide } from '../state/rides';
 import {
   activeRecordingId,
   addRecording,
@@ -160,7 +161,7 @@ export async function deleteRecordingsAsked(chosen: readonly Recording[]): Promi
 
 /**
  * The menu of a recording, or of the selected recordings it is one of: rename, cut, copy,
- * move to another day, for several their pins, select, delete. What takes one recording
+ * move to another day, show it among the rides, for several their pins, select, delete. What takes one recording
  * alone is greyed out for several.
  */
 function recordingMenu(recording: Recording, onRename: (recording: Recording) => void): MenuItem[] {
@@ -178,6 +179,7 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
     { label: t('Cut'), run: () => clipRecordings(chosen, true) },
     { label: t('Copy'), run: () => clipRecordings(chosen, false) },
     ...moveToDayItem(dayId, move),
+    { label: t('Show in the rides'), disabled: several, run: () => showRide(recording.id) },
     ...(several ? pinItems((pinned) => pinRecordings(chosen.map((r) => r.id), pinned)) : []),
     ...(several || isPartSelected('recording', String(recording.id)) ? [] : [{ label: t('Select'), run: () => togglePart('recording', String(recording.id)) }]),
     { label: t('Delete'), run: () => void deleteRecordingsAsked(chosen) },

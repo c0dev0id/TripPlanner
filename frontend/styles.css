@@ -679,6 +679,43 @@ li.row.cut {
   border-radius: 7px;
 }
 
+/* The rides by when they were ridden: a year's, a month's and a day's heading are buttons across the pane, their totals at the end. */
+.rides h3,
+.rides h4 {
+  margin: 10px 0 2px;
+}
+
+.rides h3 button.text,
+.rides h4 button.text,
+.rides button.riding-day {
+  width: 100%;
+  align-items: baseline;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+  color: inherit;
+}
+
+.rides button.riding-day {
+  font-weight: 600;
+}
+
+/* The totals read as text, not as part of the heading's capitals. */
+.rides h3 .detail {
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* A year's chevron points down while its months are shown. */
+.rides .fold svg {
+  align-self: center;
+}
+
+.rides .fold[aria-expanded='true'] svg {
+  transform: rotate(90deg);
+}
+
 /* A file or a link kept with a day: a link that reads as a row, what it is drawn before its name. */
 .media-item a.text {
   display: flex;

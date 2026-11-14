@@ -239,6 +239,20 @@ entries at the end of their section.
   what would be refused. The import dialog lost planning material as a way to organize
   a tree: among collections a picked folder is imported as a dropped one is, elsewhere
   it can only make trips.
+- **The rides are a second way into the same recordings, and change nothing.** The
+  library is a tree of plans, and a recording has no place in it but the day it was
+  put on, so that "what did I ride last week" had no answer once rides were assigned.
+  A recording has its own place in time, though. The rides' pane lists all of them by
+  when they began, wherever they are kept, and stands where the duplicates report
+  stands, built as it is: a list whose selection the map draws, and a way to the day
+  behind a row. It only reads. That a ride is kept on one day, and leaves the folder
+  for recordings when it is assigned, is left as it is until the pane has shown what
+  the relation between a ride and a plan should be; the user's own answer is that it
+  is many to many and made by hand.
+- **A day of riding is the unit, not the file.** The user's tracker starts a new file
+  when the bike moves again after a break, so one outing is two or three recordings.
+  They are grouped by the date they began on, where the browser is, and shown as one
+  card; the files stay as they are.
 - **The overlay of all rides draws the lines that are kept already.** A recording's line
   is kept beside its file, thinned to ten metres, for the lookup and the duplicates.
   Measured on 164 of the user's rides, 10,800 km, those lines are 51,000 points and a

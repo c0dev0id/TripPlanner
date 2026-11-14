@@ -10,8 +10,15 @@ import { createRequest } from '../ui/request';
 /** The folder asked for, null for the top: the one the tree marks, and that takes what is pasted with the keys or from the line that offers it. */
 const [listFolderId, setListFolderId] = createSignal<number | null>(null);
 
+/** What stands in the pane between the library and the map instead of a day: the routes kept more than once, or the rides by when they were ridden. */
+export type Report = 'duplicates' | 'rides';
+export const [shownReport, showReport] = createSignal<Report>();
+
 /** Whether the duplicates report stands in the pane between the library and the map. */
-export const [showingDuplicates, setShowingDuplicates] = createSignal(false);
+export const showingDuplicates = (): boolean => shownReport() === 'duplicates';
+
+/** Shows the duplicates report, or takes it from the pane where it stands there. */
+export const setShowingDuplicates = (shown: boolean): void => void showReport((report) => (shown ? 'duplicates' : report === 'duplicates' ? undefined : report));
 
 /** The trip being opened and how far that has come: its document on its way, or arrived and being put on the map. */
 export const [opening, setOpening] = createSignal<{ tripId: number; progress: Progress | 'arrived' }>();

@@ -91,6 +91,7 @@ final class Routes
             $api->get('/trips/{id:[0-9]+}/media/{entry:[0-9]+}/file', [MediaController::class, 'file']);
             $api->get('/trips/{id:[0-9]+}/media/{entry:[0-9]+}/preview', [MediaController::class, 'preview']);
             $api->get('/rides', [RecordingController::class, 'rides']);
+            $api->get('/rides/lines', [RecordingController::class, 'rideLines']);
             $api->get('/trips/{id:[0-9]+}/recordings', [RecordingController::class, 'index']);
             $api->get('/trips/{id:[0-9]+}/recordings/lookup', [RecordingController::class, 'lookup']);
             $api->post('/trips/{id:[0-9]+}/recordings', [RecordingController::class, 'add']);
