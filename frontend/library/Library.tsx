@@ -489,18 +489,25 @@ export function Library(props: {
       await Promise.all([...goingTrips.map((trip) => moveTrip(trip.id, into)), ...goingFolders.map((f) => moveFolder(f.id, into)), ...goingFiles.map((file) => moveStashFile(file.id, into!))]);
     }, relist);
   };
-  /** Move… with the folders that take what is moved as its submenu, and none for the top; none where there is nowhere to go. */
+  /**
+   * Move… with where what is moved can go from where the first of it is, as its submenu:
+   * the top of its tree as "/", the folder around its own as "..", the folders beside
+   * it and the folders in those. Anything further off is reached in steps, or by
+   * dragging. None where there is nowhere to go.
+   */
   const moveItem = (moved: readonly Item[]): MenuItem[] => {
     const [first] = moved;
     const from = 'folder' in first! ? first.folder.parentId : ('trip' in first! ? first.trip : first!.file).folderId;
     const movedFolders = new Set(foldersOf(moved).map((f) => f.id));
     const takes = takerOf(moved);
+    const root = rootOf(treeOf(from));
+    const above = folders().find((f) => f.id === from)?.parentId ?? null;
+    const to = (label: string, into: number | null): MenuItem[] => (takes(into) ? [{ label, run: () => moveInto(moved, into) }] : []);
+    const beside = (parent: number | null) => childFolders(parent).filter((f) => !movedFolders.has(f.id)).sort((x, y) => x.name.localeCompare(y.name));
     const places: MenuItem[] = [
-      ...(from === null || !takes(null) ? [] : [{ label: t('No folder'), run: () => moveInto(moved, null) }]),
-      ...folders()
-        .filter((f) => f.id !== from && !movedFolders.has(f.id) && takes(f.id))
-        .map((f) => ({ label: pathOf(f.id), run: () => moveInto(moved, f.id) }))
-        .sort((x, y) => x.label.localeCompare(y.label)),
+      ...(from === root ? [] : to('/', root)),
+      ...(from === root || above === root ? [] : to('..', above)),
+      ...beside(from).flatMap((f) => [...to(f.name, f.id), ...beside(f.id).flatMap((inner) => to(`${f.name} / ${inner.name}`, inner.id))]),
     ];
     return places.length > 0 ? [{ label: t('Move…'), items: places }] : [];
   };

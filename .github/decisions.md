@@ -291,6 +291,11 @@ entries at the end of their section.
   places and nothing else; the special folder of the Stash keeps its kind
   `collections` in the database, since a changed check would need the tables made
   anew.
+- **Move… offers what is near.** Its submenu listed every folder of the tree by its
+  path, which with a few hundred folders filled the screen with paths cut off alike.
+  It now lists, from where the thing is, the top as "/", the folder around its own as
+  "..", the folders beside it and the folders in those. A move further off takes two
+  steps or a drag; in return the list is short and every entry can be told apart.
 - **The Stash is files; the Trips are curated.** The Stash is where data is dumped
   without thought and kept safe until it is worked on: what is imported there must not
   lose anything. The Trips are where routes, tracks, recordings and times are tied
