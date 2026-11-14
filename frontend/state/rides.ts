@@ -6,7 +6,7 @@ import type { Ride } from '../recording/rides';
 import { decodePolyline } from '../routing/polyline';
 import { selectIn, selectionOf } from '../ui/selection';
 import { showWhole } from './drawing';
-import { libraryTab, libraryTrips, showTab } from './library';
+import { libraryTab, libraryTrips, setQuery, showTab } from './library';
 import { foldPanel } from './panel';
 
 /**
@@ -79,11 +79,12 @@ export const rideColor = (ride: Ride): string | undefined => rides.lines().find(
 /** The ride to be brought into view among the rides, once: one shown from a day it is on. */
 export const [revealedRide, revealRide] = createSignal<number>();
 
-/** Shows the rides, in the library unfolded for them, with one of them selected and in view. */
+/** Shows the rides, in the library unfolded for them and not searched, with one of them selected and in view. */
 export function showRide(id: number): void {
   batch(() => {
     foldPanel(false);
     showTab('recordings');
+    setQuery('');
     selectIn(RIDES, new Set([String(id)]));
     revealRide(id);
   });

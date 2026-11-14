@@ -3,7 +3,7 @@ import { t } from '../i18n/t';
 import { PlacesList } from '../map/PlacesList';
 import type { TripSummary } from '../model/trip';
 import { LIBRARY_TABS, libraryProblem, libraryTab, libraryTrips, openTree, query, setQuery, showFolder, showTab, TAB_NAMES, type LibraryTab } from '../state/library';
-import { openTrip, openTripId, selectDay } from '../state/trip';
+import { openTrip, openTripId, selectDay, takeUpRouteOf } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
 import { SaveState } from '../trip/SaveStatus';
 import { TripIcons, TripPanel } from '../trip/TripPanel';
@@ -16,6 +16,14 @@ import { Rides } from './Rides';
 /** The explorer's own name, its heading at the top of the library. */
 const EXPLORER = t('Trip Explorer');
 
+/** What the search says it looks through, by the tab shown. */
+const SEARCHES: Record<LibraryTab, string> = {
+  stash: t('Search collections, routes and tracks'),
+  trips: t('Search trips, routes and tracks'),
+  places: t('Search lists of places'),
+  recordings: t('Search rides'),
+};
+
 /**
  * The library's pane: its switches and search, a tab for each of its views (the
  * collections, the trips, the lists of places and the rides), the open trip's name
@@ -24,11 +32,17 @@ const EXPLORER = t('Trip Explorer');
  * what is unfolded, marked and selected in the others stays, and how far each was
  * scrolled.
  */
-export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; onLeave: () => Promise<void>; error: string | undefined }) {
+export function Explorer(props: { onOpen: (id: number, dayId?: string, routeId?: string) => void; onLeave: () => Promise<void>; error: string | undefined }) {
   /** Opens a trip and makes its folder the one shown: a trip of the tree or the search, or one just made. */
   const openIn = (trip: TripSummary, dayId?: string) => {
     showFolder(trip.folderId);
     props.onOpen(trip.id, dayId);
+  };
+  /** Shows a route the search found: its trip at its day, opened where another is open, with the route taken up. */
+  const openRoute = (trip: TripSummary, dayId: string, routeId: string) => {
+    showFolder(trip.folderId);
+    if (trip.id === openTripId()) takeUpRouteOf(dayId, routeId);
+    else props.onOpen(trip.id, dayId, routeId);
   };
   /** Shows a folder the search found, leaving an open trip for it. */
   const openFolder = (id: number) => void props.onLeave().then(() => showFolder(id));
@@ -41,11 +55,6 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
   const showDay = (tripId: number, dayId: string) => (tripId === openTripId() ? selectDay(dayId) : props.onOpen(tripId, dayId));
   /** The open trip where the tab shown is the one it is in, which its name and its actions then stand over; one not listed yet counts as in the tab shown. */
   const headed = () => ((openTree() ?? libraryTab()) === libraryTab() ? openTrip() : undefined);
-  /** Shows a tab, which ends a search: what it found stood in the tabs' place. */
-  const switchTo = (tab: LibraryTab) => {
-    showTab(tab);
-    setQuery('');
-  };
   // The panel scrolls as a whole, so how far it was scrolled is kept for each tab and given back when the tab is shown again.
   let section!: HTMLElement;
   const scrolled: Partial<Record<LibraryTab, number>> = {};
@@ -60,11 +69,11 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
     <section class="explorer" ref={section}>
       <LibraryActions />
       <PlacesList />
-      <input class="search" type="search" placeholder={t('Search trips and folders')} aria-label={t('Search trips and folders')} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
+      <input class="search" type="search" placeholder={SEARCHES[libraryTab()]} aria-label={SEARCHES[libraryTab()]} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
       <div class="row library-tabs" role="tablist" aria-label={t('Library')}>
         <For each={LIBRARY_TABS}>
           {(tab) => (
-            <button role="tab" class="grow" data-tab={tab} aria-selected={libraryTab() === tab} onClick={() => switchTo(tab)}>
+            <button role="tab" class="grow" data-tab={tab} aria-selected={libraryTab() === tab} onClick={() => showTab(tab)}>
               {TAB_NAMES[tab]}
             </button>
           )}
@@ -89,12 +98,12 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string) => void; 
         </Show>
       </div>
       <Show when={libraryProblem() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
-      <Library onOpen={openIn} onOpenFolder={openFolder} onLeave={props.onLeave}>
+      <Library onOpen={openIn} onOpenRoute={openRoute} onOpenFolder={openFolder} onLeave={props.onLeave}>
         <Show when={openTrip()?.kind === 'collection'} fallback={<TripPanel />}>
           <CollectionPanel />
         </Show>
       </Library>
-      <div hidden={libraryTab() !== 'recordings' || query().trim() !== ''}>
+      <div hidden={libraryTab() !== 'recordings'}>
         <Rides onOpen={openDay} onShow={showDay} />
       </div>
     </section>

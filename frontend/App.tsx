@@ -39,8 +39,8 @@ export function App() {
 
   /** Counts the trips asked for and the leavings, so that a trip that arrives after the user went elsewhere is not opened. */
   let latest = 0;
-  /** Opens a trip, at the day `dayId` where one is given; a trip open before is saved first. */
-  const open = async (id: number, dayId?: string) => {
+  /** Opens a trip, at the day `dayId` where one is given, with that day's route `routeId` taken up; a trip open before is saved first. */
+  const open = async (id: number, dayId?: string, routeId?: string) => {
     const ask = ++latest;
     /** Says on the trip's row how far the opening has come, while it is still the trip asked for. */
     const say = (progress: Progress | 'arrived') => void (ask === latest && setOpening({ tripId: id, progress }));
@@ -56,6 +56,7 @@ export function App() {
       if (!document.hidden) await new Promise((painted) => requestAnimationFrame(() => setTimeout(painted)));
       if (ask !== latest) return;
       loadTrip(trip, dayId);
+      if (selectedDay()?.routes.some((route) => route.id === routeId)) takeUpRoute(routeId);
       resetSaveState();
       // The trip is open; its row keeps saying that it opens until the map has drawn the routes.
       void routesDrawn().then(() => ask === latest && setOpening(undefined));
@@ -104,8 +105,7 @@ export function App() {
   onMount(async () => {
     if (place.tripId !== undefined) {
       if (/(^#|&)map=/.test(location.hash)) keepViewOf(place.tripId);
-      await open(place.tripId, place.dayId);
-      if (selectedDay()?.routes.some((route) => route.id === place.routeId)) takeUpRoute(place.routeId);
+      await open(place.tripId, place.dayId, place.routeId);
     }
     setReturned(true);
   });
@@ -149,7 +149,7 @@ export function App() {
         <Show when={panelFolded() && openTrip()}>
           <DayStrip />
         </Show>
-        <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} error={error()} />
+        <Explorer onOpen={(id, dayId, routeId) => void open(id, dayId, routeId)} onLeave={leave} error={error()} />
       </aside>
       <Show when={showingDuplicates()} fallback={<DayPane />}>
         <DuplicatesReport onOpen={openLocation} />

@@ -177,6 +177,23 @@ entries at the end of their section.
   the user (a few hundred small rows at most for a personal planner) and filters them by
   name; the results are capped at twenty. A server search would add an endpoint for
   data the client already holds.
+- **The search limits the tab shown.** Searching all tabs at once mixed collections,
+  trips and lists of places in one list and had nothing to say about the rides; a tab
+  switch ended it. The query is now one filter over whichever tab is shown and stays
+  when the tab changes, so the same word can be looked up in the Stash and then in the
+  Trips. In a tree the results stay a flat list with where each is, rather than the
+  tree with rows left out: a tree filtered in place needs its matches' ancestors
+  unfolded and a rule for what a matching folder shows of its content, and the list
+  says the same with the path. The special folders are the tabs and are never found.
+  The rides are few enough per search to be filtered in place, all years unfolded and
+  the fold buttons off, since a folded year would hide what was found; showing a ride
+  from a day ends the search, which could otherwise leave it out.
+- **Routes and tracks are found by name through the outlines.** Their names are in the
+  trips' documents, which the library does not hold. The outlines, which it does hold
+  for every trip, now carry for each day its routes that have a name (id, name, kind);
+  unnamed ones cannot be found and are left out, which keeps the answer small. A
+  search of its own on the server was the alternative and would have made this one
+  kind of result arrive later than the others.
 - **An exported trip is its document, with GPX beside it for others.** GPX cannot carry
   a trip back: a stop's details, dates, the motorway dial, colours and the points of a
   routed route have no place in it. So the export writes the document as the planner
@@ -252,8 +269,8 @@ entries at the end of their section.
   The trees stay in the page while another is shown, so nothing is rebuilt; the panel
   scrolls as a whole, so each tab's scroll is kept and given back, and the tabs stay at
   the top of it, since a tab that scrolled away would have to be scrolled back to. The
-  search stays above the tabs and across all of them, and opening what it finds shows
-  the tab that holds it. The address names the tab by the folder shown and, for the
+  search stays above the tabs and limits the one shown (see "The search limits the tab
+  shown"). The address names the tab by the folder shown and, for the
   rides, by `view=recordings`.
 - **Collections live in the special folders only, trips only outside them.** A library
   where any folder could hold either left it to the user to keep planning material and

@@ -52,8 +52,11 @@ export const fetchingTrip = createRoot(() =>
   }),
 );
 
-/** The search typed into the library; while there is one, what it finds stands in for the tree. */
+/** The search typed into the library, which limits the tab shown to what it finds there. */
 export const [query, setQuery] = createSignal('');
+
+/** Whether the search finds a name: every name while nothing is typed. */
+export const isSearchedFor = (name: string): boolean => name.toLowerCase().includes(query().trim().toLowerCase());
 
 /** The special folders are named as the tabs they are the tops of. */
 const SPECIAL_NAMES = { collections: TAB_NAMES.stash, places: TAB_NAMES.places };

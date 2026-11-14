@@ -5,7 +5,7 @@ import { GPX_FILE_TYPES } from '../gpx/import';
 import type { Ride, Suggestion } from '../recording/rides';
 import { FAR_APART_M, isOddJoint, likelierFirst, ridingYears, totalDistance } from '../recording/rides';
 import { copyRecordings } from '../state/clipboard';
-import { fetchingTrip, libraryTrips, outlineOf } from '../state/library';
+import { fetchingTrip, isSearchedFor, libraryTrips, outlineOf, query } from '../state/library';
 import { activeRecordingId, putOnDay } from '../state/recordings';
 import { toggleRecording } from '../state/recordingView';
 import { allRides, askOfRides, changeRides, compareWithDay, revealedRide, revealRide, rideColor, RIDES, ridesCompared, ridesError, ridesLoading, ridesNote, runRidesJob } from '../state/rides';
@@ -54,9 +54,13 @@ const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>();
  * them on the day, the cross says they are not of it.
  */
 export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; onShow: (tripId: number, dayId: string) => void }) {
-  const years = createMemo(() => ridingYears(allRides()));
-  const untimed = createMemo(() => allRides().filter((ride) => ride.startedAt === null));
-  const shown = () => unfolded() ?? new Set(years()[0] ? [years()[0]!.year] : []);
+  /** The rides listed: all of them, or those the search finds. */
+  const listed = createMemo(() => allRides().filter((ride) => isSearchedFor(ride.name)));
+  const searching = () => query().trim() !== '';
+  const years = createMemo(() => ridingYears(listed()));
+  const untimed = createMemo(() => listed().filter((ride) => ride.startedAt === null));
+  /** The years unfolded: the latest until one is folded or unfolded, and every year of what a search found. */
+  const shown = () => (searching() ? new Set(years().map((year) => year.year)) : (unfolded() ?? new Set(years()[0] ? [years()[0]!.year] : [])));
   const fold = (year: string) => setUnfolded(new Set(shown().has(year) ? [...shown()].filter((y) => y !== year) : [...shown(), year]));
   /** The rides in view, top to bottom, by id: what a Shift run goes through. */
   const order = createMemo(() => [...years().flatMap((year) => (shown().has(year.year) ? year.months.flatMap((month) => month.days.flatMap((day) => day.rides)) : [])), ...untimed()].map((ride) => String(ride.id)));
@@ -168,8 +172,8 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
     <div class="rides">
       <div class="row tab-summary">
         <span class="muted detail grow">
-          <Show when={allRides().length > 0}>
-            {counted(allRides().length, 'ride')} · {distanceText(totalDistance(allRides()))}
+          <Show when={listed().length > 0}>
+            {counted(listed().length, 'ride')} · {distanceText(totalDistance(listed()))}
           </Show>
         </span>
         <IconButton label={t('Suggest days for the rides on no day')} onClick={() => void suggest()}>
@@ -229,11 +233,14 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       <Show when={!ridesLoading() && !ridesError() && allRides().length === 0}>
         <p class="muted">{t('No rides yet: drop the GPX files of your recordings here or add them with the plus. A recording added to a day is listed here too.')}</p>
       </Show>
+      <Show when={allRides().length > 0 && listed().length === 0}>
+        <p class="muted">{t('Nothing found.')}</p>
+      </Show>
       <For each={years()}>
         {(year) => (
           <>
             <h3>
-              <button type="button" class="text grow fold" aria-expanded={shown().has(year.year)} onClick={() => fold(year.year)}>
+              <button type="button" class="text grow fold" aria-expanded={shown().has(year.year)} disabled={searching()} onClick={() => fold(year.year)}>
                 <ChevronIcon />
                 <span class="grow">{year.year}</span>
                 <span class="muted detail">

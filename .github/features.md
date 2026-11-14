@@ -17,8 +17,16 @@
   explorer's own name there.
   Under the tabs a line says what the view holds, with the button that folds its tree
   away and the menu of its top; the address keeps the tab, so that loading the page
-  again comes back to it. Opening a trip from the search, from a ride or from the
-  duplicates shows the tab it is in.
+  again comes back to it. Opening a trip from a ride or from the duplicates shows the
+  tab it is in.
+- The search over the tabs limits the tab shown to what it finds there, and stays as
+  typed when another tab is shown. In Stash, Trips and Places it lists the tree's
+  folders and trips whose names contain it, and the routes and tracks of those trips
+  that are named so, each with its trip and day, at most twenty in all; a folder found
+  is shown in the tree, a trip opens, and a route or a track opens its trip at its day
+  with the route taken up, each ending the search. In Recordings it leaves the rides
+  whose names contain it, every year of them unfolded, with their count and length
+  over them.
 - Stash, Trips and Places are each a tree: its folders and trips as rows, each unfolding
   in place by a click on it, a folder to its folders and trips, a trip to its days, as
   many at once as wanted; what is unfolded is kept per browser. The tree has one mark,
@@ -57,9 +65,7 @@
   folder never goes into itself. Folders and trips are cards with the name over a line
   of metadata, each with the icon of its kind: a folder, a trip, a collection of planning
   material; a trip's card also shows its shape, small, each line in the colour its route
-  has on the map; right-click or a long press on a card opens its menu. A search by name
-  across trips and folders, listing at most twenty results; a trip opened from it stands
-  in its own folder.
+  has on the map; right-click or a long press on a card opens its menu.
 - Folders and trips answer to one menu: New, Add, Rename, Duplicate, Cut, Copy, Paste,
   Move…, Merge, Export, Delete; what does not apply is greyed out. New makes what the
   row can hold, named in a dialog: in a folder a folder or a trip, a collection where

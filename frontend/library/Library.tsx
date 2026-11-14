@@ -4,7 +4,7 @@ import { changeTrip, createFolder, createTrip, deleteFolder, deleteTrip, duplica
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
-import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTab, libraryTrips, markedFolderOf, opening, openTree, outlineOf, query, relistFolders, relistTrips, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
+import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTab, libraryTrips, markedFolderOf, opening, openTree, outlineOf, query, relistFolders, relistTrips, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, isSearchedFor, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
@@ -133,6 +133,8 @@ type LibraryDialog = { kind: 'rename-folder'; folder: Folder } | { kind: 'rename
  */
 export function Library(props: {
   onOpen: (trip: TripSummary, dayId?: string) => void;
+  /** Opens a route the search found, in its trip and day. */
+  onOpenRoute: (trip: TripSummary, dayId: string, routeId: string) => void;
   onOpenFolder: (id: number) => void;
   /** Leaves the open trip, saved: before the library changes it behind its back. */
   onLeave: () => Promise<void>;
@@ -614,7 +616,7 @@ export function Library(props: {
   };
 
   return (
-    <div class="library" hidden={!shownTree() && !query().trim()}>
+    <div class="library" hidden={!shownTree()}>
       <Show when={importNote()}>
         {(note) => (
           <>
@@ -642,19 +644,17 @@ export function Library(props: {
               </>
             }
           >
-            {(q) => (
-              <SearchResults
-                query={q()}
-                folders={folders()}
-                trips={trips()}
-                onOpenFolder={props.onOpenFolder}
-                onOpenTrip={props.onOpen}
-                folderNote={(f) => [pathOf(f.parentId), heldText(heldOf(f.id), heldNoun(f.id))].filter(Boolean).join(' · ')}
-                tripWhere={(trip) => pathOf(trip.folderId) || t('No folder')}
-                folderItems={(f) => itemMenu({ folder: f })}
-                tripItems={(trip) => itemMenu({ trip })}
-              />
-            )}
+            <SearchResults
+              folders={folders().filter((f) => f.kind === 'folder' && treeOf(f.id) === libraryTab())}
+              trips={trips().filter((trip) => treeOf(trip.folderId) === libraryTab())}
+              onOpenFolder={props.onOpenFolder}
+              onOpenTrip={props.onOpen}
+              onOpenRoute={props.onOpenRoute}
+              folderNote={(f) => [pathOf(f.parentId), heldText(heldOf(f.id), heldNoun(f.id))].filter(Boolean).join(' · ')}
+              tripWhere={(trip) => pathOf(trip.folderId) || t('No folder')}
+              folderItems={(f) => itemMenu({ folder: f })}
+              tripItems={(trip) => itemMenu({ trip })}
+            />
           </Show>
         </Match>
       </Switch>
@@ -791,13 +791,13 @@ function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) 
   );
 }
 
-/** Folders and trips whose names contain the query, whatever folder they are in, up to a limit. */
+/** Those of a tree's folders and trips that the search finds, whatever folder they are in, and the routes and tracks of the trips that it finds by their names, up to a limit. */
 function SearchResults(props: {
-  query: string;
   folders: Folder[];
   trips: TripSummary[];
   onOpenFolder: (id: number) => void;
   onOpenTrip: (trip: TripSummary) => void;
+  onOpenRoute: (trip: TripSummary, dayId: string, routeId: string) => void;
   /** What a found folder's card says: where it is and what it holds. */
   folderNote: (f: Folder) => string;
   /** Where a found trip is. */
@@ -805,18 +805,41 @@ function SearchResults(props: {
   folderItems: (f: Folder) => MenuItem[];
   tripItems: (trip: TripSummary) => MenuItem[];
 }) {
-  const matches = (name: string) => name.toLowerCase().includes(props.query.toLowerCase());
-  const found = createMemo(() => ({ folders: props.folders.filter((f) => matches(f.name)), trips: props.trips.filter((t) => matches(t.name)) }));
-  const total = () => found().folders.length + found().trips.length;
-  const listedTrips = () => found().trips.slice(0, Math.max(0, SEARCH_LIMIT - found().folders.length));
+  const found = createMemo(() => ({
+    folders: props.folders.filter((f) => isSearchedFor(f.name)),
+    trips: props.trips.filter((trip) => isSearchedFor(trip.name)),
+    routes: props.trips.flatMap((trip) =>
+      (outlineOf(trip.id) ?? []).flatMap((day, index) => day.namedRoutes.filter((route) => isSearchedFor(route.name)).map((route) => ({ trip, day, index, route }))),
+    ),
+  }));
+  const total = () => found().folders.length + found().trips.length + found().routes.length;
+  const listedFolders = () => found().folders.slice(0, SEARCH_LIMIT);
+  const listedTrips = () => found().trips.slice(0, SEARCH_LIMIT - listedFolders().length);
+  const listedRoutes = () => found().routes.slice(0, SEARCH_LIMIT - listedFolders().length - listedTrips().length);
   return (
     <Show when={total() > 0} fallback={<p class="muted">{t('Nothing found.')}</p>}>
       <ul class="results">
-        <For each={found().folders.slice(0, SEARCH_LIMIT)}>
+        <For each={listedFolders()}>
           {(f) => <FolderCard folder={f} note={props.folderNote(f)} onOpen={props.onOpenFolder} items={() => props.folderItems(f)} />}
         </For>
         <For each={listedTrips()}>
           {(trip) => <TripCard trip={trip} onOpen={props.onOpenTrip} items={() => props.tripItems(trip)} where={props.tripWhere(trip)} />}
+        </For>
+        <For each={listedRoutes()}>
+          {(at) => (
+            <li class="card">
+              <div class="row">
+                <button class="text grow" disabled={fetchingTrip()} onClick={() => props.onOpenRoute(at.trip, at.day.id, at.route.id)}>
+                  <span class="lines">
+                    <span class="name">{at.route.name}</span>
+                    <span class="muted detail">
+                      {[at.route.kind === 'track' ? t('Track') : t('Route'), at.trip.name, dayHeading(at.trip.kind, at.index, at.day.name)].filter(Boolean).join(' · ')}
+                    </span>
+                  </span>
+                </button>
+              </div>
+            </li>
+          )}
         </For>
       </ul>
       <Show when={total() > SEARCH_LIMIT}>

@@ -33,9 +33,9 @@ share work; sharing between users is on the way.
   a route moves to another day, routes and stops are copied and pasted into any day of any
   trip, a whole trip is duplicated, trips imported one file each are merged into one.
 - **A library with folders** — trips sorted into folders inside folders, dragged by their
-  pad from one to another, and a search across them. GPX files and folders are added
-  from a folder's menu or dropped on it: a folder of files becomes a trip, a folder of
-  folders a folder of trips.
+  pad from one to another, and a search that also finds routes and tracks by name. GPX
+  files and folders are added from a folder's menu or dropped on it: a folder of files
+  becomes a trip, a folder of folders a folder of trips.
 - **Four tabs** — Stash for planning material to copy routes from, Trips, Places for
   lists of your own places, and Recordings. Each keeps what you unfolded and selected
   while you look at another.
