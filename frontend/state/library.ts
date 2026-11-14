@@ -7,18 +7,32 @@ import { createRequest } from '../ui/request';
 
 /** The library as the server lists it, and where the user is in it. */
 
-/** The folder asked for, null for the top: the one the tree marks, and that takes what is pasted with the keys or from the line that offers it. */
-const [listFolderId, setListFolderId] = createSignal<number | null>(null);
+/** The library's views, a tab each: the collections of planning material, the trips, the lists of places, and the rides as recorded. */
+export type LibraryTab = 'stash' | 'trips' | 'places' | 'recordings';
+/** The tabs that show a tree of folders. */
+export type TreeTab = Exclude<LibraryTab, 'recordings'>;
+export const TREE_TABS: readonly TreeTab[] = ['stash', 'trips', 'places'];
+export const LIBRARY_TABS: readonly LibraryTab[] = [...TREE_TABS, 'recordings'];
 
-/** What stands in the pane between the library and the map instead of a day: the routes kept more than once, or the rides by when they were ridden. */
-export type Report = 'duplicates' | 'rides';
-export const [shownReport, showReport] = createSignal<Report>();
+/** The tab whose tree a folder of the kind is in. */
+const TAB_OF: Record<FolderKind, TreeTab> = { collections: 'stash', folder: 'trips', places: 'places' };
 
-/** Whether the duplicates report stands in the pane between the library and the map. */
-export const showingDuplicates = (): boolean => shownReport() === 'duplicates';
+/** The tab shown, and the tree last shown, which stays the one the address names while the rides are. */
+const [tab, setTab] = createSignal<LibraryTab>('trips');
+const [treeTab, setTreeTab] = createSignal<TreeTab>('trips');
+export const libraryTab = tab;
 
-/** Shows the duplicates report, or takes it from the pane where it stands there. */
-export const setShowingDuplicates = (shown: boolean): void => void showReport((report) => (shown ? 'duplicates' : report === 'duplicates' ? undefined : report));
+/** Shows a tab; what the others show stays as it is. */
+export function showTab(to: LibraryTab): void {
+  setTab(to);
+  if (to !== 'recordings') setTreeTab(to);
+}
+
+/** The folder asked for in each tree, none for its top: the one the tree marks, and that takes what is pasted with the keys or from the line that offers it. */
+const [markedFolders, setMarkedFolders] = createSignal<Partial<Record<TreeTab, number>>>({});
+
+/** Whether the report of the routes kept more than once stands in the pane between the library and the map, instead of a day. */
+export const [showingDuplicates, setShowingDuplicates] = createSignal(false);
 
 /** The trip being opened and how far that has come: its document on its way, or arrived and being put on the map. */
 export const [opening, setOpening] = createSignal<{ tripId: number; progress: Progress | 'arrived' }>();
@@ -38,16 +52,24 @@ export const fetchingTrip = createRoot(() =>
 export const [query, setQuery] = createSignal('');
 
 /** The special folders are named in the page's language. */
-const SPECIAL_NAMES = { collections: t('Collections'), places: t('Places') };
+const SPECIAL_NAMES = { collections: t('Stash'), places: t('Places') };
 
 const library = createRoot(() => {
   const [trips, { refetch: refetchTrips }] = createResource(listTrips);
   const [folders, { refetch: refetchFolders }] = createResource(async () => (await listFolders()).map((f) => (f.kind === 'folder' ? f : { ...f, name: SPECIAL_NAMES[f.kind] })));
   const [outlines, { refetch: refetchOutlines }] = createResource(fetchOutlines);
-  /** The folder sent to while it exists, else the top: a folder deleted elsewhere leaves the explorer at the top. */
-  const shownFolderId = createMemo(() => (folders()?.some((f) => f.id === listFolderId()) ? listFolderId() : null));
+  /** The top of each tree: none for the trips', the folder of their kind for the others' once the folders are listed. */
+  const roots = createMemo((): Record<TreeTab, number | null> => {
+    const special = (kind: FolderKind) => folders()?.find((f) => f.kind === kind)?.id ?? null;
+    return { stash: special('collections'), trips: null, places: special('places') };
+  });
+  /** The folder marked in each tree while it exists, else the tree's top: a folder deleted elsewhere leaves its tree at the top. */
+  const marked = createMemo((): Record<TreeTab, number | null> => {
+    const of = (tree: TreeTab) => (folders()?.some((f) => f.id === markedFolders()[tree]) ? markedFolders()[tree]! : roots()[tree]);
+    return { stash: of('stash'), trips: of('trips'), places: of('places') };
+  });
   const heldOf = createMemo(() => heldCounts(folders() ?? [], trips() ?? []));
-  return { trips, folders, outlines, refetchTrips, refetchFolders, refetchOutlines, shownFolderId, heldOf };
+  return { trips, folders, outlines, refetchTrips, refetchFolders, refetchOutlines, roots, marked, heldOf };
 });
 
 /** The user's trips and folders as the server last listed them. */
@@ -75,8 +97,17 @@ export interface TripSource {
 }
 export const [tripSource, setTripSource] = createSignal<TripSource>();
 
-/** The folder shown, null for the top: the one asked for while it exists. */
-export const shownFolderId = library.shownFolderId;
+/** The folder at the top of a tree, which its tab stands for: null for the trips', and for the others' while the folders are not listed. */
+export const rootOf = (tree: TreeTab): number | null => library.roots()[tree];
+
+/** The tree a folder is in, null for the top of the trips'. */
+export const treeOf = (folderId: number | null): TreeTab => TAB_OF[kindAround(library.folders.error ? [] : (library.folders() ?? []), folderId)];
+
+/** The folder marked in a tree: the one asked for while it exists, else the tree's top. */
+export const markedFolderOf = (tree: TreeTab): number | null => library.marked()[tree];
+
+/** The folder shown: the one marked in the tree shown or, with the rides shown, in the tree shown last. */
+export const shownFolderId = (): number | null => markedFolderOf(treeTab());
 
 /** How many folders and trips each folder holds itself, by its id, null for the top. */
 export const heldOf = (id: number | null) => library.heldOf()(id);
@@ -103,8 +134,11 @@ export const runLibrary = (work: () => Promise<unknown>, then?: () => void): Pro
 /** How the last folder import goes or went, and what it could not read or save. */
 export const [importNote, setImportNote] = createSignal<{ text: string; errors: string[] }>();
 
-/** Makes a folder the one shown, null for the top, and ends a search. */
+/** Makes a folder the one shown, null for the top of the trips: its tree is shown with the folder marked, and a search ends. */
 export function showFolder(id: number | null): void {
-  setListFolderId(id);
+  const tree = treeOf(id);
+  if (id !== null) setMarkedFolders({ ...markedFolders(), [tree]: id });
+  else setMarkedFolders({ ...markedFolders(), trips: undefined });
+  showTab(tree);
   setQuery('');
 }

@@ -4,7 +4,7 @@ import { changeTrip, createFolder, createTrip, deleteFolder, deleteTrip, duplica
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
-import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTrips, opening, outlineOf, query, relistFolders, relistTrips, runLibrary, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
+import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTab, libraryTrips, markedFolderOf, opening, outlineOf, query, relistFolders, relistTrips, rootOf, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
@@ -16,7 +16,7 @@ import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
 import { counted, dateText, openingText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
-import { CollectionIcon, FoldIcon, FolderIcon, HomeIcon, TripIcon } from '../ui/icons';
+import { CollectionIcon, FoldIcon, FolderIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
@@ -33,8 +33,18 @@ import { TripShape } from './TripShape';
 /** A folder or a trip of the library, as what is selected, cut, moved and deleted together. */
 type Item = { folder: Folder } | { trip: TripSummary };
 
-/** The top of the library, as a row of the tree and a place to paste into. */
-const ALL_TRIPS = t('All trips');
+/** The top of the trips, as a place to paste into. */
+const ALL_TRIPS = t('Trips');
+
+/** What a tree says while it holds nothing. */
+const EMPTY: Record<TreeTab, string> = {
+  stash: t('No collections yet. Start one from the menu above, or drop GPX files and folders here.'),
+  trips: t('No trips yet. Start one from the menu above, or drop GPX files here.'),
+  places: t('No lists of places yet. Start one from the menu above, or drop GPX files of waypoints here.'),
+};
+
+/** The list that holds the selection of a tree's folders and trips. */
+const ownerOf = (tree: TreeTab): string => `library:${tree}`;
 
 const keyOf = (item: Item): string => ('folder' in item ? `folder:${item.folder.id}` : `trip:${item.trip.id}`);
 const nameOf = (item: Item): string => ('folder' in item ? item.folder.name : item.trip.name);
@@ -138,12 +148,6 @@ export function Library(props: {
   /** The folders and trips unfolded in the tree, by key; this browser keeps them. */
   const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>(new Set(JSON.parse(readPreference(UNFOLDED) ?? '[]') as string[]));
   const isUnfolded = (item: Item): boolean => unfolded().has(keyOf(item));
-  /** Folds every folder and trip away, which closes the day shown with its trip. */
-  const foldAll = () => {
-    setUnfolded(new Set<string>());
-    writePreference(UNFOLDED, undefined);
-    selectDay(undefined);
-  };
   const fold = (keys: readonly string[], unfold: boolean) => {
     const next = new Set(unfolded());
     for (const key of keys) {
@@ -164,17 +168,23 @@ export function Library(props: {
       if (keys.some((key) => !unfolded().has(key))) fold(keys, true);
     }),
   );
-  const childFolders = (parent: number | null) => folders().filter((f) => f.parentId === parent);
+  /** The folders in a folder, null for the top of the trips; the special folders are in none, each the top of its own tree. */
+  const childFolders = (parent: number | null) => folders().filter((f) => f.parentId === parent && f.kind === 'folder');
   const childTrips = (parent: number | null) => trips().filter((trip) => trip.folderId === parent);
-  /** Whether the folder, null for the top, holds the tree's one mark: it is the folder shown, and the mark is not on the open trip or its day. */
-  const isMarkedFolder = (id: number | null): boolean => shownFolderId() === id && !isMarkInTrip();
-  /** Gives the mark to a folder, null for the top, which makes it the one shown. */
+  /** The tree the open trip is in; none while no trip is open. */
+  const openTree = createMemo(() => {
+    const trip = trips().find((candidate) => candidate.id === openTripId());
+    return trip && treeOf(trip.folderId);
+  });
+  /** Whether the folder, null for the top of the trips, holds its tree's one mark: it is the folder marked there, and the mark is not on the open trip or its day. */
+  const isMarkedFolder = (id: number | null): boolean => markedFolderOf(treeOf(id)) === id && !(isMarkInTrip() && openTree() === treeOf(id));
+  /** Gives its tree's mark to a folder, null for the top of the trips, which makes it the one shown; the mark on the open trip in another tree stays. */
   const markFolderShown = (id: number | null) => {
     showFolder(id);
-    markFolder();
+    if (openTree() === treeOf(id)) markFolder();
   };
-  /** The keys of all a folder holds, at any depth. */
-  const keysWithin = (id: number): string[] => [...childFolders(id).flatMap((f) => [keyOf({ folder: f }), ...keysWithin(f.id)]), ...childTrips(id).map((trip) => keyOf({ trip }))];
+  /** The keys of all a folder holds, at any depth; null is the top of the trips. */
+  const keysWithin = (id: number | null): string[] => [...childFolders(id).flatMap((f) => [keyOf({ folder: f }), ...keysWithin(f.id)]), ...childTrips(id).map((trip) => keyOf({ trip }))];
   /**
    * A click on a folder marks it, which makes it the one that takes what is pasted with the keys,
    * and unfolds it; marked and unfolded already, it folds. A folder that folds takes all it holds with it:
@@ -187,6 +197,11 @@ export function Library(props: {
       if (holdsOpen([{ folder: f }])) selectDay(undefined);
     } else fold([key], true);
     markFolderShown(f.id);
+  };
+  /** Folds away every folder and trip of a tree, by its top, which closes the day shown with its trip where that is among them. */
+  const foldAll = (root: number | null) => {
+    fold(keysWithin(root), false);
+    if (openTree() === treeOf(root)) selectDay(undefined);
   };
   /** Whether the trip is the open one and holds the mark, rather than the day of it that is shown. */
   const isMarkedTrip = (trip: TripSummary): boolean => trip.id === openTripId() && isTripMarked();
@@ -230,10 +245,22 @@ export function Library(props: {
       relistTrips();
     });
   };
-  /** The folders and trips selected to be acted on together, by key, the first selected first; none once another folder is shown. */
-  const selected = () => selectionOf('library');
-  const setSelected = (rows: Selection<string>) => selectIn('library', rows);
-  createEffect(on(shownFolderId, () => setSelected(NOTHING_SELECTED)));
+  /** The tree shown; none while the rides are. */
+  const shownTree = (): TreeTab | undefined => TREE_TABS.find((tree) => tree === libraryTab());
+  /**
+   * The folders and trips selected in the tree shown to be acted on together, by key, the
+   * first selected first. A tree keeps its selection while another is shown, where the
+   * keys do not reach it, and lets go of it once another of its folders is marked.
+   */
+  const selected = (): Selection<string> => {
+    const tree = shownTree();
+    return tree ? selectionOf(ownerOf(tree)) : NOTHING_SELECTED;
+  };
+  const setSelected = (rows: Selection<string>) => {
+    const tree = shownTree();
+    if (tree) selectIn(ownerOf(tree), rows);
+  };
+  for (const tree of TREE_TABS) createEffect(on(() => markedFolderOf(tree), () => selectIn(ownerOf(tree), NOTHING_SELECTED), { defer: true }));
   const isSelected = createSelector(selected, (key: string, keys) => keys.has(key));
   /** Every folder and trip there is, by key. */
   const itemOf = (key: string): Item | undefined => {
@@ -241,18 +268,20 @@ export function Library(props: {
     if (key.startsWith('folder:')) return itemOfFolder(folders().find((f) => f.id === id));
     return itemOfTrip(trips().find((t) => t.id === id));
   };
-  /** The folders and trips in view that can be selected, top to bottom: those of the top and of every unfolded folder, without the special folders. */
-  const shownKeys = (parent: number | null = null): string[] => [
-    ...childFolders(parent).flatMap((f) => [...(f.kind === 'folder' ? [keyOf({ folder: f })] : []), ...(isUnfolded({ folder: f }) ? shownKeys(f.id) : [])]),
+  /** The folders and trips in view under a folder, top to bottom: its own and those of every unfolded folder in it. */
+  const shownKeys = (parent: number | null): string[] => [
+    ...childFolders(parent).flatMap((f) => [keyOf({ folder: f }), ...(isUnfolded({ folder: f }) ? shownKeys(f.id) : [])]),
     ...childTrips(parent).map((trip) => keyOf({ trip })),
   ];
+  /** The tree a folder or a trip is in. */
+  const treeOfItem = (item: Item): TreeTab => treeOf('folder' in item ? item.folder.id : item.trip.folderId);
   /** What a card's menu, or a press on its pad, acts on: the selection where it holds the card, else the card alone. */
   const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.has(keyOf(item)) ? [...selection].flatMap((key) => itemOf(key) ?? []) : [item]);
   const select = (item: Item) => ({
     selected: () => isSelected(keyOf(item)),
     cut: () => isCut(item),
-    onToggle: () => toggleRow('library', keyOf(item)),
-    onClick: (e: MouseEvent) => clickRow('library', shownKeys(), keyOf(item), e),
+    onToggle: () => toggleRow(ownerOf(treeOfItem(item)), keyOf(item)),
+    onClick: (e: MouseEvent) => clickRow(ownerOf(treeOfItem(item)), shownKeys(rootOf(treeOfItem(item))), keyOf(item), e),
     onDrag: (e: PointerEvent, dragged: () => void) => {
       const moved = chosenWith(item);
       dragToFolder(e, moved.length === 1 ? nameOf(item) : countText(moved), (into) => moveInto(moved, into), dragged);
@@ -439,12 +468,12 @@ export function Library(props: {
   };
   /** Puts folders and trips on the clipboard: cut, to be moved where they are pasted; copied, which only trips are. */
   const clip = (chosen: readonly Item[], move: boolean) => copyLibraryItems({ tripIds: tripsOf(chosen).map((trip) => trip.id), folderIds: foldersOf(chosen).map((f) => f.id), move });
-  /** The keys that cut, copy and delete the selected folders and trips, and paste those on the clipboard into the folder shown, as the menu does. */
+  /** The keys that cut, copy and delete the selected folders and trips, and paste those on the clipboard into the folder shown, as the menu does; none while the rides are shown. */
   const onKey = (e: KeyboardEvent) => {
     const verb = fileVerb(e);
     if (!verb) return;
     const chosen = [...selected()].flatMap((key) => itemOf(key) ?? []);
-    if ((verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0)) return;
+    if (!shownTree() || (verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0)) return;
     e.preventDefault();
     if (verb === 'paste') pasteLibrary(shownFolderId());
     else if (verb === 'delete') void remove(chosen);
@@ -557,8 +586,41 @@ export function Library(props: {
     </>
   );
 
+  /**
+   * The tree of a tab, there while another is shown: a line that says what the tree holds
+   * at its top, which a click marks, with the button that folds the tree away and the
+   * menu of its top, over its folders and trips.
+   */
+  const Tree = (tree: { tab: TreeTab }): JSX.Element => {
+    const root = () => rootOf(tree.tab);
+    const held = () => heldOf(root());
+    const menu = (): MenuItem[] => {
+      const top = folders().find((f) => f.id === root());
+      return top ? itemMenu({ folder: top }) : topMenu();
+    };
+    return (
+      <div hidden={libraryTab() !== tree.tab}>
+        <div class="row tab-summary" classList={{ current: isMarkedFolder(root()) }} ref={(el) => cardMenu(el, menu)}>
+          <button class="text grow" onClick={() => markFolderShown(root())}>
+            <span class="muted detail">{heldText(held(), heldNoun(root()))}</span>
+          </button>
+          <IconButton label={t('Fold all folders and trips away')} disabled={!keysWithin(root()).some((key) => unfolded().has(key))} onClick={() => foldAll(root())}>
+            <FoldIcon />
+          </IconButton>
+          <MenuButton of={pathOf(root()) || ALL_TRIPS} items={menu} />
+        </div>
+        <ul class="tree">
+          <Branch parent={root()} />
+        </ul>
+        <Show when={held().folders + held().trips === 0}>
+          <p class="muted">{EMPTY[tree.tab]}</p>
+        </Show>
+      </div>
+    );
+  };
+
   return (
-    <div class="library">
+    <div class="library" hidden={!shownTree() && !query().trim()}>
       <Show when={importNote()}>
         {(note) => (
           <>
@@ -582,27 +644,7 @@ export function Library(props: {
                     </button>
                   )}
                 </Show>
-                <ul class="tree">
-                  <li class="card" classList={{ current: isMarkedFolder(null) }}>
-                    <div class="row" ref={(el) => cardMenu(el, topMenu)}>
-                      <button class="text grow" onClick={() => markFolderShown(null)}>
-                        <HomeIcon />
-                        <span class="lines">
-                          <span class="name">{ALL_TRIPS}</span>
-                          <span class="muted detail">{heldText(heldOf(null))}</span>
-                        </span>
-                      </button>
-                      <IconButton label={t('Fold all folders and trips away')} disabled={unfolded().size === 0} onClick={foldAll}>
-                        <FoldIcon />
-                      </IconButton>
-                      <MenuButton of={ALL_TRIPS} items={topMenu} />
-                    </div>
-                  </li>
-                  <Branch parent={null} />
-                </ul>
-                <Show when={trips().length === 0 && folders().every((f) => f.kind !== 'folder')}>
-                  <p class="muted">{t('No trips yet. Start one from the menu of “All trips”, or drop GPX files on it.')}</p>
-                </Show>
+                <For each={TREE_TABS}>{(tree) => <Tree tab={tree} />}</For>
               </>
             }
           >

@@ -6,20 +6,21 @@ import type { Ride } from '../recording/rides';
 import { decodePolyline } from '../routing/polyline';
 import { selectIn, selectionOf } from '../ui/selection';
 import { showWhole } from './drawing';
-import { libraryTrips, shownReport, showReport } from './library';
+import { libraryTab, libraryTrips, showTab } from './library';
+import { foldPanel } from './panel';
 
 /**
- * The rides: every recording the user keeps, read while their pane is shown, again when
+ * The rides: every recording the user keeps, read while their tab is shown, again when
  * the library is listed afresh and when one of them changes, and the lines of the rides
  * selected there, which the map draws.
  */
 
-/** The owner of the pane's selection, whose rows are rides by their id. */
+/** The owner of the selection among the rides, whose rows are rides by their id. */
 export const RIDES = 'rides';
 
 const rides = createRoot(() => {
   const [list, { refetch }] = createResource(
-    () => shownReport() === 'rides' && (libraryTrips.error ? [] : libraryTrips()),
+    () => libraryTab() === 'recordings' && (libraryTrips.error ? [] : libraryTrips()),
     () => fetchRides(),
   );
   const all = createMemo((): Ride[] => (list.error ? [] : (list.latest ?? [])));
@@ -52,13 +53,14 @@ export const ridesOnMap = rides.lines;
 /** The colour a selected ride is drawn in on the map; none for one that is not drawn. */
 export const rideColor = (ride: Ride): string | undefined => rides.lines()[rides.drawn().indexOf(ride)]?.color;
 
-/** The ride to be brought into view in the pane, once: one shown from where it is kept. */
+/** The ride to be brought into view among the rides, once: one shown from a day it is on. */
 export const [revealedRide, revealRide] = createSignal<number>();
 
-/** Shows the rides with one of them selected and in view. */
+/** Shows the rides, in the library unfolded for them, with one of them selected and in view. */
 export function showRide(id: number): void {
   batch(() => {
-    showReport('rides');
+    foldPanel(false);
+    showTab('recordings');
     selectIn(RIDES, new Set([String(id)]));
     revealRide(id);
   });

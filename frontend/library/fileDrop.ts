@@ -42,8 +42,8 @@ export async function droppedSources(data: DataTransfer): Promise<Dropped> {
 /**
  * Takes files dragged in from outside the browser: the folder they are over is marked as
  * for a dragged trip (see dragToFolder), and dropped there, `onDrop` gets the drop and the
- * folder, null for the top; over the rides' pane, marked with `data-drop-rides`, the
- * drop goes to `onRides`. Anywhere else the drop is refused, so that the browser does
+ * folder, null for the top; over what is marked with `data-drop-rides`, the library
+ * while it shows the rides, the drop goes to `onRides`. Anywhere else the drop is refused, so that the browser does
  * not open the file in the planner's place.
  */
 export function onFileDrop(onDrop: (data: DataTransfer, folderId: number | null) => void, onRides: (data: DataTransfer) => void): void {

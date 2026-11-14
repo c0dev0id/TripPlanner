@@ -1,7 +1,6 @@
-import { createEffect, createResource, createSignal, Match, onCleanup, onMount, Show, Switch } from 'solid-js';
+import { createEffect, createResource, createSignal, onCleanup, onMount, Show, untrack } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout, type Progress } from './api';
 import { DuplicatesReport } from './library/DuplicatesReport';
-import { RidesPane } from './library/RidesPane';
 import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';
@@ -12,7 +11,7 @@ import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { setPreferencesOpen } from './state/drawing';
-import { libraryFolders, libraryTrips, relistTrips, setOpening, showFolder, shownFolderId, shownReport } from './state/library';
+import { libraryFolders, libraryTab, libraryTrips, relistTrips, rootOf, setOpening, showFolder, showingDuplicates, shownFolderId, showTab } from './state/library';
 import { foldPanel, panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
@@ -91,9 +90,18 @@ export function App() {
 
   /** Whether the page is back at the place its address named, from when on the address follows the place. */
   const [returned, setReturned] = createSignal(false);
+  const place = readPlace(location.hash);
+  // The folder the address names is shown once the folders are listed, which say whose tree it is in.
+  let shown = false;
+  createEffect(() => {
+    if (shown || libraryFolders.loading) return;
+    shown = true;
+    untrack(() => {
+      showFolder(place.folderId);
+      if (place.recordings) showTab('recordings');
+    });
+  });
   onMount(async () => {
-    const place = readPlace(location.hash);
-    showFolder(place.folderId);
     if (place.tripId !== undefined) {
       if (/(^#|&)map=/.test(location.hash)) keepViewOf(place.tripId);
       await open(place.tripId, place.dayId);
@@ -104,13 +112,19 @@ export function App() {
   createEffect(() => {
     // The folder shown is only known once the folders are listed.
     if (!returned() || libraryFolders.loading) return;
-    const place = { folderId: shownFolderId(), tripId: openTripId(), dayId: selectedDayId(), routeId: editingRouteId() };
-    history.replaceState(history.state, '', location.pathname + location.search + withPlace(location.hash, place));
+    const now = { folderId: shownFolderId(), recordings: libraryTab() === 'recordings', tripId: openTripId(), dayId: selectedDayId(), routeId: editingRouteId() };
+    history.replaceState(history.state, '', location.pathname + location.search + withPlace(location.hash, now));
   });
+
+  /** What files dropped on the library beside its rows go to: the top of the tree shown, or the rides. */
+  const dropFolder = () => {
+    const tab = libraryTab();
+    return tab === 'recordings' ? undefined : String(rootOf(tab) ?? 'top');
+  };
 
   return (
     <>
-      <aside class="panel library-panel" classList={{ folded: panelFolded() }} data-drop-folder="top">
+      <aside class="panel library-panel" classList={{ folded: panelFolded() }} data-drop-folder={dropFolder()} data-drop-rides={libraryTab() === 'recordings' ? '' : undefined}>
         <header class="panel-header">
           <IconButton label={t(panelFolded() ? 'Show the library' : 'Fold the library away')} pressed={!panelFolded()} onClick={() => foldPanel(!panelFolded())}>
             <MenuIcon />
@@ -137,14 +151,9 @@ export function App() {
         </Show>
         <Explorer onOpen={(id, dayId) => void open(id, dayId)} onLeave={leave} error={error()} />
       </aside>
-      <Switch fallback={<DayPane />}>
-        <Match when={shownReport() === 'duplicates'}>
-          <DuplicatesReport onOpen={openLocation} />
-        </Match>
-        <Match when={shownReport() === 'rides'}>
-          <RidesPane onOpen={openLocation} />
-        </Match>
-      </Switch>
+      <Show when={showingDuplicates()} fallback={<DayPane />}>
+        <DuplicatesReport onOpen={openLocation} />
+      </Show>
       <div class="map-wrap">
         <PanelResizer />
         <MapView />

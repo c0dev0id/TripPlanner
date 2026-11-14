@@ -5,7 +5,7 @@ import { importDropped, importIntoTrip } from './dropImport';
 import { droppedSources, onFileDrop, type Dropped } from './fileDrop';
 import { sourceOf, type ImportSource } from './folderImport';
 import { kindAround } from './folders';
-import { addRides } from './RidesPane';
+import { addRides } from './Rides';
 import { ROUTE_FILE_TYPES } from '../gpx/import';
 import { zipEntries } from '../gpx/zip';
 
@@ -29,8 +29,8 @@ async function unpacked(dropped: Dropped): Promise<Dropped[]> {
 
 /**
  * The imports the library starts: what is dropped on a folder of the tree, and what is
- * picked from a folder's or a trip's menu; GPX files dropped on the rides' pane are
- * handed to it. Each says how it goes and then what it made
+ * picked from a folder's or a trip's menu; GPX files dropped on the library while it
+ * shows the rides are handed to those. Each says how it goes and then what it made
  * and could not read. The open trip is left first and the library listed afresh after;
  * while one import runs, another is not started.
  */

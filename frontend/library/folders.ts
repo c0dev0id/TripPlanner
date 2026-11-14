@@ -19,11 +19,11 @@ export function kindAround(folders: readonly Folder[], id: number | null): Folde
   return folder?.kind ?? 'folder';
 }
 
-/** How many folders and trips each folder holds itself, by its id; null stands for the top of the library. */
+/** How many folders and trips each folder holds itself, by its id; null stands for the top of the trips, where the special folders, each a tree's own top, are not counted. */
 export function heldCounts(folders: readonly Folder[], trips: readonly TripSummary[]): (id: number | null) => { folders: number; trips: number } {
   const counts = new Map<number | null, { folders: number; trips: number }>();
   const of = (id: number | null) => counts.get(id) ?? counts.set(id, { folders: 0, trips: 0 }).get(id)!;
-  for (const f of folders) of(f.parentId).folders++;
+  for (const f of folders) if (f.kind === 'folder') of(f.parentId).folders++;
   for (const trip of trips) of(trip.folderId).trips++;
   return (id) => counts.get(id) ?? { folders: 0, trips: 0 };
 }

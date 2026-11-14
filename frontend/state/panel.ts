@@ -1,6 +1,6 @@
 import { createEffect, createRoot, createSignal, on } from 'solid-js';
 import { readPreference, writePreference } from '../ui/preferences';
-import { shownReport } from './library';
+import { showingDuplicates } from './library';
 import { editingRouteId, selectedDayId } from './trip';
 
 const PREFERENCE = 'panelFolded';
@@ -25,7 +25,7 @@ export const [sheet, setSheet] = createSignal<Sheet>('half');
 createRoot(() => {
   // On a phone the library lies over the map: a day picked in it, or a report asked for, is shown by folding it away.
   createEffect(on(selectedDayId, (id) => id && onPhone() && foldPanel(true)));
-  createEffect(on(shownReport, (shown) => shown && onPhone() && foldPanel(true)));
+  createEffect(on(showingDuplicates, (shown) => shown && onPhone() && foldPanel(true)));
   // A route is edited on the map, so the sheet folds down to its heading meanwhile.
   createEffect(on(editingRouteId, (id) => setSheet(id ? 'peek' : 'half'), { defer: true }));
 });
