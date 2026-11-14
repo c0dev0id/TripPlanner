@@ -7,19 +7,17 @@ namespace Planner\Recording;
 use DateTimeImmutable;
 use Planner\Account\CurrentUser;
 use Planner\Export\Polyline;
+use Planner\Http\GpxUpload;
+use Planner\Http\InvalidUpload;
 use Planner\Http\Json;
 use Planner\Name;
 use Planner\Trip\TripDocuments;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Http\Message\UploadedFileInterface;
 
 /** The rides API: every ride of the user's, keeping a file as one, merging, renaming, deleting, its GPX file, the days it is on, the days rides may be of, and for a trip the rides on its days and those that may be a day's. */
 final class RecordingController
 {
-    /** The largest file a recording may be, compressed and as GPX: a long day of one point a second with sensor data stays well below. */
-    private const MAX_COMPRESSED = 20_000_000;
-    private const MAX_GPX = 200_000_000;
     /** How long one answer looks through days for suggestions, in nanoseconds: well within what a server lets a request take. */
     private const SUGGESTING_NS = 3_000_000_000;
 
@@ -109,14 +107,10 @@ final class RecordingController
         if ($name === null) {
             return Json::error($response, 422, 'A recording needs a name of up to 200 characters.');
         }
-        $upload = $request->getUploadedFiles()['file'] ?? null;
-        if (!$upload instanceof UploadedFileInterface || $upload->getError() !== UPLOAD_ERR_OK || $upload->getSize() > self::MAX_COMPRESSED) {
-            return Json::error($response, 422, 'The recording did not arrive, or is too large.');
-        }
-        $gzip = (string) $upload->getStream();
-        $gpx = @gzdecode($gzip, self::MAX_GPX);
-        if ($gpx === false || preg_match('/<gpx[\s>]/', substr($gpx, 0, 4096)) !== 1) {
-            return Json::error($response, 422, 'A recording is a GPX file compressed with gzip.');
+        try {
+            $gzip = GpxUpload::gzip($request);
+        } catch (InvalidUpload $invalid) {
+            return Json::error($response, 422, $invalid->getMessage());
         }
         $dayId = $body['dayId'] ?? null;
         $kept = $this->recordings->keep($this->currentUser->get()->id, $name, $gzip, new DateTimeImmutable(), is_string($dayId) ? $dayId : null);
