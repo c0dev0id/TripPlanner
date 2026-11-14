@@ -158,6 +158,14 @@ entries at the end of their section.
   their files move with them. The trip selected first is the one kept; a selection
   remembers its order for that, a Shift run starting at the trip it was started from.
   Trips and collections do not merge, since a section has no date to place it by.
+- **A run starts at the row clicked last, whatever that click did.** The anchor of a
+  Shift-click used to be the row of the last Cmd or Shift click and stayed where a run
+  began, as in a file manager. But a plain click opens here instead of selecting, so
+  the row just opened was not the anchor, and a run started at a row clicked long
+  before. Every click now leaves its row as the anchor: a plain one lets go of the
+  selection and keeps the row as an anchor without selecting it, so that Delete and
+  the menu still do not act on what was merely opened; a Shift-click selects from the
+  anchor to its row, drops everything else and moves the anchor there.
 - **Rows are selected by a pad on touch screens.** A touch screen has no Cmd or Shift, and
   its long press already opens the menu, so a selectable row (a trip of a folder, a route
   of the duplicates report) has a pad drawn as a day's or a route's drag grip: a tap on it

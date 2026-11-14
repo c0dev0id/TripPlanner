@@ -20,7 +20,7 @@ import { CollectionIcon, FoldIcon, FolderIcon, HomeIcon, TripIcon } from '../ui/
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
-import { clickSelect, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, selects, toggled, type Selection } from '../ui/selection';
+import { anchoredAt, clickSelect, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, selects, toggled, type Selection } from '../ui/selection';
 import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
 import { Pad } from '../ui/Pad';
@@ -41,7 +41,7 @@ const itemOfTrip = (trip: TripSummary | undefined): Item | undefined => trip && 
 const foldersOf = (items: readonly Item[]): Folder[] => items.flatMap((item) => ('folder' in item ? [item.folder] : []));
 const tripsOf = (items: readonly Item[]): TripSummary[] => items.flatMap((item) => ('trip' in item ? [item.trip] : []));
 
-/** How a card takes part in the selection: whether it is selected or cut, and what its pad and a click with a modifier do. */
+/** How a card takes part in the selection: whether it is selected or cut, what its pad does, and what a click does to the selection. */
 interface CardSelect {
   selected: () => boolean;
   cut: () => boolean;
@@ -248,7 +248,7 @@ export function Library(props: {
     selected: () => isSelected(keyOf(item)),
     cut: () => isCut(item),
     onToggle: () => setSelected(toggled(selected(), keyOf(item))),
-    onClick: (e: MouseEvent) => setSelected(clickSelect(selected(), shownKeys(), keyOf(item), e)),
+    onClick: (e: MouseEvent) => setSelected(selects(e) ? clickSelect(selected(), shownKeys(), keyOf(item), e) : anchoredAt(keyOf(item))),
     onDrag: (e: PointerEvent, dragged: () => void) => {
       const moved = chosenWith(item);
       dragToFolder(e, moved.length === 1 ? nameOf(item) : countText(moved), (into) => moveInto(moved, into), dragged);
@@ -648,8 +648,8 @@ export function Library(props: {
  * collection its sections, after the folder it is in where `where` names it, or, while it
  * is being opened, over how far its document has come, beside a spinner; its menu
  * renames, moves, copies and deletes it. A click opens it. Where it can be selected, a tap
- * on its pad selects it, a press drags it, and a click with Cmd, Ctrl or Shift held goes
- * to `select.onClick`.
+ * on its pad selects it, a press drags it, and a click with Cmd, Ctrl or Shift held
+ * selects instead of opening; every click goes to `select.onClick`.
  */
 function TripCard(props: {
   trip: TripSummary;
@@ -687,7 +687,10 @@ function TripCard(props: {
         <button
           class="text grow"
           aria-expanded={props.fold?.unfolded()}
-          onClick={(e) => (props.select && selects(e) ? props.select.onClick(e) : props.onOpen(props.trip))}
+          onClick={(e) => {
+            if (!selects(e) || !props.select) props.onOpen(props.trip);
+            props.select?.onClick(e);
+          }}
           disabled={fetchingTrip()}
         >
           <Show when={!loading()} fallback={<span class="spinner" />}>
@@ -729,7 +732,11 @@ function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) 
             <Pad label={t('Select {name}, or drag it into a folder', { name: props.folder.name })} selected={select().selected()} onToggle={select().onToggle} onPress={select().onDrag} />
           )}
         </Show>
-        <button class="text grow" aria-expanded={props.fold?.unfolded()} onClick={(e) => (props.select && selects(e) ? props.select.onClick(e) : props.onOpen(props.folder.id))}>
+        <button class="text grow" aria-expanded={props.fold?.unfolded()} onClick={(e) => {
+            if (!selects(e) || !props.select) props.onOpen(props.folder.id);
+            props.select?.onClick(e);
+          }}
+        >
           <FolderIcon />
           <span class="lines">
             <span class="name">{props.folder.name}</span>

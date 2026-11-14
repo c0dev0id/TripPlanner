@@ -40,7 +40,6 @@ import { NameDialog } from '../ui/NameDialog';
 import { moveToDayItem, pinItems } from './partMenu';
 import { Pin } from './Pin';
 import { pickFile } from '../ui/pickFile';
-import { selects } from '../ui/selection';
 
 /** Adds a GPX file of one track the user picks to the day as a recording, and shows it whole on the map. */
 export function addRecordingPicked(dayId: string): void {
@@ -207,8 +206,8 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
     if (loaded) showWhole(loaded.points);
   };
   const click = (e: MouseEvent) => {
-    if (selects(e)) clickPart('recording', recordingsOf(props.recording.dayId).map((r) => String(r.id)), String(props.recording.id), e);
-    else if (isOpened()) openRecording(undefined);
+    if (clickPart('recording', recordingsOf(props.recording.dayId).map((r) => String(r.id)), String(props.recording.id), e)) return;
+    if (isOpened()) openRecording(undefined);
     else openIt();
   };
   return (

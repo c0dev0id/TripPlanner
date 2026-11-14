@@ -1,6 +1,6 @@
 import { createEffect, createRoot, on } from 'solid-js';
 import type { PartKind } from '../routing/dayEdit';
-import { clickSelect, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, selectionOwner, toggled } from '../ui/selection';
+import { anchoredAt, clickSelect, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, selectionOwner, selects, toggled } from '../ui/selection';
 import { openTripId, selectedDayId } from './trip';
 
 /** What of the open trip is selected: a kind of its parts, or the recordings on its days, by their id as text. */
@@ -15,21 +15,26 @@ const KINDS: readonly Selectable[] = ['day', 'route', 'stop', 'recording'];
  */
 const selectedKind = (): Selectable | undefined => KINDS.find((kind) => kind === selectionOwner());
 
-export function clearPartSelection(): void {
-  const kind = selectedKind();
-  if (kind) selectIn(kind, NOTHING_SELECTED);
-}
+/** Lets go of what is selected of these kinds, and of the part a Shift-click would select from. */
+const clear = (kinds: readonly Selectable[]): void => kinds.forEach((kind) => selectIn(kind, NOTHING_SELECTED));
+
+export const clearPartSelection = (): void => clear(KINDS);
 
 createRoot(() => {
   createEffect(on(openTripId, clearPartSelection, { defer: true }));
-  createEffect(on(selectedDayId, () => selectedKind() !== 'day' && clearPartSelection(), { defer: true }));
+  createEffect(on(selectedDayId, () => clear(KINDS.filter((kind) => kind !== 'day')), { defer: true }));
 });
 
 export const isPartSelected = (kind: Selectable, id: string): boolean => selectionOf(kind).keys.has(id);
 
-/** A click on a part with Cmd, Ctrl or Shift held, among the parts of its list in `order`. */
-export function clickPart(kind: Selectable, order: readonly string[], id: string, click: Pick<MouseEvent, 'metaKey' | 'ctrlKey' | 'shiftKey'>): void {
-  selectIn(kind, clickSelect(selectionOf(kind), order, id, click));
+/**
+ * A click on a part, among the parts of its list in `order`: with Cmd, Ctrl or Shift held
+ * it selects; without, it lets go of what is selected and leaves the part as the one a
+ * Shift-click selects from. Whether it selected, and so opens nothing.
+ */
+export function clickPart(kind: Selectable, order: readonly string[], id: string, click: Pick<MouseEvent, 'metaKey' | 'ctrlKey' | 'shiftKey'>): boolean {
+  selectIn(kind, selects(click) ? clickSelect(selectionOf(kind), order, id, click) : anchoredAt(id));
+  return selects(click);
 }
 
 /** Adds the part to the selection or takes it away. */

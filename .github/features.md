@@ -59,8 +59,9 @@
   as days, into a collection as sections. “All trips” has a menu too, with New and Add
   for the top, Paste, and Export for every trip there is. Several are selected
   together, folders and trips alike: a tap or click on a card's pad (drawn as a drag
-  grip), Cmd or Ctrl with a click, Shift with a click for a run (a plain click or tap
-  still opens). The menu then acts on all of them, and a press on a pad drags them all
+  grip), Cmd or Ctrl with a click, Shift with a click for a run: the cards from the one
+  clicked last to the one clicked now, and no others. A plain click or tap
+  still opens, lets go of what was selected and is where the next run starts. The menu then acts on all of them, and a press on a pad drags them all
   onto a folder. Cut folders and trips move to where they are pasted, copied trips get a
   copy there, and either way the clipboard is empty after: what is on it is pasted
   once, and a new cut or copy takes its place before that. A folder that does not hold
@@ -89,7 +90,9 @@
   one of which a click gives to the stop, or to all the stops selected in one step;
   Garmin's symbols stay in the stop's dialog. Several of a kind are
   selected with Cmd or Ctrl and a click, Shift for a run, a tap on the grip, or Select in
-  the menu; the menu then acts on all of them. Pasted into a day go routes with the stops
+  the menu; the menu then acts on all of them. A run goes from the row clicked last,
+  with or without a key held, to the row clicked now and holds nothing else; a plain
+  click lets go of what was selected. Pasted into a day go routes with the stops
   bound to them, stops, which stand free, and days, which follow it; pasted into a route,
   stops become points of it where the route passes closest, or at its start or end where
   the stop lies off it. What was cut waits, dimmed, and moves when it is pasted: within

@@ -40,7 +40,6 @@ import { ClockIcon, DownloadIcon, FileImportIcon, NotebookIcon, PencilIcon, Plus
 import { Grip } from '../ui/Grip';
 import { IconButton } from '../ui/IconButton';
 import { MenuButton } from '../ui/MenuButton';
-import { selects } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, dayHeading, dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 import { RoutePin } from './Pin';
@@ -103,9 +102,9 @@ function DayItem(props: { day: Day; index: number }) {
   const meta = () => dayDetail('trip', { date: props.day.date, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, distanceM: distance() });
   const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
   const click = (e: MouseEvent) => {
-    if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);
+    if (clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e)) return;
     // The day shown stays shown: a click on it only takes the mark back from a folder.
-    else if (selected()) markShownDay();
+    if (selected()) markShownDay();
     else selectDay(props.day.id);
   };
   return (
@@ -248,7 +247,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
   );
   /** A click takes the route up to be edited and lists its stops and points; on the route being edited, it ends that and folds the list away. */
   const click = (e: MouseEvent) => {
-    if (selects(e)) return clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
+    if (clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e)) return;
     setUnfolded(!editing());
     takeUpRoute(editing() ? undefined : props.route.id);
   };
@@ -330,7 +329,7 @@ function SequenceItem(props: { entry: SequenceEntry; routeId: string; time: Entr
         classList={{ point: !stop(), picked: !!stop() && isPartSelected('stop', stop()!.id), cut: !!stop() && isCut(stop()!.id) }}
         ref={(el) => hasMenu() && cardMenu(el, menu)}
       >
-        <button class="text grow" onClick={(e) => (stop() && selects(e) ? clickStop(stop()!, e) : panTo(props.entry.lngLat))}>
+        <button class="text grow" onClick={(e) => (stop() && clickStop(stop()!, e)) || panTo(props.entry.lngLat)}>
           <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
             {(s) => <StopShape symbol={s().symbol} color={s().pointId === null ? FREE_COLOR : BOUND_COLOR} height={22} />}
           </Show>
@@ -361,7 +360,7 @@ function SequenceItem(props: { entry: SequenceEntry; routeId: string; time: Entr
 function AloneStopItem(props: { stop: Stop }) {
   return (
     <li class="row sequence-item" classList={{ picked: isPartSelected('stop', props.stop.id), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
-      <button class="text grow" onClick={(e) => (selects(e) ? clickStop(props.stop, e) : panTo(props.stop.lngLat))}>
+      <button class="text grow" onClick={(e) => clickStop(props.stop, e) || panTo(props.stop.lngLat)}>
         <StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />
         <span class="lines">
           <span class="name">{props.stop.name}</span>
@@ -376,7 +375,7 @@ function AloneStopItem(props: { stop: Stop }) {
   );
 }
 
-/** A click that selects on a stop of the selected day, among that day's stops in riding order. */
-function clickStop(stop: Stop, e: MouseEvent): void {
-  clickPart('stop', selectedSequence().flatMap((entry) => (entry.stop ? [entry.stop.id] : [])), stop.id, e);
+/** A click on a stop of the selected day, among that day's stops in riding order; whether it selected. */
+function clickStop(stop: Stop, e: MouseEvent): boolean {
+  return clickPart('stop', selectedSequence().flatMap((entry) => (entry.stop ? [entry.stop.id] : [])), stop.id, e);
 }

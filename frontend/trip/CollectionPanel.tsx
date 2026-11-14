@@ -16,7 +16,6 @@ import { distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
-import { selects } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, routeKindLabel, routeLabel } from './labels';
 import { partMenu } from './partMenu';
@@ -60,9 +59,9 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
   const meta = () => dayDetail('collection', { date: null, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, distanceM: distance() }, isPlaceList(openTripId()));
   const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
   const click = (e: MouseEvent) => {
-    if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);
+    if (clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e)) return;
     // The day shown stays shown: a click on it only takes the mark back from a folder.
-    else if (selected()) markShownDay();
+    if (selected()) markShownDay();
     else selectDay(props.day.id);
   };
   return (
@@ -125,7 +124,7 @@ function RouteItem(props: { route: Route; day: Day }) {
   // A route taken up on the map is brought into view.
   createEffect(on(active, (is) => is && row.scrollIntoView({ block: 'nearest' })));
   const click = (e: MouseEvent) => {
-    if (selects(e)) return clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e);
+    if (clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e)) return;
     takeUpRoute(active() ? undefined : props.route.id);
     if (active()) showWhole(routePositions(props.route));
   };
@@ -159,8 +158,7 @@ function RouteItem(props: { route: Route; day: Day }) {
 function WaypointItem(props: { stop: Stop; day: Day }) {
   const label = () => symbolLabel(props.stop.symbol);
   const click = (e: MouseEvent) => {
-    if (selects(e)) clickPart('stop', props.day.stops.map((s) => s.id), props.stop.id, e);
-    else panTo(props.stop.lngLat);
+    if (!clickPart('stop', props.day.stops.map((s) => s.id), props.stop.id, e)) panTo(props.stop.lngLat);
   };
   return (
     <li class="row sequence-item" classList={{ picked: isPartSelected('stop', props.stop.id), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
