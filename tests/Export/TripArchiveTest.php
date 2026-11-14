@@ -60,7 +60,7 @@ final class TripArchiveTest extends TestCase
         $ticket = $entries->addMedia($userId, $tripId, $dayId, 'Ferry', ['name' => 'ferry.pdf', 'mediaType' => 'application/pdf', 'size' => 3], null, $now);
         file_put_contents($files->path($tripId, $ticket->id), 'pdf');
         $entries->addMedia($userId, $tripId, $dayId, 'Hotel', null, 'https://example.org/hotel', $now);
-        $recording = $recordings->add($userId, $tripId, $dayId, 'Morning ride', gzencode('<gpx><trk/></gpx>'), $now);
+        $recording = $recordings->keep($userId, 'Morning ride', gzencode('<gpx><trk/></gpx>'), $now, $dayId)['recording'];
         $sameName = $trips->create($userId, 'Alps', $now)->id;
         $foreign = $trips->create($otherId, 'Theirs', $now)->id;
 

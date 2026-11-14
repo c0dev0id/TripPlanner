@@ -9,7 +9,6 @@ use PDO;
 use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
 use Planner\Export\Polyline;
-use Planner\Recording\AlreadyKept;
 use Planner\Recording\Recordings;
 use Planner\Tests\TestDatabase;
 use Planner\Tests\Trip\TripFixture;
@@ -40,83 +39,69 @@ final class RecordingsTest extends TestCase
         $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated(TripFixture::document()), 1, $this->now);
     }
 
-    public function testKeepsARecordingOnADayOfTheUsersTrip(): void
+    public function testKeepsARideForItsUserWithWhatItsFileTells(): void
     {
-        $gzip = gzencode('<gpx><trk/></gpx>');
-        $recording = $this->recordings->add($this->userId, $this->tripId, 'day1', 'Morning ride', $gzip, $this->now);
-        self::assertSame(['day1', 'Morning ride'], [$recording->dayId, $recording->name]);
-        self::assertNull($this->recordings->add($this->userId + 1, $this->tripId, 'day1', 'Theirs', $gzip, $this->now));
-        self::assertNull($this->recordings->add($this->userId, $this->tripId, 'no-such-day', 'Nowhere', $gzip, $this->now));
-        self::assertSame($gzip, $this->recordings->gzip($this->userId, $this->tripId, $recording->id));
-        self::assertNull($this->recordings->gzip($this->userId + 1, $this->tripId, $recording->id));
+        $gzip = gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], '2027-06-12T08:00:00+02:00'));
+        ['recording' => $ride, 'added' => $added] = $this->recordings->keep($this->userId, 'Morning ride', $gzip, $this->now);
+        self::assertTrue($added);
+        self::assertSame(['Morning ride', '2027-06-12T06:00:00Z', null], [$ride->name, $ride->startedAt, $ride->dayId]);
+        self::assertEqualsWithDelta(11_120, $ride->distanceM, 10);
+        self::assertSame($gzip, $this->recordings->gzip($this->userId, $ride->id));
+        self::assertNull($this->recordings->gzip($this->userId + 1, $ride->id));
+        self::assertNull($this->recordings->keep($this->userId, 'No times', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], null)), $this->now)['recording']->startedAt);
 
-        self::assertTrue($this->recordings->rename($this->userId, $this->tripId, $recording->id, 'Ride to the pass'));
-        self::assertFalse($this->recordings->rename($this->userId + 1, $this->tripId, $recording->id, 'Mine'));
-        self::assertSame(['Ride to the pass'], array_map(fn ($r) => $r->name, $this->recordings->listFor($this->userId, $this->tripId)));
-        self::assertNull($this->recordings->listFor($this->userId + 1, $this->tripId));
+        self::assertTrue($this->recordings->rename($this->userId, $ride->id, 'Ride to the pass'));
+        self::assertFalse($this->recordings->rename($this->userId + 1, $ride->id, 'Mine'));
+        self::assertSame(['No times', 'Ride to the pass'], array_column($this->recordings->rides($this->userId), 'name'));
+        self::assertSame([], $this->recordings->rides($this->userId + 1));
 
-        self::assertFalse($this->recordings->delete($this->userId + 1, $this->tripId, $recording->id));
-        self::assertTrue($this->recordings->delete($this->userId, $this->tripId, $recording->id));
-        self::assertSame([], $this->recordings->listFor($this->userId, $this->tripId));
+        self::assertFalse($this->recordings->delete($this->userId + 1, $ride->id));
+        self::assertTrue($this->recordings->delete($this->userId, $ride->id));
+        self::assertSame(['No times'], array_column($this->recordings->rides($this->userId), 'name'));
     }
 
-    public function testKeepsWhatItsFileTellsBesideTheRecording(): void
+    public function testKeepsAFileOnceForAUser(): void
     {
-        $recording = $this->recordings->add($this->userId, $this->tripId, 'day1', 'Ride', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], '2027-06-12T08:00:00+02:00')), $this->now);
-        self::assertSame('2027-06-12T06:00:00Z', $recording->startedAt);
-        self::assertEqualsWithDelta(11_120, $recording->distanceM, 10);
-        self::assertEquals([$recording], $this->recordings->listFor($this->userId, $this->tripId));
+        $gzip = gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], null));
+        $first = $this->recordings->keep($this->userId, 'Ride', $gzip, $this->now)['recording'];
+        ['recording' => $again, 'added' => $added] = $this->recordings->keep($this->userId, 'Again', $gzip, $this->now, 'day1');
+        self::assertFalse($added);
+        self::assertSame([$first->id, 'Ride', 'day1'], [$again->id, $again->name, $again->dayId]);
+        self::assertCount(1, $this->recordings->rides($this->userId));
+        self::assertEquals([$again], $this->recordings->listFor($this->userId, $this->tripId));
 
-        $bare = $this->recordings->add($this->userId, $this->tripId, 'day1', 'No times', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], null)), $this->now);
-        self::assertNull($bare->startedAt);
+        $theirs = (new Users($this->db))->create('other@example.com', 'correct horse battery', $this->now)->id;
+        self::assertTrue($this->recordings->keep($theirs, 'Theirs', $gzip, $this->now)['added']);
+        self::assertNull($this->recordings->keep($theirs, 'On my day', gzencode('<gpx/>'), $this->now, 'day1'));
+        self::assertCount(1, $this->recordings->rides($theirs));
     }
 
-    public function testGivesEveryRideOfTheUsersWithItsLineByWhenItBegan(): void
+    public function testPutsARideOnAnyNumberOfTheUsersDays(): void
     {
         $other = $this->trips->create($this->userId, 'Vosges', $this->now)->id;
         $this->documents->save($this->userId, $other, TripDocumentValidator::validated(['name' => 'Vosges', 'days' => [TripFixture::day('other-day')]] + TripFixture::document()), 1, $this->now);
-        $theirs = (new Users($this->db))->create('other@example.com', 'correct horse battery', $this->now)->id;
-        $theirTrip = $this->trips->create($theirs, 'Theirs', $this->now)->id;
-        $this->documents->save($theirs, $theirTrip, TripDocumentValidator::validated(['days' => [TripFixture::day('their-day')]] + TripFixture::document()), 1, $this->now);
+        $later = $this->recordings->keep($this->userId, 'Later', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], '2027-06-13T08:00:00Z')), $this->now, 'day1')['recording'];
+        $earlier = $this->recordings->keep($this->userId, 'Earlier', gzencode(self::gpx([[7.1, 48.0], [7.2, 48.1]], '2027-06-12T08:00:00Z')), $this->now)['recording'];
 
-        $later = $this->recordings->add($this->userId, $this->tripId, 'day1', 'Later', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], '2027-06-13T08:00:00Z')), $this->now);
-        $this->recordings->add($this->userId, $other, 'other-day', 'Earlier', gzencode(self::gpx([[7.1, 48.0], [7.2, 48.1]], '2027-06-12T08:00:00Z')), $this->now);
-        $this->recordings->add($this->userId, $this->tripId, 'day1', 'No points', gzencode('<gpx><trk/></gpx>'), $this->now);
-        $this->recordings->add($theirs, $theirTrip, 'their-day', 'Not mine', gzencode(self::gpx([[9.0, 47.0], [9.1, 47.1]], '2027-06-11T08:00:00Z')), $this->now);
+        self::assertFalse($this->recordings->link($this->userId, $earlier->id, 'no-such-day'));
+        self::assertFalse($this->recordings->link($this->userId + 1, $earlier->id, 'day1'));
+        self::assertTrue($this->recordings->link($this->userId, $earlier->id, 'day1'));
+        self::assertTrue($this->recordings->link($this->userId, $earlier->id, 'day1'));
+        self::assertTrue($this->recordings->link($this->userId, $earlier->id, 'other-day'));
+        self::assertSame([['Earlier', 'day1'], ['Later', 'day1']], array_map(fn ($r) => [$r->name, $r->dayId], $this->recordings->listFor($this->userId, $this->tripId)));
+        self::assertSame([['Earlier', 'other-day']], array_map(fn ($r) => [$r->name, $r->dayId], $this->recordings->listFor($this->userId, $other)));
+        self::assertNull($this->recordings->listFor($this->userId + 1, $this->tripId));
 
         $rides = $this->recordings->rides($this->userId);
-        self::assertSame([['Earlier', '2027-06-12T08:00:00Z', 'Vosges'], ['Later', '2027-06-13T08:00:00Z', 'Alps']], array_map(fn (array $ride) => [$ride['name'], $ride['startedAt'], $ride['trip']], $rides));
+        self::assertSame([$earlier->id, $later->id], array_column($rides, 'id'));
+        self::assertSame([['tripId' => $this->tripId, 'dayId' => 'day1', 'trip' => 'Alps'], ['tripId' => $other, 'dayId' => 'other-day', 'trip' => 'Vosges']], $rides[0]['days']);
         self::assertEqualsWithDelta([[7.1, 48.0], [7.2, 48.1]], Polyline::decode($rides[0]['line']), 1e-6);
-        self::assertEqualsWithDelta(11_120, $rides[1]['distanceM'], 10);
-        self::assertSame([$later->id, $this->tripId, 'day1'], [$rides[1]['id'], $rides[1]['tripId'], $rides[1]['dayId']]);
-    }
 
-    public function testKeepsAFileOnceWhereAskedTo(): void
-    {
-        $gzip = gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], null));
-        $this->recordings->add($this->userId, $this->tripId, 'day1', 'Ride', $gzip, $this->now, true);
-        self::assertNotNull($this->recordings->add($this->userId, $this->tripId, 'day1', 'On purpose', $gzip, $this->now));
-        $this->expectException(AlreadyKept::class);
-        $this->recordings->add($this->userId, $this->tripId, 'day1', 'Again', $gzip, $this->now, true);
-    }
-
-    public function testListsTheRecordingsThatWaitInTheFolderForRecordings(): void
-    {
-        $folders = new Folders($this->db);
-        $inbox = array_values(array_filter($folders->listFor($this->userId), fn ($folder) => $folder->kind === 'recordings'))[0]->id;
-        $year = $this->trips->create($this->userId, '2027', $this->now, $folders->create($this->userId, 'Tracker', $inbox, $this->now)->id, 'collection')->id;
-        $document = ['days' => [TripFixture::day('2027-06')]] + TripFixture::document();
-        $this->documents->save($this->userId, $year, TripDocumentValidator::validated($document), 1, $this->now);
-        $waiting = $this->recordings->add($this->userId, $year, '2027-06', 'Waiting', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], '2027-06-12T06:00:00Z')), $this->now);
-        $this->recordings->add($this->userId, $this->tripId, 'day1', 'On its day', gzencode('<gpx/>'), $this->now);
-
-        $unassigned = $this->recordings->unassigned($this->userId);
-        self::assertSame([[$waiting->id, $year, 'Waiting', '2027-06-12T06:00:00Z']], array_map(fn ($r) => [$r['id'], $r['tripId'], $r['name'], $r['startedAt']], $unassigned));
-        self::assertCount(2, Polyline::decode($unassigned[0]['line']));
-        self::assertSame([], $this->recordings->unassigned($this->userId + 1));
-
-        self::assertTrue($this->recordings->move($this->userId, $year, $waiting->id, 'day1'));
-        self::assertSame([], $this->recordings->unassigned($this->userId));
+        self::assertFalse($this->recordings->unlink($this->userId + 1, $earlier->id, 'day1'));
+        self::assertTrue($this->recordings->unlink($this->userId, $earlier->id, 'day1'));
+        self::assertFalse($this->recordings->unlink($this->userId, $earlier->id, 'day1'));
+        self::assertSame(['Later'], array_map(fn ($r) => $r->name, $this->recordings->listFor($this->userId, $this->tripId)));
+        self::assertCount(2, $this->recordings->rides($this->userId));
     }
 
     /** A GPX file of one track along the points, the first with the time. */
@@ -126,38 +111,22 @@ final class RecordingsTest extends TestCase
         return '<?xml version="1.0"?><gpx><metadata><time>2020-01-01T00:00:00Z</time></metadata><trk><trkseg>' . implode('', $trackpoints) . '</trkseg></trk></gpx>';
     }
 
-    public function testMovesToAnotherDayOfTheUsersAndToNoOther(): void
+    public function testStaysWhenItsDayGoesAndIsOnTheDaysOfACopy(): void
     {
-        $document = TripFixture::document();
-        $document['days'][] = TripFixture::day('day2');
-        $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated($document), 2, $this->now);
-        $otherTrip = $this->trips->create($this->userId, 'Other', $this->now)->id;
-        $other = TripFixture::document();
-        $other['days'] = [TripFixture::day('elsewhere')];
-        $this->documents->save($this->userId, $otherTrip, TripDocumentValidator::validated($other), 1, $this->now);
-        $recording = $this->recordings->add($this->userId, $this->tripId, 'day1', 'Ride', gzencode('<gpx><trk/></gpx>'), $this->now);
-
-        self::assertFalse($this->recordings->move($this->userId, $this->tripId, $recording->id, 'no-such-day'));
-        self::assertFalse($this->recordings->move($this->userId + 1, $this->tripId, $recording->id, 'day2'));
-        self::assertTrue($this->recordings->move($this->userId, $this->tripId, $recording->id, 'day2'));
-        self::assertSame(['day2'], array_map(fn ($r) => $r->dayId, $this->recordings->listFor($this->userId, $this->tripId)));
-        self::assertTrue($this->recordings->move($this->userId, $this->tripId, $recording->id, 'elsewhere'));
-        self::assertSame(['elsewhere'], array_map(fn ($r) => $r->dayId, $this->recordings->listFor($this->userId, $otherTrip)));
-    }
-
-    public function testGoesWithItsDayAndIsCopiedWithTheTrip(): void
-    {
-        $this->recordings->add($this->userId, $this->tripId, 'day1', 'Morning ride', gzencode('<gpx/>'), $this->now);
+        $this->recordings->keep($this->userId, 'Morning ride', gzencode('<gpx/>'), $this->now, 'day1');
         $copyId = $this->documents->copy($this->userId, $this->tripId, $this->now);
         $copied = $this->recordings->listFor($this->userId, $copyId);
         self::assertSame(['Morning ride'], array_map(fn ($r) => $r->name, $copied));
         self::assertNotSame('day1', $copied[0]->dayId);
+        self::assertCount(2, $this->recordings->rides($this->userId)[0]['days']);
+        self::assertSame(1, $this->documents->outlines($this->userId)[$copyId][0]['recordings']);
 
         $document = TripFixture::document();
         $document['days'] = [];
         $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated($document), 2, $this->now);
         self::assertSame([], $this->recordings->listFor($this->userId, $this->tripId));
-        self::assertCount(1, $this->recordings->listFor($this->userId, $copyId));
+        $this->trips->delete($this->userId, $copyId);
+        self::assertSame([['Morning ride', []]], array_map(fn (array $ride) => [$ride['name'], $ride['days']], $this->recordings->rides($this->userId)));
     }
 
     public function testFollowsADayThatJoinsAnotherInAMerge(): void
@@ -166,8 +135,12 @@ final class RecordingsTest extends TestCase
         $document = TripFixture::document();
         $document['days'] = [['date' => '2027-06-12'] + TripFixture::day('b1')];
         $this->documents->save($this->userId, $other, TripDocumentValidator::validated($document), 1, $this->now);
-        $this->recordings->add($this->userId, $other, 'b1', 'Second file', gzencode('<gpx/>'), $this->now);
+        $both = $this->recordings->keep($this->userId, 'First file', gzencode('<gpx><trk/></gpx>'), $this->now, 'day1')['recording'];
+        $this->recordings->link($this->userId, $both->id, 'b1');
+        $this->recordings->keep($this->userId, 'Second file', gzencode('<gpx/>'), $this->now, 'b1');
         $this->documents->merge($this->userId, $this->tripId, [$other], $this->now);
-        self::assertSame([['day1', 'Second file']], array_map(fn ($r) => [$r->dayId, $r->name], $this->recordings->listFor($this->userId, $this->tripId)));
+        $merged = array_map(fn ($r) => [$r->dayId, $r->name], $this->recordings->listFor($this->userId, $this->tripId));
+        sort($merged);
+        self::assertSame([['day1', 'First file'], ['day1', 'Second file']], $merged);
     }
 }

@@ -122,16 +122,21 @@ final class TripArchive
     }
 
     /**
-     * Adds the trip's recordings as GPX files and gives them, each naming its file in the folder.
+     * Adds the rides on the trip's days as GPX files, each once, and gives them by day,
+     * each naming its file in the folder.
      *
      * @param callable(string, string): void $addText
      */
     private function addRecordings(callable $addText, string $folder, int $userId, int $tripId): array
     {
         $recordings = [];
+        $added = [];
         foreach ($this->recordings->listFor($userId, $tripId) as $recording) {
             $path = "recordings/$recording->id-" . TripGpx::fileName($recording->name) . '.gpx';
-            $addText("$folder/$path", gzdecode($this->recordings->gzip($userId, $tripId, $recording->id)));
+            if (!isset($added[$recording->id])) {
+                $addText("$folder/$path", gzdecode($this->recordings->gzip($userId, $recording->id)));
+                $added[$recording->id] = true;
+            }
             $recordings[] = ['dayId' => $recording->dayId, 'name' => $recording->name, 'file' => $path];
         }
         return $recordings;

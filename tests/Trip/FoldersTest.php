@@ -178,26 +178,26 @@ final class FoldersTest extends TestCase
     public function testEveryUserHasTheSpecialFoldersFirst(): void
     {
         $this->folders->create($this->userId, 'Alps', null, $this->now);
-        self::assertSame([['Recordings', 'recordings', null], ['Collections', 'collections', null], ['Places', 'places', null], ['Alps', 'folder', null]], array_map(fn ($f) => [$f->name, $f->kind, $f->parentId], $this->folders->listFor($this->userId)));
+        self::assertSame([['Collections', 'collections', null], ['Places', 'places', null], ['Alps', 'folder', null]], array_map(fn ($f) => [$f->name, $f->kind, $f->parentId], $this->folders->listFor($this->userId)));
     }
 
     public function testLeavesTheSpecialFoldersAsTheyAre(): void
     {
-        [$recordings] = $this->folders->listFor($this->userId);
+        [$collections] = $this->folders->listFor($this->userId);
         $alps = $this->folders->create($this->userId, 'Alps', null, $this->now);
-        $inside = $this->folders->create($this->userId, '2025', $recordings->id, $this->now);
-        self::assertFalse($this->folders->rename($this->userId, $recordings->id, 'Mine'));
-        self::assertFalse($this->folders->move($this->userId, $recordings->id, $alps->id));
-        self::assertFalse($this->folders->delete($this->userId, $recordings->id));
-        self::assertNull($this->folders->deleteWithContents($this->userId, $recordings->id));
-        self::assertSame(['Recordings', null], [$this->folders->listFor($this->userId)[0]->name, $this->parentOf($recordings->id)]);
-        self::assertSame($recordings->id, $this->parentOf($inside->id));
-        self::assertTrue($this->folders->move($this->userId, $alps->id, $recordings->id));
+        $inside = $this->folders->create($this->userId, '2025', $collections->id, $this->now);
+        self::assertFalse($this->folders->rename($this->userId, $collections->id, 'Mine'));
+        self::assertFalse($this->folders->move($this->userId, $collections->id, $alps->id));
+        self::assertFalse($this->folders->delete($this->userId, $collections->id));
+        self::assertNull($this->folders->deleteWithContents($this->userId, $collections->id));
+        self::assertSame(['Collections', null], [$this->folders->listFor($this->userId)[0]->name, $this->parentOf($collections->id)]);
+        self::assertSame($collections->id, $this->parentOf($inside->id));
+        self::assertTrue($this->folders->move($this->userId, $alps->id, $collections->id));
     }
 
     public function testKeepsCollectionsInTheSpecialFoldersAndTripsOutOfThem(): void
     {
-        [$recordings, $collections] = $this->folders->listFor($this->userId);
+        [$collections, $places] = $this->folders->listFor($this->userId);
         $alps = $this->folders->create($this->userId, 'Alps', null, $this->now);
         $passes = $this->folders->create($this->userId, 'Passes', $collections->id, $this->now);
         $trip = $this->trips->create($this->userId, 'Weekend', $this->now, $alps->id);
@@ -205,7 +205,7 @@ final class FoldersTest extends TestCase
         $refused = [
             fn () => $this->trips->create($this->userId, 'TET', $this->now, null, 'collection'),
             fn () => $this->trips->create($this->userId, 'TET', $this->now, $alps->id, 'collection'),
-            fn () => $this->trips->create($this->userId, 'Weekend', $this->now, $recordings->id),
+            fn () => $this->trips->create($this->userId, 'Weekend', $this->now, $places->id),
             fn () => $this->trips->create($this->userId, 'Weekend', $this->now, $passes->id),
             fn () => $this->trips->move($this->userId, $collection->id, null),
             fn () => $this->trips->move($this->userId, $collection->id, $alps->id),
@@ -221,10 +221,10 @@ final class FoldersTest extends TestCase
             } catch (MisplacedTrip) {
             }
         }
-        self::assertTrue($this->trips->move($this->userId, $collection->id, $recordings->id));
-        self::assertTrue($this->folders->move($this->userId, $passes->id, $recordings->id));
+        self::assertTrue($this->trips->move($this->userId, $collection->id, $places->id));
+        self::assertTrue($this->folders->move($this->userId, $passes->id, $places->id));
         self::assertTrue($this->folders->move($this->userId, $passes->id, $alps->id));
-        self::assertSame([[$collection->id, $recordings->id], [$trip->id, $alps->id]], array_map(fn ($t) => [$t->id, $t->folderId], $this->trips->listFor($this->userId)));
+        self::assertSame([[$collection->id, $places->id], [$trip->id, $alps->id]], array_map(fn ($t) => [$t->id, $t->folderId], $this->trips->listFor($this->userId)));
     }
 
     /** @return \Planner\Trip\Folder[] the user's folders without the two special ones */

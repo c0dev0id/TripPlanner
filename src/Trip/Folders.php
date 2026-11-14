@@ -11,7 +11,7 @@ use Planner\Timestamp;
 
 /**
  * A user's folders: at the top of the library or inside another folder. The two special
- * ones, for recordings and for collections, are there from the start and are neither
+ * ones, for collections and for places, are there from the start and are neither
  * renamed, moved nor deleted. They and the folders in them hold collections and nothing
  * else; every other folder and the top hold trips.
  */
@@ -21,11 +21,11 @@ final class Folders
     {
     }
 
-    /** @return Folder[] the user's folders: the special ones first, for recordings, collections and places, the others by name */
+    /** @return Folder[] the user's folders: the special ones first, for collections and places, the others by name */
     public function listFor(int $userId): array
     {
         $statement = $this->db->prepare(
-            "SELECT id, name, parent_id, kind FROM folders WHERE user_id = ? ORDER BY CASE kind WHEN 'recordings' THEN 0 WHEN 'collections' THEN 1 WHEN 'places' THEN 2 ELSE 3 END, name COLLATE NOCASE, id",
+            "SELECT id, name, parent_id, kind FROM folders WHERE user_id = ? ORDER BY CASE kind WHEN 'collections' THEN 0 WHEN 'places' THEN 1 ELSE 2 END, name COLLATE NOCASE, id",
         );
         $statement->execute([$userId]);
         return array_map(fn (array $row) => new Folder((int) $row['id'], $row['name'], $row['parent_id'] === null ? null : (int) $row['parent_id'], $row['kind']), $statement->fetchAll());

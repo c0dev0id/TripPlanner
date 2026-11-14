@@ -14,7 +14,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\UploadedFileInterface;
 
-/** The recordings API of a trip: the list, adding one to a day, renaming, moving, deleting, a recording's GPX file, and the recordings that may be a day's. */
+/** The rides API: every ride of the user's, keeping a file as one, renaming, deleting, its GPX file, the days it is on, and for a trip the rides on its days and those that may be a day's. */
 final class RecordingController
 {
     /** The largest file a recording may be, compressed and as GPX: a long day of one point a second with sensor data stays well below. */
@@ -28,32 +28,34 @@ final class RecordingController
     ) {
     }
 
+    /** The rides on the trip's days, once for each day a ride is on. */
     public function index(Request $request, Response $response, array $args): Response
     {
         $recordings = $this->recordings->listFor($this->currentUser->get()->id, (int) $args['id']);
         return $recordings === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $recordings);
     }
 
-    /** Every ride of the user's, by when it began: its recording's id, the trip and day that keep it, its name, its length and its line as polyline6. */
+    /** Every ride of the user's, by when it began: its id, its name, its length, its line as polyline6 and the days it is on, each with its trip. */
     public function rides(Request $request, Response $response): Response
     {
         return Json::of($response, $this->recordings->rides($this->currentUser->get()->id));
     }
 
-    /** Every ride of the user's as GeoJSON, a line each with its name, when it began, its length and where it is kept: what the map's overlay of the rides reads. */
+    /** Every ride of the user's that has a line as GeoJSON, with its name, when it began, its length and the trips it is on days of: what the map's overlay of the rides reads. */
     public function rideLines(Request $request, Response $response): Response
     {
+        $rides = array_filter($this->recordings->rides($this->currentUser->get()->id), fn (array $ride) => $ride['line'] !== '');
         $features = array_map(fn (array $ride) => [
             'type' => 'Feature',
-            'properties' => ['name' => $ride['name'], 'startedAt' => $ride['startedAt'], 'distanceM' => $ride['distanceM'], 'trip' => $ride['trip']],
+            'properties' => ['name' => $ride['name'], 'startedAt' => $ride['startedAt'], 'distanceM' => $ride['distanceM'], 'trip' => implode(', ', array_unique(array_column($ride['days'], 'trip')))],
             'geometry' => ['type' => 'LineString', 'coordinates' => Polyline::decode($ride['line'])],
-        ], $this->recordings->rides($this->currentUser->get()->id));
+        ], array_values($rides));
         return Json::of($response, ['type' => 'FeatureCollection', 'features' => $features]);
     }
 
     /**
-     * The recordings waiting in the folder for recordings that may be those of the day
-     * `day`; `offset` is the minutes the user's clock is ahead of UTC.
+     * The days of riding that may be those of the trip's day `day`, among all the user's
+     * rides; `offset` is the minutes the user's clock is ahead of UTC.
      */
     public function lookup(Request $request, Response $response, array $args): Response
     {
@@ -61,18 +63,18 @@ final class RecordingController
         $userId = $this->currentUser->get()->id;
         foreach ($this->documents->load($userId, (int) $args['id'])['days'] ?? [] as $day) {
             if ($day['id'] === ($query['day'] ?? null)) {
-                return Json::of($response, Lookup::of($day, $this->recordings->unassigned($userId), (int) ($query['offset'] ?? 0)));
+                return Json::of($response, Lookup::of($day, $this->recordings->rides($userId), (int) ($query['offset'] ?? 0)));
             }
         }
         return Json::error($response, 404, 'No such trip or day.');
     }
 
     /**
-     * Adds a recording from a multipart form: `dayId`, `name`, and the GPX `file`
-     * compressed with gzip. With `unlessKept`, a file the user keeps already is not kept
-     * again, and the answer is empty.
+     * Keeps a ride from a multipart form: `name`, the GPX `file` compressed with gzip,
+     * and with `dayId` the day it is put on. A file the user keeps already is not kept
+     * again: the answer is then the ride it is kept as, with 200 instead of 201.
      */
-    public function add(Request $request, Response $response, array $args): Response
+    public function add(Request $request, Response $response): Response
     {
         $body = (array) $request->getParsedBody();
         $name = Name::of($body['name'] ?? null);
@@ -88,40 +90,45 @@ final class RecordingController
         if ($gpx === false || preg_match('/<gpx[\s>]/', substr($gpx, 0, 4096)) !== 1) {
             return Json::error($response, 422, 'A recording is a GPX file compressed with gzip.');
         }
-        try {
-            $recording = $this->recordings->add($this->currentUser->get()->id, (int) $args['id'], (string) ($body['dayId'] ?? ''), $name, $gzip, new DateTimeImmutable(), isset($body['unlessKept']));
-        } catch (AlreadyKept) {
-            return $response->withStatus(204);
-        }
-        return $recording === null ? Json::error($response, 404, 'No such trip or day.') : Json::of($response->withStatus(201), $recording);
+        $dayId = $body['dayId'] ?? null;
+        $kept = $this->recordings->keep($this->currentUser->get()->id, $name, $gzip, new DateTimeImmutable(), is_string($dayId) ? $dayId : null);
+        return $kept === null ? Json::error($response, 404, 'No such day.') : Json::of($response->withStatus($kept['added'] ? 201 : 200), $kept['recording']);
     }
 
-    /** Renames the recording from `name`, or puts it on another day, of this trip or another of the user's, from `dayId`. */
-    public function change(Request $request, Response $response, array $args): Response
+    public function rename(Request $request, Response $response, array $args): Response
     {
-        $dayId = Json::field($request, 'dayId');
-        if ($dayId !== null) {
-            $moved = is_string($dayId) && $this->recordings->move($this->currentUser->get()->id, (int) $args['id'], (int) $args['recording'], $dayId);
-            return $moved ? $response->withStatus(204) : Json::error($response, 404, 'No such recording or day.');
-        }
         $name = Name::of(Json::field($request, 'name'));
         if ($name === null) {
             return Json::error($response, 422, 'A recording needs a name of up to 200 characters.');
         }
-        $renamed = $this->recordings->rename($this->currentUser->get()->id, (int) $args['id'], (int) $args['recording'], $name);
+        $renamed = $this->recordings->rename($this->currentUser->get()->id, (int) $args['recording'], $name);
         return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'No such recording.');
     }
 
     public function delete(Request $request, Response $response, array $args): Response
     {
-        $deleted = $this->recordings->delete($this->currentUser->get()->id, (int) $args['id'], (int) $args['recording']);
+        $deleted = $this->recordings->delete($this->currentUser->get()->id, (int) $args['recording']);
         return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'No such recording.');
+    }
+
+    /** Puts the ride on a day of the user's. */
+    public function link(Request $request, Response $response, array $args): Response
+    {
+        $linked = $this->recordings->link($this->currentUser->get()->id, (int) $args['recording'], $args['day']);
+        return $linked ? $response->withStatus(204) : Json::error($response, 404, 'No such recording or day.');
+    }
+
+    /** Takes the ride off a day, which keeps it as a ride. */
+    public function unlink(Request $request, Response $response, array $args): Response
+    {
+        $unlinked = $this->recordings->unlink($this->currentUser->get()->id, (int) $args['recording'], $args['day']);
+        return $unlinked ? $response->withStatus(204) : Json::error($response, 404, 'No such recording or day.');
     }
 
     /** The GPX file as kept: compressed, which the browser undoes. It never changes under its id. */
     public function gpx(Request $request, Response $response, array $args): Response
     {
-        $gzip = $this->recordings->gzip($this->currentUser->get()->id, (int) $args['id'], (int) $args['recording']);
+        $gzip = $this->recordings->gzip($this->currentUser->get()->id, (int) $args['recording']);
         if ($gzip === null) {
             return Json::error($response, 404, 'No such recording.');
         }

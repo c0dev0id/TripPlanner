@@ -8,16 +8,19 @@ use DateTimeImmutable;
 use PDO;
 use Planner\Timestamp;
 
-/** The recordings on the days of a user's trips, each a GPX file kept as uploaded, compressed with gzip. */
+/**
+ * A user's rides as recorded, each a GPX file kept once, as uploaded, compressed with
+ * gzip, and the days of the user's trips each is a recording of.
+ */
 final class Recordings
 {
-    private const OF_TRIP = 'FROM recordings r JOIN days d ON d.id = r.day_id JOIN trips t ON t.id = d.trip_id WHERE t.id = ? AND t.user_id = ?';
+    private const BY_START = 'ORDER BY r.started_at, r.id';
 
     public function __construct(private readonly PDO $db)
     {
     }
 
-    /** @return ?Recording[] the trip's recordings, in the order they were added; null when the user has no such trip */
+    /** @return ?Recording[] the rides on the trip's days, once for each day a ride is on, by when they began; null when the user has no such trip */
     public function listFor(int $userId, int $tripId): ?array
     {
         $statement = $this->db->prepare('SELECT 1 FROM trips WHERE id = ? AND user_id = ?');
@@ -25,131 +28,136 @@ final class Recordings
         if ($statement->fetchColumn() === false) {
             return null;
         }
-        $statement = $this->db->prepare('SELECT r.id, r.day_id, r.name, r.distance_m, r.started_at ' . self::OF_TRIP . ' ORDER BY r.id');
-        $statement->execute([$tripId, $userId]);
-        return array_map(fn (array $row) => new Recording((int) $row['id'], $row['day_id'], $row['name'], (int) $row['distance_m'], $row['started_at']), $statement->fetchAll());
+        $statement = $this->db->prepare(
+            'SELECT r.id, r.name, r.distance_m, r.started_at, l.day_id FROM recordings r JOIN recording_days l ON l.recording_id = r.id JOIN days d ON d.id = l.day_id
+             WHERE d.trip_id = ? ' . self::BY_START,
+        );
+        $statement->execute([$tripId]);
+        return array_map(fn (array $row) => new Recording((int) $row['id'], $row['name'], (int) $row['distance_m'], $row['started_at'], $row['day_id']), $statement->fetchAll());
     }
 
     /**
-     * Every recording of the user's that has a line, by when it began, with the day it is
-     * on and the trip or collection that day is in: the rides, whatever keeps them.
+     * Every ride of the user's, by when it began, with its line and the days it is on,
+     * each with the trip or collection it is in.
      *
-     * @return list<array{id: int, tripId: int, dayId: string, name: string, startedAt: ?string, distanceM: int, line: string, trip: string}>
+     * @return list<array{id: int, name: string, startedAt: ?string, distanceM: int, line: string, days: list<array{tripId: int, dayId: string, trip: string}>}>
      */
     public function rides(int $userId): array
     {
         $statement = $this->db->prepare(
-            "SELECT r.id, t.id AS trip_id, r.day_id, r.name, r.started_at, r.distance_m, r.line, t.name AS trip FROM recordings r JOIN days d ON d.id = r.day_id JOIN trips t ON t.id = d.trip_id
-             WHERE t.user_id = ? AND r.line <> '' ORDER BY r.started_at, r.id",
+            'SELECT l.recording_id, l.day_id, t.id AS trip_id, t.name FROM recording_days l JOIN days d ON d.id = l.day_id JOIN trips t ON t.id = d.trip_id
+             WHERE t.user_id = ? ORDER BY t.name COLLATE NOCASE, t.id, d.position',
         );
+        $statement->execute([$userId]);
+        $days = [];
+        foreach ($statement as $row) {
+            $days[(int) $row['recording_id']][] = ['tripId' => (int) $row['trip_id'], 'dayId' => $row['day_id'], 'trip' => $row['name']];
+        }
+        $statement = $this->db->prepare('SELECT r.id, r.name, r.started_at, r.distance_m, r.line FROM recordings r WHERE r.user_id = ? ' . self::BY_START);
         $statement->execute([$userId]);
         return array_map(fn (array $row) => [
             'id' => (int) $row['id'],
-            'tripId' => (int) $row['trip_id'],
-            'dayId' => $row['day_id'],
             'name' => $row['name'],
             'startedAt' => $row['started_at'],
             'distanceM' => (int) $row['distance_m'],
             'line' => $row['line'],
-            'trip' => $row['trip'],
+            'days' => $days[(int) $row['id']] ?? [],
         ], $statement->fetchAll());
     }
 
     /**
-     * A new recording on the day of the user's trip, with what is read from its file
-     * beside it; null when the user has no such day. With `$unlessKept`, a file the user
-     * keeps already, on whatever day, is not kept again.
+     * Keeps a GPX file as a ride of the user's, with what is read from it beside it,
+     * unless the user keeps the file already, and puts the ride on the day where one is
+     * given. Null when the user has no such day.
      *
-     * @throws AlreadyKept
+     * @return ?array{recording: Recording, added: bool} the ride, the one kept already where the file was, and whether the file was added
      */
-    public function add(int $userId, int $tripId, string $dayId, string $name, string $gzip, DateTimeImmutable $now, bool $unlessKept = false): ?Recording
+    public function keep(int $userId, string $name, string $gzip, DateTimeImmutable $now, ?string $dayId = null): ?array
     {
-        $statement = $this->db->prepare('SELECT 1 FROM days d JOIN trips t ON t.id = d.trip_id WHERE d.id = ? AND t.id = ? AND t.user_id = ?');
-        $statement->execute([$dayId, $tripId, $userId]);
-        if ($statement->fetchColumn() === false) {
+        if ($dayId !== null && !$this->hasDay($userId, $dayId)) {
             return null;
         }
         $gpx = (string) gzdecode($gzip);
         $digest = hash('sha256', $gpx);
-        if ($unlessKept) {
-            $kept = $this->db->prepare('SELECT 1 FROM recordings r JOIN days d ON d.id = r.day_id JOIN trips t ON t.id = d.trip_id WHERE r.digest = ? AND t.user_id = ?');
-            $kept->execute([$digest, $userId]);
-            if ($kept->fetchColumn() !== false) {
-                throw new AlreadyKept();
-            }
+        $kept = $this->db->prepare('SELECT id, name, distance_m, started_at FROM recordings WHERE user_id = ? AND digest = ?');
+        $kept->execute([$userId, $digest]);
+        $row = $kept->fetch();
+        if ($row === false) {
+            $summary = TrackSummary::of($gpx);
+            $statement = $this->db->prepare('INSERT INTO recordings (user_id, name, created_at, line, distance_m, started_at, digest, gpx) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+            $statement->bindValue(1, $userId, PDO::PARAM_INT);
+            $statement->bindValue(2, $name);
+            $statement->bindValue(3, Timestamp::of($now));
+            $statement->bindValue(4, $summary->line);
+            $statement->bindValue(5, $summary->distanceM, PDO::PARAM_INT);
+            $statement->bindValue(6, $summary->startedAt);
+            $statement->bindValue(7, $digest);
+            $statement->bindValue(8, $gzip, PDO::PARAM_LOB);
+            $statement->execute();
+            $recording = new Recording((int) $this->db->lastInsertId(), $name, $summary->distanceM, $summary->startedAt, $dayId);
+        } else {
+            $recording = new Recording((int) $row['id'], $row['name'], (int) $row['distance_m'], $row['started_at'], $dayId);
         }
-        $summary = TrackSummary::of($gpx);
-        $statement = $this->db->prepare('INSERT INTO recordings (day_id, name, gpx, created_at, line, distance_m, started_at, digest) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-        $statement->bindValue(1, $dayId);
-        $statement->bindValue(2, $name);
-        $statement->bindValue(3, $gzip, PDO::PARAM_LOB);
-        $statement->bindValue(4, Timestamp::of($now));
-        $statement->bindValue(5, $summary->line);
-        $statement->bindValue(6, $summary->distanceM, PDO::PARAM_INT);
-        $statement->bindValue(7, $summary->startedAt);
-        $statement->bindValue(8, $digest);
-        $statement->execute();
-        return new Recording((int) $this->db->lastInsertId(), $dayId, $name, $summary->distanceM, $summary->startedAt);
+        if ($dayId !== null) {
+            $this->db->prepare('INSERT OR IGNORE INTO recording_days (day_id, recording_id) VALUES (?, ?)')->execute([$dayId, $recording->id]);
+        }
+        return ['recording' => $recording, 'added' => $row === false];
     }
 
-    /**
-     * The recordings that wait for their day: those kept in the user's folder for
-     * recordings and the folders in it, each with its line and the id of the collection
-     * it is in.
-     *
-     * @return list<array{id: int, tripId: int, name: string, line: string, distanceM: int, startedAt: ?string}>
-     */
-    public function unassigned(int $userId): array
+    /** Puts the ride on a day of the user's, where it is not on it yet; false when the user has no such ride or no such day. */
+    public function link(int $userId, int $recordingId, string $dayId): bool
     {
-        $statement = $this->db->prepare(
-            "WITH RECURSIVE inside(id) AS (SELECT id FROM folders WHERE user_id = ? AND kind = 'recordings' UNION ALL SELECT f.id FROM folders f JOIN inside ON f.parent_id = inside.id)
-             SELECT r.id, t.id AS trip_id, r.name, r.line, r.distance_m, r.started_at
-             FROM recordings r JOIN days d ON d.id = r.day_id JOIN trips t ON t.id = d.trip_id
-             WHERE t.folder_id IN (SELECT id FROM inside) ORDER BY r.started_at, r.id",
-        );
-        $statement->execute([$userId]);
-        return array_map(fn (array $row) => [
-            'id' => (int) $row['id'],
-            'tripId' => (int) $row['trip_id'],
-            'name' => $row['name'],
-            'line' => $row['line'],
-            'distanceM' => (int) $row['distance_m'],
-            'startedAt' => $row['started_at'],
-        ], $statement->fetchAll());
+        if (!$this->has($userId, $recordingId) || !$this->hasDay($userId, $dayId)) {
+            return false;
+        }
+        $this->db->prepare('INSERT OR IGNORE INTO recording_days (day_id, recording_id) VALUES (?, ?)')->execute([$dayId, $recordingId]);
+        return true;
     }
 
-    /** False when the user has no such recording. */
-    public function rename(int $userId, int $tripId, int $recordingId, string $name): bool
+    /** Takes the ride off the day, which keeps it as a ride; false when the user has no such ride on such a day. */
+    public function unlink(int $userId, int $recordingId, string $dayId): bool
     {
-        $statement = $this->db->prepare('UPDATE recordings SET name = ? WHERE id = ? AND id IN (SELECT r.id ' . self::OF_TRIP . ')');
-        $statement->execute([$name, $recordingId, $tripId, $userId]);
+        $statement = $this->db->prepare('DELETE FROM recording_days WHERE day_id = ? AND recording_id IN (SELECT id FROM recordings WHERE id = ? AND user_id = ?)');
+        $statement->execute([$dayId, $recordingId, $userId]);
         return $statement->rowCount() === 1;
     }
 
-    /** Puts the recording on another day, of its trip or of another of the user's; false when the user has no such recording or no such day. */
-    public function move(int $userId, int $tripId, int $recordingId, string $dayId): bool
+    /** False when the user has no such ride. */
+    public function rename(int $userId, int $recordingId, string $name): bool
     {
-        $statement = $this->db->prepare(
-            'UPDATE recordings SET day_id = ? WHERE id = ? AND id IN (SELECT r.id ' . self::OF_TRIP . ') AND ? IN (SELECT d.id FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.user_id = ?)',
-        );
-        $statement->execute([$dayId, $recordingId, $tripId, $userId, $dayId, $userId]);
+        $statement = $this->db->prepare('UPDATE recordings SET name = ? WHERE id = ? AND user_id = ?');
+        $statement->execute([$name, $recordingId, $userId]);
         return $statement->rowCount() === 1;
     }
 
-    /** False when the user has no such recording. */
-    public function delete(int $userId, int $tripId, int $recordingId): bool
+    /** Deletes the ride with its file, from every day it is on; false when the user has no such ride. */
+    public function delete(int $userId, int $recordingId): bool
     {
-        $statement = $this->db->prepare('DELETE FROM recordings WHERE id = ? AND id IN (SELECT r.id ' . self::OF_TRIP . ')');
-        $statement->execute([$recordingId, $tripId, $userId]);
+        $statement = $this->db->prepare('DELETE FROM recordings WHERE id = ? AND user_id = ?');
+        $statement->execute([$recordingId, $userId]);
         return $statement->rowCount() === 1;
     }
 
-    /** The recording's GPX file as kept, compressed with gzip; null when the user has no such recording. */
-    public function gzip(int $userId, int $tripId, int $recordingId): ?string
+    /** The ride's GPX file as kept, compressed with gzip; null when the user has no such ride. */
+    public function gzip(int $userId, int $recordingId): ?string
     {
-        $statement = $this->db->prepare('SELECT r.gpx ' . self::OF_TRIP . ' AND r.id = ?');
-        $statement->execute([$tripId, $userId, $recordingId]);
+        $statement = $this->db->prepare('SELECT gpx FROM recordings WHERE id = ? AND user_id = ?');
+        $statement->execute([$recordingId, $userId]);
         $gzip = $statement->fetchColumn();
         return $gzip === false ? null : (string) $gzip;
+    }
+
+    private function has(int $userId, int $recordingId): bool
+    {
+        $statement = $this->db->prepare('SELECT 1 FROM recordings WHERE id = ? AND user_id = ?');
+        $statement->execute([$recordingId, $userId]);
+        return $statement->fetchColumn() !== false;
+    }
+
+    private function hasDay(int $userId, string $dayId): bool
+    {
+        $statement = $this->db->prepare('SELECT 1 FROM days d JOIN trips t ON t.id = d.trip_id WHERE d.id = ? AND t.user_id = ?');
+        $statement->execute([$dayId, $userId]);
+        return $statement->fetchColumn() !== false;
     }
 }

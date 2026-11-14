@@ -39,7 +39,7 @@ final class TripDocuments
         $outlines = [];
         $days = 'SELECT d.trip_id, d.id, d.name, d.date, d.outline,
                         (SELECT COUNT(*) FROM routes WHERE day_id = d.id) AS routes, (SELECT COUNT(*) FROM stops WHERE day_id = d.id) AS stops,
-                        (SELECT COUNT(*) FROM recordings WHERE day_id = d.id) AS recordings,
+                        (SELECT COUNT(*) FROM recording_days WHERE day_id = d.id) AS recordings,
                         (SELECT COUNT(*) FROM entries WHERE day_id = d.id AND kind = \'media\') AS media
                  FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.user_id = ? ORDER BY d.trip_id, d.position';
         foreach ($this->rows($days, $userId) as $day) {
@@ -161,7 +161,7 @@ final class TripDocuments
 
     /**
      * A copy of the user's trip, named after it, in its folder, planned again, every part
-     * under a new id and each day with its recordings, as one transaction. Returns the
+     * under a new id and each day with the rides on it, as one transaction. Returns the
      * copy's id, or null when the user has no such trip.
      */
     public function copy(int $userId, int $tripId, DateTimeImmutable $now): ?int
@@ -179,7 +179,7 @@ final class TripDocuments
             $copyId = (int) $this->db->lastInsertId();
             $days = TripCopy::withNewIds($document)['days'];
             $this->saveDays($copyId, $days);
-            $copyRecordings = $this->db->prepare('INSERT INTO recordings (day_id, name, gpx, created_at, line, distance_m, started_at, digest) SELECT ?, name, gpx, created_at, line, distance_m, started_at, digest FROM recordings WHERE day_id = ? ORDER BY id');
+            $copyRecordings = $this->db->prepare('INSERT INTO recording_days (day_id, recording_id) SELECT ?, recording_id FROM recording_days WHERE day_id = ?');
             foreach ($document['days'] as $i => $day) {
                 $copyRecordings->execute([$days[$i]['id'], $day['id']]);
             }
@@ -223,7 +223,8 @@ final class TripDocuments
             $this->saveDays($intoId, $days);
             $this->db->prepare("UPDATE entries SET trip_id = ? WHERE trip_id IN ($in)")->execute([$intoId, ...$fromIds]);
             $joinEntries = $this->db->prepare('UPDATE entries SET day_id = ? WHERE day_id = ?');
-            $joinRecordings = $this->db->prepare('UPDATE recordings SET day_id = ? WHERE day_id = ?');
+            // The day that goes takes with it what it has of a ride both days have.
+            $joinRecordings = $this->db->prepare('UPDATE OR IGNORE recording_days SET day_id = ? WHERE day_id = ?');
             foreach ($joined as $dayId => $intoDayId) {
                 $joinEntries->execute([$intoDayId, $dayId]);
                 $joinRecordings->execute([$intoDayId, $dayId]);

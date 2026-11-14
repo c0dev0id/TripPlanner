@@ -92,12 +92,14 @@ final class Routes
             $api->get('/trips/{id:[0-9]+}/media/{entry:[0-9]+}/preview', [MediaController::class, 'preview']);
             $api->get('/rides', [RecordingController::class, 'rides']);
             $api->get('/rides/lines', [RecordingController::class, 'rideLines']);
+            $api->post('/rides', [RecordingController::class, 'add']);
+            $api->patch('/rides/{recording:[0-9]+}', [RecordingController::class, 'rename']);
+            $api->delete('/rides/{recording:[0-9]+}', [RecordingController::class, 'delete']);
+            $api->get('/rides/{recording:[0-9]+}/gpx', [RecordingController::class, 'gpx']);
+            $api->put('/rides/{recording:[0-9]+}/days/{day}', [RecordingController::class, 'link']);
+            $api->delete('/rides/{recording:[0-9]+}/days/{day}', [RecordingController::class, 'unlink']);
             $api->get('/trips/{id:[0-9]+}/recordings', [RecordingController::class, 'index']);
             $api->get('/trips/{id:[0-9]+}/recordings/lookup', [RecordingController::class, 'lookup']);
-            $api->post('/trips/{id:[0-9]+}/recordings', [RecordingController::class, 'add']);
-            $api->patch('/trips/{id:[0-9]+}/recordings/{recording:[0-9]+}', [RecordingController::class, 'change']);
-            $api->delete('/trips/{id:[0-9]+}/recordings/{recording:[0-9]+}', [RecordingController::class, 'delete']);
-            $api->get('/trips/{id:[0-9]+}/recordings/{recording:[0-9]+}/gpx', [RecordingController::class, 'gpx']);
             $api->get('/export-presets', [ExportPresetController::class, 'index']);
             $api->post('/export-presets', [ExportPresetController::class, 'save']);
             $api->delete('/export-presets/{id:[0-9]+}', [ExportPresetController::class, 'delete']);

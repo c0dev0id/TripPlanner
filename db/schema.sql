@@ -78,10 +78,9 @@ CREATE TABLE IF NOT EXISTS folders (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     parent_id INTEGER REFERENCES folders(id),
     name TEXT NOT NULL,
-    -- A folder of the user's making, or one of the three every user has at the top of the
-    -- library: for recordings that belong to no trip, for collections, and for the lists
-    -- of the user's own places.
-    kind TEXT NOT NULL DEFAULT 'folder' CHECK (kind IN ('folder', 'recordings', 'collections', 'places')),
+    -- A folder of the user's making, or one of the two every user has at the top of the
+    -- library: for collections, and for the lists of the user's own places.
+    kind TEXT NOT NULL DEFAULT 'folder' CHECK (kind IN ('folder', 'collections', 'places')),
     created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS folders_user ON folders(user_id);
@@ -90,7 +89,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS folders_special ON folders(user_id, kind) WHER
 
 CREATE TRIGGER IF NOT EXISTS users_special_folders AFTER INSERT ON users BEGIN
     INSERT INTO folders (user_id, name, kind, created_at) VALUES
-        (NEW.id, 'Recordings', 'recordings', NEW.created_at),
         (NEW.id, 'Collections', 'collections', NEW.created_at),
         (NEW.id, 'Places', 'places', NEW.created_at);
 END;
@@ -176,26 +174,33 @@ CREATE TABLE IF NOT EXISTS stops (
 );
 CREATE INDEX IF NOT EXISTS stops_day ON stops(day_id);
 
--- A ride as recorded, kept on a day: the GPX file as uploaded, compressed with gzip; the
--- browser reads its points. A removed day takes its recordings with it. Beside the file
--- stands what is read from it once, to list and find recordings without their files: its
--- line thinned, as polyline6, its length, the time of its first point where it has one,
--- and the file's SHA-256, by which a file kept already is known. The file stands last:
--- SQLite reads a row's columns in their order, and what stood behind the file would be
--- reached only through all of it.
+-- A ride as recorded, kept once for its user: the GPX file as uploaded, compressed with
+-- gzip; the browser reads its points. Beside the file stands what is read from it once,
+-- to list and find rides without their files: its line thinned, as polyline6, its
+-- length, the time of its first point where it has one, and the file's SHA-256, by which
+-- a file kept already is known. The file stands last: SQLite reads a row's columns in
+-- their order, and what stood behind the file would be reached only through all of it.
 CREATE TABLE IF NOT EXISTS recordings (
     id INTEGER PRIMARY KEY,
-    day_id TEXT NOT NULL REFERENCES days(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     created_at TEXT NOT NULL,
     line TEXT NOT NULL DEFAULT '',
     distance_m INTEGER NOT NULL DEFAULT 0,
     started_at TEXT,
-    digest TEXT NOT NULL DEFAULT '',
+    digest TEXT NOT NULL,
     gpx BLOB NOT NULL
 );
-CREATE INDEX IF NOT EXISTS recordings_day ON recordings(day_id);
-CREATE INDEX IF NOT EXISTS recordings_digest ON recordings(digest);
+CREATE UNIQUE INDEX IF NOT EXISTS recordings_file ON recordings(user_id, digest);
+
+-- The days a ride is a recording of: any number of days, of any trips of its user's, and
+-- a day any number of rides. A removed day or ride takes its rows here, not the other.
+CREATE TABLE IF NOT EXISTS recording_days (
+    day_id TEXT NOT NULL REFERENCES days(id) ON DELETE CASCADE,
+    recording_id INTEGER NOT NULL REFERENCES recordings(id) ON DELETE CASCADE,
+    PRIMARY KEY (day_id, recording_id)
+) WITHOUT ROWID;
+CREATE INDEX IF NOT EXISTS recording_days_recording ON recording_days(recording_id);
 
 -- The places the map shows of the kinds the planner knows (frontend/poi/places.json),
 -- fetched from OpenStreetMap area by area by `make places` and asked for by the planner
