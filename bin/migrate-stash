@@ -1,0 +1,33 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Planner\Journal\FileStore;
+use Planner\Kernel;
+use Planner\Trip\Trips;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Run once after the Stash became folders of files, then delete this file. It removes
+// the collections the Stash held before, with the files kept with them; the Stash's
+// folders stay. It only says what it would do unless it is given --apply.
+$apply = in_array('--apply', $argv, true);
+$container = Kernel::container(dirname(__DIR__));
+$db = $container->get(PDO::class);
+
+$inStash = "WITH RECURSIVE stash(id) AS (SELECT id FROM folders WHERE kind = 'collections' UNION ALL SELECT f.id FROM folders f JOIN stash ON f.parent_id = stash.id)";
+$collections = $db->query("$inStash SELECT id, user_id FROM trips WHERE folder_id IN (SELECT id FROM stash)")->fetchAll();
+$count = fn (string $table): int => (int) $db->query("$inStash SELECT COUNT(*) FROM $table WHERE day_id IN (SELECT d.id FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.folder_id IN (SELECT id FROM stash))")->fetchColumn();
+$held = [$count('routes'), $count('stops'), $count('entries')];
+
+if ($apply) {
+    foreach ($collections as $collection) {
+        $container->get(Trips::class)->delete((int) $collection['user_id'], (int) $collection['id']);
+        $container->get(FileStore::class)->deleteAll((int) $collection['id']);
+    }
+}
+echo ($apply ? 'Removed ' : 'Would remove ') . count($collections) . " collections from the Stash, with $held[0] routes and tracks, $held[1] waypoints and $held[2] attachments. Its folders stay.\n";
+if (!$apply) {
+    echo "Nothing was changed. Run again with --apply to do it.\n";
+}
