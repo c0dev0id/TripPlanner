@@ -239,6 +239,16 @@ entries at the end of their section.
   what would be refused. The import dialog lost planning material as a way to organize
   a tree: among collections a picked folder is imported as a dropped one is, elsewhere
   it can only make trips.
+- **A trip is made from a collection in the browser, as an import makes one.** A dump of
+  GPX files kept as planning material is sorted into trips later; copying sections one
+  by one into a trip that has to exist first did not cover that. The sections become
+  days by the rules a folder of files follows, by the same function, so that a dump
+  sorted later comes out as it would have dropped on a folder of trips. The trip is a
+  new document under new ids, saved before anything leaves the collection, so that the
+  sections are in both for a moment and never in neither; then recordings move to their
+  days and the sections are removed, in the open collection as an edit like any other.
+  Moving is the default because a dump that keeps what was sorted never shows what is
+  left, and the tick is there for material that is used more than once.
 - **A list of places is a collection in a folder of its own, its kinds are sections,
   a place is a free stop.** Places need what stops have already: a position, a symbol,
   the fields, the dialog, a marker, copy and paste, undo, the save. A table and

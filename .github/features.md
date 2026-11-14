@@ -262,6 +262,16 @@
   waypoints; a click on a route takes it up and shows it whole on the map, on a waypoint goes there, and
   their menus copy them, to be pasted into a day of a trip, or remove them. A section is
   renamed or removed from its menu.
+- A trip from planning material: "Create trip from collection…" in a collection's menu
+  and "Create trip from selection…" in the menu of its sections, selected or one alone,
+  ask for the trip's name, which the collection or the section selected first
+  suggests, and for the folder it goes into, the one chosen last offered again. The
+  trip is made as a folder of GPX files makes one: named without the date in its
+  name, a section with a date in its name on the day of that date, several of a date
+  on one day, the others a day each, dated on from the name's date or undated. A tick,
+  set at first, takes the sections out of the collection once the trip is saved, their
+  recordings going to their days; a collection left without sections is deleted.
+  Without it the trip holds copies. The collection stays the one shown.
 - Lists of the user's own places, in the Places folder: a list is opened like a
   collection, its sections are the kinds of its places ("Kind of place…" under New in
   the list's menu), and a kind lists its places by name. A place is a stop without the

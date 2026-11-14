@@ -2,6 +2,7 @@ import { createMemo, createResource, createRoot, createSelector, createSignal } 
 import { t } from '../i18n/t';
 import { listFolders, listTrips, fetchOutlines, type OutlineDay, type Progress } from '../api';
 import { heldCounts, kindAround } from '../library/folders';
+import type { FolderKind } from '../model/trip';
 import { createRequest } from '../ui/request';
 
 /** The library as the server lists it, and where the user is in it. */
@@ -49,9 +50,23 @@ export const libraryFolders = library.folders;
 /** The outline of a trip, day by day, as last fetched: none while they load, or where they could not be had. */
 export const outlineOf = (tripId: number): OutlineDay[] | undefined => (library.outlines.error ? undefined : library.outlines()?.[tripId]);
 
+/** The kind of the special folder the trip is in or under; a plain folder's for a trip anywhere else. */
+const folderKindOf = (tripId: number | undefined): FolderKind =>
+  kindAround(library.folders.error ? [] : (library.folders() ?? []), (library.trips.error ? undefined : library.trips())?.find((trip) => trip.id === tripId)?.folderId ?? null);
+
 /** Whether the trip is a list of places: a collection in the folder for places or a folder in it. */
-export const isPlaceList = (tripId: number | undefined): boolean =>
-  kindAround(library.folders.error ? [] : (library.folders() ?? []), (library.trips.error ? undefined : library.trips())?.find((trip) => trip.id === tripId)?.folderId ?? null) === 'places';
+export const isPlaceList = (tripId: number | undefined): boolean => folderKindOf(tripId) === 'places';
+
+/** Whether the trip is planning material: a collection in the folder for collections or a folder in it. */
+export const isPlanningMaterial = (tripId: number | undefined): boolean => folderKindOf(tripId) === 'collections';
+
+/** What a trip is being made from, in its dialog: the collection `id`, whole or the sections named, and the name suggested for the trip. */
+export interface TripSource {
+  id: number;
+  dayIds?: string[];
+  name: string;
+}
+export const [tripSource, setTripSource] = createSignal<TripSource>();
 
 /** The folder shown, null for the top: the one asked for while it exists. */
 export const shownFolderId = library.shownFolderId;

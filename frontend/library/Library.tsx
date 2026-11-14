@@ -4,7 +4,7 @@ import { changeTrip, createFolder, createTrip, deleteFolder, deleteTrip, duplica
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
-import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, libraryFolders, libraryTrips, opening, outlineOf, query, relistFolders, relistTrips, runLibrary, showFolder, shownFolderId } from '../state/library';
+import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTrips, opening, outlineOf, query, relistFolders, relistTrips, runLibrary, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
@@ -26,6 +26,8 @@ import { ForById } from '../ui/ForById';
 import { Pad } from '../ui/Pad';
 import { dragToFolder } from './dragToFolder';
 import { libraryImports } from './importActions';
+import { TripFromDialog } from './TripFromDialog';
+import { createTripFrom } from './tripFromSections';
 import { TripShape } from './TripShape';
 
 /** A folder or a trip of the library, as what is selected, cut, moved and deleted together. */
@@ -334,6 +336,15 @@ export function Library(props: {
     ];
     return places.length > 0 ? [{ label: t('Move…'), items: places }] : [];
   };
+  /** The folders a trip can go into, by their path. */
+  const tripFolders = () =>
+    folders()
+      .filter((f) => !holdsCollections(f.id))
+      .map((f) => ({ id: f.id, path: pathOf(f.id) }))
+      .sort((x, y) => x.path.localeCompare(y.path));
+  /** Makes the trip asked for in the dialog and says so where the imports say what they did. */
+  const makeTripFrom = (source: TripSource, name: string, folderId: number | null, move: boolean) =>
+    void runLibrary(async () => setImportNote({ text: await createTripFrom(source, name, folderId, move, props.onLeave), errors: [] }), relist);
   /** What the clipboard holds of the library, by number: 2 folders and 3 trips. */
   const clipText = (copied: LibraryClip): string => countsText(copied.folderIds.length, copied.tripIds.length);
   /** The folders and trips on the clipboard, those still there. */
@@ -447,7 +458,7 @@ export function Library(props: {
   /**
    * The menu of a folder or a trip, the same for both: what is new in it and what is added
    * to it from the computer, rename, duplicate, cut, copy, paste into it, move, merge,
-   * export, delete. New in a folder is a folder, a trip or a collection, in a trip a day;
+   * for planning material the trip made from it, export, delete. New in a folder is a folder, a trip or a collection, in a trip a day;
    * added to a folder are files or a folder, to a trip or a collection files. Opened on a
    * card of the selection it acts on all of it; what does not apply to what is selected is
    * greyed out, and new and add are left out.
@@ -493,6 +504,7 @@ export function Library(props: {
               : { label: t('Trips and planning material do not merge'), disabled: true, run: nothing },
           ]
         : []),
+      ...('trip' in item && isPlanningMaterial(item.trip.id) ? [{ label: t('Create trip from collection…'), disabled: several, run: () => setTripSource({ id: item.trip.id, name: item.trip.name }) }] : []),
       exportEntry,
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
@@ -639,6 +651,7 @@ export function Library(props: {
           if (name !== trip.name) void runLibrary(() => renameTrip(trip.id, name), relistTrips);
         }}
       />
+      <TripFromDialog folders={tripFolders()} onCreate={makeTripFrom} />
     </div>
   );
 }

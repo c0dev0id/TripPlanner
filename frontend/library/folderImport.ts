@@ -112,7 +112,7 @@ export function planFolderImport(paths: readonly string[], mode: ImportMode): Pl
  * dated on from the folder's date after the dated days, or undated where the folder has
  * none. Days follow their dates, undated ones last.
  */
-function tripOfFolder(segments: string[], files: number[], stem: (i: number) => string): PlannedTrip {
+export function tripOfFolder(segments: string[], files: number[], stem: (i: number) => string): PlannedTrip {
   const folderName = segments.at(-1)!;
   const dated = new Map<string, number[]>();
   const undated: number[] = [];
