@@ -3,7 +3,8 @@ import { t } from '../i18n/t';
 import { routesDistance } from '../routing/legs';
 import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
 import { recordingsOf } from '../state/recordings';
-import { openTrip, selectDay, selectedDay } from '../state/trip';
+import { isPlaceList } from '../state/library';
+import { openTrip, openTripId, selectDay, selectedDay } from '../state/trip';
 import { IconButton } from '../ui/IconButton';
 import { ChevronIcon, NeighboursIcon, PencilIcon } from '../ui/icons';
 import { SidePane } from '../ui/SidePane';
@@ -28,7 +29,7 @@ export function DayPane() {
         const distance = createMemo(() => routesDistance(shown().routes));
         /** The day `by` days on from the one shown, where there is one. */
         const step = (by: number) => openTrip()!.days[openTrip()!.days.indexOf(shown()) + by];
-        const detail = () => dayDetail(openTrip()!.kind, { date: shown().date, routes: shown().routes.length, stops: shown().stops.length, recordings: recordingsOf(shown().id).length, distanceM: distance() });
+        const detail = () => dayDetail(openTrip()!.kind, { date: shown().date, routes: shown().routes.length, stops: shown().stops.length, recordings: recordingsOf(shown().id).length, distanceM: distance() }, isPlaceList(openTripId()));
         const neighboursLabel = () => t(showNeighbours() ? 'Hide the neighbouring days on the map' : 'Show the neighbouring days on the map, dimmed');
         return (
           <SidePane

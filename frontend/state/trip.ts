@@ -351,6 +351,20 @@ export function addDay(): void {
   selectDay(id);
 }
 
+/** Adds a section of the name to the open collection and shows it. */
+export function addSection(name: string): void {
+  const id = newId();
+  edit((trip) => dayEdit.updateDay(dayEdit.addDay(trip, id), id, (day) => ({ ...day, name })), t('Add section'));
+  selectDay(id);
+}
+
+/** Adds a place at a position to the section shown, for its dialog to name: the answer is its id. */
+export function addPlace(lngLat: LngLat): string {
+  const id = newId();
+  editDay((trip, dayId) => dayEdit.updateStop(dayEdit.addFreeStop(trip, dayId, roundLngLat(lngLat), id), dayId, id, { name: t('New place') }), t('Add place'));
+  return id;
+}
+
 /** Moves the day to place `to` among the days. */
 export function moveDay(dayId: string, to: number): void {
   edit((trip) => dayEdit.moveDay(trip, dayId, to), t('Move day'));

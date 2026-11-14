@@ -1,7 +1,7 @@
 import { createMemo, createResource, createRoot, createSelector, createSignal } from 'solid-js';
 import { t } from '../i18n/t';
 import { listFolders, listTrips, fetchOutlines, type OutlineDay, type Progress } from '../api';
-import { heldCounts } from '../library/folders';
+import { heldCounts, kindAround } from '../library/folders';
 import { createRequest } from '../ui/request';
 
 /** The library as the server lists it, and where the user is in it. */
@@ -29,8 +29,8 @@ export const fetchingTrip = createRoot(() =>
 /** The search typed into the library; while there is one, what it finds stands in for the tree. */
 export const [query, setQuery] = createSignal('');
 
-/** The two special folders are named in the page's language. */
-const SPECIAL_NAMES = { recordings: t('Recordings'), collections: t('Collections') };
+/** The special folders are named in the page's language. */
+const SPECIAL_NAMES = { recordings: t('Recordings'), collections: t('Collections'), places: t('Places') };
 
 const library = createRoot(() => {
   const [trips, { refetch: refetchTrips }] = createResource(listTrips);
@@ -48,6 +48,10 @@ export const libraryFolders = library.folders;
 
 /** The outline of a trip, day by day, as last fetched: none while they load, or where they could not be had. */
 export const outlineOf = (tripId: number): OutlineDay[] | undefined => (library.outlines.error ? undefined : library.outlines()?.[tripId]);
+
+/** Whether the trip is a list of places: a collection in the folder for places or a folder in it. */
+export const isPlaceList = (tripId: number | undefined): boolean =>
+  kindAround(library.folders.error ? [] : (library.folders() ?? []), (library.trips.error ? undefined : library.trips())?.find((trip) => trip.id === tripId)?.folderId ?? null) === 'places';
 
 /** The folder shown, null for the top: the one asked for while it exists. */
 export const shownFolderId = library.shownFolderId;

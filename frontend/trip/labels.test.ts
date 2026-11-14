@@ -23,6 +23,9 @@ describe('a day in a list', () => {
     expect(dayDetail('collection', { date: null, routes: 1, stops: 0, recordings: 0, distanceM: 0 })).toBe('1 route');
     expect(dayDetail('collection', { date: null, routes: 0, stops: 0, recordings: 0, distanceM: 0 })).toBe('0 routes');
     expect(dayDetail('collection', { date: null, routes: 0, stops: 0, recordings: 12, distanceM: 0 })).toBe('12 recordings');
+    expect(dayDetail('collection', { date: null, routes: 0, stops: 5, recordings: 0, distanceM: 0 })).toBe('5 waypoints');
+    expect(dayDetail('collection', { date: null, routes: 0, stops: 34, recordings: 0, distanceM: 0 }, true)).toBe('34 places');
+    expect(dayDetail('collection', { date: null, routes: 0, stops: 0, recordings: 0, distanceM: 0 }, true)).toBe('0 places');
     expect(dayDetail('collection', { date: null, routes: 1, stops: 0, recordings: 1, distanceM: 0 })).toBe('1 route · 1 recording');
   });
 });

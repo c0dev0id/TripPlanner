@@ -4,7 +4,8 @@ import { t } from '../i18n/t';
 import type { LngLat, Route, RoutePoint } from '../model/trip';
 import type { MenuItem } from '../ui/menu';
 import { openJournal } from './journal';
-import { addFreeStop, appendPoint, convertPoint, editingRoute, openTrip, removePoint, selectedDay, setStraight } from './trip';
+import { isPlaceList } from './library';
+import { addFreeStop, addPlace, appendPoint, convertPoint, editingRoute, openTrip, openTripId, removePoint, selectedDay, setStraight } from './trip';
 
 /** Transient state of editing on the map; never kept. */
 
@@ -71,7 +72,7 @@ export function tapAction(): Tool | undefined {
   return editingRoute() ? currentTool() : undefined;
 }
 
-/** What a spot on the map offers: a point at the edited routed route's end, a free stop while a route is edited, a journal entry of the selected day of a trip there, and the spot in Google Maps, OpenStreetMap and Street View. */
+/** What a spot on the map offers: a point at the edited routed route's end, a free stop while a route is edited, a journal entry of the selected day of a trip there, a place of the kind shown of a list of places, and the spot in Google Maps, OpenStreetMap and Street View. */
 export function spotItems(spot: LngLat): MenuItem[] {
   const route = editingRoute();
   const day = selectedDay();
@@ -79,6 +80,7 @@ export function spotItems(spot: LngLat): MenuItem[] {
   if (route?.kind === 'routed') items.push({ label: t('Add a point here'), run: () => appendPoint(route.id, spot) });
   if (route) items.push({ label: t('Add a stop here, beside the route'), run: () => addFreeStop(spot) });
   if (day && openTrip()?.kind === 'trip') items.push({ label: t('Journal here…'), run: () => openJournal({ dayId: day.id }, spot) });
+  if (day && isPlaceList(openTripId())) items.push({ label: t('Add a place here…'), run: () => setEditTarget({ kind: 'stop', id: addPlace(spot) }) });
   items.push({ label: t('Open in Google Maps'), run: () => window.open(googleMapsUrl(spot), '_blank', 'noopener') });
   items.push({ label: t('Open in OpenStreetMap'), run: () => window.open(openStreetMapUrl(spot), '_blank', 'noopener') });
   items.push({ label: t('Open in Street View'), run: () => window.open(streetViewUrl(spot), '_blank', 'noopener') });

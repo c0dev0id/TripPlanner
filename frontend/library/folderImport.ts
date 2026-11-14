@@ -150,15 +150,21 @@ export function withImportedDay(trip: Trip, day: { name: string; date: string | 
   return parts.reduce((to, p) => addParts(to, id, p), updateDay(addDay(trip, id), id, (d) => ({ ...d, name: day.name, date: day.date })));
 }
 
-/** The planned days with what their GPX files hold, read now; a file that cannot be read is reported, and a day left without one is left out. */
-export async function readPlannedDays(sources: readonly ImportSource[], planned: readonly PlannedDay[], errors: string[]): Promise<{ day: PlannedDay; parts: DayParts[] }[]> {
+/**
+ * The planned days with what their GPX files hold, read now; a file that cannot be read is
+ * reported, and a day left without one is left out. For a trip (`ofTrip`), so is a file of
+ * waypoints alone: it is a list of places, and no day to ride.
+ */
+export async function readPlannedDays(sources: readonly ImportSource[], planned: readonly PlannedDay[], ofTrip: boolean, errors: string[]): Promise<{ day: PlannedDay; parts: DayParts[] }[]> {
   const days: { day: PlannedDay; parts: DayParts[] }[] = [];
   for (const day of planned) {
     const parts: DayParts[] = [];
     for (const i of day.files) {
       const source = sources[i]!;
       try {
-        parts.push(await readGpxFile(await source.open(), 'motorcycle'));
+        const read = await readGpxFile(await source.open(), 'motorcycle');
+        if (ofTrip && read.routes.length === 0 && read.stops.length > 0) throw new Error(t('This file holds places and no route: add it to the folder for places.'));
+        parts.push(read);
       } catch (error) {
         errors.push(`${source.path}: ${errorMessage(error)}`);
       }
@@ -217,7 +223,7 @@ export async function importFolder(
   }
   for (const [n, planned] of plan.entries()) {
     onProgress(t('Importing {i} of {n}: {name}', { i: archives.length + n + 1, n: total, name: planned.name }));
-    const days = await readPlannedDays(sources, planned.days, result.errors);
+    const days = await readPlannedDays(sources, planned.days, planned.kind === 'trip', result.errors);
     if (days.length === 0) continue;
     try {
       await changeTrip((await createTrip(planned.name, await folderIn(planned.folders), planned.kind)).id, (trip) => days.reduce((to, { day, parts }) => withImportedDay(to, day, parts), trip));

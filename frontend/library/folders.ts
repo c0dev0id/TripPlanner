@@ -28,8 +28,8 @@ export function heldCounts(folders: readonly Folder[], trips: readonly TripSumma
   return (id) => counts.get(id) ?? { folders: 0, trips: 0 };
 }
 
-/** What a folder holds, as its card says it: "2 folders · 1 trip", or collections where it holds those. */
-export const heldText = (held: { folders: number; trips: number }, noun: 'trip' | 'collection' = 'trip'): string =>
+/** What a folder holds, as its card says it: "2 folders · 1 trip", or collections or lists where it holds those. */
+export const heldText = (held: { folders: number; trips: number }, noun: 'trip' | 'collection' | 'list' = 'trip'): string =>
   [held.folders > 0 && counted(held.folders, 'folder'), counted(held.trips, noun)].filter(Boolean).join(' · ');
 
 /** How many folders and trips, as a sentence says it: "2 folders and 3 trips", "1 trip"; empty for none. */

@@ -1,9 +1,9 @@
 import { t } from '../i18n/t';
 import { addRecordingOnce, changeTrip, createTrip, errorMessage, fetchTrip, listTrips, saveTrip } from '../api';
 import { parseGpx } from '../gpx/gpx';
-import { gpxToDayParts, type DayParts } from '../gpx/import';
-import { asName, newId, type FolderKind, type TripSummary } from '../model/trip';
-import { moveDay } from '../routing/dayEdit';
+import { gpxToDayParts, waypointStops, type DayParts } from '../gpx/import';
+import { asName, newId, type FolderKind, type Stop, type Trip, type TripSummary } from '../model/trip';
+import { addParts, moveDay } from '../routing/dayEdit';
 import { readRecording, type RecordedTrack } from '../recording/track';
 import { counted } from '../ui/format';
 import type { Dropped } from './fileDrop';
@@ -70,6 +70,62 @@ async function importRecordings(files: readonly ImportSource[], into: { folderId
   return { text: texts.length > 0 ? texts.join(' ') : t('No GPX files and no exported trips in there.'), errors };
 }
 
+/** The list with the places added, each to the section of its kind, made where the list has none of that name; a place the list holds already, by its name where it stands, is left out. */
+function withPlaces(list: Trip, places: readonly { kind: string; stop: Stop }[]): Trip {
+  const at = (stop: Stop) => `${stop.name}|${stop.lngLat.join(',')}`;
+  const held = new Set(list.days.flatMap((day) => day.stops.map(at)));
+  return places.reduce((to, { kind, stop }) => {
+    if (held.has(at(stop))) return to;
+    held.add(at(stop));
+    const section = to.days.find((day) => day.name === kind);
+    return section ? addParts(to, section.id, { routes: [], stops: [stop] }) : withImportedDay(to, { name: kind, date: null }, [{ routes: [], stops: [stop] }]);
+  }, list);
+}
+
+/**
+ * Keeps the waypoints of the GPX files among `files` as places: in the list `tripId`, or
+ * in the folder `folderId` in a list per file, named as the file names itself or after
+ * the file, made where the folder has none of that name. In a list, a place goes to the
+ * section of its kind, as the file sorts its waypoints, or to “Places” where it has
+ * none. A place the list holds already is left out, so that a file can be loaded again
+ * when it has grown. Routes and tracks are no places and are left out, which is said.
+ */
+async function importPlaces(files: readonly ImportSource[], into: { folderId: number | null } | { tripId: number }, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
+  const sources = files.filter((source) => isGpxPath(source.path));
+  const errors: string[] = [];
+  let kept = 0;
+  let known = 0;
+  const trips = 'tripId' in into || sources.length === 0 ? [] : await listTrips();
+  const lists = new Map<string, number>();
+  for (const [n, source] of sources.entries()) {
+    onProgress(t('Importing {i} of {n}: {name}', { i: n + 1, n: sources.length, name: source.path }));
+    try {
+      const file = await source.open();
+      const gpx = parseGpx(await file.text());
+      if (gpx.routes.length + gpx.tracks.length > 0) errors.push(`${source.path}: ${t('Its routes and tracks were left out: a list holds places.')}`);
+      const places = waypointStops(gpx, newId).map((stop, i) => ({ kind: asName(gpx.waypoints[i]!.type ?? '') || t('Places'), stop }));
+      if (places.length === 0) continue;
+      const name = asName(gpx.name ?? file.name.replace(/\.gpx$/i, '')) || t('Places');
+      const tripId = 'tripId' in into ? into.tripId : (lists.get(name) ?? (await collectionIn(trips, into.folderId, name)));
+      lists.set(name, tripId);
+      let before = 0;
+      let after = 0;
+      await changeTrip(tripId, (list) => {
+        const added = withPlaces(list, places);
+        before = list.days.reduce((count, day) => count + day.stops.length, 0);
+        after = added.days.reduce((count, day) => count + day.stops.length, 0);
+        return added;
+      });
+      kept += after - before;
+      known += places.length - (after - before);
+    } catch (error) {
+      errors.push(`${source.path}: ${errorMessage(error)}`);
+    }
+  }
+  const texts = [kept > 0 && t('{trips} imported.', { trips: counted(kept, 'place') }), known > 0 && t('{what} kept already.', { what: counted(known, 'place') })].filter(Boolean);
+  return { text: texts.length > 0 ? texts.join(' ') : t('No places in there.'), errors };
+}
+
 /**
  * Adds GPX files as sections, each named after its file, to the collection “Imported” in
  * the folder `folderId`, made where the folder has none. What cannot be read or saved is
@@ -110,17 +166,19 @@ function importTree(loose: readonly ImportSource[], inDropped: readonly ImportSo
 
 /**
  * Adds GPX files to a trip at its end: to a collection a section per file, to a trip the
- * days a folder of the files would make; to a collection among the recordings
- * (`recordings`) as recordings, on the sections of their months. The answer says what was
- * added and what could not be read.
+ * days a folder of the files would make; to a collection among the recordings, as the
+ * `kind` of the top folder around it says, as recordings on the sections of their months,
+ * and to a list of places as places. The answer says what was added and what could not
+ * be read.
  */
-export async function importIntoTrip(trip: TripSummary, files: readonly ImportSource[], recordings: boolean, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
-  if (recordings) return importRecordings(files, { tripId: trip.id }, onProgress);
+export async function importIntoTrip(trip: TripSummary, files: readonly ImportSource[], kind: FolderKind, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
+  if (kind === 'recordings') return importRecordings(files, { tripId: trip.id }, onProgress);
+  if (kind === 'places') return importPlaces(files, { tripId: trip.id }, onProgress);
   const errors: string[] = [];
   const collection = trip.kind === 'collection';
   onProgress(t('Importing {i} of {n}: {name}', { i: 1, n: 1, name: trip.name }));
   const planned = planFolderImport(files.map((file) => file.path), collection ? 'planning-material' : 'trips');
-  const days = await readPlannedDays(files, planned.flatMap((trip) => trip.days), errors);
+  const days = await readPlannedDays(files, planned.flatMap((trip) => trip.days), !collection, errors);
   if (days.length === 0) return { text: t('No GPX files and no exported trips in there.'), errors };
   await changeTrip(trip.id, (loaded) => days.reduce((to, { day, parts }) => withImportedDay(to, day, parts), loaded));
   return { text: t('{trips} imported.', { trips: counted(days.length, collection ? 'section' : 'day') }), errors };
@@ -131,12 +189,14 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
  * as the kind of the top folder around it says. Among recordings, every GPX file is kept
  * as a recording in the collection of the year it was recorded in. Among collections, files
  * become sections of the collection “Imported” and a folder of files a collection, in the
- * folders above it. Anywhere else a file becomes a trip, a folder of files a trip of its
+ * folders above it. Among places, the waypoints of every GPX file become places of a list.
+ * Anywhere else a file becomes a trip, a folder of files a trip of its
  * own, and a folder that also holds folders a folder of trips. The answer says what was
  * made and what could not be read or saved.
  */
 export async function importDropped(dropped: Dropped, folderId: number | null, kind: FolderKind, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
   if (kind === 'recordings') return importRecordings([...dropped.files, ...dropped.inFolders], { folderId }, onProgress);
+  if (kind === 'places') return importPlaces([...dropped.files, ...dropped.inFolders], { folderId }, onProgress);
   const made: string[] = [];
   const errors: string[] = [];
   if (kind === 'collections') {

@@ -4,11 +4,12 @@ import { changeTrip, createFolder, createTrip, deleteFolder, deleteTrip, duplica
 import { asName, newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
-import { fetchingTrip, heldOf, importNote, isOpening, libraryFolders, libraryTrips, opening, outlineOf, query, relistFolders, relistTrips, runLibrary, showFolder, shownFolderId } from '../state/library';
+import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, libraryFolders, libraryTrips, opening, outlineOf, query, relistFolders, relistTrips, runLibrary, showFolder, shownFolderId } from '../state/library';
+import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
 import { setEditTarget } from '../state/drawing';
-import { addDay, isMarkInTrip, isTripMarked, markFolder, markTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
+import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
 import { dayDetail, dayHeading } from '../trip/labels';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
@@ -79,7 +80,7 @@ function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void })
               <button class="text grow" onClick={() => props.onOpen(day().id)}>
                 <span class="lines">
                   <span class="name">{dayHeading(props.trip.kind, index(), day().name)}</span>
-                  <span class="muted detail">{dayDetail(props.trip.kind, day())}</span>
+                  <span class="muted detail">{dayDetail(props.trip.kind, day(), isPlaceList(props.trip.id))}</span>
                 </span>
               </button>
             </div>
@@ -97,16 +98,18 @@ function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void })
 const SEARCH_LIMIT = 20;
 
 /** What a folder's menu makes new in it. */
-type NewKind = 'folder' | 'trip' | 'collection';
+type NewKind = 'folder' | 'trip' | 'collection' | 'list' | 'kind';
 
-/** How the dialog that names a new folder, trip or collection reads. */
+/** How the dialog that names a new folder, trip, collection, list of places or kind of place reads. */
 const NEW_DIALOG: Record<NewKind, { title: string; placeholder: string; submit: string }> = {
   folder: { title: t('New folder'), placeholder: t('Name of the folder'), submit: t('Create') },
   trip: { title: t('New trip'), placeholder: t('Name of the trip'), submit: t('Start') },
   collection: { title: t('New collection'), placeholder: t('Name of the collection'), submit: t('Start') },
+  list: { title: t('New list of places'), placeholder: t('Name of the list'), submit: t('Start') },
+  kind: { title: t('New kind of place'), placeholder: t('Name of the kind'), submit: t('Create') },
 };
 
-/** The dialog the library has open: a new name for a folder or a trip, or the name of a new one in a folder, null for the top. */
+/** The dialog the library has open: a new name for a folder or a trip, or the name of a new one in a folder, null for the top; of a new kind of place, in the list `into`. */
 type LibraryDialog = { kind: 'rename-folder'; folder: Folder } | { kind: 'rename-trip'; trip: TripSummary } | { kind: 'new'; what: NewKind; into: number | null };
 
 /**
@@ -293,6 +296,8 @@ export function Library(props: {
   };
   /** Whether the folder, null for the top, holds collections: the special folders and the folders in them do, everything else holds trips. */
   const holdsCollections = (id: number | null): boolean => kindAround(folders(), id) !== 'folder';
+  /** What a folder's trips are called where they are counted: trips, collections or, among the places, lists. */
+  const heldNoun = (id: number | null) => ({ folder: 'trip', recordings: 'collection', collections: 'collection', places: 'list' } as const)[kindAround(folders(), id)];
   /** Says of a folder, null for the top, whether it takes the items: all their trips, at any depth, are of the kind it holds. */
   const takerOf = (items: readonly Item[]) => {
     const within = tripsWithin(items);
@@ -367,16 +372,21 @@ export function Library(props: {
     const parent = folders().find((f) => f.id === into);
     if (parent) fold([keyOf({ folder: parent })], true);
     if (what === 'folder') void runLibrary(() => createFolder(name, into), relistFolders);
-    else void runLibrary(async () => props.onOpen(await createTrip(name, into, what)), relistTrips);
+    else if (what === 'kind') addSectionTo(into!, name);
+    else void runLibrary(async () => props.onOpen(await createTrip(name, into, what === 'trip' ? 'trip' : 'collection')), relistTrips);
   };
-  /** New, with what the folder, null for the top, takes as its submenu: a folder, and a trip or, where it holds collections, a collection. */
+  /** A new section of the name in the collection: in the open one as an edit, in another on the server. */
+  const addSectionTo = (tripId: number, name: string) =>
+    tripId === openTripId() ? addSection(name) : void runLibrary(() => changeTrip(tripId, (loaded) => withImportedDay(loaded, { name, date: null }, [])), relistTrips);
+  /** New, with what the folder, null for the top, takes as its submenu: a folder, and a trip or, where it holds them, a collection or a list of places. */
   const newItem = (into: number | null): MenuItem => {
-    const what = holdsCollections(into) ? 'collection' : 'trip';
+    const kind = kindAround(folders(), into);
+    const what = kind === 'places' ? 'list' : kind === 'folder' ? 'trip' : 'collection';
     return {
       label: t('New'),
       items: [
         { label: t('Folder…'), run: () => setDialog({ kind: 'new', what: 'folder', into }) },
-        { label: t(what === 'trip' ? 'Trip…' : 'Collection…'), run: () => setDialog({ kind: 'new', what, into }) },
+        { label: t(what === 'trip' ? 'Trip…' : what === 'list' ? 'List of places…' : 'Collection…'), run: () => setDialog({ kind: 'new', what, into }) },
       ],
     };
   };
@@ -461,6 +471,7 @@ export function Library(props: {
         ? [newItem(item.folder.id), addItem(item.folder.id)]
         : [
             ...(item.trip.kind === 'trip' ? [{ label: t('New'), items: [{ label: t('Day'), run: () => addDayTo(item.trip) }] }] : []),
+            ...(isPlaceList(item.trip.id) ? [{ label: t('New'), items: [{ label: t('Kind of place…'), run: () => setDialog({ kind: 'new', what: 'kind' as const, into: item.trip.id }) }] }] : []),
             { label: t('Add'), items: [{ label: t('Files…'), run: () => void imports.addToTrip(item.trip) }] },
           ];
     // A special folder stays as it is: it takes what is new, added and pasted, and exports what it holds.
@@ -505,7 +516,7 @@ export function Library(props: {
         {(f) => (
           <FolderCard
             folder={f()}
-            note={heldText(heldOf(f().id), holdsCollections(f().id) ? 'collection' : 'trip')}
+            note={heldText(heldOf(f().id), heldNoun(f().id))}
             onOpen={() => clickFolder(f())}
             items={() => itemMenu({ folder: f() })}
             select={f().kind === 'folder' ? select({ folder: f() }) : undefined}
@@ -589,7 +600,7 @@ export function Library(props: {
                 trips={trips()}
                 onOpenFolder={props.onOpenFolder}
                 onOpenTrip={props.onOpen}
-                folderNote={(f) => [pathOf(f.parentId), heldText(heldOf(f.id), holdsCollections(f.id) ? 'collection' : 'trip')].filter(Boolean).join(' · ')}
+                folderNote={(f) => [pathOf(f.parentId), heldText(heldOf(f.id), heldNoun(f.id))].filter(Boolean).join(' · ')}
                 tripWhere={(trip) => pathOf(trip.folderId) || t('No folder')}
                 folderItems={(f) => itemMenu({ folder: f })}
                 tripItems={(trip) => itemMenu({ trip })}
@@ -652,15 +663,15 @@ function TripCard(props: {
   const shape = createMemo(() => outlineOf(props.trip.id)?.map((day) => day.lines).filter((lines) => lines.length > 0));
   /** How far the opening of the trip has come, while it is being opened. */
   const loading = () => (isOpening(props.trip.id) ? opening()?.progress : undefined);
-  /** What a collection is: the recordings it holds in the folder for them, planning material elsewhere. */
-  const held = createMemo(() =>
-    kindAround(libraryFolders() ?? [], props.trip.folderId) === 'recordings'
-      ? counted((outlineOf(props.trip.id) ?? []).reduce((count, day) => count + day.recordings, 0), 'recording')
-      : t('Planning material'),
-  );
+  /** What a collection is: the recordings or the places it holds in the folder for them, planning material elsewhere. */
+  const held = createMemo(() => {
+    const kind = kindAround(libraryFolders() ?? [], props.trip.folderId);
+    const count = (of: 'recordings' | 'stops') => (outlineOf(props.trip.id) ?? []).reduce((sum, day) => sum + day[of], 0);
+    return kind === 'recordings' ? counted(count('recordings'), 'recording') : kind === 'places' ? counted(count('stops'), 'place') : t('Planning material');
+  });
   const meta = () =>
     (props.trip.kind === 'collection'
-      ? [props.where, held(), counted(props.trip.dayCount, 'section')]
+      ? [props.where, held(), counted(props.trip.dayCount, isPlaceList(props.trip.id) ? 'kind' : 'section')]
       : [props.where, counted(props.trip.dayCount, 'day'), props.trip.startsOn && t('from {date}', { date: dateText(props.trip.startsOn) }), props.trip.state === 'done' && t('done')]
     )
       .filter(Boolean)

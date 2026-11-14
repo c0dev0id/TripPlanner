@@ -7,7 +7,8 @@ import { isCut } from '../state/clipboard';
 import { panTo, showWhole } from '../state/drawing';
 import { clickPart, isPartSelected } from '../state/partSelection';
 import { recordingsOf } from '../state/recordings';
-import { isDayMarked, isRouteActive, markShownDay, openTrip, selectDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
+import { isPlaceList } from '../state/library';
+import { isDayMarked, isRouteActive, markShownDay, openTrip, openTripId, selectDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
 import { symbolLabel } from '../symbols/symbols';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
@@ -56,7 +57,7 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
   // The section's routes change less often than the section.
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
-  const meta = () => dayDetail('collection', { date: null, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, distanceM: distance() });
+  const meta = () => dayDetail('collection', { date: null, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, distanceM: distance() }, isPlaceList(openTripId()));
   const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
   const click = (e: MouseEvent) => {
     if (selects(e)) clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e);
@@ -79,18 +80,26 @@ function SectionItem(props: { day: Day; onRename: (day: Day) => void }) {
   );
 }
 
-/** What a section holds, in the pane beside the list: its routes, its waypoints and, where it has any, its recordings. */
+/** What a section holds, in the pane beside the list: its routes, its waypoints, which in a list of places are places, and, where it has any, its recordings. */
 export function SectionDetails(props: { day: Day }) {
+  const places = () => isPlaceList(openTripId());
   return (
     <div class="day-details">
-      <Show when={props.day.routes.length > 0} fallback={<Show when={recordingsOf(props.day.id).length === 0}><p class="muted">{t('No routes in this section yet.')}</p></Show>}>
+      <Show
+        when={props.day.routes.length > 0}
+        fallback={
+          <Show when={recordingsOf(props.day.id).length === 0 && !(places() && props.day.stops.length > 0)}>
+            <p class="muted">{places() ? t('No places of this kind yet: right-click the map where one is, or add a GPX file to the list.') : t('No routes in this section yet.')}</p>
+          </Show>
+        }
+      >
         <ul class="routes">
           <ForById each={props.day.routes}>{(route) => <RouteItem route={route()} day={props.day} />}</ForById>
         </ul>
       </Show>
       <Show when={props.day.stops.length > 0}>
         <div class="row heading">
-          <h4 class="grow">{t('Waypoints')}</h4>
+          <h4 class="grow">{places() ? t('Places') : t('Waypoints')}</h4>
         </div>
         <ol class="stops">
           <ForById each={props.day.stops}>{(stop) => <WaypointItem stop={stop()} day={props.day} />}</ForById>
