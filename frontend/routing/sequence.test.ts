@@ -135,4 +135,10 @@ describe('withStopsInRidingOrder', () => {
     expect(trip.days[0]!.stops.map((s) => s.id)).toEqual(['start', 'cafe', 'fuel', 'end']);
     expect(trip.days[1]!.stops.map((s) => s.id)).toEqual(['lost']);
   });
+
+  it('leaves the stops of a day without a route in the order they are listed, as a file gave them', () => {
+    const listed = [stop('c', [11.2, 47], null), stop('a', [11, 47.3], null), stop('d', [10.9, 47.1], null), stop('b', [11.1, 46.9], null)];
+    const trip = withStopsInRidingOrder({ id: 1, kind: 'collection', name: 'T', description: '', state: 'planned', version: 1, days: [day(listed, [])] });
+    expect(trip.days[0]!.stops.map((s) => s.id)).toEqual(['c', 'a', 'd', 'b']);
+  });
 });

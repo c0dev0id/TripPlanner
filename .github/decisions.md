@@ -240,13 +240,23 @@ entries at the end of their section.
   a tree: among collections a picked folder is imported as a dropped one is, elsewhere
   it can only make trips.
 - **A route kept as waypoints is mended where it is seen, not guessed at when it is
-  read.** Some planners write a route as a string of waypoints named by number. The
-  import cannot know that 214 waypoints are a route and 105 are a directory of
-  restaurants, so it keeps both as waypoints, and a collection takes any file whole.
-  There the section's menu makes a route of the stops that are numbered in a series,
-  which is what tells them from the one waypoint among them that is a place. They
-  become a routed route rather than a track: every one of them is a point the planner
-  set, none is a sample of a line.
+  read.** Some planners write a route as a string of waypoints, named by number or by
+  the address of each. The import cannot know that 214 waypoints are a route and 105
+  are a directory of restaurants, so it keeps both as waypoints, and a collection
+  takes any file whole. There Convert makes a route of them. "By order" relies on
+  the order: the import keeps a file's waypoints as listed, a day without a route does
+  not sort its stops, and the server stores them by position; a test holds the sorting
+  to that. "By number" takes the stops numbered in a series and so leaves the one
+  waypoint among them that is a place. Which of the two a file wants is the user's
+  choice, each entry saying how many stops it takes: a rule that picked one, numbered
+  where most stops are, was wrong for the second file it met. The stops become a
+  routed route rather than a track: every one of them is a point the planner set, none
+  is a sample of a line. They are no stops afterwards; a route point has no name, and
+  eighty stops on eighty points is what the file's author never meant.
+- **Conversions are one submenu.** A track into a route, stops into a route, and
+  whatever a broken file needs next are found under Convert, each kind of conversion
+  an entry and its variants a submenu of that, instead of entries of their own among
+  what a part's menu always has.
 - **A trip is made from a collection in the browser, as an import makes one.** A dump of
   GPX files kept as planning material is sorted into trips later; copying sections one
   by one into a trip that has to exist first did not cover that. The sections become

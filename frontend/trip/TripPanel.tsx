@@ -227,12 +227,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
             ...ROUTE_PALETTE.map(({ color, label }) => ({ label, swatch: color, checked: props.route.color === color, run: () => updateRoute(props.route.id, { color }) })),
           ],
         },
-        ...(props.route.kind === 'track'
-          ? [
-              { label: t('Condense points…'), run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) },
-              { label: t('Convert to route…'), run: () => setTrackAction({ routeId: props.route.id, action: 'convert' }) },
-            ]
-          : []),
+        ...(props.route.kind === 'track' ? [{ label: t('Condense points…'), run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) }] : []),
       ],
     });
   const [unfolded, setUnfolded] = createSignal(false);

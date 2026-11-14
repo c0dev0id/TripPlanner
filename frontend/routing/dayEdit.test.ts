@@ -349,30 +349,25 @@ describe('a route kept as waypoints', () => {
     let n = 0;
     return () => `n${++n}`;
   };
+  const names = (stops: readonly { name: string }[]) => stops.map((stop) => stop.name);
 
-  it('tells the stops numbered in a series from a waypoint that is one', () => {
-    const trip = waypoints('Position 1', 'Position 2', 'Gasthof Adler', 'Position 3', 'Hut 7');
-    expect(numberedStops(day(trip)).map((stop) => stop.name)).toEqual(['Position 1', 'Position 2', 'Position 3']);
-    expect(numberedStops(day(waypoints('1', '2', 'WP003', 'WP004'))).length).toBe(4);
+  it('finds the stops numbered in a series, by their number, and no waypoint that is one', () => {
+    expect(names(numberedStops(day(waypoints('Position 2', 'Position 10', 'Gasthof Adler', 'Position 1', 'Hut 7')).stops))).toEqual(['Position 1', 'Position 2', 'Position 10']);
+    expect(names(numberedStops(day(waypoints('2', 'WP004', '1', 'WP003')).stops))).toEqual(['1', '2', 'WP003', 'WP004']);
+    expect(numberedStops(day(waypoints('Alpenstraße', 'Panoramastraße', '8 Vorderbrandstraße 52')).stops)).toEqual([]);
   });
 
   it('counts no stop on a route as numbered', () => {
     const trip = updateStop(updateStop(fixture(), 'd', 's1', { name: 'Via 1' }), 'd', 's2', { name: 'Via 2' });
-    expect(numberedStops(day(trip))).toEqual([]);
+    expect(numberedStops(day(trip).stops)).toEqual([]);
   });
 
-  it('makes a route of the stops in the order the day lists them, and takes the numbered ones away', () => {
-    const trip = waypoints('Position 1', 'Position 2', 'Gasthof Adler', 'Position 3');
+  it('makes a route of the stops in the order they are named in, which are stops no more', () => {
+    const trip = waypoints('Alpenstraße', '2 Roßfeldstraße 76', 'Gasthof Adler', 'Ramsau');
     const made = routeFromStops(trip, ['s3', 's0', 's1'], 'r', counter());
     const route = routedOf(day(made).routes[0]!);
-    expect([route.id, route.kind, route.points.map((p) => p.lngLat), route.legs]).toEqual(['r', 'routed', [[0, 0], [1, 1], [3, 3]], {}]);
-    expect(day(made).stops.map((stop) => stop.name)).toEqual(['Gasthof Adler']);
-  });
-
-  it('keeps a stop that is not numbered as a stop on its point', () => {
-    const made = routeFromStops(waypoints('Position 1', 'Gasthof Adler', 'Position 2'), ['s0', 's1', 's2'], 'r', counter());
-    const route = routedOf(day(made).routes[0]!);
-    expect(day(made).stops.map((stop) => [stop.name, stop.pointId])).toEqual([['Gasthof Adler', route.points[1]!.id]]);
+    expect([route.id, route.kind, route.points.map((p) => p.lngLat), route.legs]).toEqual(['r', 'routed', [[3, 3], [0, 0], [1, 1]], {}]);
+    expect(names(day(made).stops)).toEqual(['Gasthof Adler']);
   });
 
   it('leaves the trip as it is for fewer than two free stops', () => {

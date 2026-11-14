@@ -85,7 +85,7 @@
   long press), where Move… opens the other days.
 - Days, routes and stops answer to one menu, in a trip and in a collection alike: Edit,
   Duplicate, Cut, Copy, Paste, Move…, what only the kind has (a route's colour, a track's
-  condensing), for several routes pinning them to the map or letting go of them, Select, Remove. What does not apply is greyed out. A stop's menu has
+  condensing), Convert, for several routes pinning them to the map or letting go of them, Select, Remove. What does not apply is greyed out. A stop's menu has
   Icon besides: our twelve icons, each drawn before its name and the stop's own marked,
   one of which a click gives to the stop, or to all the stops selected in one step;
   Garmin's symbols stay in the stop's dialog. Several of a kind are
@@ -190,8 +190,8 @@
   contact. A track's row counts its points and
   lists only its stops, which are free along its line, and the map shows no marker for
   each of its points. Its menu condenses it (Douglas–Peucker at a distance chosen from a
-  few, each with the count of points it leaves) or makes a route of it: fewer points,
-  every leg routed, with the time the routing will take.
+  few, each with the count of points it leaves), and Convert in it makes a route of it:
+  fewer points, every leg routed, with the time the routing will take.
 - Import of a folder tree from disk into a folder of the library, its folders recreated
   (existing ones reused by name), without a dialog. A folder that holds GPX files alone
   becomes a trip named after it without its date; a date in a file's name (YYYY-MM-DD,
@@ -262,14 +262,17 @@
   waypoints; a click on a route takes it up and shows it whole on the map, on a waypoint goes there, and
   their menus copy them, to be pasted into a day of a trip, or remove them. A section is
   renamed or removed from its menu.
-- A route from waypoints, for a file that kept a route as a string of them ("Position 1",
-  "Position 2", …): the menu of a section or a day offers "Make a route of the N
-  numbered waypoints" where two or more of its free stops are named alike but for the
-  number at the end, and the menu of several selected stops "Make a route of the
-  selection". The stops become the points of a new route in the order they are listed,
-  its legs routed. A numbered stop is then a point and nothing else; a stop with a name
-  of its own that was selected stays a stop on its point, and one that was not is left
-  as it is. One step to undo.
+- Convert, in the menu of a day or section, of a route and of several selected stops,
+  with what the part can be turned into as its submenu, greyed out where it does not
+  apply. A track becomes a route ("Track to route…", in its dialog). The free stops of
+  a day or section, or those selected, become a route ("Waypoints to route", in a trip
+  "Stops to route"), for a file that kept a route as a string of waypoints, which a
+  collection keeps in the file's order: "By order" takes them all, top down; "By
+  number" takes those numbered in a series, named alike but for the number at the end
+  ("Position 1", "Position 2", …), in the order of their numbers, and leaves a
+  waypoint among them that is a place as it is. Each says how many it takes. The stops
+  become the points of a new route, its legs routed, and are stops no more. One step
+  to undo. A list of places has no Convert.
 - A trip from planning material: "Create trip from collection…" in a collection's menu
   and "Create trip from selection…" in the menu of its sections, selected or one alone,
   ask for the trip's name, which the collection or the section selected first

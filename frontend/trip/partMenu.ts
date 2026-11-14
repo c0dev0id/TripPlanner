@@ -2,14 +2,15 @@ import { t } from '../i18n/t';
 import { FREE_COLOR } from '../map/routeOverlay';
 import { dayOfRoute, dayOfStop, numberedStops, type PartKind } from '../routing/dayEdit';
 import { copyParts, pasteItems } from '../state/clipboard';
-import { setEditTarget, setExportScope } from '../state/drawing';
+import { setEditTarget, setExportScope, setTrackAction } from '../state/drawing';
 import { pinRoutes } from '../state/pins';
-import { isPlanningMaterial, setTripSource } from '../state/library';
+import { isPlaceList, isPlanningMaterial, setTripSource } from '../state/library';
 import { clearPartSelection, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
 import { duplicateParts, makeRouteOfStops, movePartsToDay, openTrip, removeParts, routeById, setStopSymbols } from '../state/trip';
 import { OUR_ICONS, PLAIN_SYMBOL } from '../symbols/symbols';
 import { askConfirmation } from '../ui/confirm';
 import { counted } from '../ui/format';
+import type { Stop } from '../model/trip';
 import type { MenuItem } from '../ui/menu';
 import { dayTitleOf } from './labels';
 import { removeDayAsked, removeRouteAsked } from './remove';
@@ -73,17 +74,25 @@ function iconItem(ids: readonly string[]): MenuItem {
 }
 
 /**
- * Makes a route of waypoints, for a file that kept a route as them: of the stops selected,
- * or of a day's stops that are numbered in a series, where it has any.
+ * Convert, with what a part can be turned into as its submenu, greyed out where it does
+ * not apply: a track into a route; the free stops of a day, or those selected, into a
+ * route, for a file that kept a route as waypoints, in the order they are listed or, the
+ * numbered ones, by their number. None for a single stop, for several days or routes, or
+ * in a list of places.
  */
-function routeOfStopsItem(kind: PartKind, ids: readonly string[]): MenuItem[] {
+function convertItem(kind: PartKind, ids: readonly string[]): MenuItem[] {
   const trip = openTrip()!;
-  if (kind === 'stop') return ids.length > 1 ? [{ label: t('Make a route of the selection'), run: () => makeRouteOfStops(ids) }] : [];
-  const day = kind === 'day' && ids.length === 1 ? trip.days.find((d) => d.id === ids[0]) : undefined;
-  const numbered = day ? numberedStops(day) : [];
-  if (numbered.length === 0) return [];
-  const label = t(trip.kind === 'trip' ? 'Make a route of the {n} numbered stops' : 'Make a route of the {n} numbered waypoints', { n: numbered.length });
-  return [{ label, run: () => makeRouteOfStops(numbered.map((stop) => stop.id)) }];
+  const several = ids.length > 1;
+  if (isPlaceList(trip.id) || (kind === 'stop' ? !several : several)) return [];
+  if (kind === 'route') {
+    const track = routeById(ids[0]!)?.kind === 'track';
+    return [{ label: t('Convert'), items: [{ label: t('Track to route…'), disabled: !track, run: () => setTrackAction({ routeId: ids[0]!, action: 'convert' }) }] }];
+  }
+  const day = kind === 'day' ? trip.days.find((d) => d.id === ids[0]) : dayOfStop(trip, ids[0]!);
+  const listed = (day?.stops ?? []).filter((stop) => stop.pointId === null && (kind === 'day' || ids.includes(stop.id)));
+  const numbered = numberedStops(listed);
+  const by = (label: string, stops: readonly Stop[]): MenuItem => ({ label: t(label, { n: stops.length }), disabled: stops.length < 2, run: () => makeRouteOfStops(stops.map((stop) => stop.id)) });
+  return [{ label: t('Convert'), items: [{ label: t(trip.kind === 'trip' ? 'Stops to route' : 'Waypoints to route'), items: [by('By order ({n})', listed), by('By number ({n})', numbered)] }] }];
 }
 
 /** Makes a trip of the sections of planning material, the first of them suggesting its name. */
@@ -97,7 +106,7 @@ function tripFromItem(ids: readonly string[]): MenuItem[] {
 /**
  * The menu of a day, a route or a stop of the open trip, the same for each kind and in a
  * trip as in a collection: edit, a stop's icon, duplicate, cut, copy, paste into it, move,
- * export as GPX (days and routes), what only its kind has (`more`), the route made of stops that a file kept one as, for sections of planning material the trip made of them, for several routes their pins, select, remove. Opened on a part of a selection it acts on all of
+ * export as GPX (days and routes), what only its kind has (`more`), what it converts to, for sections of planning material the trip made of them, for several routes their pins, select, remove. Opened on a part of a selection it acts on all of
  * them; what takes one part alone is then greyed out. `edit` stands in where a part is
  * edited otherwise than in its dialog.
  */
@@ -117,7 +126,7 @@ export function partMenu(kind: PartKind, id: string, own: { edit?: () => void; m
     ...moveItems(kind, ids),
     ...(kind === 'stop' ? [] : [{ label: t('Export GPX…'), run: () => setExportScope({ kind, ids }) }]),
     ...(several ? [] : (own.more ?? [])),
-    ...routeOfStopsItem(kind, ids),
+    ...convertItem(kind, ids),
     ...(kind === 'day' ? tripFromItem(ids) : []),
     ...(several && kind === 'route' ? pinItems((pinned) => pinRoutes(ids, pinned)) : []),
     ...(several || isPartSelected(kind, id) ? [] : [{ label: t('Select'), run: () => togglePart(kind, id) }]),
