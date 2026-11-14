@@ -5,7 +5,7 @@ import type { Entry, EntryTarget } from './model/journal';
 import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Trip, TripKind, TripSummary } from './model/trip';
 import type { OwnPlace } from './poi/ownPlaces';
-import type { Ride } from './recording/rides';
+import type { Joint, Ride } from './recording/rides';
 import { stopsInRidingOrder } from './routing/sequence';
 
 /** Requests to the JSON API, and the one form the app posts: sign out. */
@@ -260,6 +260,12 @@ export interface FoundRidingDay {
 /** The days of riding that may be the day's, the likeliest first; `utcOffsetMinutes` is how far the user's clock is ahead of UTC on that day. */
 export const lookUpRides = (tripId: number, dayId: string, utcOffsetMinutes: number): Promise<FoundRidingDay[]> =>
   request('GET', `${tripApi(tripId)}/recordings/lookup?day=${encodeURIComponent(dayId)}&offset=${utcOffsetMinutes}`);
+
+/** Where a merge would join the rides, in the order they began: one joint for each ride after the first. */
+export const rideJoints = (ids: readonly number[]): Promise<Joint[]> => request('GET', `/api/rides/joints?ids=${ids.join(',')}`);
+
+/** Merges rides that follow one another into one, which takes their place on their days; the answer is the merged ride. */
+export const mergeRides = (ids: readonly number[]): Promise<Ride> => request('POST', '/api/rides/merge', { ids });
 
 export const renameRide = (id: number, name: string): Promise<void> => request('PATCH', `/api/rides/${id}`, { name });
 

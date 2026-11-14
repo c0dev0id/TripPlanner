@@ -1,8 +1,8 @@
 import { createEffect, createMemo, createSelector, createSignal, For, on, onCleanup, Show } from 'solid-js';
 import { t } from '../i18n/t';
-import { deleteRide, errorMessage, renameRide } from '../api';
+import { deleteRide, errorMessage, mergeRides, renameRide, rideJoints } from '../api';
 import type { Ride } from '../recording/rides';
-import { ridingYears } from '../recording/rides';
+import { FAR_APART_M, isOddJoint, ridingYears } from '../recording/rides';
 import { copyRecordings } from '../state/clipboard';
 import { fetchingTrip, libraryTrips, outlineOf, showReport } from '../state/library';
 import { putOnDay, relistRecordings } from '../state/recordings';
@@ -11,7 +11,7 @@ import { openTrip, selectedDayId } from '../state/trip';
 import { dayLabel, dayTitleOf } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
-import { counted, dateText, distanceText, monthText, timeOfDayText } from '../ui/format';
+import { counted, dateText, distanceText, durationText, momentText, monthText, timeOfDayText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { ChevronIcon, PlusIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
@@ -21,6 +21,7 @@ import { Pad } from '../ui/Pad';
 import { pickFiles } from '../ui/pickFile';
 import { clickRow, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, toggleRow } from '../ui/selection';
 import { SidePane } from '../ui/SidePane';
+import { autoname } from './autoname';
 import { importRides } from './dropImport';
 import type { Dropped } from './fileDrop';
 import { sourceOf } from './folderImport';
@@ -28,25 +29,36 @@ import { sourceOf } from './folderImport';
 /** The years unfolded, kept while the page stands; none until the rides are read, when the latest unfolds. */
 const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>();
 
-/** How keeping files as rides goes, then how many were kept and what could not be read; and what else went wrong in the pane. */
+/** How a job on the rides goes, then what came of it and what it could not do; and what else went wrong in the pane. */
 const [note, setNote] = createSignal<{ text: string; errors: string[] }>();
-let importing = false;
+let busy = false;
 
 /**
- * Keeps the GPX files dropped or picked as rides and shows their pane, which says how it
- * goes; while one import runs, another is not started.
+ * Runs a job on the rides that takes a while and says how far it is, then has the rides
+ * read again, the open trip's too; the pane says how it goes and what came of it. While
+ * one runs, another is not started.
  */
-export async function addRides(dropped: Dropped | Promise<Dropped>): Promise<void> {
-  if (importing) return;
-  importing = true;
-  showReport('rides');
+async function job(work: (onProgress: (text: string) => void) => Promise<{ text: string; errors: string[] }>): Promise<void> {
+  if (busy) return;
+  busy = true;
   try {
-    const { files, inFolders } = await dropped;
-    setNote(await importRides([...files, ...inFolders], (text) => setNote({ text, errors: [] })));
+    setNote(await work((text) => setNote({ text, errors: [] })));
+  } catch (fault) {
+    setNote({ text: '', errors: [errorMessage(fault)] });
   } finally {
-    importing = false;
+    busy = false;
     refreshRides();
+    relistRecordings();
   }
+}
+
+/** Keeps the GPX files dropped or picked as rides and shows their pane, which says how it goes. */
+export function addRides(dropped: Dropped | Promise<Dropped>): Promise<void> {
+  showReport('rides');
+  return job(async (onProgress) => {
+    const { files, inFolders } = await dropped;
+    return importRides([...files, ...inFolders], onProgress);
+  });
 }
 
 /** Runs a change to rides, then has them read again, the open trip's too; why it failed is said in the pane. */
@@ -68,9 +80,10 @@ async function change(work: () => Promise<unknown>): Promise<void> {
  * files dropped on it, keep GPX files as rides. A click or a tap on a ride selects it,
  * with Cmd or Ctrl one more, with Shift a run of them; its pad adds or takes it away; a
  * day's or a month's heading selects all its rides. The map draws what is selected,
- * each ride in a colour its row shows too. A ride's menu renames it, copies it to be
- * pasted onto a day, puts it on a day of the open trip, opens a day it is on, whose
- * pane takes this one's place, and deletes it.
+ * each ride in a colour its row shows too. A ride's menu renames it, names it after
+ * where it began and ended, copies it to be pasted onto a day, puts it on a day of the
+ * open trip, merges it with the selected rides it follows or that follow it, opens a
+ * day it is on, whose pane takes this one's place, and deletes it.
  */
 export function RidesPane(props: { onOpen: (tripId: number, dayId: string) => void }) {
   const years = createMemo(() => ridingYears(allRides()));
@@ -111,6 +124,27 @@ export function RidesPane(props: { onOpen: (tripId: number, dayId: string) => vo
     selectIn(RIDES, NOTHING_SELECTED);
     await change(() => Promise.all(rides.map((ride) => deleteRide(ride.id))));
   };
+  /** Whether the rides, of those with times, follow one another with no other between them. */
+  const followOneAnother = (rides: readonly Ride[]): boolean => {
+    const at = rides.map((ride) => allRides().indexOf(ride));
+    return rides.every((ride) => ride.startedAt !== null) && Math.max(...at) - Math.min(...at) === rides.length - 1;
+  };
+  /** Merges the rides once the user agrees, who is told where they are joined after a long pause or over a way. */
+  const mergeAsked = (rides: readonly Ride[]) =>
+    job(async (onProgress) => {
+      const ids = rides.map((ride) => ride.id);
+      const odd = (await rideJoints(ids)).filter(isOddJoint);
+      const question = [
+        t('Merge {what} into one? It takes the place of their files.', { what: counted(rides.length, 'recording') }),
+        ...odd.map((joint) => t('Before the recording of {time} lie {pause} and {distance}.', { time: momentText(joint.startedAt!), pause: durationText(joint.pauseS ?? 0), distance: distanceText(joint.distanceM) })),
+        ...(odd.some((joint) => joint.distanceM > FAR_APART_M) ? [t('The merged recording draws a straight line over such a way.')] : []),
+      ].join(' ');
+      if (!(await askConfirmation(question, t('Merge')))) return { text: '', errors: [] };
+      const merged = await mergeRides(ids);
+      selectIn(RIDES, new Set([String(merged.id)]));
+      const { errors } = await autoname([merged], onProgress);
+      return { text: t('{what} merged.', { what: counted(rides.length, 'recording') }), errors };
+    });
   const items = (ride: Ride): MenuItem[] => {
     const ids = menuSelection(selectionOf(RIDES), String(ride.id));
     selectIn(RIDES, ids);
@@ -121,8 +155,10 @@ export function RidesPane(props: { onOpen: (tripId: number, dayId: string) => vo
     const [only, ...more] = ride.days;
     return [
       { label: t('Rename…'), disabled: several, run: () => setRenamed(ride) },
+      { label: t('Autoname'), run: () => void job((onProgress) => autoname(chosen, onProgress)) },
       { label: t('Copy'), run: () => copyRecordings(chosen) },
       ...(trip ? [{ label: t('Add to day'), items: trip.days.map((day) => ({ label: dayTitleOf(trip, day), run: () => toDay(day.id) })) }] : []),
+      { label: t('Merge'), disabled: !several || !followOneAnother(chosen), run: () => void mergeAsked(chosen) },
       only && more.length > 0 && !several
         ? { label: t('Open location'), disabled: fetchingTrip(), items: ride.days.map((on) => ({ label: dayText(on), run: () => open(on) })) }
         : { label: t('Open location'), disabled: several || !only || fetchingTrip(), run: () => open(only!) },

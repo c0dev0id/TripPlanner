@@ -2,14 +2,24 @@ import { t } from '../i18n/t';
 import type { LngLat } from '../model/trip';
 
 /**
- * Place and address search with Nominatim, OpenStreetMap's geocoder. Its usage policy
+ * Place and address search, and the place a position is in, with Nominatim,
+ * OpenStreetMap's geocoder. Its usage policy
  * (operations.osmfoundation.org/policies/nominatim) allows one request per second and no
  * search as you type, and asks for attribution.
  */
 
-const NOMINATIM_URL = 'https://nominatim.openstreetmap.org/search';
+const NOMINATIM_URL = 'https://nominatim.openstreetmap.org';
 export const NOMINATIM_ATTRIBUTION = t('Search: Nominatim, © OpenStreetMap contributors');
-export const NOMINATIM_MIN_INTERVAL_MS = 1000;
+const NOMINATIM_MIN_INTERVAL_MS = 1000;
+
+let nextTurn = 0;
+
+/** Waits until Nominatim may be asked again: one request per second, whoever asks; those who wait are served in turn. */
+export async function nominatimTurn(): Promise<void> {
+  const at = Math.max(Date.now(), nextTurn);
+  nextTurn = at + NOMINATIM_MIN_INTERVAL_MS;
+  if (at > Date.now()) await new Promise((resolve) => setTimeout(resolve, at - Date.now()));
+}
 const RESULT_LIMIT = 5;
 
 /** West, south, east, north. */
@@ -27,7 +37,16 @@ export interface Place {
 export function searchUrl(query: string, near?: Bounds): string {
   const params = new URLSearchParams({ q: query.trim(), format: 'jsonv2', limit: String(RESULT_LIMIT) });
   if (near) params.set('viewbox', near.join(','));
-  return `${NOMINATIM_URL}?${params}`;
+  return `${NOMINATIM_URL}/search?${params}`;
+}
+
+/** The request for the town, city or village a position is in. */
+export const reverseUrl = ([lng, lat]: LngLat): string => `${NOMINATIM_URL}/reverse?${new URLSearchParams({ format: 'jsonv2', lat: String(lat), lon: String(lng), zoom: '10' })}`;
+
+/** The name of the place in Nominatim's answer for a position; none where it knows no place there. */
+export function parsePlaceName(json: unknown): string | undefined {
+  const name = (json as { name?: unknown } | null)?.name;
+  return typeof name === 'string' && name !== '' ? name : undefined;
 }
 
 interface NominatimPlace {

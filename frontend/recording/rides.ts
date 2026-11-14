@@ -11,6 +11,19 @@ export interface Ride {
   days: { tripId: number; dayId: string; trip: string }[];
 }
 
+/** Where a merge would join two rides: when the later one began, the seconds since the earlier one ended, null where a file tells no times, and the metres from where that one ended to where the later begins. */
+export interface Joint {
+  startedAt: string | null;
+  pauseS: number | null;
+  distanceM: number;
+}
+
+/** The pause and the way between two rides above which merging them is questioned: a pause that long is two outings, and over the way the merged ride is a straight line. */
+export const LONG_PAUSE_S = 6 * 3600;
+export const FAR_APART_M = 150;
+
+export const isOddJoint = (joint: Joint): boolean => (joint.pauseS ?? 0) > LONG_PAUSE_S || joint.distanceM > FAR_APART_M;
+
 /** A day of riding: the rides that began on one date, the earliest first. A tracker starts a new file after a break, so a day is often several. */
 export interface RidingDay {
   /** As YYYY-MM-DD. */

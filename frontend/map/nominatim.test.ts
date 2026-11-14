@@ -1,10 +1,22 @@
 import { describe, expect, it } from 'vitest';
-import { parsePlaces, searchUrl } from './nominatim';
+import { parsePlaceName, parsePlaces, reverseUrl, searchUrl } from './nominatim';
 
 describe('searchUrl', () => {
   it('asks for a few places as JSON, preferring the view', () => {
     expect(searchUrl(' Riedbergpass ', [10.1, 47.4, 10.3, 47.5])).toBe('https://nominatim.openstreetmap.org/search?q=Riedbergpass&format=jsonv2&limit=5&viewbox=10.1%2C47.4%2C10.3%2C47.5');
     expect(searchUrl('Paris')).not.toContain('viewbox');
+  });
+});
+
+describe('the place a position is in', () => {
+  it('is asked for at the level of towns', () => {
+    expect(reverseUrl([8.548, 49.3172])).toBe('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=49.3172&lon=8.548&zoom=10');
+  });
+
+  it('is the name of what Nominatim finds there, or none', () => {
+    expect(parsePlaceName({ name: 'Hockenheim', addresstype: 'town' })).toBe('Hockenheim');
+    expect(parsePlaceName({ error: 'Unable to geocode' })).toBeUndefined();
+    expect(parsePlaceName({ name: '' })).toBeUndefined();
   });
 });
 

@@ -5,10 +5,8 @@ import { errorMessage } from '../api';
 import { spotItems } from '../state/drawing';
 import { CloseIcon, SearchIcon } from '../ui/icons';
 import { setMenu } from '../ui/menu';
-import { NOMINATIM_ATTRIBUTION, NOMINATIM_MIN_INTERVAL_MS, parsePlaces, searchUrl, type Bounds, type Place } from './nominatim';
+import { NOMINATIM_ATTRIBUTION, nominatimTurn, parsePlaces, searchUrl, type Bounds, type Place } from './nominatim';
 
-/** When the last search went out, to keep to Nominatim's one request per second. */
-let lastSearch = 0;
 const SEARCH_TIMEOUT_MS = 15_000;
 const PIN_COLOR = '#b4440f';
 
@@ -49,9 +47,7 @@ export function SearchBox(props: { map: MapLibreMap }) {
     setBusy(true);
     setError(undefined);
     try {
-      const wait = lastSearch + NOMINATIM_MIN_INTERVAL_MS - Date.now();
-      if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
-      lastSearch = Date.now();
+      await nominatimTurn();
       const view = map.getBounds();
       const near: Bounds = [Math.max(-180, view.getWest()), view.getSouth(), Math.min(180, view.getEast()), view.getNorth()];
       const response = await fetch(searchUrl(text, near), { signal: AbortSignal.timeout(SEARCH_TIMEOUT_MS) });

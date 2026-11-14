@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { ridingYears, type Ride } from './rides';
+import { isOddJoint, ridingYears, type Ride } from './rides';
 
 const ride = (id: number, startedAt: string | null, km: number): Ride => ({ id, name: `Ride ${id}`, startedAt, distanceM: km * 1000, line: '', days: [] });
 /** The date a moment falls on in UTC, so that the test holds wherever it runs. */
 const utc = (iso: string) => iso.slice(0, 10);
+
+describe('a joint between two rides to be merged', () => {
+  it('is odd after a pause of more than six hours or over more than 150 m', () => {
+    const joint = { startedAt: '2026-11-14T13:00:00Z', pauseS: 1800, distanceM: 40 };
+    expect(isOddJoint(joint)).toBe(false);
+    expect(isOddJoint({ ...joint, pauseS: 6 * 3600 + 1 })).toBe(true);
+    expect(isOddJoint({ ...joint, distanceM: 151 })).toBe(true);
+    expect(isOddJoint({ ...joint, pauseS: null })).toBe(false);
+  });
+});
 
 describe('the rides by when they were ridden', () => {
   const rides = [ride(1, '2025-07-08T08:00:00Z', 20), ride(2, '2026-11-14T13:00:00Z', 40), ride(3, '2026-11-14T08:00:00Z', 42), ride(4, '2026-11-01T09:00:00Z', 80), ride(5, '2026-10-23T09:00:00Z', 41), ride(6, null, 10)];
