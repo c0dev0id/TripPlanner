@@ -24,6 +24,10 @@ export interface Entry {
   /** Where the entry stands on the map: where a photo was taken by its EXIF data, else where it was put. */
   lngLat: LngLat | null;
   createdAt: string;
+  /** An entry of the journal, or one of a day's additional media: a file or a link, named by its text. */
+  kind: 'journal' | 'media';
+  /** The address of a link among a day's media; none for anything else. */
+  url: string | null;
 }
 
 /** What an entry is on: one part by its id, or the trip for an empty target. */

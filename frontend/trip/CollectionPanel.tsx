@@ -6,6 +6,7 @@ import { routeDistance, routePositions, routesDistance } from '../routing/legs';
 import { isCut } from '../state/clipboard';
 import { panTo, showWhole } from '../state/drawing';
 import { clickPart, isPartSelected } from '../state/partSelection';
+import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
 import { isPlaceList } from '../state/library';
 import { isDayMarked, isRouteActive, markShownDay, openTrip, openTripId, selectDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
@@ -20,6 +21,7 @@ import { StopShape } from '../ui/StopShape';
 import { dayDetail, routeKindLabel, routeLabel } from './labels';
 import { partMenu } from './partMenu';
 import { RoutePin } from './Pin';
+import { DayMedia } from './Media';
 import { DayRecordings } from './Recordings';
 
 /**
@@ -57,7 +59,7 @@ function SectionItem(props: { day: Day; places: boolean; onRename: (day: Day) =>
   // The section's routes change less often than the section.
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
-  const meta = () => dayDetail('collection', { date: null, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, distanceM: distance() }, props.places);
+  const meta = () => dayDetail('collection', { date: null, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, media: mediaOf(props.day.id).length, distanceM: distance() }, props.places);
   const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
   const click = (e: MouseEvent) => {
     if (clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e)) return;
@@ -80,11 +82,11 @@ function SectionItem(props: { day: Day; places: boolean; onRename: (day: Day) =>
   );
 }
 
-/** What a section holds, in the pane beside the list: its routes, its waypoints, which in a list of places are places, and, where it has any, its recordings. */
+/** What a section holds, in the pane beside the list: its routes, its waypoints, which in a list of places are places, and, where it has any, its recordings and its media. */
 export function SectionDetails(props: { day: Day }) {
   const places = () => isPlaceList(openTripId());
-  /** Whether the section holds nothing of what it is for: no route, no recording and, in a list of places, no place. */
-  const empty = () => props.day.routes.length + recordingsOf(props.day.id).length + (places() ? props.day.stops.length : 0) === 0;
+  /** Whether the section holds nothing of what it is for: no route, no recording, no media and, in a list of places, no place. */
+  const empty = () => props.day.routes.length + recordingsOf(props.day.id).length + mediaOf(props.day.id).length + (places() ? props.day.stops.length : 0) === 0;
   return (
     <div class="day-details">
       <Show when={empty()}>
@@ -105,6 +107,9 @@ export function SectionDetails(props: { day: Day }) {
       </Show>
       <Show when={recordingsOf(props.day.id).length > 0}>
         <DayRecordings day={props.day} />
+      </Show>
+      <Show when={mediaOf(props.day.id).length > 0}>
+        <DayMedia day={props.day} />
       </Show>
     </div>
   );

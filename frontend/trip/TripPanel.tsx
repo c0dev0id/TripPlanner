@@ -43,6 +43,7 @@ import { MenuButton } from '../ui/MenuButton';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, dayHeading, dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 import { RoutePin } from './Pin';
+import { DayMedia } from './Media';
 import { addRecordingPicked, DayRecordings } from './Recordings';
 import { partMenu } from './partMenu';
 
@@ -99,7 +100,7 @@ function DayItem(props: { day: Day; index: number }) {
   // The day's routes change less often than the day.
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
-  const meta = () => dayDetail('trip', { date: props.day.date, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, distanceM: distance() });
+  const meta = () => dayDetail('trip', { date: props.day.date, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, media: 0, distanceM: distance() });
   const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
   const click = (e: MouseEvent) => {
     if (clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e)) return;
@@ -162,7 +163,7 @@ export function DayDetails(props: { day: Day }) {
         </Show>
       </Show>
       <div class="row">
-        <h4 class="grow">{t('Routes')}</h4>
+        <h4 class="grow">{t('Planning')}</h4>
         <IconButton label={t('Import GPX…')} onClick={() => fileInput.click()}>
           <FileImportIcon />
         </IconButton>
@@ -184,6 +185,7 @@ export function DayDetails(props: { day: Day }) {
         </ol>
       </Show>
       <DayRecordings day={props.day} />
+      <DayMedia day={props.day} />
     </div>
   );
 }

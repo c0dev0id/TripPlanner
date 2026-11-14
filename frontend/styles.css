@@ -444,6 +444,7 @@ a {
 .routes,
 .stops,
 .recordings,
+.media,
 .legend {
   list-style: none;
   margin: 0;
@@ -676,6 +677,24 @@ li.row.cut {
 .recording.opened > .row {
   background: var(--active);
   border-radius: 7px;
+}
+
+/* A file or a link kept with a day: a link that reads as a row, what it is drawn before its name. */
+.media-item a.text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 8px;
+  color: inherit;
+  text-decoration: none;
+  user-select: none;
+}
+
+.media-kind {
+  display: flex;
+  flex: none;
+  color: var(--muted);
 }
 
 .day-details {

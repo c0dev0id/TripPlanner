@@ -30,13 +30,14 @@ export const dayHeading = (kind: TripKind, index: number, name: string): string 
  * What stands under a day's name: its date and its length; under a section's, what it
  * holds and its length, its waypoints as places in a list of places (`places`).
  */
-export function dayDetail(kind: TripKind, day: { date: string | null; routes: number; stops: number; recordings: number; distanceM: number }, places = false): string {
+export function dayDetail(kind: TripKind, day: { date: string | null; routes: number; stops: number; recordings: number; media: number; distanceM: number }, places = false): string {
   const length = day.distanceM > 0 && distanceText(day.distanceM);
   if (kind === 'trip') return [day.date ? shortDateText(day.date) : t('No date'), length].filter(Boolean).join(' · ');
   // A section that holds nothing says so by what it is for.
-  const stops = (day.stops > 0 || (places && day.routes + day.recordings === 0)) && counted(day.stops, places ? 'place' : 'waypoint');
-  const routes = (day.routes > 0 || (!places && day.stops + day.recordings === 0)) && counted(day.routes, 'route');
-  return [routes, stops, day.recordings > 0 && counted(day.recordings, 'recording'), length].filter(Boolean).join(' · ');
+  const kept = day.recordings + day.media;
+  const stops = (day.stops > 0 || (places && day.routes + kept === 0)) && counted(day.stops, places ? 'place' : 'waypoint');
+  const routes = (day.routes > 0 || (!places && day.stops + kept === 0)) && counted(day.routes, 'route');
+  return [routes, stops, day.recordings > 0 && counted(day.recordings, 'recording'), day.media > 0 && counted(day.media, 'attachment'), length].filter(Boolean).join(' · ');
 }
 
 /** What a day is called within its trip: its label, or in a collection the section's name. */

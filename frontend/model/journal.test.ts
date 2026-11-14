@@ -13,6 +13,8 @@ const entry = (id: number, on: Partial<Pick<Entry, 'dayId' | 'stopId' | 'routeId
   takenAt: null,
   lngLat: null,
   createdAt: '2026-10-27T10:00:00Z',
+  kind: 'journal',
+  url: null,
   ...on,
 });
 const photo = { name: 'a.jpg', mediaType: 'image/jpeg', size: 10, image: true };

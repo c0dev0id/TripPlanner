@@ -62,7 +62,7 @@ export interface OutlineLine {
   color: string | null;
 }
 
-/** A day as the library knows it without its trip's document: what names it, how many routes, stops and recordings it holds, its length in metres, and the lines of its routes. */
+/** A day as the library knows it without its trip's document: what names it, how many routes, stops, recordings and media it holds, its length in metres, and the lines of its routes. */
 export interface OutlineDay {
   id: string;
   name: string;
@@ -70,6 +70,7 @@ export interface OutlineDay {
   routes: number;
   stops: number;
   recordings: number;
+  media: number;
   distanceM: number;
   lines: OutlineLine[];
 }
@@ -154,6 +155,36 @@ export function addEntry(tripId: number, target: EntryTarget, text: string, file
 export const updateEntry = (tripId: number, entryId: number, text: string): Promise<void> => request('PATCH', `${tripApi(tripId)}/entries/${entryId}`, { text });
 
 export const deleteEntry = (tripId: number, entryId: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/entries/${entryId}`);
+
+/** The additional media of the trip's days: files and links, each an entry of the kind `media` on its day. */
+export const listMedia = (tripId: number): Promise<Entry[]> => request('GET', `${tripApi(tripId)}/media`);
+
+export const mediaFileUrl = (tripId: number, id: number): string => `${tripApi(tripId)}/media/${id}/file`;
+
+export const mediaPreviewUrl = (tripId: number, id: number): string => `${tripApi(tripId)}/media/${id}/preview`;
+
+/** Keeps a file, or a link under a name, with a day of the trip. */
+export function addMedia(tripId: number, dayId: string, what: File | { name: string; url: string }): Promise<Entry> {
+  const form = new FormData();
+  form.set('dayId', dayId);
+  if (what instanceof File) form.set('file', what);
+  else {
+    form.set('name', what.name);
+    form.set('url', what.url);
+  }
+  return request('POST', `${tripApi(tripId)}/media`, form);
+}
+
+/** Names a file or a link anew, a link with its address. */
+export const changeMedia = (tripId: number, id: number, name: string, url?: string): Promise<void> => request('PATCH', `${tripApi(tripId)}/media/${id}`, { name, ...(url !== undefined && { url }) });
+
+/** Moves a file or a link to a day of the user's, in this trip or another. */
+export const moveMedia = (tripId: number, id: number, dayId: string): Promise<void> => request('PATCH', `${tripApi(tripId)}/media/${id}`, { dayId });
+
+/** A copy of a file or a link on a day of the user's, in this trip or another. */
+export const copyMedia = (tripId: number, id: number, dayId: string): Promise<Entry> => request('POST', `${tripApi(tripId)}/media/${id}/copies`, { dayId });
+
+export const deleteMedia = (tripId: number, id: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/media/${id}`);
 
 /** A place as the server keeps it: its OpenStreetMap id ("node/123"), kind, position and the tags its details are made of. */
 export interface KeptPlace {

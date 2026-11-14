@@ -8,17 +8,18 @@ import { copiedRoute, defaultProfile, removeParts, type CopiedRoute, type PartKi
 import { askConfirmation } from '../ui/confirm';
 import type { MenuItem } from '../ui/menu';
 import { flushSave } from './autosave';
+import { bringMedia, mediaAction } from './media';
 import { addRecording, moveRecording, recordingAction, recordingById } from './recordings';
 import { moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, openTripId, pasteDays, pasteRoutes, pasteStops, pasteStopsIntoRoute, selectDay } from './trip';
 
 /**
  * What was copied or cut to be pasted: days with all they hold, routes with the stops
- * bound to them, stops, recordings with their GPX files, or trips and folders of the
- * library. Kept from one trip to another until it is pasted, which empties the
+ * bound to them, stops, recordings with their GPX files, the files and links kept with
+ * days, or trips and folders of the library. Kept from one trip to another until it is pasted, which empties the
  * clipboard, or until something else is copied or cut. What was cut is taken from where
  * it was once it is pasted.
  */
-type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[] } | { recordings: CopiedRecording[]; from?: { tripId: number; ids: number[] } } | { library: LibraryClip }) & {
+type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[] } | { recordings: CopiedRecording[]; from?: { tripId: number; ids: number[] } } | { media: CopiedMedia } | { library: LibraryClip }) & {
   /** Where the parts were cut from. */
   cut?: { tripId: number; kind: PartKind; ids: string[] };
 };
@@ -27,6 +28,14 @@ type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[] } | {
 export interface CopiedRecording {
   name: string;
   gpx: string;
+}
+
+/** Files and links kept with days of a trip, by id, with their names: copied, or cut to be moved where they are pasted. The server holds the files. */
+export interface CopiedMedia {
+  tripId: number;
+  ids: number[];
+  names: string[];
+  move: boolean;
 }
 
 /** Trips and folders of the library, by id: copied, or cut to be moved where they are pasted. */
@@ -85,6 +94,17 @@ export function isCutRecording(id: number): boolean {
   return from !== undefined && from.tripId === openTripId() && from.ids.includes(id);
 }
 
+/** Copies or cuts files and links of days of a trip. */
+export function copyMedia(media: CopiedMedia): void {
+  setClip({ media });
+}
+
+/** Whether the file or link of the open trip is cut and waits to be pasted. */
+export function isCutMedia(id: number): boolean {
+  const copied = clip();
+  return copied !== undefined && 'media' in copied && copied.media.move && copied.media.tripId === openTripId() && copied.media.ids.includes(id);
+}
+
 /**
  * Pastes recordings onto a day of the open trip: cut from this trip they move there;
  * otherwise each is added, and what was cut from another trip is then deleted in it.
@@ -118,6 +138,7 @@ function pasteLabel(copied: Clip): string {
     names.length > 1 ? t(several, { n: names.length }) : names[0] ? t(named, { name: names[0] }) : t(unnamed);
   if ('library' in copied) return t('Paste');
   if ('recordings' in copied) return of('Paste recording “{name}”', 'Paste recording', 'Paste {n} recordings', copied.recordings.map((r) => r.name));
+  if ('media' in copied) return of('Paste “{name}”', 'Paste file', 'Paste {n} files and links', copied.media.names);
   if ('days' in copied) return of('Paste day “{name}”', 'Paste day', 'Paste {n} days', copied.days.map((d) => d.name));
   if ('stops' in copied) return of('Paste stop “{name}”', 'Paste stop', 'Paste {n} stops', copied.stops.map((s) => s.name));
   return of('Paste route “{name}”', 'Paste route', 'Paste {n} routes', copied.routes.map((c) => c.route.name));
@@ -153,7 +174,7 @@ function pasted(copied: Clip, move: (ids: string[]) => void, paste: () => void):
 
 /**
  * The menu items that paste what is on the clipboard into a part of the open trip: into a
- * day, routes, stops and a recording, and days after it; into a route, stops, as points
+ * day, routes, stops, a recording and a day's files and links, and days after it; into a route, stops, as points
  * of it. None where the clipboard holds nothing for the part. A recording also pastes as
  * a route.
  */
@@ -170,6 +191,13 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
   };
   if ('days' in copied) return [{ label, run: pasted(copied, (ids) => moveDaysAfter(ids, id), () => pasteDays(copied.days, id)) }];
   if ('stops' in copied) return [{ label, run: shown(pasted(copied, (ids) => movePartsToDay('stop', ids, id), () => pasteStops(id, copied.stops))) }];
+  if ('media' in copied) {
+    const { media } = copied;
+    return [{ label, run: shown(() => {
+          setClip(undefined);
+          void mediaAction(id, () => bringMedia(media, id, media.move));
+        }) }];
+  }
   if ('recordings' in copied) {
     const { recordings, from } = copied;
     const [only, ...more] = recordings;

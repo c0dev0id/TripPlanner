@@ -3,13 +3,13 @@ import type { PartKind } from '../routing/dayEdit';
 import { clickRow, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, selectionOwner, toggleRow } from '../ui/selection';
 import { openTripId, selectedDayId } from './trip';
 
-/** What of the open trip is selected: a kind of its parts, or the recordings on its days, by their id as text. */
-export type Selectable = PartKind | 'recording';
+/** What of the open trip is selected: a kind of its parts, or the recordings or the media on its days, by their id as text. */
+export type Selectable = PartKind | 'recording' | 'media';
 
-const KINDS: readonly Selectable[] = ['day', 'route', 'stop', 'recording'];
+const KINDS: readonly Selectable[] = ['day', 'route', 'stop', 'recording', 'media'];
 
 /**
- * The days, routes, stops or recordings of the open trip that are selected to be acted on
+ * The days, routes, stops, recordings or media of the open trip that are selected to be acted on
  * together: each kind a list of its own, so of one kind at a time; forgotten with the
  * trip, and what is selected of a day with the day shown.
  */

@@ -26,6 +26,15 @@
   object-fit: contain;
 }
 
+/* A document in the browser's own viewer, on paper's white. */
+.lightbox iframe {
+  display: block;
+  width: min(1100px, calc(100vw - 32px));
+  height: calc(100dvh - 76px);
+  border: none;
+  background: #fff;
+}
+
 .lightbox figcaption {
   display: flex;
   align-items: center;

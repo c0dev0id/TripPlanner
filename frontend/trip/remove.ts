@@ -2,16 +2,17 @@ import { locale } from '../i18n/language';
 import { t } from '../i18n/t';
 import type { Day, Route } from '../model/trip';
 import { pointCount } from '../routing/legs';
+import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
 import { openTrip, removeDay, removeRoute } from '../state/trip';
 import { askConfirmation } from '../ui/confirm';
 import { dayLabelOf, routeLabelOf } from './labels';
 
-/** Removes the day, after asking where routes, stops or recordings would go with it; whether it was removed. */
+/** Removes the day, after asking where routes, stops, recordings or media would go with it; whether it was removed. */
 export async function removeDayAsked(day: Day): Promise<boolean> {
-  const recordings = recordingsOf(day.id).length;
-  const question = t(recordings > 0 ? 'Remove {day} with its routes, stops and recordings?' : 'Remove {day} with its routes and stops?', { day: dayLabelOf(openTrip()!, day) });
-  if (day.routes.length + day.stops.length + recordings > 0 && !(await askConfirmation(question, t('Remove')))) return false;
+  const kept = recordingsOf(day.id).length + mediaOf(day.id).length;
+  const question = t(kept > 0 ? 'Remove {day} with its routes, stops, recordings and media?' : 'Remove {day} with its routes and stops?', { day: dayLabelOf(openTrip()!, day) });
+  if (day.routes.length + day.stops.length + kept > 0 && !(await askConfirmation(question, t('Remove')))) return false;
   removeDay(day.id);
   return true;
 }
