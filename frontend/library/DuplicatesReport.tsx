@@ -4,7 +4,8 @@ import { errorMessage, fetchTrip, type DuplicateGroup, type DuplicateRoute } fro
 import { copiedRoute, type CopiedRoute } from '../routing/dayEdit';
 import { copyRoutes } from '../state/clipboard';
 import { comparedColor, DUPLICATES, duplicateGroups, duplicateKey, duplicatesMadeAt, duplicatesStartedAt, forgetDuplicates, refreshDuplicates } from '../state/duplicates';
-import { deleteRoutes, fetchingTrip, libraryTrips, outlineOf, setShowingDuplicates } from '../state/library';
+import { deleteRoutes, fetchingTrip, libraryFolders, libraryTrips, outlineOf, setShowingDuplicates } from '../state/library';
+import { folderPath } from './folders';
 import { selectedDayId } from '../state/trip';
 import { dayLabel } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
@@ -19,10 +20,11 @@ import { clickRow, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, toggl
 import { SidePane } from '../ui/SidePane';
 import { Pad } from '../ui/Pad';
 
-/** Where a route of the report is: its trip, and its day by number, date and name, or its section. */
+/** Where a route of the report is: the folders its trip is in, its trip, and its day by number, date and name, or its section. Routes of one trip, or of one folder, read alike up to there. */
 function whereText(route: DuplicateRoute): string {
   const day = route.tripKind === 'collection' ? route.dayName : dayLabel({ date: route.date, name: route.dayName }, route.dayIndex);
-  return `${route.tripName} › ${day}`;
+  const folderId = libraryTrips()?.find((trip) => trip.id === route.tripId)?.folderId ?? null;
+  return [folderPath(libraryFolders() ?? [], folderId), route.tripName, day].filter(Boolean).join(' › ');
 }
 
 const nameOf = (route: DuplicateRoute): string => route.routeName || t('Unnamed route');
@@ -50,7 +52,8 @@ let scrolled = 0;
  * a route, with Cmd or Ctrl one more, with Shift a run of them; its pad adds or takes it
  * away. The map draws what is selected, each route in a colour its row shows too, to
  * compare them. The menu opens the place of one, its day, whose pane takes the report's
- * place until the report is shown again, and copies or deletes the selected ones, as
+ * place until the report is shown again, scrolled and selected as it was left, and
+ * copies or deletes the selected ones, as
  * Ctrl+C and Delete do. A day picked elsewhere takes the pane for itself.
  */
 export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void }) {
@@ -70,7 +73,6 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   const of = (kind: DuplicateGroup['kind']) => (found() ?? []).filter((g) => g.kind === kind);
   const selection = () => selectionOf(DUPLICATES);
   const setSelection = (rows: Selection<string>) => selectIn(DUPLICATES, rows);
-  onCleanup(() => setSelection(NOTHING_SELECTED));
   const [note, setNote] = createSignal<{ text: string; error: boolean }>();
   /** The routes in the order shown, by key; a route in a group of each kind is shown twice but listed once. */
   const shown = createMemo(() => new Map([...of('copies'), ...of('same ride')].flatMap((g) => g.routes).map((r) => [duplicateKey(r), r])));

@@ -301,6 +301,9 @@
   holds a route or a track twice. Once the same ride is anywhere else as well, in another trip or in a collection, the group is
   listed whole. A click or a tap selects a route, Cmd or Ctrl one more,
   Shift a run of them; a route's pad adds it or takes it away; a selected row is highlighted.
+  A row says where its route is by the folders its trip is in, the trip and the day,
+  so that routes of one trip or of one folder read alike and a whole trip or folder
+  kept twice shows as such.
   The map draws the selected routes and brings them into view, each in a colour of its
   own that its row shows as well, the first eight selected, so that they are compared at a
   glance. The menu (right-click or long press) opens the location of a single route, its
@@ -308,7 +311,8 @@
   the day as if it had been clicked there, and copies or deletes the
   selected ones, as Ctrl+C and Delete do. A day picked in the tree takes the pane for
   itself as well. The report is made once and kept while the page stands: shown again,
-  it is there at once, where it was scrolled to; what is deleted from it is taken out
+  it is there at once, where it was scrolled to and with what was selected still
+  selected, which the map draws only while the report is shown; what is deleted from it is taken out
   of it, its heading says when it was made, and the button there makes it afresh. A
   route deleted from the open trip leaves it as an edit that can be undone. While it is made, which takes a
   while on a large library, a ring turns beside how many routes are compared and the

@@ -34,10 +34,15 @@ const report = createRoot(() => {
   /** The report's routes by key; none where the report failed, since reading a resource that failed throws. */
   const routes = createMemo(() => new Map((groups.error ? [] : (groups() ?? [])).flatMap((group) => group.routes).map((route) => [duplicateKey(route), route])));
 
-  /** The routes drawn on the map: the selected ones, the first selected first, as many as there are colours to tell them apart; each in the palette's colour at its place. */
+  /**
+   * The routes drawn on the map while the report is shown: the selected ones, the first
+   * selected first, as many as there are colours to tell them apart; each in the
+   * palette's colour at its place. The selection stays while the report is away, so that
+   * it comes back as it was left; the map draws none of it meanwhile.
+   */
   const compared = createMemo(
     () =>
-      [...selectionOf(DUPLICATES)]
+      (showingDuplicates() ? [...selectionOf(DUPLICATES)] : [])
         .flatMap((key) => routes().get(key) ?? [])
         .slice(0, ROUTE_PALETTE.length),
     undefined,
