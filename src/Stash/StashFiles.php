@@ -73,6 +73,15 @@ final class StashFiles
         return ['file' => self::file($row, $this->items($id)), 'added' => true];
     }
 
+    /** The file as it is listed; null when the user has no such file. */
+    public function find(int $userId, int $id): ?array
+    {
+        $statement = $this->db->prepare(self::FILE . ' WHERE id = ? AND user_id = ?');
+        $statement->execute([$id, $userId]);
+        $row = $statement->fetch();
+        return $row === false ? null : self::file($row, $this->items($id));
+    }
+
     /** The file as it is kept, compressed with gzip; null when the user has no such file. */
     public function gzip(int $userId, int $id): ?string
     {

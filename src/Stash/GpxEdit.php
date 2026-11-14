@@ -1,0 +1,51 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Planner\Stash;
+
+use DOMDocument;
+use DOMElement;
+
+/**
+ * Changes to a GPX file of the Stash on the level of its routes, tracks and waypoints:
+ * whole elements are taken or left as they are, and everything else in the file stays.
+ */
+final class GpxEdit
+{
+    /** What the routes, tracks and waypoints of a file are called in it. */
+    private const ELEMENTS = ['route' => 'rte', 'track' => 'trk', 'waypoint' => 'wpt'];
+
+    /** The file with one of its tracks alone, by its place among the file's tracks: the other tracks, the routes and the waypoints left out. */
+    public static function trackAlone(string $gpx, int $position): string
+    {
+        $document = self::read($gpx);
+        foreach (self::ELEMENTS as $kind => $name) {
+            foreach (self::elements($document, $name) as $at => $element) {
+                if ($kind !== 'track' || $at !== $position) {
+                    $element->parentNode->removeChild($element);
+                }
+            }
+        }
+        return (string) $document->saveXML();
+    }
+
+    private static function read(string $gpx): DOMDocument
+    {
+        $document = new DOMDocument();
+        $document->loadXML($gpx, LIBXML_NONET);
+        return $document;
+    }
+
+    /** @return list<DOMElement> the elements of the name directly in the file, in its order */
+    private static function elements(DOMDocument $document, string $name): array
+    {
+        $found = [];
+        foreach ($document->documentElement->childNodes ?? [] as $node) {
+            if ($node instanceof DOMElement && $node->localName === $name) {
+                $found[] = $node;
+            }
+        }
+        return $found;
+    }
+}

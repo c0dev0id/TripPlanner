@@ -16,7 +16,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 /** The Stash's files over the API. */
 final class StashController
 {
-    public function __construct(private readonly StashFiles $files, private readonly CurrentUser $currentUser)
+    public function __construct(private readonly StashFiles $files, private readonly StashRides $rides, private readonly CurrentUser $currentUser)
     {
     }
 
@@ -67,6 +67,14 @@ final class StashController
     {
         $deleted = $this->files->delete($this->currentUser->get()->id, (int) $args['file']);
         return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'No such file.');
+    }
+
+    /** Keeps the file's tracks as rides: all of them, or with `{tracks}` those at these places among its tracks. Answers how many were `kept` and how many the user kept already, `known`. */
+    public function keepRides(Request $request, Response $response, array $args): Response
+    {
+        $tracks = Json::field($request, 'tracks');
+        $kept = $this->rides->keep($this->currentUser->get()->id, (int) $args['file'], is_array($tracks) ? array_map('intval', $tracks) : null, new DateTimeImmutable());
+        return $kept === null ? Json::error($response, 404, 'No such file.') : Json::of($response, $kept);
     }
 
     /** The file as it is kept, compressed, which the browser unpacks itself. */

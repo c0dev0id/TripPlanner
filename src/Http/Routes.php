@@ -115,6 +115,7 @@ final class Routes
             $api->patch('/stash/files/{file:[0-9]+}', [StashController::class, 'change']);
             $api->delete('/stash/files/{file:[0-9]+}', [StashController::class, 'delete']);
             $api->get('/stash/files/{file:[0-9]+}/gpx', [StashController::class, 'gpx']);
+            $api->post('/stash/files/{file:[0-9]+}/rides', [StashController::class, 'keepRides']);
             $api->get('/folders', [FolderController::class, 'index']);
             $api->post('/folders', [FolderController::class, 'create']);
             $api->patch('/folders/{id:[0-9]+}', [FolderController::class, 'change']);
