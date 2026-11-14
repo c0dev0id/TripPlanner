@@ -98,7 +98,7 @@ Layers, each depending only on the ones below:
 - Coordinates are rounded to six decimals in the edit actions of `state/trip.ts`. Leg keys
   are built from coordinates as text in both TypeScript and PHP and only agree under that
   invariant.
-- Routing (Valhalla), place search (Nominatim), roadworks (WFS) and map tiles are fetched
+- Routing (Valhalla), place search and place names (Nominatim), roadworks (WFS) and map tiles are fetched
   by the browser directly, at most one request per second to Valhalla and Nominatim. GPX import runs in
   the browser, GPX export on the server.
 

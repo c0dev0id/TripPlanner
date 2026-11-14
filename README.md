@@ -74,7 +74,8 @@ share work; sharing between users is on the way.
   you ride often dark, the ones you never took not at all. It stays on while planning.
 - **Rides by date** — every recording in years, months and days of riding, kept once
   whatever plans it followed; drop your tracker's files there, select some and compare
-  them on the map.
+  them on the map. Name them after where they began and ended, and merge the pieces
+  of one outing.
 - **Fuel, beds and food** — fuel stations, hotels, restaurants, cafes, viewpoints and
   parking as a layer: along the day's routes, each kind within its own distance, or all
   in view.

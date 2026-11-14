@@ -260,6 +260,41 @@ entries at the end of their section.
   user's clock on the day looked up: the files of one date together, so that pieces
   that each cover a part of the plan are found as the day they are, and are put on
   the day together.
+- **Rides are merged on the server, as text, and the pieces stay known.** A tracker
+  starts a new file after a break, and though the rides' pane and the lookup group a
+  day's files, a ride's figures and its comparison with the plan take one file. Merging
+  writes a file no tracker wrote, which the rule that a recording is its file as
+  recorded does not allow for; it is bent as little as can be: the first file stays as
+  it is and the track segments of the others are put after its own, each point with
+  everything it measured, so a break is still a segment's end. The files are megabytes
+  and are on the server, so they are joined there, as text: reading them into a tree
+  would take many times their size, and sending them to the browser and back would be
+  megabytes travelling for nothing. Namespace prefixes the later files declare on
+  their root are added to the first one's; a prefix two files declare differently is
+  refused. What the first file says of itself above its points (Ridelink's summary of
+  distance and speeds) is left as written and is then that of the first piece only.
+  The merged ride takes the pieces' days, and the pieces are deleted, since kept
+  beside it they would be counted and drawn twice. Their digests are kept in
+  `recording_parts`, so that a tracker's folder dropped again does not bring them
+  back; deleting the merged ride forgets them. Only rides that follow one another are
+  merged, by when they began, and none without times, which have no place in that
+  order.
+- **A merge is questioned where it joins what lies apart, and never refused for it.** The
+  planner draws a recording as one line through all its segments, so two files whose
+  ends lie apart are joined by a straight line, and a pause of half a day means two
+  outings rather than one with a break. Above six hours or 150 m the question that
+  asks for the merge says the pause and the way; the choice stays the user's. A ride's
+  end is read from its files when the question is asked and not kept beside it:
+  nothing else needs it. Two files of one of the user's afternoons lie 204 m apart,
+  the way the bike rolled before the tracker started again, so the way is said often.
+- **A ride is named after the places it began and ended in, by Nominatim, in the browser.**
+  One app names its files after their start and end, another names them all alike.
+  Nominatim's reverse lookup at the level of towns (`zoom=10`) gives the names the
+  first app writes, for the same rides. It is asked from the browser, as the place
+  search is, through one gate for both, since its policy of one request a second is
+  per user; a position is asked for once, to some hundred metres, while the page
+  stands, because most rides begin where others began. The positions are the ends of
+  the line kept beside the file, which thinning leaves where they are.
 - **The overlay of all rides draws the lines that are kept already.** A recording's line
   is kept beside its file, thinned to ten metres, for the lookup and the duplicates.
   Measured on 164 of the user's rides, 10,800 km, those lines are 51,000 points and a

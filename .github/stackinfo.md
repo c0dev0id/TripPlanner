@@ -49,7 +49,7 @@
 - Garmin's waypoint symbol pictures from GPS Visualizer's copies
   (gpsvisualizer.com/google_maps/icons/garmin/24x24/), fetched once on the server by
   `make garmin-icons` into public/garmin-symbols, outside git: they are Garmin's artwork.
-- Place search by Nominatim (nominatim.openstreetmap.org): at most one request per second,
+- Place search and the names of the places rides begin and end in, by Nominatim (nominatim.openstreetmap.org): at most one request per second,
   no search as you type, attribution shown.
 - Overlays: roadworks as GeoJSON features (WFS) from Rhineland-Palatinate's Mobilitätsatlas
   (maps.mobilitaetsatlas.de, layers `mwvlw:baustelle`, `mwvlw:verlauf`, `mwvlw:umleitung`)

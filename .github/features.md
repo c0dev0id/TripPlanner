@@ -354,6 +354,18 @@
   is on, after a question; with several selected it copies, adds and deletes all of
   them. A recording's menu on its day has "Show in the rides", which comes back with
   it selected and in view.
+- Autoname, in a ride's menu: the selected rides are named after the places they began
+  and ended in, as "Hockenheim - Walldorf", for files an app names all alike. The
+  places are asked of Nominatim, one a second, each position once; the pane says how
+  far it is and which rides it could not name.
+- Merge, in a ride's menu: the selected rides, where they follow one another with no
+  other ride between them and all tell their times, become one, for a tracker that
+  starts a new file after every break. The files are joined as the segments of one
+  track, every point as recorded; the merged ride is on every day one of them was on
+  and is named after where it begins and ends. The files merged are deleted and stay
+  known: dropped again, they are kept already. Before it merges, the planner says how
+  many it merges and, for a joint after a pause of more than six hours or over more
+  than 150 m, the pause and the way, across which the merged ride is a straight line.
 - Looking up a day's rides: *Look up recordings…* beside *Add recording…* on a trip's
   day goes through all the user's rides and lists the days of riding that may be the
   day's: begun on its date, or ridden along its routes, or its routes along them, a
