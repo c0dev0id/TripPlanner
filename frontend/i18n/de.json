@@ -475,6 +475,7 @@
   "The text must be a string of up to 20000 characters.": "Der Text muss eine Zeichenkette mit bis zu 20000 Zeichen sein.",
   "The track has {points} now.": "Der Track hat jetzt {points}.",
   "The track keeps the points that hold its line within the distance chosen.": "Der Track behält die Punkte, die seine Linie innerhalb des gewählten Abstands halten.",
+  "The trip has no day to keep files with.": "Die Tour hat keinen Tag, an dem Dateien abgelegt werden können.",
   "The trip was changed elsewhere since it was loaded.": "Die Tour wurde seit dem Laden anderswo geändert.",
   "The trip was changed elsewhere.": "Die Tour wurde anderswo geändert.",
   "The two passwords differ.": "Die beiden Passwörter stimmen nicht überein.",

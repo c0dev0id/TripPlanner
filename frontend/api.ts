@@ -163,15 +163,13 @@ export const mediaFileUrl = (tripId: number, id: number): string => `${tripApi(t
 
 export const mediaPreviewUrl = (tripId: number, id: number): string => `${tripApi(tripId)}/media/${id}/preview`;
 
-/** Keeps a file, or a link under a name, with a day of the trip. */
-export function addMedia(tripId: number, dayId: string, what: File | { name: string; url: string }): Promise<Entry> {
+/** Keeps a file or a link with a day of the trip, under a name; a file without one goes by its own. */
+export function addMedia(tripId: number, dayId: string, what: File | { url: string }, name = ''): Promise<Entry> {
   const form = new FormData();
   form.set('dayId', dayId);
+  form.set('name', name);
   if (what instanceof File) form.set('file', what);
-  else {
-    form.set('name', what.name);
-    form.set('url', what.url);
-  }
+  else form.set('url', what.url);
   return request('POST', `${tripApi(tripId)}/media`, form);
 }
 

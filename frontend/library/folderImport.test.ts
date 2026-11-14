@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { dateIn, pickedPath, planFolderImport, type ImportMode } from './folderImport';
+import type { Trip } from '../model/trip';
+import { dateIn, pickedPath, planFolderImport, withMediaDay, type ImportMode } from './folderImport';
 
-/** The plan with each day as its date, name and file names; trips planned per folder unless the mode says otherwise. */
-const plan = (paths: string[], mode: ImportMode = 'trips') =>
-  planFolderImport(paths, mode).map(({ kind, ...t }) => ({ ...(kind === 'trip' ? {} : { kind }), ...t, days: t.days.map((d) => [d.date, d.name, d.files.map((i) => paths[i]!.split('/').at(-1))]) }));
+/** The plan with each day as its date, name and file names, and the names of its media where it has any; trips planned per folder unless the mode says otherwise. */
+const plan = (paths: string[], mode: ImportMode = 'trips') => {
+  const names = (files: number[]) => files.map((i) => paths[i]!.split('/').at(-1));
+  return planFolderImport(paths, mode).map(({ kind, media, ...t }) => ({ ...(kind === 'trip' ? {} : { kind }), ...t, ...(media.length > 0 ? { media: names(media) } : {}), days: t.days.map((d) => [d.date, d.name, names(d.files)]) }));
+};
 
 describe('pickedPath', () => {
   it('composes a name macOS wrote decomposed', () => {
@@ -116,5 +119,39 @@ describe('planFolderImport, planning material', () => {
       { kind: 'collection', folders: ['Planning'], name: 'ACT 2024-06-12', days: [[null, 'ACT_IT', ['ACT_IT.gpx']], [null, 'ACT_PT', ['ACT_PT.gpx']]] },
       { kind: 'collection', folders: ['Planning'], name: 'TET', days: [[null, 'E', ['E.gpx']], [null, 'F', ['F.gpx']]] },
     ]);
+  });
+});
+
+describe('the other files of a folder', () => {
+  it('are the media of the trip or the collection the folder makes, hidden ones left out', () => {
+    const paths = ['Alps/day 1.gpx', 'Alps/ferry.pdf', 'Alps/.DS_Store', 'Alps/Roadbook.docx', 'Alps/day 2.gpx'];
+    expect(plan(paths)[0]!.media).toEqual(['ferry.pdf', 'Roadbook.docx']);
+    expect(plan(paths, 'planning-material')[0]!.media).toEqual(['ferry.pdf', 'Roadbook.docx']);
+  });
+
+  it('stay with the folder they are in', () => {
+    const made = plan(['Tours/Alps/a.gpx', 'Tours/Alps/alps.pdf', 'Tours/Vosges/b.gpx', 'Tours/readme.txt'], 'planning-material');
+    expect(made.map((c) => [c.name, c.media])).toEqual([['Alps', ['alps.pdf']], ['Vosges', undefined]]);
+  });
+
+  it('are left out beside trips made a file each', () => {
+    expect(plan(['a.gpx', 'ticket.pdf'], 'trip-per-file').map((t) => t.media)).toEqual([undefined]);
+    expect(plan(['Tours/a.gpx', 'Tours/ticket.pdf', 'Tours/Alps/b.gpx']).map((t) => t.media)).toEqual([undefined, undefined]);
+  });
+});
+
+describe('where the files that come with a trip are kept', () => {
+  const trip = (kind: 'trip' | 'collection', names: string[]): Trip => ({ id: 1, kind, name: 'T', description: '', state: 'planned', version: 1, days: names.map((name) => ({ id: name, name, date: null, notes: '', routes: [], stops: [] })) });
+
+  it('is a trip\'s first day, and nowhere without a day', () => {
+    expect(withMediaDay(trip('trip', ['a', 'b'])).dayId).toBe('a');
+    expect(withMediaDay(trip('trip', [])).dayId).toBeUndefined();
+  });
+
+  it('is a collection\'s section for them, added at the end where there is none', () => {
+    const made = withMediaDay(trip('collection', ['a', 'b']));
+    expect([made.trip.days.map((day) => day.name), made.dayId]).toEqual([['a', 'b', 'Additional Media'], made.trip.days[2]!.id]);
+    const again = withMediaDay(made.trip);
+    expect([again.trip, again.dayId]).toEqual([made.trip, made.dayId]);
   });
 });

@@ -1,11 +1,11 @@
-import { addEntry, addRecording, createTrip, errorMessage, fetchTrip, saveTrip } from '../api';
+import { addEntry, addMedia, addRecording, createTrip, errorMessage, fetchTrip, saveTrip } from '../api';
 import type { EntryTarget } from '../model/journal';
 import { newId, type LngLat, type Trip } from '../model/trip';
 import { withNewPartIds } from '../routing/dayEdit';
 
 /**
  * A trip as the export wrote it into a folder: `trip.json` with the trip's document, its
- * journal and its recordings, and beside it the files those name.
+ * journal, its days' media and its recordings, and beside it the files those name.
  */
 
 const ARCHIVE_FILE = 'trip.json';
@@ -15,6 +15,8 @@ interface Archive {
   trip: Pick<Trip, 'kind' | 'name' | 'description' | 'state' | 'days'>;
   journal: { dayId: string | null; stopId: string | null; routeId: string | null; text: string; file: string | null; fileName: string | null; lngLat: LngLat | null; createdAt: string }[];
   recordings: { dayId: string; name: string; file: string }[];
+  /** The files and links kept with the days; none in an export made before there were any. */
+  media?: { dayId: string; name: string; url: string | null; file: string | null; fileName: string | null }[];
 }
 
 /** The folders among the paths that hold an exported trip, by their path; empty for the folder picked itself. */
@@ -27,9 +29,9 @@ export const inFolders = (path: string, folders: readonly string[]): boolean => 
 
 /**
  * Makes the trip exported into a folder anew in the library's folder `folderId`, with its
- * journal and recordings; `read` gives a file of the folder by its path in it, or nothing
- * where it is missing. An entry or a recording that cannot be put back is told in the
- * errors, and the import goes on.
+ * journal, media and recordings; `read` gives a file of the folder by its path in it, or
+ * nothing where it is missing. An entry, a file or a recording that cannot be put back is
+ * told in the errors, and the import goes on.
  *
  * @throws where `trip.json` is none of ours or the trip cannot be saved
  */
@@ -56,6 +58,16 @@ export async function importArchive(read: (path: string) => Promise<Blob | undef
       await addEntry(made.id, target, entry.text, file && new File([file], entry.fileName ?? 'file'), entry.lngLat ?? undefined, entry.createdAt);
     } catch (error) {
       note(entry.fileName ?? entry.text.slice(0, 40), error);
+    }
+  }
+  for (const media of archive.media ?? []) {
+    try {
+      const dayId = ids.get(media.dayId);
+      const file = media.file === null ? undefined : await read(media.file);
+      if (!dayId || (!file && media.url === null)) throw new Error('its day or its file is missing');
+      await addMedia(made.id, dayId, file ? new File([file], media.fileName ?? 'file') : { url: media.url! }, media.name);
+    } catch (error) {
+      note(media.name || media.fileName || '', error);
     }
   }
   for (const recording of archive.recordings ?? []) {

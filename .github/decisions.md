@@ -239,6 +239,37 @@ entries at the end of their section.
   what would be refused. The import dialog lost planning material as a way to organize
   a tree: among collections a picked folder is imported as a dropped one is, elsewhere
   it can only make trips.
+- **A day's media are journal entries of another kind.** A day already took a PDF, as a
+  journal entry with a file; what was missing was a list of its own in the day's pane,
+  links, and collections, which have no journal. A table of its own would have needed
+  everything the journal's has again: the file store, the type read from the content,
+  previews, the copy of a trip, the merge, the archive and its import, the removal of
+  a trip's files. A column says which of the two an entry is, and a second one holds a
+  link's address; the journal lists its kind and the day's pane the other, so that the
+  diary stays a diary. The price is one migration.
+- **Media belong to a day, in a collection too.** A collection's files could have hung
+  on the collection itself, which would have been a second place for them in the
+  model, the interface and the import. They are kept with a section named for them
+  instead, an ordinary section with no route; a file that belongs to one route can be
+  moved to that route's section. Making a trip, such a section makes no day and its
+  media go with the first: files carry no date to place them by.
+- **A day takes its media along.** A journal entry outlives its part and stays with the
+  trip, as the diary should. Media without their day would be files nobody can find,
+  so the entries a save leaves without a day are removed with their files, right after
+  the save that removed the day.
+- **Media are not shared.** The journal is on a shared trip's page with its files.
+  Booking confirmations and tickets carry names and addresses, so what a shared link
+  can list and fetch is the journal's kind alone, checked where the entries are read.
+- **A PDF is shown by the browser.** The lightbox frames the file and leaves the pages
+  to the browser's own viewer: no library to bundle, where the build already takes
+  half a minute on the server. A browser that says it shows no PDF inline gets the
+  file in a new tab, which is what the link does anyway. Files are served under their
+  type as read from their content, inline for images and PDFs and as a download for
+  everything else, and with `nosniff`, so that an upload cannot pass for a page.
+- **Files are moved and copied on the server.** Recordings are pasted by sending their
+  GPX again; a scan or a manual is megabytes that would travel down and up for nothing.
+  The clipboard holds the ids, and the server moves the row and its file to any day of
+  the user's, or copies both.
 - **A route kept as waypoints is mended where it is seen, not guessed at when it is
   read.** Some planners write a route as a string of waypoints, named by number or by
   the address of each. The import cannot know that 214 waypoints are a route and 105

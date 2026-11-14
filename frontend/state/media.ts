@@ -41,7 +41,7 @@ export async function addFiles(dayId: string, files: readonly File[]): Promise<v
 /** Keeps a link under a name with a day of the open trip. */
 export async function addLink(dayId: string, name: string, url: string): Promise<void> {
   await flushSave();
-  const added = await postMedia(openTripId()!, dayId, { name, url });
+  const added = await postMedia(openTripId()!, dayId, { url }, name);
   changed((media) => [...media, added]);
 }
 

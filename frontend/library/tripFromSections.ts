@@ -1,5 +1,5 @@
 import { plural } from '../i18n/t';
-import { changeTrip, createTrip, deleteTrip, fetchTrip, listRecordings, moveRecording } from '../api';
+import { changeTrip, copyMedia, createTrip, deleteTrip, fetchTrip, listMedia, listRecordings, moveMedia, moveRecording } from '../api';
 import { newId, type Day } from '../model/trip';
 import { withNewPartIds } from '../routing/dayEdit';
 import { flushSave } from '../state/autosave';
@@ -32,23 +32,28 @@ export function tripFromSections(name: string, sections: readonly Day[], newId: 
 
 /**
  * Makes a trip in a folder from a collection, whole or the sections named, and says what
- * it made. With `move` the sections leave the collection once the trip is saved, their
- * recordings going with them to their days, and a collection left without sections is
- * deleted, after `leave` where it is the open one.
+ * it made. The media kept with the sections come along, each with its section's day; a
+ * section that holds media and nothing to ride makes no day, and its media go with the
+ * first. With `move` the sections leave the collection once the trip is saved, their
+ * media and recordings going to their days instead of copies of the media, and a
+ * collection left without sections is deleted, after `leave` where it is the open one.
  */
 export async function createTripFrom(source: TripSource, name: string, folderId: number | null, move: boolean, leave: () => Promise<void>): Promise<string> {
   await flushSave();
   const open = source.id === openTripId();
   const collection = open ? openTrip()! : await fetchTrip(source.id);
-  const sections = source.dayIds ? collection.days.filter((day) => source.dayIds!.includes(day.id)) : collection.days;
-  const made = tripFromSections(name, sections, newId);
+  const chosen = source.dayIds ? collection.days.filter((day) => source.dayIds!.includes(day.id)) : collection.days;
+  const media = (await listMedia(collection.id)).filter((kept) => chosen.some((section) => section.id === kept.dayId));
+  const riding = chosen.filter((section) => section.routes.length + section.stops.length > 0 || !media.some((kept) => kept.dayId === section.id));
+  const made = tripFromSections(name, riding.length > 0 ? riding : chosen, newId);
   const trip = await createTrip(made.name, folderId);
   await changeTrip(trip.id, (empty) => ({ ...empty, days: made.days }));
+  for (const kept of media) await (move ? moveMedia : copyMedia)(collection.id, kept.id, made.dayOf.get(kept.dayId!) ?? made.days[0]!.id);
   if (move) {
     const recordings = (await listRecordings(collection.id)).filter((recording) => made.dayOf.has(recording.dayId));
     await Promise.all(recordings.map((recording) => moveRecording(collection.id, recording.id, made.dayOf.get(recording.dayId)!)));
     // Sections are only ever named of the open collection, where taking them out is an edit like any other.
-    if (sections.length < collection.days.length) removeParts('day', sections.map((section) => section.id));
+    if (chosen.length < collection.days.length) removeParts('day', chosen.map((section) => section.id));
     else {
       if (open) await leave();
       await deleteTrip(collection.id);

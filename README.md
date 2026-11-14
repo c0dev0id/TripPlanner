@@ -58,6 +58,8 @@ share work; sharing between users is on the way.
   next to the planned route. Open one for its figures: speed, climb, lean and road
   surface, charted and coloured on the line.
   Compare it with the plan or another ride.
+- **Documents with the day** — keep PDFs, pictures, any other file and links with a
+  day; a folder's documents come along when it is imported.
 - **A journal on everything** — notes, photos, receipts and documents on the trip, a
   day, a stop, a route, or a spot on the map. Photos shrink to a web size before they
   leave the phone, stand on the map where they were taken, land on the day they were

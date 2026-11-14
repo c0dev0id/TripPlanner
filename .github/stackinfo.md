@@ -10,9 +10,10 @@
   taken (without exif, photos are kept but not placed), zlib checks that an uploaded
   recording is a compressed GPX file, xmlreader reads its line and start from it, and
   xmlwriter writes the GPX exports.
-- The journal's files are uploads: httpd's `connection max request body` (1 MB by
+- The journal's files and the days' media are uploads: httpd's `connection max request body` (1 MB by
   default, answered with 413 above it) and php-fpm's `upload_max_filesize` and
-  `post_max_size` (2 MB and 8 MB by default) bound a photo's size; phone photos need
+  `post_max_size` (2 MB and 8 MB by default) bound a photo's size, and that of a
+  document kept with a day, which is sent as it is; phone photos need
   20 MB or so from all three, although a photo arrives as a JPEG of at most 2560 px made
   in the browser (see the frontend). JPEG, PNG and WebP get a preview; a JPEG its EXIF
   placement.

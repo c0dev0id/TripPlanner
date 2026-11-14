@@ -56,7 +56,8 @@ export function Lightbox() {
               <a href={shown.src} target="_blank" rel="noopener">
                 {t('Open the file')}
               </a>
-              <button type="button" title={t('Close')} aria-label={t('Close')} onClick={close}>
+              {/* Focused first: a document's frame would take the keys otherwise, Escape among them. */}
+              <button type="button" title={t('Close')} aria-label={t('Close')} autofocus onClick={close}>
                 <CloseIcon />
               </button>
             </figcaption>

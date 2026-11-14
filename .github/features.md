@@ -199,7 +199,9 @@
   on one day; other files are a day each, dated on from a date in the trip folder's
   name, or undated. A folder that also holds folders of GPX files is a folder of
   trips: each of its own files becomes a trip of one day, named and dated by the file.
-  Files that are no GPX are reported and left out.
+  The other files of a folder that becomes one trip are kept with the trip's first day
+  as its media; hidden files, and other files beside trips made a file each, are left
+  out.
 - Opening a trip says how far it has come on the trip's row: a ring turns where its
   icon stands, and under its name stands how much of its document has arrived of how
   much ("Loading 2.3 of 4.1 MB"), then "Opening…" until the map has drawn its routes.
@@ -365,6 +367,27 @@
   other, and by speed and lean against the other recording; a Difference chart shows
   the time and speed against it along the way, or the distance from the plan. The point
   picked says how it differs there.
+- Additional media on a day: files and links kept with it, listed in the day's pane under
+  their own heading after Planning (the day's routes and stops) and Recordings. Files
+  are picked, as many at once as wanted, and may be of any kind; a link is given a name
+  and its address, and shows the name over the address without its scheme, cut where
+  it is long. A click opens an image or a PDF over the page, the PDF in the browser's
+  own viewer, or in a new tab where the browser has none; a link opens in a new tab;
+  any other file is downloaded. Media are renamed (a link edited), selected with Cmd,
+  Ctrl or Shift, moved to another day, cut, copied and pasted onto a day of any trip,
+  and deleted, from their menu and by the keys of the file verbs. They go with their
+  day: removed with it after a question that names them, copied with a duplicated
+  trip, moved with a merged one, written into the exported zip and read back from it.
+  They are the owner's alone: a shared link shows the journal and none of them. A
+  section of a collection lists the media it has, under the same heading.
+- Files that come with an import: the files in a folder that are neither GPX nor
+  hidden are kept with what the folder becomes. A collection gets a section
+  "Additional Media" at its end that holds them, as does "Imported" for files dropped
+  loose on Collections; a trip made of a folder keeps them with its first day. Files
+  added to a trip or a collection from its menu go the same way. A trip made from a
+  collection takes the media along, each with its section's day; a section that
+  holds media and nothing to ride makes no day, and its media go with the first day,
+  from where they are moved to the day they belong to.
 - A journal on the trip, on a day, on a stop and on a route, opened from the icon on
   their rows, which counts their entries: entries of a note, a file (a photo, a receipt, a document) or both, edited and
   deleted in place; rows say how many entries a part has. The trip's own journal reads

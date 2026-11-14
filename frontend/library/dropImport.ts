@@ -7,7 +7,7 @@ import { addParts, moveDay } from '../routing/dayEdit';
 import { readRecording, type RecordedTrack } from '../recording/track';
 import { counted } from '../ui/format';
 import type { Dropped } from './fileDrop';
-import { dateIn, importFolder, isGpxPath, planFolderImport, readPlannedDays, withImportedDay, type ImportMode, type ImportSource } from './folderImport';
+import { addDaysAndMedia, dateIn, importFolder, isGpxPath, isMediaPath, planFolderImport, readPlannedDays, withImportedDay, type ImportMode, type ImportSource, type PlannedDay } from './folderImport';
 import { archiveFolders, inFolders } from './tripArchive';
 
 /** The month a ride was recorded in, as YYYY-MM: from the time of its first point that has one, else from a date in the file's name, else from when the file was last changed. */
@@ -19,6 +19,13 @@ export function recordedMonth(track: RecordedTrack, file: File): string {
 /** The collection of the name in the folder: the one among the trips listed, or a new one. */
 const collectionIn = async (trips: readonly TripSummary[], folderId: number | null, name: string): Promise<number> =>
   trips.find((trip) => trip.kind === 'collection' && trip.folderId === folderId && trip.name === name)?.id ?? (await createTrip(name, folderId, 'collection')).id;
+
+/** What an import brought, in a sentence: "3 sections, 2 attachments and 1 collection imported." */
+function importedText(made: readonly (string | false)[]): string {
+  const said = made.filter((part) => part !== false);
+  const last = said.at(-1)!;
+  return t('{trips} imported.', { trips: said.length > 1 ? t('{a} and {b}', { a: said.slice(0, -1).join(', '), b: last }) : last });
+}
 
 /** Runs `work` on each file in turn, saying how far the import is; what fails is reported under the file's path, and the import goes on. */
 async function eachFile(sources: readonly ImportSource[], onProgress: (text: string) => void, errors: string[], work: (source: ImportSource) => Promise<void>): Promise<void> {
@@ -147,22 +154,24 @@ async function importPlaces(files: readonly ImportSource[], into: { folderId: nu
 
 /**
  * Adds GPX files as sections, each named after its file, to the collection “Imported” in
- * the folder `folderId`, made where the folder has none. What cannot be read or saved is
- * reported, and the import goes on.
+ * the folder `folderId`, made where the folder has none, and keeps the other files with
+ * it as media. What cannot be read or saved is reported, and the import goes on.
  */
-async function importSections(sources: readonly ImportSource[], folderId: number | null, onProgress: (text: string) => void): Promise<{ sections: number; errors: string[] }> {
-  const result = { sections: 0, errors: [] as string[] };
-  const sections: { name: string; parts: DayParts }[] = [];
-  await eachFile(sources, onProgress, result.errors, async (source) => {
+async function importSections(sources: readonly ImportSource[], folderId: number | null, onProgress: (text: string) => void): Promise<{ sections: number; media: number; errors: string[] }> {
+  const result = { sections: 0, media: 0, errors: [] as string[] };
+  const sections: { day: PlannedDay; parts: DayParts[] }[] = [];
+  await eachFile(sources.filter((source) => isGpxPath(source.path)), onProgress, result.errors, async (source) => {
     const file = await source.open();
     const name = file.name.replace(/\.gpx$/i, '');
-    sections.push({ name: asName(name), parts: gpxToDayParts(parseGpx(await file.text()), { fileName: name, profile: 'motorcycle', newId }) });
+    sections.push({ day: { name: asName(name), date: null, files: [] }, parts: [gpxToDayParts(parseGpx(await file.text()), { fileName: name, profile: 'motorcycle', newId })] });
   });
-  if (sections.length === 0) return result;
+  const media = sources.filter((source) => isMediaPath(source.path));
+  if (sections.length + media.length === 0) return result;
   const collection = t('Imported');
   try {
-    await changeTrip(await collectionIn(await listTrips(), folderId, collection), (trip) => sections.reduce((to, section) => withImportedDay(to, { name: section.name, date: null }, [section.parts]), trip));
+    await addDaysAndMedia(await collectionIn(await listTrips(), folderId, collection), sections, media, result.errors);
     result.sections = sections.length;
+    result.media = media.length;
   } catch (error) {
     result.errors.push(`${collection}: ${errorMessage(error)}`);
   }
@@ -179,8 +188,9 @@ function importTree(loose: readonly ImportSource[], inDropped: readonly ImportSo
 }
 
 /**
- * Adds GPX files to a trip at its end: to a collection a section per file, to a trip the
- * days a folder of the files would make; to a collection among the recordings, as the
+ * Adds files to a trip: GPX files at its end, to a collection a section per file, to a
+ * trip the days a folder of the files would make, and any other file as media, with a
+ * trip's first day or in a collection's section for them; to a collection among the recordings, as the
  * `kind` of the top folder around it says, as recordings on the sections of their months,
  * and to a list of places as places. The answer says what was added and what could not
  * be read.
@@ -193,17 +203,18 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
   onProgress(t('Importing {i} of {n}: {name}', { i: 1, n: 1, name: trip.name }));
   const planned = planFolderImport(files.map((file) => file.path), collection ? 'planning-material' : 'trips');
   const days = await readPlannedDays(files, planned.flatMap((trip) => trip.days), !collection, errors);
-  if (days.length === 0) return { text: t('No GPX files and no exported trips in there.'), errors };
-  await changeTrip(trip.id, (loaded) => days.reduce((to, { day, parts }) => withImportedDay(to, day, parts), loaded));
-  return { text: t('{trips} imported.', { trips: counted(days.length, collection ? 'section' : 'day') }), errors };
+  const media = files.filter((file) => isMediaPath(file.path));
+  if (days.length + media.length === 0) return { text: t('No GPX files and no exported trips in there.'), errors };
+  if (!(await addDaysAndMedia(trip.id, days, media, errors))) errors.push(t('The trip has no day to keep files with.'));
+  return { text: importedText([days.length > 0 && counted(days.length, collection ? 'section' : 'day'), media.length > 0 && counted(media.length, 'attachment')]), errors };
 }
 
 /**
  * Imports what was dropped on the folder `folderId`, null for the top, or picked for it,
  * as the kind of the top folder around it says. Among recordings, every GPX file is kept
  * as a recording in the collection of the year it was recorded in. Among collections, files
- * become sections of the collection “Imported” and a folder of files a collection, in the
- * folders above it. Among places, the waypoints of every GPX file become places of a list.
+ * become sections of the collection “Imported”, other files its media, and a folder of
+ * files a collection with the folder's other files as its media, in the folders above it. Among places, the waypoints of every GPX file become places of a list.
  * Anywhere else a file becomes a trip, a folder of files a trip of its
  * own, and a folder that also holds folders a folder of trips. The answer says what was
  * made and what could not be read or saved.
@@ -214,13 +225,14 @@ export async function importDropped(dropped: Dropped, folderId: number | null, k
   const made: string[] = [];
   const errors: string[] = [];
   if (kind === 'collections') {
-    const sections = await importSections(dropped.files.filter((source) => isGpxPath(source.path)), folderId, onProgress);
+    const sections = await importSections(dropped.files, folderId, onProgress);
     if (sections.sections > 0) made.push(counted(sections.sections, 'section'));
+    if (sections.media > 0) made.push(counted(sections.media, 'attachment'));
     errors.push(...sections.errors);
   }
   const trees = await importTree(kind === 'collections' ? [] : dropped.files, dropped.inFolders, kind === 'collections' ? 'planning-material' : 'trips', folderId, onProgress);
   if (trees.trips > 0) made.push(counted(trees.trips, kind === 'collections' ? 'collection' : 'trip'));
   errors.push(...trees.errors);
   if (made.length === 0) return { text: t('No GPX files and no exported trips in there.'), errors };
-  return { text: t('{trips} imported.', { trips: made.length > 1 ? t('{a} and {b}', { a: made[0]!, b: made[1]! }) : made[0]! }), errors };
+  return { text: importedText(made), errors };
 }
