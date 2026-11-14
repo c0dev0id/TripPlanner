@@ -215,9 +215,9 @@ entries at the end of their section.
   appears once. Over an archive of 2.8 million points the report takes about 4 s, half of
   it decoding lines in PHP; should libraries grow far beyond that, each route's shape
   can be kept when it is saved instead of worked out for every report.
-- **Two folders are special, by a kind on the folder.** Collections are to live in two
-  places only, a folder for recordings that belong to no trip and one for planning
-  material, and everything else is to hold trips. The two are rows of `folders` with a
+- **Three folders are special, by a kind on the folder.** Collections are to live in
+  three places only, a folder for recordings that belong to no trip, one for planning
+  material and one for lists of places, and everything else is to hold trips. They are rows of `folders` with a
   `kind`, not places of their own: everything a folder does (holding folders, taking
   what is moved or pasted, the tree) then works for them unchanged. A trigger makes
   them with the user, so no code that creates a user has to know of the library; the
@@ -231,6 +231,36 @@ entries at the end of their section.
   what would be refused. The import dialog lost planning material as a way to organize
   a tree: among collections a picked folder is imported as a dropped one is, elsewhere
   it can only make trips.
+- **A list of places is a collection in a folder of its own, its kinds are sections,
+  a place is a free stop.** Places need what stops have already: a position, a symbol,
+  the fields, the dialog, a marker, copy and paste, undo, the save. A table and
+  an editor of their own would have repeated all of it. They are kept apart from trips
+  and planning material by the folder, not by a field on the stop: in a trip the order
+  of the stops says something and their kind does not, in a list of places it is the
+  other way round, and a section per kind in a trip's panel would have been wrong.
+  The stop's dialog leaves out what only a ride has and leaves those values as they are.
+- **A place added to a day is a copy.** The trip is one document, saved, exported and
+  shared whole; a stop that pointed at a place in another document would change, or
+  vanish, with a list edited later, and a shared trip would depend on something its
+  reader cannot see. The copy takes the name, symbol, position, address, contact,
+  website and notes and is a stop of the trip from then on.
+- **The user's places are read in one request, not by tile.** A user keeps hundreds of
+  places, not the hundreds of thousands the store of OpenStreetMap holds; one list
+  answers the map, the list of kinds and the tap alike. It is read again when the
+  library is listed afresh and when another trip is opened, which covers a list
+  edited in the meantime.
+- **Own places are dots in the colour of their kind.** The kinds are the user's words,
+  so no icon can stand for them, and the stop's own symbol is unset in most imported
+  files. Names are not drawn: the raster base maps bring no glyphs, and a hundred
+  labels cover the roads the map is read for. The name is in the tap.
+- **Links to the host most waypoints share are not a place's website.** A directory
+  that offers its places as a file puts a link to its own page on every waypoint,
+  beside the place's own; the stop has one website. Where a file's waypoints link to
+  several hosts, the links to the most frequent one are dropped and the last link left
+  is kept; a file whose waypoints all link to one host keeps those links.
+- **A file of waypoints alone is no trip.** Dropped on a folder of trips it made a trip
+  of one day with a hundred stops and no route, which nothing in the planner is made
+  for. It is refused there with the pointer to the Places folder.
 - **What is new or imported is asked for where it goes.** The toolbar's icons for a new
   trip, a new folder and the two imports acted on "the folder shown", which the user
   had to set first and could not see in the icon. New and Add are now in the menu of
@@ -580,7 +610,7 @@ entries at the end of their section.
   wait for the base map's tiles on a slow line. The library answers again as soon as
   the document is here; only the row keeps its ring until the map is done.
 - **The highlight under the pointer is a veil, not a colour.** As an opaque grey it
-  replaced whatever a row showed: the tint of the two special folders, the mark, a
+  replaced whatever a row showed: the tint of the special folders, the mark, a
   selection. As a translucent layer of the text's colour it darkens what is there in
   the light scheme and lightens it in the dark one, whatever that is, and no row needs
   a highlight of its own. A grip and a pad take none at all: they are handles of the

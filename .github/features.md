@@ -200,9 +200,10 @@
 - Opening a trip says how far it has come on the trip's row: a ring turns where its
   icon stands, and under its name stands how much of its document has arrived of how
   much ("Loading 2.3 of 4.1 MB"), then "Opening…" until the map has drawn its routes.
-- Two folders every user has, first in the tree and tinted, which are neither renamed,
-  moved nor deleted: Recordings (red), for recordings that belong to no trip, and
-  Collections (yellow). They and the folders in them hold collections and nothing else;
+- Three folders every user has, first in the tree and tinted, which are neither renamed,
+  moved nor deleted: Recordings (red), for recordings that belong to no trip,
+  Collections (yellow), and Places (green), for lists of the user's own places. They
+  and the folders in them hold collections and nothing else;
   every other folder and the top hold trips. The server refuses a collection made or
   moved elsewhere, a trip made or moved into them, and a folder moved across with
   contents of the wrong kind. The library follows: New in such a folder's menu offers
@@ -218,7 +219,13 @@
   both made where they are missing. A file the user keeps already, on whatever day, is
   left out, so the same folder can be dropped again; a file of several tracks is
   reported and left out. Files added from the menu of a collection in there are kept
-  the same way, in that collection. On Collections or a
+  the same way, in that collection. On Places or a folder in it, a GPX file's waypoints
+  become the places of a list named as the file names itself, else after the file, each
+  under the kind its waypoint is of (`<type>`), else under "Places"; a place the list
+  holds already, by name and position, is left out, so a newer file of the same list
+  adds only what is new. Routes and tracks in such a file are left out and said so.
+  A file that holds waypoints and no route is refused elsewhere, with the pointer to
+  this folder. On Collections or a
   folder in it, files become sections of the collection “Imported” and a dropped folder
   is imported as planning material: a collection per folder of files, its folders
   recreated. On any other folder or the top, a file becomes a trip and a dropped folder
@@ -252,6 +259,22 @@
   waypoints; a click on a route takes it up and shows it whole on the map, on a waypoint goes there, and
   their menus copy them, to be pasted into a day of a trip, or remove them. A section is
   renamed or removed from its menu.
+- Lists of the user's own places, in the Places folder: a list is opened like a
+  collection, its sections are the kinds of its places ("Kind of place…" under New in
+  the list's menu), and a kind lists its places by name. A place is a stop without the
+  fields of a ride (arrival, pause, booking reference, optional): symbol, name,
+  address, contact, website and notes, edited in the stop's dialog and copied, cut
+  and removed from its menu. "Add a place here…" in the map's menu adds
+  one to the kind shown. A waypoint's link becomes the place's website; where most
+  waypoints of a file link to the same host, such as the directory the file was
+  downloaded from, those links are left out and the place's own link is kept.
+- The user's own places on the map while planning: under the places of OpenStreetMap,
+  the list the places icon opens names every list with its kinds, each a layer to
+  tick, with the colour its places are drawn in and how many it holds. A place is a
+  dot in its kind's colour; a tap says its name, list and kind, address, contact,
+  notes and website, and with a day of a trip shown offers "Add as stop", which adds a
+  copy of the place to the day as a free stop. Which kinds are on is kept for the
+  browser.
 - Routes and stops can be marked optional, each in its dialog, and are shown so.
 - GPX export from a dialog: the whole trip, the day picked, or the days or routes
   selected, from Export GPX… in their menu; what is exported is saved first; one file

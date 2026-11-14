@@ -4,6 +4,7 @@ import { daysToSend } from './model/delta';
 import type { Entry, EntryTarget } from './model/journal';
 import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Trip, TripKind, TripSummary } from './model/trip';
+import type { OwnPlace } from './poi/ownPlaces';
 import { stopsInRidingOrder } from './routing/sequence';
 
 /** Requests to the JSON API, and the one form the app posts: sign out. */
@@ -164,6 +165,9 @@ export interface KeptPlace {
 
 /** The places of the kinds in a tile of the web's maps at zoom 10. */
 export const fetchPlaces = (x: number, y: number, kinds: readonly string[]): Promise<KeptPlace[]> => request('GET', `/api/places/${x}/${y}?kinds=${kinds.join(',')}`);
+
+/** The places the user keeps in the lists of the folder for places. */
+export const fetchOwnPlaces = (): Promise<OwnPlace[]> => request('GET', '/api/places/own');
 
 /** What the user set for the planner as a whole; fields not set are absent. */
 export interface Preferences {

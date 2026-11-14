@@ -1154,6 +1154,24 @@ fieldset.choices legend {
   font-size: 13px;
 }
 
+/* The name of one of the user's own lists, over its kinds. */
+.places-list .own-list {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+/* The colour a kind's places are drawn in, as on the map. */
+.own-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin: 0 3px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line);
+}
+
 .place-reaches label {
   align-items: center;
 }
@@ -1352,6 +1370,12 @@ fieldset.choices legend {
 
 .map-info p {
   margin: 4px 0 0;
+}
+
+.map-info .notes {
+  max-height: 9em;
+  overflow-y: auto;
+  white-space: pre-line;
 }
 
 .dialog {

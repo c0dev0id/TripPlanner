@@ -18,6 +18,7 @@ import { OverlayInfo } from './OverlayInfo';
 import { Interactions } from './Interactions';
 import { EntryMarkers } from './EntryMarkers';
 import { PointMarkers } from './PointMarkers';
+import { OwnPlaceMarkers } from './OwnPlaceMarkers';
 import { PlaceMarkers } from './PlaceMarkers';
 import { COMPARED_SOURCE, OPENED_RECORDING_SOURCE, RECORDINGS_SOURCE, recordingFeatures } from './recordingOverlay';
 import { RecordingPoint } from './RecordingPoint';
@@ -72,6 +73,7 @@ export function MapView() {
             <PointMarkers map={m()} />
             <Interactions map={m()} />
             <PlaceMarkers map={m()} />
+            <OwnPlaceMarkers map={m()} />
             <OverlayInfo map={m()} />
             <SearchBox map={m()} />
           </>
