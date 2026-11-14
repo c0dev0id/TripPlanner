@@ -5,7 +5,7 @@ import type { StashFile, StashItem } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip, copyRoutes, copyStops } from '../state/clipboard';
-import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, opening, openTree, outlineOf, query, relistFolders, relistStash, searchedFor, relistTrips, stashFiles, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
+import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, opening, openTree, outlineOf, query, relistFolders, relistStash, searchedFor, relistTrips, stashFiles, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
@@ -29,8 +29,6 @@ import { ForById } from '../ui/ForById';
 import { Pad } from '../ui/Pad';
 import { dragToFolder } from './dragToFolder';
 import { libraryImports } from './importActions';
-import { TripFromDialog } from './TripFromDialog';
-import { createTripFrom } from './tripFromSections';
 import { StashFileCard, StashItemRow, stashItemName } from './StashFileCard';
 import { stashCopies, stashStops, type Picked } from './stashOut';
 import { keptText } from './dropImport';
@@ -470,22 +468,20 @@ export function Library(props: {
     if (holdsOpen([{ trip: into }, ...others.map((trip) => ({ trip }))])) await props.onLeave();
     await runLibrary(() => mergeTrips(into.id, others.map((t) => t.id)), relist);
   };
-  /** Whether the folder, null for the top, holds collections: the special folders and the folders in them do, everything else holds trips. */
-  const holdsCollections = (id: number | null): boolean => kindAround(folders(), id) !== 'folder';
   /** What a folder holds besides folders, as it is counted: trips, in the Stash files or, among the places, lists. */
   const heldNoun = (id: number | null) => ({ folder: 'trip', collections: 'file', places: 'list' } as const)[kindAround(folders(), id)];
-  /** Says of a folder, null for the top, whether it takes the items: all their trips, at any depth, are of the kind it holds, and files go into the Stash alone. */
+  /** Says of a folder, null for the top, whether it takes the items: lists of places go among the Places, trips into the other folders, and files into the Stash alone. */
   const takerOf = (items: readonly Item[]) => {
     const within = tripsWithin(items);
     const files = filesOf(items).length > 0;
     return (into: number | null): boolean => {
-      const collections = holdsCollections(into);
-      return within.every((trip) => (trip.kind === 'collection') === collections) && (!files || kindAround(folders(), into) === 'collections');
+      const around = kindAround(folders(), into);
+      return within.every((trip) => (trip.kind === 'collection' ? 'places' : 'folder') === around) && (!files || around === 'collections');
     };
   };
   /** Refuses, as the server would, to put the items into a folder that does not hold their kind. */
   const assertFits = (items: readonly Item[], into: number | null) => {
-    if (!takerOf(items)(into)) throw new Error(t('Collections are kept in the folders for collections and places, trips in the others.'));
+    if (!takerOf(items)(into)) throw new Error(t('Lists of places are kept among the Places, files in the Stash, trips in the other folders.'));
   };
   /** Moves folders, trips and files into a folder, none for the top, those not in it already; the server refuses a folder inside itself. */
   const moveInto = (moved: readonly Item[], into: number | null) => {
@@ -513,15 +509,6 @@ export function Library(props: {
     ];
     return places.length > 0 ? [{ label: t('Move…'), items: places }] : [];
   };
-  /** The folders a trip can go into, by their path. */
-  const tripFolders = () =>
-    folders()
-      .filter((f) => !holdsCollections(f.id))
-      .map((f) => ({ id: f.id, path: pathOf(f.id) }))
-      .sort((x, y) => x.path.localeCompare(y.path));
-  /** Makes the trip asked for in the dialog and says so where the imports say what they did. */
-  const makeTripFrom = (source: TripSource, name: string, folderId: number | null, move: boolean) =>
-    void runLibrary(async () => setImportNote({ text: await createTripFrom(source, name, folderId, move, props.onLeave), errors: [] }), relist);
   /** What the clipboard holds of the library, by number: 2 folders and 3 trips. */
   const clipText = (copied: LibraryClip): string => countsText(copied.folderIds.length, copied.tripIds.length);
   /** The folders and trips on the clipboard, those still there. */
@@ -793,7 +780,6 @@ export function Library(props: {
               : { label: t('Trips and planning material do not merge'), disabled: true, run: nothing },
           ]
         : []),
-      ...('trip' in item && isPlanningMaterial(item.trip.id) ? [{ label: t('Create trip from collection…'), disabled: several, run: () => setTripSource({ id: item.trip.id, name: item.trip.name }) }] : []),
       exportEntry,
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
@@ -1017,7 +1003,6 @@ export function Library(props: {
           if (name !== trip.name) void runLibrary(() => renameTrip(trip.id, name), relistTrips);
         }}
       />
-      <TripFromDialog folders={tripFolders()} onCreate={makeTripFrom} />
     </div>
   );
 }
@@ -1044,7 +1029,7 @@ function TripCard(props: {
   const loading = () => (isOpening(props.trip.id) ? opening()?.progress : undefined);
   const folderKind = createMemo(() => kindAround(libraryFolders() ?? [], props.trip.folderId));
   /** What a collection is: the places it holds in the folder for them, planning material elsewhere. */
-  const held = createMemo(() => (folderKind() === 'places' ? counted((outlineOf(props.trip.id) ?? []).reduce((sum, day) => sum + day.stops, 0), 'place') : t('Planning material')));
+  const held = createMemo(() => counted((outlineOf(props.trip.id) ?? []).reduce((sum, day) => sum + day.stops, 0), 'place'));
   const meta = () =>
     (props.trip.kind === 'collection'
       ? [props.where, held(), counted(props.trip.dayCount, folderKind() === 'places' ? 'kind' : 'section')]

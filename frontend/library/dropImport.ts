@@ -158,23 +158,21 @@ function importTree(loose: readonly ImportSource[], inDropped: readonly ImportSo
 }
 
 /**
- * Adds files to a trip: GPX files at its end, to a collection a section per file, to a
- * trip the days a folder of the files would make, and any other file as media, with a
- * trip's first day or in a collection's section for them; to a list of places, as the
- * `kind` of the top folder around it says, as places. The answer says what was added and
- * what could not be read.
+ * Adds files to a trip: the days a folder of the files would make, at its end, and any
+ * other file as media with its first day; to a list of places, as the `kind` of the top
+ * folder around it says, the files' waypoints as places. The answer says what was added
+ * and what could not be read.
  */
 export async function importIntoTrip(trip: TripSummary, files: readonly ImportSource[], kind: FolderKind, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
   if (kind === 'places') return importPlaces(files, { tripId: trip.id }, onProgress);
   const errors: string[] = [];
-  const collection = trip.kind === 'collection';
   onProgress(t('Importing {i} of {n}: {name}', { i: 1, n: 1, name: trip.name }));
-  const planned = planFolderImport(files.map((file) => file.path), collection ? 'planning-material' : 'trips');
-  const days = await readPlannedDays(files, planned.flatMap((trip) => trip.days), !collection, errors);
+  const planned = planFolderImport(files.map((file) => file.path), 'trips');
+  const days = await readPlannedDays(files, planned.flatMap((trip) => trip.days), true, errors);
   const media = files.filter((file) => isMediaPath(file.path));
   if (days.length + media.length === 0) return { text: t('No GPX or KML files and no exported trips in there.'), errors };
   if (!(await addDaysAndMedia(trip.id, days, media, errors))) errors.push(t('The trip has no day to keep files with.'));
-  return { text: importedText([days.length > 0 && counted(days.length, collection ? 'section' : 'day'), media.length > 0 && counted(media.length, 'attachment')]), errors };
+  return { text: importedText([days.length > 0 && counted(days.length, 'day'), media.length > 0 && counted(media.length, 'attachment')]), errors };
 }
 
 /**

@@ -18,7 +18,11 @@ Photos, receipts, documents and comments attach to the trip, a day, a stop or a 
 From the stop times and the routing durations the planner computes each day's timeline
 and shows where a fixed arrival cannot be met. A library view organises a user's trips in
 folders with a search across them, and lets days, stops and routes be copied, moved,
-reordered and duplicated. Export produces GPX in the shapes devices and other
+reordered and duplicated. Beside the trips it keeps a Stash: GPX files and folders dumped
+there without sorting, each kept whole so that nothing in it is lost, to be browsed,
+cleaned up and taken from when a trip is put together. The trips are the curated side,
+where routes, tracks, recordings and times are tied together; the Stash is the queue
+before it. Export produces GPX in the shapes devices and other
 applications need: one file or one per day, tracks or routes, with or without optional
 parts, as a single file or a zip.
 

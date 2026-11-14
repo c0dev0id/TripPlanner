@@ -4,7 +4,7 @@ import { dayOfRoute, dayOfStop, numberedStops, type PartKind } from '../routing/
 import { copyParts, pasteItems } from '../state/clipboard';
 import { setEditTarget, setExportScope, setTrackAction } from '../state/drawing';
 import { pinRoutes } from '../state/pins';
-import { isPlaceList, isPlanningMaterial, setTripSource } from '../state/library';
+import { isPlaceList } from '../state/library';
 import { clearPartSelection, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
 import { duplicateParts, makeRouteOfStops, movePartsToDay, openTrip, removeParts, routeById, setStopSymbols } from '../state/trip';
 import { OUR_ICONS, PLAIN_SYMBOL } from '../symbols/symbols';
@@ -95,14 +95,6 @@ function convertItem(kind: PartKind, ids: readonly string[]): MenuItem[] {
   return [{ label: t('Convert'), items: [{ label: t(trip.kind === 'trip' ? 'Stops to route' : 'Waypoints to route'), items: [by('By order ({n})', listed), by('By number ({n})', numbered)] }] }];
 }
 
-/** Makes a trip of the sections of planning material, the first of them suggesting its name. */
-function tripFromItem(ids: readonly string[]): MenuItem[] {
-  const trip = openTrip()!;
-  if (!isPlanningMaterial(trip.id)) return [];
-  const name = trip.days.find((day) => day.id === ids[0])?.name ?? '';
-  return [{ label: t(ids.length > 1 ? 'Create trip from selection…' : 'Create trip from section…'), run: () => setTripSource({ id: trip.id, dayIds: [...ids], name }) }];
-}
-
 /**
  * The menu of a day, a route or a stop of the open trip, the same for each kind and in a
  * trip as in a collection: edit, a stop's icon, duplicate, cut, copy, paste into it, move,
@@ -127,7 +119,6 @@ export function partMenu(kind: PartKind, id: string, own: { edit?: () => void; m
     ...(kind === 'stop' ? [] : [{ label: t('Export GPX…'), run: () => setExportScope({ kind, ids }) }]),
     ...(several ? [] : (own.more ?? [])),
     ...convertItem(kind, ids),
-    ...(kind === 'day' ? tripFromItem(ids) : []),
     ...(several && kind === 'route' ? pinItems((pinned) => pinRoutes(ids, pinned)) : []),
     ...(several || isPartSelected(kind, id) ? [] : [{ label: t('Select'), run: () => togglePart(kind, id) }]),
     { label: t('Remove'), run: () => void removeAsked(kind, ids) },

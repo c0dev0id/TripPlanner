@@ -98,17 +98,6 @@ const folderKindOf = (tripId: number | undefined): FolderKind =>
 /** Whether the trip is a list of places: a collection in the folder for places or a folder in it. */
 export const isPlaceList = (tripId: number | undefined): boolean => folderKindOf(tripId) === 'places';
 
-/** Whether the trip is planning material: a collection in the folder for collections or a folder in it. */
-export const isPlanningMaterial = (tripId: number | undefined): boolean => folderKindOf(tripId) === 'collections';
-
-/** What a trip is being made from, in its dialog: the collection `id`, whole or the sections named, and the name suggested for the trip. */
-export interface TripSource {
-  id: number;
-  dayIds?: string[];
-  name: string;
-}
-export const [tripSource, setTripSource] = createSignal<TripSource>();
-
 /** The folder at the top of a tree, which its tab stands for: null for the trips', and for the others' while the folders are not listed. */
 export const rootOf = (tree: TreeTab): number | null => library.roots()[tree];
 

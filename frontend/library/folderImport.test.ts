@@ -113,24 +113,14 @@ describe('planFolderImport, a trip per file', () => {
   });
 });
 
-describe('planFolderImport, planning material', () => {
-  it('makes a collection of each folder of GPX files, a section of each file, none of them dated', () => {
-    expect(plan(['Planning/TET/F.gpx', 'Planning/TET/E.gpx', 'Planning/ACT 2024-06-12/ACT_PT.gpx', 'Planning/ACT 2024-06-12/ACT_IT.gpx'], 'planning-material')).toEqual([
-      { kind: 'collection', folders: ['Planning'], name: 'ACT 2024-06-12', days: [[null, 'ACT_IT', ['ACT_IT.gpx']], [null, 'ACT_PT', ['ACT_PT.gpx']]] },
-      { kind: 'collection', folders: ['Planning'], name: 'TET', days: [[null, 'E', ['E.gpx']], [null, 'F', ['F.gpx']]] },
-    ]);
-  });
-});
-
 describe('the other files of a folder', () => {
-  it('are the media of the trip or the collection the folder makes, hidden ones left out', () => {
+  it('are the media of the trip the folder makes, hidden ones left out', () => {
     const paths = ['Alps/day 1.gpx', 'Alps/ferry.pdf', 'Alps/.DS_Store', 'Alps/Roadbook.docx', 'Alps/day 2.gpx'];
     expect(plan(paths)[0]!.media).toEqual(['ferry.pdf', 'Roadbook.docx']);
-    expect(plan(paths, 'planning-material')[0]!.media).toEqual(['ferry.pdf', 'Roadbook.docx']);
   });
 
   it('stay with the folder they are in', () => {
-    const made = plan(['Tours/Alps/a.gpx', 'Tours/Alps/alps.pdf', 'Tours/Vosges/b.gpx', 'Tours/readme.txt'], 'planning-material');
+    const made = plan(['Tours/Alps/a.gpx', 'Tours/Alps/alps.pdf', 'Tours/Vosges/b.gpx', 'Tours/readme.txt']);
     expect(made.map((c) => [c.name, c.media])).toEqual([['Alps', ['alps.pdf']], ['Vosges', undefined]]);
   });
 
@@ -162,6 +152,5 @@ describe('files of routes', () => {
     const [trip] = plan(paths);
     expect(trip!.days.map((day) => day[1])).toEqual(['day 1', 'day 2', 'day 3']);
     expect(trip!.media).toEqual(['ferry.pdf']);
-    expect(plan(['Tours/Vosges.kml'], 'planning-material').map((c) => [c.name, c.days])).toEqual([['Tours', [[null, 'Vosges', ['Vosges.kml']]]]]);
   });
 });

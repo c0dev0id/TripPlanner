@@ -9,7 +9,7 @@
   an account without an invitation and prints a generated password; at the first
   sign-in the user has to replace it before the planner opens.
 - The library has four tabs under its search, which stay in view while it scrolls:
-  Stash, for the collections of planning material, Trips, Places, for the lists of the
+  Stash, for the files that wait to be worked on, Trips, Places, for the lists of the
   user's own places, and Recordings, for the rides. A tab only shows its view: what is
   unfolded, marked and selected in the others stays as it is, each keeps how far it
   was scrolled, and the open trip stays open with its day in its pane. Its name and
@@ -67,17 +67,17 @@
   row or onto anything it holds while unfolded, the folder lighting up; anywhere else in
   the library's pane, the line under the tabs lights up and the drop goes to the top of the tree shown; selected trips go together, and a
   folder never goes into itself. Folders and trips are cards with the name over a line
-  of metadata, each with the icon of its kind: a folder, a trip, a collection of planning
-  material; a trip's card also shows its shape, small, each line in the colour its route
+  of metadata, each with the icon of its kind: a folder, a trip, a list of places, a
+  file; a trip's card also shows its shape, small, each line in the colour its route
   has on the map; right-click or a long press on a card opens its menu.
 - Folders and trips answer to one menu: New, Add, Rename, Duplicate, Cut, Copy, Paste,
   Move…, Merge, Export, Delete; what does not apply is greyed out. New makes what the
-  row can hold, named in a dialog: in a folder a folder or a trip, a collection where
-  the folder holds those; in a trip a day at its end, whether the trip is open or not,
-  in the open one as an edit that can be undone and that shows the day; a collection
-  has no New. Add takes files from the computer: into a folder GPX files, zips of
-  exported trips or a whole folder, imported as if dropped there; into a trip GPX files
-  as days, into a collection as sections. The line under the tabs has a menu too, with New and Add
+  row can hold, named in a dialog: in a folder a folder or a trip, among the Places a
+  list, in the Stash a folder alone; in a trip a day at its end, whether the trip is
+  open or not, in the open one as an edit that can be undone and that shows the day.
+  Add takes files from the computer: into a folder GPX files, zips of exported trips
+  or a whole folder, imported as if dropped there; into a trip GPX files as days. The
+  line under the tabs has a menu too, with New and Add
   for the top of the tree shown, Paste, and Export for what the tree holds, every trip there is in the trips' case. Several are selected
   together, folders and trips alike: a tap or click on a card's pad (drawn as a drag
   grip), Cmd or Ctrl with a click, Shift with a click for a run: the cards from the one
@@ -131,9 +131,7 @@
   is shown. In a text field the keys
   type, and a copy while text is selected copies the text.
   Copied routes are also pasted
-  from a trip's menu in the library, each onto the day of its date or a new day (into a
-  collection as a new section each), and from the menu of a folder that holds
-  collections as a new collection with a section per route.
+  from a trip's menu in the library, each onto the day of its date or a new day.
 - Routes as geometry: points in order with routed legs between them, one profile (road,
   bike, foot) per route. A click on a route's row selects it and shows the tools over
   the map. The hand, the default, moves the map and opens a stop's details, and neither
@@ -235,10 +233,10 @@
 - Opening a trip says how far it has come on the trip's row: a ring turns where its
   icon stands, and under its name stands how much of its document has arrived of how
   much ("Loading 2.3 of 4.1 MB"), then "Opening…" until the map has drawn its routes.
-- The Stash (its tab yellow) and Places (green) hold collections and nothing else, in
-  folders of their own; the Trips hold trips. The server refuses a collection made or
-  moved elsewhere, a trip made or moved into them, and a folder moved across with
-  contents of the wrong kind. The library follows: New in a folder's menu offers a
+- The Stash (its tab yellow) holds files and Places (green) lists of places, each in
+  folders of their own; the Trips hold trips. The server refuses a list made or moved
+  outside the Places, a trip made or moved into either, a file kept outside the
+  Stash, and a folder moved across with contents of the wrong kind. The library follows: New in a folder's menu offers a
   list among the Places where others offer a trip, and in the Stash a folder alone;
   Move… offers only folders that take what is moved; and a folder's card counts files
   in the Stash and lists among the Places.
@@ -308,12 +306,6 @@
   route deleted from the open trip leaves it as an edit that can be undone. While it is made, which takes a
   while on a large library, a ring turns beside how many routes are compared and the
   seconds gone.
-- Collections of planning material, such as a long-distance trail by country: listed in
-  the library as planning material, opened like a trip but with sections instead of
-  days and no dates, times, journal, tools or export. A section lists its routes and
-  waypoints; a click on a route takes it up and shows it whole on the map, on a waypoint goes there, and
-  their menus copy them, to be pasted into a day of a trip, or remove them. A section is
-  renamed or removed from its menu.
 - Convert, in the menu of a day or section, of a route and of several selected stops,
   with what the part can be turned into as its submenu, greyed out where it does not
   apply. A track becomes a route ("Track to route…", in its dialog). The free stops of
@@ -325,19 +317,9 @@
   waypoint among them that is a place as it is. Each says how many it takes. The stops
   become the points of a new route, its legs routed, and are stops no more. One step
   to undo. A list of places has no Convert.
-- A trip from planning material: "Create trip from collection…" in a collection's menu
-  and "Create trip from selection…" in the menu of its sections, selected or one alone,
-  ask for the trip's name, which the collection or the section selected first
-  suggests, and for the folder it goes into, the one chosen last offered again. The
-  trip is made as a folder of GPX files makes one: named without the date in its
-  name, a section with a date in its name on the day of that date, several of a date
-  on one day, the others a day each, dated on from the name's date or undated. A tick,
-  set at first, takes the sections out of the collection once the trip is saved;
-  a collection left without sections is deleted. The rides on a section are on its
-  day in the trip either way.
-  Without it the trip holds copies. The collection stays the one shown.
-- Lists of the user's own places, in the Places folder: a list is opened like a
-  collection, its sections are the kinds of its places ("Kind of place…" under New in
+- Lists of the user's own places, in the Places folder: a list is a collection, opened
+  like a trip but with sections instead of days and no dates, times, journal, tools or
+  export; its sections are the kinds of its places ("Kind of place…" under New in
   the list's menu), and a kind lists its places by name. A place is a stop without the
   fields of a ride (arrival, pause, booking reference, optional): symbol, name,
   address, contact, website and notes, edited in the stop's dialog and copied, cut
@@ -493,13 +475,10 @@
   They are the owner's alone: a shared link shows the journal and none of them. A
   section of a collection lists the media it has, under the same heading.
 - Files that come with an import: the files in a folder that are neither GPX nor
-  hidden are kept with what the folder becomes. A collection gets a section
-  "Additional Media" at its end that holds them, as does "Imported" for files dropped
-  loose on Collections; a trip made of a folder keeps them with its first day. Files
-  added to a trip or a collection from its menu go the same way. A trip made from a
-  collection takes the media along, each with its section's day; a section that
-  holds media and nothing to ride makes no day, and its media go with the first day,
-  from where they are moved to the day they belong to.
+  hidden are kept with what the folder becomes: a trip made of a folder keeps them
+  with its first day, from where they are moved to the day they belong to. Files
+  added to a trip from its menu go the same way. The Stash keeps files of routes
+  alone and leaves the others out.
 - A journal on the trip, on a day, on a stop and on a route, opened from the icon on
   their rows, which counts their entries: entries of a note, a file (a photo, a receipt, a document) or both, edited and
   deleted in place; rows say how many entries a part has. The trip's own journal reads

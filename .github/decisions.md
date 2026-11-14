@@ -281,14 +281,16 @@ entries at the end of their section.
   search stays above the tabs and limits the one shown (see "The search limits the tab
   shown"). The address names the tab by the folder shown and, for the
   rides, by `view=recordings`.
-- **Collections live in the special folders only, trips only outside them.** A library
-  where any folder could hold either left it to the user to keep planning material and
-  rides apart. The rule is one sentence both ways, so a folder's place says what it
-  holds, and it is checked on the server where a trip is created or moved and where a
-  folder is moved with what it holds; the library only keeps the user from asking for
-  what would be refused. The import dialog lost planning material as a way to organize
-  a tree: among collections a picked folder is imported as a dropped one is, elsewhere
-  it can only make trips.
+- **A folder's place says what it holds.** Lists of places live among the Places,
+  files in the Stash, trips in the other folders, and nothing else anywhere. A library
+  where any folder could hold anything left it to the user to keep them apart. The
+  rule is checked on the server where a trip is created or moved, where a file is
+  kept or moved and where a folder is moved with what it holds (`Folders::kindAround`,
+  `Folders::HELD`); the library only keeps the user from asking for what would be
+  refused. A collection, once also the Stash's planning material, is now a list of
+  places and nothing else; the special folder of the Stash keeps its kind
+  `collections` in the database, since a changed check would need the tables made
+  anew.
 - **The Stash is files; the Trips are curated.** The Stash is where data is dumped
   without thought and kept safe until it is worked on: what is imported there must not
   lose anything. The Trips are where routes, tracks, recordings and times are tied
@@ -313,6 +315,13 @@ entries at the end of their section.
     (`GpxEdit`), or, where it is all the file holds of routes and tracks, as the file's
     own bytes, since a ride is known by its file's digest and the same recording is
     often both dropped on the rides and dumped in the Stash.
+  - What the Stash held before, collections of planning material, is not carried
+    over: what they had dropped cannot be brought back, so the files are imported
+    again. With them went making a trip from a collection, pasting routes into the
+    Stash as a new collection, and importing a folder as planning material.
+  - A file's waypoints are counted, copied together and go with their file; they
+    are not listed, renamed or deleted one by one yet. A file of places can hold
+    thousands, and the Places are where single places are worked on.
   - KML and KMZ are turned into GPX in the browser before they are kept. The user's
     devices write GPX, and what such files hold beyond what GPX can say is little.
 - **A ride is kept once, for itself, and is on days by a link.** The library is a tree

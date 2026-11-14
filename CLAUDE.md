@@ -49,7 +49,7 @@ There is no linter beyond `php -l` and `tsc`. PHPUnit fails on warnings and depr
   `Http/Routes.php` is the one list of routes: a pages group behind the CSRF guard and an
   `/api` group answering JSON.
 - Folders are features (`Trip/`, `Journal/`, `Export/`, `Recording/`, `Poi/`, `Signup/`,
-  `Account/`, `Share/`). Each holds its controllers, value objects and PDO repositories
+  `Account/`, `Share/`, `Stash/`). Each holds its controllers, value objects and PDO repositories
   (plural class names: `Trips`, `Folders`, `Entries`).
 - Public pages (landing, sign-up, sign-in) are Plates templates in `templates/` and work
   without JavaScript. `/app` and the read-only trip page (`/trips/{id}`, `/t/{token}`)
@@ -78,6 +78,14 @@ The library has a tab for each of its views (`state/library.ts`, `LibraryTab`): 
 Trips, Places and Recordings. The folders of kind `collections` and `places` are the
 tops of the Stash's and the Places' trees and are never rows; each tree keeps its own
 mark and selection while another tab is shown.
+
+The Stash is folders of GPX files kept whole (`stash_files`, `src/Stash/`), with an
+index of each file's routes and tracks beside it (`stash_items`); it is not made of trip
+documents. It works on whole routes, tracks and files: rename, delete, and the ways out,
+into a day by the clipboard or among the rides. Cleaning up rewrites the stored file.
+Nothing goes into the Stash from the app. The Trips are where things are edited and
+tied together. A collection (`trips.kind`) is a list of places and lives among the
+Places alone.
 
 ### The trip document
 

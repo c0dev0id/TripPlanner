@@ -8,10 +8,9 @@ import { importArchive } from './tripArchive';
 /**
  * How a folder tree is organized: a trip per folder that holds GPX files alone, with a
  * day per file or date, and a trip per file of a folder that also holds folders of them;
- * a trip per file, the folders plain folders; or planning material, a collection per
- * folder of GPX files with a section per file.
+ * or a trip per file, the folders plain folders.
  */
-export type ImportMode = 'trips' | 'trip-per-file' | 'planning-material';
+export type ImportMode = 'trips' | 'trip-per-file';
 
 /** A trip or a collection the import makes. */
 export interface PlannedTrip {
@@ -131,7 +130,6 @@ export function planFolderImport(paths: readonly string[], mode: ImportMode): Pl
     const segments = folder.split('/');
     const files = byFolder.get(folder)!.sort((a, b) => byName(stem(a), stem(b)));
     const media = mediaIn.get(folder) ?? [];
-    if (mode === 'planning-material') return [{ ...collectionOfFolder(segments, files, stem), media }];
     if (mode === 'trip-per-file' || holdsFolders(folder)) return files.map((i) => tripOfFile(segments.filter(Boolean), stem(i), i));
     return [{ ...tripOfFolder(segments, files, stem), media }];
   });
@@ -169,11 +167,6 @@ export function tripOfFolder(segments: string[], files: number[], stem: (i: numb
 /** A GPX file as a trip of one day, named after the file without its date, dated by it; in the folders it is in. */
 function tripOfFile(folders: string[], stem: string, file: number): PlannedTrip {
   return { kind: 'trip', folders, name: withoutDate(stem) || stem, days: [{ date: dateIn(stem) ?? null, name: '', files: [file] }], media: [] };
-}
-
-/** A folder of GPX files as a collection named after it, inside the folders above it, with a section per file named after it. */
-function collectionOfFolder(segments: string[], files: number[], stem: (i: number) => string): PlannedTrip {
-  return { kind: 'collection', folders: segments.slice(0, -1), name: segments.at(-1) || t('Imported'), days: files.map((i) => ({ date: null, name: stem(i), files: [i] })), media: [] };
 }
 
 /** The trip with a day added at its end, named and dated, holding what the GPX files gave. */

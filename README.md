@@ -36,15 +36,16 @@ share work; sharing between users is on the way.
   pad from one to another, and a search that also finds routes and tracks by name. GPX
   files and folders are added from a folder's menu or dropped on it: a folder of files
   becomes a trip, a folder of folders a folder of trips.
-- **Four tabs** — Stash for planning material to copy routes from, Trips, Places for
+- **Four tabs** — Stash for the files you dump and sort out later, Trips, Places for
   lists of your own places, and Recordings. Each keeps what you unfolded and selected
   while you look at another.
 - **One way back** — the card under the path leads one level up, from a day to its trip
   to its folder to the top, and never moves.
 - **Duplicates found** — a report lists the routes kept more than once across the
   library, copies and the same ride from two apps; select some to copy or delete them.
-- **Planning material** — a trail or a tour collection, such as the TET by country, kept
-  as a collection to browse on the map and copy routes from into your own days.
+- **A Stash that loses nothing** — GPX files and folders dumped there are kept whole.
+  Browse them on the map, clean them up, copy routes into your days or keep a track as
+  a ride with all its data.
 - **GPX in as well as out** — a file from the device or BaseCamp drops into a day: its
   routes, tracks and waypoints become routes and stops. KML and KMZ files are read too. A recorded track keeps every
   point; condense it or turn it into a route from its menu.
