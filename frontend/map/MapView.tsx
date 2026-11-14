@@ -106,6 +106,8 @@ function routeDrawn(route: Route, role: RouteRole): boolean {
   return role !== 'neighbour' && activeRouteId() === undefined && activeRecordingId() === undefined;
 }
 
+const sameIds = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean => a.size === b.size && [...a].every((id) => b.has(id));
+
 const samePlaces = (a: readonly LngLat[], b: readonly LngLat[]): boolean => a.length === b.length && a.every((p, i) => p[0] === b[i]![0] && p[1] === b[i]![1]);
 
 /**
@@ -171,7 +173,9 @@ function RouteLines(props: { map: MapLibreMap }) {
   const days = createMemo(shownDays, [], { equals: sameLines });
   const marks = createMemo(() => selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : [])), [], { equals: samePlaces });
   const dims = createMemo(dimStops, [], { equals: samePlaces });
-  const features = createMemo(() => routeFeatures(days(), openRouteColors(), activeRouteId(), failedLegs(), marks(), dims(), routeDrawn));
+  // A pin set on a route that is drawn anyway changes no line.
+  const drawn = createMemo(() => new Set(days().flatMap(({ day, role }) => day.routes.flatMap((route) => (routeDrawn(route, role) ? route.id : [])))), new Set<string>(), { equals: sameIds });
+  const features = createMemo(() => routeFeatures(days(), openRouteColors(), activeRouteId(), failedLegs(), marks(), dims(), (route) => drawn().has(route.id)));
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
     on([selectedDayId, openTripId], () => {
