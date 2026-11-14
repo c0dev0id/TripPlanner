@@ -31,7 +31,7 @@ final class GpxEdit
         $root = $document->documentElement;
         // A track stands alone where the last of the file's routes, tracks and waypoints stood: before what follows them.
         $after = null;
-        foreach (iterator_to_array($root->childNodes ?? []) as $node) {
+        foreach (iterator_to_array($root->childNodes) as $node) {
             if ($node instanceof DOMElement && in_array($node->localName, self::ELEMENTS, true)) {
                 $after = $node->nextSibling;
                 $root->removeChild($node);

@@ -33,7 +33,7 @@ final class StashRides
         }
         $gzip = (string) $this->files->gzip($userId, $fileId);
         $tracks = array_filter($file['items'], fn (array $item) => $item['kind'] === 'track' && ($positions === null || in_array($item['position'], $positions, true)));
-        $alone = count($file['items']) === 1 ? [] : GpxEdit::tracksAlone((string) gzdecode($gzip), array_column($tracks, 'position'));
+        $alone = $tracks === [] || count($file['items']) === 1 ? [] : GpxEdit::tracksAlone((string) gzdecode($gzip), array_column($tracks, 'position'));
         $count = ['kept' => 0, 'known' => 0];
         foreach ($tracks as $track) {
             $piece = isset($alone[$track['position']]) ? (string) gzencode($alone[$track['position']]) : $gzip;

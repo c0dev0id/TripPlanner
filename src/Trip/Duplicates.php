@@ -16,9 +16,8 @@ use Planner\Export\RouteGeometry;
  * points or the same line, and the same ride kept twice, as from two apps, which runs the
  * same way at about the same length along about the same line, on the same date or where
  * a day has none. Like is compared with like: a planned route and a track of the same way
- * are a plan and a line, kept both on purpose, and never duplicates of each other. The
- * same road ridden on different dates is no duplicate. A day that holds the same route
- * twice, or the same track, is listed as any other.
+ * are never duplicates of each other. The same road ridden on different dates is no
+ * duplicate.
  */
 final class Duplicates
 {
@@ -108,7 +107,6 @@ final class Duplicates
             'end' => $line[count($line) - 1],
             'lengthM' => $lengthM,
             'box' => Proximity::bounds($line),
-            'date' => $row['date'],
             'entry' => [
                 'tripId' => (int) $row['trip_id'],
                 'tripName' => $row['trip_name'],
@@ -172,7 +170,7 @@ final class Duplicates
     private static function alike(array $a, array $b): bool
     {
         return $a['route']['kind'] === $b['route']['kind']
-            && ($a['date'] === null || $b['date'] === null || $a['date'] === $b['date'])
+            && ($a['entry']['date'] === null || $b['entry']['date'] === null || $a['entry']['date'] === $b['entry']['date'])
             && min($a['lengthM'], $b['lengthM']) >= self::LENGTH_RATIO * max($a['lengthM'], $b['lengthM'])
             && Proximity::overlap($a['box'], $b['box'])
             && Proximity::between($a['start'], $b['start']) <= self::ENDS_WITHIN_M
