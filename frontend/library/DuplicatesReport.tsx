@@ -40,9 +40,8 @@ async function copiesOf(routes: readonly DuplicateRoute[]): Promise<CopiedRoute[
   });
 }
 
-/** How far down the report was scrolled when it was last shown, and what was selected in it: it comes back to both. */
+/** How far down the report was scrolled when it was last shown, to which it comes back. */
 let scrolled = 0;
-let selectedLast: Selection<string> = NOTHING_SELECTED;
 
 /**
  * The routes the library keeps more than once, in the pane between the library and the
@@ -53,8 +52,8 @@ let selectedLast: Selection<string> = NOTHING_SELECTED;
  * away. The map draws what is selected, each route in a colour its row shows too, to
  * compare them. The menu opens the place of one: its trip at its day, marked and in view
  * in the library, with the report still in the pane, which a click on that day or on
- * another gives to the day; shown again, the report is scrolled and selected as it was
- * left. The menu also copies or deletes the selected ones, as
+ * another gives to the day; shown again, the report is scrolled as it was left. The
+ * menu also copies or deletes the selected ones, as
  * Ctrl+C and Delete do.
  */
 export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string) => void }) {
@@ -73,13 +72,8 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   const seconds = () => Math.max(0, Math.round((now() - duplicatesStartedAt()) / 1000));
   const of = (kind: DuplicateGroup['kind']) => (found() ?? []).filter((g) => g.kind === kind);
   const selection = () => selectionOf(DUPLICATES);
-  const setSelection = (rows: Selection<string>) => {
-    selectedLast = rows;
-    selectIn(DUPLICATES, rows);
-  };
-  // The report comes back selected as it was left, and lets go of the selection while it is away: the one selection there is belongs to what is in view.
-  selectIn(DUPLICATES, selectedLast);
-  onCleanup(() => selectIn(DUPLICATES, NOTHING_SELECTED));
+  const setSelection = (rows: Selection<string>) => selectIn(DUPLICATES, rows);
+  onCleanup(() => setSelection(NOTHING_SELECTED));
   const [note, setNote] = createSignal<{ text: string; error: boolean }>();
   /** The routes in the order shown, by key. */
   const shown = createMemo(() => new Map([...of('copies'), ...of('same ride')].flatMap((g) => g.routes).map((r) => [duplicateKey(r), r])));
@@ -148,11 +142,8 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   const rows = {
     selected: (route: DuplicateRoute) => isSelected(duplicateKey(route)),
     // A click that does not select with a key held selects the route alone: that is what draws it on the map.
-    onClick: (route: DuplicateRoute, e: MouseEvent) => setSelection(clickRow(DUPLICATES, [...shown().keys()], duplicateKey(route), e) ? selection() : new Set([duplicateKey(route)])),
-    onToggle: (route: DuplicateRoute) => {
-      toggleRow(DUPLICATES, duplicateKey(route));
-      selectedLast = selection();
-    },
+    onClick: (route: DuplicateRoute, e: MouseEvent) => clickRow(DUPLICATES, [...shown().keys()], duplicateKey(route), e) || setSelection(new Set([duplicateKey(route)])),
+    onToggle: (route: DuplicateRoute) => toggleRow(DUPLICATES, duplicateKey(route)),
     items,
   };
   return (
