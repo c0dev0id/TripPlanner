@@ -28,10 +28,10 @@ final class StashRides
     public function keep(int $userId, int $fileId, ?array $positions, DateTimeImmutable $now): ?array
     {
         $file = $this->files->find($userId, $fileId);
-        $gzip = $this->files->gzip($userId, $fileId);
-        if ($file === null || $gzip === null) {
+        if ($file === null) {
             return null;
         }
+        $gzip = (string) $this->files->gzip($userId, $fileId);
         $count = ['kept' => 0, 'known' => 0];
         foreach ($file['items'] as $item) {
             if ($item['kind'] !== 'track' || ($positions !== null && !in_array($item['position'], $positions, true))) {

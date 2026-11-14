@@ -56,21 +56,20 @@ final class StashFiles
         }
         $gpx = (string) gzdecode($gzip);
         $digest = hash('sha256', $gpx);
-        $kept = $this->db->prepare(self::FILE . ' WHERE user_id = ? AND digest = ?');
+        $kept = $this->db->prepare('SELECT id FROM stash_files WHERE user_id = ? AND digest = ?');
         $kept->execute([$userId, $digest]);
-        $row = $kept->fetch();
-        if ($row !== false) {
-            return ['file' => self::file($row, $this->items((int) $row['id'])), 'added' => false];
+        $id = $kept->fetchColumn();
+        $added = $id === false;
+        if ($added) {
+            $index = GpxIndex::of($gpx);
+            $this->db->beginTransaction();
+            $this->db->prepare('INSERT INTO stash_files (user_id, folder_id, name, created_at, waypoints, digest, gpx) VALUES (?, ?, ?, ?, ?, ?, ?)')
+                ->execute([$userId, $folderId, $name, Timestamp::of($now), $index->waypoints, $digest, $gzip]);
+            $id = $this->db->lastInsertId();
+            $this->index((int) $id, $index);
+            $this->db->commit();
         }
-        $index = GpxIndex::of($gpx);
-        $this->db->beginTransaction();
-        $this->db->prepare('INSERT INTO stash_files (user_id, folder_id, name, created_at, waypoints, digest, gpx) VALUES (?, ?, ?, ?, ?, ?, ?)')
-            ->execute([$userId, $folderId, $name, Timestamp::of($now), $index->waypoints, $digest, $gzip]);
-        $id = (int) $this->db->lastInsertId();
-        $this->index($id, $index);
-        $this->db->commit();
-        $row = ['id' => $id, 'folder_id' => $folderId, 'name' => $name, 'created_at' => Timestamp::of($now), 'waypoints' => $index->waypoints];
-        return ['file' => self::file($row, $this->items($id)), 'added' => true];
+        return ['file' => $this->find($userId, (int) $id), 'added' => $added];
     }
 
     /** The file as it is listed; null when the user has no such file. */
