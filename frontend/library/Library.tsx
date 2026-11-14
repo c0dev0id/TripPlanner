@@ -20,7 +20,7 @@ import { CollectionIcon, FoldIcon, FolderIcon, HomeIcon, TripIcon } from '../ui/
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
-import { anchoredAt, clickSelect, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, selects, toggled, type Selection } from '../ui/selection';
+import { clickRow, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, toggleRow, type Selection } from '../ui/selection';
 import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
 import { Pad } from '../ui/Pad';
@@ -48,7 +48,8 @@ interface CardSelect {
   selected: () => boolean;
   cut: () => boolean;
   onToggle: () => void;
-  onClick: (e: MouseEvent) => void;
+  /** Whether the click selected, and so opens nothing. */
+  onClick: (e: MouseEvent) => boolean;
   onDrag: (e: PointerEvent, dragged: () => void) => void;
 }
 
@@ -232,7 +233,7 @@ export function Library(props: {
   const selected = () => selectionOf('library');
   const setSelected = (rows: Selection<string>) => selectIn('library', rows);
   createEffect(on(shownFolderId, () => setSelected(NOTHING_SELECTED)));
-  const isSelected = createSelector(() => selected().keys, (key: string, keys) => keys.has(key));
+  const isSelected = createSelector(selected, (key: string, keys) => keys.has(key));
   /** Every folder and trip there is, by key. */
   const itemOf = (key: string): Item | undefined => {
     const id = Number(key.slice(key.indexOf(':') + 1));
@@ -245,12 +246,12 @@ export function Library(props: {
     ...childTrips(parent).map((trip) => keyOf({ trip })),
   ];
   /** What a card's menu, or a press on its pad, acts on: the selection where it holds the card, else the card alone. */
-  const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.keys.has(keyOf(item)) ? [...selection.keys].flatMap((key) => itemOf(key) ?? []) : [item]);
+  const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.has(keyOf(item)) ? [...selection].flatMap((key) => itemOf(key) ?? []) : [item]);
   const select = (item: Item) => ({
     selected: () => isSelected(keyOf(item)),
     cut: () => isCut(item),
-    onToggle: () => setSelected(toggled(selected(), keyOf(item))),
-    onClick: (e: MouseEvent) => setSelected(selects(e) ? clickSelect(selected(), shownKeys(), keyOf(item), e) : anchoredAt(keyOf(item))),
+    onToggle: () => toggleRow('library', keyOf(item)),
+    onClick: (e: MouseEvent) => clickRow('library', shownKeys(), keyOf(item), e),
     onDrag: (e: PointerEvent, dragged: () => void) => {
       const moved = chosenWith(item);
       dragToFolder(e, moved.length === 1 ? nameOf(item) : countText(moved), (into) => moveInto(moved, into), dragged);
@@ -442,7 +443,7 @@ export function Library(props: {
   const onKey = (e: KeyboardEvent) => {
     const verb = fileVerb(e);
     if (!verb) return;
-    const chosen = [...selected().keys].flatMap((key) => itemOf(key) ?? []);
+    const chosen = [...selected()].flatMap((key) => itemOf(key) ?? []);
     if ((verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0)) return;
     e.preventDefault();
     if (verb === 'paste') pasteLibrary(shownFolderId());
@@ -465,7 +466,7 @@ export function Library(props: {
    */
   const itemMenu = (item: Item): MenuItem[] => {
     const selection = menuSelection(selected(), keyOf(item));
-    setSelected(selection.keys.size > 1 ? selection : NOTHING_SELECTED);
+    setSelected(selection.size > 1 ? selection : NOTHING_SELECTED);
     const chosen = chosenWith(item, selection);
     const several = chosen.length > 1;
     const chosenTrips = tripsOf(chosen);
@@ -662,7 +663,7 @@ export function Library(props: {
  * is being opened, over how far its document has come, beside a spinner; its menu
  * renames, moves, copies and deletes it. A click opens it. Where it can be selected, a tap
  * on its pad selects it, a press drags it, and a click with Cmd, Ctrl or Shift held
- * selects instead of opening; every click goes to `select.onClick`.
+ * selects instead of opening, which `select.onClick` says.
  */
 function TripCard(props: {
   trip: TripSummary;
@@ -700,10 +701,7 @@ function TripCard(props: {
         <button
           class="text grow"
           aria-expanded={props.fold?.unfolded()}
-          onClick={(e) => {
-            if (!selects(e) || !props.select) props.onOpen(props.trip);
-            props.select?.onClick(e);
-          }}
+          onClick={(e) => props.select?.onClick(e) || props.onOpen(props.trip)}
           disabled={fetchingTrip()}
         >
           <Show when={!loading()} fallback={<span class="spinner" />}>
@@ -745,11 +743,7 @@ function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) 
             <Pad label={t('Select {name}, or drag it into a folder', { name: props.folder.name })} selected={select().selected()} onToggle={select().onToggle} onPress={select().onDrag} />
           )}
         </Show>
-        <button class="text grow" aria-expanded={props.fold?.unfolded()} onClick={(e) => {
-            if (!selects(e) || !props.select) props.onOpen(props.folder.id);
-            props.select?.onClick(e);
-          }}
-        >
+        <button class="text grow" aria-expanded={props.fold?.unfolded()} onClick={(e) => props.select?.onClick(e) || props.onOpen(props.folder.id)}>
           <FolderIcon />
           <span class="lines">
             <span class="name">{props.folder.name}</span>

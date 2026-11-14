@@ -15,7 +15,7 @@ import { clockText, counted, distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { fileVerb } from '../ui/fileVerb';
-import { clickSelect, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, toggled, type Selection } from '../ui/selection';
+import { clickRow, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, toggleRow, type Selection } from '../ui/selection';
 import { SidePane } from '../ui/SidePane';
 import { Pad } from '../ui/Pad';
 
@@ -79,9 +79,9 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   const [note, setNote] = createSignal<{ text: string; error: boolean }>();
   /** The routes in the order shown, by key; a route in a group of each kind is shown twice but listed once. */
   const shown = createMemo(() => new Map([...of('copies'), ...of('same ride')].flatMap((g) => g.routes).map((r) => [duplicateKey(r), r])));
-  const isSelected = createSelector(() => selection().keys, (key: string, keys) => keys.has(key));
+  const isSelected = createSelector(selection, (key: string, keys) => keys.has(key));
   /** The selected routes, in the order shown. */
-  const selectedRoutes = () => [...shown().values()].filter((r) => selection().keys.has(duplicateKey(r)));
+  const selectedRoutes = () => [...shown().values()].filter((r) => selection().has(duplicateKey(r)));
   /** Opens the trip of a route at the route's day, whose pane takes the report's place; the report is kept as it stands. */
   const openLocation = (route: DuplicateRoute) => {
     setShowingDuplicates(false);
@@ -139,7 +139,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
     ];
   };
   const onKey = (e: KeyboardEvent) => {
-    const verb = selection().keys.size > 0 ? fileVerb(e) : undefined;
+    const verb = selection().size > 0 ? fileVerb(e) : undefined;
     if (verb !== 'copy' && verb !== 'delete') return;
     e.preventDefault();
     void (verb === 'copy' ? copy(selectedRoutes()) : remove(selectedRoutes()));
@@ -155,8 +155,9 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   });
   const rows = {
     selected: (route: DuplicateRoute) => isSelected(duplicateKey(route)),
-    onClick: (route: DuplicateRoute, e: MouseEvent) => setSelection(clickSelect(selection(), [...shown().keys()], duplicateKey(route), e)),
-    onToggle: (route: DuplicateRoute) => setSelection(toggled(selection(), duplicateKey(route))),
+    // A click that does not select with a key held selects the route alone: that is what draws it on the map.
+    onClick: (route: DuplicateRoute, e: MouseEvent) => clickRow(DUPLICATES, [...shown().keys()], duplicateKey(route), e) || setSelection(new Set([duplicateKey(route)])),
+    onToggle: (route: DuplicateRoute) => toggleRow(DUPLICATES, duplicateKey(route)),
     items,
   };
   return (

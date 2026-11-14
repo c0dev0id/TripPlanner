@@ -37,7 +37,7 @@ const report = createRoot(() => {
   /** The routes drawn on the map: the selected ones, the first selected first, as many as there are colours to tell them apart; each in the palette's colour at its place. */
   const compared = createMemo(
     () =>
-      [...selectionOf(DUPLICATES).keys]
+      [...selectionOf(DUPLICATES)]
         .flatMap((key) => routes().get(key) ?? [])
         .slice(0, ROUTE_PALETTE.length),
     undefined,
