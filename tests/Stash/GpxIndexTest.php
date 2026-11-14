@@ -37,6 +37,17 @@ final class GpxIndexTest extends TestCase
         self::assertNull($route['startedAt']);
     }
 
+    public function testReadsEveryPointOfATrackWhateverItsPointsHoldAndWhatFollowsIt(): void
+    {
+        $point = fn (float $lat, string $time) => "<trkpt lat=\"$lat\" lon=\"8.7\"><ele>1</ele><time>$time</time><extensions><speed>3</speed><x><hr>120</hr></x></extensions></trkpt>";
+        $gpx = '<gpx><trk><name>First</name><trkseg>' . $point(49.4, '2025-07-08T15:24:36Z') . $point(49.5, 'x') . '</trkseg><trkseg>' . $point(49.6, 'y') . '</trkseg></trk>'
+            . '<trk><name>Second</name><trkseg><trkpt lat="49.0" lon="8.0"/><trkpt lat="49.1" lon="8.0"><time>2025-07-09T08:00:00Z</time></trkpt><trkpt lat="49.2" lon="8.0"/></trkseg></trk><wpt lat="1" lon="1"/></gpx>';
+        $index = GpxIndex::of($gpx);
+        self::assertSame([['First', 3, '2025-07-08T15:24:36Z'], ['Second', 3, '2025-07-09T08:00:00Z']], array_map(fn (array $item) => [$item['name'], $item['points'], $item['startedAt']], $index->items));
+        self::assertSame(1, $index->waypoints);
+        self::assertEqualsWithDelta(22_240, $index->items[0]['distanceM'], 60);
+    }
+
     public function testAFileThatIsNoXmlHoldsNothing(): void
     {
         $index = GpxIndex::of('not a file');

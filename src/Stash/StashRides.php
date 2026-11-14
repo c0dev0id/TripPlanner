@@ -32,13 +32,12 @@ final class StashRides
             return null;
         }
         $gzip = (string) $this->files->gzip($userId, $fileId);
+        $tracks = array_filter($file['items'], fn (array $item) => $item['kind'] === 'track' && ($positions === null || in_array($item['position'], $positions, true)));
+        $alone = count($file['items']) === 1 ? [] : GpxEdit::tracksAlone((string) gzdecode($gzip), array_column($tracks, 'position'));
         $count = ['kept' => 0, 'known' => 0];
-        foreach ($file['items'] as $item) {
-            if ($item['kind'] !== 'track' || ($positions !== null && !in_array($item['position'], $positions, true))) {
-                continue;
-            }
-            $piece = count($file['items']) === 1 ? $gzip : (string) gzencode(GpxEdit::trackAlone((string) gzdecode($gzip), $item['position']));
-            $kept = $this->recordings->keep($userId, $item['name'] !== '' ? mb_substr($item['name'], 0, 200) : $file['name'], $piece, $now);
+        foreach ($tracks as $track) {
+            $piece = isset($alone[$track['position']]) ? (string) gzencode($alone[$track['position']]) : $gzip;
+            $kept = $this->recordings->keep($userId, $track['name'] !== '' ? mb_substr($track['name'], 0, 200) : $file['name'], $piece, $now);
             $count[$kept['added'] ? 'kept' : 'known']++;
         }
         return $count;

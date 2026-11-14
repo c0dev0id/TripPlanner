@@ -16,18 +16,34 @@ final class GpxEdit
     /** What the routes, tracks and waypoints of a file are called in it. */
     private const ELEMENTS = ['route' => 'rte', 'track' => 'trk', 'waypoint' => 'wpt'];
 
-    /** The file with one of its tracks alone, by its place among the file's tracks: the other tracks, the routes and the waypoints left out. */
-    public static function trackAlone(string $gpx, int $position): string
+    /**
+     * The file with one of its tracks alone, for each of the places given among the
+     * file's tracks: the other tracks, the routes and the waypoints left out. The file is
+     * read once for all of them.
+     *
+     * @param list<int> $positions
+     * @return array<int, string> the files, by the track's place
+     */
+    public static function tracksAlone(string $gpx, array $positions): array
     {
         $document = self::read($gpx);
-        foreach (self::ELEMENTS as $kind => $name) {
-            foreach (self::elements($document, $name) as $at => $element) {
-                if ($kind !== 'track' || $at !== $position) {
-                    $element->parentNode->removeChild($element);
-                }
+        $tracks = self::elements($document, self::ELEMENTS['track']);
+        $root = $document->documentElement;
+        // A track stands alone where the last of the file's routes, tracks and waypoints stood: before what follows them.
+        $after = null;
+        foreach (iterator_to_array($root->childNodes ?? []) as $node) {
+            if ($node instanceof DOMElement && in_array($node->localName, self::ELEMENTS, true)) {
+                $after = $node->nextSibling;
+                $root->removeChild($node);
             }
         }
-        return (string) $document->saveXML();
+        $alone = [];
+        foreach ($positions as $position) {
+            $root->insertBefore($tracks[$position], $after);
+            $alone[$position] = (string) $document->saveXML();
+            $root->removeChild($tracks[$position]);
+        }
+        return $alone;
     }
 
     /**

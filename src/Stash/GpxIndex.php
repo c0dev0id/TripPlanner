@@ -42,7 +42,10 @@ final readonly class GpxIndex
         $errors = libxml_use_internal_errors(true);
         $reader = new XMLReader();
         $reader->XML($gpx, null, LIBXML_NONET);
-        while ($reader->read()) {
+        // What a track point holds is passed over once the track's start is known: nothing else is read from it.
+        $passOver = false;
+        while ($passOver ? $reader->next() : $reader->read()) {
+            $passOver = false;
             if ($reader->nodeType === XMLReader::END_ELEMENT && $reader->depth === 1 && $open !== null) {
                 $close();
             }
@@ -74,6 +77,7 @@ final readonly class GpxIndex
                     $open['points'] += $element === 'rpt' ? 0 : 1;
                 }
                 $pointDepth = $element === 'trkpt' ? $reader->depth : $pointDepth;
+                $passOver = $element === 'trkpt' && $open['startedAt'] !== null;
             } elseif ($element === 'time' && $open['startedAt'] === null && $pointDepth !== null && $reader->depth === $pointDepth + 1) {
                 $open['startedAt'] = TrackSummary::time($reader->readString());
             }
