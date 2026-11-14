@@ -394,6 +394,11 @@
   files it has, its length and why it was found; a click shows its lines on the map,
   the plus puts its rides on the day. Rides that are on the day already are not listed
   again, and a ride on another day is found as any other.
+- A lock among the map's controls keeps the view: while it is locked, taking up another
+  day, route, stop, recording or ride leaves the map where it is, zoomed as it is, so
+  that one place can be looked at in one after the other. The place search and the
+  button that shows where the user is still move it. The lock is open when the page
+  is loaded.
 - What is on the map follows what is taken up. With the whole trip shown, or a day and
   nothing taken up, the planned routes and tracks are all drawn, and no recordings.
   Taking up a route or opening a recording draws that one alone; a route being edited
@@ -411,6 +416,11 @@
 - A recording's figures: a click on it shows it whole and opens a card over the map with
   its distance, time and moving time, average and top speed, climb and descent, lowest
   and highest point and furthest lean to either side, as far as its file has the values.
+  Under them the card says what the file is like, to tell which of two recordings of
+  one ride is the better: what wrote it, how many points it has, the usual time and
+  the average way from one to the next, its segments where it has more than one, and
+  what it tells of each point, with the share of the points that have it where not
+  all do.
   Its line can be coloured by speed, altitude, slope, lean angle or the road surface,
   with a legend; the surfaces, matched once by the routing server, are listed with the
   distance on each. A card along the bottom charts altitude and speed along the way, and

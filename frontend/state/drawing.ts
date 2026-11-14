@@ -52,6 +52,9 @@ export const [preferencesOpen, setPreferencesOpen] = createSignal(false);
 /** Whether the print-and-share dialog is open. */
 export const [shareOpen, setShareOpen] = createSignal(false);
 
+/** Whether the map stays as it is while another day, route or recording is taken up, where it would otherwise show that whole. */
+export const [viewLocked, setViewLocked] = createSignal(false);
+
 /** Where the map should go next: to a spot, or to show positions whole; every request is a new object, so the same one twice counts twice. */
 export const [panTarget, setPanTarget] = createSignal<{ lngLat: LngLat } | { positions: LngLat[] }>();
 

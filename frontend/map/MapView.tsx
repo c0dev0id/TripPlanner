@@ -1,7 +1,7 @@
 import { GeoJSONSource, LngLatBounds, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
 import type { Day, LngLat, Route } from '../model/trip';
-import { panTarget, showNeighbours } from '../state/drawing';
+import { panTarget, showNeighbours, viewLocked } from '../state/drawing';
 import { comparedLines } from '../state/duplicates';
 import { ridesOnMap } from '../state/rides';
 import { routePositions } from '../routing/legs';
@@ -27,6 +27,7 @@ import { RouteHover } from './RouteHover';
 import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { SearchBox } from './SearchBox';
 import { StopMarkers } from './StopMarkers';
+import { ViewLockControl } from './ViewLockControl';
 
 /** The page's map, once it is loaded and while it stands. */
 const [shownMap, setShownMap] = createSignal<MapLibreMap>();
@@ -52,6 +53,7 @@ export function MapView() {
   onMount(() => {
     // The map keeps its view in the address, as `map=`, and starts from it.
     const m = newBaseMap(container, { hash: 'map' }, setShownMap, { routeWidth, overlays: true, ridesOpacity });
+    m.addControl(new ViewLockControl(), 'top-right');
     onCleanup(() => {
       setShownMap(undefined);
       m.remove();
@@ -180,8 +182,8 @@ function RouteLines(props: { map: MapLibreMap }) {
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
     on([selectedDayId, openTripId], () => {
-      // Back at the view the address names, the map stays there.
-      if (keepsView(openTripId())) return;
+      // Back at the view the address names, the map stays there, as it does while its view is locked.
+      if (keepsView(openTripId()) || viewLocked()) return;
       const bounds = new LngLatBounds();
       for (const { day } of shownDays().filter((d) => d.role === 'selected')) {
         for (const route of day.routes.filter((r) => routeDrawn(r, 'selected'))) for (const position of routePositions(route)) bounds.extend(position);
@@ -193,7 +195,7 @@ function RouteLines(props: { map: MapLibreMap }) {
   );
   createEffect(
     on(panTarget, (target) => {
-      if (!target) return;
+      if (!target || viewLocked()) return;
       if ('lngLat' in target) props.map.flyTo({ center: target.lngLat, zoom: Math.max(props.map.getZoom(), 12), duration: 500 });
       else if (target.positions.length > 0) props.map.fitBounds(target.positions.reduce((b, p) => b.extend(p), new LngLatBounds()), { padding: clearOfCards(props.map), maxZoom: 15, duration: 500 });
     }),

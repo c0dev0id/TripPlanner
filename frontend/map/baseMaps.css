@@ -5,6 +5,16 @@
   color: #333;
 }
 
+/* The lock of the map's view among the map's controls: dark ink as the others, the accent while the view is locked. */
+
+.view-lock > button {
+  color: #333;
+}
+
+.view-lock > button[aria-pressed='true'] {
+  color: #b4440f;
+}
+
 /* The overlays' buttons among the map's controls: an overlay's sign, greyed while it is off. */
 
 .overlay-toggles img {

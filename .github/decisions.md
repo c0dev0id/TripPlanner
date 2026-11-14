@@ -307,6 +307,19 @@ entries at the end of their section.
   it takes eleven seconds here and several times that on the server, so an answer
   looks through the days for three seconds and the planner asks on from where it
   stopped, saying how far it is; no library is then too large for a request.
+- **A recording's card says what its file is like.** The same ride recorded by two apps
+  gives two files that differ in what they are worth: one has a point every second,
+  another every three; one has lean and acceleration, another speed alone. The card
+  says it in a ride's own terms rather than as a grade: who wrote the file, how many
+  points, the median time and the mean way between them, and the values by the names
+  the file gives them, since those names are what the user knows from the app.
+- **The map's view can be locked, in one place.** Every move the planner makes of
+  itself goes through two effects of the map, the one that shows a day taken up and
+  the one that goes where it is sent, so the lock is a signal both read; nothing that
+  asks for a view has to know of it. What the user asks the map for directly, a place
+  searched or the own position, is not held back. The lock is not kept from one
+  loading of the page to the next: a map that does not follow, for a reason set days
+  ago, reads as broken.
 - **Rides are merged on the server, as text, and the pieces stay known.** A tracker
   starts a new file after a break, and though the list of rides and the lookup group a
   day's files, a ride's figures and its comparison with the plan take one file. Merging
