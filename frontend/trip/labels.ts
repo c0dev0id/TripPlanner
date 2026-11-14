@@ -43,6 +43,9 @@ export function dayDetail(kind: TripKind, day: { date: string | null; routes: nu
 /** What a day is called within its trip: its label, or in a collection the section's name. */
 export const dayTitleOf = (trip: Trip, day: Day): string => (trip.kind === 'collection' ? day.name : dayLabelOf(trip, day));
 
+/** What a route is called by its kind alone, where its profile is not known or does not matter: "Track" or "Route". */
+export const routeOrTrack = (kind: Route['kind']): string => (kind === 'track' ? t('Track') : t('Route'));
+
 /** "Track" for a track, else the route's profile (Motorcycle, Bicycle, On foot), and where the motorway dial is turned, how. */
 export function routeKindLabel(route: Route): string {
   if (route.kind === 'track') return t('Track');

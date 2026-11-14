@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import { setShowingDuplicates, showingDuplicates } from '../state/library';
+import { setShowingDuplicates, showingDuplicates } from '../state/pane';
 import { placesListOpen, setPlacesListOpen } from '../state/places';
 import { IconButton } from '../ui/IconButton';
 import { CopyIcon, PinIcon } from '../ui/icons';

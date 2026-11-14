@@ -1,13 +1,13 @@
 import { t } from '../i18n/t';
-import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, onMount, Show, Switch } from 'solid-js';
+import { createEffect, createMemo, createSelector, createSignal, For, Match, onCleanup, onMount, Show, Switch } from 'solid-js';
 import { errorMessage, fetchTrip, type DuplicateGroup, type DuplicateRoute } from '../api';
 import { copiedRoute, type CopiedRoute } from '../routing/dayEdit';
 import { copyRoutes } from '../state/clipboard';
 import { comparedColor, DUPLICATES, duplicateGroups, duplicateKey, duplicatesMadeAt, duplicatesStartedAt, forgetDuplicates, refreshDuplicates } from '../state/duplicates';
-import { deleteRoutes, fetchingTrip, libraryFolders, libraryTrips, outlineOf, setShowingDuplicates } from '../state/library';
+import { deleteRoutes, fetchingTrip, folderOfTrip, libraryFolders, libraryTrips, outlineOf } from '../state/library';
+import { setShowingDuplicates } from '../state/pane';
 import { folderPath } from './folders';
-import { selectedDayId } from '../state/trip';
-import { dayLabel } from '../trip/labels';
+import { dayLabel, routeOrTrack } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
 import { IconButton } from '../ui/IconButton';
 import { RefreshIcon } from '../ui/icons';
@@ -23,8 +23,7 @@ import { Pad } from '../ui/Pad';
 /** Where a route of the report is: the folders its trip is in, its trip, and its day by number, date and name, or its section. Routes of one trip, or of one folder, read alike up to there. */
 function whereText(route: DuplicateRoute): string {
   const day = route.tripKind === 'collection' ? route.dayName : dayLabel({ date: route.date, name: route.dayName }, route.dayIndex);
-  const folderId = libraryTrips()?.find((trip) => trip.id === route.tripId)?.folderId ?? null;
-  return [folderPath(libraryFolders() ?? [], folderId), route.tripName, day].filter(Boolean).join(' › ');
+  return [folderPath(libraryFolders() ?? [], folderOfTrip(route.tripId)), route.tripName, day].filter(Boolean).join(' › ');
 }
 
 const nameOf = (route: DuplicateRoute): string => route.routeName || t('Unnamed route');
@@ -41,8 +40,9 @@ async function copiesOf(routes: readonly DuplicateRoute[]): Promise<CopiedRoute[
   });
 }
 
-/** How far down the report was scrolled when it was last shown, to which it comes back. */
+/** How far down the report was scrolled when it was last shown, and what was selected in it: it comes back to both. */
 let scrolled = 0;
+let selectedLast: Selection<string> = NOTHING_SELECTED;
 
 /**
  * The routes the library keeps more than once, in the pane between the library and the
@@ -73,22 +73,21 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   const seconds = () => Math.max(0, Math.round((now() - duplicatesStartedAt()) / 1000));
   const of = (kind: DuplicateGroup['kind']) => (found() ?? []).filter((g) => g.kind === kind);
   const selection = () => selectionOf(DUPLICATES);
-  const setSelection = (rows: Selection<string>) => selectIn(DUPLICATES, rows);
+  const setSelection = (rows: Selection<string>) => {
+    selectedLast = rows;
+    selectIn(DUPLICATES, rows);
+  };
+  // The report comes back selected as it was left, and lets go of the selection while it is away: the one selection there is belongs to what is in view.
+  selectIn(DUPLICATES, selectedLast);
+  onCleanup(() => selectIn(DUPLICATES, NOTHING_SELECTED));
   const [note, setNote] = createSignal<{ text: string; error: boolean }>();
-  /** The routes in the order shown, by key; a route in a group of each kind is shown twice but listed once. */
+  /** The routes in the order shown, by key. */
   const shown = createMemo(() => new Map([...of('copies'), ...of('same ride')].flatMap((g) => g.routes).map((r) => [duplicateKey(r), r])));
   const isSelected = createSelector(selection, (key: string, keys) => keys.has(key));
   /** The selected routes, in the order shown. */
   const selectedRoutes = () => [...shown().values()].filter((r) => selection().has(duplicateKey(r)));
-  /** The day of the location opened last from here, which does not take the pane. */
-  let located: string | undefined;
   /** Opens the trip of a route at the route's day, which the library then marks and brings into view, while the report stays in the pane. */
-  const openLocation = (route: DuplicateRoute) => {
-    located = route.dayId;
-    props.onOpen(route.tripId, route.dayId);
-  };
-  // A day picked elsewhere takes the pane for itself.
-  createEffect(on(selectedDayId, (id) => id && id !== located && setShowingDuplicates(false), { defer: true }));
+  const openLocation = (route: DuplicateRoute) => props.onOpen(route.tripId, route.dayId);
   /** Runs a job that reads and writes trips, saying what it is doing and then what it did or why it failed. */
   const work = async (doing: string, job: () => Promise<string>) => {
     setNote({ text: doing, error: false });
@@ -149,8 +148,11 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   const rows = {
     selected: (route: DuplicateRoute) => isSelected(duplicateKey(route)),
     // A click that does not select with a key held selects the route alone: that is what draws it on the map.
-    onClick: (route: DuplicateRoute, e: MouseEvent) => clickRow(DUPLICATES, [...shown().keys()], duplicateKey(route), e) || setSelection(new Set([duplicateKey(route)])),
-    onToggle: (route: DuplicateRoute) => toggleRow(DUPLICATES, duplicateKey(route)),
+    onClick: (route: DuplicateRoute, e: MouseEvent) => setSelection(clickRow(DUPLICATES, [...shown().keys()], duplicateKey(route), e) ? selection() : new Set([duplicateKey(route)])),
+    onToggle: (route: DuplicateRoute) => {
+      toggleRow(DUPLICATES, duplicateKey(route));
+      selectedLast = selection();
+    },
     items,
   };
   return (
@@ -227,7 +229,7 @@ function Section(props: {
                               {nameOf(route)} · {distanceText(route.distanceM)}
                             </span>
                             <span class="muted detail">
-                              {route.routeKind === 'track' ? t('Track') : t('Route')} · {whereText(route)}
+                              {routeOrTrack(route.routeKind)} · {whereText(route)}
                             </span>
                           </span>
                         </button>

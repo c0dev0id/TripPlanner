@@ -5,7 +5,8 @@ import type { LngLat } from '../model/trip';
 import { decodePolyline } from '../routing/polyline';
 import { selectionOf } from '../ui/selection';
 import { showWhole } from './drawing';
-import { runLibrary, showingDuplicates } from './library';
+import { runLibrary } from './library';
+import { showingDuplicates } from './pane';
 
 /**
  * The duplicates report: made when it is first shown and kept while the page stands, so
@@ -16,7 +17,7 @@ import { runLibrary, showingDuplicates } from './library';
 /** The owner of the report's selection. */
 export const DUPLICATES = 'duplicates';
 
-/** A route of the report by its trip and its id: a route is listed once, in whatever groups it is. */
+/** A route of the report by its trip and its id. */
 export const duplicateKey = (route: DuplicateRoute): string => `${route.tripId}/${route.routeId}`;
 
 const report = createRoot(() => {
@@ -34,15 +35,10 @@ const report = createRoot(() => {
   /** The report's routes by key; none where the report failed, since reading a resource that failed throws. */
   const routes = createMemo(() => new Map((groups.error ? [] : (groups() ?? [])).flatMap((group) => group.routes).map((route) => [duplicateKey(route), route])));
 
-  /**
-   * The routes drawn on the map while the report is shown: the selected ones, the first
-   * selected first, as many as there are colours to tell them apart; each in the
-   * palette's colour at its place. The selection stays while the report is away, so that
-   * it comes back as it was left; the map draws none of it meanwhile.
-   */
+  /** The routes drawn on the map: the selected ones, the first selected first, as many as there are colours to tell them apart; each in the palette's colour at its place. */
   const compared = createMemo(
     () =>
-      (showingDuplicates() ? [...selectionOf(DUPLICATES)] : [])
+      [...selectionOf(DUPLICATES)]
         .flatMap((key) => routes().get(key) ?? [])
         .slice(0, ROUTE_PALETTE.length),
     undefined,

@@ -916,7 +916,14 @@ entries at the end of their section.
   alike meant showing it again ten times. The trip now opens at the day with the
   report still in the pane: the library marks the day and brings it into view, which
   is what says where the route is, and the day's own pane is one click on it away.
-  Any other day picked takes the pane as before.
+  Who has the pane is one rule in the state (`state/pane.ts`, `selectDay`, `pickDay`
+  in `state/trip.ts`): a day that is picked takes it, by its row, the day strip, a
+  ride or the journal alike; a day a trip is merely opened at does not. A first
+  version had the report remember the day it had opened and skip it in an effect of
+  its own, which left that day unable to take the pane from the day strip, the only
+  picker on a phone. The report's selection is the report's own to remember: the one
+  selection there is belongs to what is in view, so the report lets go of it while it
+  is away and takes it up again when it is shown.
 - **A route and a track are never duplicates of each other.** The report compared
   lines whatever they were of, so a planned route and a track of the same way made a
   group, and a comment in the code called that a ride kept twice. It was never asked

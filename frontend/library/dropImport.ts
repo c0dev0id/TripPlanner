@@ -101,7 +101,7 @@ function withPlaces(list: Trip, places: readonly KindedPlace[]): Trip {
  * kept and how many were there already, and what could not be read or kept; `onKept`
  * is handed each file as the server answers with it.
  */
-export async function importIntoStash(dropped: Dropped, folderId: number, onProgress: (text: string) => void, onKept: (file: StashFile) => void): Promise<{ text: string; errors: string[] }> {
+async function importIntoStash(dropped: Dropped, folderId: number, onProgress: (text: string) => void, onKept: (file: StashFile) => void): Promise<{ text: string; errors: string[] }> {
   const errors: string[] = [];
   let kept = 0;
   let known = 0;

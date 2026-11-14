@@ -37,9 +37,6 @@ export function showTab(to: LibraryTab): void {
 /** The folder asked for in each tree, none for its top: the one the tree marks, and that takes what is pasted with the keys or from the line that offers it. */
 const [markedFolders, setMarkedFolders] = createSignal<Partial<Record<TreeTab, number>>>({});
 
-/** Whether the report of the routes kept more than once stands in the pane between the library and the map, instead of a day. */
-export const [showingDuplicates, setShowingDuplicates] = createSignal(false);
-
 /** The trip being opened and how far that has come: its document on its way, or arrived and being put on the map. */
 export const [opening, setOpening] = createSignal<{ tripId: number; progress: Progress | 'arrived' }>();
 
@@ -88,9 +85,11 @@ export const libraryFolders = library.folders;
 /** The outline of a trip, day by day, as last fetched: none while they load, or where they could not be had. */
 export const outlineOf = (tripId: number): OutlineDay[] | undefined => (library.outlines.error ? undefined : library.outlines()?.[tripId]);
 
+/** The folder a trip is in: null at the top, and for a trip that is not listed. */
+export const folderOfTrip = (tripId: number | undefined): number | null => (library.trips.error ? undefined : library.trips())?.find((trip) => trip.id === tripId)?.folderId ?? null;
+
 /** The kind of the special folder the trip is in or under; a plain folder's for a trip anywhere else. */
-const folderKindOf = (tripId: number | undefined): FolderKind =>
-  kindAround(library.folders.error ? [] : (library.folders() ?? []), (library.trips.error ? undefined : library.trips())?.find((trip) => trip.id === tripId)?.folderId ?? null);
+const folderKindOf = (tripId: number | undefined): FolderKind => kindAround(library.folders.error ? [] : (library.folders() ?? []), folderOfTrip(tripId));
 
 /** Whether the trip is a list of places: a collection in the folder for places or a folder in it. */
 export const isPlaceList = (tripId: number | undefined): boolean => folderKindOf(tripId) === 'places';

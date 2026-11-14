@@ -7,6 +7,7 @@ import * as routeEdit from '../routing/routeEdit';
 import { daySequence, type SequenceEntry } from '../routing/sequence';
 import { dayTimeline, type DayTimeline } from '../routing/timeline';
 import { History } from './history';
+import { setShowingDuplicates } from './pane';
 
 /**
  * The open trip, as an immutable value: each edit replaces it with the result of a pure
@@ -64,13 +65,23 @@ export const markShownDay = (): void => void setMarkInTrip(true);
 /** Takes the mark from the open trip and its day, for a folder; both stay open. */
 export const markFolder = (): void => void setMarkInTrip(false);
 
-/** Shows a day, which takes the mark, or none; the route taken up is let go. */
+/** Shows a day, which takes the mark and the pane beside the library, or none; the route taken up is let go. */
 export function selectDay(id: string | undefined): void {
   batch(() => {
     setSelectedDayId(id);
-    if (id !== undefined) setMarkInTrip(true);
+    if (id !== undefined) {
+      setMarkInTrip(true);
+      setShowingDuplicates(false);
+    }
     setActiveRouteId(undefined);
   });
+}
+
+/** Picks a day in the library: it is shown, or where it is shown already, takes the mark back from a folder and the pane back from a report. */
+export function pickDay(id: string): void {
+  if (selectedDayId() !== id) return selectDay(id);
+  markShownDay();
+  setShowingDuplicates(false);
 }
 
 /** The selected day; it changes only when that day does. */

@@ -309,11 +309,11 @@
   glance. The menu (right-click or long press) opens the location of a single route: its
   trip opens at its day, the library shows the trip's tab, unfolds down to the day,
   marks it and brings it into view, and the report stays in the pane beside it; a
-  click on that day gives the pane to the day. The menu also copies or deletes the
+  click on that day, or picking it in the day strip, gives the pane to the day. The menu also copies or deletes the
   selected ones, as Ctrl+C and Delete do. A day picked in the tree takes the pane for
   itself as well. The report is made once and kept while the page stands: shown again,
-  it is there at once, where it was scrolled to and with what was selected still
-  selected, which the map draws only while the report is shown; what is deleted from it is taken out
+  it is there at once, where it was scrolled to and with what was selected in it
+  selected again; what is deleted from it is taken out
   of it, its heading says when it was made, and the button there makes it afresh. A
   route deleted from the open trip leaves it as an edit that can be undone. While it is made, which takes a
   while on a large library, a ring turns beside how many routes are compared and the

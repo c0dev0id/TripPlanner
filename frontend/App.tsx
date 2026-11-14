@@ -11,7 +11,8 @@ import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { setPreferencesOpen } from './state/drawing';
-import { libraryFolders, libraryTab, libraryTrips, relistTrips, rootOf, setOpening, showFolder, showingDuplicates, shownFolderId, showTab } from './state/library';
+import { folderOfTrip, libraryFolders, libraryTab, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab } from './state/library';
+import { setShowingDuplicates, showingDuplicates } from './state/pane';
 import { foldPanel, panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
@@ -80,9 +81,15 @@ export function App() {
     if (changed) relistTrips();
   };
 
-  /** Opens a trip at a day from a report in the pane; as a trip opened in the tree, it makes its folder the one shown. */
+  /** Opens a trip picked in the library; a day picked with it takes the pane beside the library. */
+  const openPicked = (id: number, dayId?: string, routeId?: string) => {
+    if (dayId !== undefined) setShowingDuplicates(false);
+    void open(id, dayId, routeId);
+  };
+
+  /** Opens a trip at a day from a report in the pane, which stays there; as a trip opened in the tree, it makes its folder the one shown. */
   const openLocation = (id: number, dayId: string) => {
-    showFolder(libraryTrips()?.find((trip) => trip.id === id)?.folderId ?? null);
+    showFolder(folderOfTrip(id));
     void open(id, dayId);
   };
 
@@ -149,7 +156,7 @@ export function App() {
         <Show when={panelFolded() && openTrip()}>
           <DayStrip />
         </Show>
-        <Explorer onOpen={(id, dayId, routeId) => void open(id, dayId, routeId)} onLeave={leave} error={error()} />
+        <Explorer onOpen={openPicked} onLeave={leave} error={error()} />
       </aside>
       <Show when={showingDuplicates()} fallback={<DayPane />}>
         <DuplicatesReport onOpen={openLocation} />

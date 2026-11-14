@@ -1,6 +1,6 @@
 import { createEffect, createRoot, createSignal, on } from 'solid-js';
 import { readPreference, writePreference } from '../ui/preferences';
-import { showingDuplicates } from './library';
+import { showingDuplicates } from './pane';
 import { editingRouteId, selectedDayId } from './trip';
 
 const PREFERENCE = 'panelFolded';

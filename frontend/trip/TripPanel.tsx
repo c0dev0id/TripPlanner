@@ -10,7 +10,6 @@ import { pointCount, routeDistance, routesDistance } from '../routing/legs';
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { panTo, pointItems, setEditTarget, setExportScope, setShareOpen, setTrackAction } from '../state/drawing';
-import { setShowingDuplicates } from '../state/library';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
@@ -23,12 +22,11 @@ import {
   addRoute,
   isRouteActive,
   isDayMarked,
-  markShownDay,
   takeUpRoute,
   moveDay,
   moveRoute,
   openTrip,
-  selectDay,
+  pickDay,
   selectedDayId,
   updateRoute,
   selectedSequence,
@@ -105,11 +103,7 @@ function DayItem(props: { day: Day; index: number }) {
   const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
   const click = (e: MouseEvent) => {
     if (clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e)) return;
-    // The day shown stays shown: a click on it takes the mark back from a folder, and the pane back from the duplicates' report.
-    if (selected()) {
-      markShownDay();
-      setShowingDuplicates(false);
-    } else selectDay(props.day.id);
+    pickDay(props.day.id);
   };
   let row!: HTMLLIElement;
   // The day shown is brought into view: one opened from elsewhere may lie far down its trip.
