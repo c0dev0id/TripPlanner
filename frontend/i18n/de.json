@@ -418,6 +418,7 @@
   "Route tools": "Routenwerkzeuge",
   "Route {n}": "Route {n}",
   "Routed leg": "Berechnetes Teilstück",
+  "Routes are not deleted together with folders and trips": "Routen werden nicht zusammen mit Ordnern und Touren gelöscht",
   "Routes as": "Routen als",
   "Routes kept more than once": "Mehrfach vorhandene Routen",
   "Routes of the points, for the device to route": "Routen aus den Punkten, das Gerät berechnet den Weg",

@@ -9,7 +9,7 @@ import { SaveState } from '../trip/SaveStatus';
 import { TripIcons, TripPanel } from '../trip/TripPanel';
 import { IconButton } from '../ui/IconButton';
 import { CloseIcon } from '../ui/icons';
-import { Library } from './Library';
+import { Library, type FoundRoute } from './Library';
 import { LibraryActions } from './LibraryActions';
 import { Rides } from './Rides';
 
@@ -39,10 +39,10 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string, routeId?:
     props.onOpen(trip.id, dayId);
   };
   /** Shows a route the search found: its trip at its day, opened where another is open, with the route taken up. */
-  const openRoute = (trip: TripSummary, dayId: string, routeId: string) => {
-    showFolder(trip.folderId);
-    if (trip.id === openTripId()) takeUpRouteOf(dayId, routeId);
-    else props.onOpen(trip.id, dayId, routeId);
+  const openRoute = (found: FoundRoute) => {
+    showFolder(found.within.folderId);
+    if (found.within.id === openTripId()) takeUpRouteOf(found.dayId, found.route.id);
+    else props.onOpen(found.within.id, found.dayId, found.route.id);
   };
   /** Shows a folder the search found, leaving an open trip for it. */
   const openFolder = (id: number) => void props.onLeave().then(() => showFolder(id));

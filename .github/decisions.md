@@ -185,6 +185,15 @@ entries at the end of their section.
   tree with rows left out: a tree filtered in place needs its matches' ancestors
   unfolded and a rule for what a matching folder shows of its content, and the list
   says the same with the path. The special folders are the tabs and are never found.
+  What it lists is selected in the tree's own selection, so the menu and the keys of
+  folders and trips are the tree's; a changed query empties it, since a row selected
+  and then filtered away would be acted on unseen. A found route is deleted through
+  the function the duplicates report deletes with (`deleteRoutes`): as an edit of the
+  open trip, on the server for the others. Routes are not deleted together with
+  folders or trips: one question would have to say two different things, and a route
+  inside a trip deleted with it is gone either way; the menu says so instead. The
+  routes of the open trip are searched in the trip as it is edited, not in its
+  outline, which only follows a save.
   The rides are few enough per search to be filtered in place, all years unfolded and
   the fold buttons off, since a folded year would hide what was found; showing a ride
   from a day ends the search, which could otherwise leave it out.
