@@ -77,7 +77,7 @@ final class TripDocuments
         foreach ($this->rows($routes, $tripId) as $row) {
             $days[$row['day_id']]['routes'][] = self::route($row);
         }
-        $stops = 'SELECT id, day_id, name, symbol, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional
+        $stops = 'SELECT id, day_id, name, symbol, lng, lat, point_id, address, contact, booking_reference, website, notes, arrive_at, pause_minutes, optional
                   FROM stops WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
         foreach ($this->rows($stops, $tripId) as $stop) {
             $days[$stop['day_id']]['stops'][] = [
@@ -89,6 +89,7 @@ final class TripDocuments
                 'address' => $stop['address'],
                 'contact' => $stop['contact'],
                 'bookingReference' => $stop['booking_reference'],
+                'website' => $stop['website'],
                 'notes' => $stop['notes'],
                 'arriveAt' => $stop['arrive_at'],
                 'pauseMinutes' => $stop['pause_minutes'] === null ? null : (int) $stop['pause_minutes'],
@@ -325,11 +326,11 @@ final class TripDocuments
                  line = excluded.line',
         );
         $upsertStop = $this->db->prepare(
-            'INSERT INTO stops (id, day_id, position, name, symbol, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            'INSERT INTO stops (id, day_id, position, name, symbol, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional, website)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, position = excluded.position, name = excluded.name, symbol = excluded.symbol, lng = excluded.lng, lat = excluded.lat,
                  point_id = excluded.point_id, address = excluded.address, contact = excluded.contact, booking_reference = excluded.booking_reference,
-                 notes = excluded.notes, arrive_at = excluded.arrive_at, pause_minutes = excluded.pause_minutes, optional = excluded.optional',
+                 notes = excluded.notes, arrive_at = excluded.arrive_at, pause_minutes = excluded.pause_minutes, optional = excluded.optional, website = excluded.website',
         );
         $placeDay = $this->db->prepare('UPDATE days SET position = ? WHERE id = ? AND trip_id = ?');
         $placeRoute = $this->db->prepare('UPDATE routes SET day_id = ?, position = ? WHERE id = ?');
@@ -363,7 +364,7 @@ final class TripDocuments
             foreach ($day['stops'] as $index => $stop) {
                 $upsertStop->execute([
                     $stop['id'], $day['id'], $index, $stop['name'], $stop['symbol'], $stop['lngLat'][0], $stop['lngLat'][1], $stop['pointId'],
-                    $stop['address'], $stop['contact'], $stop['bookingReference'], $stop['notes'], $stop['arriveAt'], $stop['pauseMinutes'], (int) $stop['optional'],
+                    $stop['address'], $stop['contact'], $stop['bookingReference'], $stop['notes'], $stop['arriveAt'], $stop['pauseMinutes'], (int) $stop['optional'], $stop['website'],
                 ]);
             }
         }

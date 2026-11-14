@@ -24,7 +24,7 @@ export function stopsBoundTo(route: Route, stops: readonly Stop[]): Stop[] {
 
 /** A stop with nothing said about it yet. */
 export function newStop(id: string, name: string, lngLat: LngLat, pointId: string | null): Stop {
-  return { id, name, symbol: PLAIN_SYMBOL, lngLat, pointId, address: '', contact: '', bookingReference: '', notes: '', arriveAt: null, pauseMinutes: null, optional: false };
+  return { id, name, symbol: PLAIN_SYMBOL, lngLat, pointId, address: '', contact: '', bookingReference: '', website: '', notes: '', arriveAt: null, pauseMinutes: null, optional: false };
 }
 
 /** The day's stops with every bound one at its route point, or free where its point no longer is. */

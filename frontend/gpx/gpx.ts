@@ -4,8 +4,14 @@ import { children, parseXml, text } from './xml';
 
 /** What a GPX 1.0 or 1.1 file holds: waypoints, routes (`rte`) and tracks (`trk`) with their segments. */
 export interface GpxContent {
-  /** `symbol` is the icon a Garmin device shows for the waypoint (`sym`); `address` and `phone` come from Garmin's waypoint extension. */
-  waypoints: { lngLat: LngLat; name?: string; description?: string; symbol?: string; address?: string; phone?: string }[];
+  /** The file's own name, where its metadata give one. */
+  name?: string;
+  /**
+   * `symbol` is the icon a Garmin device shows for the waypoint (`sym`); `address` and
+   * `phone` come from Garmin's waypoint extension; `type` is the kind of place the file
+   * sorts it under, and `links` are the web addresses it links to, in the file's order.
+   */
+  waypoints: { lngLat: LngLat; name?: string; description?: string; symbol?: string; address?: string; phone?: string; type?: string; links: string[] }[];
   /**
    * `ways` holds for each point the points of the way a Garmin device or BaseCamp
    * calculated from it on to the next, where the file has them; none otherwise.
@@ -59,10 +65,13 @@ function route(rte: Element): GpxContent['routes'][number] {
 export function parseGpx(xml: string): GpxContent {
   const root = parseXml(xml);
   if (root?.localName !== 'gpx') throw new Error(t('This is not a GPX file.'));
+  const metadata = children(root, 'metadata')[0];
   return {
+    name: metadata && text(metadata, 'name'),
     waypoints: children(root, 'wpt').flatMap((w) => {
       const lngLat = position(w);
-      return lngLat ? [{ lngLat, name: text(w, 'name'), description: text(w, 'desc') ?? text(w, 'cmt'), symbol: text(w, 'sym'), ...garminContact(w) }] : [];
+      const links = children(w, 'link').flatMap((link) => link.getAttribute('href')?.trim() || []);
+      return lngLat ? [{ lngLat, name: text(w, 'name'), description: text(w, 'desc') ?? text(w, 'cmt'), symbol: text(w, 'sym'), type: text(w, 'type'), links, ...garminContact(w) }] : [];
     }),
     routes: children(root, 'rte').map(route),
     tracks: children(root, 'trk').map((t) => {

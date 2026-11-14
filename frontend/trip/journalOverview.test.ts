@@ -32,8 +32,8 @@ const trip: Trip = {
       notes: '',
       routes: [{ id: 'r1', name: 'Pass road', kind: 'routed', profile: 'motorcycle', highways: 'allow', optional: false, color: null, points: [], legs: {} }],
       stops: [
-        { id: 's1', name: 'Hut', symbol: 'Navaid, Black', lngLat: [10, 47], pointId: null, arriveAt: null, pauseMinutes: null, optional: false, address: '', contact: '', bookingReference: '', notes: '' },
-        { id: 's2', name: 'Home', symbol: null, lngLat: [11, 47], pointId: null, arriveAt: null, pauseMinutes: null, optional: false, address: '', contact: '', bookingReference: '', notes: '' },
+        { id: 's1', name: 'Hut', symbol: 'Navaid, Black', lngLat: [10, 47], pointId: null, arriveAt: null, pauseMinutes: null, optional: false, address: '', contact: '', bookingReference: '', website: '', notes: '' },
+        { id: 's2', name: 'Home', symbol: null, lngLat: [11, 47], pointId: null, arriveAt: null, pauseMinutes: null, optional: false, address: '', contact: '', bookingReference: '', website: '', notes: '' },
       ],
     },
     { id: 'd2', name: '', date: null, notes: '', routes: [], stops: [] },

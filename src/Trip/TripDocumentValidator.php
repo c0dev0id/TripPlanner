@@ -110,6 +110,7 @@ final class TripDocumentValidator
             'address' => self::text($stop, 'address', $at),
             'contact' => self::text($stop, 'contact', $at),
             'bookingReference' => self::text($stop, 'bookingReference', $at),
+            'website' => self::text($stop, 'website', $at, 2000),
             'notes' => self::text($stop, 'notes', $at),
             'arriveAt' => $arriveAt,
             'pauseMinutes' => $pause,

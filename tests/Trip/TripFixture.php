@@ -44,6 +44,7 @@ final class TripFixture
             'address' => '',
             'contact' => '',
             'bookingReference' => '',
+            'website' => '',
             'notes' => '',
             'arriveAt' => null,
             'pauseMinutes' => null,

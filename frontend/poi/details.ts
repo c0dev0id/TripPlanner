@@ -9,8 +9,8 @@ export interface PoiDetails {
   homepage?: string;
 }
 
-/** A tagged address as one a link can take: many are written without "https://"; anything of another scheme is none. */
-function webAddress(tagged: string): string | undefined {
+/** An address of the web as one a link can take: many are written without "https://"; anything of another scheme is none. */
+export function webAddress(tagged: string): string | undefined {
   const address = tagged.split(';')[0]!.trim();
   if (/^https?:\/\//i.test(address)) return address;
   return /^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(address) ? `https://${address}` : undefined;

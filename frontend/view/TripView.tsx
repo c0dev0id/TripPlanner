@@ -3,6 +3,7 @@ import { createEffect, createMemo, createResource, For, Match, Show, Switch } fr
 import { errorMessage, fetchTripAt, listEntriesAt } from '../api';
 import { entriesOn, type Entry, type EntryTarget } from '../model/journal';
 import type { Day, Route, Stop, Trip } from '../model/trip';
+import { webAddress } from '../poi/details';
 import { routeDistance, routesDistance } from '../routing/legs';
 import { daySequence, standingAlone } from '../routing/sequence';
 import { dayTimeline, type EntryTime } from '../routing/timeline';
@@ -148,6 +149,13 @@ function StopItem(props: { stop: Stop; distanceM: number | undefined; time: Entr
         </Show>
         <Show when={stop().bookingReference}>
           <span>{t('Booking {ref}', { ref: stop().bookingReference })}</span>
+        </Show>
+        <Show when={webAddress(stop().website)}>
+          {(address) => (
+            <a href={address()} target="_blank" rel="noopener noreferrer">
+              {t('Website')}
+            </a>
+          )}
         </Show>
         <Show when={stop().notes}>
           <span class="text">{stop().notes}</span>

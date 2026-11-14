@@ -1,13 +1,14 @@
 import { t } from '../i18n/t';
-import { createMemo } from 'solid-js';
+import { createMemo, Show } from 'solid-js';
 import type { Stop } from '../model/trip';
+import { webAddress } from '../poi/details';
 import { editTarget, setEditTarget } from '../state/drawing';
 import { removeStop, selectedDay, updateStop } from '../state/trip';
 import { EditDialog } from '../ui/EditDialog';
 import { field } from '../ui/form';
 import { SymbolField } from './SymbolField';
 
-/** A stop of the selected day: name, symbol, arrival time and pause, address, contact, booking, notes, whether it is optional; and its removal. */
+/** A stop of the selected day: name, symbol, arrival time and pause, address, contact, booking, website, notes, whether it is optional; and its removal. */
 export function StopDialog() {
   const stop = createMemo((): Stop | undefined => {
     const target = editTarget();
@@ -25,6 +26,7 @@ export function StopDialog() {
       address: field(form, 'address'),
       contact: field(form, 'contact'),
       bookingReference: field(form, 'bookingReference'),
+      website: field(form, 'website'),
       notes: field(form, 'notes'),
     });
   };
@@ -64,6 +66,22 @@ export function StopDialog() {
           <label>
             {t('Booking reference')}
             <input name="bookingReference" value={s.bookingReference} />
+          </label>
+          <label>
+            <span>
+              {t('Website')}
+              <Show when={webAddress(s.website)}>
+                {(address) => (
+                  <>
+                    {' · '}
+                    <a href={address()} target="_blank" rel="noopener noreferrer">
+                      {t('Open')}
+                    </a>
+                  </>
+                )}
+              </Show>
+            </span>
+            <input name="website" inputmode="url" value={s.website} maxlength={2000} />
           </label>
           <label>
             {t('Notes')}

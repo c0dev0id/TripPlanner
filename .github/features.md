@@ -124,7 +124,7 @@
   or free beside the route. The stop tool makes a stop of a route point, inserts one on
   the line, or places a free stop elsewhere; a free stop within 500 m of the route is
   connected to it where it passes closest, a bound one disconnected. A stop has a Garmin
-  waypoint symbol, a name, address, contact, booking reference and notes in a dialog.
+  waypoint symbol, a name, address, contact, booking reference, website and notes in a dialog.
   Twelve symbols are drawn as our own icons (stop, start, end, meeting point, hotel,
   restaurant, café, fuel, sight, info, photo spot, break), each standing for one Garmin
   symbol; any other symbol is drawn as Garmin's picture on a sign, and a stop without

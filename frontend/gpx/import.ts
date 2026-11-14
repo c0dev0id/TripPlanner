@@ -66,12 +66,40 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
     return { ...base, kind: 'routed', highways: 'allow', points, legs: calculatedLegs(line.points, line.ways, options.profile) };
   });
   const pointAt = new Map(routes.flatMap((r) => routePoints(r).map((p) => [p.lngLat.join(','), p.id] as const)));
-  const stops = gpx.waypoints.map((w, i) => {
+  return { routes, stops: waypointStops(gpx, options.newId, (lngLat) => pointAt.get(lngLat.join(',')) ?? null) };
+}
+
+/** The host a web address leads to; none for what is no web address. */
+function hostOf(link: string): string | undefined {
+  try {
+    return new URL(link).host || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * The page of its own each waypoint links to, or '' for none: its last link that does not
+ * lead to where the file came from. A site most of the waypoints link to, while there are
+ * links to others as well, is the file's source, such as the list a place was downloaded
+ * from, and not a place's own page.
+ */
+export function ownWebsites(waypoints: readonly { links: readonly string[] }[]): string[] {
+  const linking = new Map<string, number>();
+  for (const w of waypoints) for (const host of new Set(w.links.flatMap((link) => hostOf(link) ?? []))) linking.set(host, (linking.get(host) ?? 0) + 1);
+  const shared = new Set([...linking].filter(([, count]) => count > waypoints.length / 2).map(([host]) => host));
+  const source = shared.size < linking.size ? shared : new Set<string>();
+  return waypoints.map((w) => w.links.findLast((link) => hostOf(link) !== undefined && !source.has(hostOf(link)!)) ?? '');
+}
+
+/** The file's waypoints as stops, each bound to the point `pointAt` names for its position, with the page of its own it links to. */
+export function waypointStops(gpx: GpxContent, newId: () => string, pointAt: (lngLat: LngLat) => string | null = () => null): Stop[] {
+  const websites = ownWebsites(gpx.waypoints);
+  return gpx.waypoints.map((w, i) => {
     const lngLat = roundLngLat(w.lngLat);
-    const stop = newStop(options.newId(), asName(w.name ?? t('Waypoint {n}', { n: i + 1 })), lngLat, pointAt.get(lngLat.join(',')) ?? null);
-    return { ...stop, symbol: asSymbol(w.symbol), address: asNotes(w.address ?? ''), contact: asNotes(w.phone ?? ''), notes: asNotes(w.description ?? '') };
+    const stop = newStop(newId(), asName(w.name ?? t('Waypoint {n}', { n: i + 1 })), lngLat, pointAt(lngLat));
+    return { ...stop, symbol: asSymbol(w.symbol), address: asNotes(w.address ?? ''), contact: asNotes(w.phone ?? ''), website: websites[i]!.slice(0, 2000), notes: asNotes(w.description ?? '') };
   });
-  return { routes, stops };
 }
 
 /** A GPX file read into routes and stops, the routes named after the file where they have no name. */

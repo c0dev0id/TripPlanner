@@ -62,6 +62,8 @@ export interface Stop {
   address: string;
   contact: string;
   bookingReference: string;
+  /** The place's own page on the web, as typed or as a file gave it; empty for none. */
+  website: string;
   notes: string;
   /** Time of day as HH:MM, where the arrival is fixed. */
   arriveAt: string | null;

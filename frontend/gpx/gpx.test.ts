@@ -4,7 +4,7 @@ import { parseGpx, type GpxContent } from './gpx';
 import { pointCount } from '../routing/legs';
 import { decodePolyline } from '../routing/polyline';
 import { routedOf } from '../routing/testing';
-import { gpxToDayParts } from './import';
+import { gpxToDayParts, ownWebsites, waypointStops } from './import';
 
 const GPX_11 = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="test" xmlns="http://www.topografix.com/GPX/1/1">
@@ -39,8 +39,8 @@ describe('parseGpx', () => {
   it('reads waypoints, routes and tracks, leaving out positions off the world', () => {
     const gpx = parseGpx(GPX_11);
     expect(gpx.waypoints).toEqual([
-      { lngLat: [11.5, 48.1], name: 'Café', description: 'Good cake', symbol: 'Navaid, Black' },
-      { lngLat: [11.6, 48.2], name: undefined, description: 'No name' },
+      { lngLat: [11.5, 48.1], name: 'Café', description: 'Good cake', symbol: 'Navaid, Black', type: 'user', links: [] },
+      { lngLat: [11.6, 48.2], name: undefined, description: 'No name', type: 'castle', links: [] },
     ]);
     expect(gpx.routes).toEqual([{ name: 'Planned', points: [[11.5, 48.1], [11.7, 48.3]], ways: [[], []] }]);
     expect(gpx.tracks).toEqual([{ name: undefined, segments: [[[12, 47], [12.1, 47.1]], [[12.2, 47.2]]] }]);
@@ -152,5 +152,29 @@ describe('gpxToDayParts', () => {
     const long = gpxToDayParts({ waypoints: [], routes: [], tracks: [{ segments: [zigzag(3000)] }] }, options);
     expect(pointCount(long.routes[0]!)).toBe(3000);
     expect(gpxToDayParts({ waypoints: [], routes: [], tracks: [] }, options)).toEqual({ routes: [], stops: [] });
+  });
+});
+
+describe('a file of places', () => {
+  const place = (name: string, links: string[], type = 'Inns') =>
+    `<wpt lat="48" lon="8"><name>${name}</name>${links.map((href) => `<link href="${href}"/>`).join('')}<type>${type}</type></wpt>`;
+  const file = (...places: string[]) => parseGpx(`<gpx xmlns="http://www.topografix.com/GPX/1/1"><metadata><name>Our places</name></metadata>${places.join('')}</gpx>`);
+
+  it('is read with its name, and each waypoint with its kind and its links in order', () => {
+    const gpx = file(place('Post', ['https://list.example/post', 'https://post.example/']), place('Krone', [], 'Hotels'));
+    expect(gpx.name).toBe('Our places');
+    expect(gpx.waypoints.map((w) => [w.name, w.type, w.links])).toEqual([['Post', 'Inns', ['https://list.example/post', 'https://post.example/']], ['Krone', 'Hotels', []]]);
+  });
+
+  it('gives each place its own page and leaves out the list they all link to', () => {
+    const gpx = file(place('Post', ['https://list.example/post', 'https://post.example/']), place('Krone', ['https://list.example/krone']), place('Adler', ['https://list.example/adler', 'http://adler.example/hof']));
+    expect(ownWebsites(gpx.waypoints)).toEqual(['https://post.example/', '', 'http://adler.example/hof']);
+    expect(waypointStops(gpx, () => 'id').map((stop) => stop.website)).toEqual(['https://post.example/', '', 'http://adler.example/hof']);
+  });
+
+  it('keeps the only site the places link to, and takes what is no web address for none', () => {
+    const chain = file(place('North', ['https://chain.example/north']), place('South', ['https://chain.example/south']));
+    expect(ownWebsites(chain.waypoints)).toEqual(['https://chain.example/north', 'https://chain.example/south']);
+    expect(ownWebsites(file(place('Odd', ['not a link'])).waypoints)).toEqual(['']);
   });
 });

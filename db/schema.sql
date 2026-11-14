@@ -162,7 +162,8 @@ CREATE TABLE IF NOT EXISTS stops (
     notes TEXT NOT NULL DEFAULT '',
     arrive_at TEXT,
     pause_minutes INTEGER,
-    optional INTEGER NOT NULL DEFAULT 0
+    optional INTEGER NOT NULL DEFAULT 0,
+    website TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS stops_day ON stops(day_id);
 

@@ -238,6 +238,7 @@ erDiagram
     string address
     string contact
     string booking_reference
+    string website
     string notes
     time arrive_at
     int pause_minutes
