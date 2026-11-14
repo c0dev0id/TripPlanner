@@ -263,20 +263,20 @@ export const lookUpRides = (tripId: number, dayId: string, utcOffsetMinutes: num
 
 /**
  * The days of the user's trips that rides on no day may be of, without what was declined,
- * those of the day's date first, then the nearest; `utcOffsetMinutes` is how far the
- * user's clock is ahead of UTC. The server looks through the days a few seconds'
- * worth at a time; `onProgress` hears how many are done of all.
+ * in the order of the days; `utcOffsetMinutes` is how far the user's clock is ahead of
+ * UTC. The server looks through the days a few seconds' worth at a time; `onProgress`
+ * hears how many are done of all.
  */
 export async function suggestRideDays(utcOffsetMinutes: number, onProgress: (done: number, of: number) => void): Promise<Suggestion[]> {
   const found: Suggestion[] = [];
-  for (let from = 0; ; ) {
-    const part = await request<{ suggestions: Suggestion[]; done: number; of: number }>('GET', `/api/rides/suggestions?offset=${utcOffsetMinutes}&from=${from}`);
-    found.push(...part.suggestions);
+  let part = { done: 0, of: 0 };
+  do {
+    const answer = await request<{ suggestions: Suggestion[]; done: number; of: number }>('GET', `/api/rides/suggestions?offset=${utcOffsetMinutes}&from=${part.done}`);
+    found.push(...answer.suggestions);
+    part = answer;
     onProgress(part.done, part.of);
-    if (part.done >= part.of || part.done <= from) break;
-    from = part.done;
-  }
-  return found.sort((a, b) => Number(b.sameDate) - Number(a.sameDate) || b.share - a.share);
+  } while (part.done < part.of);
+  return found;
 }
 
 /** Says that a ride is not of a day it was suggested for, which is remembered. */

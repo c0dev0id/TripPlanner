@@ -2,7 +2,7 @@ import { batch, createEffect, createMemo, createResource, createRoot, createSign
 import { errorMessage, fetchRides } from '../api';
 import { ROUTE_PALETTE } from '../model/routeLook';
 import type { LngLat } from '../model/trip';
-import type { Ride, Suggestion } from '../recording/rides';
+import type { Ride } from '../recording/rides';
 import { decodePolyline } from '../routing/polyline';
 import { selectIn, selectionOf } from '../ui/selection';
 import { showWhole } from './drawing';
@@ -73,9 +73,6 @@ export function showRide(id: number): void {
   });
 }
 
-/** The days suggested for rides on no day, to be gone through; none until they are asked for, or once they are put away. */
-export const [rideSuggestions, setRideSuggestions] = createSignal<Suggestion[]>();
-
 /** What a change to rides came to: a sentence, and what it could not do. */
 export interface RidesNote {
   text: string;
@@ -86,22 +83,27 @@ export interface RidesNote {
 const [note, setNote] = createSignal<RidesNote>();
 export const ridesNote = note;
 
-/** Runs a change to rides, says what came of it where it says something, or why it failed, and has the rides read again. */
-export async function changeRides(work: () => Promise<RidesNote | void>): Promise<void> {
+/** Runs something that concerns the rides and changes none of them, and says what came of it where it says something, or why it failed. */
+export async function askOfRides(work: () => Promise<RidesNote | void>): Promise<void> {
   try {
     setNote((await work()) || undefined);
   } catch (fault) {
     setNote({ text: '', errors: [errorMessage(fault)] });
   }
+}
+
+/** Runs a change to rides, says what came of it or why it failed, and has the rides read again. */
+export async function changeRides(work: () => Promise<RidesNote | void>): Promise<void> {
+  await askOfRides(work);
   ridesChanged();
 }
 
 let busy = false;
 
-/** Runs a change to rides that takes a while and says how far it is; while one runs, another is not started. */
-export async function runRidesJob(work: (onProgress: (text: string) => void) => Promise<RidesNote>): Promise<void> {
+/** Runs something on the rides that takes a while and says how far it is, a change to them unless `changes` says otherwise; while one runs, another is not started. */
+export async function runRidesJob(work: (onProgress: (text: string) => void) => Promise<RidesNote>, changes = true): Promise<void> {
   if (busy) return;
   busy = true;
-  await changeRides(() => work((text) => setNote({ text, errors: [] })));
+  await (changes ? changeRides : askOfRides)(() => work((text) => setNote({ text, errors: [] })));
   busy = false;
 }

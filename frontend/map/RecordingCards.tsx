@@ -65,9 +65,6 @@ function coloringLabel(c: Coloring): string {
 
 const textOf = <T,>(value: T | undefined, text: (value: T) => string): string | undefined => (value === undefined ? undefined : text(value));
 
-/** What a point has in a file beside its position, where the planner has a word for the file's. */
-const VALUE_NAMES: Record<string, string> = { time: t('time'), ele: t('altitude') };
-
 /** The rows that say what the recording's file is like: what wrote it, how densely, in how many pieces, and what it tells of each point. */
 function fileRows(file: FileFacts): [string, string | undefined][] {
   const density = [
@@ -75,7 +72,7 @@ function fileRows(file: FileFacts): [string, string | undefined][] {
     file.intervalS !== undefined && t('every {n} s', { n: (Math.round(file.intervalS * 10) / 10).toLocaleString(locale) }),
     file.spacingM !== undefined && t('{distance} apart', { distance: distanceText(file.spacingM) }),
   ];
-  const values = file.values.map(({ name, share }) => (share < 0.995 ? t('{name} ({share} %)', { name: VALUE_NAMES[name] ?? name, share: Math.round(share * 100) }) : (VALUE_NAMES[name] ?? name)));
+  const values = file.values.map(({ name, share }) => (share < 0.995 ? t('{name} ({share} %)', { name, share: Math.round(share * 100) }) : name));
   return [
     [t('Recorded by'), file.creator],
     [t('Points'), density.filter(Boolean).join(' · ')],

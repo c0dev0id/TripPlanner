@@ -1,15 +1,11 @@
-/* The base map button among the map's controls, which are light in either theme: its icon takes their dark ink, not the page's. */
+/* The base map button and the lock of the map's view among the map's controls, which are light in either theme: their icons take the controls' dark ink, not the page's. */
 
 .base-maps > button,
-.base-maps > button {
-  color: #333;
-}
-
-/* The lock of the map's view among the map's controls: dark ink as the others, the accent while the view is locked. */
-
 .view-lock > button {
   color: #333;
 }
+
+/* The lock in the accent while the view is locked. */
 
 .view-lock > button[aria-pressed='true'] {
   color: #b4440f;

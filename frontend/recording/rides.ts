@@ -1,6 +1,6 @@
 /** The rides: every recording the user keeps, looked at by when it was ridden instead of by the plans it followed. */
 
-/** A ride: a recording with its line as polyline6 and the days it is on, each with the trip or collection it is in. */
+/** A ride: a recording with its line as polyline6 and the days it is on. */
 export interface Ride {
   id: number;
   name: string;
@@ -8,7 +8,7 @@ export interface Ride {
   startedAt: string | null;
   distanceM: number;
   line: string;
-  days: { tripId: number; dayId: string; trip: string }[];
+  days: { tripId: number; dayId: string }[];
 }
 
 /** Where a merge would join two rides: when the later one began, the seconds since the earlier one ended, null where a file tells no times, and the metres from where that one ended to where the later begins. */
@@ -33,6 +33,9 @@ export interface Suggestion {
   share: number;
   rideIds: number[];
 }
+
+/** Orders what was found for days as it is gone through: what began on its day's date first, then what ran along the routes the most. */
+export const likelierFirst = (a: Pick<Suggestion, 'sameDate' | 'share'>, b: Pick<Suggestion, 'sameDate' | 'share'>): number => Number(b.sameDate) - Number(a.sameDate) || b.share - a.share;
 
 /** A day of riding: the rides that began on one date, the earliest first. A tracker starts a new file after a break, so a day is often several. */
 export interface RidingDay {

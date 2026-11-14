@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { createEffect, createMemo, createRoot, createSignal, on } from 'solid-js';
-import type { KeptRide, Recording } from '../api';
+import type { KeptRide } from '../api';
 import { deltaToTrack, offsetsFrom, type Delta } from '../recording/delta';
 import { DIFFERENCE_FIGURES, FIGURES, METRICS } from '../recording/figures';
 import { colorAt, DIFFERENCE_SERIES, isDifference, scaleOf, surfaceColor, type Coloring, type Difference } from '../recording/lineColors';
@@ -9,7 +9,7 @@ import { trackSurfaces } from '../recording/surfaces';
 import type { RecordedTrack } from '../recording/track';
 import { legCoordinates, routeLegs } from '../routing/legs';
 import { showWhole } from './drawing';
-import { activeRecordingId, loadedTrack, setActiveRecordingId, shownRecordings } from './recordings';
+import { activeRecordingId, loadedTrack, setActiveRecordingId, shownRecordings, type ShownRecording } from './recordings';
 import { openTrip, openTripId, selectedDayId } from './trip';
 
 /**
@@ -31,15 +31,15 @@ export function openRecording(id: number | undefined): void {
 }
 
 /**
- * Opens the figures of a ride of the list of rides, which is then on the map as a
- * recording on no day, whole once its track is read; or closes them where it is the
- * one opened.
+ * Opens the figures of a recording of a day or of a ride of the list of rides, which
+ * shows it whole on the map, at once where its track is read and else when it arrives;
+ * or closes them where it is the one opened.
  */
-export function toggleRide(ride: KeptRide): void {
-  if (activeRecordingId() === ride.id) return openRecording(undefined);
-  openRecording(ride.id);
-  const listed = shownRecordings().find((r) => r.id === ride.id);
-  const track = listed && loadedTrack(listed);
+export function toggleRecording(recording: KeptRide): void {
+  if (activeRecordingId() === recording.id) return openRecording(undefined);
+  // Opened first, so that it is shown whole beside its cards.
+  openRecording(recording.id);
+  const track = loadedTrack(recording);
   if (track) showWhole(track.points);
 }
 
@@ -76,7 +76,7 @@ function measuresFor(track: RecordedTrack): Measures {
 }
 
 export interface Opened {
-  recording: Recording;
+  recording: ShownRecording;
   track: RecordedTrack;
   measures: Measures;
 }

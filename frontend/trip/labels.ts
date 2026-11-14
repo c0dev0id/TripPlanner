@@ -51,6 +51,12 @@ export function routeKindLabel(route: Route): string {
   return t(route.highways === 'avoid' ? '{profile}, no motorways' : '{profile}, motorways first', { profile });
 }
 
+/** What riding found for a day has in common with it, as its row says: that it began on the day's date, and how much of it ran along the day's routes. */
+export const foundBecause = (found: { sameDate: boolean; share: number }): (string | false)[] => [
+  found.sameDate && t('on this day'),
+  found.share > 0 && t('{share} % along the routes', { share: Math.round(found.share * 100) }),
+];
+
 /** Where the ride misses a stop's fixed time: by how much it is late or early, and when it gets there; none where it fits. */
 export function offTime(time: EntryTime): { late: boolean; text: string; rideMin: number } | undefined {
   if (time.slackMin === 0) return undefined;

@@ -8,7 +8,7 @@ import { copyRecordings, isCutRecording } from '../state/clipboard';
 import { clearPartSelection, clickPart, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
 import { showWhole } from '../state/drawing';
 import { isRecordingPinned, pinRecordings } from '../state/pins';
-import { openRecording } from '../state/recordingView';
+import { toggleRecording } from '../state/recordingView';
 import { showRide } from '../state/rides';
 import {
   activeRecordingId,
@@ -39,6 +39,7 @@ import { CloseIcon, PlusIcon, SearchIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
+import { foundBecause } from './labels';
 import { moveToDayItem, pinItems } from './partMenu';
 import { Pin } from './Pin';
 import { pickFile } from '../ui/pickFile';
@@ -106,8 +107,7 @@ function FoundRecordings(props: { dayId: string; found: FoundRidingDay[] | undef
     [
       ridingDay.rides.length > 1 ? counted(ridingDay.rides.length, 'recording') : ridingDay.date !== null && ridingDay.rides[0]!.name,
       distanceText(totalDistance(ridingDay.rides)),
-      ridingDay.sameDate && t('on this day'),
-      ridingDay.share > 0 && t('{share} % along the routes', { share: Math.round(ridingDay.share * 100) }),
+      ...foundBecause(ridingDay),
     ]
       .filter(Boolean)
       .join(' · ');
@@ -204,17 +204,7 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
     return `${startedAt ? momentText(startedAt) : t('no times')} · ${distanceText(distanceM)}`;
   };
   const isOpened = () => activeRecordingId() === props.recording.id;
-  const openIt = () => {
-    // Opened first, so that it is shown whole beside its cards; one whose file is yet to be read is shown whole when it arrives.
-    openRecording(props.recording.id);
-    const loaded = loadedTrack(props.recording);
-    if (loaded) showWhole(loaded.points);
-  };
-  const click = (e: MouseEvent) => {
-    if (clickPart('recording', recordingsOf(props.recording.dayId).map((r) => String(r.id)), String(props.recording.id), e)) return;
-    if (isOpened()) openRecording(undefined);
-    else openIt();
-  };
+  const click = (e: MouseEvent) => clickPart('recording', recordingsOf(props.recording.dayId).map((r) => String(r.id)), String(props.recording.id), e) || toggleRecording(props.recording);
   return (
     <li
       class="recording"

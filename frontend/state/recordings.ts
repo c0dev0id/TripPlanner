@@ -8,7 +8,7 @@ import { flushSave } from './autosave';
 import { showWhole } from './drawing';
 import { isRecordingPinned, pinRecordings } from './pins';
 import { allRides, rideChanges, ridesChanged } from './rides';
-import { openTripId, selectedDayId } from './trip';
+import { openTrip, openTripId, selectedDayId } from './trip';
 
 /**
  * The rides on the open trip's days, loaded with the trip and again when rides change,
@@ -43,29 +43,36 @@ export const recordingsOf = (dayId: string): Recording[] => allRecordings().filt
 /** The day's recordings among the ids, as a selection names them. */
 export const recordingsAmong = (dayId: string, ids: readonly string[]): Recording[] => recordingsOf(dayId).filter((r) => ids.includes(String(r.id)));
 
-/** The colours recordings are drawn in, apart from the planned routes', by their place on their day; one on no day in the first. */
+/** A recording as it is on the map: one of a day, or a ride opened in the list of rides, which is there for itself and has no day. */
+export type ShownRecording = KeptRide & { dayId?: string };
+
+/** The colours recordings are drawn in, apart from the planned routes', by their place on their day; a ride without a day in the first. */
 const COLORS = ['#7048e8', '#0c8599', '#c2255c', '#5c940d', '#e67700', '#3b5bdb'];
 
-export function recordingColor(recording: Recording): string {
-  return COLORS[Math.max(0, recordingsOf(recording.dayId).findIndex((r) => r.id === recording.id)) % COLORS.length]!;
+export function recordingColor(recording: ShownRecording): string {
+  return recording.dayId === undefined ? COLORS[0]! : COLORS[recordingsOf(recording.dayId).findIndex((r) => r.id === recording.id) % COLORS.length]!;
 }
 
 /** The recording opened for its figures. */
 const [activeRecordingId, setActiveRecordingId] = createSignal<number>();
 export { activeRecordingId, setActiveRecordingId };
 
-/** The ride opened where it is none of the day shown: one opened in the list of rides, as a recording on no day. */
+/** The ride opened where it is none of the day shown: one opened in the list of rides. The same while it reads the same, however often the rides are read. */
 const listedRide = createRoot(() =>
-  createMemo((): Recording | undefined => {
-    const active = activeRecordingId();
-    if (active === undefined || recordingsOf(selectedDayId() ?? '').some((r) => r.id === active)) return undefined;
-    const ride = allRides().find((kept) => kept.id === active);
-    return ride && { id: ride.id, dayId: '', name: ride.name, distanceM: ride.distanceM, startedAt: ride.startedAt };
-  }),
+  createMemo(
+    (): KeptRide | undefined => {
+      const active = activeRecordingId();
+      if (active === undefined || recordingsOf(selectedDayId() ?? '').some((r) => r.id === active)) return undefined;
+      const ride = allRides().find((kept) => kept.id === active);
+      return ride && { id: ride.id, name: ride.name, distanceM: ride.distanceM, startedAt: ride.startedAt };
+    },
+    undefined,
+    { equals: (a, b) => a?.id === b?.id && a?.name === b?.name && a?.distanceM === b?.distanceM && a?.startedAt === b?.startedAt },
+  ),
 );
 
 /** The recordings on the map: of the day shown, the pinned ones and the one opened, and a ride opened in the list of rides. */
-export function shownRecordings(): Recording[] {
+export function shownRecordings(): ShownRecording[] {
   const dayId = selectedDayId();
   const active = activeRecordingId();
   const listed = listedRide();
@@ -75,10 +82,10 @@ export function shownRecordings(): Recording[] {
 /** Each read recording's track, or why it could not be read, by recording id. */
 const [tracks, setTracks] = createSignal<ReadonlyMap<number, RecordedTrack | Error>>(new Map());
 
-export const trackOf = (recording: Recording): RecordedTrack | Error | undefined => tracks().get(recording.id);
+export const trackOf = (recording: KeptRide): RecordedTrack | Error | undefined => tracks().get(recording.id);
 
 /** The recording's track once read; nothing while it is read or where it could not be. */
-export function loadedTrack(recording: Recording): RecordedTrack | undefined {
+export function loadedTrack(recording: KeptRide): RecordedTrack | undefined {
   const track = trackOf(recording);
   return track instanceof Error ? undefined : track;
 }
@@ -104,6 +111,8 @@ createRoot(() => {
       reading.add(recording.id);
       fetchRideGpx(recording.id)
         .then((gpx) => {
+          // One no longer shown when its file arrives is not read: a file is megabytes.
+          if (!shownRecordings().some((shown) => shown.id === recording.id)) return;
           const track = readRecording(gpx);
           keep(recording.id, track);
           if (recording.id === activeRecordingId()) showWhole(track.points);
@@ -112,15 +121,15 @@ createRoot(() => {
         .finally(() => reading.delete(recording.id));
     }
   });
-});
-
-createRoot(() => {
-  // A ride opened in the list keeps its track only while it is shown: the list is long, and a track is megabytes.
-  createEffect(() => {
-    const held = new Set([...allRecordings(), ...shownRecordings()].map((r) => r.id));
-    const kept = [...tracks()].filter(([id]) => held.has(id));
-    if (kept.length < tracks().size) setTracks(new Map(kept));
-  });
+  // A ride opened in the list keeps its track only while it is opened there: the list is long, and a track is megabytes.
+  createEffect(
+    on(listedRide, (now, before) => {
+      if (!before || before.id === now?.id || allRecordings().some((r) => r.id === before.id)) return;
+      const kept = new Map(tracks());
+      kept.delete(before.id);
+      setTracks(kept);
+    }),
+  );
 });
 
 /** Lists a ride as on a day of the open trip, where it is not yet, and pins it to the map, where it is to be seen. */
@@ -129,10 +138,10 @@ function listOnDay({ id, name, distanceM, startedAt }: KeptRide, dayId: string):
   pinRecordings([id], true);
 }
 
-/** Puts a ride on a day of the open trip, which leaves it on the days it is on. */
+/** Puts a ride on a day, which leaves it on the days it is on; on a day of the open trip it is listed and pinned there. */
 export async function putOnDay(ride: KeptRide, dayId: string): Promise<void> {
   await putRideOnDay(ride.id, dayId);
-  listOnDay(ride, dayId);
+  if (openTrip()?.days.some((day) => day.id === dayId)) listOnDay(ride, dayId);
 }
 
 /** Takes a ride off a day, of the open trip or another; it stays a ride. */
