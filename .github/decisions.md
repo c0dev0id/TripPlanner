@@ -911,15 +911,17 @@ entries at the end of their section.
   the light scheme and lightens it in the dark one, whatever that is, and no row needs
   a highlight of its own. A grip and a pad take none at all: they are handles of the
   row, not buttons.
-- **A day's plan and what was recorded of it are no duplicates.** A trip keeps the
-  planned route and the tracks ridden along it on the same day, and the report listed
-  each such day as the same ride kept twice, hundreds of groups that buried the ones
-  worth looking at. A group is left out where it lies in one day and holds at most one
-  planned route and no route or track twice, since a copy is no recording of anything.
-  Anything beyond that day makes it a duplicate again and lists it whole: the same routes imported twice into two trips, which is what the report is
-  for, or a recording kept in a collection beside the one in its trip. A first version
-  left out every group whose routes were all in trips, which hid exactly the trips
-  imported twice.
+- **What one day holds is no duplicate.** A trip keeps the planned route and the tracks
+  ridden along it on the same day, and the report listed each such day as the same ride
+  kept twice, hundreds of groups that buried the ones worth looking at. A group is left
+  out where all of it lies in one day. Anything beyond that day makes it a duplicate
+  again and lists it whole: the same routes imported twice into two trips, which is
+  what the report is for. A first version left out every group whose routes were all
+  in trips, which hid exactly the trips imported twice. A second kept a day's group
+  where it held two planned routes or an exact copy; in a day that is planned with a
+  route and a track of it, and with the same way kept in more than one form, those
+  were mostly false alarms too, so a day now never reports against itself, at the
+  price that a route really kept twice in one day is not found.
 - **What is taken up is drawn alone, but for what is pinned.** The map drew every route
   of the day shown and, by a switch on the day, all of its recordings or none, which
   left no way to look at one route of several or at three rides of ten. With the whole

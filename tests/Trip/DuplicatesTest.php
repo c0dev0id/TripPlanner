@@ -93,15 +93,16 @@ final class DuplicatesTest extends TestCase
         self::assertSame([['r1', 't1', 't2', 'r2']], $ids());
     }
 
-    public function testListsARouteOrATrackADayHoldsTwice(): void
+    public function testLeavesWhatOneDayHoldsTogetherEvenTwice(): void
     {
+        $ids = fn (): array => array_map(fn (array $group) => array_column($group['routes'], 'routeId'), (new Duplicates($this->db))->of($this->userId));
         $this->trip('Doubled', null, [$this->route('r1'), $this->route('r2')]);
+        self::assertSame([], $ids());
+        // The tracks of another day run along the routes, so all four are one ride, listed whole.
         $this->trip('Recorded twice', null, [$this->track('t1', self::EAST), $this->track('t2', self::EAST)]);
-        $groups = (new Duplicates($this->db))->of($this->userId);
-        // The tracks run along the routes, so all four are one ride; listed, since copies are no plan with its recording.
-        self::assertSame([['r1', 'r2', 't1', 't2']], array_map(fn (array $group) => array_column($group['routes'], 'routeId'), $groups));
+        self::assertSame([['r1', 'r2', 't1', 't2']], $ids());
         $this->db->exec("DELETE FROM trips WHERE name = 'Doubled'");
-        self::assertSame([['copies', ['t1', 't2']]], array_map(fn (array $group) => [$group['kind'], array_column($group['routes'], 'routeId')], (new Duplicates($this->db))->of($this->userId)));
+        self::assertSame([], $ids());
     }
 
     public function testLeavesTheSameRoadOnAnotherDateAndOtherUsersAlone(): void

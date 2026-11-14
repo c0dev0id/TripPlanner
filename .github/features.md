@@ -296,10 +296,10 @@
   and collections, grouped as exact copies (the same points or the same line, whatever
   the date) or as the same ride kept twice (the same way within a kilometre at both
   ends, lengths within a tenth, nine in ten of each line's points within 75 m of the
-  other, on the same date or an undated day). A day's planned route beside the
-  tracks recorded of it on that day is left out: they belong together, unless the day
-  holds a route or a track twice. Once the same ride is anywhere else as well, in another trip or in a collection, the group is
-  listed whole. A click or a tap selects a route, Cmd or Ctrl one more,
+  other, on the same date or an undated day). What one day holds is left out, even
+  twice: its planned route, the tracks recorded of it and what else runs alike there
+  belong together. Once the same ride is on another day as well, of the trip or of
+  another, the group is listed whole. A click or a tap selects a route, Cmd or Ctrl one more,
   Shift a run of them; a route's pad adds it or takes it away; a selected row is highlighted.
   A row says whether it is a route or a track, since a planned route and the track of
   the same way are often both wanted, and where it is by the folders its trip is in, the trip and the day,
