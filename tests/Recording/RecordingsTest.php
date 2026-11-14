@@ -121,8 +121,8 @@ final class RecordingsTest extends TestCase
 
     public function testGivesTheDaysOfTheUsersTripsWithTheirRoutes(): void
     {
-        $collections = array_values(array_filter((new Folders($this->db))->listFor($this->userId), fn ($folder) => $folder->kind === 'collections'))[0]->id;
-        $material = $this->trips->create($this->userId, 'Material', $this->now, $collections, 'collection')->id;
+        $places = array_values(array_filter((new Folders($this->db))->listFor($this->userId), fn ($folder) => $folder->kind === 'places'))[0]->id;
+        $material = $this->trips->create($this->userId, 'Material', $this->now, $places, 'collection')->id;
         $this->documents->save($this->userId, $material, TripDocumentValidator::validated(['days' => [TripFixture::day('section')]] + TripFixture::document()), 1, $this->now);
 
         $days = iterator_to_array($this->documents->tripDays($this->userId), false);

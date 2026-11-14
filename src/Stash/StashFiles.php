@@ -51,7 +51,7 @@ final class StashFiles
      */
     public function keep(int $userId, int $folderId, string $name, string $gzip, DateTimeImmutable $now): ?array
     {
-        if (!$this->folders->holdsCollections($userId, $folderId)) {
+        if ($this->folders->kindAround($userId, $folderId) !== 'collections') {
             return null;
         }
         $gpx = (string) gzdecode($gzip);
@@ -102,7 +102,7 @@ final class StashFiles
     /** Moves the file into another folder of the Stash. False when the user has no such file, or no such folder there. */
     public function move(int $userId, int $id, int $folderId): bool
     {
-        if (!$this->folders->holdsCollections($userId, $folderId)) {
+        if ($this->folders->kindAround($userId, $folderId) !== 'collections') {
             return false;
         }
         $statement = $this->db->prepare('UPDATE stash_files SET folder_id = ? WHERE id = ? AND user_id = ?');

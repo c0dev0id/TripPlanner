@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use PDO;
 use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
+use Planner\Stash\StashFiles;
 use Planner\Tests\TestDatabase;
 use Planner\Trip\FolderInsideItself;
 use Planner\Trip\Folders;
@@ -195,36 +196,41 @@ final class FoldersTest extends TestCase
         self::assertTrue($this->folders->move($this->userId, $alps->id, $collections->id));
     }
 
-    public function testKeepsCollectionsInTheSpecialFoldersAndTripsOutOfThem(): void
+    public function testKeepsListsAmongThePlacesFilesInTheStashAndTripsOutOfBoth(): void
     {
-        [$collections, $places] = $this->folders->listFor($this->userId);
+        [$stash, $places] = $this->folders->listFor($this->userId);
         $alps = $this->folders->create($this->userId, 'Alps', null, $this->now);
-        $passes = $this->folders->create($this->userId, 'Passes', $collections->id, $this->now);
+        $dump = $this->folders->create($this->userId, '2025', $stash->id, $this->now);
+        $clubs = $this->folders->create($this->userId, 'Clubs', $places->id, $this->now);
         $trip = $this->trips->create($this->userId, 'Weekend', $this->now, $alps->id);
-        $collection = $this->trips->create($this->userId, 'TET', $this->now, $passes->id, 'collection');
+        $list = $this->trips->create($this->userId, 'Inns', $this->now, $clubs->id, 'collection');
+        (new StashFiles($this->db, $this->folders))->keep($this->userId, $dump->id, 'A day out', (string) gzencode('<gpx/>'), $this->now);
         $refused = [
-            fn () => $this->trips->create($this->userId, 'TET', $this->now, null, 'collection'),
-            fn () => $this->trips->create($this->userId, 'TET', $this->now, $alps->id, 'collection'),
+            fn () => $this->trips->create($this->userId, 'Inns', $this->now, null, 'collection'),
+            fn () => $this->trips->create($this->userId, 'Inns', $this->now, $alps->id, 'collection'),
+            fn () => $this->trips->create($this->userId, 'Inns', $this->now, $dump->id, 'collection'),
             fn () => $this->trips->create($this->userId, 'Weekend', $this->now, $places->id),
-            fn () => $this->trips->create($this->userId, 'Weekend', $this->now, $passes->id),
-            fn () => $this->trips->move($this->userId, $collection->id, null),
-            fn () => $this->trips->move($this->userId, $collection->id, $alps->id),
-            fn () => $this->trips->move($this->userId, $trip->id, $collections->id),
-            fn () => $this->folders->move($this->userId, $passes->id, null),
-            fn () => $this->folders->move($this->userId, $passes->id, $alps->id),
-            fn () => $this->folders->move($this->userId, $alps->id, $passes->id),
+            fn () => $this->trips->create($this->userId, 'Weekend', $this->now, $dump->id),
+            fn () => $this->trips->move($this->userId, $list->id, null),
+            fn () => $this->trips->move($this->userId, $list->id, $stash->id),
+            fn () => $this->trips->move($this->userId, $trip->id, $stash->id),
+            fn () => $this->folders->move($this->userId, $clubs->id, null),
+            fn () => $this->folders->move($this->userId, $clubs->id, $dump->id),
+            fn () => $this->folders->move($this->userId, $alps->id, $clubs->id),
+            fn () => $this->folders->move($this->userId, $dump->id, $alps->id),
+            fn () => $this->folders->move($this->userId, $dump->id, $places->id),
         ];
         foreach ($refused as $n => $misplace) {
             try {
                 $misplace();
-                self::fail("Case $n put a trip or a collection where it does not belong.");
+                self::fail("Case $n put a trip, a list or a file where it does not belong.");
             } catch (MisplacedTrip) {
             }
         }
-        self::assertTrue($this->trips->move($this->userId, $collection->id, $places->id));
-        self::assertTrue($this->folders->move($this->userId, $passes->id, $places->id));
-        self::assertTrue($this->folders->move($this->userId, $passes->id, $alps->id));
-        self::assertSame([[$collection->id, $places->id], [$trip->id, $alps->id]], array_map(fn ($t) => [$t->id, $t->folderId], $this->trips->listFor($this->userId)));
+        self::assertTrue($this->trips->move($this->userId, $list->id, $places->id));
+        self::assertTrue($this->folders->move($this->userId, $clubs->id, $alps->id));
+        self::assertTrue($this->folders->move($this->userId, $clubs->id, $dump->id));
+        self::assertSame([[$list->id, $places->id], [$trip->id, $alps->id]], array_map(fn ($t) => [$t->id, $t->folderId], $this->trips->listFor($this->userId)));
     }
 
     /** @return \Planner\Trip\Folder[] the user's folders without the two special ones */

@@ -35,8 +35,6 @@ final class OwnPlacesTest extends TestCase
             ['name' => 'Inns'] + TripFixture::day('inns', [], [['website' => 'https://post.example/'] + TripFixture::stop('p2', 'Post', [8.5, 47.1], null, 'Restaurant'), TripFixture::stop('p1', 'Adler', [8.4, 47.0], null)]),
             ['name' => 'Hotels'] + TripFixture::day('hotels', [], [TripFixture::stop('p3', 'Krone', [8.6, 47.2], null)]),
         ]);
-        $elsewhere = $trips->create($userId, 'Material', $now, $special['collections'], 'collection')->id;
-        $save($elsewhere, [TripFixture::day('other', [], [TripFixture::stop('w1', 'Waypoint', [9.0, 46.0], null)])]);
 
         $places = (new OwnPlaces($db))->of($userId);
         self::assertSame([['Adler', 'Inns'], ['Post', 'Inns'], ['Krone', 'Hotels']], array_map(fn (array $p) => [$p['name'], $p['kind']], $places));

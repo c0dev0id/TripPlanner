@@ -66,10 +66,10 @@ final class Trips
         return true;
     }
 
-    /** @throws MisplacedTrip for a collection outside the folders for collections, or a trip in them */
+    /** @throws MisplacedTrip for a collection outside the folders for places, or a trip in them or in the Stash */
     private function assertFits(int $userId, string $kind, ?int $folderId): void
     {
-        if (($kind === 'collection') !== $this->folders->holdsCollections($userId, $folderId)) {
+        if (Folders::HELD[$this->folders->kindAround($userId, $folderId)] !== $kind) {
             throw new MisplacedTrip();
         }
     }

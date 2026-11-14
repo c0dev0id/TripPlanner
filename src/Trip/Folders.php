@@ -17,6 +17,9 @@ use Planner\Timestamp;
  */
 final class Folders
 {
+    /** The kind of trip kept under each kind of special folder, and outside them; none in the Stash, which holds files. */
+    public const HELD = ['folder' => 'trip', 'places' => 'collection', 'collections' => ''];
+
     public function __construct(private readonly PDO $db)
     {
     }
@@ -61,14 +64,19 @@ final class Folders
         }
     }
 
-    /** Whether the folder is a special one or lies in one, where collections are kept; the top, null, is not. */
-    public function holdsCollections(int $userId, ?int $folderId): bool
+    /**
+     * The kind of the special folder the folder is or lies in, which says what it holds:
+     * 'collections' in the Stash, which holds files, 'places' among the lists of places,
+     * and 'folder' anywhere else and at the top, null, where trips are.
+     */
+    public function kindAround(int $userId, ?int $folderId): string
     {
         $statement = $this->db->prepare(
-            "WITH RECURSIVE around(parent_id, kind) AS (SELECT parent_id, kind FROM folders WHERE id = ? AND user_id = ? UNION ALL SELECT f.parent_id, f.kind FROM folders f JOIN around ON f.id = around.parent_id) SELECT 1 FROM around WHERE kind <> 'folder'",
+            "WITH RECURSIVE around(parent_id, kind) AS (SELECT parent_id, kind FROM folders WHERE id = ? AND user_id = ? UNION ALL SELECT f.parent_id, f.kind FROM folders f JOIN around ON f.id = around.parent_id) SELECT kind FROM around WHERE kind <> 'folder'",
         );
         $statement->execute([$folderId, $userId]);
-        return $statement->fetchColumn() !== false;
+        $kind = $statement->fetchColumn();
+        return $kind === false ? 'folder' : $kind;
     }
 
     /** False when the user has no such folder, or it is a special one. */
@@ -85,7 +93,7 @@ final class Folders
      *
      * @throws UnknownFolder for a parent the user does not have
      * @throws FolderInsideItself for a parent that is the folder or inside it
-     * @throws MisplacedTrip for a folder with collections that would leave the special folders, or one with trips that would enter them
+     * @throws MisplacedTrip for a folder whose trips, lists of places or files would come to lie where their kind is not kept
      */
     public function move(int $userId, int $folderId, ?int $parentId): bool
     {
@@ -100,8 +108,10 @@ final class Folders
             if ($parentId !== null && in_array($parentId, $inside, true)) {
                 throw new FolderInsideItself();
             }
-            $misplaced = $this->db->prepare('SELECT 1 FROM trips WHERE kind <> ? AND folder_id IN (' . Database::placeholders($inside) . ')');
-            $misplaced->execute([$this->holdsCollections($userId, $parentId) ? 'collection' : 'trip', ...$inside]);
+            $around = $this->kindAround($userId, $parentId);
+            $in = Database::placeholders($inside);
+            $misplaced = $this->db->prepare("SELECT 1 FROM trips WHERE kind <> ? AND folder_id IN ($in) UNION ALL SELECT 1 FROM stash_files WHERE ? <> 'collections' AND folder_id IN ($in)");
+            $misplaced->execute([self::HELD[$around], ...$inside, $around, ...$inside]);
             if ($misplaced->fetchColumn() !== false) {
                 throw new MisplacedTrip();
             }
