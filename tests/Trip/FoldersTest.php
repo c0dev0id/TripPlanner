@@ -178,7 +178,7 @@ final class FoldersTest extends TestCase
     public function testEveryUserHasTheSpecialFoldersFirst(): void
     {
         $this->folders->create($this->userId, 'Alps', null, $this->now);
-        self::assertSame([['Recordings', 'recordings', null], ['Collections', 'collections', null], ['Alps', 'folder', null]], array_map(fn ($f) => [$f->name, $f->kind, $f->parentId], $this->folders->listFor($this->userId)));
+        self::assertSame([['Recordings', 'recordings', null], ['Collections', 'collections', null], ['Places', 'places', null], ['Alps', 'folder', null]], array_map(fn ($f) => [$f->name, $f->kind, $f->parentId], $this->folders->listFor($this->userId)));
     }
 
     public function testLeavesTheSpecialFoldersAsTheyAre(): void

@@ -73,9 +73,10 @@ CREATE TABLE IF NOT EXISTS folders (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     parent_id INTEGER REFERENCES folders(id),
     name TEXT NOT NULL,
-    -- A folder of the user's making, or one of the two every user has at the top of the
-    -- library: for recordings that belong to no trip, and for collections.
-    kind TEXT NOT NULL DEFAULT 'folder' CHECK (kind IN ('folder', 'recordings', 'collections')),
+    -- A folder of the user's making, or one of the three every user has at the top of the
+    -- library: for recordings that belong to no trip, for collections, and for the lists
+    -- of the user's own places.
+    kind TEXT NOT NULL DEFAULT 'folder' CHECK (kind IN ('folder', 'recordings', 'collections', 'places')),
     created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS folders_user ON folders(user_id);
@@ -85,7 +86,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS folders_special ON folders(user_id, kind) WHER
 CREATE TRIGGER IF NOT EXISTS users_special_folders AFTER INSERT ON users BEGIN
     INSERT INTO folders (user_id, name, kind, created_at) VALUES
         (NEW.id, 'Recordings', 'recordings', NEW.created_at),
-        (NEW.id, 'Collections', 'collections', NEW.created_at);
+        (NEW.id, 'Collections', 'collections', NEW.created_at),
+        (NEW.id, 'Places', 'places', NEW.created_at);
 END;
 
 -- A trip's parts carry ids the client generates, so that the whole trip is saved as one

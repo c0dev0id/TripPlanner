@@ -21,11 +21,11 @@ final class Folders
     {
     }
 
-    /** @return Folder[] the user's folders: the special ones first, recordings before collections, the others by name */
+    /** @return Folder[] the user's folders: the special ones first, for recordings, collections and places, the others by name */
     public function listFor(int $userId): array
     {
         $statement = $this->db->prepare(
-            "SELECT id, name, parent_id, kind FROM folders WHERE user_id = ? ORDER BY CASE kind WHEN 'recordings' THEN 0 WHEN 'collections' THEN 1 ELSE 2 END, name COLLATE NOCASE, id",
+            "SELECT id, name, parent_id, kind FROM folders WHERE user_id = ? ORDER BY CASE kind WHEN 'recordings' THEN 0 WHEN 'collections' THEN 1 WHEN 'places' THEN 2 ELSE 3 END, name COLLATE NOCASE, id",
         );
         $statement->execute([$userId]);
         return array_map(fn (array $row) => new Folder((int) $row['id'], $row['name'], $row['parent_id'] === null ? null : (int) $row['parent_id'], $row['kind']), $statement->fetchAll());

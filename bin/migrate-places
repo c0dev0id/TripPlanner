@@ -1,0 +1,35 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Planner\Database;
+use Planner\Kernel;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Run once on a database made before stops had a website and users a folder for places, then delete this file.
+$root = dirname(__DIR__);
+$db = Kernel::container($root)->get(PDO::class);
+// The table of the folders is made anew for its kinds: the trips keep pointing at it by its name.
+$db->exec('PRAGMA foreign_keys = OFF');
+$db->exec('PRAGMA legacy_alter_table = ON');
+$db->beginTransaction();
+$db->exec("ALTER TABLE stops ADD COLUMN website TEXT NOT NULL DEFAULT ''");
+$db->exec('ALTER TABLE folders RENAME TO folders_before');
+$db->exec('DROP INDEX folders_user');
+$db->exec('DROP INDEX folders_parent');
+$db->exec('DROP INDEX folders_special');
+$db->exec('DROP TRIGGER users_special_folders');
+Database::applySchema($db, $root . '/db/schema.sql');
+$db->exec('INSERT INTO folders (id, user_id, parent_id, name, kind, created_at) SELECT id, user_id, parent_id, name, kind, created_at FROM folders_before');
+$db->exec('DROP TABLE folders_before');
+$users = $db->exec("INSERT INTO folders (user_id, name, kind, created_at) SELECT id, 'Places', 'places', created_at FROM users");
+$broken = $db->query('PRAGMA foreign_key_check')->fetchAll();
+if ($broken !== []) {
+    $db->rollBack();
+    fwrite(STDERR, 'Nothing was changed: ' . count($broken) . " rows would point at nothing.\n");
+    exit(1);
+}
+$db->commit();
+echo "Stops have a website, and $users users their folder for places.\n";
