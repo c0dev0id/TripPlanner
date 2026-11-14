@@ -176,14 +176,37 @@ final class Recordings
         return $id;
     }
 
-    /** Puts the ride on a day of the user's, where it is not on it yet; false when the user has no such ride or no such day. */
+    /** Puts the ride on a day of the user's, where it is not on it yet, whatever was said of the two before; false when the user has no such ride or no such day. */
     public function link(int $userId, int $recordingId, string $dayId): bool
     {
         if (!$this->has($userId, $recordingId) || !$this->hasDay($userId, $dayId)) {
             return false;
         }
         $this->db->prepare('INSERT OR IGNORE INTO recording_days (day_id, recording_id) VALUES (?, ?)')->execute([$dayId, $recordingId]);
+        $this->db->prepare('DELETE FROM recording_declines WHERE day_id = ? AND recording_id = ?')->execute([$dayId, $recordingId]);
         return true;
+    }
+
+    /** Remembers that the ride is not of the day, for which it is then not suggested again; false when the user has no such ride or no such day. */
+    public function decline(int $userId, int $recordingId, string $dayId): bool
+    {
+        if (!$this->has($userId, $recordingId) || !$this->hasDay($userId, $dayId)) {
+            return false;
+        }
+        $this->db->prepare('INSERT OR IGNORE INTO recording_declines (day_id, recording_id) VALUES (?, ?)')->execute([$dayId, $recordingId]);
+        return true;
+    }
+
+    /** @return array<string, list<int>> the rides the user said are not of a day, by the day's id */
+    public function declined(int $userId): array
+    {
+        $statement = $this->db->prepare('SELECT x.day_id, x.recording_id FROM recording_declines x JOIN recordings r ON r.id = x.recording_id WHERE r.user_id = ?');
+        $statement->execute([$userId]);
+        $declined = [];
+        foreach ($statement as $row) {
+            $declined[$row['day_id']][] = (int) $row['recording_id'];
+        }
+        return $declined;
     }
 
     /** Takes the ride off the day, which keeps it as a ride; false when the user has no such ride on such a day. */

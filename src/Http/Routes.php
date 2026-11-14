@@ -94,12 +94,14 @@ final class Routes
             $api->get('/rides/lines', [RecordingController::class, 'rideLines']);
             $api->post('/rides', [RecordingController::class, 'add']);
             $api->get('/rides/joints', [RecordingController::class, 'joints']);
+            $api->get('/rides/suggestions', [RecordingController::class, 'suggestions']);
             $api->post('/rides/merge', [RecordingController::class, 'merge']);
             $api->patch('/rides/{recording:[0-9]+}', [RecordingController::class, 'rename']);
             $api->delete('/rides/{recording:[0-9]+}', [RecordingController::class, 'delete']);
             $api->get('/rides/{recording:[0-9]+}/gpx', [RecordingController::class, 'gpx']);
             $api->put('/rides/{recording:[0-9]+}/days/{day}', [RecordingController::class, 'link']);
             $api->delete('/rides/{recording:[0-9]+}/days/{day}', [RecordingController::class, 'unlink']);
+            $api->put('/rides/{recording:[0-9]+}/days/{day}/declined', [RecordingController::class, 'decline']);
             $api->get('/trips/{id:[0-9]+}/recordings', [RecordingController::class, 'index']);
             $api->get('/trips/{id:[0-9]+}/recordings/lookup', [RecordingController::class, 'lookup']);
             $api->get('/export-presets', [ExportPresetController::class, 'index']);

@@ -21,7 +21,7 @@ final class LookupTest extends TestCase
 
     public function testFindsWhatRanAlongTheDaysRoutesWholeOrInPart(): void
     {
-        $found = Lookup::of($this->day, [
+        $found = self::lookUp($this->day, [
             self::ride(1, [[11.5, 48.1], [11.45, 47.8], [11.4, 47.3]]),
             self::ride(2, [[11.5, 48.1], [11.45, 47.8]]),
             self::ride(3, [[11.5, 48.1], [11.4995, 48.097]]),
@@ -42,21 +42,21 @@ final class LookupTest extends TestCase
         foreach ([[48.1, 47.94], [47.94, 47.8], [47.8, 47.64], [47.64, 47.47], [47.47, 47.3]] as $i => [$from, $to]) {
             $pieces[] = self::ride($i + 1, [self::onRoute($from), self::onRoute($to)], sprintf('2026-05-01T%02d:00:00Z', 8 + $i));
         }
-        $found = Lookup::of($this->day, [...$pieces, self::ride(9, [self::onRoute(47.9), self::onRoute(47.89)], '2026-05-02T08:00:00Z')], 0);
+        $found = self::lookUp($this->day, [...$pieces, self::ride(9, [self::onRoute(47.9), self::onRoute(47.89)], '2026-05-02T08:00:00Z')], 0);
         self::assertSame([['2026-05-01', false, 1.0, [1, 2, 3, 4, 5]]], array_map(fn (array $d) => [$d['date'], $d['sameDate'], $d['share'], array_column($d['rides'], 'id')], $found));
 
         // Those on the day already count toward the share and are not listed again; a day of riding that is on it whole is not listed.
         foreach ([0, 1] as $i) {
             $pieces[$i]['days'] = [['dayId' => $this->day['id']]];
         }
-        self::assertSame([[3, 4, 5]], self::ids(Lookup::of($this->day, $pieces, 0)));
-        self::assertSame([], Lookup::of($this->day, [['days' => [['dayId' => $this->day['id']]]] + self::ride(1, [[11.5, 48.1], [11.45, 47.8], [11.4, 47.3]])], 0));
+        self::assertSame([[3, 4, 5]], self::ids(self::lookUp($this->day, $pieces, 0)));
+        self::assertSame([], self::lookUp($this->day, [['days' => [['dayId' => $this->day['id']]]] + self::ride(1, [[11.5, 48.1], [11.45, 47.8], [11.4, 47.3]])], 0));
     }
 
     public function testFindsWhatBeganOnTheDaysDateByTheUsersClockFirst(): void
     {
         $elsewhere = [[9.5, 46.1], [9.4, 46.3]];
-        $found = Lookup::of($this->day, [
+        $found = self::lookUp($this->day, [
             self::ride(1, [[11.5, 48.1], [11.45, 47.8], [11.4, 47.3]], '2026-05-01T08:00:00Z'),
             self::ride(2, $elsewhere, '2027-06-11T22:30:00Z'),
             self::ride(3, $elsewhere, '2027-06-12T22:30:00Z'),
@@ -64,14 +64,29 @@ final class LookupTest extends TestCase
         self::assertSame([['2027-06-12', [2], true, 0.0], ['2026-05-01', [1], false, 1.0]], array_map(fn (array $d) => [$d['date'], array_column($d['rides'], 'id'), $d['sameDate'], $d['share']], $found));
 
         $undated = ['date' => null] + $this->day;
-        self::assertSame([[1]], self::ids(Lookup::of($undated, [self::ride(1, [[11.5, 48.1], [11.45, 47.8], [11.4, 47.3]]), self::ride(2, $elsewhere, '2027-06-12T08:00:00Z')], 0)));
+        self::assertSame([[1]], self::ids(self::lookUp($undated, [self::ride(1, [[11.5, 48.1], [11.45, 47.8], [11.4, 47.3]]), self::ride(2, $elsewhere, '2027-06-12T08:00:00Z')], 0)));
     }
 
     public function testFindsOnlyByTheDateOnADayWithoutRoutes(): void
     {
         $empty = ['routes' => []] + $this->day;
-        $found = Lookup::of($empty, [self::ride(1, [[11.5, 48.1], [11.4, 47.3]]), self::ride(2, [[11.5, 48.1], [11.4, 47.3]], '2027-06-12T08:00:00Z')], 0);
+        $found = self::lookUp($empty, [self::ride(1, [[11.5, 48.1], [11.4, 47.3]]), self::ride(2, [[11.5, 48.1], [11.4, 47.3]], '2027-06-12T08:00:00Z')], 0);
         self::assertSame([[2]], self::ids($found));
+    }
+
+    public function testLooksUpAnyNumberOfDaysAmongTheSameRides(): void
+    {
+        $lookup = new Lookup([self::ride(1, [[11.5, 48.1], [11.45, 47.8], [11.4, 47.3]]), self::ride(2, [[9.5, 46.1], [9.4, 46.3]], '2027-06-12T08:00:00Z')], 0);
+        $elsewhere = ['id' => 'other', 'date' => '2027-06-13', 'routes' => []] + $this->day;
+        foreach ([[[2], [1]], [], [[2], [1]]] as $n => $expected) {
+            self::assertSame($expected, self::ids($lookup->of($n === 1 ? $elsewhere : $this->day)));
+        }
+    }
+
+    /** What a lookup among the rides finds for the day. */
+    private static function lookUp(array $day, array $rides, int $utcOffsetMinutes): array
+    {
+        return (new Lookup($rides, $utcOffsetMinutes))->of($day);
     }
 
     /** @return list<list<int>> the ids of the rides of each day of riding found */

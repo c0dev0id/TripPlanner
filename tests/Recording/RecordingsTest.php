@@ -105,6 +105,34 @@ final class RecordingsTest extends TestCase
         self::assertCount(2, $this->recordings->rides($this->userId));
     }
 
+    public function testRemembersTheDaysARideIsNotOfUntilItIsPutOnThem(): void
+    {
+        $ride = $this->recordings->keep($this->userId, 'Ride', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], null)), $this->now)['recording'];
+        self::assertFalse($this->recordings->decline($this->userId + 1, $ride->id, 'day1'));
+        self::assertFalse($this->recordings->decline($this->userId, $ride->id, 'no-such-day'));
+        self::assertTrue($this->recordings->decline($this->userId, $ride->id, 'day1'));
+        self::assertTrue($this->recordings->decline($this->userId, $ride->id, 'day1'));
+        self::assertSame(['day1' => [$ride->id]], $this->recordings->declined($this->userId));
+        self::assertSame([], $this->recordings->declined($this->userId + 1));
+
+        $this->recordings->link($this->userId, $ride->id, 'day1');
+        self::assertSame([], $this->recordings->declined($this->userId));
+    }
+
+    public function testGivesTheDaysOfTheUsersTripsWithTheirRoutes(): void
+    {
+        $collections = array_values(array_filter((new Folders($this->db))->listFor($this->userId), fn ($folder) => $folder->kind === 'collections'))[0]->id;
+        $material = $this->trips->create($this->userId, 'Material', $this->now, $collections, 'collection')->id;
+        $this->documents->save($this->userId, $material, TripDocumentValidator::validated(['days' => [TripFixture::day('section')]] + TripFixture::document()), 1, $this->now);
+
+        $days = iterator_to_array($this->documents->tripDays($this->userId), false);
+        $document = TripFixture::document();
+        self::assertSame(array_column($document['days'], 'id'), array_column($days, 'id'));
+        self::assertSame([$this->tripId, $document['days'][0]['date']], [$days[0]['tripId'], $days[0]['date']]);
+        self::assertSame(array_column($document['days'][0]['routes'], 'id'), array_column($days[0]['routes'], 'id'));
+        self::assertSame([], iterator_to_array($this->documents->tripDays($this->userId + 1), false));
+    }
+
     public function testMergesRidesThatFollowOneAnotherAndRemembersTheirFiles(): void
     {
         $files = $rides = [];

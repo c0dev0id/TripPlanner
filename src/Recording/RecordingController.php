@@ -14,7 +14,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\UploadedFileInterface;
 
-/** The rides API: every ride of the user's, keeping a file as one, merging, renaming, deleting, its GPX file, the days it is on, and for a trip the rides on its days and those that may be a day's. */
+/** The rides API: every ride of the user's, keeping a file as one, merging, renaming, deleting, its GPX file, the days it is on, the days rides may be of, and for a trip the rides on its days and those that may be a day's. */
 final class RecordingController
 {
     /** The largest file a recording may be, compressed and as GPX: a long day of one point a second with sensor data stays well below. */
@@ -63,10 +63,23 @@ final class RecordingController
         $userId = $this->currentUser->get()->id;
         foreach ($this->documents->load($userId, (int) $args['id'])['days'] ?? [] as $day) {
             if ($day['id'] === ($query['day'] ?? null)) {
-                return Json::of($response, Lookup::of($day, $this->recordings->rides($userId), (int) ($query['offset'] ?? 0)));
+                return Json::of($response, (new Lookup($this->recordings->rides($userId), (int) ($query['offset'] ?? 0)))->of($day));
             }
         }
         return Json::error($response, 404, 'No such trip or day.');
+    }
+
+    /**
+     * The days of the user's trips that rides on no day may be of, as a lookup finds them
+     * for each day, without what the user declined: the trip and the day, the date of
+     * the riding, whether it is the day's, the share along the routes, and the rides.
+     * `offset` is the minutes the user's clock is ahead of UTC.
+     */
+    public function suggestions(Request $request, Response $response): Response
+    {
+        $userId = $this->currentUser->get()->id;
+        $offset = (int) ($request->getQueryParams()['offset'] ?? 0);
+        return Json::of($response, Suggestions::of($this->documents->tripDays($userId), $this->recordings->rides($userId), $this->recordings->declined($userId), $offset));
     }
 
     /**
@@ -148,6 +161,13 @@ final class RecordingController
     {
         $linked = $this->recordings->link($this->currentUser->get()->id, (int) $args['recording'], $args['day']);
         return $linked ? $response->withStatus(204) : Json::error($response, 404, 'No such recording or day.');
+    }
+
+    /** Remembers that the ride is not of a day it was suggested for. */
+    public function decline(Request $request, Response $response, array $args): Response
+    {
+        $declined = $this->recordings->decline($this->currentUser->get()->id, (int) $args['recording'], $args['day']);
+        return $declined ? $response->withStatus(204) : Json::error($response, 404, 'No such recording or day.');
     }
 
     /** Takes the ride off a day, which keeps it as a ride. */

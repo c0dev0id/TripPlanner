@@ -202,6 +202,15 @@ CREATE TABLE IF NOT EXISTS recording_days (
 ) WITHOUT ROWID;
 CREATE INDEX IF NOT EXISTS recording_days_recording ON recording_days(recording_id);
 
+-- The days a ride was suggested for and the user said it is not of: it is not suggested
+-- for them again.
+CREATE TABLE IF NOT EXISTS recording_declines (
+    day_id TEXT NOT NULL REFERENCES days(id) ON DELETE CASCADE,
+    recording_id INTEGER NOT NULL REFERENCES recordings(id) ON DELETE CASCADE,
+    PRIMARY KEY (day_id, recording_id)
+) WITHOUT ROWID;
+CREATE INDEX IF NOT EXISTS recording_declines_recording ON recording_declines(recording_id);
+
 -- The files a ride was merged from, by their SHA-256: such a file is known as kept, in
 -- the ride it is a part of, and is not kept again.
 CREATE TABLE IF NOT EXISTS recording_parts (

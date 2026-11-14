@@ -30,18 +30,42 @@ final class Lookup
     /** The share of the day's routes a recording along them must be as long as: less is a piece of road they share. */
     private const LENGTH_SHARE = 0.25;
 
+    /** @var list<array{date: ?string, rides: list<array<string, mixed>>, lines: list<array<string, mixed>>, lengthM: ?float}> the days of riding, each with its rides' lines and their bounds, and its length once it was needed */
+    private array $ridingDays;
+
+    /**
+     * Sorts the rides into days of riding, each line read once, for any number of days to
+     * be looked up among them.
+     *
+     * @param list<array{id: int, line: string, startedAt: ?string, days: list<array{dayId: string}>}> $rides as Recordings::rides gives them
+     * @param int $utcOffsetMinutes how far the user's clock is ahead of UTC, for the date a ride began on
+     */
+    public function __construct(array $rides, int $utcOffsetMinutes)
+    {
+        $ridingDays = [];
+        foreach ($rides as $ride) {
+            $date = $ride['startedAt'] === null ? null : (new DateTimeImmutable($ride['startedAt']))->modify("$utcOffsetMinutes minutes")->format('Y-m-d');
+            $key = $date ?? "ride {$ride['id']}";
+            $ridingDays[$key] ??= ['date' => $date, 'rides' => [], 'lines' => [], 'lengthM' => null];
+            $ridingDays[$key]['rides'][] = $ride;
+            $line = Polyline::decode($ride['line']);
+            if (count($line) > 1) {
+                $ridingDays[$key]['lines'][] = ['line' => $line, 'bounds' => Proximity::bounds($line)];
+            }
+        }
+        $this->ridingDays = array_values($ridingDays);
+    }
+
     /**
      * The days of riding that may be the day's, each with its date, whether that is the
      * day's (`sameDate`), the share of it that ran along the day's routes, or of them
      * along it, whichever is more (`share`), and those of its rides that are not on the
      * day yet; none where all are. Those of the date first, then the nearest.
      *
-     * @param array $day a day of a trip's document
-     * @param list<array{id: int, line: string, startedAt: ?string, days: list<array{dayId: string}>}> $rides as Recordings::rides gives them
-     * @param int $utcOffsetMinutes how far the user's clock is ahead of UTC, for the date a ride began on
+     * @param array{id: string, date: ?string, routes: list<array<string, mixed>>} $day a day of a trip's document
      * @return list<array{date: ?string, sameDate: bool, share: float, rides: list<array<string, mixed>>}>
      */
-    public static function of(array $day, array $rides, int $utcOffsetMinutes): array
+    public function of(array $day): array
     {
         $routes = [];
         $routesM = 0.0;
@@ -53,22 +77,15 @@ final class Lookup
                 $routes[] = ['line' => $line, 'samples' => LineSamples::spread($line, $along, self::SAMPLES), 'bounds' => Proximity::bounds($line)];
             }
         }
-        $ridingDays = [];
-        foreach ($rides as $ride) {
-            $date = $ride['startedAt'] === null ? null : (new DateTimeImmutable($ride['startedAt']))->modify("$utcOffsetMinutes minutes")->format('Y-m-d');
-            $key = $date ?? "ride {$ride['id']}";
-            $ridingDays[$key] ??= ['date' => $date, 'rides' => []];
-            $ridingDays[$key]['rides'][] = $ride;
-        }
         $found = [];
-        foreach ($ridingDays as ['date' => $date, 'rides' => $ridden]) {
+        foreach ($this->ridingDays as $index => ['date' => $date, 'rides' => $ridden]) {
             $waiting = array_values(array_filter($ridden, fn (array $ride) => !in_array($day['id'], array_column($ride['days'], 'dayId'), true)));
             if ($waiting === []) {
                 continue;
             }
             $sameDate = $date !== null && $date === $day['date'];
             // One of the date is listed whatever its share, which is then worked out in full.
-            $share = self::share($ridden, $routes, $routesM, $sameDate ? 0.0 : self::SHARE_NEAR);
+            $share = $this->share($index, $routes, $routesM, $sameDate ? 0.0 : self::SHARE_NEAR);
             if ($sameDate || $share >= self::SHARE_NEAR) {
                 $found[] = ['date' => $date, 'sameDate' => $sameDate, 'share' => round($share, 2), 'rides' => $waiting];
             }
@@ -78,30 +95,27 @@ final class Lookup
     }
 
     /**
-     * The share of the rides' lines that ran along the routes, or of the routes that ran
-     * along them, whichever is more; none where they are apart, or where neither share
-     * comes to `$atLeast`.
+     * The share of a day of riding's lines that ran along the routes, or of the routes
+     * that ran along them, whichever is more; none where they are apart, or where
+     * neither share comes to `$atLeast`.
      */
-    private static function share(array $rides, array $routes, float $routesM, float $atLeast): float
+    private function share(int $index, array $routes, float $routesM, float $atLeast): float
     {
-        $lines = [];
-        foreach ($rides as $ride) {
-            $line = Polyline::decode($ride['line']);
-            if (count($line) > 1) {
-                $lines[] = ['line' => $line, 'bounds' => Proximity::bounds($line)];
-            }
-        }
+        $lines = $this->ridingDays[$index]['lines'];
         $routes = array_values(array_filter($routes, fn (array $route) => array_filter($lines, fn (array $line) => Proximity::overlap($route['bounds'], $line['bounds'])) !== []));
         if ($routes === []) {
             return 0.0;
         }
-        // Most rides are apart from the day's routes, so the lines are measured only once they are not.
-        $ridesM = 0.0;
-        foreach ($lines as &$line) {
-            $line['along'] = LineSamples::along($line['line']);
-            $ridesM += $line['along'][count($line['line']) - 1];
+        // Most rides are apart from a day's routes, so their lines are measured only once they are not, and then once.
+        if ($this->ridingDays[$index]['lengthM'] === null) {
+            $lengthM = 0.0;
+            foreach ($lines as $at => $line) {
+                $lines[$at]['along'] = LineSamples::along($line['line']);
+                $lengthM += $lines[$at]['along'][count($line['line']) - 1];
+            }
+            $this->ridingDays[$index] = ['lines' => $lines, 'lengthM' => $lengthM] + $this->ridingDays[$index];
         }
-        unset($line);
+        $ridesM = $this->ridingDays[$index]['lengthM'];
         if ($ridesM <= 0.0) {
             return 0.0;
         }
