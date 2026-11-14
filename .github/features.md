@@ -353,8 +353,11 @@
   line under the tabs, and GPX files or folders dropped on the library while the tab is shown, keep files as rides: a
   file kept already is left out, so a tracker's folder can be dropped again as it
   grows, and it is said above the rides how many were kept and how many were there already. A
-  click or tap selects a ride, Cmd or Ctrl one more, Shift a run, its pad adds it or
-  takes it away; a day's or a month's heading selects all its rides. The map draws the
+  click or tap opens a ride as a recording on a day is opened: whole on the map, with
+  its figures, its line coloured by a measure and its charts, without a day to be on;
+  a click on the opened one closes it. Cmd or Ctrl with a click selects a ride, Shift a
+  run, its pad adds it or takes it away; a day's or a month's heading selects all its
+  rides. The map draws the
   selected rides, each in a colour its row shows, and brings them into view, so that
   rides of different years are looked at together. A ride's menu renames it, copies it
   to be pasted onto a day, puts it on a day of the open trip, opens a day it is on,

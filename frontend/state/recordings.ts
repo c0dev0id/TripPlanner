@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import { createEffect, createResource, createRoot, createSignal, on } from 'solid-js';
+import { createEffect, createMemo, createResource, createRoot, createSignal, on } from 'solid-js';
 import { errorMessage, fetchRideGpx, keepRide, listRecordings, lookUpRides, putRideOnDay, renameRide, takeRideOffDay, type FoundRidingDay, type KeptRide, type Recording } from '../api';
 import { asName, type Day, type LngLat } from '../model/trip';
 import { readRecording, type RecordedTrack } from '../recording/track';
@@ -7,7 +7,7 @@ import { decodeCached } from '../routing/polyline';
 import { flushSave } from './autosave';
 import { showWhole } from './drawing';
 import { isRecordingPinned, pinRecordings } from './pins';
-import { rideChanges, ridesChanged } from './rides';
+import { allRides, rideChanges, ridesChanged } from './rides';
 import { openTripId, selectedDayId } from './trip';
 
 /**
@@ -43,22 +43,33 @@ export const recordingsOf = (dayId: string): Recording[] => allRecordings().filt
 /** The day's recordings among the ids, as a selection names them. */
 export const recordingsAmong = (dayId: string, ids: readonly string[]): Recording[] => recordingsOf(dayId).filter((r) => ids.includes(String(r.id)));
 
-/** The colours recordings are drawn in, apart from the planned routes', by their place on their day. */
+/** The colours recordings are drawn in, apart from the planned routes', by their place on their day; one on no day in the first. */
 const COLORS = ['#7048e8', '#0c8599', '#c2255c', '#5c940d', '#e67700', '#3b5bdb'];
 
 export function recordingColor(recording: Recording): string {
-  return COLORS[recordingsOf(recording.dayId).findIndex((r) => r.id === recording.id) % COLORS.length]!;
+  return COLORS[Math.max(0, recordingsOf(recording.dayId).findIndex((r) => r.id === recording.id)) % COLORS.length]!;
 }
 
 /** The recording opened for its figures. */
 const [activeRecordingId, setActiveRecordingId] = createSignal<number>();
 export { activeRecordingId, setActiveRecordingId };
 
-/** The recordings on the map: of the day shown, the pinned ones and the one opened. */
+/** The ride opened where it is none of the day shown: one opened in the list of rides, as a recording on no day. */
+const listedRide = createRoot(() =>
+  createMemo((): Recording | undefined => {
+    const active = activeRecordingId();
+    if (active === undefined || recordingsOf(selectedDayId() ?? '').some((r) => r.id === active)) return undefined;
+    const ride = allRides().find((kept) => kept.id === active);
+    return ride && { id: ride.id, dayId: '', name: ride.name, distanceM: ride.distanceM, startedAt: ride.startedAt };
+  }),
+);
+
+/** The recordings on the map: of the day shown, the pinned ones and the one opened, and a ride opened in the list of rides. */
 export function shownRecordings(): Recording[] {
   const dayId = selectedDayId();
   const active = activeRecordingId();
-  return allRecordings().filter((r) => r.dayId === dayId && (r.id === active || isRecordingPinned(r.id)));
+  const listed = listedRide();
+  return [...allRecordings().filter((r) => r.dayId === dayId && (r.id === active || isRecordingPinned(r.id))), ...(listed ? [listed] : [])];
 }
 
 /** Each read recording's track, or why it could not be read, by recording id. */
@@ -88,9 +99,8 @@ createRoot(() => {
   // The tracks of the recordings on the map are read once; the one opened is shown whole when it arrives.
   const reading = new Set<number>();
   createEffect(() => {
-    const tripId = openTripId();
     for (const recording of shownRecordings()) {
-      if (tripId === undefined || tracks().has(recording.id) || reading.has(recording.id)) continue;
+      if (tracks().has(recording.id) || reading.has(recording.id)) continue;
       reading.add(recording.id);
       fetchRideGpx(recording.id)
         .then((gpx) => {
@@ -101,6 +111,15 @@ createRoot(() => {
         .catch((fault: unknown) => keep(recording.id, fault instanceof Error ? fault : new Error(String(fault))))
         .finally(() => reading.delete(recording.id));
     }
+  });
+});
+
+createRoot(() => {
+  // A ride opened in the list keeps its track only while it is shown: the list is long, and a track is megabytes.
+  createEffect(() => {
+    const held = new Set([...allRecordings(), ...shownRecordings()].map((r) => r.id));
+    const kept = [...tracks()].filter(([id]) => held.has(id));
+    if (kept.length < tracks().size) setTracks(new Map(kept));
   });
 });
 

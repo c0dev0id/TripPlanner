@@ -275,7 +275,12 @@ entries at the end of their section.
   the file; removing a day, a trip or a collection removes links and leaves the ride.
   Only the list of rides deletes one. The folder for recordings, which was a time index
   built by hand for rides nobody had claimed, is gone: the rides are listed by
-  when it began, takes new files, and says for each the days it is on. The rides are
+  when it began, takes new files, and says for each the days it is on. A ride is
+  opened for its figures there as on a day: the recording opened, where it is none of
+  the day shown, is the ride of that id from the list, so the cards, the colouring and
+  the charts are the ones a day's recording has, and nothing of them knows the
+  difference but the comparison with a plan, which a ride on no day has none of. Its
+  track is kept only while it is shown, since the list is long. The rides are
   shown in two lists, all of them in their tab and those on its days with the open
   trip, and either can change them; whatever does says so once it is done, once for
   all it did (`ridesChanged`), and both lists read again. A list that changed them

@@ -715,7 +715,7 @@ li.row.cut {
 }
 
 /* A selected duplicate and the opened recording are tinted as the tree's mark is. */
-.duplicates li.selected > .row,
+.duplicates li:is(.selected, .opened) > .row,
 .recording.opened > .row {
   background: var(--active);
   border-radius: 7px;

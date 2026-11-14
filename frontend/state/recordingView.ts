@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { createEffect, createMemo, createRoot, createSignal, on } from 'solid-js';
-import type { Recording } from '../api';
+import type { KeptRide, Recording } from '../api';
 import { deltaToTrack, offsetsFrom, type Delta } from '../recording/delta';
 import { DIFFERENCE_FIGURES, FIGURES, METRICS } from '../recording/figures';
 import { colorAt, DIFFERENCE_SERIES, isDifference, scaleOf, surfaceColor, type Coloring, type Difference } from '../recording/lineColors';
@@ -8,11 +8,12 @@ import { measuresOf, type Measures } from '../recording/measures';
 import { trackSurfaces } from '../recording/surfaces';
 import type { RecordedTrack } from '../recording/track';
 import { legCoordinates, routeLegs } from '../routing/legs';
+import { showWhole } from './drawing';
 import { activeRecordingId, loadedTrack, setActiveRecordingId, shownRecordings } from './recordings';
 import { openTrip, openTripId, selectedDayId } from './trip';
 
 /**
- * The recording opened for its figures: its cards over the map, its line coloured by a
+ * The recording opened for its figures, on its day or in the list of rides: its cards over the map, its line coloured by a
  * measure or a difference, what it is compared with, and the point of it picked on the
  * map or in its chart.
  */
@@ -27,6 +28,19 @@ export function openRecording(id: number | undefined): void {
   if (id !== activeRecordingId()) setPickedIndex(undefined);
   setHoverIndex(undefined);
   setActiveRecordingId(id);
+}
+
+/**
+ * Opens the figures of a ride of the list of rides, which is then on the map as a
+ * recording on no day, whole once its track is read; or closes them where it is the
+ * one opened.
+ */
+export function toggleRide(ride: KeptRide): void {
+  if (activeRecordingId() === ride.id) return openRecording(undefined);
+  openRecording(ride.id);
+  const listed = shownRecordings().find((r) => r.id === ride.id);
+  const track = listed && loadedTrack(listed);
+  if (track) showWhole(track.points);
 }
 
 /** Picks a point of a recording, opening it. */

@@ -6,7 +6,8 @@ import type { Ride } from '../recording/rides';
 import { FAR_APART_M, isOddJoint, ridingYears, totalDistance } from '../recording/rides';
 import { copyRecordings } from '../state/clipboard';
 import { fetchingTrip, libraryTrips, outlineOf } from '../state/library';
-import { putOnDay } from '../state/recordings';
+import { activeRecordingId, putOnDay } from '../state/recordings';
+import { toggleRide } from '../state/recordingView';
 import { allRides, changeRides, revealedRide, revealRide, rideColor, RIDES, ridesError, ridesLoading, ridesNote, runRidesJob } from '../state/rides';
 import { openTrip } from '../state/trip';
 import { dayLabel, dayTitleOf } from '../trip/labels';
@@ -33,9 +34,11 @@ const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>();
  * was ridden, in years, months and days of riding, each with how far it went and the
  * days of trips it is on; those without times come last. The plus above them, and
  * files dropped on the library while they are shown, keep GPX files as rides. A click
- * or a tap on a ride selects it, with Cmd or Ctrl one more, with Shift a run of them;
- * its pad adds or takes it away; a day's or a month's heading selects all its rides.
- * The map draws what is selected, each ride in a colour its row shows too. A ride's
+ * or a tap on a ride opens it, which shows it whole on the map with its figures, as a
+ * recording on a day is opened, and a click on the opened one closes it; with Cmd or
+ * Ctrl it selects, with Shift a run of them; its pad adds or takes it away; a day's or
+ * a month's heading selects all its rides. The map draws what is selected, each ride
+ * in a colour its row shows too. A ride's
  * menu renames it, names it after where it began and ended, copies it to be pasted
  * onto a day, puts it on a day of the open trip, merges it with the selected rides it
  * follows or that follow it, opens a day it is on, and deletes it.
@@ -114,7 +117,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
     ];
   };
   const card = (heading: string, rides: Ride[], distanceM: number) => (
-    <RidingDayCard heading={heading} rides={rides} distanceM={distanceM} where={whereOf} selected={isSelected} onSelectDay={() => select(rides)} onClick={(ride, e) => clickRow(RIDES, order(), String(ride.id), e) || select([ride])} onToggle={(ride) => toggleRow(RIDES, String(ride.id))} items={items} />
+    <RidingDayCard heading={heading} rides={rides} distanceM={distanceM} where={whereOf} selected={isSelected} onSelectDay={() => select(rides)} onClick={(ride, e) => clickRow(RIDES, order(), String(ride.id), e) || toggleRide(ride)} onToggle={(ride) => toggleRow(RIDES, String(ride.id))} items={items} />
   );
   const addPicked = async () => {
     const files = await pickFiles({ accept: GPX_FILE_TYPES });
@@ -229,7 +232,7 @@ function RidingDayCard(props: {
         <For each={props.rides}>
           {(ride) => (
             <li
-              classList={{ selected: props.selected(String(ride.id)) }}
+              classList={{ selected: props.selected(String(ride.id)), opened: activeRecordingId() === ride.id }}
               ref={(el) => {
                 cardMenu(el, () => props.items(ride));
                 reveal(el, ride);
