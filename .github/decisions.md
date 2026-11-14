@@ -289,6 +289,27 @@ entries at the end of their section.
   what would be refused. The import dialog lost planning material as a way to organize
   a tree: among collections a picked folder is imported as a dropped one is, elsewhere
   it can only make trips.
+- **The Stash is files; the Trips are curated.** The Stash is where data is dumped
+  without thought and kept safe until it is worked on: what is imported there must not
+  lose anything. The Trips are where routes, tracks, recordings and times are tied
+  together and shown accurately. A collection modelled as a trip with sections read a
+  file into routes and stops and dropped the file, and with it a track's times,
+  heights and sensor data, so nothing in the Stash could become a ride. A file of the
+  Stash is therefore kept whole (`stash_files.gpx`), as a ride's is, and the Stash is a
+  view into it: a folder holds files, a file its routes, tracks and waypoints. What
+  the lists, the search and the map need without the file is read from it once and
+  kept beside it (`stash_items`, `GpxIndex`), and can be read again at any time.
+  - The Stash works on whole elements and takes them as they are: a route, a track or
+    a waypoint is renamed, since a name sorts, or deleted, and nothing finer. Geometry
+    and symbols are changed in a trip.
+  - Cleaning up rewrites the stored file. An explicit action is a change the user
+    asked for, not a loss, so no original is kept behind it; `digest` stays that of
+    the file as imported, so the same file imported again is known as kept, cleaned up
+    or not.
+  - Nothing goes into the Stash from the app; things only come out of it, into a
+    trip, among the rides or into a list of places.
+  - KML and KMZ are turned into GPX in the browser before they are kept. The user's
+    devices write GPX, and what such files hold beyond what GPX can say is little.
 - **A ride is kept once, for itself, and is on days by a link.** The library is a tree
   of plans, and a recording had no place in it but the one day it was put on: assigning
   it moved it out of the folder for recordings, it could follow one plan only, and a

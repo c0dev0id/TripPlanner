@@ -114,7 +114,7 @@ final class Folders
         }
     }
 
-    /** Deletes a folder; its trips and folders move up into the folder it was in, or to the top. False when the user has no such folder, or it is a special one. */
+    /** Deletes a folder; its trips, files and folders move up into the folder it was in, or to the top. False when the user has no such folder, or it is a special one. */
     public function delete(int $userId, int $folderId): bool
     {
         $this->db->beginTransaction();
@@ -128,6 +128,7 @@ final class Folders
             }
             $this->db->prepare('UPDATE folders SET parent_id = ? WHERE parent_id = ?')->execute([$row['parent_id'], $folderId]);
             $this->db->prepare('UPDATE trips SET folder_id = ? WHERE folder_id = ?')->execute([$row['parent_id'], $folderId]);
+            $this->db->prepare('UPDATE stash_files SET folder_id = ? WHERE folder_id = ?')->execute([$row['parent_id'], $folderId]);
             $this->db->prepare('DELETE FROM folders WHERE id = ?')->execute([$folderId]);
             $this->db->commit();
             return true;
@@ -138,7 +139,7 @@ final class Folders
     }
 
     /**
-     * Deletes a folder with the folders inside it, at any depth, and every trip in them.
+     * Deletes a folder with the folders inside it, at any depth, and every trip and file in them.
      *
      * @return int[]|null the ids of the deleted trips, for their journal files to go too; null when the user has no such folder, or it is a special one
      */
@@ -155,6 +156,7 @@ final class Folders
             $statement = $this->db->prepare("DELETE FROM trips WHERE folder_id IN ($in) RETURNING id");
             $statement->execute($folderIds);
             $tripIds = array_map('intval', $statement->fetchAll(PDO::FETCH_COLUMN));
+            $this->db->prepare("DELETE FROM stash_files WHERE folder_id IN ($in)")->execute($folderIds);
             $this->db->prepare("DELETE FROM folders WHERE id IN ($in)")->execute($folderIds);
             $this->db->commit();
             return $tripIds;

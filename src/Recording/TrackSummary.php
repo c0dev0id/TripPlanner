@@ -65,7 +65,7 @@ final readonly class TrackSummary
     }
 
     /** The time a point gives, in the database's form; null where it gives none that can be read. */
-    private static function time(string $text): ?string
+    public static function time(string $text): ?string
     {
         try {
             return Timestamp::of(new DateTimeImmutable(trim($text)));

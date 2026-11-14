@@ -220,6 +220,38 @@ CREATE TABLE IF NOT EXISTS recording_parts (
 ) WITHOUT ROWID;
 CREATE INDEX IF NOT EXISTS recording_parts_recording ON recording_parts(recording_id);
 
+-- A file of the Stash: a GPX file as it was imported, compressed with gzip, in a folder
+-- for collections. Cleaning it up rewrites the file; digest stays the SHA-256 of the file
+-- as it was imported, by which the same file is known when it is imported again. The
+-- file stands last, as a recording's does.
+CREATE TABLE IF NOT EXISTS stash_files (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    folder_id INTEGER NOT NULL REFERENCES folders(id),
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    waypoints INTEGER NOT NULL DEFAULT 0,
+    digest TEXT NOT NULL,
+    gpx BLOB NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS stash_files_file ON stash_files(user_id, digest);
+CREATE INDEX IF NOT EXISTS stash_files_folder ON stash_files(folder_id);
+
+-- The routes and tracks of a file of the Stash, read from it to list, find and draw them
+-- without the file: each by its place among the file's routes or tracks, with its line
+-- thinned, as polyline6, its length, its points and, of a track, when it began.
+CREATE TABLE IF NOT EXISTS stash_items (
+    file_id INTEGER NOT NULL REFERENCES stash_files(id) ON DELETE CASCADE,
+    kind TEXT NOT NULL CHECK (kind IN ('route', 'track')),
+    position INTEGER NOT NULL,
+    name TEXT NOT NULL DEFAULT '',
+    line TEXT NOT NULL,
+    distance_m INTEGER NOT NULL,
+    points INTEGER NOT NULL,
+    started_at TEXT,
+    PRIMARY KEY (file_id, kind, position)
+) WITHOUT ROWID;
+
 -- The places the map shows of the kinds the planner knows (frontend/poi/places.json),
 -- fetched from OpenStreetMap area by area by `make places` and asked for by the planner
 -- tile by tile: the tiles of the web's maps at zoom 10. id is the OpenStreetMap object,

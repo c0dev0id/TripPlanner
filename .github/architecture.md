@@ -78,7 +78,7 @@ flowchart TB
 | API client (frontend) | `api.ts`: requests to the JSON API, the one place that knows its URLs; every request names the page's language. |
 | Language (both) | `frontend/i18n/`: the page's language, from the browser or the kept choice, `t()` with plurals, and the German dictionary `de.json` by English text, which the server's `t()` reads too (`src/I18n/`); a middleware sets the request's language from a `lang` query parameter or `Accept-Language`, `Json::error` translates the API's messages, the templates their texts. |
 | HTTP (backend) | Slim routes and middleware (sessions, CSRF, body parsing, authentication, the request's language, gzip for JSON answers, which then carry their unpacked length as `X-Uncompressed-Length`), Plates templates for the public pages and the two bundle pages, JSON encoding of API answers (`Http/`, `Pages/`, `Api/`). |
-| Domain (backend) | Accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, trip documents with their validator and copies, the outline kept with each day (`Trip/`), GPX writing with its options, the proximity of free stops, the export presets and the zip of whole trips (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the files and links kept with the days, which are entries of a kind of their own (`Media/`), the user's rides and the days they are on, what is read from a ride's file to be kept beside it, and the lookup of the days of riding that may be a day's (`Recording/`), the places of the map: the kinds, the question to the Overpass API and its answer, the fetch of an area and the store by tile, and the places of the user's own lists (`Poi/`), the account's preferences (`Account/`), the read-only API of a shared trip (`Share/`), fetching Garmin's symbol pictures for `make garmin-icons` (`Symbols/`), fetching the motorcycle closures and converting their KML to GeoJSON for `make closures` (`Closures/`). |
+| Domain (backend) | The Stash's files and what is read from them to list them (`Stash/`), accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, trip documents with their validator and copies, the outline kept with each day (`Trip/`), GPX writing with its options, the proximity of free stops, the export presets and the zip of whole trips (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the files and links kept with the days, which are entries of a kind of their own (`Media/`), the user's rides and the days they are on, what is read from a ride's file to be kept beside it, and the lookup of the days of riding that may be a day's (`Recording/`), the places of the map: the kinds, the question to the Overpass API and its answer, the fetch of an area and the store by tile, and the places of the user's own lists (`Poi/`), the account's preferences (`Account/`), the read-only API of a shared trip (`Share/`), fetching Garmin's symbol pictures for `make garmin-icons` (`Symbols/`), fetching the motorcycle closures and converting their KML to GeoJSON for `make closures` (`Closures/`). |
 | Storage (backend) | PDO repositories over SQLite, the file store on disk (`Journal/FileStore`), mail over SMTP (`Mail/`). |
 
 ## API
@@ -138,6 +138,11 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `DELETE /export-presets/{id}` | Deletes the preset. |
 | `GET /duplicates` | The routes the user's library keeps more than once, in groups of exact copies or of the same ride, each route with its trip, day, name and length; a day's planned route with the tracks recorded of it is no group. |
 | `GET /duplicates/lines` | The lines of the user's routes named by `routes=` (comma-separated ids), as polyline6 by the route's id, for the report to draw the routes selected in it. |
+| `GET /stash` | The files of the user's Stash by name: `id`, `folderId`, `name`, `createdAt`, how many `waypoints` the file holds, and its routes and tracks as `items`, each with its `kind`, its `position` among the file's routes or tracks, `name`, `line` (thinned, polyline6), `distanceM`, `points` and, of a track, `startedAt`. |
+| `POST /stash/files` | Keeps a file from a multipart form: `name`, `folderId`, a folder of the Stash, and `file`, a GPX file compressed with gzip. Answers 201 with the file as it is listed, or 200 with the one kept already where the user keeps the same file anywhere in the Stash. |
+| `PATCH /stash/files/{id}` | Renames the file with `{name}`, or moves it into another folder of the Stash with `{folderId}`. |
+| `DELETE /stash/files/{id}` | Deletes the file. |
+| `GET /stash/files/{id}/gpx` | The file as it is kept, compressed with gzip. |
 | `GET /folders` | The user's folders, each with the folder it is in (`parentId`, null at the top) and its `kind`: the two special ones first (`collections`, `places`), the others (`folder`) by name. |
 | `POST /folders` | Creates a folder from `{name, parentId}`; the parent may be null. |
 | `PATCH /folders/{id}` | Renames the folder from `{name}`, or moves it into the folder `{parentId}` (null for the top); a folder never goes into itself or a folder inside it, and one that holds collections never leaves the special folders, one that holds trips never enters them. A special folder is not found. |
@@ -175,6 +180,9 @@ erDiagram
   USER ||--o{ RECORDING : "rides"
   RECORDING }o--o{ DAY : "is on (recording_days)"
   RECORDING ||--o{ RECORDING_PART : "merged from"
+  USER ||--o{ STASH_FILE : "keeps in the Stash"
+  FOLDER ||--o{ STASH_FILE : holds
+  STASH_FILE ||--o{ STASH_ITEM : "routes and tracks"
   RECORDING }o--o{ DAY : "declined for (recording_declines)"
   USER ||--o| USER_PREFERENCES : sets
   PLACE_FETCH ||--o{ PLACE : "fetched with"
@@ -278,6 +286,26 @@ erDiagram
   RECORDING_PART {
     string digest PK "the SHA-256 of a file the ride was merged from"
     int recording_id PK
+  }
+  STASH_FILE {
+    int id PK
+    int user_id FK
+    int folder_id FK "a folder for collections"
+    string name
+    datetime created_at
+    int waypoints "read from the file: how many it holds"
+    string digest "the SHA-256 of the file as imported, once per user"
+    blob gpx "the GPX file, compressed with gzip"
+  }
+  STASH_ITEM {
+    int file_id PK
+    string kind PK "route or track"
+    int position PK "its place among the file's routes or tracks"
+    string name
+    string line "read from the file: thinned as an outline's, as polyline6"
+    int distance_m
+    int points
+    datetime started_at "of a track: its first point's time, or null"
   }
   USER_PREFERENCES {
     json preferences "an object the planner reads and writes"
