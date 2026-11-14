@@ -231,6 +231,12 @@ export function addParts(parts: { routes: Route[]; stops: Stop[] }): void {
   editDay((trip, dayId) => dayEdit.addParts(trip, dayId, parts), t('Import GPX'));
 }
 
+/** Makes a route of stops of a day, which become its points, as one step to undo. */
+export function makeRouteOfStops(stopIds: readonly string[]): void {
+  const id = newId();
+  edit((trip) => dayEdit.routeFromStops(trip, stopIds, id, newId), t('Make a route of waypoints'));
+}
+
 export function removeRoute(routeId: string): void {
   editDay((trip, dayId) => dayEdit.removeRoute(trip, dayId, routeId), t('Remove route'));
   if (activeRouteId() === routeId) setActiveRouteId(undefined);

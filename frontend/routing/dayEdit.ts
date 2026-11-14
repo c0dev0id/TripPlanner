@@ -86,6 +86,43 @@ export function addRoute(trip: Trip, dayId: string, id: string): Trip {
   }));
 }
 
+/** The name without the number at its end, where it has one: what the stops of a numbered series share. */
+const seriesOf = (name: string): string | undefined => /^(.*?)\s*\d+$/.exec(name)?.[1];
+
+/**
+ * The day's free stops that are numbered in a series: named alike but for the number at
+ * the end, as two or more are. That is how a file names the points of a route it keeps as
+ * waypoints, and what tells them from a waypoint that is one.
+ */
+export function numberedStops(day: Pick<Day, 'stops'>): Stop[] {
+  const free = day.stops.filter((stop) => stop.pointId === null);
+  const sizes = new Map<string, number>();
+  for (const stop of free) {
+    const series = seriesOf(stop.name);
+    if (series !== undefined) sizes.set(series, (sizes.get(series) ?? 0) + 1);
+  }
+  return free.filter((stop) => {
+    const series = seriesOf(stop.name);
+    return series !== undefined && sizes.get(series)! > 1;
+  });
+}
+
+/**
+ * Makes a route of free stops of one day, at its end: each stop a point where it stands,
+ * in the order the day lists them. A stop numbered in a series is then a point and
+ * nothing else; any other stays a stop, on its point. Nothing with fewer than two.
+ */
+export function routeFromStops(trip: Trip, stopIds: readonly string[], routeId: string, newId: () => string): Trip {
+  const day = trip.days.find((d) => d.stops.some((stop) => stopIds.includes(stop.id)));
+  const taken = new Set(day?.stops.filter((stop) => stopIds.includes(stop.id) && stop.pointId === null));
+  if (!day || taken.size < 2) return trip;
+  const plain = new Set(numberedStops({ stops: [...taken] }));
+  const pointOf = new Map([...taken].map((stop) => [stop, newId()]));
+  const route: Route = { id: routeId, name: '', kind: 'routed', profile: defaultProfile(day), highways: 'allow', optional: false, color: null, points: [...taken].map((stop) => ({ id: pointOf.get(stop)!, lngLat: stop.lngLat })), legs: {} };
+  const stops = day.stops.flatMap((stop) => (!taken.has(stop) ? [stop] : plain.has(stop) ? [] : [{ ...stop, pointId: pointOf.get(stop)! }]));
+  return updateDay(trip, day.id, (d) => ({ ...d, routes: [...d.routes, route], stops }));
+}
+
 /** Adds routes and stops, as read from a file, to the day. */
 export function addParts(trip: Trip, dayId: string, parts: { routes: Route[]; stops: Stop[] }): Trip {
   if (parts.routes.length === 0 && parts.stops.length === 0) return trip;

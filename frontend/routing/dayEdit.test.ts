@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { withChanges, type Day, type RoutedLeg, type Trip } from '../model/trip';
-import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, duplicateParts, moveDay, moveDaysAfter, moveRoute, moveRouteToDay, moveStop, moveStopIntoRoute, moveStopToDay, pasteDays, pasteIntoTrip, pasteRoute, pasteStop, pasteStopIntoRoute, removeParts, removeRoute, removeStop, routedOnly, updateDay, updateRoute, updateStop, withNewPartIds } from './dayEdit';
+import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, duplicateParts, moveDay, moveDaysAfter, moveRoute, moveRouteToDay, moveStop, moveStopIntoRoute, moveStopToDay, numberedStops, pasteDays, pasteIntoTrip, pasteRoute, pasteStop, pasteStopIntoRoute, removeParts, removeRoute, removeStop, routedOnly, routeFromStops, updateDay, updateRoute, updateStop, withNewPartIds } from './dayEdit';
 import { changeSettings } from './routeEdit';
 import { pointCount, routedLegs } from './legs';
 import { encodePolyline } from './polyline';
@@ -338,5 +338,45 @@ describe('addParts', () => {
     const added = addParts(trip, 'd', { routes: [route], stops: [stop] });
     expect(day(added).routes.map((r) => r.id)).toEqual(['r', 'imported']);
     expect(day(added).stops.map((s) => s.id)).toEqual(['s1', 's2', 'w']);
+  });
+});
+
+describe('a route kept as waypoints', () => {
+  /** A day of free stops by these names, a degree apart, in this order. */
+  const waypoints = (...names: string[]): Trip => names.reduce((trip, name, i) => updateStop(addFreeStop(trip, 'd', [i, i], `s${i}`), 'd', `s${i}`, { name }), empty());
+  /** Ids n1, n2, … in the order asked for. */
+  const counter = () => {
+    let n = 0;
+    return () => `n${++n}`;
+  };
+
+  it('tells the stops numbered in a series from a waypoint that is one', () => {
+    const trip = waypoints('Position 1', 'Position 2', 'Gasthof Adler', 'Position 3', 'Hut 7');
+    expect(numberedStops(day(trip)).map((stop) => stop.name)).toEqual(['Position 1', 'Position 2', 'Position 3']);
+    expect(numberedStops(day(waypoints('1', '2', 'WP003', 'WP004'))).length).toBe(4);
+  });
+
+  it('counts no stop on a route as numbered', () => {
+    const trip = updateStop(updateStop(fixture(), 'd', 's1', { name: 'Via 1' }), 'd', 's2', { name: 'Via 2' });
+    expect(numberedStops(day(trip))).toEqual([]);
+  });
+
+  it('makes a route of the stops in the order the day lists them, and takes the numbered ones away', () => {
+    const trip = waypoints('Position 1', 'Position 2', 'Gasthof Adler', 'Position 3');
+    const made = routeFromStops(trip, ['s3', 's0', 's1'], 'r', counter());
+    const route = routedOf(day(made).routes[0]!);
+    expect([route.id, route.kind, route.points.map((p) => p.lngLat), route.legs]).toEqual(['r', 'routed', [[0, 0], [1, 1], [3, 3]], {}]);
+    expect(day(made).stops.map((stop) => stop.name)).toEqual(['Gasthof Adler']);
+  });
+
+  it('keeps a stop that is not numbered as a stop on its point', () => {
+    const made = routeFromStops(waypoints('Position 1', 'Gasthof Adler', 'Position 2'), ['s0', 's1', 's2'], 'r', counter());
+    const route = routedOf(day(made).routes[0]!);
+    expect(day(made).stops.map((stop) => [stop.name, stop.pointId])).toEqual([['Gasthof Adler', route.points[1]!.id]]);
+  });
+
+  it('leaves the trip as it is for fewer than two free stops', () => {
+    const trip = fixture();
+    expect(routeFromStops(trip, ['s1', 's2'], 'r2', counter())).toBe(trip);
   });
 });

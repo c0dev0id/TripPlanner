@@ -262,6 +262,14 @@
   waypoints; a click on a route takes it up and shows it whole on the map, on a waypoint goes there, and
   their menus copy them, to be pasted into a day of a trip, or remove them. A section is
   renamed or removed from its menu.
+- A route from waypoints, for a file that kept a route as a string of them ("Position 1",
+  "Position 2", …): the menu of a section or a day offers "Make a route of the N
+  numbered waypoints" where two or more of its free stops are named alike but for the
+  number at the end, and the menu of several selected stops "Make a route of the
+  selection". The stops become the points of a new route in the order they are listed,
+  its legs routed. A numbered stop is then a point and nothing else; a stop with a name
+  of its own that was selected stays a stop on its point, and one that was not is left
+  as it is. One step to undo.
 - A trip from planning material: "Create trip from collection…" in a collection's menu
   and "Create trip from selection…" in the menu of its sections, selected or one alone,
   ask for the trip's name, which the collection or the section selected first
