@@ -1,6 +1,7 @@
 import { t } from '../i18n/t';
 import { createEffect, createMemo, createResource, createRoot, createSignal, on } from 'solid-js';
 import { errorMessage, fetchRideGpx, keepRide, listRecordings, lookUpRides, putRideOnDay, renameRide, takeRideOffDay, type FoundRidingDay, type KeptRide, type Recording } from '../api';
+import { COMPARED_RIDE_COLOR } from '../model/routeLook';
 import { asName, type Day, type LngLat } from '../model/trip';
 import { readRecording, type RecordedTrack } from '../recording/track';
 import { decodeCached } from '../routing/polyline';
@@ -202,13 +203,15 @@ export function preview(ridingDay: FoundRidingDay): void {
 
 export const isPreviewed = (ridingDay: FoundRidingDay): boolean => lookup()?.previewed === ridingDay;
 
-/** The lines of the found day of riding shown on the map, in the colours its rides would have on the day. */
-export function previewedLines(): { id: number; points: LngLat[]; color: string }[] {
+/** The lines of the found day of riding shown on the map, in the red that tells them apart from the day's routes. */
+export function previewedLines(): { id: number; points: LngLat[]; color: string; held: boolean }[] {
   const looked = lookup();
   if (!looked?.previewed) return [];
-  const taken = recordingsOf(looked.dayId).length;
-  return looked.previewed.rides.map((ride, i) => ({ id: ride.id, points: decodeCached(ride.line), color: COLORS[(taken + i) % COLORS.length]! }));
+  return looked.previewed.rides.map((ride) => ({ id: ride.id, points: decodeCached(ride.line), color: COMPARED_RIDE_COLOR, held: true }));
 }
+
+/** Whether a found day of riding is shown on the map, held against the day it was found for. */
+export const isPreviewing = (): boolean => lookup()?.previewed !== undefined;
 
 /** Puts the rides of a found day of riding on the day of the open trip and pins them to the map; it is found no longer. */
 export async function assignRidingDay(dayId: string, ridingDay: FoundRidingDay): Promise<void> {

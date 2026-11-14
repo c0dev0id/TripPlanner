@@ -15,6 +15,12 @@ export const ROUTE_PALETTE: readonly { color: string; label: string }[] = [
   { color: '#212529', label: t('Black') },
 ];
 
+/** The colour of rides held against a day they may be of, so that they are told apart from its routes: a red no route is given. */
+export const COMPARED_RIDE_COLOR = '#e03131';
+
+/** The colours of routes while rides are held against them: the palette's magenta, which reads as that red, gives way to its blue. */
+export const apartFromRides = (colors: ReadonlyMap<string, string>): Map<string, string> => new Map([...colors].map(([id, color]) => [id, color === ROUTE_PALETTE[0]!.color ? ROUTE_PALETTE[1]!.color : color]));
+
 /** How routes without a colour of their own get one: one per day, or one per route. */
 export type RouteColoring = 'day' | 'route';
 export const DEFAULT_ROUTE_COLORING: RouteColoring = 'day';

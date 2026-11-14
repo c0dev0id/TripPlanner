@@ -1,6 +1,6 @@
 import { batch, createEffect, createMemo, createResource, createRoot, createSignal } from 'solid-js';
 import { errorMessage, fetchRides } from '../api';
-import { ROUTE_PALETTE } from '../model/routeLook';
+import { COMPARED_RIDE_COLOR, ROUTE_PALETTE } from '../model/routeLook';
 import type { LngLat } from '../model/trip';
 import type { Ride } from '../recording/rides';
 import { decodePolyline } from '../routing/polyline';
@@ -25,6 +25,9 @@ export const ridesChanged = (): void => void setChanges(changes() + 1);
 /** The owner of the selection among the rides, whose rows are rides by their id. */
 export const RIDES = 'rides';
 
+/** The rides held against a day they are suggested for, by id. */
+const [heldAgainstDay, holdAgainstDay] = createSignal<readonly number[]>([]);
+
 const rides = createRoot(() => {
   const [list] = createResource(
     () => {
@@ -37,14 +40,16 @@ const rides = createRoot(() => {
   const byId = createMemo(() => new Map(all().map((ride) => [String(ride.id), ride])));
   /** The rides drawn on the map: the selected ones, the first selected first; the same while their lines are, however often they are read. */
   const drawn = createMemo(() => [...selectionOf(RIDES)].flatMap((id) => byId().get(id) ?? []), [], { equals: (a, b) => a.length === b.length && a.every((ride, i) => ride.id === b[i]!.id && ride.line === b[i]!.line) });
-  /** Their lines, each in the palette's colour at its place, which starts over where the palette ends. */
-  const lines = createMemo(() => drawn().map((ride, i) => ({ id: ride.id, points: decodePolyline(ride.line) as LngLat[], color: ROUTE_PALETTE[i % ROUTE_PALETTE.length]!.color })));
+  /** Whether the rides drawn are those held against a day, and none else. */
+  const compared = createMemo(() => drawn().length > 0 && drawn().every((ride) => heldAgainstDay().includes(ride.id)));
+  /** Their lines, each in the palette's colour at its place, which starts over where the palette ends; those held against a day in the red that tells them apart from its routes, and narrow over them. */
+  const lines = createMemo(() => drawn().map((ride, i) => ({ id: ride.id, points: decodePolyline(ride.line) as LngLat[], color: compared() ? COMPARED_RIDE_COLOR : ROUTE_PALETTE[i % ROUTE_PALETTE.length]!.color, held: compared() })));
   // What is selected is brought into view.
   createEffect(() => {
     const points = lines().flatMap((line) => line.points);
     if (points.length > 0) showWhole(points);
   });
-  return { list, all, lines };
+  return { list, all, lines, compared };
 });
 
 /** Every ride, by when it began; none until they are read. */
@@ -53,6 +58,17 @@ export const allRides = rides.all;
 /** Whether the rides are being read for the first time, and why they could not be, where they could not. */
 export const ridesLoading = (): boolean => rides.list.loading && rides.all().length === 0;
 export const ridesError = (): unknown => rides.list.error;
+
+/** Whether the rides on the map are held against a day they are suggested for. */
+export const ridesCompared = rides.compared;
+
+/** Holds rides against a day they are suggested for: they are selected, and so drawn, in the red that tells them apart from the day's routes. */
+export function compareWithDay(ids: readonly number[]): void {
+  batch(() => {
+    holdAgainstDay(ids);
+    selectIn(RIDES, new Set(ids.map(String)));
+  });
+}
 
 /** The lines the map draws of the rides selected. */
 export const ridesOnMap = rides.lines;

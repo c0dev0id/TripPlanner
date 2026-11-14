@@ -382,7 +382,11 @@
   finds above the rides, those of a day's date first, then the nearest: the trip and
   its day over the date of the riding, its ride or how many files, its length and why
   it was found. A click shows the rides on the map and the day in its pane with its
-  routes, without leaving the tab; the tick puts the rides on the day, the cross says
+  routes, without leaving the tab, and marks the suggestion for as long as its rides
+  are the ones shown. The rides are drawn in red, narrow over the routes, so that a
+  route shows on both sides of a ride that followed it and each shows alone where
+  they part; a route in the palette's magenta, which reads as that red, is drawn in
+  its blue meanwhile. A day's lookup shows what it found the same way; the tick puts the rides on the day, the cross says
   they are not of it, which is remembered, so that they are not suggested for it
   again. Either way the suggestion leaves the list. While it looks, it says how many
   days it has looked through.

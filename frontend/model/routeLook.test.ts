@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ROUTE_PALETTE, routeColors } from './routeLook';
+import { apartFromRides, ROUTE_PALETTE, routeColors } from './routeLook';
 import type { Day, Route } from './trip';
 
 const route = (id: string, color: string | null = null): Route => ({
@@ -54,5 +54,12 @@ describe('routeColors', () => {
     const colors = routeColors([day('1', [route('a', '#123456')]), day('2', [route('b')])], 'day');
     expect(colors.get('a')).toBe('#123456');
     expect(colors.get('b')).toBe(palette[1]);
+  });
+});
+
+describe('apartFromRides', () => {
+  it('gives the routes in the palette\'s magenta its blue, and leaves the others as they are', () => {
+    const [magenta, blue, violet] = ROUTE_PALETTE.map((entry) => entry.color);
+    expect([...apartFromRides(new Map([['a', magenta!], ['b', violet!], ['c', '#123456']]))]).toEqual([['a', blue], ['b', violet], ['c', '#123456']]);
   });
 });

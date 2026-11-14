@@ -41,16 +41,24 @@ const lineLayers = (source: string, width: number, sharpUntil: number): LayerSpe
 
 export const recordingLayers = (width: number, sharpUntil: number): LayerSpecification[] => SOURCES.flatMap((source) => lineLayers(source, width, sharpUntil));
 
-/** The routes the duplicates report compares, each in its colour, over the planned routes. */
+/** The routes the duplicates report compares and the rides shown from their list, each in its colour, over the planned routes. */
 export const COMPARED_SOURCE = 'compared';
 
-export const comparedLayers = (width: number, sharpUntil: number): LayerSpecification[] => lineLayers(COMPARED_SOURCE, width, sharpUntil);
+/** How wide a ride held against a day's routes is drawn, as a share of a route's width: narrow enough that the route under it shows on both sides. */
+const HELD_SHARE = 0.4;
 
-/** Lines as features, each with its colour and an id: the recordings, a feature each or, coloured by a measure, a feature per piece of one colour, with the recording's id; or the routes compared. */
-export function recordingFeatures(lines: readonly { id: number; points: readonly LngLat[]; color: string }[]): FeatureCollection<LineString> {
+/** The layers of what is compared: lines as wide as routes on their casing, and those held against a day's routes narrow and bare over them. */
+export function comparedLayers(width: number, sharpUntil: number): LayerSpecification[] {
+  const held = ['==', ['get', 'held'], true];
+  const [, narrow] = lineLayers(COMPARED_SOURCE, width * HELD_SHARE, sharpUntil);
+  return [...lineLayers(COMPARED_SOURCE, width, sharpUntil).map((layer) => ({ ...layer, filter: ['!', held] })), { ...narrow!, id: `${COMPARED_SOURCE}-held`, filter: held }] as LayerSpecification[];
+}
+
+/** Lines as features, each with its colour and an id: the recordings, a feature each or, coloured by a measure, a feature per piece of one colour, with the recording's id; or the routes compared, where `held` marks a ride held against a day's routes. */
+export function recordingFeatures(lines: readonly { id: number; points: readonly LngLat[]; color: string; held?: boolean }[]): FeatureCollection<LineString> {
   return {
     type: 'FeatureCollection',
-    features: lines.map(({ id, points, color }) => ({ type: 'Feature', properties: { id, color }, geometry: { type: 'LineString', coordinates: points as LngLat[] } })),
+    features: lines.map(({ id, points, color, held = false }) => ({ type: 'Feature', properties: { id, color, held }, geometry: { type: 'LineString', coordinates: points as LngLat[] } })),
   };
 }
 

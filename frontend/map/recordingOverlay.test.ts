@@ -18,3 +18,11 @@ it('draws recordings and compared routes as wide as routes, keeping pace with th
   }
   expect(widthAt(recordingLayers(5, Infinity).find((layer) => layer.id.endsWith('-line'))!, 21)).toBe(9);
 });
+
+it('draws a ride held against a day narrow and bare, apart from what is compared as wide as routes', () => {
+  const layers = comparedLayers(5, 17);
+  expect(layers.map((layer) => layer.id)).toEqual(['compared-casing', 'compared-line', 'compared-held']);
+  expect(widthAt(layers[2]!, 12)).toBe(2);
+  expect((layers[2] as { filter?: unknown }).filter).toEqual(['==', ['get', 'held'], true]);
+  expect((layers[1] as { filter?: unknown }).filter).toEqual(['!', ['==', ['get', 'held'], true]]);
+});

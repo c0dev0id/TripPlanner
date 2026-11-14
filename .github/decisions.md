@@ -330,6 +330,17 @@ entries at the end of their section.
   searched or the own position, is not held back. The lock is not kept from one
   loading of the page to the next: a map that does not follow, for a reason set days
   ago, reads as broken.
+- **A ride held against a day is red and narrow.** To judge whether a ride is a day's,
+  both have to be seen. Rides shown from their list were drawn as wide as routes, over
+  them, in the palette the routes take their colours from, so a ride that followed
+  the plan hid it, in its own colour. Held against a day, by a suggestion or by the
+  day's lookup, rides are drawn in one red that the palette does not have and at two
+  fifths of a route's width without a casing: the route is a rim on both sides where
+  they agree, and each stands alone where they part. The palette's first colour, a
+  magenta, is too near that red, and it is the colour of every first day; routes in
+  it are drawn in the palette's blue while rides are held against them. Both are one
+  layer of the compared lines with a filter, since a width that follows the zoom
+  cannot also follow a feature.
 - **Rides are merged on the server, as text, and the pieces stay known.** A tracker
   starts a new file after a break, and though the list of rides and the lookup group a
   day's files, a ride's figures and its comparison with the plan take one file. Merging

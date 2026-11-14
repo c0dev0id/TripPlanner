@@ -8,7 +8,7 @@ import { copyRecordings } from '../state/clipboard';
 import { fetchingTrip, libraryTrips, outlineOf } from '../state/library';
 import { activeRecordingId, putOnDay } from '../state/recordings';
 import { toggleRecording } from '../state/recordingView';
-import { allRides, askOfRides, changeRides, revealedRide, revealRide, rideColor, RIDES, ridesError, ridesLoading, ridesNote, runRidesJob } from '../state/rides';
+import { allRides, askOfRides, changeRides, compareWithDay, revealedRide, revealRide, rideColor, RIDES, ridesCompared, ridesError, ridesLoading, ridesNote, runRidesJob } from '../state/rides';
 import { openTrip } from '../state/trip';
 import { dayLabel, dayTitleOf, foundBecause } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
@@ -29,6 +29,9 @@ import { addRides } from './importActions';
 /** The days suggested for rides on no day that are yet to be gone through; none until they are asked for, or once they are put away. */
 const [suggestions, setSuggestions] = createSignal<Suggestion[]>([]);
 
+/** The suggestion shown last: its rides on the map, held against its day. */
+const [shownSuggestion, setShownSuggestion] = createSignal<Suggestion>();
+
 /** The years unfolded, kept while the page stands; none until the rides are read, when the latest unfolds. */
 const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>();
 
@@ -46,8 +49,9 @@ const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>();
  * onto a day, puts it on a day of the open trip, merges it with the selected rides it
  * follows or that follow it, opens a day it is on, and deletes it. The magnifier above
  * them asks for the days of trips the rides on no day may be of, which are then listed
- * over the rides to be gone through: a click shows the rides on the map and the day in
- * its pane, the tick puts them on the day, the cross says they are not of it.
+ * over the rides to be gone through: a click shows the rides on the map, in red, and
+ * the day in its pane, and marks the suggestion while they are shown; the tick puts
+ * them on the day, the cross says they are not of it.
  */
 export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; onShow: (tripId: number, dayId: string) => void }) {
   const years = createMemo(() => ridingYears(allRides()));
@@ -138,9 +142,10 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       .filter(Boolean)
       .join(' · ');
   };
-  /** Shows what is suggested: the rides on the map, and the day in its pane with its routes. */
+  /** Shows what is suggested: the rides on the map, in red, and the day in its pane with its routes in other colours. */
   const showSuggestion = (suggestion: Suggestion) => {
-    select(ridesOf(suggestion));
+    setShownSuggestion(suggestion);
+    compareWithDay(suggestion.rideIds);
     props.onShow(suggestion.tripId, suggestion.dayId);
   };
   /** Puts the suggested rides on the day, which changes the rides, or remembers that they are not of it, which changes none; either way the suggestion is gone through. */
@@ -149,6 +154,8 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       if (accept) for (const ride of ridesOf(suggestion)) await putOnDay(ride, suggestion.dayId);
       else await Promise.all(suggestion.rideIds.map((id) => declineRideDay(id, suggestion.dayId)));
       setSuggestions(suggestions().filter((other) => other !== suggestion));
+      // What was held against the day to be judged is let go of with the judgement.
+      if (shownSuggestion() === suggestion) selectIn(RIDES, NOTHING_SELECTED);
     });
   const card = (heading: string, rides: Ride[], distanceM: number) => (
     <RidingDayCard heading={heading} rides={rides} distanceM={distanceM} where={whereOf} selected={isSelected} onSelectDay={() => select(rides)} onClick={(ride, e) => clickRow(RIDES, order(), String(ride.id), e) || toggleRecording(ride)} onToggle={(ride) => toggleRow(RIDES, String(ride.id))} items={items} />
@@ -193,7 +200,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
         <ul class="recordings">
           <For each={suggestions()}>
             {(suggestion) => (
-              <li class="recording">
+              <li class="recording" classList={{ opened: shownSuggestion() === suggestion && ridesCompared() }}>
                 <div class="row">
                   <button class="text grow" onClick={() => showSuggestion(suggestion)}>
                     <span class="lines grow">
