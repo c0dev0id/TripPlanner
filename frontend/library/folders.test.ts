@@ -35,6 +35,12 @@ describe('heldCounts', () => {
       { folders: 1, trips: 1 },
     ]);
   });
+
+  it('leaves the special folders, each the top of its own tree, out of the count of the top', () => {
+    const all: Folder[] = [...folders, { id: 4, name: 'Collections', parentId: null, kind: 'collections' }, { id: 5, name: 'Passes', parentId: 4, kind: 'folder' }];
+    const held = heldCounts(all, []);
+    expect([held(null).folders, held(4).folders]).toEqual([1, 1]);
+  });
 });
 
 describe('heldInAll', () => {
