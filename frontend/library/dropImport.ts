@@ -1,6 +1,7 @@
 import { t } from '../i18n/t';
 import { changeTrip, createTrip, errorMessage, keepRide, keepStashFile, listTrips } from '../api';
 import { readRouteFile, ROUTE_FILE, waypointStops } from '../gpx/import';
+import { isGpxText } from '../gpx/gpx';
 import { gpxText } from '../gpx/write';
 import { asName, newId, type FolderKind, type Stop, type Trip, type TripSummary } from '../model/trip';
 import { addParts } from '../routing/dayEdit';
@@ -116,7 +117,9 @@ export async function importIntoStash(dropped: Dropped, folderId: number, onProg
   const aboveOf = new Map(routeFiles.map(({ source, above }) => [source, above]));
   await eachFile([...aboveOf.keys()], onProgress, errors, async (source) => {
     const file = await source.open();
-    const gpx = isGpxPath(source.path) ? await file.text() : gpxText(await readRouteFile(file));
+    // A file named as GPX is kept as it is where it is one; one that holds KML under that name is turned into GPX as a KML file is.
+    const text = isGpxPath(source.path) ? await file.text() : '';
+    const gpx = isGpxText(text) ? text : gpxText(await readRouteFile(file));
     const { added } = await keepStashFile(await folderIn(aboveOf.get(source)!), asName(file.name.replace(ROUTE_FILE, '')) || t('File'), gpx);
     if (added) kept++;
     else known++;

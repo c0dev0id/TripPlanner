@@ -203,7 +203,13 @@ describe('a file of routes', () => {
   it('is read as what its name says it is', async () => {
     expect((await readRouteFile(new File([kml], 'Vosges.KML'))).tracks[0]!.segments).toEqual([[[7.1, 48.5], [7.2, 48.6]]]);
     expect((await readRouteFile(new File(['<gpx version="1.1"><wpt lat="48" lon="7"/></gpx>'], 'places.gpx'))).waypoints.length).toBe(1);
-    await expect(readRouteFile(new File([kml], 'Vosges.gpx'))).rejects.toThrow('not a GPX file');
+  });
+
+  it('is read as the other of GPX and KML where its name says the wrong one, and refused as what it is named where it is neither', async () => {
+    expect((await readRouteFile(new File([kml], 'Vosges.gpx'))).tracks[0]!.segments).toEqual([[[7.1, 48.5], [7.2, 48.6]]]);
+    expect((await readRouteFile(new File(['<gpx version="1.1"><wpt lat="48" lon="7"/></gpx>'], 'places.kml'))).waypoints.length).toBe(1);
+    await expect(readRouteFile(new File(['nonsense'], 'Vosges.gpx'))).rejects.toThrow('not a GPX file');
+    await expect(readRouteFile(new File(['<html/>'], 'Vosges.kml'))).rejects.toThrow('not a KML file');
   });
 
   it('is read from a KMZ, whose KML lies at its top', async () => {

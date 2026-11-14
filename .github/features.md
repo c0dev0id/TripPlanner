@@ -278,8 +278,10 @@
   holds already, by name and position, is left out, so a newer file of the same list
   adds only what is new. Routes and tracks in such a file are left out and said so.
   A file that holds waypoints and no route is refused elsewhere, with the pointer to
-  this folder. On the Stash or a folder in it, every GPX file is kept as a file, as it
-  is, a KML or KMZ file as the GPX it is turned into, and the folders of a dropped
+  this folder. A file that holds KML under a GPX file's name, or the other way round,
+  is read as what it holds, wherever it is imported. On the Stash or a folder in it,
+  every GPX file is kept as a file, as it is, a KML or KMZ file as the GPX it is turned
+  into, and the folders of a dropped
   folder are made as they are; a file the Stash keeps already, wherever, is left out
   and counted, and so is a file of any other kind. While a long import runs, the Stash
   lists every ten seconds what it has kept so far. On any other folder or the top, a file becomes a trip and a dropped folder

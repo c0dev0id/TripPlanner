@@ -113,7 +113,12 @@ export const ROUTE_FILE_TYPES = '.gpx,.kml,.kmz,application/gpx+xml,application/
 /** What a file picker is told to offer for recordings, which are GPX files kept as they are. */
 export const GPX_FILE_TYPES = '.gpx,application/gpx+xml';
 
-/** A file of routes by what its name says it is, read as what a GPX file holds; throws for one that is not what it says. */
+/**
+ * A file of routes read as what a GPX file holds. A KMZ is known by its name. Any other
+ * is read as what its name says it is and, where it is not that, as the other of GPX and
+ * KML: files of one are passed on under the name of the other. Throws for a file that is
+ * neither, saying that it is not what its name says.
+ */
 export async function readRouteFile(file: File): Promise<GpxContent> {
   if (/\.kmz$/i.test(file.name)) {
     // The KML of a KMZ lies at its top; what else it packs, icons and pictures, is left.
@@ -121,7 +126,17 @@ export async function readRouteFile(file: File): Promise<GpxContent> {
     if (!kmls[0]) throw new Error(t('This KMZ file holds no KML.'));
     return parseKml(await (await kmls[0].read()).text());
   }
-  return /\.kml$/i.test(file.name) ? parseKml(await file.text()) : parseGpx(await file.text());
+  const text = await file.text();
+  const [named, other] = /\.kml$/i.test(file.name) ? [parseKml, parseGpx] : [parseGpx, parseKml];
+  try {
+    return named(text);
+  } catch (notAsNamed) {
+    try {
+      return other(text);
+    } catch {
+      throw notAsNamed;
+    }
+  }
 }
 
 /** A file of routes read into routes and stops, the routes named after the file where they have no name. */

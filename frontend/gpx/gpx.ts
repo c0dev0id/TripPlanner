@@ -61,6 +61,9 @@ function route(rte: Element): GpxContent['routes'][number] {
   return { name: text(rte, 'name'), points: positions(rtepts), ways: rtepts.map((p) => positions(garminWay(p))) };
 }
 
+/** Whether a text is a GPX file's, by how it begins, as the server tells one. */
+export const isGpxText = (text: string): boolean => /<gpx[\s>]/.test(text.slice(0, 4096));
+
 /** Reads a GPX document; throws for anything else. */
 export function parseGpx(xml: string): GpxContent {
   const root = parseXml(xml);
