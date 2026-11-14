@@ -20,6 +20,24 @@ export function recordedMonth(track: RecordedTrack, file: File): string {
 const collectionIn = async (trips: readonly TripSummary[], folderId: number | null, name: string): Promise<number> =>
   trips.find((trip) => trip.kind === 'collection' && trip.folderId === folderId && trip.name === name)?.id ?? (await createTrip(name, folderId, 'collection')).id;
 
+/** Runs `work` on each file in turn, saying how far the import is; what fails is reported under the file's path, and the import goes on. */
+async function eachFile(sources: readonly ImportSource[], onProgress: (text: string) => void, errors: string[], work: (source: ImportSource) => Promise<void>): Promise<void> {
+  for (const [n, source] of sources.entries()) {
+    onProgress(t('Importing {i} of {n}: {name}', { i: n + 1, n: sources.length, name: source.path }));
+    try {
+      await work(source);
+    } catch (error) {
+      errors.push(`${source.path}: ${errorMessage(error)}`);
+    }
+  }
+}
+
+/** How many of a noun were kept and how many were there already, or `none` where there were neither. */
+function keptText(kept: number, known: number, noun: string, none: string): string {
+  const texts = [kept > 0 && t('{trips} imported.', { trips: counted(kept, noun) }), known > 0 && t('{what} kept already.', { what: counted(known, noun) })].filter(Boolean);
+  return texts.length > 0 ? texts.join(' ') : none;
+}
+
 /**
  * Keeps the GPX files among `files`, of one track each, as recordings, the files as they
  * are: in the collection `tripId`, or in the folder `folderId` in the collection of the
@@ -51,34 +69,47 @@ async function importRecordings(files: readonly ImportSource[], into: { folderId
     }
     return { tripId, dayId };
   };
-  for (const [n, source] of sources.entries()) {
-    onProgress(t('Importing {i} of {n}: {name}', { i: n + 1, n: sources.length, name: source.path }));
-    try {
-      const file = await source.open();
-      const gpx = await file.text();
-      const track = readRecording(gpx);
-      const month = recordedMonth(track, file);
-      const section = sections.get(month) ?? (await sectionOf(month));
-      sections.set(month, section);
-      if (await addRecordingOnce(section.tripId, section.dayId, asName(track.name ?? file.name.replace(/\.gpx$/i, '')) || t('Recording'), gpx)) kept++;
-      else known++;
-    } catch (error) {
-      errors.push(`${source.path}: ${errorMessage(error)}`);
-    }
-  }
-  const texts = [kept > 0 && t('{trips} imported.', { trips: counted(kept, 'recording') }), known > 0 && t('{what} kept already.', { what: counted(known, 'recording') })].filter(Boolean);
-  return { text: texts.length > 0 ? texts.join(' ') : t('No GPX files and no exported trips in there.'), errors };
+  await eachFile(sources, onProgress, errors, async (source) => {
+    const file = await source.open();
+    const gpx = await file.text();
+    const track = readRecording(gpx);
+    const month = recordedMonth(track, file);
+    const section = sections.get(month) ?? (await sectionOf(month));
+    sections.set(month, section);
+    if (await addRecordingOnce(section.tripId, section.dayId, asName(track.name ?? file.name.replace(/\.gpx$/i, '')) || t('Recording'), gpx)) kept++;
+    else known++;
+  });
+  return { text: keptText(kept, known, 'recording', t('No GPX files and no exported trips in there.')), errors };
 }
 
-/** The list with the places added, each to the section of its kind, made where the list has none of that name; a place the list holds already, by its name where it stands, is left out. */
-function withPlaces(list: Trip, places: readonly { kind: string; stop: Stop }[]): Trip {
+/** A place to be kept, with the kind it is of. */
+interface KindedPlace {
+  kind: string;
+  stop: Stop;
+}
+
+/** The places the list does not hold yet, by their name where they stand, each once. */
+function newPlaces(list: Trip, places: readonly KindedPlace[]): KindedPlace[] {
   const at = (stop: Stop) => `${stop.name}|${stop.lngLat.join(',')}`;
   const held = new Set(list.days.flatMap((day) => day.stops.map(at)));
-  return places.reduce((to, { kind, stop }) => {
-    if (held.has(at(stop))) return to;
-    held.add(at(stop));
+  return places.filter(({ stop }) => {
+    const key = at(stop);
+    if (held.has(key)) return false;
+    held.add(key);
+    return true;
+  });
+}
+
+/** The list with the places added, those of a kind to its section, made where the list has none of that name. */
+function withPlaces(list: Trip, places: readonly KindedPlace[]): Trip {
+  const byKind = new Map<string, Stop[]>();
+  for (const { kind, stop } of places) {
+    if (!byKind.has(kind)) byKind.set(kind, []);
+    byKind.get(kind)!.push(stop);
+  }
+  return [...byKind].reduce((to, [kind, stops]) => {
     const section = to.days.find((day) => day.name === kind);
-    return section ? addParts(to, section.id, { routes: [], stops: [stop] }) : withImportedDay(to, { name: kind, date: null }, [{ routes: [], stops: [stop] }]);
+    return section ? addParts(to, section.id, { routes: [], stops }) : withImportedDay(to, { name: kind, date: null }, [{ routes: [], stops }]);
   }, list);
 }
 
@@ -97,33 +128,21 @@ async function importPlaces(files: readonly ImportSource[], into: { folderId: nu
   let known = 0;
   const trips = 'tripId' in into || sources.length === 0 ? [] : await listTrips();
   const lists = new Map<string, number>();
-  for (const [n, source] of sources.entries()) {
-    onProgress(t('Importing {i} of {n}: {name}', { i: n + 1, n: sources.length, name: source.path }));
-    try {
-      const file = await source.open();
-      const gpx = parseGpx(await file.text());
-      if (gpx.routes.length + gpx.tracks.length > 0) errors.push(`${source.path}: ${t('Its routes and tracks were left out: a list holds places.')}`);
-      const places = waypointStops(gpx, newId).map((stop, i) => ({ kind: asName(gpx.waypoints[i]!.type ?? '') || t('Places'), stop }));
-      if (places.length === 0) continue;
-      const name = asName(gpx.name ?? file.name.replace(/\.gpx$/i, '')) || t('Places');
-      const tripId = 'tripId' in into ? into.tripId : (lists.get(name) ?? (await collectionIn(trips, into.folderId, name)));
-      lists.set(name, tripId);
-      let before = 0;
-      let after = 0;
-      await changeTrip(tripId, (list) => {
-        const added = withPlaces(list, places);
-        before = list.days.reduce((count, day) => count + day.stops.length, 0);
-        after = added.days.reduce((count, day) => count + day.stops.length, 0);
-        return added;
-      });
-      kept += after - before;
-      known += places.length - (after - before);
-    } catch (error) {
-      errors.push(`${source.path}: ${errorMessage(error)}`);
-    }
-  }
-  const texts = [kept > 0 && t('{trips} imported.', { trips: counted(kept, 'place') }), known > 0 && t('{what} kept already.', { what: counted(known, 'place') })].filter(Boolean);
-  return { text: texts.length > 0 ? texts.join(' ') : t('No places in there.'), errors };
+  await eachFile(sources, onProgress, errors, async (source) => {
+    const file = await source.open();
+    const gpx = parseGpx(await file.text());
+    if (gpx.routes.length + gpx.tracks.length > 0) errors.push(`${source.path}: ${t('Its routes and tracks were left out: a list holds places.')}`);
+    const places = waypointStops(gpx, newId).map((stop, i) => ({ kind: asName(gpx.waypoints[i]!.type ?? '') || t('Places'), stop }));
+    if (places.length === 0) return;
+    const name = asName(gpx.name ?? file.name.replace(/\.gpx$/i, '')) || t('Places');
+    const tripId = 'tripId' in into ? into.tripId : (lists.get(name) ?? (await collectionIn(trips, into.folderId, name)));
+    lists.set(name, tripId);
+    let added: KindedPlace[] = [];
+    await changeTrip(tripId, (list) => withPlaces(list, (added = newPlaces(list, places))));
+    kept += added.length;
+    known += places.length - added.length;
+  });
+  return { text: keptText(kept, known, 'place', t('No places in there.')), errors };
 }
 
 /**
@@ -134,16 +153,11 @@ async function importPlaces(files: readonly ImportSource[], into: { folderId: nu
 async function importSections(sources: readonly ImportSource[], folderId: number | null, onProgress: (text: string) => void): Promise<{ sections: number; errors: string[] }> {
   const result = { sections: 0, errors: [] as string[] };
   const sections: { name: string; parts: DayParts }[] = [];
-  for (const [n, source] of sources.entries()) {
-    onProgress(t('Importing {i} of {n}: {name}', { i: n + 1, n: sources.length, name: source.path }));
-    try {
-      const file = await source.open();
-      const name = file.name.replace(/\.gpx$/i, '');
-      sections.push({ name: asName(name), parts: gpxToDayParts(parseGpx(await file.text()), { fileName: name, profile: 'motorcycle', newId }) });
-    } catch (error) {
-      result.errors.push(`${source.path}: ${errorMessage(error)}`);
-    }
-  }
+  await eachFile(sources, onProgress, result.errors, async (source) => {
+    const file = await source.open();
+    const name = file.name.replace(/\.gpx$/i, '');
+    sections.push({ name: asName(name), parts: gpxToDayParts(parseGpx(await file.text()), { fileName: name, profile: 'motorcycle', newId }) });
+  });
   if (sections.length === 0) return result;
   const collection = t('Imported');
   try {
