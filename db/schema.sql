@@ -202,6 +202,15 @@ CREATE TABLE IF NOT EXISTS recording_days (
 ) WITHOUT ROWID;
 CREATE INDEX IF NOT EXISTS recording_days_recording ON recording_days(recording_id);
 
+-- The files a ride was merged from, by their SHA-256: such a file is known as kept, in
+-- the ride it is a part of, and is not kept again.
+CREATE TABLE IF NOT EXISTS recording_parts (
+    digest TEXT NOT NULL,
+    recording_id INTEGER NOT NULL REFERENCES recordings(id) ON DELETE CASCADE,
+    PRIMARY KEY (digest, recording_id)
+) WITHOUT ROWID;
+CREATE INDEX IF NOT EXISTS recording_parts_recording ON recording_parts(recording_id);
+
 -- The places the map shows of the kinds the planner knows (frontend/poi/places.json),
 -- fetched from OpenStreetMap area by area by `make places` and asked for by the planner
 -- tile by tile: the tiles of the web's maps at zoom 10. id is the OpenStreetMap object,

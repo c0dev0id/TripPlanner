@@ -6,6 +6,7 @@ namespace Planner\Recording;
 
 use DateTimeImmutable;
 use PDO;
+use Planner\Database;
 use Planner\Timestamp;
 
 /**
@@ -67,8 +68,8 @@ final class Recordings
 
     /**
      * Keeps a GPX file as a ride of the user's, with what is read from it beside it,
-     * unless the user keeps the file already, and puts the ride on the day where one is
-     * given. Null when the user has no such day.
+     * unless the user keeps the file already, for itself or as a part of a merged ride,
+     * and puts the ride on the day where one is given. Null when the user has no such day.
      *
      * @return ?array{recording: Recording, added: bool} the ride, the one kept already where the file was, and whether the file was added
      */
@@ -79,22 +80,14 @@ final class Recordings
         }
         $gpx = (string) gzdecode($gzip);
         $digest = hash('sha256', $gpx);
-        $kept = $this->db->prepare('SELECT id, name, distance_m, started_at FROM recordings WHERE user_id = ? AND digest = ?');
-        $kept->execute([$userId, $digest]);
+        $kept = $this->db->prepare(
+            'SELECT id, name, distance_m, started_at FROM recordings WHERE user_id = ? AND (digest = ? OR id IN (SELECT recording_id FROM recording_parts WHERE digest = ?))',
+        );
+        $kept->execute([$userId, $digest, $digest]);
         $row = $kept->fetch();
         if ($row === false) {
             $summary = TrackSummary::of($gpx);
-            $statement = $this->db->prepare('INSERT INTO recordings (user_id, name, created_at, line, distance_m, started_at, digest, gpx) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-            $statement->bindValue(1, $userId, PDO::PARAM_INT);
-            $statement->bindValue(2, $name);
-            $statement->bindValue(3, Timestamp::of($now));
-            $statement->bindValue(4, $summary->line);
-            $statement->bindValue(5, $summary->distanceM, PDO::PARAM_INT);
-            $statement->bindValue(6, $summary->startedAt);
-            $statement->bindValue(7, $digest);
-            $statement->bindValue(8, $gzip, PDO::PARAM_LOB);
-            $statement->execute();
-            $recording = new Recording((int) $this->db->lastInsertId(), $name, $summary->distanceM, $summary->startedAt, $dayId);
+            $recording = new Recording($this->insert($userId, $name, $summary, $digest, $gzip, $now), $name, $summary->distanceM, $summary->startedAt, $dayId);
         } else {
             $recording = new Recording((int) $row['id'], $row['name'], (int) $row['distance_m'], $row['started_at'], $dayId);
         }
@@ -102,6 +95,53 @@ final class Recordings
             $this->db->prepare('INSERT OR IGNORE INTO recording_days (day_id, recording_id) VALUES (?, ?)')->execute([$dayId, $recording->id]);
         }
         return ['recording' => $recording, 'added' => $row === false];
+    }
+
+    /**
+     * Merges rides of the user's that follow one another into one, named as the first:
+     * their files joined in the order they began, on every day one of them was on. The
+     * rides merged are deleted, and their files stay known as kept, as parts of the new
+     * ride. Returns its id, or null when the user lacks one of them.
+     *
+     * @param list<int> $ids two or more
+     * @throws Unmergeable
+     */
+    public function merge(int $userId, array $ids, DateTimeImmutable $now): ?int
+    {
+        $in = Database::placeholders($ids);
+        $statement = $this->db->prepare("SELECT r.name, r.started_at, r.gpx FROM recordings r WHERE r.user_id = ? AND r.id IN ($in) " . self::BY_START);
+        $statement->execute([$userId, ...$ids]);
+        $pieces = $statement->fetchAll();
+        if (count($pieces) !== count($ids)) {
+            return null;
+        }
+        $began = array_column($pieces, 'started_at');
+        if (in_array(null, $began, true)) {
+            throw new Unmergeable('A recording without times cannot be merged.');
+        }
+        $between = $this->db->prepare("SELECT 1 FROM recordings WHERE user_id = ? AND id NOT IN ($in) AND started_at > ? AND started_at < ?");
+        $between->execute([$userId, ...$ids, $began[0], $began[count($began) - 1]]);
+        if ($between->fetchColumn() !== false) {
+            throw new Unmergeable('Only recordings that follow one another can be merged.');
+        }
+        $gpx = GpxJoin::of(array_map(fn (array $piece) => (string) gzdecode($piece['gpx']), $pieces));
+        $summary = TrackSummary::of($gpx);
+        if ($summary->line === '') {
+            throw new Unmergeable('These recordings cannot be read as one.');
+        }
+        $this->db->beginTransaction();
+        try {
+            $id = $this->insert($userId, $pieces[0]['name'], $summary, hash('sha256', $gpx), gzencode($gpx), $now);
+            $this->db->prepare("INSERT OR IGNORE INTO recording_days (day_id, recording_id) SELECT day_id, ? FROM recording_days WHERE recording_id IN ($in)")->execute([$id, ...$ids]);
+            $this->db->prepare("UPDATE OR IGNORE recording_parts SET recording_id = ? WHERE recording_id IN ($in)")->execute([$id, ...$ids]);
+            $this->db->prepare("INSERT OR IGNORE INTO recording_parts (digest, recording_id) SELECT digest, ? FROM recordings WHERE id IN ($in)")->execute([$id, ...$ids]);
+            $this->db->prepare("DELETE FROM recordings WHERE id IN ($in)")->execute($ids);
+            $this->db->commit();
+        } catch (\Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
+        }
+        return $id;
     }
 
     /** Puts the ride on a day of the user's, where it is not on it yet; false when the user has no such ride or no such day. */
@@ -145,6 +185,22 @@ final class Recordings
         $statement->execute([$recordingId, $userId]);
         $gzip = $statement->fetchColumn();
         return $gzip === false ? null : (string) $gzip;
+    }
+
+    /** Keeps a file as a new ride of the user's and gives its id. */
+    private function insert(int $userId, string $name, TrackSummary $summary, string $digest, string $gzip, DateTimeImmutable $now): int
+    {
+        $statement = $this->db->prepare('INSERT INTO recordings (user_id, name, created_at, line, distance_m, started_at, digest, gpx) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        $statement->bindValue(1, $userId, PDO::PARAM_INT);
+        $statement->bindValue(2, $name);
+        $statement->bindValue(3, Timestamp::of($now));
+        $statement->bindValue(4, $summary->line);
+        $statement->bindValue(5, $summary->distanceM, PDO::PARAM_INT);
+        $statement->bindValue(6, $summary->startedAt);
+        $statement->bindValue(7, $digest);
+        $statement->bindValue(8, $gzip, PDO::PARAM_LOB);
+        $statement->execute();
+        return (int) $this->db->lastInsertId();
     }
 
     private function has(int $userId, int $recordingId): bool

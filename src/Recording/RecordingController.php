@@ -14,7 +14,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\UploadedFileInterface;
 
-/** The rides API: every ride of the user's, keeping a file as one, renaming, deleting, its GPX file, the days it is on, and for a trip the rides on its days and those that may be a day's. */
+/** The rides API: every ride of the user's, keeping a file as one, merging, renaming, deleting, its GPX file, the days it is on, and for a trip the rides on its days and those that may be a day's. */
 final class RecordingController
 {
     /** The largest file a recording may be, compressed and as GPX: a long day of one point a second with sensor data stays well below. */
@@ -93,6 +93,30 @@ final class RecordingController
         $dayId = $body['dayId'] ?? null;
         $kept = $this->recordings->keep($this->currentUser->get()->id, $name, $gzip, new DateTimeImmutable(), is_string($dayId) ? $dayId : null);
         return $kept === null ? Json::error($response, 404, 'No such day.') : Json::of($response->withStatus($kept['added'] ? 201 : 200), $kept['recording']);
+    }
+
+    /**
+     * Merges the user's rides `{ids}`, which follow one another, into one, which takes
+     * their place on their days, and answers with it as the list of rides gives it.
+     */
+    public function merge(Request $request, Response $response): Response
+    {
+        $ids = Json::field($request, 'ids');
+        if (!is_array($ids) || count($ids) < 2 || array_filter($ids, is_int(...)) !== $ids) {
+            return Json::error($response, 422, 'Merging takes two recordings or more.');
+        }
+        $userId = $this->currentUser->get()->id;
+        try {
+            $id = $this->recordings->merge($userId, array_values(array_unique($ids)), new DateTimeImmutable());
+        } catch (Unmergeable $refused) {
+            return Json::error($response, 422, $refused->getMessage());
+        }
+        foreach ($this->recordings->rides($userId) as $ride) {
+            if ($ride['id'] === $id) {
+                return Json::of($response->withStatus(201), $ride);
+            }
+        }
+        return Json::error($response, 404, 'No such recording.');
     }
 
     public function rename(Request $request, Response $response, array $args): Response

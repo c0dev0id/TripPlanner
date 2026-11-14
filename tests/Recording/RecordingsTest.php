@@ -10,6 +10,7 @@ use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
 use Planner\Export\Polyline;
 use Planner\Recording\Recordings;
+use Planner\Recording\Unmergeable;
 use Planner\Tests\TestDatabase;
 use Planner\Tests\Trip\TripFixture;
 use Planner\Trip\Folders;
@@ -102,6 +103,43 @@ final class RecordingsTest extends TestCase
         self::assertFalse($this->recordings->unlink($this->userId, $earlier->id, 'day1'));
         self::assertSame(['Later'], array_map(fn ($r) => $r->name, $this->recordings->listFor($this->userId, $this->tripId)));
         self::assertCount(2, $this->recordings->rides($this->userId));
+    }
+
+    public function testMergesRidesThatFollowOneAnotherAndRemembersTheirFiles(): void
+    {
+        $files = $rides = [];
+        foreach ([['2027-06-12T08:00:00Z', 48.1, 48.2], ['2027-06-12T11:00:00Z', 48.2, 48.3], ['2027-06-12T15:00:00Z', 48.3, 48.4], ['2027-06-13T08:00:00Z', 48.4, 48.5]] as $i => [$time, $from, $to]) {
+            $files[] = gzencode(self::gpx([[11.5, $from], [11.5, $to]], $time));
+            $rides[] = $this->recordings->keep($this->userId, "Piece $i", $files[$i], $this->now)['recording'];
+        }
+        $untimed = $this->recordings->keep($this->userId, 'No times', gzencode(self::gpx([[11.5, 48.1], [11.5, 48.2]], null)), $this->now)['recording'];
+        $this->recordings->link($this->userId, $rides[1]->id, 'day1');
+
+        self::assertNull($this->recordings->merge($this->userId + 1, [$rides[0]->id, $rides[1]->id], $this->now));
+        foreach ([[$rides[0]->id, $rides[2]->id], [$rides[0]->id, $untimed->id]] as $refused) {
+            try {
+                $this->recordings->merge($this->userId, $refused, $this->now);
+                self::fail('Merged what does not follow one another, or has no times.');
+            } catch (Unmergeable) {
+            }
+        }
+
+        $merged = $this->recordings->merge($this->userId, [$rides[1]->id, $rides[0]->id], $this->now);
+        $kept = array_column($this->recordings->rides($this->userId), null, 'id');
+        self::assertSame([$untimed->id, $merged, $rides[2]->id, $rides[3]->id], array_keys($kept));
+        self::assertSame(['Piece 0', '2027-06-12T08:00:00Z', ['day1']], [$kept[$merged]['name'], $kept[$merged]['startedAt'], array_column($kept[$merged]['days'], 'dayId')]);
+        self::assertEqualsWithDelta(22_240, $kept[$merged]['distanceM'], 20);
+        self::assertSame(2, substr_count((string) gzdecode($this->recordings->gzip($this->userId, $merged)), '<trkseg>'));
+
+        // A piece dropped again is the merged ride, also once that is merged on.
+        ['recording' => $again, 'added' => $added] = $this->recordings->keep($this->userId, 'Piece 0 again', $files[0], $this->now);
+        self::assertSame([$merged, false], [$again->id, $added]);
+        $whole = $this->recordings->merge($this->userId, [$merged, $rides[2]->id], $this->now);
+        foreach ([$files[0], $files[1], $files[2]] as $file) {
+            self::assertSame($whole, $this->recordings->keep($this->userId, 'Again', $file, $this->now)['recording']->id);
+        }
+        self::assertTrue($this->recordings->delete($this->userId, $whole));
+        self::assertTrue($this->recordings->keep($this->userId, 'Anew', $files[0], $this->now)['added']);
     }
 
     /** A GPX file of one track along the points, the first with the time. */
