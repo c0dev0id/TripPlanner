@@ -3,7 +3,7 @@ import { changeTrip, createTrip, errorMessage, keepRide, listTrips } from '../ap
 import { gpxToDayParts, readRouteFile, ROUTE_FILE, waypointStops, type DayParts } from '../gpx/import';
 import { asName, newId, type FolderKind, type Stop, type Trip, type TripSummary } from '../model/trip';
 import { addParts } from '../routing/dayEdit';
-import { readRecording } from '../recording/track';
+import { recordingName } from '../recording/track';
 import { counted } from '../ui/format';
 import type { Dropped } from './fileDrop';
 import { addDaysAndMedia, importFolder, isGpxPath, isMediaPath, isRoutePath, planFolderImport, readPlannedDays, withImportedDay, type ImportMode, type ImportSource, type PlannedDay } from './folderImport';
@@ -51,7 +51,7 @@ export async function importRides(files: readonly ImportSource[], onProgress: (t
   await eachFile(files.filter((source) => isGpxPath(source.path)), onProgress, errors, async (source) => {
     const file = await source.open();
     const gpx = await file.text();
-    const { added } = await keepRide(asName(readRecording(gpx).name ?? file.name.replace(/\.gpx$/i, '')) || t('Recording'), gpx);
+    const { added } = await keepRide(asName(recordingName(gpx) ?? file.name.replace(/\.gpx$/i, '')) || t('Recording'), gpx);
     if (added) kept++;
     else known++;
   });

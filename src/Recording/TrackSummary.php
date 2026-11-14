@@ -26,7 +26,7 @@ final readonly class TrackSummary
         public int $distanceM,
         public ?string $startedAt,
         /** The time of its last point that has one; not kept, read where a ride's end matters. */
-        public ?string $endedAt = null,
+        public ?string $endedAt,
     ) {
     }
 

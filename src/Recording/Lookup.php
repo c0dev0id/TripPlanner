@@ -56,8 +56,9 @@ final class Lookup
         $ridingDays = [];
         foreach ($rides as $ride) {
             $date = $ride['startedAt'] === null ? null : (new DateTimeImmutable($ride['startedAt']))->modify("$utcOffsetMinutes minutes")->format('Y-m-d');
-            $ridingDays[$date ?? "ride {$ride['id']}"] ??= ['date' => $date, 'rides' => []];
-            $ridingDays[$date ?? "ride {$ride['id']}"]['rides'][] = $ride;
+            $key = $date ?? "ride {$ride['id']}";
+            $ridingDays[$key] ??= ['date' => $date, 'rides' => []];
+            $ridingDays[$key]['rides'][] = $ride;
         }
         $found = [];
         foreach ($ridingDays as ['date' => $date, 'rides' => $ridden]) {
@@ -84,17 +85,24 @@ final class Lookup
     private static function share(array $rides, array $routes, float $routesM, float $atLeast): float
     {
         $lines = [];
-        $ridesM = 0.0;
         foreach ($rides as $ride) {
             $line = Polyline::decode($ride['line']);
             if (count($line) > 1) {
-                $along = LineSamples::along($line);
-                $ridesM += $along[count($line) - 1];
-                $lines[] = ['line' => $line, 'along' => $along, 'bounds' => Proximity::bounds($line)];
+                $lines[] = ['line' => $line, 'bounds' => Proximity::bounds($line)];
             }
         }
         $routes = array_values(array_filter($routes, fn (array $route) => array_filter($lines, fn (array $line) => Proximity::overlap($route['bounds'], $line['bounds'])) !== []));
-        if ($routes === [] || $ridesM <= 0.0) {
+        if ($routes === []) {
+            return 0.0;
+        }
+        // Most rides are apart from the day's routes, so the lines are measured only once they are not.
+        $ridesM = 0.0;
+        foreach ($lines as &$line) {
+            $line['along'] = LineSamples::along($line['line']);
+            $ridesM += $line['along'][count($line['line']) - 1];
+        }
+        unset($line);
+        if ($ridesM <= 0.0) {
             return 0.0;
         }
         $alongRoutes = 0.0;

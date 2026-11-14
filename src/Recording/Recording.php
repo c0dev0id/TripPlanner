@@ -14,7 +14,7 @@ final readonly class Recording
         public int $distanceM,
         public ?string $startedAt,
         /** The day it is given as on; null where it is given for itself. */
-        public ?string $dayId = null,
+        public ?string $dayId,
     ) {
     }
 }

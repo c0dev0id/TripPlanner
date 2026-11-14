@@ -64,17 +64,13 @@ final class GpxJoin
                 $missing .= " xmlns:$prefix=\"$namespace\"";
             }
         }
-        $root = strpos($gpx, '<gpx');
-        return $missing === '' || $root === false ? $gpx : substr_replace($gpx, $missing, strpos($gpx, '>', $root), 0);
+        return $missing === '' ? $gpx : substr_replace($gpx, $missing, strpos($gpx, '>', strpos($gpx, '<gpx')), 0);
     }
 
-    /** @return array<string, string> the namespaces a file declares on its root, by prefix */
+    /** @return array<string, string> the namespaces a file declares on its root, which a recording kept has, by prefix */
     private static function prefixes(string $gpx): array
     {
         $root = strpos($gpx, '<gpx');
-        if ($root === false) {
-            return [];
-        }
         preg_match_all('/\sxmlns:([\w.-]+)\s*=\s*(["\'])(.*?)\2/', substr($gpx, $root, strpos($gpx, '>', $root) - $root), $found);
         return array_combine($found[1], $found[3]);
     }

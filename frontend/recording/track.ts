@@ -19,16 +19,25 @@ export interface RecordedTrack {
 /** The elements inside an element that hold no others: the values of an extension, however deep. */
 const leaves = (element: Element): Element[] => Array.from(element.getElementsByTagName('*')).filter((e) => e.childElementCount === 0);
 
+/** The one track of a recording's file; throws for a file that is no GPX file of one track. */
+function trackIn(xml: string): Element {
+  const root = parseXml(xml);
+  if (root?.localName !== 'gpx') throw new Error(t('This is not a GPX file.'));
+  const tracks = children(root, 'trk');
+  if (tracks.length !== 1 || children(root, 'rte').length > 0) throw new Error(t('A recording is a GPX file of one track.'));
+  return tracks[0]!;
+}
+
+/** The name a recording's file gives its track, read without its points; throws for a file that is no recording. */
+export const recordingName = (xml: string): string | undefined => text(trackIn(xml), 'name');
+
 /**
  * Reads a recording: a GPX file of one track, its segments one after the other; waypoints,
  * such as an app's start and end points, are left aside. Throws for any other file.
  */
 export function readRecording(xml: string): RecordedTrack {
-  const root = parseXml(xml);
-  if (root?.localName !== 'gpx') throw new Error(t('This is not a GPX file.'));
-  const tracks = children(root, 'trk');
-  if (tracks.length !== 1 || children(root, 'rte').length > 0) throw new Error(t('A recording is a GPX file of one track.'));
-  const trackpoints = children(tracks[0]!, 'trkseg')
+  const track = trackIn(xml);
+  const trackpoints = children(track, 'trkseg')
     .flatMap((segment) => children(segment, 'trkpt'))
     .filter((p) => position(p) !== undefined);
   const series: RecordedTrack['series'] = {};
@@ -45,5 +54,5 @@ export function readRecording(xml: string): RecordedTrack {
       if (Number.isFinite(value)) put(leaf.localName, i, value);
     }
   });
-  return { name: text(tracks[0]!, 'name'), points: trackpoints.map((p) => position(p)!), series };
+  return { name: text(track, 'name'), points: trackpoints.map((p) => position(p)!), series };
 }
