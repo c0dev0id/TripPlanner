@@ -1,11 +1,11 @@
 import type { TripSummary } from '../model/trip';
-import { libraryFolders, relistFolders, relistTrips, runLibrary, setImportNote } from '../state/library';
+import { libraryFolders, relistFolders, relistTrips, runLibrary, setImportNote, showTab } from '../state/library';
+import { runRidesJob } from '../state/rides';
 import { pickFiles } from '../ui/pickFile';
-import { importDropped, importIntoTrip } from './dropImport';
+import { importDropped, importIntoTrip, importRides } from './dropImport';
 import { droppedSources, onFileDrop, type Dropped } from './fileDrop';
 import { sourceOf, type ImportSource } from './folderImport';
 import { kindAround } from './folders';
-import { addRides } from './Rides';
 import { ROUTE_FILE_TYPES } from '../gpx/import';
 import { zipEntries } from '../gpx/zip';
 
@@ -25,6 +25,15 @@ async function unpacked(dropped: Dropped): Promise<Dropped[]> {
     zips.push({ files: [], inFolders: entries.map((entry) => ({ path: entry.path, open: async () => new File([await entry.read()], entry.path.slice(entry.path.lastIndexOf('/') + 1)) })) });
   }
   return rest.files.length + rest.inFolders.length > 0 || zips.length === 0 ? [rest, ...zips] : zips;
+}
+
+/** Keeps the GPX files dropped or picked as rides and shows the rides, where it is said how it goes. */
+export function addRides(dropped: Dropped | Promise<Dropped>): Promise<void> {
+  showTab('recordings');
+  return runRidesJob(async (onProgress) => {
+    const { files, inFolders } = await dropped;
+    return importRides([...files, ...inFolders], onProgress);
+  });
 }
 
 /**

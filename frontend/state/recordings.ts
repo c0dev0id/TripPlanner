@@ -7,19 +7,22 @@ import { decodeCached } from '../routing/polyline';
 import { flushSave } from './autosave';
 import { showWhole } from './drawing';
 import { isRecordingPinned, pinRecordings } from './pins';
-import { refreshRides } from './rides';
+import { rideChanges, ridesChanged } from './rides';
 import { openTripId, selectedDayId } from './trip';
 
 /**
- * The rides on the open trip's days, loaded with the trip; changes go to the server at
- * once. A ride is kept for itself and is on a day by a link, so it may be on several.
- * Its track is read from its file once it is on the map.
+ * The rides on the open trip's days, loaded with the trip and again when rides change,
+ * wherever that was done; changes go to the server at once. A ride is kept for itself
+ * and is on a day by a link, so it may be on several. Its track is read from its file
+ * once it is on the map.
  */
 
-const [list, { mutate, refetch }] = createRoot(() => createResource(openTripId, async (tripId) => ({ tripId, recordings: await listRecordings(tripId) })));
-
-/** Reads the open trip's recordings again: after rides were changed where the trip does not see it. */
-export const relistRecordings = (): void => void refetch();
+const [list, { mutate }] = createRoot(() =>
+  createResource(
+    () => openTripId() !== undefined && ([openTripId()!, rideChanges()] as const),
+    async ([tripId]) => ({ tripId, recordings: await listRecordings(tripId) }),
+  ),
+);
 
 /** The recordings of the open trip, once for each day a ride is on, by when they began; none until they are loaded. */
 function allRecordings(): Recording[] {
@@ -30,11 +33,8 @@ function allRecordings(): Recording[] {
 /** The order the server lists them in: by when they began, those without times first. */
 const byStart = (a: Recording, b: Recording): number => (a.startedAt ?? '').localeCompare(b.startedAt ?? '') || a.id - b.id;
 
-/** Changes the list of the open trip's recordings, and has the rides read again where they are shown. */
-function change(to: (recordings: Recording[]) => Recording[]): void {
-  mutate((loaded) => loaded && { ...loaded, recordings: to(loaded.recordings) });
-  refreshRides();
-}
+/** Changes the list of the open trip's recordings as the server will list them, ahead of its answer. */
+const change = (to: (recordings: Recording[]) => Recording[]): void => void mutate((loaded) => loaded && { ...loaded, recordings: to(loaded.recordings) });
 
 const isOn = (dayId: string, id: number) => (r: Recording): boolean => r.id === id && r.dayId === dayId;
 
@@ -123,14 +123,13 @@ export async function takeOffDay(id: number, dayId: string): Promise<void> {
 }
 
 /**
- * Keeps a GPX file of one track as a ride on the day, under `name`, or else named after
- * its track or, without a name there, `fallback`; a file kept already is put on the day
- * as the ride it is. Throws for any other file.
+ * Keeps a GPX file of one track as a ride on the day, named after its track or, without
+ * a name there, `fallback`; a file kept already is put on the day as the ride it is.
+ * Throws for any other file.
  */
-export async function addRecording(dayId: string, gpx: string, naming: { name: string } | { fallback: string }): Promise<Recording> {
+export async function addRecording(dayId: string, gpx: string, fallback: string): Promise<Recording> {
   const track = readRecording(gpx);
-  const name = 'name' in naming ? naming.name : (track.name ?? naming.fallback);
-  const { ride } = await keepRide(asName(name) || t('Recording'), gpx, dayId);
+  const { ride } = await keepRide(asName(track.name ?? fallback) || t('Recording'), gpx, dayId);
   // Kept before it is listed, so that it is not read again from the file just sent.
   keep(ride.id, track);
   listOnDay(ride, dayId);
@@ -194,7 +193,7 @@ const [note, setNote] = createSignal<{ dayId: string; text: string; error: boole
 
 export const recordingNote = (dayId: string) => (note()?.dayId === dayId ? note() : undefined);
 
-/** Runs an action on a day's recordings, then says under them what it did where it says something, or why it failed. */
+/** Runs an action on a day's recordings, then says under them what it did where it says something, or why it failed; the rides are read again once for all it did. */
 export async function recordingAction(dayId: string, job: () => Promise<string | void>): Promise<void> {
   try {
     const text = await job();
@@ -202,4 +201,8 @@ export async function recordingAction(dayId: string, job: () => Promise<string |
   } catch (fault) {
     setNote({ dayId, text: errorMessage(fault), error: true });
   }
+  ridesChanged();
 }
+
+/** What is said when rides were put on a day. */
+export const addedText = (rides: readonly KeptRide[]): string => (rides.length === 1 ? t('“{name}” added as a recording.', { name: rides[0]!.name }) : t('{n} recordings added.', { n: rides.length }));

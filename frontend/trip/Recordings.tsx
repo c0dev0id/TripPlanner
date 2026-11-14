@@ -1,7 +1,9 @@
 import { createSignal, For, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import type { FoundRidingDay, Recording } from '../api';
+import { GPX_FILE_TYPES } from '../gpx/import';
 import type { Day } from '../model/trip';
+import { totalDistance } from '../recording/rides';
 import { copyRecordings, isCutRecording } from '../state/clipboard';
 import { clearPartSelection, clickPart, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
 import { showWhole } from '../state/drawing';
@@ -10,6 +12,7 @@ import { openRecording } from '../state/recordingView';
 import { showRide } from '../state/rides';
 import {
   activeRecordingId,
+  addedText,
   addRecording,
   assignRidingDay,
   closeLookup,
@@ -42,10 +45,10 @@ import { pickFile } from '../ui/pickFile';
 
 /** Keeps a GPX file of one track the user picks as a ride on the day, and shows it whole on the map. */
 export function addRecordingPicked(dayId: string): void {
-  void pickFile('.gpx,application/gpx+xml').then((file) => {
+  void pickFile(GPX_FILE_TYPES).then((file) => {
     if (!file) return;
     void recordingAction(dayId, async () => {
-      const recording = await addRecording(dayId, await file.text(), { fallback: file.name.replace(/\.gpx$/i, '') });
+      const recording = await addRecording(dayId, await file.text(), file.name.replace(/\.gpx$/i, ''));
       const track = loadedTrack(recording);
       if (track) showWhole(track.points);
       return t('{file} added as “{name}”.', { file: file.name, name: recording.name });
@@ -102,7 +105,7 @@ function FoundRecordings(props: { dayId: string; found: FoundRidingDay[] | undef
   const detail = (ridingDay: FoundRidingDay) =>
     [
       ridingDay.rides.length > 1 ? counted(ridingDay.rides.length, 'recording') : ridingDay.date !== null && ridingDay.rides[0]!.name,
-      distanceText(ridingDay.rides.reduce((sum, ride) => sum + ride.distanceM, 0)),
+      distanceText(totalDistance(ridingDay.rides)),
       ridingDay.sameDate && t('on this day'),
       ridingDay.share > 0 && t('{share} % along the routes', { share: Math.round(ridingDay.share * 100) }),
     ]
@@ -111,8 +114,7 @@ function FoundRecordings(props: { dayId: string; found: FoundRidingDay[] | undef
   const assign = (ridingDay: FoundRidingDay) =>
     void recordingAction(props.dayId, async () => {
       await assignRidingDay(props.dayId, ridingDay);
-      const [first] = ridingDay.rides;
-      return ridingDay.rides.length === 1 ? t('“{name}” added as a recording.', { name: first!.name }) : t('{n} recordings added.', { n: ridingDay.rides.length });
+      return addedText(ridingDay.rides);
     });
   return (
     <div>

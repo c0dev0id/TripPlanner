@@ -9,7 +9,7 @@ import { askConfirmation } from '../ui/confirm';
 import type { MenuItem } from '../ui/menu';
 import { flushSave } from './autosave';
 import { bringMedia, mediaAction } from './media';
-import { putOnDay, recordingAction, takeOffDay } from './recordings';
+import { addedText, putOnDay, recordingAction, takeOffDay } from './recordings';
 import { moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, openTripId, pasteDays, pasteRoutes, pasteStops, pasteStopsIntoRoute, selectDay } from './trip';
 
 /**
@@ -106,7 +106,7 @@ async function pasteRecordings(dayId: string, recordings: readonly KeptRide[], c
       await putOnDay(ride, dayId);
       if (cutFrom !== undefined && cutFrom !== dayId) await takeOffDay(ride.id, cutFrom);
     }
-    return recordings.length === 1 ? t('“{name}” added as a recording.', { name: recordings[0]!.name }) : t('{n} recordings added.', { n: recordings.length });
+    return addedText(recordings);
   });
 }
 

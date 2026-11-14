@@ -110,6 +110,9 @@ export const ROUTE_FILE = /\.(gpx|kml|kmz)$/i;
 /** What a file picker is told to offer for them. */
 export const ROUTE_FILE_TYPES = '.gpx,.kml,.kmz,application/gpx+xml,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz';
 
+/** What a file picker is told to offer for recordings, which are GPX files kept as they are. */
+export const GPX_FILE_TYPES = '.gpx,application/gpx+xml';
+
 /** A file of routes by what its name says it is, read as what a GPX file holds; throws for one that is not what it says. */
 export async function readRouteFile(file: File): Promise<GpxContent> {
   if (/\.kmz$/i.test(file.name)) {

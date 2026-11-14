@@ -19,7 +19,7 @@ export interface Joint {
 }
 
 /** The pause and the way between two rides above which merging them is questioned: a pause that long is two outings, and over the way the merged ride is a straight line. */
-export const LONG_PAUSE_S = 6 * 3600;
+const LONG_PAUSE_S = 6 * 3600;
 export const FAR_APART_M = 150;
 
 export const isOddJoint = (joint: Joint): boolean => (joint.pauseS ?? 0) > LONG_PAUSE_S || joint.distanceM > FAR_APART_M;
@@ -54,7 +54,8 @@ export function localDate(iso: string): string {
   return `${at.getFullYear()}-${two(at.getMonth() + 1)}-${two(at.getDate())}`;
 }
 
-const length = (of: readonly { distanceM: number }[]): number => of.reduce((sum, part) => sum + part.distanceM, 0);
+/** How far rides, or days of riding, went together, in metres. */
+export const totalDistance = (of: readonly { distanceM: number }[]): number => of.reduce((sum, part) => sum + part.distanceM, 0);
 
 /** The days, which are in order, in runs that share the first `chars` of their date: a month's, or a year's. */
 function runs(days: readonly RidingDay[], chars: number): RidingDay[][] {
@@ -78,10 +79,10 @@ export function ridingYears(rides: readonly Ride[], dateOf: (iso: string) => str
   }
   const days = [...byDate]
     .sort(([a], [b]) => b.localeCompare(a))
-    .map(([date, of]): RidingDay => ({ date, rides: of.sort((a, b) => a.startedAt!.localeCompare(b.startedAt!)), distanceM: length(of) }));
-  const months = runs(days, 7).map((of): RidingMonth => ({ month: of[0]!.date.slice(0, 7), days: of, distanceM: length(of) }));
+    .map(([date, of]): RidingDay => ({ date, rides: of.sort((a, b) => a.startedAt!.localeCompare(b.startedAt!)), distanceM: totalDistance(of) }));
+  const months = runs(days, 7).map((of): RidingMonth => ({ month: of[0]!.date.slice(0, 7), days: of, distanceM: totalDistance(of) }));
   return runs(days, 4).map((of): RidingYear => {
     const year = of[0]!.date.slice(0, 4);
-    return { year, months: months.filter((month) => month.month.startsWith(year)), days: of.length, distanceM: length(of) };
+    return { year, months: months.filter((month) => month.month.startsWith(year)), days: of.length, distanceM: totalDistance(of) };
   });
 }

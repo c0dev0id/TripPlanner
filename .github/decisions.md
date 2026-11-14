@@ -273,7 +273,11 @@ entries at the end of their section.
   the file; removing a day, a trip or a collection removes links and leaves the ride.
   Only the list of rides deletes one. The folder for recordings, which was a time index
   built by hand for rides nobody had claimed, is gone: the rides are listed by
-  when it began, takes new files, and says for each the days it is on.
+  when it began, takes new files, and says for each the days it is on. The rides are
+  shown in two lists, all of them in their tab and those on its days with the open
+  trip, and either can change them; whatever does says so once it is done, once for
+  all it did (`ridesChanged`), and both lists read again. A list that changed them
+  itself shows the change ahead of the server's answer.
 - **A day of riding is the unit, not the file.** The user's tracker starts a new file
   when the bike moves again after a break, so one outing is two or three recordings.
   They are grouped by the date they began on, where the browser is, and shown as one

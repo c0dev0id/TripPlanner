@@ -1,12 +1,13 @@
 import { createEffect, createMemo, createSelector, createSignal, For, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { deleteRide, errorMessage, mergeRides, renameRide, rideJoints } from '../api';
+import { GPX_FILE_TYPES } from '../gpx/import';
 import type { Ride } from '../recording/rides';
-import { FAR_APART_M, isOddJoint, ridingYears } from '../recording/rides';
+import { FAR_APART_M, isOddJoint, ridingYears, totalDistance } from '../recording/rides';
 import { copyRecordings } from '../state/clipboard';
-import { fetchingTrip, libraryTrips, outlineOf, showTab } from '../state/library';
-import { putOnDay, relistRecordings } from '../state/recordings';
-import { allRides, refreshRides, revealedRide, revealRide, rideColor, RIDES, ridesError, ridesLoading } from '../state/rides';
+import { fetchingTrip, libraryTrips, outlineOf } from '../state/library';
+import { putOnDay } from '../state/recordings';
+import { allRides, changeRides, revealedRide, revealRide, rideColor, RIDES, ridesError, ridesLoading, ridesNote, runRidesJob } from '../state/rides';
 import { openTrip } from '../state/trip';
 import { dayLabel, dayTitleOf } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
@@ -21,56 +22,11 @@ import { Pad } from '../ui/Pad';
 import { pickFiles } from '../ui/pickFile';
 import { clickRow, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, toggleRow } from '../ui/selection';
 import { autoname } from './autoname';
-import { importRides } from './dropImport';
-import type { Dropped } from './fileDrop';
 import { sourceOf } from './folderImport';
+import { addRides } from './importActions';
 
 /** The years unfolded, kept while the page stands; none until the rides are read, when the latest unfolds. */
 const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>();
-
-/** How a job on the rides goes, then what came of it and what it could not do; and what else went wrong among them. */
-const [note, setNote] = createSignal<{ text: string; errors: string[] }>();
-let busy = false;
-
-/**
- * Runs a job on the rides that takes a while and says how far it is, then has the rides
- * read again, the open trip's too; it is said above them how it goes and what came of it. While
- * one runs, another is not started.
- */
-async function job(work: (onProgress: (text: string) => void) => Promise<{ text: string; errors: string[] }>): Promise<void> {
-  if (busy) return;
-  busy = true;
-  try {
-    setNote(await work((text) => setNote({ text, errors: [] })));
-  } catch (fault) {
-    setNote({ text: '', errors: [errorMessage(fault)] });
-  } finally {
-    busy = false;
-    refreshRides();
-    relistRecordings();
-  }
-}
-
-/** Keeps the GPX files dropped or picked as rides and shows the rides, where it is said how it goes. */
-export function addRides(dropped: Dropped | Promise<Dropped>): Promise<void> {
-  showTab('recordings');
-  return job(async (onProgress) => {
-    const { files, inFolders } = await dropped;
-    return importRides([...files, ...inFolders], onProgress);
-  });
-}
-
-/** Runs a change to rides, then has them read again, the open trip's too; why it failed is said above them. */
-async function change(work: () => Promise<unknown>): Promise<void> {
-  try {
-    await work();
-    setNote(undefined);
-  } catch (fault) {
-    setNote({ text: '', errors: [errorMessage(fault)] });
-  }
-  refreshRides();
-  relistRecordings();
-}
 
 /**
  * The rides, in the library's tab for them: every recording the user keeps by when it
@@ -114,7 +70,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
     const question = rides.length > 1 ? t('Delete {what} with their files, from every day they are on?', { what: counted(rides.length, 'ride') }) : t('Delete the ride “{name}” with its file, from every day it is on?', { name: first!.name });
     if (!(await askConfirmation(question, t('Delete')))) return;
     selectIn(RIDES, NOTHING_SELECTED);
-    await change(() => Promise.all(rides.map((ride) => deleteRide(ride.id))));
+    await changeRides(async () => void (await Promise.all(rides.map((ride) => deleteRide(ride.id)))));
   };
   /** Whether the rides, of those with times, follow one another with no other between them. */
   const followOneAnother = (rides: readonly Ride[]): boolean => {
@@ -123,7 +79,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
   };
   /** Merges the rides once the user agrees, who is told where they are joined after a long pause or over a way. */
   const mergeAsked = (rides: readonly Ride[]) =>
-    job(async (onProgress) => {
+    runRidesJob(async (onProgress) => {
       const ids = rides.map((ride) => ride.id);
       const odd = (await rideJoints(ids)).filter(isOddJoint);
       const question = [
@@ -143,11 +99,11 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
     const chosen = allRides().filter((kept) => ids.has(String(kept.id)));
     const several = chosen.length > 1;
     const trip = openTrip();
-    const toDay = (dayId: string) => void change(async () => { for (const kept of chosen) await putOnDay(kept, dayId); });
+    const toDay = (dayId: string) => void changeRides(async () => { for (const kept of chosen) await putOnDay(kept, dayId); });
     const [only, ...more] = ride.days;
     return [
       { label: t('Rename…'), disabled: several, run: () => setRenamed(ride) },
-      { label: t('Autoname'), run: () => void job((onProgress) => autoname(chosen, onProgress)) },
+      { label: t('Autoname'), run: () => void runRidesJob((onProgress) => autoname(chosen, onProgress)) },
       { label: t('Copy'), run: () => copyRecordings(chosen) },
       ...(trip ? [{ label: t('Add to day'), items: trip.days.map((day) => ({ label: dayTitleOf(trip, day), run: () => toDay(day.id) })) }] : []),
       { label: t('Merge'), disabled: !several || !followOneAnother(chosen), run: () => void mergeAsked(chosen) },
@@ -161,7 +117,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
     <RidingDayCard heading={heading} rides={rides} distanceM={distanceM} where={whereOf} selected={isSelected} onSelectDay={() => select(rides)} onClick={(ride, e) => clickRow(RIDES, order(), String(ride.id), e) || select([ride])} onToggle={(ride) => toggleRow(RIDES, String(ride.id))} items={items} />
   );
   const addPicked = async () => {
-    const files = await pickFiles({ accept: '.gpx,application/gpx+xml' });
+    const files = await pickFiles({ accept: GPX_FILE_TYPES });
     if (files.length > 0) void addRides({ files: files.map(sourceOf), inFolders: [] });
   };
   return (
@@ -169,7 +125,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
       <div class="row tab-summary">
         <span class="muted detail grow">
           <Show when={allRides().length > 0}>
-            {counted(allRides().length, 'ride')} · {distanceText(allRides().reduce((sum, ride) => sum + ride.distanceM, 0))}
+            {counted(allRides().length, 'ride')} · {distanceText(totalDistance(allRides()))}
           </Show>
         </span>
         <IconButton label={t('Add rides…')} onClick={() => void addPicked()}>
@@ -177,7 +133,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
         </IconButton>
       </div>
       <Show when={ridesError()}>{(error) => <p class="error">{errorMessage(error())}</p>}</Show>
-      <Show when={note()}>
+      <Show when={ridesNote()}>
         {(said) => (
           <>
             <Show when={said().text}>
@@ -231,7 +187,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
         )}
       </For>
       <Show when={untimed().length > 0}>
-        <ul class="duplicates">{card(t('Without times'), untimed(), untimed().reduce((sum, ride) => sum + ride.distanceM, 0))}</ul>
+        <ul class="duplicates">{card(t('Without times'), untimed(), totalDistance(untimed()))}</ul>
       </Show>
       <NameDialog
         title={t('Rename recording')}
@@ -239,7 +195,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void }
         placeholder={t('Name of the recording')}
         initial={renamed()?.name}
         onClose={() => setRenamed(undefined)}
-        onSubmit={(name) => void change(() => renameRide(renamed()!.id, name))}
+        onSubmit={(name) => void changeRides(() => renameRide(renamed()!.id, name))}
       />
     </div>
   );
