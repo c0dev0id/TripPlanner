@@ -58,29 +58,24 @@ final class Polyline
         $length = strlen($encoded);
         $lat = 0;
         $lng = 0;
-        /** The next number, or null where the text ends within it. */
-        $next = function () use ($encoded, $length, &$index): ?int {
-            $result = 0;
-            $shift = 0;
-            do {
-                if ($index >= $length) {
-                    return null;
-                }
-                $byte = ord($encoded[$index++]) - 63;
-                $result |= ($byte & 0x1f) << $shift;
-                $shift += 5;
-            } while ($byte >= 0x20);
-            return $result & 1 ? ~($result >> 1) : $result >> 1;
-        };
+        // A point is two numbers, the latitude's change first; a text cut off within a point ends the line at the point before.
         while ($index < $length) {
-            $dLat = $next();
-            $dLng = $next();
-            // A text cut off within a point ends the line at the point before.
-            if ($dLat === null || $dLng === null) {
-                break;
+            $changes = [];
+            for ($n = 0; $n < 2; $n++) {
+                $result = 0;
+                $shift = 0;
+                do {
+                    if ($index >= $length) {
+                        return $points;
+                    }
+                    $byte = ord($encoded[$index++]) - 63;
+                    $result |= ($byte & 0x1f) << $shift;
+                    $shift += 5;
+                } while ($byte >= 0x20);
+                $changes[] = $result & 1 ? ~($result >> 1) : $result >> 1;
             }
-            $lat += $dLat;
-            $lng += $dLng;
+            $lat += $changes[0];
+            $lng += $changes[1];
             $points[] = [$lng / $factor, $lat / $factor];
         }
         return $points;

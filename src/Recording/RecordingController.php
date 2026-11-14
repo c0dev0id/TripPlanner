@@ -84,18 +84,17 @@ final class RecordingController
         $query = $request->getQueryParams();
         $userId = $this->currentUser->get()->id;
         $done = max(0, (int) ($query['from'] ?? 0));
-        $days = (function () use ($userId, &$done) {
-            $until = hrtime(true) + self::SUGGESTING_NS;
-            foreach ($this->documents->tripDays($userId, $done) as $day) {
-                yield $day;
-                $done++;
-                if (hrtime(true) > $until) {
-                    return;
-                }
+        $suggestions = new Suggestions($this->recordings->rides($userId), $this->recordings->declined($userId), (int) ($query['offset'] ?? 0));
+        $found = [];
+        $until = hrtime(true) + self::SUGGESTING_NS;
+        foreach ($this->documents->tripDays($userId, $done) as $day) {
+            array_push($found, ...$suggestions->of($day));
+            $done++;
+            if (hrtime(true) > $until) {
+                break;
             }
-        })();
-        $suggestions = Suggestions::of($days, $this->recordings->rides($userId), $this->recordings->declined($userId), (int) ($query['offset'] ?? 0));
-        return Json::of($response, ['suggestions' => $suggestions, 'done' => $done, 'of' => $this->documents->tripDayCount($userId)]);
+        }
+        return Json::of($response, ['suggestions' => $found, 'done' => $done, 'of' => $this->documents->tripDayCount($userId)]);
     }
 
     /**

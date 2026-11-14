@@ -94,7 +94,7 @@ final class Recordings
             $recording = new Recording((int) $row['id'], $row['name'], (int) $row['distance_m'], $row['started_at'], $dayId);
         }
         if ($dayId !== null) {
-            $this->db->prepare('INSERT OR IGNORE INTO recording_days (day_id, recording_id) VALUES (?, ?)')->execute([$dayId, $recording->id]);
+            $this->putOn($dayId, $recording->id);
         }
         return ['recording' => $recording, 'added' => $row === false];
     }
@@ -182,8 +182,7 @@ final class Recordings
         if (!$this->has($userId, $recordingId) || !$this->hasDay($userId, $dayId)) {
             return false;
         }
-        $this->db->prepare('INSERT OR IGNORE INTO recording_days (day_id, recording_id) VALUES (?, ?)')->execute([$dayId, $recordingId]);
-        $this->db->prepare('DELETE FROM recording_declines WHERE day_id = ? AND recording_id = ?')->execute([$dayId, $recordingId]);
+        $this->putOn($dayId, $recordingId);
         return true;
     }
 
@@ -249,6 +248,13 @@ final class Recordings
         $statement->execute([$userId, ...$ids]);
         $pieces = $statement->fetchAll();
         return count($pieces) === count($ids) ? $pieces : null;
+    }
+
+    /** Puts a ride on a day, where it is not on it yet, and forgets that it was said not to be of it. */
+    private function putOn(string $dayId, int $recordingId): void
+    {
+        $this->db->prepare('INSERT OR IGNORE INTO recording_days (day_id, recording_id) VALUES (?, ?)')->execute([$dayId, $recordingId]);
+        $this->db->prepare('DELETE FROM recording_declines WHERE day_id = ? AND recording_id = ?')->execute([$dayId, $recordingId]);
     }
 
     /** Keeps a file as a new ride of the user's and gives its id. */
