@@ -28,11 +28,11 @@ function heldIn(file: StashFile): string {
     .join(' · ') || t('Empty');
 }
 
-/** A route or a track of a file as a row: its name over what it is, how far it goes and, of a track with times, when it began; a click shows it alone on the map, in the colour its row has. */
-export function StashItemRow(props: { file: StashFile; item: StashItem; where?: string; onShow: (item: StashItem) => void }) {
+/** A route or a track of a file as a row: its name over what it is, how far it goes and, of a track with times, when it began; a click shows it alone on the map, in the colour its row has, and its menu takes it out of the Stash. */
+export function StashItemRow(props: { file: StashFile; item: StashItem; where?: string; onShow: (item: StashItem) => void; items: () => MenuItem[] }) {
   return (
     <li class="card" classList={{ opened: isShownItem(props.file.id, props.item) }}>
-      <div class="row">
+      <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <button class="text grow" onClick={() => props.onShow(props.item)}>
           <span class="swatch" style={{ background: stashColor(props.file, props.item) }} />
           <span class="lines">
@@ -44,6 +44,7 @@ export function StashItemRow(props: { file: StashFile; item: StashItem; where?: 
             </span>
           </span>
         </button>
+        <MenuButton of={stashItemName(props.item)} items={props.items} />
       </div>
     </li>
   );
@@ -60,6 +61,8 @@ export function StashFileCard(props: {
   onOpen: (file: StashFile) => void;
   onShow: (item: StashItem) => void;
   items: () => MenuItem[];
+  /** The menu of one of its routes or tracks. */
+  itemItems: (item: StashItem) => MenuItem[];
   select: CardSelect;
   /** Whether its routes and tracks are listed under it; not among what a search found. */
   unfolded?: boolean;
@@ -84,7 +87,7 @@ export function StashFileCard(props: {
       </div>
       <Show when={props.unfolded}>
         <ul class="tree-children">
-          <For each={props.file.items}>{(item) => <StashItemRow file={props.file} item={item} onShow={props.onShow} />}</For>
+          <For each={props.file.items}>{(item) => <StashItemRow file={props.file} item={item} onShow={props.onShow} items={() => props.itemItems(item)} />}</For>
           <Show when={props.file.waypoints > 0}>
             <li class="muted detail">{counted(props.file.waypoints, 'waypoint')}</li>
           </Show>

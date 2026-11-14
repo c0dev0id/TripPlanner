@@ -60,6 +60,11 @@ export function copyRoutes(routes: CopiedRoute[]): void {
   setClip({ routes });
 }
 
+/** Copies stops that stand free. */
+export function copyStops(stops: Stop[]): void {
+  setClip({ stops });
+}
+
 /** Copies days, routes or stops of the open trip; cut, they leave it when they are pasted. */
 export function copyParts(kind: PartKind, ids: readonly string[], cut = false): void {
   const trip = openTrip();

@@ -307,7 +307,12 @@ entries at the end of their section.
     the file as imported, so the same file imported again is known as kept, cleaned up
     or not.
   - Nothing goes into the Stash from the app; things only come out of it, into a
-    trip, among the rides or into a list of places.
+    trip, among the rides or into a list of places. Into a trip and a list they go by
+    the clipboard, which every day and kind already pastes from. A track becomes a
+    ride on the server, from the stored file: alone, cut out of its file with the DOM
+    (`GpxEdit`), or, where it is all the file holds of routes and tracks, as the file's
+    own bytes, since a ride is known by its file's digest and the same recording is
+    often both dropped on the rides and dumped in the Stash.
   - KML and KMZ are turned into GPX in the browser before they are kept. The user's
     devices write GPX, and what such files hold beyond what GPX can say is little.
 - **A ride is kept once, for itself, and is on days by a link.** The library is a tree

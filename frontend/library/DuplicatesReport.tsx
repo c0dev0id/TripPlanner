@@ -98,7 +98,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
       const copies = await copiesOf(chosen);
       if (copies.length === 0) return t('Those routes are no longer there.');
       copyRoutes(copies);
-      return t('Copied {what}: paste from the menu of a day, a trip or a folder.', { what: counted(copies.length, 'route') });
+      return t('Copied {what}: paste from the menu of a day or a trip.', { what: counted(copies.length, 'route') });
     });
   const remove = async (chosen: DuplicateRoute[]) => {
     const trips = tripIdsOf(chosen).length;

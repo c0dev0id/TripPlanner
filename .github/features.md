@@ -254,6 +254,16 @@
   in the Stash and nothing is pasted into it: a folder is all that is made there. The
   search finds files by name and their routes and tracks by theirs, and shows what it
   found in its folder and on the map.
+- Things leave the Stash from the menu of a file, of several selected, or of one route
+  or track. Copy puts routes and tracks on the clipboard as an import would read them,
+  a route with its points and the way Garmin gave between them, a track with its line,
+  each with the waypoints on its points, to be pasted into a day of any trip. Copy
+  waypoints puts a file's waypoints there as free stops, to be pasted into a day or
+  into a kind of a list of places. Keep as ride keeps a track among the rides with
+  everything the file tells of it, its times, heights and sensor values: a track that
+  is all its file holds of routes and tracks as the file itself, so that it is known as
+  the ride the same file was kept as before, any other alone, without the file's
+  other tracks, routes and waypoints. The file stays in the Stash either way.
 - Import by dropping GPX files, zips of exported trips and folders from the computer on
   a folder of the tree, or by Add in its menu; what they become follows from the folder.
   On Places or a folder in it, a GPX file's waypoints

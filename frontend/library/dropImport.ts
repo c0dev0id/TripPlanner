@@ -34,7 +34,7 @@ async function eachFile(sources: readonly ImportSource[], onProgress: (text: str
 }
 
 /** How many of a noun were kept and how many were there already, or `none` where there were neither. */
-function keptText(kept: number, known: number, noun: string, none: string): string {
+export function keptText(kept: number, known: number, noun: string, none: string): string {
   const texts = [kept > 0 && t('{trips} imported.', { trips: counted(kept, noun) }), known > 0 && t('{what} kept already.', { what: counted(known, noun) })].filter(Boolean);
   return texts.length > 0 ? texts.join(' ') : none;
 }

@@ -1,15 +1,16 @@
 import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
-import { changeTrip, type NamedRoute, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, renameStashFile, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
+import { changeTrip, keepStashRides, type NamedRoute, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, renameStashFile, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import type { StashFile, StashItem } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
-import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
+import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip, copyRoutes, copyStops } from '../state/clipboard';
 import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, isPlanningMaterial, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, opening, openTree, outlineOf, query, relistFolders, relistStash, searchedFor, relistTrips, stashFiles, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, setTripSource, showFolder, shownFolderId, type TripSource } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, kindAround } from './folders';
 import { flushSave } from '../state/autosave';
 import { showInStash, shownInStash, stashProblem } from '../state/stash';
+import { ridesChanged } from '../state/rides';
 import { setEditTarget } from '../state/drawing';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
 import { dayDetail, dayHeading } from '../trip/labels';
@@ -31,6 +32,8 @@ import { libraryImports } from './importActions';
 import { TripFromDialog } from './TripFromDialog';
 import { createTripFrom } from './tripFromSections';
 import { StashFileCard, StashItemRow } from './StashFileCard';
+import { stashCopies, stashStops, type Picked } from './stashOut';
+import { keptText } from './dropImport';
 import { TripShape } from './TripShape';
 
 /** A folder, a trip or a file of the Stash, as what is selected, moved and deleted together. */
@@ -621,16 +624,61 @@ export function Library(props: {
   /** Adds a day at the end of a trip: of the open one as an edit that can be undone, which shows the day; of another on the server. */
   const addDayTo = (trip: TripSummary) => (trip.id === openTripId() ? addDay() : void runLibrary(() => changeTrip(trip.id, (loaded) => withDayAdded(loaded, newId())), relistTrips));
 
-  /** The menu of what is selected once files of the Stash are among it: one file is renamed, and files, with the folders selected beside them, are moved and deleted. */
+  /** Takes something out of the Stash and says, where the imports say what they did, what came of it. */
+  const takeOut = (work: () => Promise<string>) => void runLibrary(async () => setImportNote({ text: await work(), errors: [] }));
+  /** Copies routes and tracks of the Stash, to be pasted into a day. */
+  const copyOut = (picked: readonly Picked[]) =>
+    takeOut(async () => {
+      const copies = await stashCopies(picked);
+      if (copies.length === 0) return t('No routes or tracks in there.');
+      copyRoutes(copies);
+      return t('Copied {what}: paste from the menu of a day or a trip.', { what: counted(copies.length, 'route') });
+    });
+  /** Copies the waypoints of files of the Stash, to be pasted as stops or as places. */
+  const copyWaypoints = (of: readonly StashFile[]) =>
+    takeOut(async () => {
+      const stops = await stashStops(of);
+      copyStops(stops);
+      return t('Copied {what}: paste from the menu of a day, or of a kind in a list of places.', { what: counted(stops.length, 'waypoint') });
+    });
+  /** Keeps tracks of the Stash as rides, which the rides then list. */
+  const keepRides = (picked: readonly Picked[]) =>
+    takeOut(async () => {
+      let [kept, known] = [0, 0];
+      for (const { file, items } of picked) {
+        const count = await keepStashRides(file.id, items?.map((item) => item.position));
+        kept += count.kept;
+        known += count.known;
+      }
+      ridesChanged();
+      return keptText(kept, known, 'ride', t('No tracks in there.'));
+    });
+  /**
+   * The menu of what is selected once files of the Stash are among it. Files alone are
+   * taken out of the Stash: their routes and tracks copied, their waypoints copied,
+   * their tracks kept as rides. One file is renamed, and files, with the folders
+   * selected beside them, are moved and deleted.
+   */
   const filesMenu = (chosen: readonly Item[]): MenuItem[] => {
     const several = chosen.length > 1;
+    const chosenFiles = filesOf(chosen);
+    const onlyFiles = chosenFiles.length === chosen.length;
+    const whole = chosenFiles.map((file) => ({ file }));
     return [
       ...(several ? [{ label: t('{what} selected', { what: countText(chosen) }), disabled: true, run: () => undefined }] : []),
-      { label: t('Rename…'), disabled: several, run: () => setDialog({ kind: 'rename-file', file: filesOf(chosen)[0]! }) },
+      { label: t('Copy routes and tracks'), disabled: !onlyFiles || chosenFiles.every((file) => file.items.length === 0), run: () => copyOut(whole) },
+      { label: t('Copy waypoints'), disabled: !onlyFiles || chosenFiles.every((file) => file.waypoints === 0), run: () => copyWaypoints(chosenFiles) },
+      { label: t('Keep tracks as rides'), disabled: !onlyFiles || !chosenFiles.some((file) => file.items.some((item) => item.kind === 'track')), run: () => keepRides(whole) },
+      { label: t('Rename…'), disabled: several, run: () => setDialog({ kind: 'rename-file', file: chosenFiles[0]! }) },
       ...moveItem(chosen),
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
   };
+  /** The menu of a route or a track of a file: it is copied to be pasted into a day, and a track kept as a ride. */
+  const stashItemMenu = (file: StashFile, item: StashItem): MenuItem[] => [
+    { label: t('Copy'), run: () => copyOut([{ file, items: [item] }]) },
+    ...(item.kind === 'track' ? [{ label: t('Keep as ride'), run: () => keepRides([{ file, items: [item] }]) }] : []),
+  ];
 
   /**
    * The menu of a folder or a trip, the same for both: what is new in it and what is added
@@ -739,6 +787,7 @@ export function Library(props: {
             onOpen={clickFile}
             onShow={(item) => showItem(file(), item)}
             items={() => itemMenu({ file: file() })}
+            itemItems={(item) => stashItemMenu(file(), item)}
             select={select({ file: file() })}
             unfolded={isUnfolded({ file: file() })}
           />
@@ -807,11 +856,11 @@ export function Library(props: {
           </For>
           <For each={listed().files}>
             {(file) => (
-              <StashFileCard file={file} where={pathOf(file.folderId)} onOpen={revealFile} onShow={(item) => revealFile(file, item)} items={() => itemMenu({ file })} select={select({ file }, listedKeys)} />
+              <StashFileCard file={file} where={pathOf(file.folderId)} onOpen={revealFile} onShow={(item) => revealFile(file, item)} items={() => itemMenu({ file })} itemItems={(item) => stashItemMenu(file, item)} select={select({ file }, listedKeys)} />
             )}
           </For>
           <For each={listed().routes}>{(route) => <RouteCard found={route} onOpen={props.onOpenRoute} items={() => routeMenu(route)} select={selectRoute(route)} />}</For>
-          <For each={listed().items}>{(at) => <StashItemRow file={at.file} item={at.item} where={at.file.name} onShow={(item) => revealFile(at.file, item)} />}</For>
+          <For each={listed().items}>{(at) => <StashItemRow file={at.file} item={at.item} where={at.file.name} onShow={(item) => revealFile(at.file, item)} items={() => stashItemMenu(at.file, at.item)} />}</For>
         </ul>
         <Show when={total() > SEARCH_LIMIT}>
           <p class="muted">{t('{n} more; narrow the search.', { n: total() - SEARCH_LIMIT })}</p>

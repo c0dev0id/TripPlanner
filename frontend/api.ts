@@ -282,6 +282,9 @@ export const moveStashFile = (id: number, folderId: number): Promise<void> => re
 
 export const deleteStashFile = (id: number): Promise<void> => request('DELETE', `/api/stash/files/${id}`);
 
+/** Keeps the tracks of a file of the Stash as rides: all of them, or those at the places given among its tracks. Answers how many were kept and how many the user kept already. */
+export const keepStashRides = (id: number, tracks?: readonly number[]): Promise<{ kept: number; known: number }> => request('POST', `/api/stash/files/${id}/rides`, tracks ? { tracks } : {});
+
 /** A file of the Stash as it is kept. */
 export const fetchStashGpx = async (id: number): Promise<string> => (await send('GET', `/api/stash/files/${id}/gpx`)).text();
 
