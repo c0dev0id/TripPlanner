@@ -293,9 +293,12 @@ entries at the end of their section.
   anew.
 - **Move… offers what is near.** Its submenu listed every folder of the tree by its
   path, which with a few hundred folders filled the screen with paths cut off alike.
-  It now lists, from where the thing is, the top as "/", the folder around its own as
-  "..", the folders beside it and the folders in those. A move further off takes two
-  steps or a drag; in return the list is short and every entry can be told apart.
+  It now lists, read as paths from the folder the thing is in, the top as "/", the
+  folder around it as "..", the folders beside it as "../name" and the folders in it.
+  The folders beside are there because moving a thing to the folder next to its own is
+  the common move; the folders two levels down are not, because they made the list
+  long again. A move further off takes two steps or a drag; in return the list is
+  short and every entry can be told apart.
 - **The Stash is files; the Trips are curated.** The Stash is where data is dumped
   without thought and kept safe until it is worked on: what is imported there must not
   lose anything. The Trips are where routes, tracks, recordings and times are tied

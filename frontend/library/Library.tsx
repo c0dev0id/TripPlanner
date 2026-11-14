@@ -490,8 +490,8 @@ export function Library(props: {
   /**
    * Move… with where what is moved can go from where the first of it is, as its submenu:
    * the top of its tree as "/", the folder around its own as "..", the folders beside
-   * it and the folders in those. Anything further off is reached in steps, or by
-   * dragging. None where there is nowhere to go.
+   * that one as "../name" and the folders in it. Anything further off is reached in
+   * steps, or by dragging. None where there is nowhere to go.
    */
   const moveItem = (moved: readonly Item[]): MenuItem[] => {
     const [first] = moved;

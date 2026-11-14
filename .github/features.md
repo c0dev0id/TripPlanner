@@ -238,8 +238,8 @@
   outside the Places, a trip made or moved into either, a file kept outside the
   Stash, and a folder moved across with contents of the wrong kind. The library follows: New in a folder's menu offers a
   list among the Places where others offer a trip, and in the Stash a folder alone;
-  Move… offers, from where the thing is, the top of its tree as "/", the folder around
-  its own as "..", the folders beside it and the folders in those, so that its list
+  Move… offers, from the folder the thing is in, the top of its tree as "/", the folder
+  around it as "..", the folders beside it as "../name" and the folders in it, so that its list
   stays short in a large tree, and only those that take what is moved; anything
   further off is reached in steps or by dragging. A folder's card counts files
   in the Stash and lists among the Places.
