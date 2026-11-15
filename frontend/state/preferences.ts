@@ -1,7 +1,7 @@
 import { createMemo, createResource, createRoot } from 'solid-js';
 import { fetchPreferences, savePreferences, type Preferences } from '../api';
 import { DEFAULT_RIDES_OPACITY, DEFAULT_ROUTE_COLORING, DEFAULT_ROUTE_WIDTH, type RouteColoring } from '../model/routeLook';
-import { POI_CATEGORIES, type PoiCategoryId } from '../poi/categories';
+import { isStoreKind, type PoiCategoryId } from '../poi/categories';
 
 /** What the user set for the planner as a whole, kept with the account: loaded once, saved as it changes. */
 
@@ -18,8 +18,11 @@ export const placeReachM = (kind: string): number => preferences().placeReachM?.
 /** The badge the places of the kind are drawn with, where the user picked one: that of a kind of the store, by its id. */
 export function placeIcon(kind: string): PoiCategoryId | undefined {
   const icon = preferences().placeIcons?.[kind];
-  return POI_CATEGORIES.some((category) => category.id === icon) ? (icon as PoiCategoryId) : undefined;
+  return icon !== undefined && isStoreKind(icon) ? icon : undefined;
 }
+
+/** The badge the places of the kind wear: the one picked, else a kind of the store's own; none for a kind of a list, which is drawn as a dot. */
+export const placeBadge = (kind: string): PoiCategoryId | undefined => placeIcon(kind) ?? (isStoreKind(kind) ? kind : undefined);
 
 /** Sets how far from a route the places of the kind are shown along it, and the badge they are drawn with, none for the kind's own look. */
 export function changePlaceKind(kind: string, reachM: number, icon: PoiCategoryId | undefined): Promise<void> {

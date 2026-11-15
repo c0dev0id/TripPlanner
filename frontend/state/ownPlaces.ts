@@ -31,18 +31,22 @@ const own = createRoot(() => {
     () => fetchOwnPlaces(),
   );
   const all = createMemo((): OwnPlace[] => (lists() && !places.error ? (places.latest ?? []) : []));
+  const kinds = createMemo(() => ownKindsOf(all()));
+  const colors = createMemo(() => new Map(kinds().map((kind) => [kind.dayId, kind.color])));
   const shown = createMemo(() => {
-    const colors = new Map(ownKindsOf(all()).map((kind) => [kind.dayId, kind.color]));
     // The places of the open list's kind shown in the pane are on the map as its stops already, while its tab is the one the map follows.
     const others = all().filter((place) => place.tripId !== openTripId() || place.dayId !== selectedDayId() || !tripShown());
     const along = placesNear(others.filter((place) => placeMode(place.dayId) === 'along'), dayRouteLines(), (place) => placeReachM(place.dayId));
-    return [...others.filter((place) => placeMode(place.dayId) === 'all'), ...along].map((place) => ({ place, color: colors.get(place.dayId)! }));
+    return [...others.filter((place) => placeMode(place.dayId) === 'all'), ...along].map((place) => ({ place, color: colors().get(place.dayId)! }));
   });
-  return { all, shown };
+  return { all, kinds, colors, shown };
 });
 
 /** The kinds of the user's own places, by list. */
-export const ownKinds = createRoot(() => createMemo(() => ownKindsOf(own.all())));
+export const ownKinds = own.kinds;
+
+/** The colour a kind of the user's own places is drawn in, by its section's id; none for a kind without places. */
+export const ownKindColor = (dayId: string): string | undefined => own.colors().get(dayId);
 
 /** The own places the map shows, each with its kind's colour. */
 export const ownPlacesOnMap = own.shown;

@@ -1,10 +1,10 @@
 import { createSignal, For, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { poiBadgeUrl } from '../map/poiImages';
-import { POI_CATEGORIES } from '../poi/categories';
-import { ownKinds } from '../state/ownPlaces';
+import { isStoreKind, POI_CATEGORIES } from '../poi/categories';
+import { ownKindColor } from '../state/ownPlaces';
 import { cyclePlaceMode, isTooFarOut, placeMode, type PlaceMode } from '../state/places';
-import { changePlaceKind, placeIcon, placeReachM } from '../state/preferences';
+import { changePlaceKind, placeBadge, placeReachM } from '../state/preferences';
 import { EditDialog } from '../ui/EditDialog';
 import { EyeIcon, EyeOffIcon, GearIcon, RouteIcon } from '../ui/icons';
 import { IconButton } from '../ui/IconButton';
@@ -12,11 +12,10 @@ import { IconButton } from '../ui/IconButton';
 /** The farthest a place may be from a route and still be shown along it, in kilometres. */
 const MAX_KM = 20;
 
-/** A kind of place whose settings are edited: one of the store's by its id, or a section of a list of the user's own (`own`). */
+/** A kind of place whose settings are edited: one of the store's by its id, or a section of a list of the user's own by its section's. */
 interface EditedKind {
   id: string;
   name: string;
-  own: boolean;
 }
 
 const [edited, setEdited] = createSignal<EditedKind>();
@@ -28,19 +27,14 @@ const MODE_TEXT: Record<PlaceMode, string> = {
   none: t('Not on the map'),
 };
 
-/** The address of the badge picked for a kind of place, none where none is picked. */
-function pickedBadgeUrl(kind: string): string | undefined {
-  const category = POI_CATEGORIES.find((each) => each.id === placeIcon(kind));
-  return category && poiBadgeUrl(category);
-}
+/** A dot in the colour of a kind of the user's own places. */
+const KindDot = (props: { id: string }) => <span class="own-dot" style={{ background: ownKindColor(props.id) ?? 'transparent' }} />;
 
-/** The look of a kind of place: the badge picked for it, else that of the store's kind of the id, else a dot in its list's colour. */
+/** The look of a kind of place: its badge (see placeBadge), else a dot in its list's colour. */
 export function PlaceKindMark(props: { id: string }) {
-  const badge = () => pickedBadgeUrl(props.id) ?? POI_CATEGORIES.filter((category) => category.id === props.id).map(poiBadgeUrl)[0];
-  const color = () => ownKinds().find((kind) => kind.dayId === props.id)?.color ?? 'transparent';
   return (
-    <Show when={badge()} fallback={<span class="own-dot" style={{ background: color() }} />}>
-      {(url) => <img class="poi-badge" src={url()} alt="" />}
+    <Show when={placeBadge(props.id)} fallback={<KindDot id={props.id} />}>
+      {(badge) => <img class="poi-badge" src={poiBadgeUrl(POI_CATEGORIES.find((category) => category.id === badge())!)} alt="" />}
     </Show>
   );
 }
@@ -55,7 +49,7 @@ export function PlaceKindControls(props: EditedKind) {
           <EyeIcon />
         </Show>
       </IconButton>
-      <IconButton label={t('Settings of {name}', { name: props.name })} onClick={() => setEdited({ id: props.id, name: props.name, own: props.own })}>
+      <IconButton label={t('Settings of {name}', { name: props.name })} onClick={() => setEdited({ id: props.id, name: props.name })}>
         <GearIcon />
       </IconButton>
     </>
@@ -73,7 +67,7 @@ export function StandardPlaces() {
             <li class="row place-kind">
               <PlaceKindMark id={category.id} />
               <span class="grow">{category.label}</span>
-              <PlaceKindControls id={category.id} name={category.label} own={false} />
+              <PlaceKindControls id={category.id} name={category.label} />
             </li>
           )}
         </For>
@@ -103,17 +97,17 @@ export function PlaceKindDialog() {
           </label>
           <fieldset class="choices place-icons">
             <legend>{t('Icon')}</legend>
-            <Show when={kind.own}>
+            <Show when={!isStoreKind(kind.id)}>
               <label>
-                <input type="radio" name="icon" value="" checked={placeIcon(kind.id) === undefined} />
-                <span class="own-dot" style={{ background: ownKinds().find((own) => own.dayId === kind.id)?.color ?? 'transparent' }} />
+                <input type="radio" name="icon" value="" checked={placeBadge(kind.id) === undefined} />
+                <KindDot id={kind.id} />
                 {t("The list's dot")}
               </label>
             </Show>
             <For each={POI_CATEGORIES}>
               {(category) => (
                 <label>
-                  <input type="radio" name="icon" value={category.id} checked={(placeIcon(kind.id) ?? (kind.own ? undefined : kind.id)) === category.id} />
+                  <input type="radio" name="icon" value={category.id} checked={placeBadge(kind.id) === category.id} />
                   <img class="poi-badge" src={poiBadgeUrl(category)} alt="" />
                   {category.label}
                 </label>

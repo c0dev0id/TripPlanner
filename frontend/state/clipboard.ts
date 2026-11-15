@@ -60,9 +60,9 @@ export function copyRoutes(routes: CopiedRoute[]): void {
   setClip({ routes });
 }
 
-/** Copies stops that stand free; `kinds` names for each, where a file gave them, the kind it sorts the stop under, empty for none. */
-export function copyStops(stops: Stop[], kinds?: readonly string[]): void {
-  setClip({ stops, ...(kinds ? { kinds } : {}) });
+/** Copies stops that stand free, with the kind of place each is of. */
+export function copyStops(stops: Stop[], kinds: readonly string[]): void {
+  setClip({ stops, kinds });
 }
 
 /** Copies days, routes or stops of the open trip; cut, they leave it when they are pasted. */

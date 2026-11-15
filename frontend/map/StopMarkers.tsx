@@ -6,7 +6,7 @@ import { pointOfDay } from '../routing/dayEdit';
 import { dragsMarkers, setEditTarget, straightLegItem, tapAction } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import { PlaceKindMark } from '../library/PlaceKinds';
-import { isPlaceList, tripShown } from '../state/library';
+import { isPlaceList, shownDay } from '../state/library';
 import { canConnect, connectStop, disconnectStop, editingRouteId, moveStop, openTripId, removeStop, selectedDay, selectedDayId } from '../state/trip';
 import { stopContent } from './markerContent';
 import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
@@ -18,7 +18,7 @@ import { ForById } from '../ui/ForById';
  * dots on the map (routeOverlay).
  */
 export function StopMarkers(props: { map: MapLibreMap }) {
-  return <ForById each={(tripShown() && selectedDay()?.stops) || []}>{(stop) => <StopMarker map={props.map} stop={stop()} />}</ForById>;
+  return <ForById each={shownDay()?.stops ?? []}>{(stop) => <StopMarker map={props.map} stop={stop()} />}</ForById>;
 }
 
 function StopMarker(props: { map: MapLibreMap; stop: Stop }) {

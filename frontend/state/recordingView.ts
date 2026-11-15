@@ -27,6 +27,9 @@ const [hoverIndex, setHoverIndex] = createSignal<number>();
 const [pickedIndex, setPickedIndex] = createSignal<number>();
 export { hoverIndex, pickedIndex, setHoverIndex, setPickedIndex };
 
+/** Whether a route, a track or a recording is taken up, which then leads: the map offers nothing else for a click. */
+export const somethingTakenUp = (): boolean => activeRouteId() !== undefined || activeRecordingId() !== undefined;
+
 /** Opens a recording's figures, or closes them; any point picked before is let go. */
 export function openRecording(id: number | undefined): void {
   if (id !== activeRecordingId()) setPickedIndex(undefined);
@@ -93,6 +96,13 @@ export interface Comparison {
   delta: Delta;
 }
 
+/** Whether two comparands are the same route as it is, under the same label, or the same recording: what the comparison is worked out from. */
+function sameComparand(a: Comparand | undefined, b: Comparand | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  if ('route' in a) return 'route' in b && a.route === b.route && a.label === b.label;
+  return 'recording' in b && a.recording === b.recording;
+}
+
 const view = createRoot(() => {
   // Kept while its recording and track stay the same objects, as they do when other recordings change.
   const opened = createMemo(
@@ -119,7 +129,7 @@ const view = createRoot(() => {
       ...shownRecordings().flatMap((recording) => (recording.id !== o.recording.id && isRecordingPinned(recording.id) ? [{ recording }] : [])),
     ];
     return pinned.length === 1 ? pinned[0] : undefined;
-  });
+  }, undefined, { equals: sameComparand });
   /** What the comparison is with, as a key that stays the same while the route or the recording does. */
   const comparedKey = createMemo(() => {
     const c = comparand();

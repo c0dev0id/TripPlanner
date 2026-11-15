@@ -1,7 +1,7 @@
 import { t } from '../i18n/t';
 import { changeTrip, createTrip, errorMessage, keepRide, keepStashFile, listTrips } from '../api';
 import { readRouteFile, ROUTE_FILE, waypointStops } from '../gpx/import';
-import { isGpxText } from '../gpx/gpx';
+import { isGpxText, type GpxContent } from '../gpx/gpx';
 import { gpxText } from '../gpx/write';
 import type { StashFile } from '../model/stash';
 import { asName, newId, type FolderKind, type Stop, type Trip, type TripSummary } from '../model/trip';
@@ -66,6 +66,9 @@ export interface KindedPlace {
   kind: string;
   stop: Stop;
 }
+
+/** A file's waypoints as places, each of the kind its waypoint is of (`<type>`), else of “Places”. */
+export const kindedWaypoints = (gpx: GpxContent): KindedPlace[] => waypointStops(gpx, newId).map((stop, i) => ({ kind: asName(gpx.waypoints[i]!.type ?? '') || t('Places'), stop }));
 
 /** The places the list does not hold yet, by their name where they stand, each once. */
 function newPlaces(list: Trip, places: readonly KindedPlace[]): KindedPlace[] {
@@ -148,7 +151,7 @@ async function importPlaces(files: readonly ImportSource[], into: { folderId: nu
     const file = await source.open();
     const gpx = await readRouteFile(file);
     if (gpx.routes.length + gpx.tracks.length > 0) errors.push(`${source.path}: ${t('Its routes and tracks were left out: a list holds places.')}`);
-    const places = waypointStops(gpx, newId).map((stop, i) => ({ kind: asName(gpx.waypoints[i]!.type ?? '') || t('Places'), stop }));
+    const places = kindedWaypoints(gpx);
     if (places.length === 0) return;
     const name = asName(gpx.name ?? file.name.replace(ROUTE_FILE, '')) || t('Places');
     const tripId = 'tripId' in into ? into.tripId : (lists.get(name) ?? (await collectionIn(trips, into.folderId, name)));

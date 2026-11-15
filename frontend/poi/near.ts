@@ -9,7 +9,7 @@ import type { LngLat } from '../model/trip';
  */
 export function placesNear<T extends { lngLat: LngLat }>(places: readonly T[], lines: readonly (readonly LngLat[])[], reachM: (place: T) => number): T[] {
   const origin = lines.find((line) => line.length > 0)?.[0];
-  if (!origin) return [];
+  if (!origin || places.length === 0) return [];
   const flat = planeAt(origin);
   const nearest = nearestOnLines(lines.map((line) => line.map(flat)));
   return places.filter((place) => nearest(flat(place.lngLat), reachM(place)) !== undefined);

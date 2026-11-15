@@ -17,14 +17,6 @@ export const CheckIcon = () => (
   </Icon>
 );
 
-export const DownloadIcon = () => (
-  <Icon>
-    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
-    <path d="M7 11l5 5l5 -5" />
-    <path d="M12 4l0 12" />
-  </Icon>
-);
-
 export const UndoIcon = () => (
   <Icon>
     <path d="M9 14l-4 -4l4 -4" />
@@ -180,16 +172,6 @@ export const NotebookIcon = () => (
     <path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-11a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1m3 0v16" />
     <path d="M13 8l2 0" />
     <path d="M13 12l2 0" />
-  </Icon>
-);
-
-export const ShareIcon = () => (
-  <Icon>
-    <path d="M6 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
-    <path d="M18 6m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
-    <path d="M18 18m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0" />
-    <path d="M8.7 10.7l6.6 -3.4" />
-    <path d="M8.7 13.3l6.6 3.4" />
   </Icon>
 );
 

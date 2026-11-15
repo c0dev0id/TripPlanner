@@ -4,8 +4,8 @@ import { routesDistance } from '../routing/legs';
 import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
-import { isPlaceList, tripShown } from '../state/library';
-import { openTrip, openTripId, selectDay, selectedDay } from '../state/trip';
+import { isPlaceList, shownDay } from '../state/library';
+import { openTrip, openTripId, selectDay } from '../state/trip';
 import { IconButton } from '../ui/IconButton';
 import { ChevronIcon, NeighboursIcon, PencilIcon } from '../ui/icons';
 import { SidePane } from '../ui/SidePane';
@@ -19,7 +19,7 @@ import { DayDetails, JournalButton } from './TripPanel';
  * while no day is picked.
  */
 export function DayPane() {
-  const day = () => (openTrip() && tripShown() ? selectedDay() : undefined);
+  const day = shownDay;
   return (
     <Show when={day()}>
       {(shown) => {

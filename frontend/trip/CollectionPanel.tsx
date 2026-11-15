@@ -82,7 +82,7 @@ function SectionItem(props: { day: Day; places: boolean; onRename: (day: Day) =>
           </span>
         </button>
         <Show when={props.places}>
-          <PlaceKindControls id={props.day.id} name={props.day.name} own />
+          <PlaceKindControls id={props.day.id} name={props.day.name} />
         </Show>
         <MenuButton of={props.day.name} items={items} />
       </div>

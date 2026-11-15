@@ -11,8 +11,8 @@ import { mapTab, tripShown } from '../state/library';
 import { isRoutePinned, pinnedAsideLines } from '../state/pins';
 import { keepsView } from '../state/place';
 import { ridesOpacity, routeWidth } from '../state/preferences';
-import { opened, openedLineColors } from '../state/recordingView';
-import { activeRecordingId, loadedTrack, previewedLines, recordingColor, shownRecordings } from '../state/recordings';
+import { opened, openedLineColors, somethingTakenUp } from '../state/recordingView';
+import { loadedTrack, previewedLines, recordingColor, shownRecordings } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
 import { failedLegs } from '../state/routing';
 import { activeRouteId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
@@ -117,7 +117,7 @@ const sameLines = (a: ShownDay[], b: ShownDay[]): boolean => a.length === b.leng
  */
 function routeDrawn(route: Route, role: RouteRole): boolean {
   if (route.id === activeRouteId() || isRoutePinned(route.id)) return true;
-  return role !== 'neighbour' && tripShown() && activeRouteId() === undefined && activeRecordingId() === undefined;
+  return role !== 'neighbour' && tripShown() && !somethingTakenUp();
 }
 
 const sameIds = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean => a.size === b.size && [...a].every((id) => b.has(id));

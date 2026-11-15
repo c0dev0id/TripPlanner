@@ -6,7 +6,7 @@ import { deltaSummaryOf, type Delta } from '../recording/delta';
 import { fileFacts, type FileFacts } from '../recording/file';
 import { DIFFERENCE_FIGURES, FIGURES, type Figure } from '../recording/figures';
 import { isDifference, kmBySurface, NO_VALUE, SURFACES, surfaceLabel, type Coloring, type Difference } from '../recording/lineColors';
-import { histogram, summaryOf, type Metric } from '../recording/measures';
+import { histogram, summaryOf, type Metric, type Summary } from '../recording/measures';
 import type { LngLat } from '../model/trip';
 import { panTo } from '../state/drawing';
 import {
@@ -42,18 +42,22 @@ import { AngleIcon, ClockIcon, CloseIcon, GaugeIcon, InfoIcon, MountainIcon, Off
 export function RecordingCards() {
   return (
     <Show when={opened()}>
-      {(o) => (
-        <>
-          <FocusButtons />
-          <div class="recording-cards">
-            <Show when={infoShown()}>
-              <InfoCard opened={o()} />
-            </Show>
-            <Show when={shownColoring()}>{(focus) => <FocusCard opened={o()} focus={focus()} />}</Show>
-          </div>
-          <ChartCard opened={o()} />
-        </>
-      )}
+      {(o) => {
+        // Worked out once for the recording, for both cards.
+        const summary = createMemo(() => summaryOf(o().measures));
+        return (
+          <>
+            <FocusButtons />
+            <div class="recording-cards">
+              <Show when={infoShown()}>
+                <InfoCard opened={o()} summary={summary()} />
+              </Show>
+              <Show when={shownColoring()}>{(focus) => <FocusCard opened={o()} summary={summary()} focus={focus()} />}</Show>
+            </div>
+            <ChartCard opened={o()} />
+          </>
+        );
+      }}
     </Show>
   );
 }
@@ -127,9 +131,9 @@ function fileRows(file: FileFacts): [string, string | undefined][] {
 }
 
 /** What stays the same whatever the focus: the recording's name, its figures as a whole, and what its file is like. */
-function InfoCard(props: { opened: Opened }) {
+function InfoCard(props: { opened: Opened; summary: Summary }) {
   const rows = createMemo((): [string, string | undefined][] => {
-    const s = summaryOf(props.opened.measures);
+    const s = props.summary;
     const { speed, altitude, lean } = FIGURES;
     return [
       [t('Distance'), distanceText(s.distanceM)],
@@ -155,18 +159,12 @@ function InfoCard(props: { opened: Opened }) {
   );
 }
 
-/** The lowest and highest of the values that are there. */
-function rangeOf(values: readonly (number | null)[]): [number, number] | undefined {
-  const known = values.filter((v): v is number => v !== null && Number.isFinite(v));
-  return known.length > 0 ? [Math.min(...known), Math.max(...known)] : undefined;
-}
-
 /** The figures that belong to a focus, and only those: of speed the average and top speed and the time moving, of altitude the climb, descent and range, of slope and lean their extremes, of a difference what it is against and how it differs. */
-function focusRows(opened: Opened, focus: Coloring): [string, string | undefined][] {
-  const s = summaryOf(opened.measures);
+function focusRows(opened: Opened, s: Summary, focus: Coloring): [string, string | undefined][] {
   const { speed, altitude, slope, lean } = FIGURES;
   const c = comparison();
-  const d = c && deltaSummaryOf(opened.measures, c.delta);
+  // Only a difference has figures of the comparison.
+  const d = c && isDifference(focus) ? deltaSummaryOf(opened.measures, c.delta) : undefined;
   switch (focus) {
     case 'speed':
       return [
@@ -181,7 +179,7 @@ function focusRows(opened: Opened, focus: Coloring): [string, string | undefined
         [t('Altitude'), textOf(s.altitudeRange, ([low, high]) => `${altitude.text(low)} – ${altitude.text(high)}`)],
       ];
     case 'slope':
-      return [[t('Slope'), textOf(rangeOf(opened.measures.slope ?? []), ([down, up]) => `${slope.text(down)} – ${slope.text(up)}`)]];
+      return [[t('Slope'), textOf(s.slopeRange, ([down, up]) => `${slope.text(down)} – ${slope.text(up)}`)]];
     case 'lean':
       return [[t('Lean'), textOf(s.leanRange, ([left, right]) => t('{left} to {right}', { left: lean.text(left), right: lean.text(right) }))]];
     case 'surface':
@@ -204,11 +202,11 @@ function focusRows(opened: Opened, focus: Coloring): [string, string | undefined
 }
 
 /** The card of the focus: its name, its figures and the legend of the line's colours. */
-function FocusCard(props: { opened: Opened; focus: Coloring }) {
+function FocusCard(props: { opened: Opened; summary: Summary; focus: Coloring }) {
   return (
     <section class="map-card focus-card" aria-label={coloringLabel(props.focus)}>
       <h3>{coloringLabel(props.focus)}</h3>
-      <Figures rows={focusRows(props.opened, props.focus)} />
+      <Figures rows={focusRows(props.opened, props.summary, props.focus)} />
       <Switch>
         <Match when={props.focus === 'surface'}>
           <SurfaceLegend opened={props.opened} />

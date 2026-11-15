@@ -9,6 +9,7 @@ import { Figures } from '../ui/Figures';
 import { clockText, distanceText } from '../ui/format';
 import { RECORDING_POINT_SOURCE, recordingPointFeatures } from './recordingOverlay';
 import { recordingPointAt } from './recordingPick';
+import { tapReach } from './tapFilter';
 
 /** The series of a file that the measures stand for; the others are listed as the file names them. */
 const MEASURED = new Set(['time', 'ele', 'speed', 'lean_angle']);
@@ -72,8 +73,8 @@ export function RecordingPoint(props: { map: MapLibreMap }) {
     if (!opened() || frame) return;
     frame = requestAnimationFrame(() => {
       frame = 0;
-      const hit = recordingPointAt(props.map, e.point, MOUSE_REACH_PX);
-      setOnLine(hit && hit.id === opened()?.recording.id ? hit.index : undefined);
+      const id = opened()?.recording.id;
+      setOnLine(id === undefined ? undefined : recordingPointAt(props.map, e.point, tapReach(false), id)?.index);
     });
   };
   const leave = () => setOnLine(undefined);
@@ -107,5 +108,3 @@ export function RecordingPoint(props: { map: MapLibreMap }) {
   return null;
 }
 
-/** How far from the line, in CSS pixels, the mouse still counts as on it. */
-const MOUSE_REACH_PX = 8;

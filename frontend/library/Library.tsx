@@ -31,7 +31,7 @@ import { Pad } from '../ui/Pad';
 import { dragToFolder } from './dragToFolder';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow, stashItemName } from './StashFileCard';
-import { stashCopies, stashStops, type Picked } from './stashOut';
+import { stashCopies, stashPlaces, type Picked } from './stashOut';
 import { SaveState } from '../trip/SaveStatus';
 import { PlaceKindControls, PlaceKindMark, StandardPlaces } from './PlaceKinds';
 import { keepPlaces, keptText } from './dropImport';
@@ -127,7 +127,7 @@ function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void })
                 </span>
               </button>
               <Show when={collection()}>
-                <PlaceKindControls id={day().id} name={day().name} own />
+                <PlaceKindControls id={day().id} name={day().name} />
               </Show>
             </div>
           </li>
@@ -600,7 +600,7 @@ export function Library(props: {
         ? {
             stops: (stops, kinds) =>
               left(async () => {
-                const places = stops.map((stop, i) => ({ kind: kinds[i] || t('Places'), stop: { ...stop, id: newId(), pointId: null } }));
+                const places = stops.map((stop, i) => ({ kind: kinds[i] ?? t('Places'), stop: { ...stop, id: newId(), pointId: null } }));
                 const { kept, known } = await keepPlaces(id, places);
                 setImportNote({ text: keptText(kept, known, 'place', t('No places in there.')), errors: [] });
               }),
@@ -657,9 +657,9 @@ export function Library(props: {
   /** Copies the waypoints of files of the Stash, to be pasted as stops or as places. */
   const copyWaypoints = (of: readonly StashFile[]) =>
     takeOut(async () => {
-      const { stops, kinds } = await stashStops(of);
-      copyStops(stops, kinds);
-      return t('Copied {what}: paste from the menu of a day, or of a list of places or a kind in it.', { what: counted(stops.length, 'waypoint') });
+      const places = await stashPlaces(of);
+      copyStops(places.map((place) => place.stop), places.map((place) => place.kind));
+      return t('Copied {what}: paste from the menu of a day, or of a list of places or a kind in it.', { what: counted(places.length, 'waypoint') });
     });
   /** Keeps tracks of the Stash as rides, which the rides then list. */
   const keepRides = (picked: readonly Picked[]) =>

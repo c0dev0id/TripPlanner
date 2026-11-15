@@ -84,6 +84,8 @@ export interface Summary {
   altitudeRange?: [number, number];
   /** The furthest lean to either side, in the file's signs. */
   leanRange?: [number, number];
+  /** The steepest descent and climb, in per cent. */
+  slopeRange?: [number, number];
 }
 
 /** Height changes smaller than this are noise: climb and descent count from the last turn by more. */
@@ -155,6 +157,7 @@ export function summaryOf(m: Measures): Summary {
     descentM: descent,
     altitudeRange: m.altitude && extent(numbers(m.altitude)),
     leanRange: m.lean && extent(numbers(m.lean)),
+    slopeRange: m.slope && extent(numbers(m.slope)),
   };
 }
 

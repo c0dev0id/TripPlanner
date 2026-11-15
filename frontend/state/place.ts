@@ -21,7 +21,8 @@ export function readPlace(fragment: string): Place {
   const params = new URLSearchParams(fragment.replace(/^#/, ''));
   const id = (key: string) => (/^\d+$/.test(params.get(key) ?? '') ? Number(params.get(key)) : undefined);
   const [tripId, dayId, routeId] = [id('trip'), params.get('day') || undefined, params.get('route') || undefined];
-  return { folderId: id('folder') ?? null, ...((params.get('view') === 'recordings' || params.get('view') === 'settings') && { view: params.get('view') as 'recordings' | 'settings' }), ...(tripId !== undefined && { tripId, ...(dayId && { dayId, ...(routeId && { routeId }) }) }) };
+  const view = params.get('view');
+  return { folderId: id('folder') ?? null, ...((view === 'recordings' || view === 'settings') && { view }), ...(tripId !== undefined && { tripId, ...(dayId && { dayId, ...(routeId && { routeId }) }) }) };
 }
 
 /** The fragment with the place written into it, empty for the top with nothing else; whatever else it holds, such as the map's view, stays as it is. */

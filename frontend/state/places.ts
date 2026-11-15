@@ -1,6 +1,6 @@
 import { createEffect, createMemo, createRoot, createSignal } from 'solid-js';
 import { fetchPlaces } from '../api';
-import { POI_CATEGORIES, type Place, type PoiCategory } from '../poi/categories';
+import { isStoreKind, POI_CATEGORIES, type Place, type PoiCategory } from '../poi/categories';
 import { placesNear } from '../poi/near';
 import { tilesAlong, tilesOfView, type Tile } from '../poi/tiles';
 import { routeLine } from '../routing/legs';
@@ -40,7 +40,7 @@ const [modes, setModes] = createSignal<ReadonlyMap<string, PlaceMode>>(
 export const placeMode = (kind: string): PlaceMode => modes().get(kind) ?? 'none';
 
 /** Whether a kind of the user's own places is on the map: one not of the store's kinds. */
-export const anyOwnKindShown = (): boolean => [...modes().keys()].some((kind) => !POI_CATEGORIES.some((category) => category.id === kind));
+export const anyOwnKindShown = (): boolean => [...modes().keys()].some((kind) => !isStoreKind(kind));
 
 /** Gives the kind the next mode: all, along the routes, none, and all again. */
 export function cyclePlaceMode(kind: string): void {
@@ -52,8 +52,10 @@ export function cyclePlaceMode(kind: string): void {
   writePreference(PLACE_MODES, next.size > 0 ? [...next].map(([id, shown]) => `${id}:${shown}`).join(',') : undefined);
 }
 
-/** The lines of the selected day's routes, which places are shown along. */
-export const dayRouteLines = createRoot(() => createMemo(() => (selectedDay()?.routes ?? []).map(routeLine).filter((line) => line.length > 1)));
+/** The lines of the selected day's routes, which places are shown along; none while no kind is shown along them. */
+export const dayRouteLines = createRoot(() =>
+  createMemo(() => ([...modes().values()].includes('along') ? (selectedDay()?.routes ?? []).map(routeLine).filter((line) => line.length > 1) : [])),
+);
 
 /** What the map shows: its bounds (west, south, east, north) and zoom, as the map says them. */
 export const [mapView, setMapView] = createSignal<{ bounds: [number, number, number, number]; zoom: number }>();
@@ -110,10 +112,11 @@ createRoot(() => {
   createEffect(() => readMissing(alongTiles(), alongKinds()));
 });
 
+/** The places read of the kinds in the tiles. */
+const readIn = (tiles: readonly Tile[], kinds: readonly PoiCategory[]): Place[] => tiles.flatMap((tile) => kinds.flatMap((kind) => read().get(keyOf(tile, kind.id)) ?? []));
+
+/** The places of the store along the day's routes, apart from those in view, so that moving the map does not measure them again. */
+const alongPlaces = createRoot(() => createMemo(() => placesNear(readIn(alongTiles(), alongKinds()), dayRouteLines(), (place) => placeReachM(place.category.id))));
+
 /** The places of the store the map shows. */
-export const placesOnMap = createRoot(() =>
-  createMemo((): Place[] => {
-    const of = (tiles: readonly Tile[], kinds: readonly PoiCategory[]) => tiles.flatMap((tile) => kinds.flatMap((kind) => read().get(keyOf(tile, kind.id)) ?? []));
-    return [...of(viewTiles(), allKinds()), ...placesNear(of(alongTiles(), alongKinds()), dayRouteLines(), (place) => placeReachM(place.category.id))];
-  }),
-);
+export const placesOnMap = createRoot(() => createMemo((): Place[] => [...readIn(viewTiles(), allKinds()), ...alongPlaces()]));

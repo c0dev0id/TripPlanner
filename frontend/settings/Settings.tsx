@@ -1,5 +1,6 @@
 import { createSignal, For, Show } from 'solid-js';
-import { changePassword, errorMessage } from '../api';
+import { changePassword } from '../api';
+import { createRequest } from '../ui/request';
 import { chooseLanguage, LANGUAGES, languageChoice, type Language } from '../i18n/language';
 import { t } from '../i18n/t';
 import { DEFAULT_RIDES_OPACITY, DEFAULT_ROUTE_WIDTH, ROUTE_WIDTHS } from '../model/routeLook';
@@ -69,21 +70,21 @@ export function Settings() {
 
 /** Changes the account's password: the one in use, and the new one twice. */
 function PasswordForm() {
-  const [note, setNote] = createSignal<{ text: string; error: boolean }>();
-  const submit = async (e: SubmitEvent) => {
+  const request = createRequest();
+  const [changed, setChanged] = createSignal(false);
+  const submit = (e: SubmitEvent) => {
     e.preventDefault();
     const form = e.currentTarget as HTMLFormElement;
     const fields = new FormData(form);
-    try {
+    setChanged(false);
+    void request.run(async () => {
       await changePassword(String(fields.get('current')), String(fields.get('password')), String(fields.get('repeat')));
       form.reset();
-      setNote({ text: t('Password changed.'), error: false });
-    } catch (error) {
-      setNote({ text: errorMessage(error), error: true });
-    }
+      setChanged(true);
+    });
   };
   return (
-    <form class="password" onSubmit={(e) => void submit(e)}>
+    <form class="password" onSubmit={submit}>
       <h4>{t('Change password')}</h4>
       <label>
         {t('Current password')}
@@ -97,8 +98,13 @@ function PasswordForm() {
         {t('New password again')}
         <input type="password" name="repeat" autocomplete="new-password" required />
       </label>
-      <Show when={note()}>{(shown) => <p classList={{ error: shown().error, hint: !shown().error }}>{shown().text}</p>}</Show>
-      <button type="submit">{t('Change password')}</button>
+      <Show when={request.error()}>{(error) => <p class="error">{error()}</p>}</Show>
+      <Show when={changed()}>
+        <p class="hint">{t('Password changed.')}</p>
+      </Show>
+      <button type="submit" disabled={request.busy()}>
+        {t('Change password')}
+      </button>
     </form>
   );
 }

@@ -6,7 +6,7 @@ import type { FolderKind } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { createRequest } from '../ui/request';
 import { stashFiles } from './stash';
-import { openTripId, removeParts } from './trip';
+import { openTripId, removeParts, selectedDay } from './trip';
 
 /** The library as the server lists it, and where the user is in it. */
 
@@ -44,6 +44,9 @@ export function showTab(to: LibraryTab): void {
 
 /** Whether the open trip is on the map and in the pane: while the map follows its tab; one not listed yet counts as in it. */
 export const tripShown = (): boolean => (openTree() ?? mapTab()) === mapTab();
+
+/** The day shown in the pane and on the map: the selected one, while the open trip is shown. */
+export const shownDay = () => (tripShown() ? selectedDay() : undefined);
 
 /** The folder asked for in each tree, none for its top: the one the tree marks, and that takes what is pasted with the keys or from the line that offers it. */
 const [markedFolders, setMarkedFolders] = createSignal<Partial<Record<TreeTab, number>>>({});

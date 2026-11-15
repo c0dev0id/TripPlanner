@@ -24,6 +24,9 @@ const LABELS: Record<PoiCategoryId, string> = {
   parking: t('Parking'),
 };
 
+/** Whether a kind of place is one of the store's, by its id; any other is a section of one of the user's own lists. */
+export const isStoreKind = (id: string): id is PoiCategoryId => POI_CATEGORIES.some((category) => category.id === id);
+
 export const POI_CATEGORIES: readonly PoiCategory[] = list.kinds.map((kind) => ({ id: kind.id as PoiCategoryId, label: LABELS[kind.id as PoiCategoryId], color: kind.color }));
 
 /** A place of one of the kinds: the OpenStreetMap object ("node/123"), where it is, and the tags its details are made of. */
