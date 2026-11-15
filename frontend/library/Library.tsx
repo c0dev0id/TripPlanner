@@ -7,7 +7,7 @@ import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } fr
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip, copyRoutes, copyStops } from '../state/clipboard';
 import { fetchingTrip, heldOf, importNote, isOpening, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, opening, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
-import { countsText, folderPath, heldInAll, heldText, kindAround, moveTargets } from './folders';
+import { countsText, folderPath, heldInAll, heldText, kindAround, moveTargets } from '../model/folders';
 import { flushSave } from '../state/autosave';
 import { isShownItem, isShownWhole, relistStash, showInStash, shownInStash, stashFiles, stashProblem } from '../state/stash';
 import { ridesChanged } from '../state/rides';

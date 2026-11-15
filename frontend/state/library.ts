@@ -1,7 +1,7 @@
 import { createMemo, createResource, createRoot, createSelector, createSignal } from 'solid-js';
 import { t } from '../i18n/t';
 import { changeTrip, listFolders, listTrips, fetchOutlines, type OutlineDay, type Progress } from '../api';
-import { heldCounts, kindAround } from '../library/folders';
+import { heldCounts, kindAround } from '../model/folders';
 import type { FolderKind } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { createRequest } from '../ui/request';

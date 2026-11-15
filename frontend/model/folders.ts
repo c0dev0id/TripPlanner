@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import type { Folder, FolderKind } from '../model/trip';
+import type { Folder, FolderKind } from './trip';
 import { counted } from '../ui/format';
 
 /** The names of the folders from the top of the library down to the folder `id`; none for the top. */

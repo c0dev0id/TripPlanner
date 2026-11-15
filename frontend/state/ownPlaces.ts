@@ -3,7 +3,7 @@ import { fetchOwnPlaces } from '../api';
 import { newId } from '../model/trip';
 import { type OwnPlace, ownKindsOf } from '../poi/ownPlaces';
 import { newStop } from '../routing/dayEdit';
-import { kindAround } from '../library/folders';
+import { kindAround } from '../model/folders';
 import { placesNear } from '../poi/near';
 import { libraryFolders, libraryTab, libraryTrips, tripShown } from './library';
 import { anyOwnKindShown, alongLines, placeMode, placesHidden } from './places';

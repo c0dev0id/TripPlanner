@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { TripSummary } from '../model/trip';
-import type { Folder } from '../model/trip';
+import type { TripSummary } from './trip';
+import type { Folder } from './trip';
 import { countsText, folderPath, heldCounts, heldInAll, kindAround, moveTargets } from './folders';
 
 const folders: Folder[] = [

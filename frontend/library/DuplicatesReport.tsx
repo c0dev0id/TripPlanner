@@ -6,7 +6,7 @@ import { copyRoutes } from '../state/clipboard';
 import { comparedColor, DUPLICATES, duplicateGroups, duplicateKey, duplicatesMadeAt, duplicatesStartedAt, forgetDuplicates, refreshDuplicates } from '../state/duplicates';
 import { deleteRoutes, fetchingTrip, folderOfTrip, libraryFolders, libraryTrips, outlineOf } from '../state/library';
 import { setShowingDuplicates } from '../state/pane';
-import { folderPath } from './folders';
+import { folderPath } from '../model/folders';
 import { dayLabel, routeOrTrack } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
 import { IconButton } from '../ui/IconButton';

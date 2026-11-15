@@ -7,7 +7,7 @@ import { pickFiles } from '../ui/pickFile';
 import { importDropped, importIntoTrip, importRides } from './dropImport';
 import { droppedSources, onFileDrop, type Dropped } from './fileDrop';
 import { sourceOf, type ImportSource } from './folderImport';
-import { kindAround } from './folders';
+import { kindAround } from '../model/folders';
 import { ROUTE_FILE_TYPES } from '../gpx/import';
 import { zipEntries } from '../gpx/zip';
 
