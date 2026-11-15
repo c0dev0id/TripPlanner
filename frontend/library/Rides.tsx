@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSelector, createSignal, For, Match, onCleanup, Show, Switch } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, Match, onCleanup, Show, Switch } from 'solid-js';
 import { t } from '../i18n/t';
 import { declineRideDay, deleteRide, errorMessage, mergeRides, renameRide, rideJoints, suggestRideDays } from '../api';
 import { lineLength } from '../geo/measure';
@@ -27,7 +27,7 @@ import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { Pad } from '../ui/Pad';
 import { pickFiles } from '../ui/pickFile';
-import { clickRow, menuRows, NOTHING_SELECTED, selectIn, selectionOf, toggleRow } from '../ui/selection';
+import { menuRows, NOTHING_SELECTED, rowSelect, selectIn, selectionOf, type RowSelect } from '../ui/selection';
 import { autoname } from './autoname';
 import { sourceOf } from './folderImport';
 import { addRides } from './importActions';
@@ -75,7 +75,6 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
   const fold = (year: string) => setUnfolded(new Set(shown().has(year) ? [...shown()].filter((y) => y !== year) : [...shown(), year]));
   /** The rides in view, top to bottom, by id: what a Shift run goes through. */
   const order = createMemo(() => [...years().flatMap((year) => (shown().has(year.year) ? year.months.flatMap((month) => month.days.flatMap((day) => day.rides)) : [])), ...untimed()].map((ride) => String(ride.id)));
-  const isSelected = createSelector(() => selectionOf(RIDES), (id: string, ids) => ids.has(id));
   const select = (rides: readonly Ride[]) => selectIn(RIDES, new Set(rides.map((ride) => String(ride.id))));
   const [renamed, setRenamed] = createSignal<Ride>();
   // A ride shown from a day it is on has its year unfolded.
@@ -181,7 +180,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       if (shownSuggestion() === suggestion) compareWithDay([]);
     });
   const card = (heading: string, rides: Ride[], distanceM: number) => (
-    <RidingDayCard heading={heading} rides={rides} distanceM={distanceM} where={whereOf} selected={isSelected} onSelectDay={() => select(rides)} onClick={(ride, e) => clickRow(RIDES, order(), String(ride.id), e) || toggleRecording(ride)} onToggle={(ride) => toggleRow(RIDES, String(ride.id))} items={items} />
+    <RidingDayCard heading={heading} rides={rides} distanceM={distanceM} where={whereOf} select={(ride) => rowSelect(RIDES, String(ride.id), order)} onSelectDay={() => select(rides)} onOpen={toggleRecording} items={items} />
   );
   const addPicked = async () => {
     const files = await pickFiles({ accept: GPX_FILE_TYPES });
@@ -323,10 +322,9 @@ function RidingDayCard(props: {
   rides: Ride[];
   distanceM: number;
   where: (ride: Ride) => string;
-  selected: (id: string) => boolean;
+  select: (ride: Ride) => RowSelect;
   onSelectDay: () => void;
-  onClick: (ride: Ride, e: MouseEvent) => void;
-  onToggle: (ride: Ride) => void;
+  onOpen: (ride: Ride) => void;
   items: (ride: Ride) => MenuItem[];
 }) {
   /** Brings the ride into view where it is the one to be shown, once. */
@@ -343,30 +341,33 @@ function RidingDayCard(props: {
       </button>
       <ul>
         <For each={props.rides}>
-          {(ride) => (
-            <li
-              classList={{ selected: props.selected(String(ride.id)), opened: activeRecordingId() === ride.id }}
-              ref={(el) => {
-                cardMenu(el, () => props.items(ride));
-                reveal(el, ride);
-              }}
-            >
-              <div class="row">
-                <Pad label={t('Select {name}', { name: ride.name })} selected={props.selected(String(ride.id))} onToggle={() => props.onToggle(ride)} />
-                <button class="text grow" onClick={(e) => props.onClick(ride, e)}>
-                  <Show when={drawnColor(ride)}>{(color) => <span class="swatch" style={{ background: color() }} />}</Show>
-                  <span class="lines">
-                    <span class="name">{[ride.startedAt !== null && timeOfDayText(ride.startedAt), ride.name].filter(Boolean).join(' · ')}</span>
-                    <span class="muted detail">
-                      {distanceText(ride.distanceM)} · {props.where(ride)}
+          {(ride) => {
+            const select = props.select(ride);
+            return (
+              <li
+                classList={{ selected: select.selected(), opened: activeRecordingId() === ride.id }}
+                ref={(el) => {
+                  cardMenu(el, () => props.items(ride));
+                  reveal(el, ride);
+                }}
+              >
+                <div class="row">
+                  <Pad label={t('Select {name}', { name: ride.name })} selected={select.selected()} onToggle={select.onToggle} />
+                  <button class="text grow" onClick={(e) => select.onClick(e) || props.onOpen(ride)}>
+                    <Show when={drawnColor(ride)}>{(color) => <span class="swatch" style={{ background: color() }} />}</Show>
+                    <span class="lines">
+                      <span class="name">{[ride.startedAt !== null && timeOfDayText(ride.startedAt), ride.name].filter(Boolean).join(' · ')}</span>
+                      <span class="muted detail">
+                        {distanceText(ride.distanceM)} · {props.where(ride)}
+                      </span>
                     </span>
-                  </span>
-                </button>
-                <Pin of={ride.name} pinned={isRidePinned(ride.id)} onToggle={(pinned) => pinRides([ride.id], pinned)} />
-                <MenuButton of={ride.name} items={() => props.items(ride)} />
-              </div>
-            </li>
-          )}
+                  </button>
+                  <Pin of={ride.name} pinned={isRidePinned(ride.id)} onToggle={(pinned) => pinRides([ride.id], pinned)} />
+                  <MenuButton of={ride.name} items={() => props.items(ride)} />
+                </div>
+              </li>
+            );
+          }}
         </For>
       </ul>
     </li>

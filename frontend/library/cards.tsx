@@ -12,22 +12,16 @@ import { CollectionIcon, FolderIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { Pad } from '../ui/Pad';
+import type { RowSelect } from '../ui/selection';
 import { PlaceKindControls, PlaceKindMark } from './PlaceKinds';
 import type { FoundRoute } from './search';
 import { TripShape } from './TripShape';
 
-/** How a card takes part in the selection: whether it is selected or cut, what its pad does, and what a click does to the selection. */
-export interface CardSelect {
-  selected: () => boolean;
+/** How a card takes part in the selection: as a row does, and besides whether it is cut and what a press on its pad drags. */
+export interface CardSelect extends RowSelect {
   cut: () => boolean;
-  onToggle: () => void;
-  /** Whether the click selected, and so opens nothing. */
-  onClick: (e: MouseEvent) => boolean;
   onDrag: (e: PointerEvent, dragged: () => void) => void;
 }
-
-/** How a row that stays where it is is selected, a route the search found or a route or track of a file: as a card is, but it is neither cut nor dragged. */
-export type RowSelect = Pick<CardSelect, 'selected' | 'onToggle' | 'onClick'>;
 
 /** How a card unfolds in the tree, whether it holds the tree's one mark, and of a trip whether it is the open one. */
 export interface CardFold {

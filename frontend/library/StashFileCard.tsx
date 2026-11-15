@@ -8,7 +8,8 @@ import { FileIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { Pad } from '../ui/Pad';
-import type { CardSelect, RowSelect } from './cards';
+import type { RowSelect } from '../ui/selection';
+import type { CardSelect } from './cards';
 import { TripShape } from './TripShape';
 
 /** What a route or a track of a file is called: its name, or what it is where it has none. */

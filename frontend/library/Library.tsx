@@ -1,5 +1,5 @@
 import { plural, t } from '../i18n/t';
-import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
 import { changeTrip, keepStashRides, removeStashItems, renameStashItem, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, renameStashFile, stashFileUrl, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import type { StashFile, StashItem } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
@@ -23,10 +23,10 @@ import { FoldIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
-import { clickRow, menuRows, NOTHING_SELECTED, selectIn, selectionOf, toggleRow, type Selection } from '../ui/selection';
+import { menuRows, NOTHING_SELECTED, rowSelect, selectIn, selectionOf, type RowSelect, type Selection } from '../ui/selection';
 import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
-import { FolderCard, RouteCard, TripCard, TripDays, type CardSelect, type RowSelect } from './cards';
+import { FolderCard, RouteCard, TripCard, TripDays, type CardSelect } from './cards';
 import { dragToFolder } from './dragToFolder';
 import { countText, fileItemsOf, filesOf, folderOf, foldersOf, itemKey, itemsOf, keyOf, nameOf, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
 import { libraryImports } from './importActions';
@@ -236,7 +236,6 @@ export function Library(props: {
   for (const tree of TREE_TABS) createEffect(on(() => markedFolderOf(tree), () => selectIn(ownerOf(tree), NOTHING_SELECTED), { defer: true }));
   // What a search lists is not what was listed before: nothing stays selected out of view.
   createEffect(on(query, () => TREE_TABS.forEach((tree) => selectIn(ownerOf(tree), NOTHING_SELECTED)), { defer: true }));
-  const isSelected = createSelector(selected, (key: string, keys) => keys.has(key));
   /** A trip's days with their routes: the open trip's as it is edited, another's with those that have a name, as its outline lists them. */
   const routeDaysOf = (trip: TripSummary): RouteDays => (trip.id === openTripId() ? openTrip()!.days : (outlineOf(trip.id) ?? []).map((day) => ({ id: day.id, name: day.name, routes: day.namedRoutes })));
   /** What the search finds in the tree shown; nothing while the rides are. */
@@ -259,16 +258,11 @@ export function Library(props: {
   ];
   /** What a card's menu, or a press on its pad, acts on: the selection where it holds the card, else the card alone. */
   const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.has(keyOf(item)) ? itemsOf(all(), selection) : [item]);
-  /** How a row is selected by its key, among the rows of the tree or, with `order`, among those the search lists. */
-  const rowSelect = (key: string, order: () => string[] = () => shownKeys(rootOf(shownTree()!))): RowSelect => ({
-    selected: () => isSelected(key),
-    // A row is clicked in the tree shown, which is its own.
-    onToggle: () => toggleRow(ownerOf(shownTree()!), key),
-    onClick: (e: MouseEvent) => clickRow(ownerOf(shownTree()!), order(), key, e),
-  });
+  /** How a row of a tree is selected by its key, among the rows of the tree or, with `order`, among those the search lists. */
+  const selectRow = (tree: TreeTab, key: string, order: () => string[] = () => shownKeys(rootOf(tree))): RowSelect => rowSelect(ownerOf(tree), key, order);
   /** How a folder's, a trip's or a file's card is selected, cut and dragged into a folder. */
-  const select = (item: Item, order?: () => string[]): CardSelect => ({
-    ...rowSelect(keyOf(item), order),
+  const select = (tree: TreeTab, item: Item, order?: () => string[]): CardSelect => ({
+    ...selectRow(tree, keyOf(item), order),
     cut: () => isCut(item),
     onDrag: (e: PointerEvent, dragged: () => void) => {
       const moved = chosenWith(item);
@@ -685,7 +679,7 @@ export function Library(props: {
   };
 
   /** The folders and trips of a folder, each unfolding to what it holds: folders to theirs, a trip to its days. */
-  const Branch = (branch: { parent: number | null }): JSX.Element => (
+  const Branch = (branch: { tree: TreeTab; parent: number | null }): JSX.Element => (
     <>
       <ForById each={childFolders(branch.parent)}>
         {(f) => (
@@ -694,10 +688,10 @@ export function Library(props: {
             note={heldText(heldOf(f().id), heldNoun(f().id))}
             onOpen={() => clickFolder(f())}
             items={() => itemMenu({ folder: f() })}
-            select={select({ folder: f() })}
+            select={select(branch.tree, { folder: f() })}
             fold={{ unfolded: () => isUnfolded({ folder: f() }), current: () => isMarkedFolder(f().id) }}
           >
-            <Branch parent={f().id} />
+            <Branch tree={branch.tree} parent={f().id} />
           </FolderCard>
         )}
       </ForById>
@@ -707,7 +701,7 @@ export function Library(props: {
             trip={trip()}
             onOpen={clickTrip}
             items={() => itemMenu({ trip: trip() })}
-            select={select({ trip: trip() })}
+            select={select(branch.tree, { trip: trip() })}
             fold={{ unfolded: () => isUnfolded({ trip: trip() }), current: () => isMarkedTrip(trip()), open: () => openTripId() === trip().id }}
           >
             <Show when={openTripId() === trip().id} fallback={<TripDays trip={trip()} onOpen={(dayId) => props.onOpen(trip(), dayId)} />}>
@@ -718,11 +712,11 @@ export function Library(props: {
       </ForById>
       <ForById each={childFiles(branch.parent)}>
         {(file) => (
-          <StashFileCard file={file()} onOpen={clickFile} items={() => itemMenu({ file: file() })} select={select({ file: file() })} unfolded={isUnfolded({ file: file() })}>
+          <StashFileCard file={file()} onOpen={clickFile} items={() => itemMenu({ file: file() })} select={select(branch.tree, { file: file() })} unfolded={isUnfolded({ file: file() })}>
             <For each={file().items}>
               {(item) => {
                 const at = { file: file(), item };
-                return <StashItemRow file={at.file} item={item} onShow={(shown) => showItem(at.file, shown)} items={() => stashItemMenu(at)} select={rowSelect(itemKey(at))} />;
+                return <StashItemRow file={at.file} item={item} onShow={(shown) => showItem(at.file, shown)} items={() => stashItemMenu(at)} select={selectRow(branch.tree, itemKey(at))} />;
               }}
             </For>
           </StashFileCard>
@@ -759,7 +753,7 @@ export function Library(props: {
         </div>
         <Show when={tree.tab === 'stash' && stashProblem()}>{(problem) => <p class="error">{errorMessage(problem())}</p>}</Show>
         <ul class="tree">
-          <Branch parent={root()} />
+          <Branch tree={tree.tab} parent={root()} />
         </ul>
         <Show when={held().folders + held().trips === 0}>
           <p class="muted">{EMPTY[tree.tab]}</p>
@@ -773,7 +767,7 @@ export function Library(props: {
    * that are selected and have their menus as the tree's have, a folder's and a trip's
    * with where it is.
    */
-  const Results = (): JSX.Element => {
+  const Results = (results: { tree: TreeTab }): JSX.Element => {
     const total = () => foundCount(found());
     return (
       <Show when={total() > 0} fallback={<p class="muted">{t('Nothing found.')}</p>}>
@@ -785,20 +779,20 @@ export function Library(props: {
                 note={[pathOf(f.parentId), heldText(heldOf(f.id), heldNoun(f.id))].filter(Boolean).join(' · ')}
                 onOpen={props.onOpenFolder}
                 items={() => itemMenu({ folder: f })}
-                select={select({ folder: f }, listedKeys)}
+                select={select(results.tree, { folder: f }, listedKeys)}
               />
             )}
           </For>
           <For each={listed().trips}>
-            {(trip) => <TripCard trip={trip} onOpen={props.onOpen} items={() => itemMenu({ trip })} where={pathOf(trip.folderId) || t('No folder')} select={select({ trip }, listedKeys)} />}
+            {(trip) => <TripCard trip={trip} onOpen={props.onOpen} items={() => itemMenu({ trip })} where={pathOf(trip.folderId) || t('No folder')} select={select(results.tree, { trip }, listedKeys)} />}
           </For>
           <For each={listed().files}>
             {(file) => (
-              <StashFileCard file={file} where={pathOf(file.folderId)} onOpen={revealFile} items={() => itemMenu({ file })} select={select({ file }, listedKeys)} />
+              <StashFileCard file={file} where={pathOf(file.folderId)} onOpen={revealFile} items={() => itemMenu({ file })} select={select(results.tree, { file }, listedKeys)} />
             )}
           </For>
-          <For each={listed().routes}>{(route) => <RouteCard found={route} onOpen={props.onOpenRoute} items={() => routeMenu(route)} select={rowSelect(routeKey(route), listedKeys)} />}</For>
-          <For each={listed().items}>{(at) => <StashItemRow file={at.file} item={at.item} where={at.file.name} onShow={(item) => revealFile(at.file, item)} items={() => stashItemMenu(at)} select={rowSelect(itemKey(at), listedKeys)} />}</For>
+          <For each={listed().routes}>{(route) => <RouteCard found={route} onOpen={props.onOpenRoute} items={() => routeMenu(route)} select={selectRow(results.tree, routeKey(route), listedKeys)} />}</For>
+          <For each={listed().items}>{(at) => <StashItemRow file={at.file} item={at.item} where={at.file.name} onShow={(item) => revealFile(at.file, item)} items={() => stashItemMenu(at)} select={selectRow(results.tree, itemKey(at), listedKeys)} />}</For>
         </ul>
         <Show when={total() > SEARCH_LIMIT}>
           <p class="muted">{t('{n} more; narrow the search.', { n: total() - SEARCH_LIMIT })}</p>
@@ -822,7 +816,8 @@ export function Library(props: {
         <Match when={libraryTrips.error ?? libraryFolders.error ?? stashFiles.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
         <Match when={libraryTrips() && libraryFolders()}>
           <Show
-            when={searchedFor()}
+            when={searchedFor() ? shownTree() : undefined}
+            keyed
             fallback={
               <>
                 <Show when={libraryClip()}>
@@ -836,7 +831,7 @@ export function Library(props: {
               </>
             }
           >
-            <Results />
+            {(tree) => <Results tree={tree} />}
           </Show>
         </Match>
       </Switch>

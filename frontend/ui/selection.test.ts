@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { clickRow, clickSelect, menuRows, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, selectionOwner, toggleRow, type Selection } from './selection';
+import { clickRow, clickSelect, isRowSelected, menuRows, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, rowSelect, selectionOwner, toggleRow, type Selection } from './selection';
 
 const order = ['a', 'b', 'c', 'd'];
 const plain = { metaKey: false, ctrlKey: false, shiftKey: false };
@@ -116,5 +116,24 @@ describe('menuRows', () => {
     selectIn('other', new Set(['x', 'y']));
     expect(menuRows('list', 'a')).toEqual(['a']);
     expect(selectionOwner()).toBeUndefined();
+  });
+});
+
+describe('rowSelect', () => {
+  beforeEach(() => selectIn(selectionOwner() ?? 'a', NOTHING_SELECTED));
+
+  it('selects its row with the pad and with a click that selects, in its own list', () => {
+    const row = rowSelect('list', 'b', () => order);
+    row.onToggle();
+    expect([row.selected(), isRowSelected('other', 'b')]).toEqual([true, false]);
+    expect(rowSelect('list', 'd', () => order).onClick(shift as MouseEvent)).toBe(true);
+    expect([...selectionOf('list')]).toEqual(['b', 'c', 'd']);
+  });
+
+  it('leaves a plain click to open its row', () => {
+    const row = rowSelect('list', 'b', () => order);
+    row.onToggle();
+    expect(row.onClick(plain as MouseEvent)).toBe(false);
+    expect(row.selected()).toBe(false);
   });
 });

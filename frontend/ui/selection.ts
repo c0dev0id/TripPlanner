@@ -1,4 +1,4 @@
-import { createSignal } from 'solid-js';
+import { createRoot, createSelector, createSignal } from 'solid-js';
 
 /** Rows of a list selected by key, in the order they were selected; a run from the row it was started at. */
 export type Selection<K> = ReadonlySet<K>;
@@ -45,6 +45,17 @@ export const selectionOwner = (): string | undefined => held()?.owner;
 /** The rows selected in the list `owner`; none while another list holds the selection. */
 export const selectionOf = (owner: string): Selection<string> => (held()?.owner === owner ? held()!.rows : NOTHING_SELECTED);
 
+/** Whether a row, named by its list and its key on two lines, is selected: told to that row alone when the selection changes. */
+const isHeld = createRoot(() =>
+  createSelector(held, (row: string, selection) => {
+    const at = row.indexOf('\n');
+    return selection?.owner === row.slice(0, at) && selection.rows.has(row.slice(at + 1));
+  }),
+);
+
+/** Whether the row `key` is selected in the list `owner`. */
+export const isRowSelected = (owner: string, key: string): boolean => isHeld(`${owner}\n${key}`);
+
 /** Makes the rows the selection, held by the list `owner`; with no rows the list lets go of what it held. */
 export function selectIn(owner: string, rows: Selection<string>): void {
   if (rows.size > 0) setHeld({ owner, rows });
@@ -90,3 +101,18 @@ export function menuRows(owner: string, key: string): string[] {
   setHeld(undefined);
   return [key];
 }
+
+/** How a row takes part in the selection of its list: whether it is selected, what its pad does, and what a click does. */
+export interface RowSelect {
+  selected: () => boolean;
+  onToggle: () => void;
+  /** Whether the click selected, and so opens nothing. */
+  onClick: (e: MouseEvent) => boolean;
+}
+
+/** How the row `key` of the list `owner` is selected, among the rows in view there, top to bottom, which `order` gives. */
+export const rowSelect = (owner: string, key: string, order: () => readonly string[]): RowSelect => ({
+  selected: () => isRowSelected(owner, key),
+  onToggle: () => toggleRow(owner, key),
+  onClick: (e) => clickRow(owner, order(), key, e),
+});
