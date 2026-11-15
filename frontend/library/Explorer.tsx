@@ -7,9 +7,10 @@ import { CollectionPanel } from '../trip/CollectionPanel';
 import { TripPanel } from '../trip/TripPanel';
 import { GearIcon } from '../ui/icons';
 import { Settings } from '../settings/Settings';
-import { Library, type FoundRoute } from './Library';
+import { Library } from './Library';
 import { LibraryActions } from './LibraryActions';
 import { Rides } from './Rides';
+import type { FoundRoute } from './search';
 
 /** What the search says it looks through, by the tab shown. */
 const SEARCHES: Record<Exclude<LibraryTab, 'settings'>, string> = {

@@ -1,6 +1,6 @@
 import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
-import { changeTrip, keepStashRides, removeStashItems, renameStashItem, type NamedRoute, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, renameStashFile, stashFileUrl, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
+import { changeTrip, keepStashRides, removeStashItems, renameStashItem, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, renameStashFile, stashFileUrl, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import type { StashFile, StashItem } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
@@ -36,6 +36,7 @@ import { stashCopies, stashPlaces, type Picked } from './stashOut';
 import { SaveState } from '../trip/SaveStatus';
 import { PlaceKindControls, PlaceKindMark, StandardPlaces } from './PlaceKinds';
 import { keepPlaces, keptText } from './dropImport';
+import { firstFound, foundCount, foundKeys, routeKey, searchLibrary, type FoundRoute, type RouteDays } from './search';
 import { TripShape } from './TripShape';
 
 /** The top of the trips, as a place to paste into. */
@@ -50,15 +51,6 @@ const EMPTY: Record<TreeTab, string> = {
 
 /** The list that holds the selection of a tree's folders and trips. */
 const ownerOf = (tree: TreeTab): string => `library:${tree}`;
-
-/** A route or a track the search found by its name: its trip, its day and what the day is called there. */
-export interface FoundRoute {
-  within: TripSummary;
-  dayId: string;
-  day: string;
-  route: NamedRoute;
-}
-const routeKey = (found: FoundRoute): string => `route:${found.route.id}`;
 
 /** How a card takes part in the selection: whether it is selected or cut, what its pad does, and what a click does to the selection. */
 export interface CardSelect {
@@ -309,40 +301,16 @@ export function Library(props: {
   createEffect(on(query, () => TREE_TABS.forEach((tree) => selectIn(ownerOf(tree), NOTHING_SELECTED)), { defer: true }));
   const isSelected = createSelector(selected, (key: string, keys) => keys.has(key));
   /** A trip's days with their routes: the open trip's as it is edited, another's with those that have a name, as its outline lists them. */
-  const routeDaysOf = (trip: TripSummary): readonly { id: string; name: string; routes: readonly NamedRoute[] }[] =>
-    trip.id === openTripId() ? openTrip()!.days : (outlineOf(trip.id) ?? []).map((day) => ({ id: day.id, name: day.name, routes: day.namedRoutes }));
-  /** What the search finds in the tree shown: its folders, trips and files by name, whatever folder they are in, and the routes and tracks of its trips and files by theirs. */
+  const routeDaysOf = (trip: TripSummary): RouteDays => (trip.id === openTripId() ? openTrip()!.days : (outlineOf(trip.id) ?? []).map((day) => ({ id: day.id, name: day.name, routes: day.namedRoutes })));
+  /** What the search finds in the tree shown; nothing while the rides are. */
   const found = createMemo(() => {
-    const text = searchedFor();
     const tree = shownTree();
-    if (!text || !tree) return { folders: [], trips: [], files: [], routes: [], items: [] };
-    const isFound = (named: { name: string }) => named.name.toLowerCase().includes(text);
-    const inTree = trips().filter((trip) => treeOf(trip.folderId) === tree);
-    const inStash = tree === 'stash' ? files() : [];
-    return {
-      files: inStash.filter(isFound),
-      items: inStash.flatMap((file) => file.items.filter(isFound).map((item) => ({ file, item }))),
-      folders: folders().filter((f) => f.kind === 'folder' && treeOf(f.id) === tree && isFound(f)),
-      trips: inTree.filter(isFound),
-      routes: inTree.flatMap((trip) =>
-        routeDaysOf(trip).flatMap((day, index) => day.routes.filter(isFound).map((route): FoundRoute => ({ within: trip, dayId: day.id, day: dayHeading(trip.kind, index, day.name), route }))),
-      ),
-    };
+    return searchLibrary(all(), tree ? searchedFor() : '', (folderId) => treeOf(folderId) === tree, routeDaysOf);
   });
-  /** Of what the search found, what is listed: folders first, then trips and files, then their routes and tracks, up to the limit. */
-  const listed = createMemo(() => {
-    let left = SEARCH_LIMIT;
-    const upTo = <Row,>(rows: Row[]): Row[] => rows.slice(0, left).map((row) => (left--, row));
-    return { folders: upTo(found().folders), trips: upTo(found().trips), files: upTo(found().files), routes: upTo(found().routes), items: upTo(found().items) };
-  });
+  /** Of what the search found, what is listed. */
+  const listed = createMemo(() => firstFound(found(), SEARCH_LIMIT));
   /** The rows the search lists that can be selected, top to bottom, by key. */
-  const listedKeys = (): string[] => [
-    ...listed().folders.map((folder) => keyOf({ folder })),
-    ...listed().trips.map((trip) => keyOf({ trip })),
-    ...listed().files.map((file) => keyOf({ file })),
-    ...listed().routes.map(routeKey),
-    ...listed().items.map(itemKey),
-  ];
+  const listedKeys = () => foundKeys(listed());
   const itemsIn = (keys: Selection<string>): FileItem[] => fileItemsOf(files(), keys);
   /** The routes among the rows selected, as the search found them. */
   const routesIn = (keys: Selection<string>): FoundRoute[] => found().routes.filter((route) => keys.has(routeKey(route)));
@@ -869,7 +837,7 @@ export function Library(props: {
    * with where it is.
    */
   const Results = (): JSX.Element => {
-    const total = () => found().folders.length + found().trips.length + found().files.length + found().routes.length + found().items.length;
+    const total = () => foundCount(found());
     return (
       <Show when={total() > 0} fallback={<p class="muted">{t('Nothing found.')}</p>}>
         <ul class="results">
