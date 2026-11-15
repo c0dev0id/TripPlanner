@@ -498,7 +498,10 @@
 - Comparing a recording: the recording opened is compared with what is pinned beside
   it on the map where that is one route or track of its day or one other recording;
   with two or more pinned there is no comparison, and the focus offers the measures
-  alone. Something new to compare with turns the focus to the distance from it. Against
+  alone. Something new to compare with turns the focus to the distance from it where no
+  focus is chosen. A focus chosen stays for the page, whatever route, track, recording
+  or trip comes next; a recording that does not allow it shows none until one that does
+  is opened. Against
   a route or a track the card says what it is against, how far it went off and how far
   at most, and follows the route as it is edited. What it is compared with is named once,
   among the recording's facts; the focus cards are called Compare distance, Compare speed

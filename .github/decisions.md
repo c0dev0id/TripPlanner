@@ -1007,7 +1007,9 @@ entries at the end of their section.
   or recording pinned beside it the one it is compared with. With more than one pinned
   the comparison stops, since a third line leaves open which two are meant and three
   at once would be too much to read. Comparing is what pinning one thing beside an
-  opened recording is for, so the focus turns to the distance from it at once.
+  opened recording is for, so the focus turns to the distance from it at once, but only
+  where no focus is chosen: one chosen stays for the page, so that going through rides
+  in one mode does not throw the mode away at each.
 - **A recording's figures are buttons over the map, and cards only on demand.** One card
   held everything at once, the summary, the file's facts, the comparison and the focus,
   and repeated much of it in the chart and the point's popup. Now round buttons stand

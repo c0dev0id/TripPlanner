@@ -60,7 +60,7 @@ export function pickPoint(id: number, index: number): void {
 /** Whether the opened recording's facts are shown over the map: its figures as a whole and what its file is like. */
 export const [infoShown, setInfoShown] = createSignal(false);
 
-/** What the opened recording is focused on, which colours its line and picks its chart; nothing for its own colour and no chart. */
+/** What the opened recording is focused on, which colours its line and picks its chart; nothing for its own colour and no chart. It stays chosen for the page, whatever recording is opened; one that does not allow it shows none meanwhile. */
 const [coloring, setColoring] = createSignal<Coloring>();
 export { setColoring };
 
@@ -195,8 +195,8 @@ const view = createRoot(() => {
   createEffect(on([openTripId, selectedDayId], () => openRecording(undefined)));
   // One thing is taken up at a time: a route taken up closes the recording opened.
   createEffect(on(activeRouteId, (id) => id !== undefined && openRecording(undefined), { defer: true }));
-  // Something new pinned beside the recording is compared with at once: the focus goes to the distance from it.
-  createEffect(on(comparedKey, (key) => key !== undefined && setColoring('offset'), { defer: true }));
+  // Something new pinned beside the recording is compared with at once where no focus is chosen: the focus goes to the distance from it. A focus chosen stays, from recording to recording, until another is chosen.
+  createEffect(on(comparedKey, (key) => key !== undefined && coloring() === undefined && setColoring('offset'), { defer: true }));
   // The surfaces are matched once a line is coloured by them.
   createEffect(() => {
     const o = opened();
