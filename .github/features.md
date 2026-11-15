@@ -498,8 +498,9 @@
   with two or more pinned there is no comparison, and the focus offers the measures
   alone. Something new to compare with turns the focus to the distance from it. Against
   a route or a track the card says what it is against, how far it went off and how far
-  at most, and follows the route as it is edited; what it is against is named once, in
-  the focus card's title. Against another recording it also
+  at most, and follows the route as it is edited. What it is compared with is named once,
+  among the recording's facts; the focus cards are called Compare distance, Compare speed
+  and Compare lean. Against another recording it also
   says the time ahead or behind at the end and the speed difference on average, at the
   same places along the way. The focus offers the distance from the other, and speed
   and lean against another recording, each charted along the way. Focused on a

@@ -62,18 +62,17 @@ export function RecordingCards() {
   );
 }
 
-/** What a focus is called: a difference with what it is against. */
+/** What a focus is called, short enough for a card's title: what the recording is compared with is said among its facts. */
 function coloringLabel(c: Coloring): string {
-  const against = comparison()?.name ?? '';
   switch (c) {
     case 'surface':
       return t('Surface');
     case 'offset':
-      return t('Distance from {against}', { against });
+      return t('Compare distance');
     case 'speedDifference':
-      return t('Speed against {against}', { against });
+      return t('Compare speed');
     case 'leanDifference':
-      return t('Lean against {against}', { against });
+      return t('Compare lean');
     default:
       return FIGURES[c].label;
   }
@@ -146,6 +145,7 @@ function InfoCard(props: { opened: Opened; summary: Summary }) {
       [t('Altitude'), textOf(s.altitudeRange, ([low, high]) => `${altitude.text(low)} – ${altitude.text(high)}`)],
       [t('Lean'), textOf(s.leanRange, ([left, right]) => t('{left} to {right}', { left: lean.text(left), right: lean.text(right) }))],
       ...fileRows(fileFacts(props.opened.track, s.distanceM)),
+      [t('Compared with'), comparison()?.name],
     ];
   });
   return (
