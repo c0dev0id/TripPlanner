@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import { FREE_COLOR } from '../map/routeOverlay';
+import { FREE_COLOR } from '../model/routeLook';
 import { dayOfRoute, dayOfStop, numberedStops, type PartKind } from '../routing/dayEdit';
 import { copyParts, pasteItems } from '../state/clipboard';
 import { setEditTarget, setExportScope, setTrackAction } from '../state/drawing';

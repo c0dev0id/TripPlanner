@@ -3,7 +3,7 @@ import { errorMessage, fetchMe, fetchTrip, logout, type Progress } from './api';
 import { DuplicatesReport } from './library/DuplicatesReport';
 import { setPinsAsideIfHidden, switchTab } from './state/tabs';
 import { takePinsBack } from './state/pins';
-import { PlaceKindDialog } from './library/PlaceKinds';
+import { PlaceKindDialog } from './map/PlaceKinds';
 import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';

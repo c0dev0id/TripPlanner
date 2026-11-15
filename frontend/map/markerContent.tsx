@@ -5,7 +5,7 @@ import type { Stop } from '../model/trip';
 import { NotebookIcon } from '../ui/icons';
 import { openImage } from '../ui/Lightbox';
 import { StopShape } from '../ui/StopShape';
-import { BOUND_COLOR, FREE_COLOR } from './routeOverlay';
+import { BOUND_COLOR, FREE_COLOR } from '../model/routeLook';
 
 /** What stands inside a marker, in the planner and on the read-only page alike. */
 

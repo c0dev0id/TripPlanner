@@ -18,6 +18,10 @@ export const ROUTE_PALETTE: readonly { color: string; label: string }[] = [
 /** The palette's colour at a place in a list, which starts over where the palette ends. */
 export const paletteColor = (place: number): string => ROUTE_PALETTE[place % ROUTE_PALETTE.length]!.color;
 
+/** The colours of stops, on the map and in their rows: of those bound to a route point, and of the free ones with their marks on the route. */
+export const BOUND_COLOR = '#d9480f';
+export const FREE_COLOR = '#1971c2';
+
 /** The colour of rides held against a day they may be of, so that they are told apart from its routes: a red no route is given. */
 export const COMPARED_RIDE_COLOR = '#e03131';
 

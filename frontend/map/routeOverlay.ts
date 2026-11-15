@@ -1,5 +1,6 @@
 import type { Feature, FeatureCollection, Geometry } from 'geojson';
 import type { ExpressionSpecification, FilterSpecification, LayerSpecification, LineLayerSpecification } from 'maplibre-gl';
+import { FREE_COLOR } from '../model/routeLook';
 import type { Day, LngLat, Route } from '../model/trip';
 import { atZooms, lineAt } from './zoomSize';
 import { legCoordinates, legState, routeLegs, type LegState } from '../routing/legs';
@@ -14,9 +15,6 @@ export const ROUTE_LINE_LAYER = `${ROUTES_SOURCE}-line`;
 /** A day's routes on the map: the one being edited, the others of the selected day, the neighbouring days. */
 export type RouteRole = 'edited' | 'selected' | 'neighbour';
 
-/** Bound stops, and free stops with their marks on the route. */
-export const BOUND_COLOR = '#d9480f';
-export const FREE_COLOR = '#1971c2';
 const DIM_STOP_COLOR = '#868e96';
 
 /** Legs drawn as part of the route: routed, straight by choice, or a track's line. Pending and failed legs are dashed. */

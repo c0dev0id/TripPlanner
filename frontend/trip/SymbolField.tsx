@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { createMemo, createSignal, For, Show } from 'solid-js';
-import { FREE_COLOR } from '../map/routeOverlay';
+import { FREE_COLOR } from '../model/routeLook';
 import { GARMIN_GROUPS, garminPictureUrl, hasPicture, ourIcon, OUR_ICONS } from '../symbols/symbols';
 import { StopShape } from '../ui/StopShape';
 

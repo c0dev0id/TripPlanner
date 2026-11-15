@@ -1,6 +1,6 @@
 import { createSignal, For, Show } from 'solid-js';
 import { t } from '../i18n/t';
-import { poiBadgeUrl } from '../map/poiImages';
+import { poiBadgeUrl } from './poiImages';
 import { isStoreKind, POI_CATEGORIES } from '../poi/categories';
 import { ownKindColor } from '../state/ownPlaces';
 import { cyclePlaceMode, isTooFarOut, placeMode, type PlaceMode } from '../state/places';

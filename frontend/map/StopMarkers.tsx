@@ -5,7 +5,7 @@ import type { Stop } from '../model/trip';
 import { pointOfDay } from '../routing/dayEdit';
 import { dragsMarkers, setEditTarget, straightLegItem, tapAction } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
-import { PlaceKindMark } from '../library/PlaceKinds';
+import { PlaceKindMark } from './PlaceKinds';
 import { isPlaceList, shownDay } from '../state/library';
 import { canConnect, connectStop, disconnectStop, editingRouteId, moveStop, openTripId, removeStop, selectedDay, selectedDayId } from '../state/trip';
 import { stopContent } from './markerContent';

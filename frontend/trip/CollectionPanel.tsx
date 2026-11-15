@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { createEffect, createMemo, createSignal, on, Show } from 'solid-js';
-import { FREE_COLOR } from '../map/routeOverlay';
+import { FREE_COLOR } from '../model/routeLook';
 import type { Day, Route, Stop } from '../model/trip';
 import { routeDistance, routePositions, routesDistance } from '../routing/legs';
 import { isCut } from '../state/clipboard';
@@ -20,7 +20,7 @@ import { NameDialog } from '../ui/NameDialog';
 import { Pad } from '../ui/Pad';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, routeKindLabel, routeLabel } from './labels';
-import { PlaceKindControls, PlaceKindMark } from '../library/PlaceKinds';
+import { PlaceKindControls, PlaceKindMark } from '../map/PlaceKinds';
 import { partMenu } from './partMenu';
 import { RoutePin } from './RoutePin';
 import { DayMedia } from './Media';

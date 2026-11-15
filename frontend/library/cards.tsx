@@ -13,7 +13,7 @@ import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { Pad } from '../ui/Pad';
 import type { RowSelect } from '../ui/selection';
-import { PlaceKindControls, PlaceKindMark } from './PlaceKinds';
+import { PlaceKindControls, PlaceKindMark } from '../map/PlaceKinds';
 import type { FoundRoute } from './search';
 import { TripShape } from './TripShape';
 

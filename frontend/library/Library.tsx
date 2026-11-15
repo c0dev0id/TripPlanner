@@ -32,7 +32,7 @@ import { countText, fileItemsOf, filesOf, folderOf, foldersOf, itemKey, itemsOf,
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow, stashItemName } from './StashFileCard';
 import { stashCopies, stashPlaces, type Picked } from './stashOut';
-import { StandardPlaces } from './PlaceKinds';
+import { StandardPlaces } from '../map/PlaceKinds';
 import { keepPlaces, keptText } from './dropImport';
 import { firstFound, foundCount, foundKeys, routeKey, searchLibrary, type FoundRoute, type RouteDays } from './search';
 
