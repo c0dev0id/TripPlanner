@@ -19,7 +19,7 @@ import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, routeKindLabel, routeLabel } from './labels';
-import { PlaceKindControls, PlaceKindMark, pickedBadgeUrl } from '../library/PlaceKinds';
+import { PlaceKindControls, PlaceKindMark } from '../library/PlaceKinds';
 import { partMenu } from './partMenu';
 import { RoutePin } from './Pin';
 import { DayMedia } from './Media';
@@ -175,8 +175,8 @@ function WaypointItem(props: { stop: Stop; day: Day }) {
   return (
     <li class="row sequence-item" classList={{ picked: isPartSelected('stop', props.stop.id), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
       <button class="text grow" onClick={click}>
-        <Show when={isPlaceList(openTripId()) && pickedBadgeUrl(props.day.id)} fallback={<StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />}>
-          {(url) => <img class="poi-badge" src={url()} alt="" />}
+        <Show when={isPlaceList(openTripId())} fallback={<StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />}>
+          <PlaceKindMark id={props.day.id} />
         </Show>
         <span class="lines">
           <span class="name">{props.stop.name}</span>

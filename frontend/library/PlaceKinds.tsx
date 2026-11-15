@@ -29,7 +29,7 @@ const MODE_TEXT: Record<PlaceMode, string> = {
 };
 
 /** The address of the badge picked for a kind of place, none where none is picked. */
-export function pickedBadgeUrl(kind: string): string | undefined {
+function pickedBadgeUrl(kind: string): string | undefined {
   const category = POI_CATEGORIES.find((each) => each.id === placeIcon(kind));
   return category && poiBadgeUrl(category);
 }

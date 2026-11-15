@@ -356,7 +356,8 @@
   tap says its name, list and kind, address, contact, notes and website, and with a
   day of a trip shown offers "Add as stop", which adds a copy of the place to the day
   as a free stop. The places of the open list's kind shown in its pane are its stops and
-  drawn as those, wearing the badge picked for their kind, in the list as on the map;
+  drawn as those, wearing their kind's look, its badge picked or its list's dot, in the
+  list as on the map;
   the list's other kinds follow their switches as any list's do. A
   kind's row shows its look: the badge picked, or the dot in its list's colour.
 - Routes and stops can be marked optional, each in its dialog, and are shown so.

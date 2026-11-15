@@ -12,15 +12,20 @@
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
 }
 
-/* A place of a list drawn as its kind's badge stands centred on its spot, as the places of the store do. */
-.stop-marker .stop.badged {
+/* A place of a list drawn as its kind's badge or dot stands centred on its spot, as the places of the store do. */
+.stop-marker .stop.marked {
   transform: translateY(50%);
 }
 
-.stop-marker .stop.badged img {
+.stop-marker .stop.marked img {
   display: block;
   width: 24px;
   height: 24px;
+}
+
+.stop-marker .stop.marked .own-dot {
+  display: block;
+  margin: 0;
 }
 
 .stop-marker .stop-name {
