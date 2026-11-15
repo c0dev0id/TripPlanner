@@ -1218,6 +1218,16 @@ entries at the end of their section.
   middleware takes a `lang` parameter before the header.
 - **German says du.** The server's pages and mails address the user; the planner itself
   rarely does. The German uses du: a personal tool, and the English copy is informal.
+- **Labels use the common terms of user interfaces.** An action is a verb and its
+  object without an article ("Add stop", "Stopp hinzufügen"), a field label a noun
+  ("Folder name", "Ordnername"), and a sentence says what happened in the words a user
+  expects ("found", "contains", "assigned to", not "in there", "holds", "is on"). The
+  German follows the conventions of German software: anzeigen, einblenden and
+  ausblenden, durchsuchen, zuordnen. One thing has one name on both sides: a place
+  category (Ortskategorie) is the section of a place list, a break (Pause) is the stay
+  at a stop, a registration (Registrierung) is the sign-up, apart from the sign-in
+  (Anmeldung), and a mail is an e-mail (E-Mail). The code keeps its own names (`kind`,
+  `pause`).
 - **Not translated.** The validator's messages about a malformed trip document, which a
   client bug causes, not a user; the command line; the Garmin symbol names in a GPX file,
   which the device matches; and "Trip Planner" itself.

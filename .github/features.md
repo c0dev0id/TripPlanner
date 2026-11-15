@@ -272,7 +272,7 @@
   a kind of a list of places or, from the list's menu among the Places, into the list:
   there each goes under the kind its waypoint is of (`<type>`), else under "Places",
   and a place the list holds already is left out, as when the file is added to the
-  list. Keep as ride keeps a track among the rides with
+  list. Save as ride keeps a track among the rides with
   everything the file tells of it, its times, heights and sensor values: a track that
   is all its file holds of routes and tracks as the file itself, so that it is known as
   the ride the same file was kept as before, any other alone, without the file's
@@ -343,11 +343,11 @@
   to undo. A list of places has no Convert.
 - Lists of the user's own places, in the Places folder: a list is a collection, opened
   like a trip but with sections instead of days and no dates, times, journal, tools or
-  export; its sections are the kinds of its places ("Kind of place…" under New in
+  export; its sections are the kinds of its places ("Place category…" under New in
   the list's menu), and a kind lists its places by name. A place is a stop without the
   fields of a ride (arrival, pause, booking reference, optional): symbol, name,
   address, contact, website and notes, edited in the stop's dialog and copied, cut
-  and removed from its menu. "Add a place here…" in the map's menu adds
+  and removed from its menu. "Add place…" in the map's menu adds
   one to the kind shown. A waypoint's link becomes the place's website; where most
   waypoints of a file link to the same host, such as the directory the file was
   downloaded from, those links are left out and the place's own link is kept.
@@ -417,7 +417,7 @@
   deletes all of them. A recording's menu on its day has "Show in the rides", which
   leaves the day's tab as its button does, keeping what it had open for the way back,
   and shows the rides with that ride opened, selected and in view.
-- Autoname, in a ride's menu: the selected rides are named after the places they began
+- Name automatically, in a ride's menu: the selected rides are named after the places they began
   and ended in, as "Hockenheim - Walldorf", for files an app names all alike. The
   places are asked of Nominatim, one a second, each position once; it is said above
   the rides how far it is and which rides it could not name.
