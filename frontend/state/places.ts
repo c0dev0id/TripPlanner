@@ -8,7 +8,8 @@ import { readPreference, writePreference } from '../ui/preferences';
 import { placeReachM } from './preferences';
 import type { LngLat } from '../model/trip';
 import { opened } from './recordingView';
-import { activeRouteId, selectedDay } from './trip';
+import { shownDay } from './library';
+import { activeRouteId } from './trip';
 
 /**
  * The places on the map: of each kind, of the store's and of the user's own lists alike,
@@ -57,14 +58,14 @@ export function cyclePlaceMode(kind: string): void {
 
 /**
  * The lines places are shown along: of what is taken up, the recording opened or the
- * route, else the selected day's routes; none while no kind is shown along them.
+ * route, else the routes of the day shown; none while no kind is shown along them.
  */
 export const alongLines = createRoot(() =>
   createMemo((): LngLat[][] => {
     if (![...modes().values()].includes('along')) return [];
     const recording = opened();
     if (recording) return [recording.track.points];
-    const routes = selectedDay()?.routes ?? [];
+    const routes = shownDay()?.routes ?? [];
     const taken = routes.find((route) => route.id === activeRouteId());
     return (taken ? [taken] : routes).map(routeLine).filter((line) => line.length > 1);
   }),
