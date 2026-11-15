@@ -56,13 +56,13 @@ export function Explorer(props: {
   };
   /** Shows a day in its pane, opening its trip where another is open, without leaving the tab shown. */
   const showDay = (tripId: number, dayId: string) => (tripId === openTripId() ? selectDay(dayId) : props.onOpen(tripId, dayId));
-  /** The open trip where the tab shown is the one it is in, which its name and its actions then stand over; one not listed yet counts as in the tab shown. */
   /** The tab shown where it has a search, which the settings have not. */
   const searched = () => {
     const tab = libraryTab();
     return tab === 'settings' ? undefined : tab;
   };
-  const headed = () => ((openTree() ?? libraryTab()) === libraryTab() ? openTrip() : undefined);
+  /** The open trip where the tab shown is the one it is in, which its name and its actions then stand over; one not listed yet counts as in the tab shown. A list of places has no heading: it has no actions of its own. */
+  const headed = () => ((openTree() ?? libraryTab()) === libraryTab() && openTrip()?.kind === 'trip' ? openTrip() : undefined);
   // The panel scrolls as a whole, so how far it was scrolled is kept for each tab and given back when the tab is shown again.
   let section!: HTMLElement;
   const scrolled: Partial<Record<LibraryTab, number>> = {};
@@ -96,9 +96,7 @@ export function Explorer(props: {
             <h2 class="path grow" title={trip().name}>
               {trip().name}
             </h2>
-            <Show when={trip().kind === 'trip'}>
-              <TripIcons />
-            </Show>
+            <TripIcons />
             <SaveState />
             <IconButton label={t('Close {what}', { what: trip().name })} onClick={() => void props.onLeave()}>
               <CloseIcon />

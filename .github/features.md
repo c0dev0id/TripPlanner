@@ -20,7 +20,8 @@
   their tab, the trip or list, its day, the route taken up and the recording opened,
   and open it again when the user comes back by their tab; only one trip is open at a
   time, so coming back may open it afresh. Its name and
-  its actions stand over the tab it is in; a tab with nothing open has no heading.
+  its actions stand over the tab it is in; a tab with nothing open, or a list of places
+  open, has no heading.
   Under the tabs a line says what the view holds, with the button that folds its tree
   away and the menu of its top; the address keeps the tab, so that loading the page
   again comes back to it. Opening a trip from a ride or from the duplicates shows the
@@ -356,8 +357,9 @@
   the map). A place is a dot in its kind's colour, or the badge picked for the kind; a
   tap says its name, list and kind, address, contact, notes and website, and with a
   day of a trip shown offers "Add as stop", which adds a copy of the place to the day
-  as a free stop. The places of the open list are its stops and drawn as those, but
-  where a badge is picked for their kind they wear it, in the list as on the map. A
+  as a free stop. The places of the open list's kind shown in its pane are its stops and
+  drawn as those, wearing the badge picked for their kind, in the list as on the map;
+  the list's other kinds follow their switches as any list's do. A
   kind's row shows its look: the badge picked, or the dot in its list's colour.
 - Routes and stops can be marked optional, each in its dialog, and are shown so.
 - GPX export from a dialog: the whole trip, the day picked, or the days or routes
