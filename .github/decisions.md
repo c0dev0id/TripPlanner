@@ -936,8 +936,9 @@ entries at the end of their section.
   day is shown: a selection that is out of sight must not be acted on. Paste has no
   row under the pointer to name its target, so it takes the nearest one in view: the
   route being edited, then the day picked, and for folders and trips the folder shown.
-  The key reading is one function (`ui/fileVerb.ts`); the library, the trip and the
-  duplicates report each listen and act only on their own selection or clipboard, and
+  The key reading is one function (`ui/fileVerb.ts`); the library, the trip, the
+  rides and the duplicates report each listen and act only on their own selection or
+  clipboard (the rides copy and delete, as their menu does), and
   the selection itself is one value in `ui/selection.ts`, the rows and the list that
   holds them, so that two lists cannot have rows selected at once.
 - **A selection is exported through the same dialog as the trip.** Export GPX… in the

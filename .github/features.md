@@ -129,7 +129,8 @@
   stops or recordings; with nothing selected, cut and copy take the route being edited.
   A paste goes into the route being edited where it takes what was copied (stops, as
   its points), else into the day picked, days after it. In the library they act on the
-  selected folders and trips, and a paste goes into the folder shown. Selecting in the
+  selected folders and trips, and a paste goes into the folder shown; among the rides
+  they copy and delete the selected ones. Selecting in the
   library clears the selection in the trip and the other way round, as does selecting
   in the duplicates report, and what is selected of a day is forgotten when another day
   is shown. In a text field the keys

@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSelector, createSignal, For, Match, Show, Switch } from 'solid-js';
+import { createEffect, createMemo, createSelector, createSignal, For, Match, onCleanup, Show, Switch } from 'solid-js';
 import { t } from '../i18n/t';
 import { declineRideDay, deleteRide, errorMessage, mergeRides, renameRide, rideJoints, suggestRideDays } from '../api';
 import { lineLength } from '../geo/measure';
@@ -17,6 +17,7 @@ import { clearSection, ridesOnSection, section, sectionStart } from '../state/se
 import { allRides, askOfRides, changeRides, compareWithDay, revealedRide, revealRide, RIDES, ridesCompared, ridesError, ridesLoading, ridesNote, ridesOnMap, runRidesJob } from '../state/rides';
 import { dayLabel, foundBecause } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
+import { fileVerb } from '../ui/fileVerb';
 import { askConfirmation } from '../ui/confirm';
 import { counted, dateText, distanceText, durationText, momentText, monthText, timeOfDayText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
@@ -120,10 +121,22 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       const { errors } = await autoname([merged], onProgress);
       return { text: t('{what} merged.', { what: counted(rides.length, 'recording') }), errors };
     });
+  const ridesAmong = (ids: ReadonlySet<string>): Ride[] => allRides().filter((kept) => ids.has(String(kept.id)));
+  /** The keys that copy and delete the selected rides, as the menu does, while the rides are shown. */
+  const onKey = (e: KeyboardEvent) => {
+    const chosen = libraryTab() === 'recordings' ? ridesAmong(selectionOf(RIDES)) : [];
+    const verb = chosen.length > 0 ? fileVerb(e) : undefined;
+    if (verb !== 'copy' && verb !== 'delete') return;
+    e.preventDefault();
+    if (verb === 'copy') copyRecordings(chosen);
+    else void deleteAsked(chosen);
+  };
+  document.addEventListener('keydown', onKey);
+  onCleanup(() => document.removeEventListener('keydown', onKey));
   const items = (ride: Ride): MenuItem[] => {
     const ids = menuSelection(selectionOf(RIDES), String(ride.id));
     selectIn(RIDES, ids);
-    const chosen = allRides().filter((kept) => ids.has(String(kept.id)));
+    const chosen = ridesAmong(ids);
     const several = chosen.length > 1;
     const [only, ...more] = ride.days;
     return [
