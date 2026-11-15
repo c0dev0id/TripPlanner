@@ -9,8 +9,7 @@ import { fetchingTrip, libraryTab, libraryTrips, outlineOf, searchedFor } from '
 import { activeRecordingId, putOnDay } from '../state/recordings';
 import { toggleRecording } from '../state/recordingView';
 import { allRides, askOfRides, changeRides, compareWithDay, revealedRide, revealRide, rideColor, RIDES, ridesCompared, ridesError, ridesLoading, ridesNote, runRidesJob } from '../state/rides';
-import { openTrip } from '../state/trip';
-import { dayLabel, dayTitleOf, foundBecause } from '../trip/labels';
+import { dayLabel, foundBecause } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { counted, dateText, distanceText, durationText, momentText, monthText, timeOfDayText } from '../ui/format';
@@ -117,15 +116,11 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
     selectIn(RIDES, ids);
     const chosen = allRides().filter((kept) => ids.has(String(kept.id)));
     const several = chosen.length > 1;
-    const trip = openTrip();
-    const toDay = (dayId: string) => void changeRides(async () => { for (const kept of chosen) await putOnDay(kept, dayId); });
     const [only, ...more] = ride.days;
     return [
       { label: t('Rename…'), disabled: several, run: () => setRenamed(ride) },
       { label: t('Autoname'), run: () => void runRidesJob((onProgress) => autoname(chosen, onProgress)) },
       { label: t('Copy'), run: () => copyRecordings(chosen) },
-      // The open trip is not shown beside the rides, so the entry names it.
-      ...(trip?.kind === 'trip' ? [{ label: t('Add to “{name}”', { name: trip.name }), items: trip.days.map((day) => ({ label: dayTitleOf(trip, day), run: () => toDay(day.id) })) }] : []),
       { label: t('Merge'), disabled: !several || !followOneAnother(chosen), run: () => void mergeAsked(chosen) },
       only && more.length > 0 && !several
         ? { label: t('Open location'), disabled: fetchingTrip(), items: ride.days.map((on) => ({ label: dayText(on), run: () => props.onOpen(on.tripId, on.dayId) })) }
