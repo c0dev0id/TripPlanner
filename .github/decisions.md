@@ -1226,8 +1226,12 @@ entries at the end of their section.
   ausblenden, durchsuchen, zuordnen. One thing has one name on both sides: a place
   category (Ortskategorie) is the section of a place list, a break (Pause) is the stay
   at a stop, a registration (Registrierung) is the sign-up, apart from the sign-in
-  (Anmeldung), and a mail is an e-mail (E-Mail). The code keeps its own names (`kind`,
-  `pause`).
+  (Anmeldung), and a mail is an e-mail (E-Mail). A ride kept in the library is a
+  recording (Aufzeichnung) wherever the user reads it, on a day and in the library
+  alike: apps call it either, and the recording is what the file is. A dialog that
+  renames is titled "Rename", since the menu it came from was the thing's own. What
+  a request names and the server does not have is "… not found." The code keeps its
+  own names (`kind`, `pause`, `ride`).
 - **Not translated.** The validator's messages about a malformed trip document, which a
   client bug causes, not a user; the command line; the Garmin symbol names in a GPX file,
   which the device matches; and "Trip Planner" itself.

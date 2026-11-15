@@ -272,7 +272,7 @@
   a kind of a list of places or, from the list's menu among the Places, into the list:
   there each goes under the kind its waypoint is of (`<type>`), else under "Places",
   and a place the list holds already is left out, as when the file is added to the
-  list. Save as ride keeps a track among the rides with
+  list. Save as recording keeps a track among the rides with
   everything the file tells of it, its times, heights and sensor values: a track that
   is all its file holds of routes and tracks as the file itself, so that it is known as
   the ride the same file was kept as before, any other alone, without the file's
