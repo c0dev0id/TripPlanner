@@ -3,7 +3,7 @@ import { Show, type JSX } from 'solid-js';
 import { render } from 'solid-js/web';
 
 /** What a toggle among the map's controls switches: its state, its label in either state and its icon in either state. */
-export interface Toggle {
+interface Toggle {
   pressed: () => boolean;
   setPressed: (pressed: boolean) => void;
   label: () => string;

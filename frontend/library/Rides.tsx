@@ -1,6 +1,7 @@
 import { createEffect, createMemo, createSelector, createSignal, For, Match, Show, Switch } from 'solid-js';
 import { t } from '../i18n/t';
 import { declineRideDay, deleteRide, errorMessage, mergeRides, renameRide, rideJoints, suggestRideDays } from '../api';
+import { lineLength } from '../geo/measure';
 import { GPX_FILE_TYPES } from '../gpx/import';
 import type { Ride, Suggestion } from '../recording/rides';
 import { FAR_APART_M, isOddJoint, likelierFirst, ridingYears, totalDistance } from '../recording/rides';
@@ -8,7 +9,7 @@ import { copyRecordings } from '../state/clipboard';
 import { fetchingTrip, libraryTab, libraryTrips, outlineOf, searchedFor } from '../state/library';
 import { activeRecordingId, putOnDay } from '../state/recordings';
 import { opened, toggleRecording } from '../state/recordingView';
-import { clearSection, ridesOnSection, section, sectionLength, sectionStart } from '../state/section';
+import { clearSection, ridesOnSection, section, sectionStart } from '../state/section';
 import { allRides, askOfRides, changeRides, compareWithDay, revealedRide, revealRide, rideColor, RIDES, ridesCompared, ridesError, ridesLoading, ridesNote, runRidesJob } from '../state/rides';
 import { dayLabel, foundBecause } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
@@ -348,17 +349,19 @@ function SectionLine() {
   return (
     <Switch>
       <Match when={section()}>
-        <div class="row section-line">
-          <span class="grow">{t('Rides of a section of {distance}', { distance: distanceText(sectionLength()) })}</span>
-          <IconButton label={t('Let go of the section')} onClick={clearSection}>
-            <CloseIcon />
-          </IconButton>
-        </div>
+        {(line) => (
+          <div class="row section-line">
+            <span class="grow">{t('Rides of a section of {distance}', { distance: distanceText(lineLength(line())) })}</span>
+            <IconButton label={t('Let go of the section')} onClick={clearSection}>
+              <CloseIcon />
+            </IconButton>
+          </div>
+        )}
       </Match>
       <Match when={sectionStart()}>
         <p class="muted hint">{t('Cmd-click the other end of the section on the ride.')}</p>
       </Match>
-      <Match when={opened()?.recording.dayId === undefined && opened()}>
+      <Match when={opened() && opened()!.recording.dayId === undefined}>
         <p class="muted hint">{t('Cmd-click two points on the ride to find the rides of that section.')}</p>
       </Match>
     </Switch>

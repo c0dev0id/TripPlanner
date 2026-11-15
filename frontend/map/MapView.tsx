@@ -8,8 +8,9 @@ import { ridesOnMap } from '../state/rides';
 import { stashLines, stashWaypoints } from '../state/stash';
 import { routePositions } from '../routing/legs';
 import { colorRuns, DIMMED, NO_VALUE } from '../recording/lineColors';
+import type { RecordedTrack } from '../recording/track';
 import { mapTab, tripShown } from '../state/library';
-import { sectionEnds } from '../state/section';
+import { sectionEnds, shownTrack } from '../state/section';
 import { isRoutePinned, pinnedAsideLines } from '../state/pins';
 import { keepsView } from '../state/place';
 import { placesHidden, setPlacesHidden } from '../state/places';
@@ -164,8 +165,8 @@ const colorPieces = (id: number, points: readonly LngLat[], colors: readonly str
 /** A piece of a recording's line as the map draws it. */
 type LinePiece = { id: number; points: readonly LngLat[]; color: string; dimmed?: boolean };
 
-/** A recording's whole line dimmed under the part of it shown, where that is only a part: its stretch on the section looked up. */
-const dimmedBeyond = (id: number, whole: readonly LngLat[], part: readonly LngLat[]): LinePiece[] => (part.length === whole.length ? [] : [{ id, points: whole, color: NO_VALUE, dimmed: true }]);
+/** A recording's whole line dimmed under the track shown, where that is only a part of it: its stretch on the section looked up. */
+const dimmedBeyond = (id: number, whole: RecordedTrack, shown: RecordedTrack): LinePiece[] => (shown === whole ? [] : [{ id, points: whole.points, color: NO_VALUE, dimmed: true }]);
 
 /** Keeps the recordings shown on the map once their tracks are read, each in its colour; the opened one apart, coloured by a measure where chosen. */
 function RecordingLines(props: { map: MapLibreMap }) {
@@ -173,23 +174,27 @@ function RecordingLines(props: { map: MapLibreMap }) {
   const others = createMemo(() =>
     recordingFeatures(
       shownRecordings().flatMap((recording): LinePiece[] => {
-        const track = recording.id === openedId() ? undefined : loadedTrack(recording);
-        if (!track) return [];
+        const [whole, track] = recording.id === openedId() ? [] : [loadedTrack(recording), shownTrack(recording)];
+        if (!whole || !track) return [];
         const color = recordingColor(recording);
-        // The recording compared with is dimmed where the opened one did not run along it, and beyond the section looked up.
+        // The recording compared with is dimmed where the opened one did not run along it.
         const cover = comparedCover();
-        if (cover?.id !== recording.id) return [{ id: recording.id, points: track.points, color }];
-        return [...dimmedBeyond(recording.id, track.points, cover.points), ...colorPieces(recording.id, cover.points, cover.covered.map((on) => (on ? color : DIMMED)))];
+        const shown = cover?.id === recording.id ? colorPieces(recording.id, track.points, cover.covered.map((on) => (on ? color : DIMMED))) : [{ id: recording.id, points: track.points, color }];
+        return [...dimmedBeyond(recording.id, whole, track), ...shown];
       }),
     ),
   );
-  const openedLine = createMemo(() => {
+  // The opened recording's whole track, kept apart so that other tracks arriving or going do not draw its line again.
+  const openedWhole = createMemo(() => {
     const o = opened();
-    if (!o) return recordingFeatures([]);
+    return o && loadedTrack(o.recording);
+  });
+  const openedLine = createMemo(() => {
+    const [o, whole] = [opened(), openedWhole()];
+    if (!o || !whole) return recordingFeatures([]);
     const colors = openedLineColors();
     const id = o.recording.id;
-    const whole = loadedTrack(o.recording)?.points ?? o.track.points;
-    return recordingFeatures([...dimmedBeyond(id, whole, o.track.points), ...(colors ? colorPieces(id, o.track.points, colors) : [{ id, points: o.track.points, color: recordingColor(o.recording) }])]);
+    return recordingFeatures([...dimmedBeyond(id, whole, o.track), ...(colors ? colorPieces(id, o.track.points, colors) : [{ id, points: o.track.points, color: recordingColor(o.recording) }])]);
   });
   createEffect(() => props.map.getSource<GeoJSONSource>(RECORDINGS_SOURCE)?.setData(others()));
   createEffect(() => props.map.getSource<GeoJSONSource>(OPENED_RECORDING_SOURCE)?.setData(openedLine()));

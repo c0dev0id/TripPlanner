@@ -4,7 +4,8 @@ import type { LngLat } from '../model/trip';
 import type { RecordedTrack } from '../recording/track';
 import { nearestOnLines, type XY } from '../geo/nearest';
 import { opened } from '../state/recordingView';
-import { loadedTrack, shownRecordings } from '../state/recordings';
+import { shownRecordings } from '../state/recordings';
+import { shownTrack } from '../state/section';
 import { toLngLat } from './markers';
 import { RECORDING_LINE_LAYERS } from './recordingOverlay';
 
@@ -35,8 +36,7 @@ export function recordingPointAt(map: MapLibreMap, tap: { x: number; y: number }
   const id = only ?? (openedId !== undefined && ids.includes(openedId) ? openedId : ids[0]);
   if (id === undefined || !ids.includes(id)) return undefined;
   const recording = shownRecordings().find((r) => r.id === id);
-  // The opened recording's points as it shows them, its part on a section looked up among them.
-  const track = id === openedId ? opened()!.track : recording && loadedTrack(recording);
+  const track = recording && shownTrack(recording);
   if (!track) return undefined;
   const { plane, nearest } = indexOf(track);
   const place = nearest(plane(toLngLat(map.unproject([tap.x, tap.y]))))!;

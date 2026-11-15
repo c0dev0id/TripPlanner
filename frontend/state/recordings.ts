@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import { createEffect, createMemo, createResource, createRoot, createSignal, on } from 'solid-js';
+import { createEffect, createMemo, createResource, createRoot, createSignal, on, untrack } from 'solid-js';
 import { errorMessage, fetchRideGpx, keepRide, listRecordings, lookUpRides, putRideOnDay, renameRide, takeRideOffDay, type FoundRidingDay, type KeptRide, type Recording } from '../api';
 import { COMPARED_RIDE_COLOR } from '../model/routeLook';
 import { asName, type Day, type LngLat } from '../model/trip';
@@ -145,15 +145,12 @@ createRoot(() => {
         .finally(() => reading.delete(recording.id));
     }
   });
-  // A ride of the list keeps its track only while it is opened or compared there: the list is long, and a track is megabytes.
-  const letGo = (now: KeptRide | undefined, before: KeptRide | undefined) => {
-    if (!before || before.id === now?.id || allRecordings().some((r) => r.id === before.id) || shownRecordings().some((r) => r.id === before.id)) return;
-    const kept = new Map(tracks());
-    kept.delete(before.id);
-    setTracks(kept);
-  };
-  createEffect(on(listedRide, letGo));
-  createEffect(on(comparedRide, letGo));
+  // A track is kept while its recording is on the open trip, or is the ride opened or compared in the list of rides: the list is long, and a track is megabytes.
+  createEffect(() => {
+    const wanted = new Set([...allRecordings(), listedRide(), comparedRide()].flatMap((r) => (r ? [r.id] : [])));
+    const kept = untrack(tracks);
+    if ([...kept.keys()].some((id) => !wanted.has(id))) setTracks(new Map([...kept].filter(([id]) => wanted.has(id))));
+  });
 });
 
 /** Lists a ride as on a day of the open trip, where it is not yet. */

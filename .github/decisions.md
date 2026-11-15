@@ -414,8 +414,9 @@ entries at the end of their section.
   loading of the page to the next: a map that does not follow, for a reason set days
   ago, reads as broken.
 - **Hiding all places is a switch over the kinds, not a state of them.** Setting every
-  kind to none and back would lose how each was set, so one signal empties what the map
-  draws of the places (`placesOnMap`, `ownPlacesOnMap`) and leaves the kinds alone. As
+  kind to none and back would lose how each was set, so one signal makes every standard
+  kind count as wanting none, which also stops tiles from being read meanwhile, and
+  empties the own places drawn (`ownPlacesOnMap`); the kinds' states stay as set. As
   the lock, it is not kept beyond the page: places missing days later would read as
   lost. It and the lock are one control, a toggle button given its state, labels and
   icons (`map/ToggleControl.tsx`).
@@ -1043,8 +1044,12 @@ entries at the end of their section.
   its track) is checked against the section, resampled every 50 m: a ride is on it
   where it passes within 50 m of the start and then of each sample in order, without
   more than 300 m beyond each, which keeps an out-and-back or a loop that passes
-  twice from matching backwards. No track is read for the list; only the opened and
-  the compared ride are cut to the section (`trackOnSection`), and all their figures
+  twice from matching backwards. A line none of whose segments comes into a box around
+  the section's start is ruled out before it is measured; the lines are decoded for the
+  lookup alone and not kept in the shared cache, which holds the trip's geometries. No
+  track is read for the list; only the opened and the compared ride are cut to the
+  section (`shownTrack`, which everything that draws, picks or measures a recording
+  goes through), and all their figures
   are worked out on that part, since a ride's whole average or top speed says nothing
   about one road. Ranking the list was left out: the comparison of two chosen rides
   answers the question, and the order by date stays readable. In the rides' list,

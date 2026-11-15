@@ -11,7 +11,7 @@ import type { Route } from '../model/trip';
 import { routeLine } from '../routing/legs';
 import { showWhole } from './drawing';
 import { isRecordingPinned, isRoutePinned } from './pins';
-import { onSection } from './section';
+import { shownTrack } from './section';
 import { activeRecordingId, loadedTrack, setActiveRecordingId, shownRecordings, type ShownRecording } from './recordings';
 import { activeRouteId, openTrip, openTripId, selectedDayId, takeUpRoute } from './trip';
 
@@ -112,9 +112,7 @@ const view = createRoot(() => {
   const opened = createMemo(
     (): Opened | undefined => {
       const recording = shownRecordings().find((r) => r.id === activeRecordingId());
-      const loaded = recording && loadedTrack(recording);
-      // In the rides' tab, a ride shows its part on the section looked up.
-      const track = loaded && onSection(loaded);
+      const track = recording && shownTrack(recording);
       return recording && track ? { recording, track, measures: measuresFor(track) } : undefined;
     },
     undefined,
@@ -144,8 +142,7 @@ const view = createRoot(() => {
   });
   const otherTrack = createMemo(() => {
     const c = comparand();
-    const loaded = c && 'recording' in c ? loadedTrack(c.recording) : undefined;
-    return loaded && onSection(loaded);
+    return c && 'recording' in c ? shownTrack(c.recording) : undefined;
   });
   const delta = createMemo((): Delta | undefined => {
     const [o, c] = [opened(), comparand()];
@@ -215,10 +212,10 @@ const view = createRoot(() => {
       (fault: unknown) => keepSurfaces(id, fault instanceof Error ? fault : new Error(String(fault))),
     );
   });
-  /** The recording compared with, where it is one and a difference is focused on: its points as compared, its part on the section where one is looked up, and of each whether the opened one ran along it there. */
+  /** The recording compared with, where it is one and a difference is focused on, and of each of its points as shown whether the opened one ran along it there. */
   const comparedCover = createMemo(() => {
-    const [c, focus, covered, track] = [comparand(), shownColoring(), delta()?.covered, otherTrack()];
-    return c && 'recording' in c && focus !== undefined && isDifference(focus) && covered && track ? { id: c.recording.id, points: track.points, covered } : undefined;
+    const [c, focus, covered] = [comparand(), shownColoring(), delta()?.covered];
+    return c && 'recording' in c && focus !== undefined && isDifference(focus) && covered ? { id: c.recording.id, covered } : undefined;
   });
   return { opened, comparison, colorings, shownColoring, openedSurfaces, shownScale, colors, comparedCover };
 });

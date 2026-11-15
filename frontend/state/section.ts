@@ -1,10 +1,11 @@
 import { createMemo, createRoot, createSignal } from 'solid-js';
-import { metresAlong } from '../geo/measure';
+import type { KeptRide } from '../api';
 import type { LngLat } from '../model/trip';
 import { sectionOn, trackOnSection } from '../recording/section';
 import type { RecordedTrack } from '../recording/track';
-import { decodeCached } from '../routing/polyline';
+import { decodePolyline } from '../routing/polyline';
 import { mapTab } from './library';
+import { loadedTrack } from './recordings';
 import { allRides } from './rides';
 
 /**
@@ -44,27 +45,22 @@ export const sectionEnds = (): LngLat[] => {
   return line ? [line[0]!, line[line.length - 1]!] : start ? [start.lngLat] : [];
 };
 
-/** How long the section is, in metres. */
-export const sectionLength = (): number => {
-  const line = section();
-  return line ? (metresAlong(line).at(-1) ?? 0) : 0;
-};
-
-/** The ids of the rides that rode the section, by their thinned lines; none while no section is marked. */
+/** The ids of the rides that rode the section, by their thinned lines, decoded for this alone and not kept; none while no section is marked. */
 export const ridesOnSection = createRoot(() =>
   createMemo((): ReadonlySet<number> | undefined => {
     const line = section();
-    return line && new Set(allRides().flatMap((ride) => (sectionOn(decodeCached(ride.line), line) ? [ride.id] : [])));
+    return line && new Set(allRides().flatMap((ride) => (sectionOn(decodePolyline(ride.line), line) ? [ride.id] : [])));
   }),
 );
 
 /** Each track's part on the section, worked out once per section. */
 const parts = new WeakMap<RecordedTrack, { line: readonly LngLat[]; part: RecordedTrack | undefined }>();
 
-/** A recording's track as the rides' tab shows it: its part on the section while one is marked and it rode it, else whole. */
-export function onSection(track: RecordedTrack): RecordedTrack {
+/** A recording's track as it is shown, once read: in the rides' tab, its part on the section while one is marked and it rode it; else whole. */
+export function shownTrack(recording: KeptRide): RecordedTrack | undefined {
+  const track = loadedTrack(recording);
   const line = section();
-  if (!line || mapTab() !== 'recordings') return track;
+  if (!track || !line || mapTab() !== 'recordings') return track;
   let cached = parts.get(track);
   if (cached?.line !== line) {
     cached = { line, part: trackOnSection(track, line) };
