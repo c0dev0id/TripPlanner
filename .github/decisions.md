@@ -623,6 +623,21 @@ entries at the end of their section.
   rows with a click, since its rows are worked on in bulk, and opens one from its menu.
   A collection's map shows only the section opened, and no stop dots while none is: the
   Trans Euro Trail has 5,000 waypoints, each a marker of its own.
+- **A route remembers the file of the Inbox it was copied from.** The files stay in the
+  Inbox after they are used, so that a trip can be deleted and started again, and the
+  Inbox then has to say which of them are worked into a trip already. The route carries
+  the file's id (`stashFileId` in the document, `routes.stash_file_id`), set when it is
+  copied out of the file and kept through every edit, a duplicate and a copy of the
+  trip; the listing of the Inbox reads from it the trips each file is used in. Deleting
+  the trip deletes its routes, and the file reads as unused again. The id names the
+  file, not the route or track in it: their places in the file shift when one is
+  removed, and a trip open in a browser would save the old place back. It is no
+  foreign key for the same reason: the open trip may still name a file deleted since,
+  and such an id matches nothing. Copied waypoints are not tracked; they usually come
+  with a route. Rejected: finding the use by comparing lines, as the duplicates report
+  does: a route copied from a file is routed anew and then edited, so its line stops
+  matching exactly where the file was used most. Routes copied before the column
+  existed name no file.
 
 ## Map and appearance
 
