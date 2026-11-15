@@ -159,7 +159,7 @@ function InfoCard(props: { opened: Opened; summary: Summary }) {
   );
 }
 
-/** The figures that belong to a focus, and only those: of speed the average and top speed and the time moving, of altitude the climb, descent and range, of slope and lean their extremes, of a difference what it is against and how it differs. */
+/** The figures that belong to a focus, and only those: of speed the average and top speed and the time moving, of altitude the climb, descent and range, of slope and lean their extremes, of a difference how it differs; what it is against the card's title says. */
 function focusRows(opened: Opened, s: Summary, focus: Coloring): [string, string | undefined][] {
   const { speed, altitude, slope, lean } = FIGURES;
   const c = comparison();
@@ -186,18 +186,16 @@ function focusRows(opened: Opened, s: Summary, focus: Coloring): [string, string
       return [];
     case 'offset':
       return [
-        [t('Against'), c?.name],
         [t('Off it'), textOf(d?.offM, distanceText)],
         [t('Farthest off'), textOf(d?.furthestM, distanceText)],
       ];
     case 'speedDifference':
       return [
-        [t('Against'), c?.name],
         [t('At the end'), textOf(d?.timeS, DIFFERENCE_FIGURES.time.text)],
         [t('On average'), textOf(d?.speed, DIFFERENCE_FIGURES.speed.text)],
       ];
     case 'leanDifference':
-      return [[t('Against'), c?.name]];
+      return [];
   }
 }
 

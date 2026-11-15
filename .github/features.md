@@ -486,17 +486,19 @@
   for speed, slope and lean angle, how far was ridden at each value; with none, the line
   has the recording's colour and neither card nor chart shows. The surfaces, matched once
   by the routing server, are listed with the distance on each. Pointing in the chart
-  marks the place on the map, and a click there moves the map to it. Everything known of
-  a point (the distance along, the time, the measures, the surface and the file's other
-  values) is said in a popup that follows the mouse along the line and goes when it
-  leaves it; a click on the line, or in the chart, pins the popup there, another click on
+  marks the place on the map, and a click there moves the map to it. A point is said in
+  a popup that follows the mouse along the line and goes when it leaves it: the distance
+  along and the value focused on, or the differences of a difference; with no focus,
+  everything known of it (the time, the measures, the surface and the file's other
+  values); a click on the line, or in the chart, pins the popup there, another click on
   the line moves it, and closing it lets it follow the mouse again.
 - Comparing a recording: the recording opened is compared with what is pinned beside
   it on the map where that is one route or track of its day or one other recording;
   with two or more pinned there is no comparison, and the focus offers the measures
   alone. Something new to compare with turns the focus to the distance from it. Against
   a route or a track the card says what it is against, how far it went off and how far
-  at most, and follows the route as it is edited. Against another recording it also
+  at most, and follows the route as it is edited; what it is against is named once, in
+  the focus card's title. Against another recording it also
   says the time ahead or behind at the end and the speed difference on average, at the
   same places along the way. The focus offers the distance from the other, and speed
   and lean against another recording, each charted along the way. Focused on a
