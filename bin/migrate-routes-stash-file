@@ -1,0 +1,19 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+// One-shot: adds routes.stash_file_id to a database made before it. Run once, then delete.
+
+use Planner\Kernel;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+$db = Kernel::container(dirname(__DIR__))->get(PDO::class);
+$columns = array_column($db->query('PRAGMA table_info(routes)')->fetchAll(), 'name');
+if (in_array('stash_file_id', $columns, true)) {
+    echo "routes.stash_file_id is there already.\n";
+    exit(0);
+}
+$db->exec('ALTER TABLE routes ADD COLUMN stash_file_id INTEGER');
+echo "routes.stash_file_id added.\n";

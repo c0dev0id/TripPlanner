@@ -10,7 +10,10 @@ use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
 use Planner\Stash\StashFiles;
 use Planner\Tests\TestDatabase;
+use Planner\Tests\Trip\TripFixture;
 use Planner\Trip\Folders;
+use Planner\Trip\TripDocuments;
+use Planner\Trip\Trips;
 
 final class StashFilesTest extends TestCase
 {
@@ -44,6 +47,21 @@ final class StashFilesTest extends TestCase
         self::assertSame(['Over the pass', 'Morning', ''], array_column($kept['file']['items'], 'name'));
         self::assertSame([$kept['file']], $this->files->listFor($this->userId));
         self::assertSame(StashFixture::gpx(), gzdecode($this->files->gzip($this->userId, $kept['file']['id'])));
+    }
+
+    public function testListsWithAFileTheTripsARouteOfItWasCopiedIntoEachOnce(): void
+    {
+        $file = $this->keep(StashFixture::gpx())['file'];
+        self::assertSame([], $file['usedIn']);
+        $tripId = (new Trips($this->db, $this->folders))->create($this->userId, 'Alps', $this->now)->id;
+        $document = TripFixture::document();
+        $document['days'][0]['routes'][0]['stashFileId'] = $file['id'];
+        $document['days'][0]['routes'][] = ['stashFileId' => $file['id']] + TripFixture::track('t1');
+        (new TripDocuments($this->db))->save($this->userId, $tripId, $document, 1, $this->now);
+        self::assertSame([['id' => $tripId, 'name' => 'Alps']], $this->files->listFor($this->userId)[0]['usedIn']);
+        self::assertSame([['id' => $tripId, 'name' => 'Alps']], $this->files->find($this->userId, $file['id'])['usedIn']);
+        (new Trips($this->db, $this->folders))->delete($this->userId, $tripId);
+        self::assertSame([], $this->files->listFor($this->userId)[0]['usedIn']);
     }
 
     public function testAFileKeptAlreadyIsNotKeptAgainWhereverItIs(): void

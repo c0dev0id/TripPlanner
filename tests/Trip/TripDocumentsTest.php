@@ -46,6 +46,19 @@ final class TripDocumentsTest extends TestCase
         return $this->documents->save($this->userId, $tripId ?? $this->tripId, $document, $version, $this->now);
     }
 
+    public function testKeepsTheStashFileARouteWasCopiedFromAlsoWhereTheRouteIsSentAsUnchanged(): void
+    {
+        $document = TripFixture::document();
+        $document['days'][0]['routes'][0]['stashFileId'] = 7;
+        $document['days'][0]['routes'][] = TripFixture::track('t1');
+        $this->save($document, 1);
+        $document['days'][0]['routes'][0] = ['id' => $document['days'][0]['routes'][0]['id'], 'unchanged' => true];
+        $this->save($document, 2);
+        $routes = $this->documents->load($this->userId, $this->tripId)['days'][0]['routes'];
+        self::assertSame(7, $routes[0]['stashFileId']);
+        self::assertArrayNotHasKey('stashFileId', $routes[1]);
+    }
+
     public function testLoadsANewTripAsAnEmptyDocument(): void
     {
         self::assertSame(

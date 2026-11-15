@@ -131,7 +131,7 @@ final class TripDocumentValidator
             'profile' => self::oneOf($route, 'profile', self::PROFILES, $at),
             'optional' => self::bool($route, 'optional', $at),
             'color' => self::color($route, $at),
-        ] + (self::isUnchanged($route) ? ['unchanged' => true] : []);
+        ] + self::stashFile($route, $at) + (self::isUnchanged($route) ? ['unchanged' => true] : []);
         if ($common['kind'] === 'track') {
             $line = $route['line'] ?? null;
             if (!is_string($line) || !Polyline::isWellFormed($line)) {
@@ -218,6 +218,16 @@ final class TripDocumentValidator
             throw new InvalidDocument("$at.$key must be one of " . implode(', ', $allowed) . '.');
         }
         return $value;
+    }
+
+    /** @return array{stashFileId?: int} the file of the Stash the route was copied from, where it names one */
+    private static function stashFile(array $route, string $at): array
+    {
+        $value = $route['stashFileId'] ?? null;
+        if ($value !== null && (!is_int($value) || $value < 1)) {
+            throw new InvalidDocument("$at.stashFileId must be the number of a file.");
+        }
+        return $value === null ? [] : ['stashFileId' => $value];
     }
 
     private static function bool(array $parent, string $key, string $at): bool

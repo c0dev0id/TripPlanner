@@ -96,6 +96,7 @@ final class TripDocumentValidatorTest extends TestCase
         yield 'name too long' => [fn (array &$d) => $d['name'] = str_repeat('x', 201), 'document.name'];
         yield 'notes too long' => [fn (array &$d) => $d['days'][0]['stops'][0]['notes'] = str_repeat('ü', 20001), 'stops[0].notes'];
         yield 'colour by name' => [fn (array &$d) => $d['days'][0]['routes'][0]['color'] = 'red', 'routes[0].color'];
+        yield 'stash file by name' => [fn (array &$d) => $d['days'][0]['routes'][0]['stashFileId'] = 'pass.gpx', 'routes[0].stashFileId'];
         yield 'bad date' => [fn (array &$d) => $d['days'][0]['date'] = '2027-02-30', 'days[0].date'];
         yield 'empty stop symbol' => [fn (array &$d) => $d['days'][0]['stops'][0]['symbol'] = '', 'stops[0].symbol'];
         yield 'stop symbol too long' => [fn (array &$d) => $d['days'][0]['stops'][0]['symbol'] = str_repeat('x', 101), 'stops[0].symbol'];

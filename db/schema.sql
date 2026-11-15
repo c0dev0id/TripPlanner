@@ -145,6 +145,8 @@ CREATE TABLE IF NOT EXISTS routes (
     points TEXT,
     legs TEXT,
     line TEXT,
+    -- The file of the Stash it was copied from, where it was; the file may be gone since.
+    stash_file_id INTEGER,
     CHECK ((kind = 'routed') = (highways IS NOT NULL AND points IS NOT NULL AND legs IS NOT NULL AND line IS NULL)),
     CHECK ((kind = 'track') = (highways IS NULL AND points IS NULL AND legs IS NULL AND line IS NOT NULL))
 );

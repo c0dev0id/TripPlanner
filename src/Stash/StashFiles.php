@@ -22,10 +22,10 @@ final class StashFiles
     }
 
     /**
-     * The user's files by name, each with its folder, how many waypoints it holds and
-     * its routes and tracks in the file's order.
+     * The user's files by name, each with its folder, how many waypoints it holds, its
+     * routes and tracks in the file's order and the trips a route of it was copied into.
      *
-     * @return list<array{id: int, folderId: int, name: string, createdAt: string, waypoints: int, items: list<array<string, mixed>>}>
+     * @return list<array{id: int, folderId: int, name: string, createdAt: string, waypoints: int, items: list<array<string, mixed>>, usedIn: list<array{id: int, name: string}>}>
      */
     public function listFor(int $userId): array
     {
@@ -38,9 +38,29 @@ final class StashFiles
         foreach ($statement as $row) {
             $items[(int) $row['file_id']][] = self::item($row);
         }
+        $usedIn = $this->usedIn($userId);
         $statement = $this->db->prepare(self::FILE . ' WHERE user_id = ? ORDER BY name COLLATE NOCASE, id');
         $statement->execute([$userId]);
-        return array_map(fn (array $row) => self::file($row, $items[(int) $row['id']] ?? []), $statement->fetchAll());
+        return array_map(fn (array $row) => self::file($row, $items[(int) $row['id']] ?? [], $usedIn[(int) $row['id']] ?? []), $statement->fetchAll());
+    }
+
+    /**
+     * The user's trips that hold a route copied from a file, by the file, each trip once, by name.
+     *
+     * @return array<int, list<array{id: int, name: string}>>
+     */
+    private function usedIn(int $userId): array
+    {
+        $statement = $this->db->prepare(
+            'SELECT DISTINCT r.stash_file_id, t.id, t.name FROM trips t JOIN days d ON d.trip_id = t.id JOIN routes r ON r.day_id = d.id
+             WHERE t.user_id = ? AND r.stash_file_id IS NOT NULL ORDER BY t.name COLLATE NOCASE, t.id',
+        );
+        $statement->execute([$userId]);
+        $usedIn = [];
+        foreach ($statement as $row) {
+            $usedIn[(int) $row['stash_file_id']][] = ['id' => (int) $row['id'], 'name' => $row['name']];
+        }
+        return $usedIn;
     }
 
     /**
@@ -78,7 +98,7 @@ final class StashFiles
         $statement = $this->db->prepare(self::FILE . ' WHERE id = ? AND user_id = ?');
         $statement->execute([$id, $userId]);
         $row = $statement->fetch();
-        return $row === false ? null : self::file($row, $this->items($id));
+        return $row === false ? null : self::file($row, $this->items($id), $this->usedIn($userId)[$id] ?? []);
     }
 
     /** The file as it is kept, compressed with gzip; null when the user has no such file. */
@@ -185,8 +205,8 @@ final class StashFiles
         ];
     }
 
-    private static function file(array $row, array $items): array
+    private static function file(array $row, array $items, array $usedIn): array
     {
-        return ['id' => (int) $row['id'], 'folderId' => (int) $row['folder_id'], 'name' => $row['name'], 'createdAt' => $row['created_at'], 'waypoints' => (int) $row['waypoints'], 'items' => $items];
+        return ['id' => (int) $row['id'], 'folderId' => (int) $row['folder_id'], 'name' => $row['name'], 'createdAt' => $row['created_at'], 'waypoints' => (int) $row['waypoints'], 'items' => $items, 'usedIn' => $usedIn];
     }
 }

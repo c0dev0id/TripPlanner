@@ -72,7 +72,7 @@ final class TripDocuments
      */
     public function tripDays(int $userId, int $from = 0): iterable
     {
-        $routes = $this->db->prepare('SELECT id, name, kind, profile, highways, optional, color, points, legs, line FROM routes WHERE day_id = ? ORDER BY position');
+        $routes = $this->db->prepare('SELECT id, name, kind, profile, highways, optional, color, points, legs, line, stash_file_id FROM routes WHERE day_id = ? ORDER BY position');
         $days = $this->db->prepare("SELECT d.id, d.trip_id, d.date FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.user_id = ? AND t.kind = 'trip' ORDER BY d.trip_id, d.position LIMIT -1 OFFSET ?");
         $days->execute([$userId, $from]);
         foreach ($days->fetchAll() as $day) {
@@ -108,7 +108,7 @@ final class TripDocuments
         foreach ($this->rows('SELECT id, name, date, notes FROM days WHERE trip_id = ? ORDER BY position', $tripId) as $day) {
             $days[$day['id']] = ['id' => $day['id'], 'name' => $day['name'], 'date' => $day['date'], 'notes' => $day['notes'], 'routes' => [], 'stops' => []];
         }
-        $routes = 'SELECT id, day_id, name, kind, profile, highways, optional, color, points, legs, line FROM routes WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
+        $routes = 'SELECT id, day_id, name, kind, profile, highways, optional, color, points, legs, line, stash_file_id FROM routes WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
         foreach ($this->rows($routes, $tripId) as $row) {
             $days[$row['day_id']]['routes'][] = self::route($row);
         }
@@ -145,7 +145,8 @@ final class TripDocuments
     /** A row of the routes table as the document's route: a routed route's points and legs, or a track's line. */
     public static function route(array $row): array
     {
-        $common = ['id' => $row['id'], 'name' => $row['name'], 'kind' => $row['kind'], 'profile' => $row['profile'], 'optional' => (bool) $row['optional'], 'color' => $row['color']];
+        $common = ['id' => $row['id'], 'name' => $row['name'], 'kind' => $row['kind'], 'profile' => $row['profile'], 'optional' => (bool) $row['optional'], 'color' => $row['color']]
+            + (($row['stash_file_id'] ?? null) === null ? [] : ['stashFileId' => (int) $row['stash_file_id']]);
         return $row['kind'] === 'track' ? $common + ['line' => $row['line']] : $common + [
             'highways' => $row['highways'],
             'points' => json_decode($row['points'], true, flags: JSON_THROW_ON_ERROR),
@@ -298,7 +299,7 @@ final class TripDocuments
         }
         $ids = array_map('strval', array_keys($places));
         $statement = $this->db->prepare(
-            'SELECT id, name, kind, profile, highways, optional, color, points, legs, line FROM routes
+            'SELECT id, name, kind, profile, highways, optional, color, points, legs, line, stash_file_id FROM routes
              WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) AND id IN (' . Database::placeholders($ids) . ')',
         );
         $statement->execute([$tripId, ...$ids]);
@@ -356,10 +357,11 @@ final class TripDocuments
         );
         $outlines = array_column($this->rows('SELECT id, outline FROM days WHERE trip_id = ?', $tripId), 'outline', 'id');
         $upsertRoute = $this->db->prepare(
-            'INSERT INTO routes (id, day_id, position, name, kind, profile, highways, optional, color, points, legs, line) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            'INSERT INTO routes (id, day_id, position, name, kind, profile, highways, optional, color, points, legs, line, stash_file_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, position = excluded.position, name = excluded.name, kind = excluded.kind,
                  profile = excluded.profile, highways = excluded.highways, optional = excluded.optional, color = excluded.color, points = excluded.points, legs = excluded.legs,
-                 line = excluded.line',
+                 line = excluded.line, stash_file_id = excluded.stash_file_id',
         );
         $upsertStop = $this->db->prepare(
             'INSERT INTO stops (id, day_id, position, name, symbol, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional, website)
@@ -394,7 +396,7 @@ final class TripDocuments
                 $track = $route['kind'] === 'track';
                 $upsertRoute->execute([
                     $route['id'], $day['id'], $index, $route['name'], $route['kind'], $route['profile'], $track ? null : $route['highways'], (int) $route['optional'], $route['color'],
-                    $track ? null : Json::encode($route['points']), $track ? null : Json::encode((object) $route['legs']), $track ? $route['line'] : null,
+                    $track ? null : Json::encode($route['points']), $track ? null : Json::encode((object) $route['legs']), $track ? $route['line'] : null, $route['stashFileId'] ?? null,
                 ]);
             }
             foreach ($day['stops'] as $index => $stop) {
