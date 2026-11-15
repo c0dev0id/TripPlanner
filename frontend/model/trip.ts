@@ -101,6 +101,8 @@ interface RouteBase {
   optional: boolean;
   /** The colour of its line as #rrggbb, where the user chose one; null for the colour its place in the trip gives it. */
   color: string | null;
+  /** The file of the Stash it was copied from, where it was. */
+  stashFileId?: number;
 }
 
 /** A road to drive: points in order, the legs between consecutive points routed, or straight where the point they lead to says so. */

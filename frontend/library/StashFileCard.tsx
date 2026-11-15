@@ -29,6 +29,9 @@ function heldIn(file: StashFile): string {
     .join(' · ') || t('Empty');
 }
 
+/** The trips a route or a track of the file was copied into, as its card says them; nothing where there is none. */
+const usedIn = (file: StashFile): string | false => file.usedIn.length > 0 && t('Used in {trips}', { trips: file.usedIn.map((trip) => trip.name).join(', ') });
+
 /** A route or a track of a file as a row: its name over what it is, how far it goes and, of a track with times, when it began; a click shows it alone on the map, in the colour its row has, and its menu takes it out of the Stash. */
 export function StashItemRow(props: { file: StashFile; item: StashItem; where?: string; onShow: (item: StashItem) => void; items: () => MenuItem[]; select: RowSelect }) {
   return (
@@ -67,6 +70,7 @@ export function StashFileCard(props: { file: StashFile; where?: string; onOpen: 
           <span class="lines">
             <span class="name">{props.file.name}</span>
             <span class="muted detail">{[props.where, heldIn(props.file)].filter(Boolean).join(' · ')}</span>
+            <Show when={usedIn(props.file)}>{(text) => <span class="muted detail">{text()}</span>}</Show>
           </span>
           <Show when={props.file.items.length > 0}>
             <TripShape days={[props.file.items.map((item) => ({ line: item.line, color: stashColor(props.file, item) }))]} />

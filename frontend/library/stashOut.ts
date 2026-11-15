@@ -16,7 +16,7 @@ export interface Picked {
  * The routes and tracks picked from files of the Stash, read from the files as an
  * import reads them, as copies to paste into a day: a route with its points and the way
  * Garmin gave between them, a track with its line, and with each the waypoints that
- * stand on its points.
+ * stand on its points. Each remembers the file it is from.
  */
 export async function stashCopies(picked: readonly Picked[]): Promise<CopiedRoute[]> {
   const copies: CopiedRoute[] = [];
@@ -24,7 +24,7 @@ export async function stashCopies(picked: readonly Picked[]): Promise<CopiedRout
     const gpx = parseGpx(await fetchStashGpx(file.id));
     const taken = (kind: StashItem['kind']) => (_: unknown, position: number) => !items || items.some((item) => item.kind === kind && item.position === position);
     const parts = gpxToDayParts({ ...gpx, routes: gpx.routes.filter(taken('route')), tracks: gpx.tracks.filter(taken('track')) }, { fileName: file.name, profile: 'motorcycle', newId });
-    copies.push(...parts.routes.map((route) => ({ route, stops: stopsBoundTo(route, parts.stops), from: { date: null, name: file.name } })));
+    copies.push(...parts.routes.map((route) => ({ route: { ...route, stashFileId: file.id }, stops: stopsBoundTo(route, parts.stops), from: { date: null, name: file.name } })));
   }
   return copies;
 }

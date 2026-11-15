@@ -5,7 +5,8 @@ import { isTreeTab, TREES, treeOfKind, type LibraryTab, type TreeTab } from '../
 import type { FolderKind } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { createRequest } from '../ui/request';
-import { stashFiles } from './stash';
+import { flushSave } from './autosave';
+import { relistStash, stashFiles } from './stash';
 import { openTripId, removeParts, selectedDay } from './trip';
 
 /** The library as the server lists it, and where the user is in it. */
@@ -19,8 +20,9 @@ export { libraryTab };
 const [mapTab, setMapTab] = createSignal<Exclude<LibraryTab, 'settings'>>('trips');
 export { mapTab };
 
-/** Shows a tab; what the others show stays as it is. */
+/** Shows a tab; what the others show stays as it is. The Stash is listed afresh, once the open trip is saved: its files say the trips they are used in. */
 export function showTab(to: LibraryTab): void {
+  if (to === 'stash' && libraryTab() !== 'stash') void flushSave().then(relistStash);
   setTab(to);
   if (isTreeTab(to)) setTreeTab(to);
   if (to !== 'settings') setMapTab(to);

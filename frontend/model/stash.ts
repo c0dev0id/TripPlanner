@@ -17,4 +17,6 @@ export interface StashFile {
   createdAt: string;
   waypoints: number;
   items: StashItem[];
+  /** The trips a route or a track of it was copied into, by name. */
+  usedIn: { id: number; name: string }[];
 }
