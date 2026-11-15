@@ -407,7 +407,7 @@
   rides. The map draws the
   selected rides, each in a colour its row shows, and brings them into view, so that
   rides of different years are looked at together. A ride's menu renames it, copies it
-  to be pasted onto a day, puts it on a day of the open trip, opens a day it is on,
+  to be pasted onto a day, puts it on a day of the open trip, which the entry names, opens a day it is on,
   in the tab its trip is in, and deletes it with its file, from every day it
   is on, after a question; with several selected it copies, adds and deletes all of
   them. A recording's menu on its day has "Show in the rides", which shows the tab

@@ -124,7 +124,8 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       { label: t('Rename…'), disabled: several, run: () => setRenamed(ride) },
       { label: t('Autoname'), run: () => void runRidesJob((onProgress) => autoname(chosen, onProgress)) },
       { label: t('Copy'), run: () => copyRecordings(chosen) },
-      ...(trip ? [{ label: t('Add to day'), items: trip.days.map((day) => ({ label: dayTitleOf(trip, day), run: () => toDay(day.id) })) }] : []),
+      // The open trip is not shown beside the rides, so the entry names it.
+      ...(trip?.kind === 'trip' ? [{ label: t('Add to “{name}”', { name: trip.name }), items: trip.days.map((day) => ({ label: dayTitleOf(trip, day), run: () => toDay(day.id) })) }] : []),
       { label: t('Merge'), disabled: !several || !followOneAnother(chosen), run: () => void mergeAsked(chosen) },
       only && more.length > 0 && !several
         ? { label: t('Open location'), disabled: fetchingTrip(), items: ride.days.map((on) => ({ label: dayText(on), run: () => props.onOpen(on.tripId, on.dayId) })) }
