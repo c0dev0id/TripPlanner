@@ -1,16 +1,15 @@
 import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
-import { changeTrip, keepStashRides, removeStashItems, renameStashItem, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, renameStashFile, stashFileUrl, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
+import { changeTrip, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import type { StashFile, StashItem } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
-import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip, copyRoutes, copyStops } from '../state/clipboard';
+import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
 import { heldOf, importNote, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, kindAround, moveTargets } from '../model/folders';
 import { flushSave } from '../state/autosave';
-import { isShownItem, isShownWhole, relistStash, showInStash, shownInStash, stashFiles, stashProblem } from '../state/stash';
-import { ridesChanged } from '../state/rides';
+import { isShownItem, isShownWhole, relistStash, showInStash, stashFiles, stashProblem } from '../state/stash';
 import { setEditTarget, setExportScope, setShareOpen } from '../state/drawing';
 import { openJournal } from '../state/journal';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
@@ -30,8 +29,8 @@ import { FolderCard, RouteCard, TripCard, TripDays, type CardSelect } from './ca
 import { dragToFolder } from './dragToFolder';
 import { countText, fileItemsOf, filesOf, folderOf, foldersOf, itemKey, itemsOf, keyOf, nameOf, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
 import { libraryImports } from './importActions';
-import { StashFileCard, StashItemRow, stashItemName } from './StashFileCard';
-import { stashCopies, stashPlaces, type Picked } from './stashOut';
+import { StashFileCard, StashItemRow } from './StashFileCard';
+import { filesMenu, itemsMenu, removeItems, type StashMenuHost } from './stashMenu';
 import { StandardPlaces } from '../map/PlaceKinds';
 import { keepPlaces, keptText } from './dropImport';
 import { firstFound, foundCount, foundKeys, routeKey, searchLibrary, type FoundRoute, type RouteDays } from './search';
@@ -478,7 +477,7 @@ export function Library(props: {
     if (routes.length + parts.length > 0) {
       if (verb !== 'delete' || chosen.length > 0) return;
       e.preventDefault();
-      return void (routes.length > 0 ? removeRoutes(routes) : removeItems(parts));
+      return void (routes.length > 0 ? removeRoutes(routes) : removeItems(parts, relist));
     }
     // Files of the Stash are deleted and moved, not cut or copied.
     const clips = verb === 'cut' || verb === 'copy';
@@ -497,97 +496,12 @@ export function Library(props: {
   /** Asks for a new name for something of the library, which `save` then gives it; `saved` lists afresh what it is among. */
   const rename = (title: string, placeholder: string, name: string, save: (name: string) => Promise<unknown>, saved: () => void) =>
     setDialog({ kind: 'rename', title, placeholder, name, save, saved });
-  /** Takes something out of the Stash and says, where the imports say what they did, what came of it. */
-  const takeOut = (work: () => Promise<string>) => void runLibrary(async () => setImportNote({ text: await work(), errors: [] }));
-  /** Copies routes and tracks of the Stash, to be pasted into a day. */
-  const copyOut = (picked: readonly Picked[]) =>
-    takeOut(async () => {
-      const copies = await stashCopies(picked);
-      if (copies.length === 0) return t('No routes or tracks in there.');
-      copyRoutes(copies);
-      return t('Copied {what}: paste from the menu of a day or a trip.', { what: counted(copies.length, 'route') });
-    });
-  /** Copies the waypoints of files of the Stash, to be pasted as stops or as places. */
-  const copyWaypoints = (of: readonly StashFile[]) =>
-    takeOut(async () => {
-      const places = await stashPlaces(of);
-      copyStops(places.map((place) => place.stop), places.map((place) => place.kind));
-      return t('Copied {what}: paste from the menu of a day, or of a list of places or a kind in it.', { what: counted(places.length, 'waypoint') });
-    });
-  /** Keeps tracks of the Stash as rides, which the rides then list. */
-  const keepRides = (picked: readonly Picked[]) =>
-    takeOut(async () => {
-      let [kept, known] = [0, 0];
-      for (const { file, items } of picked) {
-        const count = await keepStashRides(file.id, items?.map((item) => item.position));
-        kept += count.kept;
-        known += count.known;
-      }
-      ridesChanged();
-      return keptText(kept, known, 'ride', t('No tracks in there.'));
-    });
-  /**
-   * The menu of what is selected once files of the Stash are among it. Files alone are
-   * taken out of the Stash: their routes and tracks copied, their waypoints copied,
-   * their tracks kept as rides. One file is renamed, or exported as it is kept, and
-   * files, with the folders selected beside them, are moved and deleted.
-   */
-  const filesMenu = (chosen: readonly Item[]): MenuItem[] => {
-    const several = chosen.length > 1;
-    const chosenFiles = filesOf(chosen);
-    const onlyFiles = chosenFiles.length === chosen.length;
-    const whole = chosenFiles.map((file) => ({ file }));
-    return [
-      ...(several ? [menuNote(t('{what} selected', { what: countText(chosen) }))] : []),
-      { label: t('Copy routes and tracks'), disabled: !onlyFiles || chosenFiles.every((file) => file.items.length === 0), run: () => copyOut(whole) },
-      { label: t('Copy waypoints'), disabled: !onlyFiles || chosenFiles.every((file) => file.waypoints === 0), run: () => copyWaypoints(chosenFiles) },
-      { label: t('Keep tracks as rides'), disabled: !onlyFiles || !chosenFiles.some((file) => file.items.some((item) => item.kind === 'track')), run: () => keepRides(whole) },
-      { label: t('Rename…'), disabled: several, run: () => rename(t('Rename file'), t('Name of the file'), chosenFiles[0]!.name, (name) => renameStashFile(chosenFiles[0]!.id, name), relistStash) },
-      ...moveItem(chosen),
-      { label: t('Export'), disabled: several, run: () => window.location.assign(stashFileUrl(chosenFiles[0]!.id)) },
-      { label: t('Delete'), run: () => void remove(chosen) },
-    ];
-  };
-  /** Routes and tracks by their files, as what is taken of each. */
-  const pickedOf = (parts: readonly FileItem[]): Picked[] => [...new Set(parts.map((at) => at.file))].map((file) => ({ file, items: parts.filter((at) => at.file === file).map((at) => at.item) }));
-  /** Deletes routes and tracks from their files, once that is confirmed, which rewrites the files; one of them shown alone on the map gives way to its file. */
-  const removeItems = async (doomed: readonly FileItem[]) => {
-    const [only] = doomed;
-    const picked = pickedOf(doomed);
-    const question =
-      doomed.length === 1
-        ? t('Delete “{name}” from the file “{file}”?', { name: stashItemName(only!.item), file: only!.file.name })
-        : t('Delete {n} routes and tracks from {files}?', { n: doomed.length, files: counted(picked.length, 'file') });
-    if (!(await askConfirmation(question, t('Delete')))) return;
-    await runLibrary(() => Promise.all(picked.map(({ file, items }) => removeStashItems(file.id, items!))), () => {
-      const shown = shownInStash();
-      if (shown?.item && picked.some(({ file }) => file.id === shown.fileId)) showInStash({ fileId: shown.fileId });
-      relist();
-    });
-  };
-  /**
-   * The menu of what is selected once routes and tracks of files are among it. They
-   * are copied to be pasted into a day, the tracks kept as rides, one renamed, and
-   * deleted from their files. With anything else selected besides, it says that they
-   * are not acted on together.
-   */
-  const itemsMenu = (selection: Selection<string>): MenuItem[] => {
-    const parts = itemsIn(selection);
-    if (parts.length < selection.size) return [menuNote(t('Routes and tracks of files are not acted on together with files and folders'))];
-    const one = parts.length === 1 ? parts[0]! : undefined;
-    const tracks = parts.filter((at) => at.item.kind === 'track');
-    return [
-      ...(one ? [] : [menuNote(t('{what} selected', { what: t('{n} routes and tracks', { n: parts.length }) }))]),
-      { label: t('Copy'), run: () => copyOut(pickedOf(parts)) },
-      { label: t(one ? 'Keep as ride' : 'Keep tracks as rides'), disabled: tracks.length === 0, run: () => keepRides(pickedOf(tracks)) },
-      { label: t('Rename…'), disabled: !one, run: () => rename(one!.item.kind === 'track' ? t('Rename track') : t('Rename route'), t('Name'), one!.item.name, (name) => renameStashItem(one!.file.id, one!.item, name), relistStash) },
-      { label: t('Delete'), run: () => void removeItems(parts) },
-    ];
-  };
+  /** What the Stash's menus ask of the library around them. */
+  const stashHost: StashMenuHost = { rename, moveItem, remove: (chosen) => void remove(chosen), relist };
   /** The menu of a route or a track of a file: for the selected rows, or for it alone where it is not selected. */
   const stashItemMenu = (at: FileItem): MenuItem[] => {
     const selection = menuRowsOf(itemKey(at));
-    return itemsMenu(selection);
+    return itemsMenu(itemsIn(selection), selection.size, stashHost);
   };
 
   /**
@@ -603,10 +517,10 @@ export function Library(props: {
   const itemMenu = (item: Item): MenuItem[] => {
     const selection = menuRowsOf(keyOf(item));
     if (routesIn(selection).length > 0) return routesMenu(selection);
-    if (itemsIn(selection).length > 0) return itemsMenu(selection);
+    if (itemsIn(selection).length > 0) return itemsMenu(itemsIn(selection), selection.size, stashHost);
     const chosen = chosenWith(item, selection);
     const several = chosen.length > 1;
-    if ('file' in item || filesOf(chosen).length > 0) return filesMenu(chosen);
+    if ('file' in item || filesOf(chosen).length > 0) return filesMenu(chosen, stashHost);
     const chosenTrips = tripsOf(chosen);
     const onlyTrips = chosenTrips.length === chosen.length;
     const [first, ...others] = chosenTrips;
