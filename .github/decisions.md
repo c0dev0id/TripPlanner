@@ -514,17 +514,6 @@ entries at the end of their section.
   whatever a broken file needs next are found under Convert, each kind of conversion
   an entry and its variants a submenu of that, instead of entries of their own among
   what a part's menu always has.
-- **A trip is made from a collection in the browser, as an import makes one.** A dump of
-  GPX files kept as planning material is sorted into trips later; copying sections one
-  by one into a trip that has to exist first did not cover that. The sections become
-  days by the rules a folder of files follows, by the same function, so that a dump
-  sorted later comes out as it would have dropped on a folder of trips. The trip is a
-  new document under new ids, saved before anything leaves the collection, so that the
-  sections are in both for a moment and never in neither; the rides on the sections
-  are put on their days as well, and then the sections are removed, in the open
-  collection as an edit like any other.
-  Moving is the default because a dump that keeps what was sorted never shows what is
-  left, and the tick is there for material that is used more than once.
 - **A list of places is a collection in a folder of its own, its kinds are sections,
   a place is a free stop.** Places need what stops have already: a position, a symbol,
   the fields, the dialog, a marker, copy and paste, undo, the save. A table and
@@ -1451,9 +1440,11 @@ entries at the end of their section.
   going without a framework was rejected because routing, middleware and PSR-7 would be
   written again, worse.
 - **SQLite, one schema file, no migrations before 1.0.** One user base on one box. The
-  schema is `db/schema.sql`; while nothing is released, a schema change recreates the
+  schema is `db/schema.sql`; while nothing is released, a changed table recreates the
   database (`make recreate`, which also empties the file store, since `CREATE TABLE IF
-  NOT EXISTS` adds tables but never columns). Migrations start with the first release.
+  NOT EXISTS` adds tables but never columns), or, once the data is worth keeping, a
+  one-shot script in `bin/` changes it and is deleted after it has run, so that no
+  migration code stays. Migrations start with the first release.
 - **The library's pane has one frame.** The library's actions as icons and the search
   on top, under them the open trip's name with the trip's own actions as icons, then
   the tree; the actions of days, routes and recordings are icons on their own headers.
