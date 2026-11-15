@@ -16,7 +16,7 @@ import { counted } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { FileIcon, LinkIcon, PhotoIcon, PlusIcon } from '../ui/icons';
 import { openDocument, openImage } from '../ui/Lightbox';
-import type { MenuItem } from '../ui/menu';
+import { menuNote, type MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { Pad } from '../ui/Pad';
@@ -111,7 +111,7 @@ function mediaMenu(entry: Entry, onEdit: (entry: Entry) => void): MenuItem[] {
       clearPartSelection();
     });
   return [
-    ...(several ? [{ label: t('{what} selected', { what: counted(chosen.length, 'attachment') }), disabled: true, run: () => undefined }] : []),
+    ...(several ? [menuNote(t('{what} selected', { what: counted(chosen.length, 'attachment') }))] : []),
     { label: t(entry.url === null ? 'Rename…' : 'Edit…'), disabled: several, run: () => onEdit(entry) },
     { label: t('Cut'), run: () => clipMedia(chosen, true) },
     { label: t('Copy'), run: () => clipMedia(chosen, false) },

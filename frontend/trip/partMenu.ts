@@ -11,7 +11,7 @@ import { OUR_ICONS, PLAIN_SYMBOL } from '../symbols/symbols';
 import { askConfirmation } from '../ui/confirm';
 import { counted } from '../ui/format';
 import type { Stop } from '../model/trip';
-import type { MenuItem } from '../ui/menu';
+import { menuNote, type MenuItem } from '../ui/menu';
 import { dayTitleOf } from './labels';
 import { removeDayAsked, removeRouteAsked } from './remove';
 
@@ -106,15 +106,14 @@ export function partMenu(kind: PartKind, id: string, own: { edit?: () => void; m
   const ids = partsOfMenu(kind, id);
   const several = ids.length > 1;
   const paste = several ? [] : pasteItems(kind, id);
-  const nothing = () => undefined;
   return [
-    ...(several ? [{ label: t('{what} selected', { what: counted(ids.length, NOUNS[kind][openTrip()!.kind]) }), disabled: true, run: nothing }] : []),
+    ...(several ? [menuNote(t('{what} selected', { what: counted(ids.length, NOUNS[kind][openTrip()!.kind]) }))] : []),
     { label: t('Edit…'), disabled: several, run: own.edit ?? (() => setEditTarget({ kind, id })) },
     ...(kind === 'stop' ? [iconItem(ids)] : []),
     { label: t('Duplicate'), run: () => duplicateParts(kind, ids) },
     { label: t('Cut'), run: () => copyParts(kind, ids, true) },
     { label: t('Copy'), run: () => copyParts(kind, ids) },
-    ...(paste.length > 0 || kind === 'stop' ? paste : [{ label: t('Paste'), disabled: true, run: nothing }]),
+    ...(paste.length > 0 || kind === 'stop' ? paste : [menuNote(t('Paste'))]),
     ...moveItems(kind, ids),
     ...(kind === 'stop' ? [] : [{ label: t('Export GPX…'), run: () => setExportScope({ kind, ids }) }]),
     ...(several ? [] : (own.more ?? [])),

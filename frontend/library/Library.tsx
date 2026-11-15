@@ -20,7 +20,7 @@ import { askChoice, askConfirmation } from '../ui/confirm';
 import { counted } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { FoldIcon } from '../ui/icons';
-import type { MenuItem } from '../ui/menu';
+import { menuNote, type MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { menuRows, NOTHING_SELECTED, rowSelect, selectIn, selectionOf, type RowSelect, type Selection } from '../ui/selection';
@@ -313,10 +313,9 @@ export function Library(props: {
     const routes = routesIn(selection);
     const others = itemsOf(all(), selection);
     const what = [others.length > 0 && countText(others), counted(routes.length, 'route')].filter(Boolean).join(', ');
-    const nothing = () => undefined;
     return [
-      ...(selection.size > 1 ? [{ label: t('{what} selected', { what }), disabled: true, run: nothing }] : []),
-      others.length > 0 ? { label: t('Routes are not deleted together with folders and trips'), disabled: true, run: nothing } : { label: t('Delete'), run: () => void removeRoutes(routes) },
+      ...(selection.size > 1 ? [menuNote(t('{what} selected', { what }))] : []),
+      others.length > 0 ? menuNote(t('Routes are not deleted together with folders and trips')) : { label: t('Delete'), run: () => void removeRoutes(routes) },
     ];
   };
   /** The menu of a route the search found: for the selected rows, or for it alone where it is not selected. */
@@ -539,7 +538,7 @@ export function Library(props: {
     const onlyFiles = chosenFiles.length === chosen.length;
     const whole = chosenFiles.map((file) => ({ file }));
     return [
-      ...(several ? [{ label: t('{what} selected', { what: countText(chosen) }), disabled: true, run: () => undefined }] : []),
+      ...(several ? [menuNote(t('{what} selected', { what: countText(chosen) }))] : []),
       { label: t('Copy routes and tracks'), disabled: !onlyFiles || chosenFiles.every((file) => file.items.length === 0), run: () => copyOut(whole) },
       { label: t('Copy waypoints'), disabled: !onlyFiles || chosenFiles.every((file) => file.waypoints === 0), run: () => copyWaypoints(chosenFiles) },
       { label: t('Keep tracks as rides'), disabled: !onlyFiles || !chosenFiles.some((file) => file.items.some((item) => item.kind === 'track')), run: () => keepRides(whole) },
@@ -574,12 +573,11 @@ export function Library(props: {
    */
   const itemsMenu = (selection: Selection<string>): MenuItem[] => {
     const parts = itemsIn(selection);
-    const nothing = () => undefined;
-    if (parts.length < selection.size) return [{ label: t('Routes and tracks of files are not acted on together with files and folders'), disabled: true, run: nothing }];
+    if (parts.length < selection.size) return [menuNote(t('Routes and tracks of files are not acted on together with files and folders'))];
     const one = parts.length === 1 ? parts[0]! : undefined;
     const tracks = parts.filter((at) => at.item.kind === 'track');
     return [
-      ...(one ? [] : [{ label: t('{what} selected', { what: t('{n} routes and tracks', { n: parts.length }) }), disabled: true, run: nothing }]),
+      ...(one ? [] : [menuNote(t('{what} selected', { what: t('{n} routes and tracks', { n: parts.length }) }))]),
       { label: t('Copy'), run: () => copyOut(pickedOf(parts)) },
       { label: t(one ? 'Keep as ride' : 'Keep tracks as rides'), disabled: tracks.length === 0, run: () => keepRides(pickedOf(tracks)) },
       { label: t('Rename…'), disabled: !one, run: () => rename(one!.item.kind === 'track' ? t('Rename track') : t('Rename route'), t('Name'), one!.item.name, (name) => renameStashItem(one!.file.id, one!.item, name), relistStash) },
@@ -614,8 +612,7 @@ export function Library(props: {
     const [first, ...others] = chosenTrips;
     const paste = several ? [] : pasteItems(item);
     const within = tripsWithin(chosen);
-    const nothing = () => undefined;
-    const pasteEntries = paste.length > 0 ? paste : [{ label: t('Paste'), disabled: true, run: nothing }];
+    const pasteEntries = paste.length > 0 ? paste : [menuNote(t('Paste'))];
     const exportEntry = exportItem(within);
     const fresh: MenuItem[] = several
       ? []
@@ -629,7 +626,7 @@ export function Library(props: {
     // A special folder stays as it is: it takes what is new, added and pasted, and exports what it holds.
     if ('folder' in item && item.folder.kind !== 'folder') return [...fresh, ...pasteEntries, exportEntry];
     return [
-      ...(several ? [{ label: t('{what} selected', { what: countText(chosen) }), disabled: true, run: nothing }] : []),
+      ...(several ? [menuNote(t('{what} selected', { what: countText(chosen) }))] : []),
       ...fresh,
       // The open trip is edited in its dialog, its name with the rest; the others are renamed on the server.
       {

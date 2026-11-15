@@ -16,5 +16,8 @@ export type MenuItem = { label: string; disabled?: boolean; swatch?: string; sym
   | { items: MenuItem[] }
 );
 
+/** A line of a menu that says something and does nothing: what is selected, or what is not offered here. */
+export const menuNote = (label: string): MenuItem => ({ label, disabled: true, run: () => undefined });
+
 /** A menu opened by a long press (`touch`) ignores the lifting finger until it is tapped again. */
 export const [menu, setMenu] = createSignal<{ x: number; y: number; touch: boolean; items: MenuItem[] }>();

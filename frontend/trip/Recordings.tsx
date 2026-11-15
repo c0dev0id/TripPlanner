@@ -36,7 +36,7 @@ import { cardMenu } from '../ui/cardMenu';
 import { counted, dateText, distanceText, momentText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { CloseIcon, PlusIcon, SearchIcon } from '../ui/icons';
-import type { MenuItem } from '../ui/menu';
+import { menuNote, type MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { Pad } from '../ui/Pad';
@@ -178,7 +178,7 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
       clearPartSelection();
     });
   return [
-    ...(several ? [{ label: t('{what} selected', { what: counted(chosen.length, 'recording') }), disabled: true, run: () => undefined }] : []),
+    ...(several ? [menuNote(t('{what} selected', { what: counted(chosen.length, 'recording') }))] : []),
     { label: t('Rename…'), disabled: several, run: () => onRename(recording) },
     { label: t('Cut'), run: () => clipRecordings(chosen, true) },
     { label: t('Copy'), run: () => clipRecordings(chosen, false) },
