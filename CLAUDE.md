@@ -76,10 +76,22 @@ Layers, each depending only on the ones below:
   `symbols/`, `model/`.
 - `api.ts` is the only module that knows the API's URLs.
 
-The library has a tab for each of its views (`state/library.ts`, `LibraryTab`): Stash,
+The library has a tab for each of its views (`model/library.ts`, `LibraryTab`; what each
+tree is, its kind of folder, what it holds and its texts, is one record there, `TREES`): Stash,
 Trips, Places and Recordings. The folders of kind `collections` and `places` are the
 tops of the Stash's and the Places' trees and are never rows; each tree keeps its own
 mark and selection while another tab is shown.
+
+`library/Library.tsx` holds the trees, their menus and keys; beside it are its cards
+(`cards.tsx`, `StashFileCard.tsx`), the Stash's verbs and menus (`stashMenu.ts`) and what
+is pure and tested: the rows' keys and what a folder takes (`items.ts`), the search
+(`search.ts`).
+
+Every list selects through `ui/selection.ts`: there is one selection for the page, held
+by one list at a time. `rowSelect` gives a row its click, its pad and its highlight
+(`.selected`), `menuRows` says what a row's menu acts on, and each list reads the keys
+itself through `ui/fileVerb.ts`. A selectable row has a pad (`ui/Pad.tsx`) or a grip
+whose tap selects.
 
 The Stash is folders of GPX files kept whole (`stash_files`, `src/Stash/`), with an
 index of each file's routes and tracks beside it (`stash_items`); it is not made of trip

@@ -185,6 +185,18 @@ entries at the end of their section.
   selected. What a row needs to take part, its click, its pad and its highlight, is
   one value (`RowSelect` in `ui/selection.ts`), and the rows a menu acts on are
   decided there too (`menuRows`).
+- **The library's component holds the tree and no more.** After the tabs it had grown
+  into one function of some 840 lines that also held what is pure (what a key names,
+  what a folder takes, the search), the cards it renders, and the Stash's verbs, which
+  share nothing with the menu of folders and trips but the rename dialog and Move….
+  Those are files of their own now (`items.ts`, `search.ts`, `cards.tsx`,
+  `stashMenu.ts`), the pure ones tested. The search results stay a part of the
+  component: they are the tree's cards with the tree's menus, and handing those over
+  would have cost ten properties. What a tree is (its kind of folder, what it holds,
+  its texts) is one record in `model/library.ts` instead of a record per file, and the
+  folder helpers are in `model/` because the state uses them. The kinds of places'
+  marks and switches are with the map, whose legend they are, so that neither the map
+  nor the trip imports from the library.
 - **The search runs in the browser.** The library loads all trip summaries and folders of
   the user (a few hundred small rows at most for a personal planner) and filters them by
   name; the results are capped at twenty. A server search would add an endpoint for
