@@ -114,13 +114,8 @@ const keep = (id: number, track: RecordedTrack | Error) => setTracks(new Map(tra
 const [lookup, setLookup] = createSignal<{ dayId: string; found?: FoundRidingDay[]; previewed?: FoundRidingDay }>();
 
 createRoot(() => {
-  // Another trip starts with nothing read and nothing looked up.
-  createEffect(
-    on(openTripId, () => {
-      setTracks(new Map());
-      setLookup(undefined);
-    }),
-  );
+  // Another trip starts with nothing looked up; its tracks go by the rule below, which keeps those of the rides pinned or opened in their tab.
+  createEffect(on(openTripId, () => setLookup(undefined)));
   // The tracks of the recordings on the map are read once; the one opened is shown whole when it arrives.
   const reading = new Set<number>();
   createEffect(() => {
