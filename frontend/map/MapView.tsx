@@ -8,6 +8,7 @@ import { stashLines, stashWaypoints } from '../state/stash';
 import { routePositions } from '../routing/legs';
 import { colorRuns, DIMMED, NO_VALUE } from '../recording/lineColors';
 import { mapTab, tripShown } from '../state/library';
+import { sectionEnds } from '../state/section';
 import { isRoutePinned, pinnedAsideLines } from '../state/pins';
 import { keepsView } from '../state/place';
 import { ridesOpacity, routeWidth } from '../state/preferences';
@@ -135,21 +136,28 @@ function dimStops(): LngLat[] {
 }
 
 /** A recording's line in pieces of one colour each, those marked DIMMED drawn dimmed. */
-const colorPieces = (id: number, points: readonly LngLat[], colors: readonly string[]) =>
+const colorPieces = (id: number, points: readonly LngLat[], colors: readonly string[]): LinePiece[] =>
   colorRuns(points, colors).map((run) => ({ id, points: run.points, color: run.color === DIMMED ? NO_VALUE : run.color, dimmed: run.color === DIMMED }));
+
+/** A piece of a recording's line as the map draws it. */
+type LinePiece = { id: number; points: readonly LngLat[]; color: string; dimmed?: boolean };
+
+/** A recording's whole line dimmed under the part of it shown, where that is only a part: its stretch on the section looked up. */
+const dimmedBeyond = (id: number, whole: readonly LngLat[], part: readonly LngLat[]): LinePiece[] => (part.length === whole.length ? [] : [{ id, points: whole, color: NO_VALUE, dimmed: true }]);
 
 /** Keeps the recordings shown on the map once their tracks are read, each in its colour; the opened one apart, coloured by a measure where chosen. */
 function RecordingLines(props: { map: MapLibreMap }) {
   const openedId = createMemo(() => opened()?.recording.id);
   const others = createMemo(() =>
     recordingFeatures(
-      shownRecordings().flatMap((recording) => {
+      shownRecordings().flatMap((recording): LinePiece[] => {
         const track = recording.id === openedId() ? undefined : loadedTrack(recording);
         if (!track) return [];
         const color = recordingColor(recording);
-        // The recording compared with is dimmed where the opened one did not run along it.
+        // The recording compared with is dimmed where the opened one did not run along it, and beyond the section looked up.
         const cover = comparedCover();
-        return cover?.id === recording.id ? colorPieces(recording.id, track.points, cover.covered.map((on) => (on ? color : DIMMED))) : [{ id: recording.id, points: track.points, color }];
+        if (cover?.id !== recording.id) return [{ id: recording.id, points: track.points, color }];
+        return [...dimmedBeyond(recording.id, track.points, cover.points), ...colorPieces(recording.id, cover.points, cover.covered.map((on) => (on ? color : DIMMED)))];
       }),
     ),
   );
@@ -158,7 +166,8 @@ function RecordingLines(props: { map: MapLibreMap }) {
     if (!o) return recordingFeatures([]);
     const colors = openedLineColors();
     const id = o.recording.id;
-    return recordingFeatures(colors ? colorPieces(id, o.track.points, colors) : [{ id, points: o.track.points, color: recordingColor(o.recording) }]);
+    const whole = loadedTrack(o.recording)?.points ?? o.track.points;
+    return recordingFeatures([...dimmedBeyond(id, whole, o.track.points), ...(colors ? colorPieces(id, o.track.points, colors) : [{ id, points: o.track.points, color: recordingColor(o.recording) }])]);
   });
   createEffect(() => props.map.getSource<GeoJSONSource>(RECORDINGS_SOURCE)?.setData(others()));
   createEffect(() => props.map.getSource<GeoJSONSource>(OPENED_RECORDING_SOURCE)?.setData(openedLine()));
@@ -168,14 +177,18 @@ function RecordingLines(props: { map: MapLibreMap }) {
 /**
  * Draws the routes the duplicates report compares, each in its colour, the recording a
  * day's lookup shows, the rides selected while the map follows their tab, what is shown
- * of the Stash while it follows the Stash's, and the pinned lines of trips set aside.
+ * of the Stash while it follows the Stash's, the pinned lines of trips set aside, and the
+ * ends of the section looked up among the rides.
  */
 function ComparedLines(props: { map: MapLibreMap }) {
   createEffect(() => {
     const stash = mapTab() === 'stash';
     const aside = pinnedAsideLines().map((line) => ({ id: 0, ...line }));
-    const lines = recordingFeatures([...comparedLines(), ...previewedLines(), ...(mapTab() === 'recordings' ? ridesOnMap() : []), ...(stash ? stashLines() : []), ...aside]);
-    props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData({ type: 'FeatureCollection', features: [...lines.features, ...dotFeatures(stash ? stashWaypoints() : [])] });
+    // A ride drawn whole as a recording, opened or compared, is not drawn again as a selected ride.
+    const drawn = new Set(shownRecordings().map((recording) => recording.id));
+    const rides = mapTab() === 'recordings' ? ridesOnMap().filter((ride) => !drawn.has(ride.id)) : [];
+    const lines = recordingFeatures([...comparedLines(), ...previewedLines(), ...rides, ...(stash ? stashLines() : []), ...aside]);
+    props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData({ type: 'FeatureCollection', features: [...lines.features, ...dotFeatures([...(stash ? stashWaypoints() : []), ...sectionEnds()])] });
   });
   return null;
 }

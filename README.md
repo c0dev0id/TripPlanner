@@ -76,8 +76,9 @@ share work; sharing between users is on the way.
   you ride often dark, the ones you never took not at all. It stays on while planning.
 - **Rides by date** — every recording in years, months and days of riding, kept once
   whatever plans it followed; drop your tracker's files there, select some and compare
-  them on the map. Name them after where they began and ended, and merge the pieces
-  of one outing.
+  them on the map. Mark a section of road on one to find every ride over it and set two
+  of them against each other there. Name them after where they began and ended, and
+  merge the pieces of one outing.
 - **Fuel, beds and food** — fuel stations, hotels, restaurants, cafes, viewpoints and
   parking, each kind all in view, along the route or ride you look at, or off.
 - **Find the place** — search a town, a pass or an address; the map flies there and pins
@@ -114,6 +115,7 @@ share work; sharing between users is on the way.
 | Space, held | The Hand while a drawing tool is picked |
 | Click or tap a route on the map | Shows its day and takes the route up |
 | The pin on a route or a recording | Keeps it on the map while another is taken up |
+| Cmd/Ctrl-click two points on a ride opened in Recordings | Lists the rides over that section, figures for the section alone |
 | Right-click or long press on a stop or point on the map | Convert to stop, connect, disconnect, straight leg, remove |
 | Right-click or long press on the map | Add a point or a free stop here, a journal entry, or open the spot in Google Maps, OpenStreetMap or Street View |
 | Right-click, long press or the three dots on a folder, trip, day, route or stop in the panel | Its menu: new, add, rename or edit, move, copy or paste, duplicate, delete |

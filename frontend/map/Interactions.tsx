@@ -3,7 +3,9 @@ import { createEffect, onCleanup } from 'solid-js';
 import { currentTool, setTool, spotItems, tapAction, tool, type Tool } from '../state/drawing';
 import { isTextField } from '../ui/form';
 import { menu, setMenu } from '../ui/menu';
-import { pickPoint, setPickedIndex, somethingTakenUp } from '../state/recordingView';
+import { opened, pickPoint, setPickedIndex, somethingTakenUp } from '../state/recordingView';
+import { mapTab } from '../state/library';
+import { markSectionEnd } from '../state/section';
 import { activeRecordingId } from '../state/recordings';
 import { addFreeStop, appendPoint, editingRoute, insertPoint, insertStop, openTrip, redo, takeUpRoute, takeUpRouteOf, undo } from '../state/trip';
 import { fromMarker, toLngLat } from './markers';
@@ -72,11 +74,20 @@ export function Interactions(props: { map: MapLibreMap }) {
     }
     taps.click(sample(e.originalEvent), () => onTap(e));
   };
+  /** A Cmd or Ctrl click on the line of a ride opened in the rides' tab marks an end of the section to look up there. Whether it did. */
+  const markingSection = (e: MapMouseEvent): boolean => {
+    const ride = opened();
+    if (!(e.originalEvent.metaKey || e.originalEvent.ctrlKey) || mapTab() !== 'recordings' || !ride || ride.recording.dayId !== undefined) return false;
+    const hit = recordingPointAt(map, e.point, tapReach(pointerType !== 'mouse'), ride.recording.id);
+    if (hit) markSectionEnd(hit.id, ride.track.points, hit.index);
+    return true;
+  };
   /** A click that proved to be a tap: it does what the next tap does, or else picks the point of a recording tapped, or takes up the route tapped. */
   const onTap = (e: MapMouseEvent) => {
     const action = tapAction();
     const route = editingRoute();
     if (fromMarker(e.originalEvent)) return;
+    if (markingSection(e)) return;
     if ((action !== 'point' && action !== 'stop') || !route) {
       // A delete tap acts on markers only.
       if (action === 'delete') return;

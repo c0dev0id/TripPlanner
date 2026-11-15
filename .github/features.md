@@ -515,6 +515,14 @@
   and − for less; the speed against the other is coloured on a scale as wide as
   its differences there, in whole km/h below 10. The point picked says how it differs
   there.
+- Section lookup: with a ride opened in the Recordings tab, Cmd-click (Ctrl-click) on
+  its line marks one end of a section and a second Cmd-click the other. The list of
+  rides then holds only the rides that rode that section in the same direction, under
+  a line that names its length, whose ✕ lets go of the section. A ride opened shows its
+  figures, focus cards, chart and point popup for the section alone, with the rest of
+  it dimmed; a second ride selected beside the opened one is compared with it on the
+  section, so that two passes of one road are set against each other. More than one
+  selected beside it compares with nothing.
 - Additional media on a day: files and links kept with it, listed in the day's pane under
   their own heading after Planning (the day's routes and stops) and Recordings. Files
   are picked, as many at once as wanted, and may be of any kind; a link is given a name

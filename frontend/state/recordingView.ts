@@ -11,6 +11,7 @@ import type { Route } from '../model/trip';
 import { routeLine } from '../routing/legs';
 import { showWhole } from './drawing';
 import { isRecordingPinned, isRoutePinned } from './pins';
+import { onSection } from './section';
 import { activeRecordingId, loadedTrack, setActiveRecordingId, shownRecordings, type ShownRecording } from './recordings';
 import { activeRouteId, openTrip, openTripId, selectedDayId, takeUpRoute } from './trip';
 
@@ -111,7 +112,9 @@ const view = createRoot(() => {
   const opened = createMemo(
     (): Opened | undefined => {
       const recording = shownRecordings().find((r) => r.id === activeRecordingId());
-      const track = recording && loadedTrack(recording);
+      const loaded = recording && loadedTrack(recording);
+      // In the rides' tab, a ride shows its part on the section looked up.
+      const track = loaded && onSection(loaded);
       return recording && track ? { recording, track, measures: measuresFor(track) } : undefined;
     },
     undefined,
@@ -129,7 +132,8 @@ const view = createRoot(() => {
     const routes = day()?.routes ?? [];
     const pinned: Comparand[] = [
       ...routes.flatMap((route, i) => (isRoutePinned(route.id) ? [{ route, label: route.name || t('Route {n}', { n: i + 1 }) }] : [])),
-      ...shownRecordings().flatMap((recording) => (recording.id !== o.recording.id && isRecordingPinned(recording.id) ? [{ recording }] : [])),
+      // Of a day, the recordings pinned beside it; in the rides' tab, the one selected beside it.
+      ...shownRecordings().flatMap((recording) => (recording.id !== o.recording.id && (isRecordingPinned(recording.id) || o.recording.dayId === undefined) ? [{ recording }] : [])),
     ];
     return pinned.length === 1 ? pinned[0] : undefined;
   }, undefined, { equals: sameComparand });
@@ -140,7 +144,8 @@ const view = createRoot(() => {
   });
   const otherTrack = createMemo(() => {
     const c = comparand();
-    return c && 'recording' in c ? loadedTrack(c.recording) : undefined;
+    const loaded = c && 'recording' in c ? loadedTrack(c.recording) : undefined;
+    return loaded && onSection(loaded);
   });
   const delta = createMemo((): Delta | undefined => {
     const [o, c] = [opened(), comparand()];
@@ -193,6 +198,8 @@ const view = createRoot(() => {
 
   // Another trip or day starts with none opened, as it starts with no route taken up; surfaces are matched for this page only.
   createEffect(on([openTripId, selectedDayId], () => openRecording(undefined)));
+  // A point is an index into the track opened; the whole ride and its part on a section count differently.
+  createEffect(on(() => opened()?.track, () => { setPickedIndex(undefined); setHoverIndex(undefined); }, { defer: true }));
   // One thing is taken up at a time: a route taken up closes the recording opened.
   createEffect(on(activeRouteId, (id) => id !== undefined && openRecording(undefined), { defer: true }));
   // Something new pinned beside the recording is compared with at once where no focus is chosen: the focus goes to the distance from it. A focus chosen stays, from recording to recording, until another is chosen.
@@ -208,10 +215,10 @@ const view = createRoot(() => {
       (fault: unknown) => keepSurfaces(id, fault instanceof Error ? fault : new Error(String(fault))),
     );
   });
-  /** The recording compared with, where it is one and a difference is focused on, with which of its points the opened one ran along. */
+  /** The recording compared with, where it is one and a difference is focused on: its points as compared, its part on the section where one is looked up, and of each whether the opened one ran along it there. */
   const comparedCover = createMemo(() => {
-    const [c, focus, covered] = [comparand(), shownColoring(), delta()?.covered];
-    return c && 'recording' in c && focus !== undefined && isDifference(focus) && covered ? { id: c.recording.id, covered } : undefined;
+    const [c, focus, covered, track] = [comparand(), shownColoring(), delta()?.covered, otherTrack()];
+    return c && 'recording' in c && focus !== undefined && isDifference(focus) && covered && track ? { id: c.recording.id, points: track.points, covered } : undefined;
   });
   return { opened, comparison, colorings, shownColoring, openedSurfaces, shownScale, colors, comparedCover };
 });

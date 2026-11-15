@@ -1030,6 +1030,20 @@ entries at the end of their section.
   where the opened one did not run along it (`Delta.covered`, the stretches of the
   other between the first and last place of each run of the opened one's points on
   it), so that the two lines left bright are the ones compared.
+- **A section is looked up on the rides' thinned lines, in the direction it was marked.**
+  The question is which rides took this stretch of road, to see when it went well; a
+  ride the other way is another road for that purpose (other curves, other gradient),
+  so it is left out. Every ride's line as listed (the thinned line the list draws, not
+  its track) is checked against the section, resampled every 50 m: a ride is on it
+  where it passes within 50 m of the start and then of each sample in order, without
+  more than 300 m beyond each, which keeps an out-and-back or a loop that passes
+  twice from matching backwards. No track is read for the list; only the opened and
+  the compared ride are cut to the section (`trackOnSection`), and all their figures
+  are worked out on that part, since a ride's whole average or top speed says nothing
+  about one road. Ranking the list was left out: the comparison of two chosen rides
+  answers the question, and the order by date stays readable. In the rides' list,
+  nothing is pinned, so the ride compared with is the one other ride selected beside
+  the opened one.
 - **A recording has one focus.** The colour of its line and the chart along the bottom
   were chosen apart, with tabs for every chart the file allowed, so that the line could
   show one thing and the chart another. One select, Focus, now picks both: the line is

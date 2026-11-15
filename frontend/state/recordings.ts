@@ -8,7 +8,8 @@ import { decodeCached } from '../routing/polyline';
 import { flushSave } from './autosave';
 import { showWhole } from './drawing';
 import { isRecordingPinned } from './pins';
-import { allRides, rideChanges, ridesChanged } from './rides';
+import { allRides, rideChanges, ridesChanged, RIDES } from './rides';
+import { selectionOf } from '../ui/selection';
 import { mapTab, tripShown } from './library';
 import { openTrip, openTripId, selectedDayId } from './trip';
 
@@ -59,26 +60,47 @@ export function recordingColor(recording: ShownRecording): string {
 const [activeRecordingId, setActiveRecordingId] = createSignal<number>();
 export { activeRecordingId, setActiveRecordingId };
 
-/** The ride opened where it is none of the day shown: one opened in the list of rides. The same while it reads the same, however often the rides are read. */
+/** A ride of the list as a recording, by its id; none where there is no such ride. */
+function keptRide(id: number): KeptRide | undefined {
+  const ride = allRides().find((kept) => kept.id === id);
+  return ride && { id: ride.id, name: ride.name, distanceM: ride.distanceM, startedAt: ride.startedAt };
+}
+
+/** Whether two rides read the same: the same while they do, however often the rides are read. */
+const sameRide = (a: KeptRide | undefined, b: KeptRide | undefined) => a?.id === b?.id && a?.name === b?.name && a?.distanceM === b?.distanceM && a?.startedAt === b?.startedAt;
+
+/** The ride opened where it is none of the day shown: one opened in the list of rides. */
 const listedRide = createRoot(() =>
   createMemo(
     (): KeptRide | undefined => {
       const active = activeRecordingId();
       if (active === undefined || recordingsOf(selectedDayId() ?? '').some((r) => r.id === active)) return undefined;
-      const ride = allRides().find((kept) => kept.id === active);
-      return ride && { id: ride.id, name: ride.name, distanceM: ride.distanceM, startedAt: ride.startedAt };
+      return keptRide(active);
     },
     undefined,
-    { equals: (a, b) => a?.id === b?.id && a?.name === b?.name && a?.distanceM === b?.distanceM && a?.startedAt === b?.startedAt },
+    { equals: sameRide },
   ),
 );
 
-/** The recordings on the map: of the day shown, the pinned ones and, while the map follows the trip's tab, the one opened; and while it follows the rides, a ride opened in their list. */
+/** The ride a ride opened in the list is compared with: the one other ride selected there, where there is exactly one. */
+const comparedRide = createRoot(() =>
+  createMemo(
+    (): KeptRide | undefined => {
+      const listed = listedRide();
+      const others = listed ? [...selectionOf(RIDES)].filter((id) => id !== String(listed.id)) : [];
+      return others.length === 1 ? keptRide(Number(others[0])) : undefined;
+    },
+    undefined,
+    { equals: sameRide },
+  ),
+);
+
+/** The recordings on the map: of the day shown, the pinned ones and, while the map follows the trip's tab, the one opened; and while it follows the rides, a ride opened in their list with the one it is compared with. */
 export function shownRecordings(): ShownRecording[] {
   const dayId = selectedDayId();
   const active = tripShown() ? activeRecordingId() : undefined;
-  const listed = mapTab() === 'recordings' ? listedRide() : undefined;
-  return [...allRecordings().filter((r) => r.dayId === dayId && (r.id === active || isRecordingPinned(r.id))), ...(listed ? [listed] : [])];
+  const rides = mapTab() === 'recordings' ? [listedRide(), comparedRide()].filter((ride): ride is KeptRide => ride !== undefined) : [];
+  return [...allRecordings().filter((r) => r.dayId === dayId && (r.id === active || isRecordingPinned(r.id))), ...rides];
 }
 
 /** Each read recording's track, or why it could not be read, by recording id. */
@@ -123,15 +145,15 @@ createRoot(() => {
         .finally(() => reading.delete(recording.id));
     }
   });
-  // A ride opened in the list keeps its track only while it is opened there: the list is long, and a track is megabytes.
-  createEffect(
-    on(listedRide, (now, before) => {
-      if (!before || before.id === now?.id || allRecordings().some((r) => r.id === before.id)) return;
-      const kept = new Map(tracks());
-      kept.delete(before.id);
-      setTracks(kept);
-    }),
-  );
+  // A ride of the list keeps its track only while it is opened or compared there: the list is long, and a track is megabytes.
+  const letGo = (now: KeptRide | undefined, before: KeptRide | undefined) => {
+    if (!before || before.id === now?.id || allRecordings().some((r) => r.id === before.id) || shownRecordings().some((r) => r.id === before.id)) return;
+    const kept = new Map(tracks());
+    kept.delete(before.id);
+    setTracks(kept);
+  };
+  createEffect(on(listedRide, letGo));
+  createEffect(on(comparedRide, letGo));
 });
 
 /** Lists a ride as on a day of the open trip, where it is not yet. */

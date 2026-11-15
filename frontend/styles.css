@@ -644,6 +644,16 @@ button.icon.pin[aria-pressed='true'] {
   padding: 0 8px;
 }
 
+/* The section the rides are narrowed to, over the list. */
+.section-line {
+  min-height: 30px;
+  margin-bottom: 2px;
+  padding-left: 8px;
+  border-radius: 7px;
+  background: var(--active);
+  font-size: 13px;
+}
+
 /* The menu of a view's top is a button with a mouse too: the line it stands in names nothing to right-click. */
 .panel .tab-summary button.icon.menu-button {
   display: inline-grid;

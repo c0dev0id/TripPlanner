@@ -35,9 +35,10 @@ export function recordingPointAt(map: MapLibreMap, tap: { x: number; y: number }
   const id = only ?? (openedId !== undefined && ids.includes(openedId) ? openedId : ids[0]);
   if (id === undefined || !ids.includes(id)) return undefined;
   const recording = shownRecordings().find((r) => r.id === id);
-  const track = recording && loadedTrack(recording);
+  // The opened recording's points as it shows them, its part on a section looked up among them.
+  const track = id === openedId ? opened()!.track : recording && loadedTrack(recording);
   if (!track) return undefined;
   const { plane, nearest } = indexOf(track);
   const place = nearest(plane(toLngLat(map.unproject([tap.x, tap.y]))))!;
-  return { id: recording.id, index: place.segment + (place.t > 0.5 ? 1 : 0) };
+  return { id, index: place.segment + (place.t > 0.5 ? 1 : 0) };
 }

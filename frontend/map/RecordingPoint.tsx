@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { Popup, type GeoJSONSource, type MapMouseEvent, type Map as MapLibreMap } from 'maplibre-gl';
-import { createEffect, createSignal, onCleanup } from 'solid-js';
+import { createEffect, createSignal, on, onCleanup } from 'solid-js';
 import { render } from 'solid-js/web';
 import { DIFFERENCE_FIGURES, FIGURES, METRICS } from '../recording/figures';
 import type { DeltaSeries } from '../recording/delta';
@@ -74,6 +74,7 @@ export function RecordingPoint(props: { map: MapLibreMap }) {
   /** The point of the opened recording's line under the mouse, while it is over the line. */
   const [onLine, setOnLine] = createSignal<number>();
   const shown = () => pickedIndex() ?? onLine();
+  createEffect(on(() => opened()?.track, () => setOnLine(undefined), { defer: true }));
   createEffect(() => {
     const o = opened();
     const i = hoverIndex() ?? shown();

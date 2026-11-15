@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSelector, createSignal, For, Show } from 'solid-js';
+import { createEffect, createMemo, createSelector, createSignal, For, Match, Show, Switch } from 'solid-js';
 import { t } from '../i18n/t';
 import { declineRideDay, deleteRide, errorMessage, mergeRides, renameRide, rideJoints, suggestRideDays } from '../api';
 import { GPX_FILE_TYPES } from '../gpx/import';
@@ -7,7 +7,8 @@ import { FAR_APART_M, isOddJoint, likelierFirst, ridingYears, totalDistance } fr
 import { copyRecordings } from '../state/clipboard';
 import { fetchingTrip, libraryTab, libraryTrips, outlineOf, searchedFor } from '../state/library';
 import { activeRecordingId, putOnDay } from '../state/recordings';
-import { toggleRecording } from '../state/recordingView';
+import { opened, toggleRecording } from '../state/recordingView';
+import { clearSection, ridesOnSection, section, sectionLength, sectionStart } from '../state/section';
 import { allRides, askOfRides, changeRides, compareWithDay, revealedRide, revealRide, rideColor, RIDES, ridesCompared, ridesError, ridesLoading, ridesNote, runRidesJob } from '../state/rides';
 import { dayLabel, foundBecause } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
@@ -56,8 +57,11 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
   /** What the rides are searched for: nothing while another tab is shown, where they need not follow what is typed. */
   const searched = () => (libraryTab() === 'recordings' ? searchedFor() : '');
   const searching = () => searched() !== '';
-  /** The rides listed: all of them, or those the search finds. */
-  const listed = createMemo(() => allRides().filter((ride) => ride.name.toLowerCase().includes(searched())));
+  /** The rides listed: all of them, or those the search finds, of those that rode the section looked up. */
+  const listed = createMemo(() => {
+    const onSection = ridesOnSection();
+    return allRides().filter((ride) => ride.name.toLowerCase().includes(searched()) && (!onSection || onSection.has(ride.id)));
+  });
   const years = createMemo(() => ridingYears(listed()));
   const untimed = createMemo(() => listed().filter((ride) => ride.startedAt === null));
   /** The years unfolded: the latest until one is folded or unfolded, and every year of what a search found. */
@@ -181,6 +185,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
           <PlusIcon />
         </IconButton>
       </div>
+      <SectionLine />
       <Show when={ridesError()}>{(error) => <p class="error">{errorMessage(error())}</p>}</Show>
       <Show when={ridesNote()}>
         {(said) => (
@@ -335,5 +340,27 @@ function RidingDayCard(props: {
         </For>
       </ul>
     </li>
+  );
+}
+
+/** What the section lookup stands at: the section the list is narrowed to, with the button that lets go of it; the end still to mark; or, with a ride opened, how to start one. */
+function SectionLine() {
+  return (
+    <Switch>
+      <Match when={section()}>
+        <div class="row section-line">
+          <span class="grow">{t('Rides of a section of {distance}', { distance: distanceText(sectionLength()) })}</span>
+          <IconButton label={t('Let go of the section')} onClick={clearSection}>
+            <CloseIcon />
+          </IconButton>
+        </div>
+      </Match>
+      <Match when={sectionStart()}>
+        <p class="muted hint">{t('Cmd-click the other end of the section on the ride.')}</p>
+      </Match>
+      <Match when={opened()?.recording.dayId === undefined && opened()}>
+        <p class="muted hint">{t('Cmd-click two points on the ride to find the rides of that section.')}</p>
+      </Match>
+    </Switch>
   );
 }
