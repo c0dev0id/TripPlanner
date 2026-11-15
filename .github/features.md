@@ -541,7 +541,7 @@
   drawn the user has not been. A tap on a line says which ride it is: its name, when
   it began, its length and the trips or collections it is on a day of. The overlay is under
   the trip's own lines, so that it can stay on while planning, and how opaque one ride
-  is drawn is set in the preferences. It reads the rides anew each time it is switched
+  is drawn is set in the settings. It reads the rides anew each time it is switched
   on.
 - Places on the map from the planner's own store of OpenStreetMap data: fuel stations,
   hotels, restaurants, cafes, viewpoints and parking, each kind a layer to tick in the
@@ -551,12 +551,15 @@
   its homepage and OpenStreetMap. The store is filled area by area by `make places`, which lists
   the areas to pick from when run without one, and names those of which a kind of place
   is behind the others or missing.
-- Preferences in one dialog. Kept with the account: how wide route lines are drawn, how
-  routes get their colours, how opaque a ride is in the overlay of all rides, and how far from a route a place of each kind is still shown
-  along it, 200 m to begin with. Kept in the browser: the language, and light or dark
-  colours.
+- Settings under the gear at the right of the library's tabs, in the pane where the
+  other tabs show their tree, by section, each kept as soon as it changes. User: the
+  language, kept in the browser, and the password, changed with the one in use. Map:
+  light or dark colours, kept in the browser; kept with the account, how wide route
+  lines are drawn, how routes get their colours, how opaque a ride is in the overlay of
+  all rides, and how far from a route a place of each kind is still shown along it,
+  200 m to begin with.
 - Route lines in colour: one colour for each day, or the palette's next colour for each
-  route of the trip, as the preferences say; a route's menu gives it a colour of its own,
+  route of the trip, as the settings say; a route's menu gives it a colour of its own,
   which it keeps wherever it is drawn. A route's row shows its colour. Lines are 5 pixels
   wide unless set otherwise, and grow wider when zoomed in: those of routes, of
   recordings and of the routes the duplicates report and a day's lookup draw alike.
@@ -565,7 +568,7 @@
   selected day, the route being edited and the map's view are kept in the address, which
   can be bookmarked or opened on another device.
 - English and German. The planner follows the browser's language, or the one chosen in
-  its preferences, kept in the browser; numbers, dates and distances
+  its settings, kept in the browser; numbers, dates and distances
   are written the language's way. The server's pages, messages and mails follow the
   browser's language, and the GPX export names unnamed days and routes ("Tag 1",
   "Route 2") in the planner's.

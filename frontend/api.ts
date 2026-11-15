@@ -224,6 +224,9 @@ export const fetchPreferences = (): Promise<Preferences> => request('GET', `/api
 
 export const savePreferences = (preferences: Preferences): Promise<void> => request('PUT', `/api/preferences`, preferences);
 
+/** Sets a new password, given twice, once `current` is the password in use. */
+export const changePassword = (current: string, password: string, repeat: string): Promise<void> => request('PUT', '/api/password', { current, password, repeat });
+
 /** Every ride of the user's, by when it began, each with the days it is on. */
 export const fetchRides = (): Promise<Ride[]> => request('GET', '/api/rides');
 

@@ -69,7 +69,7 @@ goes to `public/build`; static paths and page routes never share a name.
 
 Layers, each depending only on the ones below:
 
-- Presentation: `library/`, `trip/`, `map/`, `preferences/`, `ui/`, `view/`.
+- Presentation: `library/`, `trip/`, `map/`, `settings/`, `ui/`, `view/`.
 - Application state: `state/` (the open trip, undo and redo, the routing pump, autosave,
   journal, recordings, clipboard, library).
 - Domain, pure and unit-tested: `routing/`, `gpx/`, `recording/`, `poi/`, `geo/`,

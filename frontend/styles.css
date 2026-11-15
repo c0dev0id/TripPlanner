@@ -1958,3 +1958,65 @@ fieldset.symbols {
     display: none;
   }
 }
+
+/* The settings, in the library's pane under the gear tab: sections of fields, each kept as it changes. */
+.settings section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.settings h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.settings h4 {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+}
+
+.settings label:not(.row) {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.settings input,
+.settings select {
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+}
+
+.settings input[type='range'] {
+  padding: 0;
+  border: none;
+}
+
+.settings label.row {
+  align-items: center;
+  gap: 8px;
+}
+
+.settings .password {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings .password button {
+  align-self: flex-start;
+}
+
+.panel .library-tabs button[data-tab='settings'] {
+  flex: none;
+  padding: 6px 8px;
+}

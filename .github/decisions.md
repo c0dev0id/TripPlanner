@@ -802,12 +802,17 @@ entries at the end of their section.
   does to the open trip on the server (deleting, merging, pasting onto it) leaves the
   trip first, saved, and renaming it is the edit of the trip itself: the open document
   is never changed behind its back.
-- **Language and colours are chosen in the preferences, not in the header.** Both are
+- **Language and colours are chosen in the settings, not in the header.** Both are
   set once and then left alone, and as two unlabelled selects in the panel's header
   they took a line of it on every screen and wrapped it into two on a phone. They stand
-  in the preferences dialog with the account's settings, said to be this browser's,
-  and take effect when the dialog is saved; the language last, since it loads the page
-  again.
+  in the settings with the account's own, said to be this browser's.
+- **The settings are a tab.** A dialog over the map hid what a setting changes, and was
+  a second way into the planner beside the library's tabs. The gear is a fifth tab, and
+  its pane lists the settings by section, each kept as it changes, so that the map
+  beside it shows the effect at once. A new language loads the page again at once,
+  which is why it is a select of its own and not part of a form. The password is changed
+  there with the one in use (`PUT /password`): a session left open does not give the
+  account away.
 - **What is unfolded in the tree is the user's doing.** The open trip was always
   unfolded: opening a trip listed its days and folded those of the one open before, so
   the tree moved under the pointer with every trip opened. A trip now lists its days

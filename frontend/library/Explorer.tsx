@@ -8,13 +8,14 @@ import { CollectionPanel } from '../trip/CollectionPanel';
 import { SaveState } from '../trip/SaveStatus';
 import { TripIcons, TripPanel } from '../trip/TripPanel';
 import { IconButton } from '../ui/IconButton';
-import { CloseIcon } from '../ui/icons';
+import { CloseIcon, GearIcon } from '../ui/icons';
+import { Settings } from '../settings/Settings';
 import { Library, type FoundRoute } from './Library';
 import { LibraryActions } from './LibraryActions';
 import { Rides } from './Rides';
 
 /** What the search says it looks through, by the tab shown. */
-const SEARCHES: Record<LibraryTab, string> = {
+const SEARCHES: Record<Exclude<LibraryTab, 'settings'>, string> = {
   stash: t('Search files, routes and tracks'),
   trips: t('Search trips, routes and tracks'),
   places: t('Search lists of places'),
@@ -23,7 +24,7 @@ const SEARCHES: Record<LibraryTab, string> = {
 
 /**
  * The library's pane: its switches and search, a tab for each of its views (the
- * collections, the trips, the lists of places and the rides), the open trip's name
+ * collections, the trips, the lists of places, the rides and, as a gear, the settings), the open trip's name
  * with the trip's own actions while its tab is the one shown and nothing in its place otherwise, and what the tab shown holds: a tree of folders and
  * trips, the open trip's days among them, or the rides. A tab only shows its view:
  * what is unfolded, marked and selected in the others stays, and how far each was
@@ -51,6 +52,11 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string, routeId?:
   /** Shows a day in its pane, opening its trip where another is open, without leaving the tab shown. */
   const showDay = (tripId: number, dayId: string) => (tripId === openTripId() ? selectDay(dayId) : props.onOpen(tripId, dayId));
   /** The open trip where the tab shown is the one it is in, which its name and its actions then stand over; one not listed yet counts as in the tab shown. */
+  /** The tab shown where it has a search, which the settings have not. */
+  const searched = () => {
+    const tab = libraryTab();
+    return tab === 'settings' ? undefined : tab;
+  };
   const headed = () => ((openTree() ?? libraryTab()) === libraryTab() ? openTrip() : undefined);
   // The panel scrolls as a whole, so how far it was scrolled is kept for each tab and given back when the tab is shown again.
   let section!: HTMLElement;
@@ -66,12 +72,16 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string, routeId?:
     <section class="explorer" ref={section}>
       <LibraryActions />
       <PlacesList />
-      <input class="search" type="search" placeholder={SEARCHES[libraryTab()]} aria-label={SEARCHES[libraryTab()]} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />
+      <Show when={searched()}>
+        {(tab) => <input class="search" type="search" placeholder={SEARCHES[tab()]} aria-label={SEARCHES[tab()]} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />}
+      </Show>
       <div class="row library-tabs" role="tablist" aria-label={t('Library')}>
         <For each={LIBRARY_TABS}>
           {(tab) => (
-            <button role="tab" class="grow" data-tab={tab} aria-selected={libraryTab() === tab} onClick={() => showTab(tab)}>
-              {TAB_NAMES[tab]}
+            <button role="tab" classList={{ grow: tab !== 'settings' }} data-tab={tab} aria-selected={libraryTab() === tab} aria-label={TAB_NAMES[tab]} title={TAB_NAMES[tab]} onClick={() => showTab(tab)}>
+              <Show when={tab === 'settings'} fallback={TAB_NAMES[tab]}>
+                <GearIcon />
+              </Show>
             </button>
           )}
         </For>
@@ -101,6 +111,9 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string, routeId?:
       <div hidden={libraryTab() !== 'recordings'}>
         <Rides onOpen={openDay} onShow={showDay} />
       </div>
+      <Show when={libraryTab() === 'settings'}>
+        <Settings />
+      </Show>
     </section>
   );
 }

@@ -8,6 +8,7 @@ use Planner\Account\LoginController;
 use Planner\Account\PasswordChangeController;
 use Planner\Account\PasswordResetController;
 use Planner\Api\MeController;
+use Planner\Api\PasswordController;
 use Planner\Api\PreferencesController;
 use Planner\Export\ArchiveController;
 use Planner\Export\ExportPresetController;
@@ -62,6 +63,7 @@ final class Routes
             $api->get('/me', [MeController::class, 'show']);
             $api->get('/preferences', [PreferencesController::class, 'show']);
             $api->put('/preferences', [PreferencesController::class, 'replace']);
+            $api->put('/password', [PasswordController::class, 'change']);
             $api->get('/places/own', [PlacesController::class, 'own']);
             $api->get('/places/{x:[0-9]{1,4}}/{y:[0-9]{1,4}}', [PlacesController::class, 'tile']);
             $api->get('/trips', [TripController::class, 'index']);

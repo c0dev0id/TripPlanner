@@ -10,13 +10,11 @@ import { MapView, routesDrawn } from './map/MapView';
 import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
-import { setPreferencesOpen } from './state/drawing';
-import { folderOfTrip, libraryFolders, libraryTab, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab } from './state/library';
+import { folderOfTrip, isTreeTab, libraryFolders, libraryTab, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab } from './state/library';
 import { setShowingDuplicates, showingDuplicates } from './state/pane';
 import { foldPanel, panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
-import { PreferencesDialog } from './preferences/PreferencesDialog';
 import { DayDialog } from './trip/DayDialog';
 import { DayPane } from './trip/DayPane';
 import { DayStrip } from './trip/DayStrip';
@@ -106,7 +104,7 @@ export function App() {
     shown = true;
     untrack(() => {
       showFolder(place.folderId);
-      if (place.recordings) showTab('recordings');
+      if (place.view) showTab(place.view);
     });
   });
   onMount(async () => {
@@ -119,14 +117,15 @@ export function App() {
   createEffect(() => {
     // The folder shown is only known once the folders are listed.
     if (!returned() || libraryFolders.loading) return;
-    const now = { folderId: shownFolderId(), recordings: libraryTab() === 'recordings', tripId: openTripId(), dayId: selectedDayId(), routeId: editingRouteId() };
+    const tab = libraryTab();
+    const now = { folderId: shownFolderId(), ...(isTreeTab(tab) ? {} : { view: tab }), tripId: openTripId(), dayId: selectedDayId(), routeId: editingRouteId() };
     history.replaceState(history.state, '', location.pathname + location.search + withPlace(location.hash, now));
   });
 
   /** What files dropped on the library beside its rows go to: the top of the tree shown, or the rides. */
   const dropFolder = () => {
     const tab = libraryTab();
-    return tab === 'recordings' ? undefined : String(rootOf(tab) ?? 'top');
+    return isTreeTab(tab) ? String(rootOf(tab) ?? 'top') : undefined;
   };
 
   return (
@@ -146,9 +145,6 @@ export function App() {
           </Show>
           <h1>Trip Planner</h1>
           <Show when={me()}>{(user) => <span class="user">{user().email}</span>}</Show>
-          <button type="button" class="link" onClick={() => setPreferencesOpen(true)}>
-            {t('Preferences')}
-          </button>
           <button type="button" class="link" onClick={logout}>
             {t('Sign out')}
           </button>
@@ -180,7 +176,6 @@ export function App() {
       <TrackDialog />
       <StopDialog />
       <ExportDialog />
-      <PreferencesDialog />
       <JournalDialog />
       <ShareDialog />
     </>

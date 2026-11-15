@@ -46,9 +46,6 @@ export const [trackAction, setTrackAction] = createSignal<{ routeId: string; act
 export type ExportScope = { kind: 'trip' } | { kind: 'day' | 'route'; ids: string[] };
 export const [exportScope, setExportScope] = createSignal<ExportScope>();
 
-/** Whether the preferences dialog is open. */
-export const [preferencesOpen, setPreferencesOpen] = createSignal(false);
-
 /** Whether the print-and-share dialog is open. */
 export const [shareOpen, setShareOpen] = createSignal(false);
 

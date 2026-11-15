@@ -1,7 +1,7 @@
 import { For, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { POI_CATEGORIES } from '../poi/categories';
-import { setPreferencesOpen } from '../state/drawing';
+import { showTab } from '../state/library';
 import { isOwnKindShown, ownKinds, toggleOwnKind } from '../state/ownPlaces';
 import { alongOnly, isKindShown, isTooFarOut, placesListOpen, shownKindCount, toggleAlongOnly, toggleKind } from '../state/places';
 import { poiBadgeUrl } from './poiImages';
@@ -31,7 +31,7 @@ export function PlacesList() {
           <input type="checkbox" checked={alongOnly()} onChange={toggleAlongOnly} />
           <span>
             {t('Only along the day\'s routes')}{' '}
-            <button type="button" class="link" onClick={() => setPreferencesOpen(true)}>
+            <button type="button" class="link" onClick={() => showTab('settings')}>
               {t('Distances…')}
             </button>
           </span>

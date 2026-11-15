@@ -10,20 +10,23 @@ import { openTripId, removeParts } from './trip';
 
 /** The library as the server lists it, and where the user is in it. */
 
-/** The library's views, a tab each: the Stash's files, the trips, the lists of places, and the rides as recorded. */
-export type LibraryTab = 'stash' | 'trips' | 'places' | 'recordings';
+/** The library's views, a tab each: the Stash's files, the trips, the lists of places, the rides as recorded, and the settings. */
+export type LibraryTab = 'stash' | 'trips' | 'places' | 'recordings' | 'settings';
 /** The tabs that show a tree of folders. */
-export type TreeTab = Exclude<LibraryTab, 'recordings'>;
+export type TreeTab = Exclude<LibraryTab, 'recordings' | 'settings'>;
 export const TREE_TABS: readonly TreeTab[] = ['stash', 'trips', 'places'];
-export const LIBRARY_TABS: readonly LibraryTab[] = [...TREE_TABS, 'recordings'];
+export const LIBRARY_TABS: readonly LibraryTab[] = [...TREE_TABS, 'recordings', 'settings'];
+
+/** Whether the tab shows a tree of folders. */
+export const isTreeTab = (tab: LibraryTab): tab is TreeTab => (TREE_TABS as readonly LibraryTab[]).includes(tab);
 
 /** The tab whose tree a folder of the kind is in. */
 const TAB_OF: Record<FolderKind, TreeTab> = { collections: 'stash', folder: 'trips', places: 'places' };
 
 /** What the tabs are called. */
-export const TAB_NAMES: Record<LibraryTab, string> = { stash: t('Stash'), trips: t('Trips'), places: t('Places'), recordings: t('Recordings') };
+export const TAB_NAMES: Record<LibraryTab, string> = { stash: t('Stash'), trips: t('Trips'), places: t('Places'), recordings: t('Recordings'), settings: t('Settings') };
 
-/** The tab shown, and the tree last shown, which stays the one the address names while the rides are. */
+/** The tab shown, and the tree last shown, which stays the one the address names while the rides or the settings are. */
 const [libraryTab, setTab] = createSignal<LibraryTab>('trips');
 const [treeTab, setTreeTab] = createSignal<TreeTab>('trips');
 export { libraryTab };
@@ -31,7 +34,7 @@ export { libraryTab };
 /** Shows a tab; what the others show stays as it is. */
 export function showTab(to: LibraryTab): void {
   setTab(to);
-  if (to !== 'recordings') setTreeTab(to);
+  if (isTreeTab(to)) setTreeTab(to);
 }
 
 /** The folder asked for in each tree, none for its top: the one the tree marks, and that takes what is pasted with the keys or from the line that offers it. */
