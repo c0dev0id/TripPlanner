@@ -9,7 +9,7 @@ import { clearPartSelection, clickPart, isPartSelected, partsOfMenu, togglePart 
 import { showWhole } from '../state/drawing';
 import { isRecordingPinned, pinRecordings } from '../state/pins';
 import { toggleRecording } from '../state/recordingView';
-import { showRide } from '../state/rides';
+import { showInRides } from '../state/tabs';
 import {
   activeRecordingId,
   addedText,
@@ -182,7 +182,7 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
     { label: t('Cut'), run: () => clipRecordings(chosen, true) },
     { label: t('Copy'), run: () => clipRecordings(chosen, false) },
     ...moveToDayItem(dayId, move),
-    { label: t('Show in the rides'), disabled: several, run: () => showRide(recording.id) },
+    { label: t('Show in the rides'), disabled: several, run: () => showInRides(recording) },
     ...(several ? pinItems((pinned) => pinRecordings(chosen.map((r) => r.id), pinned)) : []),
     ...(several || isPartSelected('recording', String(recording.id)) ? [] : [{ label: t('Select'), run: () => togglePart('recording', String(recording.id)) }]),
     { label: t('Take off this day'), run: () => void takeRecordingsOff(chosen) },

@@ -70,12 +70,12 @@ function keptRide(id: number): KeptRide | undefined {
 /** Whether two rides read the same: the same while they do, however often the rides are read. */
 const sameRide = (a: KeptRide | undefined, b: KeptRide | undefined) => a?.id === b?.id && a?.name === b?.name && a?.distanceM === b?.distanceM && a?.startedAt === b?.startedAt;
 
-/** The ride opened where it is none of the day shown: one opened in the list of rides. */
+/** The ride opened in the list of rides: the one opened while the trip is not shown, or one that is none of the day shown. */
 const listedRide = createRoot(() =>
   createMemo(
     (): KeptRide | undefined => {
       const active = activeRecordingId();
-      if (active === undefined || recordingsOf(selectedDayId() ?? '').some((r) => r.id === active)) return undefined;
+      if (active === undefined || (tripShown() && recordingsOf(selectedDayId() ?? '').some((r) => r.id === active))) return undefined;
       return keptRide(active);
     },
     undefined,

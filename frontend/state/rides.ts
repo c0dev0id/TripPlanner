@@ -1,12 +1,10 @@
-import { batch, createEffect, createMemo, createResource, createRoot, createSignal } from 'solid-js';
+import { createEffect, createMemo, createResource, createRoot, createSignal } from 'solid-js';
 import { errorMessage, fetchRides } from '../api';
 import { COMPARED_RIDE_COLOR } from '../model/routeLook';
 import type { Ride } from '../recording/rides';
 import { decodePolyline } from '../routing/polyline';
-import { selectIn } from '../ui/selection';
 import { showWhole } from './drawing';
-import { libraryTab, libraryTrips, setQuery, showTab } from './library';
-import { foldPanel } from './panel';
+import { libraryTab, libraryTrips } from './library';
 
 /**
  * The rides: every recording the user keeps, read while their tab is shown, again when
@@ -70,17 +68,6 @@ export const ridesOnMap = rides.lines;
 
 /** The ride to be brought into view among the rides, once: one shown from a day it is on. */
 export const [revealedRide, revealRide] = createSignal<number>();
-
-/** Shows the rides, in the library unfolded for them and not searched, with one of them selected and in view. */
-export function showRide(id: number): void {
-  batch(() => {
-    foldPanel(false);
-    showTab('recordings');
-    setQuery('');
-    selectIn(RIDES, new Set([String(id)]));
-    revealRide(id);
-  });
-}
 
 /** What a change to rides came to: a sentence, and what it could not do. */
 export interface RidesNote {

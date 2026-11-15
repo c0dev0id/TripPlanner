@@ -414,7 +414,8 @@
   in the tab its trip is in, and deletes it with its file, from every day it
   is on, after a question; with several selected it copies, pins, unpins, adds and
   deletes all of them. A recording's menu on its day has "Show in the rides", which
-  shows the tab with it selected and in view.
+  leaves the day's tab as its button does, keeping what it had open for the way back,
+  and shows the rides with that ride opened, selected and in view.
 - Autoname, in a ride's menu: the selected rides are named after the places they began
   and ended in, as "Hockenheim - Walldorf", for files an app names all alike. The
   places are asked of Nominatim, one a second, each position once; it is said above
