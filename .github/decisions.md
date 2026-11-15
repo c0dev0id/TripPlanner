@@ -406,6 +406,13 @@ entries at the end of their section.
   says it in a ride's own terms rather than as a grade: who wrote the file, how many
   points, the median time and the mean way between them, and the values by the names
   the file gives them, since those names are what the user knows from the app.
+- **The open trip is acted on only while it is shown.** A trip stays open, with its day
+  selected, while another tab is shown, so that coming back finds it as it was. What
+  acts on it from the map or the keyboard (undo and redo, paste, the map's spot menu, an
+  own place added as a stop, a route taken up by a tap, the places along the day) asks
+  whether it is shown (`tripShown`, `shownDay`), not only whether it is open: otherwise a
+  key pressed in the Stash or among the rides changed a trip out of sight, and the
+  change was saved.
 - **The map's view can be locked, in one place.** Every move the planner makes of
   itself goes through two effects of the map, the one that shows a day taken up and
   the one that goes where it is sent, so the lock is a signal both read; nothing that
