@@ -40,7 +40,7 @@ export function offsetsFrom(points: readonly LngLat[], lines: readonly (readonly
 }
 
 /** A place on a line: on its segment `segment`, the fraction `t` of the way along it, `distance` from the point it was found for. */
-export type Place = { segment: number; t: number; distance: number };
+type Place = { segment: number; t: number; distance: number };
 
 /** The place on the line nearest p between `from` and `to` metres along it; `segment` is one of the line's segments within that stretch or after it. */
 export function nearestWithin(p: XY, line: readonly XY[], along: Float64Array, from: number, to: number, segment: number): Place | undefined {
@@ -56,6 +56,12 @@ export function nearestWithin(p: XY, line: readonly XY[], along: Float64Array, f
     if (!best || distance < best.distance) best = { segment: s, t, distance };
   }
   return best;
+}
+
+/** The metres along a line of the place the fraction `t` of the way along its segment `segment`. */
+export function metresAt(along: Float64Array, segment: number, t: number): number {
+  const next = Math.min(segment + 1, along.length - 1);
+  return along[segment]! + t * (along[next]! - along[segment]!);
 }
 
 /**
@@ -87,8 +93,7 @@ export function alignAlong(points: readonly LngLat[], other: readonly LngLat[]):
       along.push(null);
       continue;
     }
-    const next = Math.min(place.segment + 1, other.length - 1);
-    const metres = otherAlong[place.segment]! + place.t * (otherAlong[next]! - otherAlong[place.segment]!);
+    const metres = metresAt(otherAlong, place.segment, place.t);
     along.push(metres);
     // Found ahead, the track moves on; found anywhere else, it joined the other there.
     if (!ahead || !reached || metres > reached.metres) reached = { metres, segment: place.segment };
