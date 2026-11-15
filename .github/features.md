@@ -10,9 +10,16 @@
   sign-in the user has to replace it before the planner opens.
 - The library has four tabs under its search, which stay in view while it scrolls:
   Stash, for the files that wait to be worked on, Trips, Places, for the lists of the
-  user's own places, and Recordings, for the rides. A tab only shows its view: what is
-  unfolded, marked and selected in the others stays as it is, each keeps how far it
-  was scrolled, and the open trip stays open with its day in its pane. Its name and
+  user's own places, and Recordings, for the rides. A tab is a view of its own: what is
+  unfolded, marked and selected in the others stays as it is, and each keeps how far it
+  was scrolled. The map and the pane beside the library show what belongs to the tab
+  shown, and under the gear what the tab before showed: the open trip and its day in
+  Trips, the open list in Places, the file shown in Stash, the rides opened and
+  selected in Recordings; pinned routes and recordings stay on the map whatever tab is
+  shown. Trips and Places each keep what they had open when the user left them by
+  their tab, the trip or list, its day, the route taken up and the recording opened,
+  and open it again when the user comes back by their tab; only one trip is open at a
+  time, so coming back may open it afresh. Its name and
   its actions stand over the tab it is in; a tab with nothing open has no heading.
   Under the tabs a line says what the view holds, with the button that folds its tree
   away and the menu of its top; the address keeps the tab, so that loading the page
@@ -443,8 +450,9 @@
   its row: pinned, it stays on the map of its day whatever else is taken up, and a
   pinned recording is drawn also while nothing is. Several selected are pinned or let
   go from their menu. The neighbouring days draw their pinned routes. The pins are the
-  open trip's, for all of its days, and go when it is left or the page is loaded
-  again. A recording added to a day, or put on it by the lookup, is pinned. Another
+  open trip's, for all of its days, and go when it is left in its own tab or the page
+  is loaded again; a trip left while another tab is shown leaves its pinned lines on
+  the map and is pinned again when it is opened. A recording added to a day, or put on it by the lookup, is pinned. Another
   day closes the recording opened, as it lets go of the route taken up.
 - A route under a mouse's pointer on the map is drawn wider and named, after its day while the
   whole trip is shown; a click or a tap on it shows its day and takes the route up, as a

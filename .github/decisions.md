@@ -816,6 +816,20 @@ entries at the end of their section.
   set once and then left alone, and as two unlabelled selects in the panel's header
   they took a line of it on every screen and wrapped it into two on a phone. They stand
   in the settings with the account's own, said to be this browser's.
+- **The tabs are views of their own, and the map follows the tab shown.** Switching
+  tabs used to leave the map and the pane as they were, so that a Stash file stayed
+  drawn over the rides and a trip's day pane over the Stash, and nothing said which tab
+  they belonged to. Now the map and the pane show what the tab shown holds (the
+  settings show what the tab before held, so that a setting's effect is seen), and
+  pinned things stay, since pinning is the user's way of saying "keep this". Only one
+  trip document is open at a time: keeping a trip and a list open side by side would
+  double the open trip's state, its undo, its autosave and everything that reads it.
+  Trips and Places therefore remember what they had open when the user left them by
+  their tab (`state/tabs.ts`) and open it again, saved, when the user comes back by
+  their tab; undo does not survive that. Only the tab buttons do this: a tab shown
+  because a ride or a duplicate opens a trip there opens that trip and nothing else. A
+  trip closed while another tab is shown keeps its pins aside with their lines, and
+  takes them back when it is opened again.
 - **The settings are a tab.** A dialog over the map hid what a setting changes, and was
   a second way into the planner beside the library's tabs. The gear is a fifth tab, and
   its pane lists the settings by section, each kept as it changes, so that the map

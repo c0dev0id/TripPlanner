@@ -1,7 +1,7 @@
 import { createEffect, For, on, onCleanup, onMount, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import type { TripSummary } from '../model/trip';
-import { LIBRARY_TABS, libraryProblem, libraryTab, libraryTrips, openTree, query, setQuery, showFolder, showTab, TAB_NAMES, type LibraryTab } from '../state/library';
+import { LIBRARY_TABS, libraryProblem, libraryTab, libraryTrips, openTree, query, setQuery, showFolder, TAB_NAMES, type LibraryTab } from '../state/library';
 import { openTrip, openTripId, selectDay, takeUpRouteOf } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
 import { SaveState } from '../trip/SaveStatus';
@@ -29,7 +29,13 @@ const SEARCHES: Record<Exclude<LibraryTab, 'settings'>, string> = {
  * what is unfolded, marked and selected in the others stays, and how far each was
  * scrolled.
  */
-export function Explorer(props: { onOpen: (id: number, dayId?: string, routeId?: string) => void; onLeave: () => Promise<void>; error: string | undefined }) {
+export function Explorer(props: {
+  onOpen: (id: number, dayId?: string, routeId?: string) => void;
+  onLeave: () => Promise<void>;
+  /** Shows the tab the user picked, with what it had open. */
+  onTab: (tab: LibraryTab) => void;
+  error: string | undefined;
+}) {
   /** Opens a trip and makes its folder the one shown: a trip of the tree or the search, or one just made. */
   const openIn = (trip: TripSummary, dayId?: string) => {
     showFolder(trip.folderId);
@@ -76,7 +82,7 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string, routeId?:
       <div class="row library-tabs" role="tablist" aria-label={t('Library')}>
         <For each={LIBRARY_TABS}>
           {(tab) => (
-            <button role="tab" classList={{ grow: tab !== 'settings' }} data-tab={tab} aria-selected={libraryTab() === tab} aria-label={TAB_NAMES[tab]} title={TAB_NAMES[tab]} onClick={() => showTab(tab)}>
+            <button role="tab" classList={{ grow: tab !== 'settings' }} data-tab={tab} aria-selected={libraryTab() === tab} aria-label={TAB_NAMES[tab]} title={TAB_NAMES[tab]} onClick={() => props.onTab(tab)}>
               <Show when={tab === 'settings'} fallback={TAB_NAMES[tab]}>
                 <GearIcon />
               </Show>

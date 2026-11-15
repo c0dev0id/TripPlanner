@@ -5,7 +5,7 @@ import { type OwnPlace, ownKindsOf } from '../poi/ownPlaces';
 import { newStop } from '../routing/dayEdit';
 import { kindAround } from '../library/folders';
 import { placesNear } from '../poi/near';
-import { libraryFolders, libraryTab, libraryTrips } from './library';
+import { libraryFolders, libraryTab, libraryTrips, tripShown } from './library';
 import { anyOwnKindShown, dayRouteLines, placeMode } from './places';
 import { placeReachM } from './preferences';
 import { addParts, openTripId } from './trip';
@@ -33,8 +33,8 @@ const own = createRoot(() => {
   const all = createMemo((): OwnPlace[] => (lists() && !places.error ? (places.latest ?? []) : []));
   const shown = createMemo(() => {
     const colors = new Map(ownKindsOf(all()).map((kind) => [kind.dayId, kind.color]));
-    // The open list's places are on the map as its stops already.
-    const others = all().filter((place) => place.tripId !== openTripId());
+    // The open list's places are on the map as its stops already, while its tab is the one the map follows.
+    const others = all().filter((place) => place.tripId !== openTripId() || !tripShown());
     const along = placesNear(others.filter((place) => placeMode(place.dayId) === 'along'), dayRouteLines(), (place) => placeReachM(place.dayId));
     return [...others.filter((place) => placeMode(place.dayId) === 'all'), ...along].map((place) => ({ place, color: colors.get(place.dayId)! }));
   });

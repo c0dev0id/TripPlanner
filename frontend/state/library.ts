@@ -31,11 +31,19 @@ const [libraryTab, setTab] = createSignal<LibraryTab>('trips');
 const [treeTab, setTreeTab] = createSignal<TreeTab>('trips');
 export { libraryTab };
 
+/** The tab whose things the map and the pane beside the library show: the one shown, or under the settings the one shown before. */
+const [mapTab, setMapTab] = createSignal<Exclude<LibraryTab, 'settings'>>('trips');
+export { mapTab };
+
 /** Shows a tab; what the others show stays as it is. */
 export function showTab(to: LibraryTab): void {
   setTab(to);
   if (isTreeTab(to)) setTreeTab(to);
+  if (to !== 'settings') setMapTab(to);
 }
+
+/** Whether the open trip is on the map and in the pane: while the map follows its tab; one not listed yet counts as in it. */
+export const tripShown = (): boolean => (openTree() ?? mapTab()) === mapTab();
 
 /** The folder asked for in each tree, none for its top: the one the tree marks, and that takes what is pasted with the keys or from the line that offers it. */
 const [markedFolders, setMarkedFolders] = createSignal<Partial<Record<TreeTab, number>>>({});

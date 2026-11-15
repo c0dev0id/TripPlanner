@@ -7,7 +7,8 @@ import { ridesOnMap } from '../state/rides';
 import { stashLines, stashWaypoints } from '../state/stash';
 import { routePositions } from '../routing/legs';
 import { colorRuns } from '../recording/lineColors';
-import { isRoutePinned } from '../state/pins';
+import { mapTab, tripShown } from '../state/library';
+import { isRoutePinned, pinnedAsideLines } from '../state/pins';
 import { keepsView } from '../state/place';
 import { ridesOpacity, routeWidth } from '../state/preferences';
 import { opened, openedLineColors } from '../state/recordingView';
@@ -89,8 +90,13 @@ export function MapView() {
 
 type ShownDay = { day: Day; role: RouteRole };
 
-/** The days drawn: the selected one, and of a trip with `showNeighbours` the ones before and after; every day while none is selected. */
+/**
+ * The days drawn: the selected one, and of a trip with `showNeighbours` the ones before
+ * and after; every day while none is selected. While the map follows another tab, the
+ * days with pinned routes, which draw those alone (see routeDrawn).
+ */
 function shownDays(): ShownDay[] {
+  if (!tripShown()) return (openTrip()?.days ?? []).filter((d) => d.routes.some((route) => isRoutePinned(route.id))).map((d) => ({ day: d, role: 'selected' as const }));
   const day = selectedDay();
   if (!day) return (openTrip()?.days ?? []).map((d) => ({ day: d, role: 'selected' as const }));
   const neighbours = showNeighbours() && openTrip()!.kind === 'trip' ? neighbourDays().map((d) => ({ day: d, role: 'neighbour' as const })) : [];
@@ -103,11 +109,12 @@ const sameLines = (a: ShownDay[], b: ShownDay[]): boolean => a.length === b.leng
 /**
  * Whether a route of a day drawn is on the map. The one taken up and the pinned ones
  * always are; the others of the day shown, or of the whole trip, while nothing is taken
- * up, which draws what is taken up alone among them. Of a neighbouring day, the pinned.
+ * up, which draws what is taken up alone among them. Of a neighbouring day, the pinned;
+ * while the map follows another tab, the pinned alone.
  */
 function routeDrawn(route: Route, role: RouteRole): boolean {
   if (route.id === activeRouteId() || isRoutePinned(route.id)) return true;
-  return role !== 'neighbour' && activeRouteId() === undefined && activeRecordingId() === undefined;
+  return role !== 'neighbour' && tripShown() && activeRouteId() === undefined && activeRecordingId() === undefined;
 }
 
 const sameIds = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean => a.size === b.size && [...a].every((id) => b.has(id));
@@ -119,7 +126,7 @@ const samePlaces = (a: readonly LngLat[], b: readonly LngLat[]): boolean => a.le
  * selected one, whose stops are markers; none of a collection, which can hold thousands.
  */
 function dimStops(): LngLat[] {
-  if (openTrip()?.kind !== 'trip') return [];
+  if (openTrip()?.kind !== 'trip' || !tripShown()) return [];
   const dim = shownDays().filter((d) => d.day !== selectedDay());
   return dim.flatMap(({ day }) => day.stops.map((stop) => stop.lngLat));
 }
@@ -147,11 +154,17 @@ function RecordingLines(props: { map: MapLibreMap }) {
   return null;
 }
 
-/** Draws the routes the duplicates report compares, each in its colour, and the recording a day's lookup shows. */
+/**
+ * Draws the routes the duplicates report compares, each in its colour, the recording a
+ * day's lookup shows, the rides selected while the map follows their tab, what is shown
+ * of the Stash while it follows the Stash's, and the pinned lines of trips set aside.
+ */
 function ComparedLines(props: { map: MapLibreMap }) {
   createEffect(() => {
-    const lines = recordingFeatures([...comparedLines(), ...previewedLines(), ...ridesOnMap(), ...stashLines()]);
-    props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData({ type: 'FeatureCollection', features: [...lines.features, ...dotFeatures(stashWaypoints())] });
+    const stash = mapTab() === 'stash';
+    const aside = pinnedAsideLines().map((line) => ({ id: 0, ...line }));
+    const lines = recordingFeatures([...comparedLines(), ...previewedLines(), ...(mapTab() === 'recordings' ? ridesOnMap() : []), ...(stash ? stashLines() : []), ...aside]);
+    props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData({ type: 'FeatureCollection', features: [...lines.features, ...dotFeatures(stash ? stashWaypoints() : [])] });
   });
   return null;
 }

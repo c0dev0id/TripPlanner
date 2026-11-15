@@ -1,6 +1,8 @@
 import { createEffect, createResource, createSignal, onCleanup, onMount, Show, untrack } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout, type Progress } from './api';
 import { DuplicatesReport } from './library/DuplicatesReport';
+import { setPinsAsideIfHidden, switchTab } from './state/tabs';
+import { takePinsBack } from './state/pins';
 import { PlaceKindDialog } from './library/PlaceKinds';
 import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
@@ -55,7 +57,9 @@ export function App() {
       say('arrived');
       if (!document.hidden) await new Promise((painted) => requestAnimationFrame(() => setTimeout(painted)));
       if (ask !== latest) return;
+      setPinsAsideIfHidden();
       loadTrip(trip, dayId);
+      takePinsBack(id);
       if (selectedDay()?.routes.some((route) => route.id === routeId)) takeUpRoute(routeId);
       resetSaveState();
       // The trip is open; its row keeps saying that it opens until the map has drawn the routes.
@@ -75,6 +79,7 @@ export function App() {
     if (!openTrip()) return;
     await flushSave();
     const changed = savedSinceLoad();
+    setPinsAsideIfHidden();
     closeTrip();
     resetSaveState();
     if (changed) relistTrips();
@@ -153,7 +158,7 @@ export function App() {
         <Show when={panelFolded() && openTrip()}>
           <DayStrip />
         </Show>
-        <Explorer onOpen={openPicked} onLeave={leave} error={error()} />
+        <Explorer onOpen={openPicked} onLeave={leave} onTab={(tab) => switchTab(tab, open)} error={error()} />
       </aside>
       <Show when={showingDuplicates()} fallback={<DayPane />}>
         <DuplicatesReport onOpen={openLocation} />

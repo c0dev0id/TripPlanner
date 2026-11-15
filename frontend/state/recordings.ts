@@ -9,6 +9,7 @@ import { flushSave } from './autosave';
 import { showWhole } from './drawing';
 import { isRecordingPinned, pinRecordings } from './pins';
 import { allRides, rideChanges, ridesChanged } from './rides';
+import { mapTab, tripShown } from './library';
 import { openTrip, openTripId, selectedDayId } from './trip';
 
 /**
@@ -72,11 +73,11 @@ const listedRide = createRoot(() =>
   ),
 );
 
-/** The recordings on the map: of the day shown, the pinned ones and the one opened, and a ride opened in the list of rides. */
+/** The recordings on the map: of the day shown, the pinned ones and, while the map follows the trip's tab, the one opened; and while it follows the rides, a ride opened in their list. */
 export function shownRecordings(): ShownRecording[] {
   const dayId = selectedDayId();
-  const active = activeRecordingId();
-  const listed = listedRide();
+  const active = tripShown() ? activeRecordingId() : undefined;
+  const listed = mapTab() === 'recordings' ? listedRide() : undefined;
   return [...allRecordings().filter((r) => r.dayId === dayId && (r.id === active || isRecordingPinned(r.id))), ...(listed ? [listed] : [])];
 }
 
@@ -206,7 +207,7 @@ export const isPreviewed = (ridingDay: FoundRidingDay): boolean => lookup()?.pre
 /** The lines of the found day of riding shown on the map, in the red that tells them apart from the day's routes. */
 export function previewedLines(): { id: number; points: LngLat[]; color: string; held: boolean }[] {
   const looked = lookup();
-  if (!looked?.previewed) return [];
+  if (!looked?.previewed || !tripShown()) return [];
   return looked.previewed.rides.map((ride) => ({ id: ride.id, points: decodeCached(ride.line), color: COMPARED_RIDE_COLOR, held: true }));
 }
 

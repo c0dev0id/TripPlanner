@@ -1,10 +1,13 @@
 import { createEffect, createRoot, createSignal, on } from 'solid-js';
+import type { LngLat } from '../model/trip';
 import { openTripId } from './trip';
 
 /**
  * What the user has pinned to the map: routes and recordings that stay on it while
- * something else is taken up, which otherwise is drawn alone. Nothing is pinned to begin
- * with. The pins are those of the open trip, for all of its days, and go when it is left.
+ * something else is taken up, which otherwise is drawn alone, or while another tab is
+ * shown. Nothing is pinned to begin with. The pins are those of the open trip, for all of
+ * its days, and go when it is left; a trip set aside for another tab's leaves its pinned
+ * lines on the map and takes its pins back when it is opened again.
  */
 
 const [pinnedRoutes, setPinnedRoutes] = createSignal<ReadonlySet<string>>(new Set());
@@ -36,3 +39,32 @@ export const isRecordingPinned = (id: number): boolean => pinnedRecordings().has
 export const pinRoutes = (ids: readonly string[], pinned: boolean): void => void setPinnedRoutes(withIds(pinnedRoutes(), ids, pinned));
 
 export const pinRecordings = (ids: readonly number[], pinned: boolean): void => void setPinnedRecordings(withIds(pinnedRecordings(), ids, pinned));
+
+/** A pinned line of a trip set aside, as the map draws it. */
+export interface PinnedLine {
+  points: readonly LngLat[];
+  color: string;
+}
+
+/** The pins of the trips set aside for another tab's, by trip: their ids, and their lines while the trip is not open. */
+const [setAside, setSetAside] = createSignal<ReadonlyMap<number, { routes: string[]; recordings: number[]; lines: PinnedLine[] }>>(new Map());
+
+/** The pinned lines of the trips set aside. */
+export const pinnedAsideLines = (): PinnedLine[] => [...setAside().values()].flatMap((aside) => aside.lines);
+
+/** Keeps the open trip's pins, by their ids, and their lines on the map while the trip is set aside. */
+export function setPinsAside(tripId: number, lines: PinnedLine[]): void {
+  if (lines.length === 0) return;
+  setSetAside(new Map(setAside()).set(tripId, { routes: [...pinnedRoutes()], recordings: [...pinnedRecordings()], lines }));
+}
+
+/** Pins again what the trip had pinned when it was set aside, now that it is open. */
+export function takePinsBack(tripId: number): void {
+  const aside = setAside().get(tripId);
+  if (!aside) return;
+  const rest = new Map(setAside());
+  rest.delete(tripId);
+  setSetAside(rest);
+  pinRoutes(aside.routes, true);
+  pinRecordings(aside.recordings, true);
+}

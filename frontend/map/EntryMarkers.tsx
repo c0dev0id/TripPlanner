@@ -3,13 +3,14 @@ import { createMemo, For, onCleanup } from 'solid-js';
 import { tripApi } from '../api';
 import { placedEntriesOfDay, targetOf, type Entry } from '../model/journal';
 import { allEntries, openJournal } from '../state/journal';
+import { tripShown } from '../state/library';
 import { selectedDay } from '../state/trip';
 import { entryMarkerElement } from './markerContent';
 
 /** The selected day's journal entries where they stand: a photo as a small preview that opens it, a note as an icon that opens the journal. */
 export function EntryMarkers(props: { map: MapLibreMap }) {
   const entries = createMemo(() => {
-    const day = selectedDay();
+    const day = tripShown() ? selectedDay() : undefined;
     return day ? placedEntriesOfDay(allEntries(), day) : [];
   });
   return <For each={entries()}>{(entry) => <EntryMarker map={props.map} entry={entry} />}</For>;
