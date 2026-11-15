@@ -54,6 +54,9 @@ export function pickPoint(id: number, index: number): void {
   setPickedIndex(index);
 }
 
+/** Whether the opened recording's facts are shown over the map: its figures as a whole and what its file is like. */
+export const [infoShown, setInfoShown] = createSignal(false);
+
 /** What the opened recording is focused on, which colours its line and picks its chart; nothing for its own colour and no chart. */
 const [coloring, setColoring] = createSignal<Coloring>();
 export { setColoring };

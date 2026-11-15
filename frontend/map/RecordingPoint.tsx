@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
-import { Popup, type GeoJSONSource, type Map as MapLibreMap } from 'maplibre-gl';
-import { createEffect, onCleanup } from 'solid-js';
+import { Popup, type GeoJSONSource, type MapMouseEvent, type Map as MapLibreMap } from 'maplibre-gl';
+import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { render } from 'solid-js/web';
 import { DIFFERENCE_FIGURES, FIGURES, METRICS } from '../recording/figures';
 import { surfaceLabel } from '../recording/lineColors';
@@ -8,15 +8,16 @@ import { comparison, hoverIndex, opened, openedSurfaces, pickedIndex, setPickedI
 import { Figures } from '../ui/Figures';
 import { clockText, distanceText } from '../ui/format';
 import { RECORDING_POINT_SOURCE, recordingPointFeatures } from './recordingOverlay';
+import { recordingPointAt } from './recordingPick';
 
 /** The series of a file that the measures stand for; the others are listed as the file names them. */
 const MEASURED = new Set(['time', 'ele', 'speed', 'lean_angle']);
 
-/** Everything known of the picked point of the opened recording: where along it lies, when, its measures, its surface, the file's other values, and how it differs from what the recording is compared with. */
-function PointDetails() {
+/** Everything known of a point of the opened recording: where along it lies, when, its measures, its surface, the file's other values, and how it differs from what the recording is compared with. */
+function PointDetails(props: { index: number | undefined }) {
   const rows = (): [string, string][] => {
     const o = opened();
-    const i = pickedIndex();
+    const i = props.index;
     if (!o || i === undefined) return [];
     const m = o.measures;
     const rows: [string, string][] = [[t('Along'), distanceText(m.distance[i]!)]];
@@ -50,31 +51,61 @@ function PointDetails() {
   );
 }
 
-/** The opened recording's point under the pointer in its chart or else the one picked, marked on its line; the picked one with its details in a popup. */
+/**
+ * The opened recording's point under the pointer, in its chart or on its line, or else
+ * the one picked, marked on its line, with its details in a popup. The popup follows a
+ * mouse along the line and goes when it leaves it; a click on the line pins it there,
+ * another click on the line moves it, and closing it lets it follow the mouse again.
+ */
 export function RecordingPoint(props: { map: MapLibreMap }) {
+  /** The point of the opened recording's line under the mouse, while it is over the line. */
+  const [onLine, setOnLine] = createSignal<number>();
+  const shown = () => pickedIndex() ?? onLine();
   createEffect(() => {
     const o = opened();
-    const i = hoverIndex() ?? pickedIndex();
+    const i = hoverIndex() ?? shown();
     props.map.getSource<GeoJSONSource>(RECORDING_POINT_SOURCE)?.setData(recordingPointFeatures(o && i !== undefined ? o.track.points[i] : undefined));
   });
 
+  let frame = 0;
+  const follow = (e: MapMouseEvent) => {
+    if (!opened() || frame) return;
+    frame = requestAnimationFrame(() => {
+      frame = 0;
+      const hit = recordingPointAt(props.map, e.point, MOUSE_REACH_PX);
+      setOnLine(hit && hit.id === opened()?.recording.id ? hit.index : undefined);
+    });
+  };
+  const leave = () => setOnLine(undefined);
+  props.map.on('mousemove', follow);
+  props.map.getCanvas().addEventListener('mouseleave', leave);
+
   const content = document.createElement('div');
-  const dispose = render(() => <PointDetails />, content);
+  const dispose = render(() => <PointDetails index={shown()} />, content);
   const popup = new Popup({ closeOnClick: false, maxWidth: '280px', offset: 10, className: 'recording-point' }).setDOMContent(content);
   popup.on('close', () => setPickedIndex(undefined));
   createEffect(() => {
     const o = opened();
-    const i = pickedIndex();
+    const i = shown();
     if (!o || i === undefined) {
       popup.remove();
       return;
     }
     popup.setLngLat(o.track.points[i]!);
     if (!popup.isOpen()) popup.addTo(props.map);
+    // Only a pinned popup has its close button and takes the pointer; one that follows the mouse lets it through to the line. The class takes once the popup is on the map.
+    if (pickedIndex() === undefined) popup.addClassName('following');
+    else popup.removeClassName('following');
   });
   onCleanup(() => {
+    cancelAnimationFrame(frame);
+    props.map.off('mousemove', follow);
+    props.map.getCanvas().removeEventListener('mouseleave', leave);
     popup.remove();
     dispose();
   });
   return null;
 }
+
+/** How far from the line, in CSS pixels, the mouse still counts as on it. */
+const MOUSE_REACH_PX = 8;

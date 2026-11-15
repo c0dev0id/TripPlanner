@@ -1008,6 +1008,14 @@ entries at the end of their section.
   the comparison stops, since a third line leaves open which two are meant and three
   at once would be too much to read. Comparing is what pinning one thing beside an
   opened recording is for, so the focus turns to the distance from it at once.
+- **A recording's figures are buttons over the map, and cards only on demand.** One card
+  held everything at once, the summary, the file's facts, the comparison and the focus,
+  and repeated much of it in the chart and the point's popup. Now round buttons stand
+  where the place search stands, which is not needed while a ride is studied: the facts,
+  hidden at first, and one per focus, whose card holds only the figures that belong to
+  it. The point's popup follows the mouse along the line, so that reading the line needs
+  no click, and a click pins it, as a click in the chart does, which also moves the map
+  to the point.
 - **A recording has one focus.** The colour of its line and the chart along the bottom
   were chosen apart, with tabs for every chart the file allowed, so that the line could
   show one thing and the chart another. One select, Focus, now picks both: the line is

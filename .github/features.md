@@ -468,23 +468,27 @@
   whole trip is shown; a click or a tap on it shows its day and takes the route up, as a
   click on its row does, which is brought into view. This holds while no route is being
   edited, when a tap does the tool's work.
-- A recording's figures: a click on it shows it whole and opens a card over the map with
-  its distance, time and moving time, average and top speed, climb and descent, lowest
-  and highest point and furthest lean to either side, as far as its file has the values.
-  Under them the card says what the file is like, to tell which of two recordings of
-  one ride is the better: what wrote it, how many points it has, the usual time and
-  the average way from one to the next, its segments where it has more than one, and
-  what it tells of each point, by the names the file has for it, with the share of the
-  points that have it where not all do.
-  Its Focus picks what to look at: none, speed, altitude, slope, lean angle, the road
-  surface, or a difference to what it is compared with. The focus colours the line,
-  with a legend, and opens a card along the bottom that charts it along the way and,
-  for speed, slope and lean angle, how far was ridden at each value; with none, the
-  line has the recording's colour and there is no chart. The surfaces, matched once by
-  the routing server, are listed with the distance on each. Pointing in the chart marks the
-  place on the map; a click in the chart or on the line on the map shows everything known
-  of that point: the distance along, the time, the measures, the surface and the file's
-  other values. On a narrow screen the figures start folded.
+- A recording's figures: a click on it shows it whole, and round buttons take the place
+  search's place over the map: the facts, one for each focus the file allows, and one
+  that closes the figures. The facts, hidden at first, are its distance, time and
+  moving time, average and top speed, climb and descent, lowest and highest point and
+  furthest lean to either side, as far as its file has the values, and what the file is
+  like, to tell which of two recordings of one ride is the better: what wrote it, how
+  many points it has, the usual time and the average way from one to the next, its
+  segments where it has more than one, and what it tells of each point, by the names the
+  file has for it, with the share of the points that have it where not all do.
+  A focus button picks what to look at, and its button again lets go of it: speed,
+  altitude, slope, lean angle, the road surface, or a difference to what it is compared
+  with. The focus colours the line, opens a card of the figures that belong to it alone
+  with the legend of the colours, and a chart along the bottom of it along the way and,
+  for speed, slope and lean angle, how far was ridden at each value; with none, the line
+  has the recording's colour and neither card nor chart shows. The surfaces, matched once
+  by the routing server, are listed with the distance on each. Pointing in the chart
+  marks the place on the map, and a click there moves the map to it. Everything known of
+  a point (the distance along, the time, the measures, the surface and the file's other
+  values) is said in a popup that follows the mouse along the line and goes when it
+  leaves it; a click on the line, or in the chart, pins the popup there, another click on
+  the line moves it, and closing it lets it follow the mouse again.
 - Comparing a recording: the recording opened is compared with what is pinned beside
   it on the map where that is one route or track of its day or one other recording;
   with two or more pinned there is no comparison, and the focus offers the measures

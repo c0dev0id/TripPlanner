@@ -201,6 +201,75 @@ export const LayersIcon = () => (
   </Icon>
 );
 
+/** A letter i in a ring: facts. */
+export const InfoIcon = () => (
+  <Icon>
+    <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" />
+    <path d="M12 9h.01" />
+    <path d="M11 12h1v4h1" />
+  </Icon>
+);
+
+/** A dial: speed. */
+export const GaugeIcon = () => (
+  <Icon>
+    <path d="M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+    <path d="M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />
+    <path d="M13.41 10.59l2.59 -2.59" />
+    <path d="M7 12a5 5 0 0 1 5 -5" />
+  </Icon>
+);
+
+/** A mountain: altitude. */
+export const MountainIcon = () => (
+  <Icon>
+    <path d="M3 20h18l-6.921 -14.612a2.3 2.3 0 0 0 -4.158 0l-6.921 14.612z" />
+    <path d="M7.5 11l2 2.5l2.5 -2.5l2 3l2.5 -2" />
+  </Icon>
+);
+
+/** A line going up: slope. */
+export const SlopeIcon = () => (
+  <Icon>
+    <path d="M3 17l6 -6l4 4l8 -8" />
+    <path d="M14 7l7 0l0 7" />
+  </Icon>
+);
+
+/** An angle with its arc: lean. */
+export const AngleIcon = () => (
+  <Icon>
+    <path d="M21 19h-18l9 -15" />
+    <path d="M20.615 15.171h.015" />
+    <path d="M19.515 11.771h.015" />
+    <path d="M17.715 8.671h.015" />
+    <path d="M15.415 5.971h.015" />
+  </Icon>
+);
+
+/** A road: the surface. */
+export const RoadIcon = () => (
+  <Icon>
+    <path d="M4 19l4 -14" />
+    <path d="M16 5l4 14" />
+    <path d="M12 8v-2" />
+    <path d="M12 13v-2" />
+    <path d="M12 18v-2" />
+  </Icon>
+);
+
+/** Two arrows apart: the distance from another line. */
+export const OffsetIcon = () => (
+  <Icon>
+    <path d="M11 16h10" />
+    <path d="M11 16l4 4" />
+    <path d="M11 16l4 -4" />
+    <path d="M13 8h-10" />
+    <path d="M13 8l-4 4" />
+    <path d="M13 8l-4 -4" />
+  </Icon>
+);
+
 /** An open eye: shown. */
 export const EyeIcon = () => (
   <Icon>

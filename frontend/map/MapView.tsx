@@ -80,7 +80,10 @@ export function MapView() {
             <PlaceMarkers map={m()} />
             <OwnPlaceMarkers map={m()} />
             <OverlayInfo map={m()} />
-            <SearchBox map={m()} />
+            {/* The opened recording's buttons take the search's place: a place is not looked for while a ride is studied. */}
+            <Show when={!opened()}>
+              <SearchBox map={m()} />
+            </Show>
           </>
         )}
       </Show>

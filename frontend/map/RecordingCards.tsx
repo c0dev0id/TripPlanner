@@ -1,42 +1,56 @@
 import { locale } from '../i18n/language';
 import { t } from '../i18n/t';
-import { createEffect, createMemo, createSignal, For, Match, Show, Switch } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, Match, Show, Switch, type JSX } from 'solid-js';
 import uPlot from 'uplot';
 import { deltaSummaryOf, type Delta } from '../recording/delta';
 import { fileFacts, type FileFacts } from '../recording/file';
 import { DIFFERENCE_FIGURES, FIGURES, type Figure } from '../recording/figures';
 import { isDifference, kmBySurface, NO_VALUE, SURFACES, surfaceLabel, type Coloring, type Difference } from '../recording/lineColors';
 import { histogram, summaryOf, type Metric } from '../recording/measures';
-import { onPhone } from '../state/panel';
+import type { LngLat } from '../model/trip';
+import { panTo } from '../state/drawing';
 import {
   colorings,
   comparison,
   hoverIndex,
+  infoShown,
   opened,
   openedSurfaces,
   openRecording,
   pickedIndex,
   setColoring,
   setHoverIndex,
+  setInfoShown,
   setPickedIndex,
   shownColoring,
   shownScale,
-  type Comparison,
   type Opened,
 } from '../state/recordingView';
 import { recordingColor } from '../state/recordings';
 import { Chart, type ChartInk } from '../ui/Chart';
 import { distanceText, durationText } from '../ui/format';
 import { Figures } from '../ui/Figures';
-import { CloseIcon } from '../ui/icons';
+import { IconButton } from '../ui/IconButton';
+import { AngleIcon, ClockIcon, CloseIcon, GaugeIcon, InfoIcon, MountainIcon, OffsetIcon, RoadIcon, SlopeIcon } from '../ui/icons';
 
-/** The opened recording's figures over the map: its summary with what it is focused on, and the chart of the focus. */
+/**
+ * The opened recording over the map: round buttons where the place search stands, one
+ * for its facts and one for each focus, which colours its line, opens a card of the
+ * figures that belong to it and charts it; the facts' card, hidden at first; and the
+ * chart of the focus along the bottom.
+ */
 export function RecordingCards() {
   return (
     <Show when={opened()}>
       {(o) => (
         <>
-          <SummaryCard opened={o()} />
+          <FocusButtons />
+          <div class="recording-cards">
+            <Show when={infoShown()}>
+              <InfoCard opened={o()} />
+            </Show>
+            <Show when={shownColoring()}>{(focus) => <FocusCard opened={o()} focus={focus()} />}</Show>
+          </div>
           <ChartCard opened={o()} />
         </>
       )}
@@ -44,7 +58,7 @@ export function RecordingCards() {
   );
 }
 
-/** What a focus is called in its list: a difference with what it is against. */
+/** What a focus is called: a difference with what it is against. */
 function coloringLabel(c: Coloring): string {
   const against = comparison()?.name ?? '';
   switch (c) {
@@ -59,6 +73,39 @@ function coloringLabel(c: Coloring): string {
     default:
       return FIGURES[c].label;
   }
+}
+
+/** The icon of each focus. */
+const FOCUS_ICONS: Record<Coloring, () => JSX.Element> = {
+  speed: GaugeIcon,
+  altitude: MountainIcon,
+  slope: SlopeIcon,
+  lean: AngleIcon,
+  surface: RoadIcon,
+  offset: OffsetIcon,
+  speedDifference: ClockIcon,
+  leanDifference: AngleIcon,
+};
+
+/** The round buttons over the map: the facts, each focus the recording allows, and closing it. A pressed focus is let go by its button. */
+function FocusButtons() {
+  return (
+    <div class="recording-buttons" role="toolbar" aria-label={t('Figures of the recording')}>
+      <IconButton label={t('Facts of the recording')} pressed={infoShown()} onClick={() => setInfoShown(!infoShown())}>
+        <InfoIcon />
+      </IconButton>
+      <For each={colorings()}>
+        {(c) => (
+          <IconButton label={coloringLabel(c)} pressed={shownColoring() === c} onClick={() => setColoring(shownColoring() === c ? undefined : c)}>
+            {FOCUS_ICONS[c]()}
+          </IconButton>
+        )}
+      </For>
+      <IconButton label={t('Close the figures')} onClick={() => openRecording(undefined)}>
+        <CloseIcon />
+      </IconButton>
+    </div>
+  );
 }
 
 const textOf = <T,>(value: T | undefined, text: (value: T) => string): string | undefined => (value === undefined ? undefined : text(value));
@@ -79,8 +126,8 @@ function fileRows(file: FileFacts): [string, string | undefined][] {
   ];
 }
 
-/** The recording in figures, how it differs from what it is compared with, and what it is focused on with its legend; folded at first on a narrow screen. */
-function SummaryCard(props: { opened: Opened }) {
+/** What stays the same whatever the focus: the recording's name, its figures as a whole, and what its file is like. */
+function InfoCard(props: { opened: Opened }) {
   const rows = createMemo((): [string, string | undefined][] => {
     const s = summaryOf(props.opened.measures);
     const { speed, altitude, lean } = FIGURES;
@@ -98,57 +145,78 @@ function SummaryCard(props: { opened: Opened }) {
     ];
   });
   return (
-    // On a narrow screen the card would cover half the map: it starts folded there.
-    <details class="map-card summary-card" open={!onPhone()}>
-      <summary class="row">
+    <section class="map-card info-card" aria-label={t('Facts of the recording')}>
+      <h3 class="row">
         <span class="swatch" style={{ background: recordingColor(props.opened.recording) }} />
-        <h3 class="grow name">{props.opened.recording.name}</h3>
-        <button class="icon" title={t('Close the figures')} aria-label={t('Close the figures')} onClick={() => openRecording(undefined)}>
-          <CloseIcon />
-        </button>
-      </summary>
+        <span class="grow name">{props.opened.recording.name}</span>
+      </h3>
       <Figures rows={rows()} />
-      <Show when={comparison()}>{(c) => <ComparisonFigures opened={props.opened} comparison={c()} />}</Show>
-      <label class="row">
-        <span>{t('Focus')}</span>
-        {/* Each option says whether it is chosen: the focus can change with the options, which a select's value does not follow. */}
-        <select class="grow" onChange={(e) => setColoring((e.currentTarget.value || undefined) as Coloring | undefined)}>
-          <option value="" selected={shownColoring() === undefined}>
-            {t('None')}
-          </option>
-          <For each={colorings()}>
-            {(c) => (
-              <option value={c} selected={c === shownColoring()}>
-                {coloringLabel(c)}
-              </option>
-            )}
-          </For>
-        </select>
-      </label>
+    </section>
+  );
+}
+
+/** The lowest and highest of the values that are there. */
+function rangeOf(values: readonly (number | null)[]): [number, number] | undefined {
+  const known = values.filter((v): v is number => v !== null && Number.isFinite(v));
+  return known.length > 0 ? [Math.min(...known), Math.max(...known)] : undefined;
+}
+
+/** The figures that belong to a focus, and only those: of speed the average and top speed and the time moving, of altitude the climb, descent and range, of slope and lean their extremes, of a difference what it is against and how it differs. */
+function focusRows(opened: Opened, focus: Coloring): [string, string | undefined][] {
+  const s = summaryOf(opened.measures);
+  const { speed, altitude, slope, lean } = FIGURES;
+  const c = comparison();
+  const d = c && deltaSummaryOf(opened.measures, c.delta);
+  switch (focus) {
+    case 'speed':
+      return [
+        [t('Average speed'), textOf(s.averageSpeed, speed.text)],
+        [t('Top speed'), textOf(s.maxSpeed, speed.text)],
+        [t('Moving'), textOf(s.movingS, durationText)],
+      ];
+    case 'altitude':
+      return [
+        [t('Climb'), textOf(s.ascentM, altitude.text)],
+        [t('Descent'), textOf(s.descentM, altitude.text)],
+        [t('Altitude'), textOf(s.altitudeRange, ([low, high]) => `${altitude.text(low)} – ${altitude.text(high)}`)],
+      ];
+    case 'slope':
+      return [[t('Slope'), textOf(rangeOf(opened.measures.slope ?? []), ([down, up]) => `${slope.text(down)} – ${slope.text(up)}`)]];
+    case 'lean':
+      return [[t('Lean'), textOf(s.leanRange, ([left, right]) => t('{left} to {right}', { left: lean.text(left), right: lean.text(right) }))]];
+    case 'surface':
+      return [];
+    case 'offset':
+      return [
+        [t('Against'), c?.name],
+        [t('Off it'), textOf(d?.offM, distanceText)],
+        [t('Farthest off'), textOf(d?.furthestM, distanceText)],
+      ];
+    case 'speedDifference':
+      return [
+        [t('Against'), c?.name],
+        [t('At the end'), textOf(d?.timeS, DIFFERENCE_FIGURES.time.text)],
+        [t('On average'), textOf(d?.speed, DIFFERENCE_FIGURES.speed.text)],
+      ];
+    case 'leanDifference':
+      return [[t('Against'), c?.name]];
+  }
+}
+
+/** The card of the focus: its name, its figures and the legend of the line's colours. */
+function FocusCard(props: { opened: Opened; focus: Coloring }) {
+  return (
+    <section class="map-card focus-card" aria-label={coloringLabel(props.focus)}>
+      <h3>{coloringLabel(props.focus)}</h3>
+      <Figures rows={focusRows(props.opened, props.focus)} />
       <Switch>
-        <Match when={shownColoring() === 'surface'}>
+        <Match when={props.focus === 'surface'}>
           <SurfaceLegend opened={props.opened} />
         </Match>
         <Match when={shownScale()}>{(shown) => <ScaleLegend shown={shown()} />}</Match>
       </Switch>
-    </details>
+    </section>
   );
-}
-
-/** How the opened recording differs from what it is compared with, in figures. */
-function ComparisonFigures(props: { opened: Opened; comparison: Comparison }) {
-  const rows = createMemo((): [string, string | undefined][] => {
-    const s = deltaSummaryOf(props.opened.measures, props.comparison.delta);
-    const { time, speed } = DIFFERENCE_FIGURES;
-    return [
-      [t('Against'), props.comparison.name],
-      [t('Off it'), distanceText(s.offM)],
-      [t('Farthest off'), distanceText(s.furthestM)],
-      [t('At the end'), textOf(s.timeS, time.text)],
-      [t('On average'), textOf(s.speed, speed.text)],
-    ];
-  });
-  return <Figures rows={rows()} />;
 }
 
 /** The colours of the line's scale from its low end to its high end. */
@@ -279,7 +347,7 @@ function ChartCard(props: { opened: Opened }) {
           <span class="grow muted name readout">{along() ? alongReadout() : spreadReadout()}</span>
         </div>
         <Show when={along()} fallback={<SpreadChart opened={props.opened} metric={spread()!} onHover={setSpreadReadout} />}>
-          <AlongChart distance={props.opened.measures.distance} lines={lines()} />
+          <AlongChart distance={props.opened.measures.distance} points={props.opened.track.points} lines={lines()} />
         </Show>
       </section>
     </Show>
@@ -300,7 +368,7 @@ const axis = (ink: ChartInk, unit: string, more: uPlot.Axis = {}): uPlot.Axis =>
 const cursorIndex = (u: uPlot): number | undefined => ((u.cursor.left ?? -1) < 0 ? undefined : (u.cursor.idx ?? undefined));
 
 /** Up to two series along the track, the second on an axis of its own on the right: the pointer marks its point on the map, a click picks it, and the point picked is marked here. */
-function AlongChart(props: { distance: Float64Array; lines: AlongLine[] }) {
+function AlongChart(props: { distance: Float64Array; points: readonly LngLat[]; lines: AlongLine[] }) {
   let chart: uPlot | undefined;
   createEffect(() => {
     pickedIndex();
@@ -342,7 +410,9 @@ function AlongChart(props: { distance: Float64Array; lines: AlongLine[] }) {
           (u) =>
             u.over.addEventListener('click', () => {
               const i = cursorIndex(u);
-              if (i !== undefined) setPickedIndex(i);
+              if (i === undefined) return;
+              setPickedIndex(i);
+              panTo(props.points[i]!);
             }),
         ],
       },
