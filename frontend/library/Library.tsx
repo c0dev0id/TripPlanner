@@ -1,13 +1,14 @@
 import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
 import { changeTrip, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
+import { TAB_NAMES, TREE_TABS, TREES, type TreeTab } from '../model/library';
 import type { StashFile, StashItem } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
-import { heldOf, importNote, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, TAB_NAMES, treeOf, TREE_TABS, type TreeTab, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
+import { heldOf, importNote, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
-import { countsText, folderPath, heldInAll, heldText, kindAround, moveTargets } from '../model/folders';
+import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
 import { flushSave } from '../state/autosave';
 import { isShownItem, isShownWhole, relistStash, showInStash, stashFiles, stashProblem } from '../state/stash';
 import { setEditTarget, setExportScope, setShareOpen } from '../state/drawing';
@@ -37,13 +38,6 @@ import { firstFound, foundCount, foundKeys, routeKey, searchLibrary, type FoundR
 
 /** The top of the trips, as a place to paste into. */
 const ALL_TRIPS = TAB_NAMES.trips;
-
-/** What a tree says while it holds nothing. */
-const EMPTY: Record<TreeTab, string> = {
-  stash: t('The Stash is empty. Drop GPX files and folders here, or add them from the menu above.'),
-  trips: t('No trips yet. Start one from the menu above, or drop GPX files here.'),
-  places: t('No lists of places yet. Start one from the menu above, or drop GPX files of waypoints here.'),
-};
 
 /** The list that holds the selection of a tree's folders and trips. */
 const ownerOf = (tree: TreeTab): string => `library:${tree}`;
@@ -331,7 +325,7 @@ export function Library(props: {
     await runLibrary(() => mergeTrips(into.id, others.map((t) => t.id)), relist);
   };
   /** What a folder holds besides folders, as it is counted: trips, in the Stash files or, among the places, lists. */
-  const heldNoun = (id: number | null) => ({ folder: 'trip', collections: 'file', places: 'list' } as const)[kindAround(folders(), id)];
+  const heldNoun = (id: number | null) => TREES[treeOf(id)].holds;
   const takerOf = (items: readonly Item[]) => takerAmong(all(), items);
   /** Refuses, as the server would, to put the items into a folder that does not hold their kind. */
   const assertFits = (items: readonly Item[], into: number | null) => {
@@ -667,7 +661,7 @@ export function Library(props: {
           <Branch tree={tree.tab} parent={root()} />
         </ul>
         <Show when={held().folders + held().trips === 0}>
-          <p class="muted">{EMPTY[tree.tab]}</p>
+          <p class="muted">{TREES[tree.tab].empty}</p>
         </Show>
       </div>
     );

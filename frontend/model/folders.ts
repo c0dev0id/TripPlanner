@@ -1,4 +1,5 @@
 import { t } from '../i18n/t';
+import type { Held } from './library';
 import type { Folder, FolderKind } from './trip';
 import { counted } from '../ui/format';
 
@@ -29,11 +30,11 @@ export function heldCounts(folders: readonly Folder[], trips: readonly { folderI
 }
 
 /** What a folder holds, as its card says it: "2 folders · 1 trip", or files or lists where it holds those. */
-export const heldText = (held: { folders: number; trips: number }, noun: 'trip' | 'file' | 'list' = 'trip'): string =>
+export const heldText = (held: { folders: number; trips: number }, noun: Held = 'trip'): string =>
   [held.folders > 0 && counted(held.folders, 'folder'), counted(held.trips, noun)].filter(Boolean).join(' · ');
 
 /** How many folders and trips, or files or lists where a folder holds those, as a sentence says it: "2 folders and 3 trips", "1 trip"; empty for none. */
-export function countsText(folders: number, trips: number, noun: 'trip' | 'file' | 'list' = 'trip'): string {
+export function countsText(folders: number, trips: number, noun: Held = 'trip'): string {
   const folderText = folders > 0 ? counted(folders, 'folder') : '';
   const tripText = trips > 0 ? counted(trips, noun) : '';
   return folderText && tripText ? t('{a} and {b}', { a: folderText, b: tripText }) : folderText || tripText;

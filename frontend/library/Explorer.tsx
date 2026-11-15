@@ -1,7 +1,8 @@
 import { createEffect, For, on, onCleanup, onMount, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import type { TripSummary } from '../model/trip';
-import { LIBRARY_TABS, libraryProblem, libraryTab, libraryTrips, query, setQuery, showFolder, TAB_NAMES, type LibraryTab } from '../state/library';
+import { LIBRARY_TABS, TAB_NAMES, TREES, type LibraryTab } from '../model/library';
+import { libraryProblem, libraryTab, libraryTrips, query, setQuery, showFolder } from '../state/library';
 import { openTrip, openTripId, selectDay, takeUpRouteOf } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
 import { TripPanel } from '../trip/TripPanel';
@@ -12,13 +13,8 @@ import { LibraryActions } from './LibraryActions';
 import { Rides } from './Rides';
 import type { FoundRoute } from './search';
 
-/** What the search says it looks through, by the tab shown. */
-const SEARCHES: Record<Exclude<LibraryTab, 'settings'>, string> = {
-  stash: t('Search files, routes and tracks'),
-  trips: t('Search trips, routes and tracks'),
-  places: t('Search lists of places'),
-  recordings: t('Search rides'),
-};
+/** What the search says it looks through, in the tab shown. */
+const searchText = (tab: Exclude<LibraryTab, 'settings'>): string => (tab === 'recordings' ? t('Search rides') : TREES[tab].search);
 
 /**
  * The library's pane: its switches and search, a tab for each of its views (the
@@ -74,7 +70,7 @@ export function Explorer(props: {
     <section class="explorer" ref={section}>
       <LibraryActions />
       <Show when={searched()}>
-        {(tab) => <input class="search" type="search" placeholder={SEARCHES[tab()]} aria-label={SEARCHES[tab()]} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />}
+        {(tab) => <input class="search" type="search" placeholder={searchText(tab())} aria-label={searchText(tab())} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />}
       </Show>
       <div class="row library-tabs" role="tablist" aria-label={t('Library')}>
         <For each={LIBRARY_TABS}>

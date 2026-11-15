@@ -1,4 +1,5 @@
 import { countsText, kindAround } from '../model/folders';
+import { TREES, treeOfKind } from '../model/library';
 import type { StashFile, StashItem } from '../model/stash';
 import type { Folder, TripSummary } from '../model/trip';
 
@@ -77,8 +78,8 @@ export function takerOf(listed: Listed, items: readonly Item[]): (into: number |
   const within = tripsWithin(listed, items);
   const files = filesOf(items).length > 0;
   return (into) => {
-    const around = kindAround(listed.folders, into);
-    return within.every((trip) => (trip.kind === 'collection' ? 'places' : 'folder') === around) && (!files || around === 'collections');
+    const holds = TREES[treeOfKind(kindAround(listed.folders, into))].holds;
+    return within.every((trip) => (trip.kind === 'collection' ? 'list' : 'trip') === holds) && (!files || holds === 'file');
   };
 }
 

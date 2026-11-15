@@ -1,7 +1,7 @@
 import { createMemo, createResource, createRoot, createSelector, createSignal } from 'solid-js';
-import { t } from '../i18n/t';
 import { changeTrip, listFolders, listTrips, fetchOutlines, type OutlineDay, type Progress } from '../api';
 import { heldCounts, kindAround } from '../model/folders';
+import { isTreeTab, TREES, treeOfKind, type LibraryTab, type TreeTab } from '../model/library';
 import type { FolderKind } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { createRequest } from '../ui/request';
@@ -9,22 +9,6 @@ import { stashFiles } from './stash';
 import { openTripId, removeParts, selectedDay } from './trip';
 
 /** The library as the server lists it, and where the user is in it. */
-
-/** The library's views, a tab each: the Stash's files, the trips, the lists of places, the rides as recorded, and the settings. */
-export type LibraryTab = 'stash' | 'trips' | 'places' | 'recordings' | 'settings';
-/** The tabs that show a tree of folders. */
-export type TreeTab = Exclude<LibraryTab, 'recordings' | 'settings'>;
-export const TREE_TABS: readonly TreeTab[] = ['stash', 'trips', 'places'];
-export const LIBRARY_TABS: readonly LibraryTab[] = [...TREE_TABS, 'recordings', 'settings'];
-
-/** Whether the tab shows a tree of folders. */
-export const isTreeTab = (tab: LibraryTab): tab is TreeTab => (TREE_TABS as readonly LibraryTab[]).includes(tab);
-
-/** The tab whose tree a folder of the kind is in. */
-const TAB_OF: Record<FolderKind, TreeTab> = { collections: 'stash', folder: 'trips', places: 'places' };
-
-/** What the tabs are called. */
-export const TAB_NAMES: Record<LibraryTab, string> = { stash: t('Stash'), trips: t('Trips'), places: t('Places'), recordings: t('Recordings'), settings: t('Settings') };
 
 /** The tab shown, and the tree last shown, which stays the one the address names while the rides or the settings are. */
 const [libraryTab, setTab] = createSignal<LibraryTab>('trips');
@@ -71,12 +55,10 @@ export const [query, setQuery] = createSignal('');
 /** What the search looks for, as it is compared with names in lower case; empty while nothing is typed. */
 export const searchedFor = createRoot(() => createMemo(() => query().trim().toLowerCase()));
 
-/** The special folders are named as the tabs they are the tops of. */
-const SPECIAL_NAMES = { collections: TAB_NAMES.stash, places: TAB_NAMES.places };
-
 const library = createRoot(() => {
   const [trips, { refetch: refetchTrips }] = createResource(listTrips);
-  const [folders, { refetch: refetchFolders }] = createResource(async () => (await listFolders()).map((f) => (f.kind === 'folder' ? f : { ...f, name: SPECIAL_NAMES[f.kind] })));
+  // The special folders are named as the tabs they are the tops of.
+  const [folders, { refetch: refetchFolders }] = createResource(async () => (await listFolders()).map((f) => (f.kind === 'folder' ? f : { ...f, name: TREES[treeOfKind(f.kind)].name })));
   const [outlines, { refetch: refetchOutlines }] = createResource(fetchOutlines);
   /** The top of each tree: none for the trips', the folder of their kind for the others' once the folders are listed. */
   const roots = createMemo((): Record<TreeTab, number | null> => {
@@ -112,7 +94,7 @@ export const isPlaceList = (tripId: number | undefined): boolean => folderKindOf
 export const rootOf = (tree: TreeTab): number | null => library.roots()[tree];
 
 /** The tree a folder is in, null for the top of the trips'. */
-export const treeOf = (folderId: number | null): TreeTab => TAB_OF[kindAround(library.folders.error ? [] : (library.folders() ?? []), folderId)];
+export const treeOf = (folderId: number | null): TreeTab => treeOfKind(kindAround(library.folders.error ? [] : (library.folders() ?? []), folderId));
 
 /** The tree the open trip is in; none while no trip is open, or the open one is not listed yet. */
 export const openTree = createRoot(() =>
