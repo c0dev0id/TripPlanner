@@ -165,7 +165,7 @@ final class FileStore
         // Scaled first, then turned: turning the small image costs nothing, the full one a second copy of it.
         $scale = min(1, self::PREVIEW_PX / max(imagesx($image), imagesy($image)));
         $small = imagescale($image, (int) round(imagesx($image) * $scale), (int) round(imagesy($image) * $scale));
-        imagedestroy($image);
+        unset($image);
         if ($small === false) {
             return null;
         }
