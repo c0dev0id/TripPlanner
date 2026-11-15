@@ -19,9 +19,7 @@
   shown. Trips and Places each keep what they had open when the user left them by
   their tab, the trip or list, its day, the route taken up and the recording opened,
   and open it again when the user comes back by their tab; only one trip is open at a
-  time, so coming back may open it afresh. Its name and
-  its actions stand over the tab it is in; a tab with nothing open, or a list of places
-  open, has no heading.
+  time, so coming back may open it afresh. No tab has a heading over its tree.
   Under the tabs a line says what the view holds, with the button that folds its tree
   away and the menu of its top; the address keeps the tab, so that loading the page
   again comes back to it. Opening a trip from a ride or from the duplicates shows the
@@ -62,10 +60,10 @@
   says so. The button in the line under the tabs folds every
   folder and trip of the tree shown away.
   The open trip stays in the tree, the others around it, so that another trip is one
-  click away. Above the tree stand the duplicates report's switch as an icon, the search, and
-  the open trip's name with its own icons (edit, export, journal, print and share,
-  whether it is saved, and a button that closes the trip, saved, and leaves the map
-  empty).
+  click away. Above the tree stand the duplicates report's switch as an icon and the
+  search. The open trip's row says whether it is saved, and its menu has what only the
+  open trip has: Edit… in place of Rename…, Export GPX…, Journal…, Print, share… and
+  Close, which leaves it saved; a list of places has Close alone.
 - A library of the user's trips in folders, which may hold folders: create, open, rename,
   duplicate and delete trips, create, rename and delete folders (for a folder that holds
   anything the confirmation asks whether that moves up into its parent or is deleted with it), move a trip between folders from Move… in its menu, create a trip or a folder

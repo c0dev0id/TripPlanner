@@ -1,13 +1,11 @@
 import { createEffect, For, on, onCleanup, onMount, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import type { TripSummary } from '../model/trip';
-import { LIBRARY_TABS, libraryProblem, libraryTab, libraryTrips, openTree, query, setQuery, showFolder, TAB_NAMES, type LibraryTab } from '../state/library';
+import { LIBRARY_TABS, libraryProblem, libraryTab, libraryTrips, query, setQuery, showFolder, TAB_NAMES, type LibraryTab } from '../state/library';
 import { openTrip, openTripId, selectDay, takeUpRouteOf } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
-import { SaveState } from '../trip/SaveStatus';
-import { TripIcons, TripPanel } from '../trip/TripPanel';
-import { IconButton } from '../ui/IconButton';
-import { CloseIcon, GearIcon } from '../ui/icons';
+import { TripPanel } from '../trip/TripPanel';
+import { GearIcon } from '../ui/icons';
 import { Settings } from '../settings/Settings';
 import { Library, type FoundRoute } from './Library';
 import { LibraryActions } from './LibraryActions';
@@ -61,8 +59,6 @@ export function Explorer(props: {
     const tab = libraryTab();
     return tab === 'settings' ? undefined : tab;
   };
-  /** The open trip where the tab shown is the one it is in, which its name and its actions then stand over; one not listed yet counts as in the tab shown. A list of places has no heading: it has no actions of its own. */
-  const headed = () => ((openTree() ?? libraryTab()) === libraryTab() && openTrip()?.kind === 'trip' ? openTrip() : undefined);
   // The panel scrolls as a whole, so how far it was scrolled is kept for each tab and given back when the tab is shown again.
   let section!: HTMLElement;
   const scrolled: Partial<Record<LibraryTab, number>> = {};
@@ -90,20 +86,6 @@ export function Explorer(props: {
           )}
         </For>
       </div>
-      <Show when={headed()}>
-        {(trip) => (
-          <div class="row explorer-heading">
-            <h2 class="path grow" title={trip().name}>
-              {trip().name}
-            </h2>
-            <TripIcons />
-            <SaveState />
-            <IconButton label={t('Close {what}', { what: trip().name })} onClick={() => void props.onLeave()}>
-              <CloseIcon />
-            </IconButton>
-          </div>
-        )}
-      </Show>
       <Show when={libraryProblem() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
       <Library onOpen={openIn} onOpenRoute={openRoute} onOpenFolder={openFolder} onLeave={props.onLeave}>
         <Show when={openTrip()?.kind === 'collection'} fallback={<TripPanel />}>

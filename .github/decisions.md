@@ -1505,8 +1505,11 @@ entries at the end of their section.
   one-shot script in `bin/` changes it and is deleted after it has run, so that no
   migration code stays. Migrations start with the first release.
 - **The library's pane has one frame.** The library's actions as icons and the search
-  on top, under them the open trip's name with the trip's own actions as icons, then
-  the tree; the actions of days, routes and recordings are icons on their own headers.
+  on top, then the tree; the actions of days, routes and recordings are icons on their
+  own headers. The open trip's name with its actions as icons stood between the tabs
+  and the tree, far from its row once a long list was scrolled, and repeated a close
+  that the day's pane has itself; the actions are now in the open trip's row's menu,
+  where every other trip's are, and its row says whether it is saved.
   They were buttons that pushed the panel wide. The path heading and the card that led
   one level up went with the explorer that showed one level at a time: in a tree the
   place is where the row stands.

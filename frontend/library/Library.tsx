@@ -11,7 +11,8 @@ import { countsText, folderPath, heldInAll, heldText, kindAround, moveTargets } 
 import { flushSave } from '../state/autosave';
 import { isShownItem, isShownWhole, relistStash, showInStash, shownInStash, stashFiles, stashProblem } from '../state/stash';
 import { ridesChanged } from '../state/rides';
-import { setEditTarget } from '../state/drawing';
+import { setEditTarget, setExportScope, setShareOpen } from '../state/drawing';
+import { openJournal } from '../state/journal';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
 import { dayDetail, dayHeading, routeOrTrack } from '../trip/labels';
 import { readPreference, writePreference } from '../ui/preferences';
@@ -31,6 +32,7 @@ import { dragToFolder } from './dragToFolder';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow, stashItemName } from './StashFileCard';
 import { stashCopies, stashStops, type Picked } from './stashOut';
+import { SaveState } from '../trip/SaveStatus';
 import { PlaceKindControls, PlaceKindMark, StandardPlaces } from './PlaceKinds';
 import { keepPlaces, keptText } from './dropImport';
 import { TripShape } from './TripShape';
@@ -777,9 +779,9 @@ export function Library(props: {
     return [
       ...(several ? [{ label: t('{what} selected', { what: countText(chosen) }), disabled: true, run: nothing }] : []),
       ...fresh,
-      // The open trip is renamed as it is edited; the others on the server.
+      // The open trip is edited in its dialog, its name with the rest; the others are renamed on the server.
       {
-        label: t('Rename…'),
+        label: 'trip' in item && item.trip.id === openTripId() ? t('Edit…') : t('Rename…'),
         disabled: several,
         run: () =>
           'folder' in item
@@ -797,10 +799,22 @@ export function Library(props: {
         ? [{ label: t('Merge into “{name}”', { name: first!.name }), run: () => void merge(first!, others) }]
         : []),
       exportEntry,
+      ...(!several && 'trip' in item && item.trip.id === openTripId() ? openTripItems(item.trip) : []),
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
   };
 
+  /** What the open trip's menu has besides: its GPX export, its journal, printing and sharing a trip, and closing it, saved. */
+  const openTripItems = (trip: TripSummary): MenuItem[] => [
+    ...(trip.kind === 'trip'
+      ? [
+          { label: t('Export GPX…'), run: () => setExportScope({ kind: 'trip' }) },
+          { label: t('Journal…'), run: () => openJournal({}) },
+          { label: t('Print, share…'), run: () => setShareOpen(true) },
+        ]
+      : []),
+    { label: t('Close'), run: () => void props.onLeave() },
+  ];
   /** The menu of the top of the library: what is new there and added to it, what is pasted, and the export of every trip. */
   const topMenu = (): MenuItem[] => {
     const copied = libraryClip();
@@ -1049,6 +1063,9 @@ function TripCard(props: {
           </span>
           <Show when={shape()?.length ? shape() : undefined}>{(days) => <TripShape days={days()} />}</Show>
         </button>
+        <Show when={props.trip.id === openTripId()}>
+          <SaveState />
+        </Show>
         <MenuButton of={props.trip.name} items={props.items} />
       </div>
       <Show when={props.fold?.unfolded()}>

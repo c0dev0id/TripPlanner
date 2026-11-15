@@ -513,12 +513,6 @@ a {
   margin: 8px 0 4px;
 }
 
-.explorer-heading {
-  min-height: 30px;
-  gap: 0;
-  margin-bottom: 4px;
-}
-
 /* The open trip's name, or the library's own, cut short where the icons beside it leave it no room. */
 .panel h2.path {
   margin: 0;

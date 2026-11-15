@@ -9,7 +9,7 @@ import { defaultProfile } from '../routing/dayEdit';
 import { pointCount, routeDistance, routesDistance } from '../routing/legs';
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
-import { panTo, pointItems, setEditTarget, setExportScope, setShareOpen, setTrackAction } from '../state/drawing';
+import { panTo, pointItems, setEditTarget, setTrackAction } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
@@ -35,7 +35,7 @@ import {
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { counted, distanceText, timeText } from '../ui/format';
-import { ClockIcon, DownloadIcon, FileImportIcon, NotebookIcon, PencilIcon, PlusIcon, ShareIcon } from '../ui/icons';
+import { ClockIcon, FileImportIcon, NotebookIcon, PencilIcon, PlusIcon } from '../ui/icons';
 import { Grip } from '../ui/Grip';
 import { IconButton } from '../ui/IconButton';
 import { MenuButton } from '../ui/MenuButton';
@@ -57,24 +57,6 @@ export function JournalButton(props: { target: EntryTarget; of: string }) {
         <span class="badge">{count()}</span>
       </Show>
     </button>
-  );
-}
-
-/** The open trip's own actions, as icons on the explorer's heading: edit, export, journal, print and share. */
-export function TripIcons() {
-  return (
-    <>
-      <IconButton label={t('Edit trip')} onClick={() => setEditTarget({ kind: 'trip' })}>
-        <PencilIcon />
-      </IconButton>
-      <IconButton label={t('Export GPX…')} onClick={() => setExportScope({ kind: 'trip' })}>
-        <DownloadIcon />
-      </IconButton>
-      <JournalButton target={{}} of={t('the trip')} />
-      <IconButton label={t('Print, share…')} onClick={() => setShareOpen(true)}>
-        <ShareIcon />
-      </IconButton>
-    </>
   );
 }
 
