@@ -1,0 +1,68 @@
+import { describe, expect, it } from 'vitest';
+import type { StashFile, StashItem } from '../model/stash';
+import type { Folder, TripSummary } from '../model/trip';
+import { countText, fileItemsOf, itemKey, itemOf, itemsOf, keyOf, takerOf, tripsWithin, type Listed } from './items';
+
+const folder = (id: number, parentId: number | null, kind: Folder['kind'] = 'folder'): Folder => ({ id, name: `f${id}`, parentId, kind });
+const trip = (id: number, folderId: number | null, kind: TripSummary['kind'] = 'trip') => ({ id, name: `t${id}`, folderId, kind }) as TripSummary;
+const item = (kind: StashItem['kind'], position: number) => ({ kind, position, name: '' }) as StashItem;
+const file = (id: number, folderId: number, items: StashItem[] = []) => ({ id, name: `g${id}`, folderId, items }) as StashFile;
+
+const listed: Listed = {
+  folders: [folder(1, null), folder(2, 1), folder(3, 2), folder(10, null, 'collections'), folder(11, 10), folder(20, null, 'places')],
+  trips: [trip(1, null), trip(2, 1), trip(3, 3), trip(4, 20, 'collection')],
+  files: [file(1, 10, [item('route', 0), item('track', 0)]), file(2, 11)],
+};
+
+describe('itemOf', () => {
+  it('finds a folder, a trip or a file by the key of its row', () => {
+    for (const row of [{ folder: listed.folders[1]! }, { trip: listed.trips[2]! }, { file: listed.files[1]! }]) expect(itemOf(listed, keyOf(row))).toEqual(row);
+  });
+
+  it('finds nothing for what is no longer listed and for the key of another row', () => {
+    expect(itemOf(listed, 'trip:99')).toBeUndefined();
+    expect(itemOf(listed, 'route:abc')).toBeUndefined();
+    expect(itemOf(listed, itemKey({ file: listed.files[0]!, item: listed.files[0]!.items[0]! }))).toBeUndefined();
+  });
+
+  it('keeps the order of the keys and leaves out what they do not name', () => {
+    expect(itemsOf(listed, ['trip:2', 'route:x', 'folder:1']).map(keyOf)).toEqual(['trip:2', 'folder:1']);
+  });
+});
+
+describe('fileItemsOf', () => {
+  it('finds the routes and tracks of files among the keys', () => {
+    const [first] = listed.files;
+    const track = { file: first!, item: first!.items[1]! };
+    expect(fileItemsOf(listed.files, new Set([itemKey(track), 'file:2']))).toEqual([track]);
+    expect(fileItemsOf(listed.files, new Set(['file:2']))).toEqual([]);
+  });
+});
+
+describe('tripsWithin', () => {
+  it('takes the trips among the items and those in their folders at any depth', () => {
+    const within = tripsWithin(listed, [{ trip: listed.trips[0]! }, { folder: listed.folders[0]! }]);
+    expect(within.map((t) => t.id)).toEqual([1, 2, 3]);
+  });
+});
+
+describe('takerOf', () => {
+  it('lets trips into plain folders and the top, lists among the places, files into the Stash', () => {
+    const takes = (items: Parameters<typeof takerOf>[1]) => [null, 1, 11, 20].map(takerOf(listed, items));
+    expect(takes([{ trip: listed.trips[1]! }])).toEqual([true, true, false, false]);
+    expect(takes([{ trip: listed.trips[3]! }])).toEqual([false, false, false, true]);
+    expect(takes([{ file: listed.files[0]! }])).toEqual([false, false, true, false]);
+  });
+
+  it('judges a folder by the trips in it', () => {
+    expect(takerOf(listed, [{ folder: listed.folders[0]! }])(20)).toBe(false);
+    expect(takerOf(listed, [{ folder: listed.folders[0]! }])(null)).toBe(true);
+  });
+});
+
+describe('countText', () => {
+  it('counts folders with trips, or with files where there are any', () => {
+    expect(countText([{ folder: listed.folders[0]! }, { trip: listed.trips[0]! }, { trip: listed.trips[1]! }])).toBe('1 folder and 2 trips');
+    expect(countText([{ file: listed.files[0]! }, { file: listed.files[1]! }])).toBe('2 files');
+  });
+});

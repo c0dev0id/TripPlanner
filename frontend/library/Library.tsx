@@ -29,6 +29,7 @@ import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
 import { Pad } from '../ui/Pad';
 import { dragToFolder } from './dragToFolder';
+import { countText, fileItemsOf, filesOf, folderOf, foldersOf, itemKey, itemsOf, keyOf, nameOf, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow, stashItemName } from './StashFileCard';
 import { stashCopies, stashPlaces, type Picked } from './stashOut';
@@ -36,9 +37,6 @@ import { SaveState } from '../trip/SaveStatus';
 import { PlaceKindControls, PlaceKindMark, StandardPlaces } from './PlaceKinds';
 import { keepPlaces, keptText } from './dropImport';
 import { TripShape } from './TripShape';
-
-/** A folder, a trip or a file of the Stash, as what is selected, moved and deleted together. */
-type Item = { folder: Folder } | { trip: TripSummary } | { file: StashFile };
 
 /** The top of the trips, as a place to paste into. */
 const ALL_TRIPS = TAB_NAMES.trips;
@@ -61,21 +59,6 @@ export interface FoundRoute {
   route: NamedRoute;
 }
 const routeKey = (found: FoundRoute): string => `route:${found.route.id}`;
-
-/** A route or a track of a file of the Stash, with its file. */
-interface FileItem {
-  file: StashFile;
-  item: StashItem;
-}
-const itemKey = ({ file, item }: FileItem): string => `item:${file.id}:${item.kind}:${item.position}`;
-
-const keyOf = (item: Item): string => ('folder' in item ? `folder:${item.folder.id}` : 'trip' in item ? `trip:${item.trip.id}` : `file:${item.file.id}`);
-const nameOf = (item: Item): string => ('folder' in item ? item.folder : 'trip' in item ? item.trip : item.file).name;
-const itemOfFolder = (folder: Folder | undefined): Item | undefined => folder && { folder };
-const itemOfTrip = (trip: TripSummary | undefined): Item | undefined => trip && { trip };
-const foldersOf = (items: readonly Item[]): Folder[] => items.flatMap((item) => ('folder' in item ? [item.folder] : []));
-const tripsOf = (items: readonly Item[]): TripSummary[] => items.flatMap((item) => ('trip' in item ? [item.trip] : []));
-const filesOf = (items: readonly Item[]): StashFile[] => items.flatMap((item) => ('file' in item ? [item.file] : []));
 
 /** How a card takes part in the selection: whether it is selected or cut, what its pad does, and what a click does to the selection. */
 export interface CardSelect {
@@ -177,6 +160,8 @@ export function Library(props: {
   const folders = () => libraryFolders() ?? [];
   const trips = () => libraryTrips() ?? [];
   const files = () => (stashFiles.error ? [] : (stashFiles() ?? []));
+  /** Every folder, trip and file there is. */
+  const all = (): Listed => ({ folders: folders(), trips: trips(), files: files() });
   const pathOf = (id: number | null) => folderPath(folders(), id);
 
   /** The folders and trips unfolded in the tree, by key; this browser keeps them. */
@@ -216,7 +201,6 @@ export function Library(props: {
     for (const file of files()) (by.get(file.folderId) ?? by.set(file.folderId, []).get(file.folderId)!).push(file);
     return by;
   });
-  const fileOf = createMemo(() => new Map(files().map((file) => [file.id, file])));
   const childFiles = (parent: number | null) => filesIn().get(parent) ?? [];
   /** Whether the folder, null for the top of the trips, holds its tree's one mark: it is the folder marked there, and the mark is not on the open trip or its day. */
   const isMarkedFolder = (id: number | null): boolean => markedFolderOf(treeOf(id)) === id && !(isMarkInTrip() && openTree() === treeOf(id));
@@ -324,16 +308,6 @@ export function Library(props: {
   // What a search lists is not what was listed before: nothing stays selected out of view.
   createEffect(on(query, () => TREE_TABS.forEach((tree) => selectIn(ownerOf(tree), NOTHING_SELECTED)), { defer: true }));
   const isSelected = createSelector(selected, (key: string, keys) => keys.has(key));
-  /** Every folder, trip and file there is, by key; none for the key of a route. */
-  const itemOf = (key: string): Item | undefined => {
-    const id = Number(key.slice(key.indexOf(':') + 1));
-    if (key.startsWith('folder:')) return itemOfFolder(folders().find((f) => f.id === id));
-    if (key.startsWith('file:')) {
-      const file = fileOf().get(id);
-      return file && { file };
-    }
-    return key.startsWith('trip:') ? itemOfTrip(trips().find((t) => t.id === id)) : undefined;
-  };
   /** A trip's days with their routes: the open trip's as it is edited, another's with those that have a name, as its outline lists them. */
   const routeDaysOf = (trip: TripSummary): readonly { id: string; name: string; routes: readonly NamedRoute[] }[] =>
     trip.id === openTripId() ? openTrip()!.days : (outlineOf(trip.id) ?? []).map((day) => ({ id: day.id, name: day.name, routes: day.namedRoutes }));
@@ -369,9 +343,7 @@ export function Library(props: {
     ...listed().routes.map(routeKey),
     ...listed().items.map(itemKey),
   ];
-  /** The routes and tracks of files among the rows selected. */
-  const itemsIn = (keys: Selection<string>): FileItem[] =>
-    [...keys].some((key) => key.startsWith('item:')) ? files().flatMap((file) => file.items.map((item) => ({ file, item })).filter((at) => keys.has(itemKey(at)))) : [];
+  const itemsIn = (keys: Selection<string>): FileItem[] => fileItemsOf(files(), keys);
   /** The routes among the rows selected, as the search found them. */
   const routesIn = (keys: Selection<string>): FoundRoute[] => found().routes.filter((route) => keys.has(routeKey(route)));
   /** The rows in view under a folder, top to bottom: its folders with those of every unfolded folder in it, its trips, and its files with the routes and tracks of every unfolded one. */
@@ -381,7 +353,7 @@ export function Library(props: {
     ...childFiles(parent).flatMap((file) => [keyOf({ file }), ...(isUnfolded({ file }) ? file.items.map((item) => itemKey({ file, item })) : [])]),
   ];
   /** What a card's menu, or a press on its pad, acts on: the selection where it holds the card, else the card alone. */
-  const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.has(keyOf(item)) ? [...selection].flatMap((key) => itemOf(key) ?? []) : [item]);
+  const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.has(keyOf(item)) ? itemsOf(all(), selection) : [item]);
   /** How a row is selected by its key, among the rows of the tree or, with `order`, among those the search lists. */
   const rowSelect = (key: string, order: () => string[] = () => shownKeys(rootOf(shownTree()!))): RowSelect => ({
     selected: () => isSelected(key),
@@ -402,8 +374,6 @@ export function Library(props: {
     const cut = libraryClip();
     return cut !== undefined && cut.move && ('folder' in item ? cut.folderIds.includes(item.folder.id) : 'trip' in item && cut.tripIds.includes(item.trip.id));
   };
-  /** How many folders and trips, or files, which no tree holds beside trips: 2 folders and 3 trips. */
-  const countText = (items: readonly Item[]): string => countsText(foldersOf(items).length, tripsOf(items).length || filesOf(items).length, filesOf(items).length > 0 ? 'file' : 'trip');
   /** Lists the library afresh, nothing selected: after folders or trips were moved, merged, pasted or deleted. */
   const relist = () => {
     setSelected(NOTHING_SELECTED);
@@ -412,15 +382,7 @@ export function Library(props: {
     if (shownTree() === 'stash') relistStash();
     else relistTrips();
   };
-  /** The trips among the items and those in their folders, at any depth. */
-  const tripsWithin = (items: readonly Item[]): TripSummary[] => {
-    const inside = new Set(foldersOf(items).map((f) => f.id));
-    for (let grown = true; grown; ) {
-      grown = false;
-      for (const f of folders()) if (f.parentId !== null && inside.has(f.parentId) && !inside.has(f.id)) grown = inside.add(f.id).size > 0;
-    }
-    return [...tripsOf(items), ...trips().filter((trip) => trip.folderId !== null && inside.has(trip.folderId))];
-  };
+  const tripsWithin = (items: readonly Item[]) => tripsAmong(all(), items);
   const remove = async (doomed: readonly Item[]) => {
     const [only] = doomed;
     if (doomed.length === 1 && 'folder' in only!) return removeFolder(only.folder);
@@ -450,7 +412,7 @@ export function Library(props: {
    */
   const routesMenu = (selection: Selection<string>): MenuItem[] => {
     const routes = routesIn(selection);
-    const others = [...selection].flatMap((key) => itemOf(key) ?? []);
+    const others = itemsOf(all(), selection);
     const what = [others.length > 0 && countText(others), counted(routes.length, 'route')].filter(Boolean).join(', ');
     const nothing = () => undefined;
     return [
@@ -473,15 +435,7 @@ export function Library(props: {
   };
   /** What a folder holds besides folders, as it is counted: trips, in the Stash files or, among the places, lists. */
   const heldNoun = (id: number | null) => ({ folder: 'trip', collections: 'file', places: 'list' } as const)[kindAround(folders(), id)];
-  /** Says of a folder, null for the top, whether it takes the items: lists of places go among the Places, trips into the other folders, and files into the Stash alone. */
-  const takerOf = (items: readonly Item[]) => {
-    const within = tripsWithin(items);
-    const files = filesOf(items).length > 0;
-    return (into: number | null): boolean => {
-      const around = kindAround(folders(), into);
-      return within.every((trip) => (trip.kind === 'collection' ? 'places' : 'folder') === around) && (!files || around === 'collections');
-    };
-  };
+  const takerOf = (items: readonly Item[]) => takerAmong(all(), items);
   /** Refuses, as the server would, to put the items into a folder that does not hold their kind. */
   const assertFits = (items: readonly Item[], into: number | null) => {
     if (!takerOf(items)(into)) throw new Error(t('Lists of places are kept among the Places, files in the Stash, trips in the other folders.'));
@@ -505,7 +459,7 @@ export function Library(props: {
    */
   const moveItem = (moved: readonly Item[]): MenuItem[] => {
     const [first] = moved;
-    const from = 'folder' in first! ? first.folder.parentId : ('trip' in first! ? first.trip : first!.file).folderId;
+    const from = folderOf(first!);
     const movedFolders = new Set(foldersOf(moved).map((f) => f.id));
     const places = moveTargets(folders(), from, rootOf(treeOf(from)), movedFolders, takerOf(moved)).map(({ label, into }) => ({ label, run: () => moveInto(moved, into) }));
     return places.length > 0 ? [{ label: t('Move…'), items: places }] : [];
@@ -620,7 +574,7 @@ export function Library(props: {
   const onKey = (e: KeyboardEvent) => {
     const verb = fileVerb(e);
     if (!verb) return;
-    const chosen = [...selected()].flatMap((key) => itemOf(key) ?? []);
+    const chosen = itemsOf(all(), selected());
     const routes = routesIn(selected());
     const parts = itemsIn(selected());
     if (routes.length + parts.length > 0) {
