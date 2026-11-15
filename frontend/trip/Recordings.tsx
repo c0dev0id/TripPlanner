@@ -68,7 +68,7 @@ export function DayRecordings(props: { day: Day }) {
       <div class="row">
         <h4 class="grow">{t('Recordings')}</h4>
         <Show when={openTrip()?.kind === 'trip'}>
-          <IconButton label={t('Look up recordings…')} onClick={() => void recordingAction(props.day.id, () => lookUp(props.day))}>
+          <IconButton label={t('Find recordings…')} onClick={() => void recordingAction(props.day.id, () => lookUp(props.day))}>
             <SearchIcon />
           </IconButton>
         </Show>
@@ -82,9 +82,9 @@ export function DayRecordings(props: { day: Day }) {
       <Show when={recordingNote(props.day.id)}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
       <Show when={lookupOf(props.day.id)}>{(looked) => <FoundRecordings dayId={props.day.id} found={looked().found} />}</Show>
       <NameDialog
-        title={t('Rename recording')}
+        title={t('Rename')}
         open={renamed() !== undefined}
-        placeholder={t('Name of the recording')}
+        placeholder={t('Recording name')}
         initial={renamed()?.name}
         onClose={() => setRenamed(undefined)}
         onSubmit={(name) => rename(renamed()!, name)}
@@ -100,9 +100,9 @@ export function DayRecordings(props: { day: Day }) {
  */
 function FoundRecordings(props: { dayId: string; found: FoundRidingDay[] | undefined }) {
   const said = () => {
-    if (!props.found) return t('Looking through your rides…');
-    if (props.found.length === 0) return t('No ride that is not on this day began on its date or ran along its routes.');
-    return t('{what} may be of this day:', { what: counted(props.found.length, 'riding day') });
+    if (!props.found) return t('Searching your recordings…');
+    if (props.found.length === 0) return t('No other recording started on the date of this day or followed its routes.');
+    return t('{what} may belong to this day:', { what: counted(props.found.length, 'riding day') });
   };
   const detail = (ridingDay: FoundRidingDay) =>
     [
@@ -183,9 +183,9 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
     { label: t('Cut'), run: () => clipRecordings(chosen, true) },
     { label: t('Copy'), run: () => clipRecordings(chosen, false) },
     ...moveToDayItem(dayId, move),
-    { label: t('Show in the rides'), disabled: several, run: () => showInRides(recording) },
+    { label: t('Show in recordings'), disabled: several, run: () => showInRides(recording) },
     ...(several ? pinItems((pinned) => pinRecordings(chosen.map((r) => r.id), pinned)) : []),
-    { label: t('Take off this day'), run: () => void takeRecordingsOff(chosen) },
+    { label: t('Remove from this day'), run: () => void takeRecordingsOff(chosen) },
   ];
 }
 

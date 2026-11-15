@@ -41,9 +41,9 @@ export function CollectionPanel() {
         <ForById each={collection().days}>{(day) => <SectionItem day={day()} places={places()} onRename={setRenamed} />}</ForById>
       </ol>
       <NameDialog
-        title={t('Rename section')}
+        title={t('Rename')}
         open={renamed() !== undefined}
-        placeholder={t('Name of the section')}
+        placeholder={t('Section name')}
         initial={renamed()?.name}
         onClose={() => setRenamed(undefined)}
         onSubmit={(name) => {
@@ -97,7 +97,7 @@ export function SectionDetails(props: { day: Day }) {
   return (
     <div class="day-details">
       <Show when={empty()}>
-        <p class="muted">{places() ? t('No places of this kind yet: right-click the map where one is, or add a GPX file to the list.') : t('No routes in this section yet.')}</p>
+        <p class="muted">{places() ? t('No places in this category yet. Right-click the map to add one, or add a GPX file to the list.') : t('No routes in this section yet.')}</p>
       </Show>
       <Show when={props.day.routes.length > 0}>
         <ul class="routes">

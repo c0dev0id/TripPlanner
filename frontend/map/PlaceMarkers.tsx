@@ -36,7 +36,7 @@ export function PlaceMarkers(props: { map: MapLibreMap }) {
               {(homepage) => (
                 <>
                   <a href={homepage()} target="_blank" rel="noopener noreferrer">
-                    {t('Homepage')}
+                    {t('Website')}
                   </a>
                   {' · '}
                 </>

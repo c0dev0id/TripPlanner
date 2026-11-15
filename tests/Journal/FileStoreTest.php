@@ -88,7 +88,7 @@ final class FileStoreTest extends TestCase
         self::assertSame(['name' => 'photo.jpg', 'mediaType' => 'image/jpeg', 'size' => strlen(self::jpeg(8, 8))], FileStore::describe($upload));
         self::assertNull(FileStore::problemOf($upload));
         self::assertNull(FileStore::problemOf(null));
-        self::assertSame('One file at a time.', FileStore::problemOf([$upload]));
+        self::assertSame('Only one file at a time.', FileStore::problemOf([$upload]));
         self::assertSame('The file is too large for the server.', FileStore::problemOf(new UploadedFile('', 'big.pdf', 'application/pdf', 0, UPLOAD_ERR_INI_SIZE)));
         unlink((string) $upload->getStream()->getMetadata('uri'));
     }

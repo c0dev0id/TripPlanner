@@ -23,7 +23,7 @@ final class GpxUpload
     {
         $upload = $request->getUploadedFiles()['file'] ?? null;
         if (!$upload instanceof UploadedFileInterface || $upload->getError() !== UPLOAD_ERR_OK || $upload->getSize() > self::MAX_COMPRESSED) {
-            throw new InvalidUpload('The file did not arrive, or is too large.');
+            throw new InvalidUpload('The file was not received or is too large.');
         }
         $gzip = (string) $upload->getStream();
         $gpx = @gzdecode($gzip, self::MAX_GPX);

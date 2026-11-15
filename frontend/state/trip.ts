@@ -245,7 +245,7 @@ export function addParts(parts: { routes: Route[]; stops: Stop[] }): void {
 /** Makes a route of stops of a day, which become its points, as one step to undo. */
 export function makeRouteOfStops(stopIds: readonly string[]): void {
   const id = newId();
-  edit((trip) => dayEdit.routeFromStops(trip, stopIds, id, newId), t('Make a route of waypoints'));
+  edit((trip) => dayEdit.routeFromStops(trip, stopIds, id, newId), t('Create route from waypoints'));
 }
 
 export function removeRoute(routeId: string): void {
@@ -265,7 +265,7 @@ function changeRoutedRoute(routeId: string, change: (route: RoutedRoute) => Rout
 
 /** Leaves out the track's points that keep its line within `toleranceM`. */
 export function condenseTrack(routeId: string, toleranceM: number): void {
-  changeRoute(routeId, (r) => (r.kind === 'track' ? routeEdit.condenseTrack(r, toleranceM) : r), t('Condense points'));
+  changeRoute(routeId, (r) => (r.kind === 'track' ? routeEdit.condenseTrack(r, toleranceM) : r), t('Reduce points'));
 }
 
 /** Makes a route of the track: its points thinned at `toleranceM`, the legs between them routed along the roads. */

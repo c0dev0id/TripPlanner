@@ -47,5 +47,5 @@ export function PanelResizer() {
     writePreference(of.preference, undefined);
     applyWidth(of, undefined);
   };
-  return <div class="panel-resizer" role="separator" aria-orientation="vertical" aria-label={t('Width of the panel')} title={t("Drag to set the panel's width; double-click for the default")} onPointerDown={drag} onDblClick={reset} />;
+  return <div class="panel-resizer" role="separator" aria-orientation="vertical" aria-label={t('Panel width')} title={t("Drag to resize the panel; double-click to reset")} onPointerDown={drag} onDblClick={reset} />;
 }

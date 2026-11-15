@@ -35,7 +35,7 @@ export function RouteDialog() {
             <input name="name" value={r.name} maxlength={200} placeholder={label({ ...r, name: '' })} />
           </label>
           <label>
-            {t('Travelled as')}
+            {t('Profile')}
             <select name="profile" value={r.profile}>
               <For each={PROFILES}>{(profile) => <option value={profile.value}>{profile.label}</option>}</For>
             </select>
@@ -51,7 +51,7 @@ export function RouteDialog() {
             )}
           </Show>
           <label class="toggle">
-            <input type="checkbox" name="optional" checked={r.optional} /> {t('Optional: a route to decide on the day, left out of an export on request')}
+            <input type="checkbox" name="optional" checked={r.optional} /> {t('Optional: decided on the day; can be left out of an export')}
           </label>
         </>
       )}

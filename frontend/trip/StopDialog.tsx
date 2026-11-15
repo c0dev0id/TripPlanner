@@ -54,7 +54,7 @@ export function StopDialog() {
                 <input type="time" name="arriveAt" value={s.arriveAt ?? ''} />
               </label>
               <label class="grow">
-                {t('Pause (minutes)')}
+                {t('Break (minutes)')}
                 <input type="number" name="pauseMinutes" min={0} max={1440} step={5} value={s.pauseMinutes ?? ''} />
               </label>
             </div>
@@ -99,7 +99,7 @@ export function StopDialog() {
           </label>
           <Show when={ridden()}>
             <label class="toggle">
-              <input type="checkbox" name="optional" checked={s.optional} /> {t('Optional: a stop to decide on the day, left out of an export on request')}
+              <input type="checkbox" name="optional" checked={s.optional} /> {t('Optional: decided on the day; can be left out of an export')}
             </label>
           </Show>
         </>

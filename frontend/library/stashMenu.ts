@@ -34,9 +34,9 @@ const takeOut = (work: () => Promise<string>): void => void runLibrary(async () 
 const copyOut = (picked: readonly Picked[]) =>
   takeOut(async () => {
     const copies = await stashCopies(picked);
-    if (copies.length === 0) return t('No routes or tracks in there.');
+    if (copies.length === 0) return t('No routes or tracks found.');
     copyRoutes(copies);
-    return t('Copied {what}: paste from the menu of a day or a trip.', { what: counted(copies.length, 'route') });
+    return t('{what} copied. Paste from the menu of a day or a trip.', { what: counted(copies.length, 'route') });
   });
 
 /** Copies the waypoints of files of the Stash, to be pasted as stops or as places. */
@@ -44,7 +44,7 @@ const copyWaypoints = (of: readonly StashFile[]) =>
   takeOut(async () => {
     const places = await stashPlaces(of);
     copyStops(places.map((place) => place.stop), places.map((place) => place.kind));
-    return t('Copied {what}: paste from the menu of a day, or of a list of places or a kind in it.', { what: counted(places.length, 'waypoint') });
+    return t('{what} copied. Paste from the menu of a day, a place list or a place category.', { what: counted(places.length, 'waypoint') });
   });
 
 /** Keeps tracks of the Stash as rides, which the rides then list. */
@@ -57,7 +57,7 @@ const keepRides = (picked: readonly Picked[]) =>
       known += count.known;
     }
     ridesChanged();
-    return keptText(kept, known, 'ride', t('No tracks in there.'));
+    return keptText(kept, known, 'recording', t('No tracks found.'));
   });
 
 /**
@@ -75,8 +75,8 @@ export function filesMenu(chosen: readonly Item[], host: StashMenuHost): MenuIte
     ...(several ? [menuNote(t('{what} selected', { what: countText(chosen) }))] : []),
     { label: t('Copy routes and tracks'), disabled: !onlyFiles || chosenFiles.every((file) => file.items.length === 0), run: () => copyOut(whole) },
     { label: t('Copy waypoints'), disabled: !onlyFiles || chosenFiles.every((file) => file.waypoints === 0), run: () => copyWaypoints(chosenFiles) },
-    { label: t('Keep tracks as rides'), disabled: !onlyFiles || !chosenFiles.some((file) => file.items.some((item) => item.kind === 'track')), run: () => keepRides(whole) },
-    { label: t('Rename…'), disabled: several, run: () => host.rename(t('Rename file'), t('Name of the file'), chosenFiles[0]!.name, (name) => renameStashFile(chosenFiles[0]!.id, name), relistStash) },
+    { label: t('Save tracks as recordings'), disabled: !onlyFiles || !chosenFiles.some((file) => file.items.some((item) => item.kind === 'track')), run: () => keepRides(whole) },
+    { label: t('Rename…'), disabled: several, run: () => host.rename(t('Rename'), t('File name'), chosenFiles[0]!.name, (name) => renameStashFile(chosenFiles[0]!.id, name), relistStash) },
     ...host.moveItem(chosen),
     { label: t('Export'), disabled: several, run: () => window.location.assign(stashFileUrl(chosenFiles[0]!.id)) },
     { label: t('Delete'), run: () => host.remove(chosen) },
@@ -109,14 +109,14 @@ export async function removeItems(doomed: readonly FileItem[], removed: () => vo
  * are not acted on together.
  */
 export function itemsMenu(parts: readonly FileItem[], selected: number, host: StashMenuHost): MenuItem[] {
-  if (parts.length < selected) return [menuNote(t('Routes and tracks of files are not acted on together with files and folders'))];
+  if (parts.length < selected) return [menuNote(t('Routes and tracks inside files cannot be edited together with files and folders'))];
   const one = parts.length === 1 ? parts[0]! : undefined;
   const tracks = parts.filter((at) => at.item.kind === 'track');
   return [
     ...(one ? [] : [menuNote(t('{what} selected', { what: t('{n} routes and tracks', { n: parts.length }) }))]),
     { label: t('Copy'), run: () => copyOut(pickedOf(parts)) },
-    { label: t(one ? 'Keep as ride' : 'Keep tracks as rides'), disabled: tracks.length === 0, run: () => keepRides(pickedOf(tracks)) },
-    { label: t('Rename…'), disabled: !one, run: () => host.rename(one!.item.kind === 'track' ? t('Rename track') : t('Rename route'), t('Name'), one!.item.name, (name) => renameStashItem(one!.file.id, one!.item, name), relistStash) },
+    { label: t(one ? 'Save as recording' : 'Save tracks as recordings'), disabled: tracks.length === 0, run: () => keepRides(pickedOf(tracks)) },
+    { label: t('Rename…'), disabled: !one, run: () => host.rename(one!.item.kind === 'track' ? t('Rename') : t('Rename'), t('Name'), one!.item.name, (name) => renameStashItem(one!.file.id, one!.item, name), relistStash) },
     { label: t('Delete'), run: () => void removeItems(parts, host.relist) },
   ];
 }

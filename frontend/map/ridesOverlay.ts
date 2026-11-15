@@ -14,7 +14,7 @@ const RIDE_COLOR = '#5f3dc4';
 
 export const RIDES: Overlay = {
   id: 'rides',
-  label: t('My rides'),
+  label: t('My recordings'),
   parts: (sharpUntil, look) => ({
     // The lines the planner keeps beside the recordings' files, read anew each time the overlay is switched on.
     sources: { rides: { type: 'geojson', data: '/api/rides/lines' } },

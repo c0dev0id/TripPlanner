@@ -46,7 +46,7 @@ describe('the journal overview', () => {
   it('lists the trip, then each day with its routes and stops, leaving out what has no entry', () => {
     const entries = [entry(1, { stopId: 's2' }), entry(2, {}), entry(3, { routeId: 'r1' }), entry(4, { stopId: 's1' })];
     const parts = journalOverview(trip, entries);
-    expect(parts.map((p) => `${p.kind}:${p.label}:${p.entries.map((e) => e.id).join(',')}`)).toEqual(['trip:On the trip:2', 'day:Day 1:', 'route:Pass road:3', 'stop:Hut:4', 'stop:Home:1']);
+    expect(parts.map((p) => `${p.kind}:${p.label}:${p.entries.map((e) => e.id).join(',')}`)).toEqual(['trip:The whole trip:2', 'day:Day 1:', 'route:Pass road:3', 'stop:Hut:4', 'stop:Home:1']);
   });
 
   it('lists a day for its own entries alone', () => {

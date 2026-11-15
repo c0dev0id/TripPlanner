@@ -35,7 +35,7 @@ export function ShareDialog() {
           <div class="dialog-body">
             <p>
               <a href={`/trips/${id()}`} target="_blank" rel="noopener">
-                {t('Open the trip\'s read-only page')}
+                {t('Open the read-only view')}
               </a>
               {t(', with the days, stops, times and journal laid out for reading and printing.')}
             </p>
@@ -43,7 +43,7 @@ export function ShareDialog() {
               when={token()}
               fallback={
                 <>
-                  <p class="muted">{t('Not shared. Anyone with the link of a shared trip can read it, its journal and its photos, without signing in.')}</p>
+                  <p class="muted">{t('Not shared. Anyone with the link to a shared trip can view it, including its journal and photos, without signing in.')}</p>
                   <div class="row end">
                     <button type="button" onClick={() => setShareOpen(false)}>
                       {t('Close')}

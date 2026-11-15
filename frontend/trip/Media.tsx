@@ -59,7 +59,7 @@ export function DayMedia(props: { day: Day }) {
   return (
     <>
       <div class="row">
-        <h4 class="grow">{t('Additional Media')}</h4>
+        <h4 class="grow">{t('Additional media')}</h4>
         <IconButton label={t('Add link…')} onClick={() => setLinked(true)}>
           <LinkIcon />
         </IconButton>
@@ -80,13 +80,13 @@ export function DayMedia(props: { day: Day }) {
             </label>
             <label>
               {t('Address')}
-              <input name="url" inputmode="url" value={link === true ? '' : (link.url ?? '')} placeholder="https://" maxlength={2000} pattern="\s*(https?://\S+|[\w\-]+(\.[\w\-]+)+(/\S*)?)\s*" title={t('An address of the web')} required />
+              <input name="url" inputmode="url" value={link === true ? '' : (link.url ?? '')} placeholder="https://" maxlength={2000} pattern="\s*(https?://\S+|[\w\-]+(\.[\w\-]+)+(/\S*)?)\s*" title={t('Web address')} required />
             </label>
           </>
         )}
       </EditDialog>
       <NameDialog
-        title={t('Rename file')}
+        title={t('Rename')}
         open={renamed() !== undefined}
         placeholder={renamed()?.file?.name ?? ''}
         initial={renamed() && mediaName(renamed()!)}

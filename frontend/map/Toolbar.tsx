@@ -39,7 +39,7 @@ export function Toolbar() {
     const items: MenuItem[] = [
       { label: t('Redo'), disabled: !redoLabel(), run: redo },
       { label: t('Reroute'), disabled: routedLegs(route).length === 0, run: () => recalculateRoute(route.id) },
-      { label: t("The route's settings…"), run: () => settings(route) },
+      { label: t("Route settings…"), run: () => settings(route) },
     ];
     setMenu({ x: box.left, y: box.top, touch: false, items });
   };
@@ -56,7 +56,7 @@ export function Toolbar() {
             <For each={toolsOf(route())}>{button}</For>
           </div>
           <div class="toolbar-group wide" role="group" aria-label={t('Route')}>
-            <ToolButton label={t('Route')} title={t("The route's name, profile, motorways and more")} onClick={() => settings(route())}>
+            <ToolButton label={t('Route')} title={t("Name, profile, motorways and more")} onClick={() => settings(route())}>
               <SettingsIcon />
             </ToolButton>
           </div>
@@ -68,18 +68,18 @@ export function Toolbar() {
               <ToolButton label={t('Redo')} title={redoLabel() ? t('Redo: {what} (Ctrl+Shift+Z)', { what: redoLabel()! }) : t('Nothing to redo')} disabled={!redoLabel()} onClick={redo}>
                 <RedoIcon />
               </ToolButton>
-              <ToolButton label={t('Reroute')} title={t('Route every leg of the route again')} disabled={routedLegs(route()).length === 0} onClick={() => recalculateRoute(route().id)}>
+              <ToolButton label={t('Reroute')} title={t('Recalculate every leg of the route')} disabled={routedLegs(route()).length === 0} onClick={() => recalculateRoute(route().id)}>
                 <RefreshIcon />
               </ToolButton>
             </span>
             <span class="narrow">
-              <ToolButton label={t('More')} title={t("Redo, reroute and the route's settings")} onClick={(e) => openMore(e, route())}>
+              <ToolButton label={t('More')} title={t("Redo, reroute and route settings")} onClick={(e) => openMore(e, route())}>
                 <DotsIcon />
               </ToolButton>
             </span>
           </div>
           <div class="toolbar-group" role="group" aria-label={t('Editing')}>
-            <ToolButton label={t('Done')} title={t('Leave the route (Esc)')} onClick={() => takeUpRoute(undefined)}>
+            <ToolButton label={t('Done')} title={t('Finish editing the route (Esc)')} onClick={() => takeUpRoute(undefined)}>
               <CheckIcon />
             </ToolButton>
           </div>

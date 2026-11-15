@@ -45,7 +45,7 @@ final class PasswordResetController
             $this->mailer->send($user->email, t('Reset your Trip Planner password'), $body);
         }
         return $this->view->render($response, 'password-forgot', [
-            'notice' => t('If the address belongs to an account, a mail with a reset link is on its way.'),
+            'notice' => t('If the address belongs to an account, an e-mail with a reset link is on its way.'),
         ]);
     }
 
@@ -79,7 +79,7 @@ final class PasswordResetController
             return t('The password needs at least {n} characters.', ['n' => self::MIN_PASSWORD_LENGTH]);
         }
         if ($password !== $repeat) {
-            return t('The two passwords differ.');
+            return t('The passwords do not match.');
         }
         return null;
     }

@@ -4,4 +4,4 @@
 <?= $link ?>
 
 
-<?= t('If you did not ask for this, ignore this mail.') ?>
+<?= t('If you did not request this, ignore this e-mail.') ?>

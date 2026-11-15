@@ -9,5 +9,5 @@
     <label><?= $this->t('Password') ?> <input type="password" name="password" required autocomplete="current-password"></label>
     <button type="submit"><?= $this->t('Sign in') ?></button>
   </form>
-  <p><a href="/password/forgot"><?= $this->t('Forgot the password?') ?></a></p>
+  <p><a href="/password/forgot"><?= $this->t('Forgot your password?') ?></a></p>
 </section>

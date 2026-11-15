@@ -32,7 +32,7 @@ final class RecordingController
     public function index(Request $request, Response $response, array $args): Response
     {
         $recordings = $this->recordings->listFor($this->currentUser->get()->id, (int) $args['id']);
-        return $recordings === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $recordings);
+        return $recordings === null ? Json::error($response, 404, 'Trip not found.') : Json::of($response, $recordings);
     }
 
     /** Every ride of the user's, by when it began: its id, its name, its length, its line as polyline6 and the days it is on, each with its trip. */
@@ -66,7 +66,7 @@ final class RecordingController
                 return Json::of($response, (new Lookup($this->recordings->rides($userId), (int) ($query['offset'] ?? 0)))->of($day));
             }
         }
-        return Json::error($response, 404, 'No such trip or day.');
+        return Json::error($response, 404, 'Trip or day not found.');
     }
 
     /**
@@ -114,7 +114,7 @@ final class RecordingController
         }
         $dayId = $body['dayId'] ?? null;
         $kept = $this->recordings->keep($this->currentUser->get()->id, $name, $gzip, new DateTimeImmutable(), is_string($dayId) ? $dayId : null);
-        return $kept === null ? Json::error($response, 404, 'No such day.') : Json::of($response->withStatus($kept['added'] ? 201 : 200), $kept['recording']);
+        return $kept === null ? Json::error($response, 404, 'Day not found.') : Json::of($response->withStatus($kept['added'] ? 201 : 200), $kept['recording']);
     }
 
     /** Where the rides `ids=` (comma-separated) would be joined by a merge, with the pause and the way between them at each joint. */
@@ -122,7 +122,7 @@ final class RecordingController
     {
         $ids = array_values(array_unique(array_map('intval', explode(',', (string) ($request->getQueryParams()['ids'] ?? '')))));
         $joints = $this->recordings->joints($this->currentUser->get()->id, $ids);
-        return $joints === null ? Json::error($response, 404, 'No such recording.') : Json::of($response, $joints);
+        return $joints === null ? Json::error($response, 404, 'Recording not found.') : Json::of($response, $joints);
     }
 
     /**
@@ -133,7 +133,7 @@ final class RecordingController
     {
         $ids = Json::field($request, 'ids');
         if (!is_array($ids) || count($ids) < 2 || array_filter($ids, is_int(...)) !== $ids) {
-            return Json::error($response, 422, 'Merging takes two recordings or more.');
+            return Json::error($response, 422, 'Merging requires at least two recordings.');
         }
         $userId = $this->currentUser->get()->id;
         try {
@@ -146,7 +146,7 @@ final class RecordingController
                 return Json::of($response->withStatus(201), $ride);
             }
         }
-        return Json::error($response, 404, 'No such recording.');
+        return Json::error($response, 404, 'Recording not found.');
     }
 
     public function rename(Request $request, Response $response, array $args): Response
@@ -156,34 +156,34 @@ final class RecordingController
             return Json::error($response, 422, 'A recording needs a name of up to 200 characters.');
         }
         $renamed = $this->recordings->rename($this->currentUser->get()->id, (int) $args['recording'], $name);
-        return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'No such recording.');
+        return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'Recording not found.');
     }
 
     public function delete(Request $request, Response $response, array $args): Response
     {
         $deleted = $this->recordings->delete($this->currentUser->get()->id, (int) $args['recording']);
-        return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'No such recording.');
+        return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'Recording not found.');
     }
 
     /** Puts the ride on a day of the user's. */
     public function link(Request $request, Response $response, array $args): Response
     {
         $linked = $this->recordings->link($this->currentUser->get()->id, (int) $args['recording'], $args['day']);
-        return $linked ? $response->withStatus(204) : Json::error($response, 404, 'No such recording or day.');
+        return $linked ? $response->withStatus(204) : Json::error($response, 404, 'Recording or day not found.');
     }
 
     /** Remembers that the ride is not of a day it was suggested for. */
     public function decline(Request $request, Response $response, array $args): Response
     {
         $declined = $this->recordings->decline($this->currentUser->get()->id, (int) $args['recording'], $args['day']);
-        return $declined ? $response->withStatus(204) : Json::error($response, 404, 'No such recording or day.');
+        return $declined ? $response->withStatus(204) : Json::error($response, 404, 'Recording or day not found.');
     }
 
     /** Takes the ride off a day, which keeps it as a ride. */
     public function unlink(Request $request, Response $response, array $args): Response
     {
         $unlinked = $this->recordings->unlink($this->currentUser->get()->id, (int) $args['recording'], $args['day']);
-        return $unlinked ? $response->withStatus(204) : Json::error($response, 404, 'No such recording or day.');
+        return $unlinked ? $response->withStatus(204) : Json::error($response, 404, 'Recording or day not found.');
     }
 
     /** The GPX file as kept: compressed, which the browser undoes. It never changes under its id. */
@@ -191,7 +191,7 @@ final class RecordingController
     {
         $gzip = $this->recordings->gzip($this->currentUser->get()->id, (int) $args['recording']);
         if ($gzip === null) {
-            return Json::error($response, 404, 'No such recording.');
+            return Json::error($response, 404, 'Recording not found.');
         }
         $response->getBody()->write($gzip);
         return $response

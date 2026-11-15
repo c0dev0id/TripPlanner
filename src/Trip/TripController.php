@@ -65,7 +65,7 @@ final class TripController
         $now = new DateTimeImmutable();
         $copyId = $this->documents->copy($this->currentUser->get()->id, $tripId, $now);
         if ($copyId === null) {
-            return Json::error($response, 404, 'No such trip.');
+            return Json::error($response, 404, 'Trip not found.');
         }
         foreach ($this->entries->copyMediaOfTrip($tripId, $copyId, $now) as [$entry, $copy]) {
             $this->files->copy($tripId, $entry->id, $copyId, $copy->id);
@@ -89,7 +89,7 @@ final class TripController
             return Json::error($response, 422, $error->getMessage());
         }
         if ($version === null) {
-            return Json::error($response, 404, 'No such trip.');
+            return Json::error($response, 404, 'Trip not found.');
         }
         foreach ($fromIds as $fromId) {
             $this->files->moveAll($fromId, $intoId);
@@ -107,7 +107,7 @@ final class TripController
                 return Json::error($response, 422, 'A trip needs a name of up to 200 characters.');
             }
             $renamed = $this->trips->rename($this->currentUser->get()->id, (int) $args['id'], $name, new DateTimeImmutable());
-            return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'No such trip.');
+            return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'Trip not found.');
         }
         $folderId = $body['folderId'] ?? null;
         if ($folderId !== null && !is_int($folderId)) {
@@ -118,7 +118,7 @@ final class TripController
         } catch (UnknownFolder | MisplacedTrip $refused) {
             return Json::error($response, 422, $refused->getMessage());
         }
-        return $moved ? $response->withStatus(204) : Json::error($response, 404, 'No such trip.');
+        return $moved ? $response->withStatus(204) : Json::error($response, 404, 'Trip not found.');
     }
 
     /** The token the trip is shared under, or null. */
@@ -131,19 +131,19 @@ final class TripController
     public function share(Request $request, Response $response, array $args): Response
     {
         $token = $this->trips->share($this->currentUser->get()->id, (int) $args['id']);
-        return $token === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, ['token' => $token]);
+        return $token === null ? Json::error($response, 404, 'Trip not found.') : Json::of($response, ['token' => $token]);
     }
 
     public function unshare(Request $request, Response $response, array $args): Response
     {
         $unshared = $this->trips->unshare($this->currentUser->get()->id, (int) $args['id']);
-        return $unshared ? $response->withStatus(204) : Json::error($response, 404, 'No such trip.');
+        return $unshared ? $response->withStatus(204) : Json::error($response, 404, 'Trip not found.');
     }
 
     public function show(Request $request, Response $response, array $args): Response
     {
         $document = $this->documents->load($this->currentUser->get()->id, (int) $args['id']);
-        return $document === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $document);
+        return $document === null ? Json::error($response, 404, 'Trip not found.') : Json::of($response, $document);
     }
 
     /** Replaces the trip's content with the document sent, if it was loaded at the current version. */
@@ -162,7 +162,7 @@ final class TripController
             return Json::of($response->withStatus(409), ['error' => t($conflict->getMessage()), 'version' => $conflict->currentVersion]);
         }
         if ($saved === null) {
-            return Json::error($response, 404, 'No such trip.');
+            return Json::error($response, 404, 'Trip not found.');
         }
         // A day the document no longer holds takes its media along.
         foreach ($this->entries->takeMediaWithoutDay((int) $args['id']) as $entry) {
@@ -176,7 +176,7 @@ final class TripController
     {
         $deleted = $this->trips->delete($this->currentUser->get()->id, (int) $args['id']);
         if (!$deleted) {
-            return Json::error($response, 404, 'No such trip.');
+            return Json::error($response, 404, 'Trip not found.');
         }
         $this->files->deleteAll((int) $args['id']);
         return $response->withStatus(204);

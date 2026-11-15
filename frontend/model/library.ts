@@ -38,15 +38,15 @@ export const TREES: Record<TreeTab, Tree> = {
     top: 'folder',
     holds: 'trip',
     name: t('Trips'),
-    empty: t('No trips yet. Start one from the menu above, or drop GPX files here.'),
+    empty: t('No trips yet. Create one from the menu above, or drop GPX files here.'),
     search: t('Search trips, routes and tracks'),
   },
   places: {
     top: 'places',
     holds: 'list',
     name: t('Places'),
-    empty: t('No lists of places yet. Start one from the menu above, or drop GPX files of waypoints here.'),
-    search: t('Search lists of places'),
+    empty: t('No place lists yet. Create one from the menu above, or drop GPX files with waypoints here.'),
+    search: t('Search place lists'),
   },
 };
 

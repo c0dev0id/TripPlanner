@@ -33,7 +33,7 @@ async function post(url: string, body: unknown, timeoutMs: number, fetchFn: type
   try {
     return await response.json();
   } catch {
-    throw new Error(t('The routing server answered with status {status}.', { status: response.status }));
+    throw new Error(t('The routing server responded with status {status}.', { status: response.status }));
   }
 }
 

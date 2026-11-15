@@ -143,7 +143,7 @@ async function removeFromSource(cut: NonNullable<Clip['cut']>): Promise<void> {
     await flushSave();
     await changeTrip(cut.tripId, (trip) => removeParts(trip, cut.kind, cut.ids));
   } catch (error) {
-    await askConfirmation(t('The parts are pasted here, but could not be taken from the trip they were cut from: {error}', { error: errorMessage(error) }), t('OK'));
+    await askConfirmation(t('The parts are pasted here, but could not be removed from the trip they were cut from: {error}', { error: errorMessage(error) }), t('OK'));
   }
 }
 

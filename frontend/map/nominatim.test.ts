@@ -34,6 +34,6 @@ describe('parsePlaces', () => {
   });
 
   it('turns away an answer that is no list', () => {
-    expect(() => parsePlaces({ error: 'x' })).toThrow('The search did not answer with a list of places.');
+    expect(() => parsePlaces({ error: 'x' })).toThrow('The search returned no list of places.');
   });
 });

@@ -154,12 +154,12 @@ final class Recordings
         $between = $this->db->prepare("SELECT 1 FROM recordings WHERE user_id = ? AND id NOT IN ($in) AND started_at > ? AND started_at < ?");
         $between->execute([$userId, ...$ids, $began[0], $began[count($began) - 1]]);
         if ($between->fetchColumn() !== false) {
-            throw new Unmergeable('Only recordings that follow one another can be merged.');
+            throw new Unmergeable('Only consecutive recordings can be merged.');
         }
         $gpx = GpxJoin::of(array_map(fn (array $piece) => (string) gzdecode($piece['gpx']), $pieces));
         $summary = TrackSummary::of($gpx);
         if ($summary->line === '') {
-            throw new Unmergeable('These recordings cannot be read as one.');
+            throw new Unmergeable('These recordings cannot be combined.');
         }
         $this->db->beginTransaction();
         try {

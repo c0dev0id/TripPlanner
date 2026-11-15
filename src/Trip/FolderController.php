@@ -55,7 +55,7 @@ final class FolderController
                 return Json::error($response, 422, 'A folder needs a name of up to 200 characters.');
             }
             $renamed = $this->folders->rename($this->currentUser->get()->id, (int) $args['id'], $name);
-            return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'No such folder.');
+            return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'Folder not found.');
         }
         $parentId = $body['parentId'] ?? null;
         if ($parentId !== null && !is_int($parentId)) {
@@ -66,7 +66,7 @@ final class FolderController
         } catch (UnknownFolder | FolderInsideItself | MisplacedTrip $refused) {
             return Json::error($response, 422, $refused->getMessage());
         }
-        return $moved ? $response->withStatus(204) : Json::error($response, 404, 'No such folder.');
+        return $moved ? $response->withStatus(204) : Json::error($response, 404, 'Folder not found.');
     }
 
     /** Deletes the folder; with `contents=delete` everything in it goes too, journal files included, otherwise it moves up. */
@@ -76,14 +76,14 @@ final class FolderController
         $contents = $request->getQueryParams()['contents'] ?? 'move';
         if ($contents === 'move') {
             $deleted = $this->folders->delete($userId, (int) $args['id']);
-            return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'No such folder.');
+            return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'Folder not found.');
         }
         if ($contents !== 'delete') {
             return Json::error($response, 422, 'contents must be move or delete.');
         }
         $tripIds = $this->folders->deleteWithContents($userId, (int) $args['id']);
         if ($tripIds === null) {
-            return Json::error($response, 404, 'No such folder.');
+            return Json::error($response, 404, 'Folder not found.');
         }
         foreach ($tripIds as $tripId) {
             $this->files->deleteAll($tripId);

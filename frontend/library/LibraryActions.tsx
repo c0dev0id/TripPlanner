@@ -7,7 +7,7 @@ import { CopyIcon } from '../ui/icons';
 export function LibraryActions() {
   return (
     <div class="row library-actions" role="toolbar" aria-label={t('Library')}>
-      <IconButton label={t('Routes kept more than once')} pressed={showingDuplicates()} onClick={() => setShowingDuplicates(!showingDuplicates())}>
+      <IconButton label={t('Duplicate routes')} pressed={showingDuplicates()} onClick={() => setShowingDuplicates(!showingDuplicates())}>
         <CopyIcon />
       </IconButton>
     </div>

@@ -88,8 +88,8 @@ export function SearchBox(props: { map: MapLibreMap }) {
       <button
         type="button"
         class="search-toggle"
-        title={t('Search a place or address')}
-        aria-label={t('Search a place or address')}
+        title={t('Search for a place or address')}
+        aria-label={t('Search for a place or address')}
         onClick={() => {
           setOpen(true);
           input.focus();
@@ -109,8 +109,8 @@ export function SearchBox(props: { map: MapLibreMap }) {
           ref={input}
           type="text"
           enterkeyhint="search"
-          placeholder={t('Search a place or address')}
-          aria-label={t('Search a place or address')}
+          placeholder={t('Search for a place or address')}
+          aria-label={t('Search for a place or address')}
           value={query()}
           onInput={(e) => setQuery(e.currentTarget.value)}
           onKeyDown={(e) => {
@@ -120,7 +120,7 @@ export function SearchBox(props: { map: MapLibreMap }) {
           }}
         />
         <Show when={query() || shown()}>
-          <button type="button" class="icon" title={t('Clear the search and its pin')} aria-label={t('Clear the search')} onClick={clear}>
+          <button type="button" class="icon" title={t('Clear search and pin')} aria-label={t('Clear search')} onClick={clear}>
             <CloseIcon />
           </button>
         </Show>

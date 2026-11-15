@@ -14,7 +14,7 @@ import { Rides } from './Rides';
 import type { FoundRoute } from './search';
 
 /** What the search says it looks through, in the tab shown. */
-const searchText = (tab: Exclude<LibraryTab, 'settings'>): string => (tab === 'recordings' ? t('Search rides') : TREES[tab].search);
+const searchText = (tab: Exclude<LibraryTab, 'settings'>): string => (tab === 'recordings' ? t('Search recordings') : TREES[tab].search);
 
 /**
  * The library's pane: its switches and search, a tab for each of its views (the

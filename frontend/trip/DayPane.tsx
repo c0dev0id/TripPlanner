@@ -31,7 +31,7 @@ export function DayPane() {
         /** The day `by` days on from the one shown, where there is one. */
         const step = (by: number) => openTrip()!.days[openTrip()!.days.indexOf(shown()) + by];
         const detail = () => dayDetail(openTrip()!.kind, { date: shown().date, routes: shown().routes.length, stops: shown().stops.length, recordings: recordingsOf(shown().id).length, media: mediaOf(shown().id).length, distanceM: distance() }, isPlaceList(openTripId()));
-        const neighboursLabel = () => t(showNeighbours() ? 'Hide the neighbouring days on the map' : 'Show the neighbouring days on the map, dimmed');
+        const neighboursLabel = () => t(showNeighbours() ? 'Hide the neighboring days on the map' : 'Show the neighboring days on the map, dimmed');
         return (
           <SidePane
             label={label()}

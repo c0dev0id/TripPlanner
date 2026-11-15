@@ -43,6 +43,6 @@ final class ExportPresetController
     public function delete(Request $request, Response $response, array $args): Response
     {
         $deleted = $this->presets->delete($this->currentUser->get()->id, (int) $args['id']);
-        return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'No such preset.');
+        return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'Preset not found.');
     }
 }

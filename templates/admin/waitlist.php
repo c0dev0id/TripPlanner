@@ -3,10 +3,10 @@
   <h1><?= $this->t('Waiting list') ?></h1>
   <?php if (isset($error)): ?><p class="error"><?= $this->e($error) ?></p><?php endif ?>
   <?php if ($pending === []): ?>
-    <p><?= $this->t('Nobody is waiting.') ?></p>
+    <p><?= $this->t('The waiting list is empty.') ?></p>
   <?php else: ?>
     <table>
-      <thead><tr><th><?= $this->t('E-mail') ?></th><th><?= $this->t('Since') ?></th><th></th></tr></thead>
+      <thead><tr><th><?= $this->t('E-mail') ?></th><th><?= $this->t('Waiting since') ?></th><th></th></tr></thead>
       <tbody>
       <?php foreach ($pending as $entry): ?>
         <tr>
@@ -24,7 +24,7 @@
       </tbody>
     </table>
   <?php endif ?>
-  <h2><?= $this->t('Invite an address') ?></h2>
+  <h2><?= $this->t('Invite by e-mail') ?></h2>
   <form method="post" action="/admin/invitations">
     <?= $this->csrf() ?>
     <label><?= $this->t('E-mail') ?> <input type="email" name="email" required></label>

@@ -88,11 +88,11 @@ export function PlaceKindDialog() {
     void changePlaceKind(kind.id, reach, picked === kind.id ? undefined : picked);
   };
   return (
-    <EditDialog label={t('Settings of a kind of place')} value={edited()} title={(kind) => kind.name} onClose={() => setEdited(undefined)} onSubmit={save}>
+    <EditDialog label={t('Place category settings')} value={edited()} title={(kind) => kind.name} onClose={() => setEdited(undefined)} onSubmit={save}>
       {(kind) => (
         <>
           <label>
-            {t('Along a route: how far from it, in km')}
+            {t('Maximum distance from a route, in km')}
             <input type="number" name="reach" min={0.1} max={MAX_KM} step={0.1} value={placeReachM(kind.id) / 1000} />
           </label>
           <fieldset class="choices place-icons">
@@ -101,7 +101,7 @@ export function PlaceKindDialog() {
               <label>
                 <input type="radio" name="icon" value="" checked={placeBadge(kind.id) === undefined} />
                 <KindDot id={kind.id} />
-                {t("The list's dot")}
+                {t("List color dot")}
               </label>
             </Show>
             <For each={POI_CATEGORIES}>

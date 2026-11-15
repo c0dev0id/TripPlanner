@@ -34,7 +34,7 @@ final class MediaController
     public function index(Request $request, Response $response, array $args): Response
     {
         $media = $this->entries->listFor($this->currentUser->get()->id, (int) $args['id'], Entries::MEDIA);
-        return $media === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $media);
+        return $media === null ? Json::error($response, 404, 'Trip not found.') : Json::of($response, $media);
     }
 
     /** Keeps a file or a link with a day, from a multipart form: `dayId`, and a `file`, or a `url` with its `name`. */
@@ -47,13 +47,13 @@ final class MediaController
             return Json::error($response, 422, $problem);
         }
         if (($upload === null) === !isset($body['url']) || !is_string($body['dayId'] ?? null)) {
-            return Json::error($response, 422, 'Media are a file or a link, on a day.');
+            return Json::error($response, 422, 'A media item is a file or a link on a day.');
         }
         $tripId = (int) $args['id'];
         $file = $upload === null ? null : FileStore::describe($upload);
         $entry = $this->entries->addMedia($this->currentUser->get()->id, $tripId, $body['dayId'], trim((string) ($body['name'] ?? '')), $file, $body['url'] ?? null, new DateTimeImmutable());
         if ($entry === null) {
-            return Json::error($response, 404, 'No such trip or day of it.');
+            return Json::error($response, 404, 'Trip or day not found.');
         }
         if ($upload !== null) {
             $this->files->store($upload, $tripId, $entry->id);
@@ -70,18 +70,18 @@ final class MediaController
         if (is_string($dayId)) {
             $moved = $this->entries->moveMedia($userId, $tripId, (int) $args['entry'], $dayId);
             if ($moved === null) {
-                return Json::error($response, 404, 'No such file or day.');
+                return Json::error($response, 404, 'File or day not found.');
             }
             $this->files->move($tripId, $moved->id, $moved->tripId);
             return $response->withStatus(204);
         }
         $name = Json::field($request, 'name');
         $url = Json::field($request, 'url');
-        $problem = is_string($name) ? self::problemOf($name, $url) : 'A day or a name is needed.';
+        $problem = is_string($name) ? self::problemOf($name, $url) : 'A day or a name is required.';
         if ($problem !== null) {
             return Json::error($response, 422, $problem);
         }
-        return $this->entries->changeMedia($userId, $tripId, (int) $args['entry'], trim($name), $url) ? $response->withStatus(204) : Json::error($response, 404, 'No such file.');
+        return $this->entries->changeMedia($userId, $tripId, (int) $args['entry'], trim($name), $url) ? $response->withStatus(204) : Json::error($response, 404, 'File not found.');
     }
 
     /** A copy of a file or a link on the day `dayId`, of this trip or another of the user's. */
@@ -91,7 +91,7 @@ final class MediaController
         $dayId = Json::field($request, 'dayId');
         $copy = is_string($dayId) ? $this->entries->copyMedia($this->currentUser->get()->id, $tripId, (int) $args['entry'], $dayId, new DateTimeImmutable()) : null;
         if ($copy === null) {
-            return Json::error($response, 404, 'No such file or day.');
+            return Json::error($response, 404, 'File or day not found.');
         }
         $this->files->copy($tripId, (int) $args['entry'], $copy->tripId, $copy->id);
         return Json::of($response->withStatus(201), $copy);
@@ -101,7 +101,7 @@ final class MediaController
     {
         $entry = $this->entries->delete($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry'], Entries::MEDIA);
         if ($entry === null) {
-            return Json::error($response, 404, 'No such file.');
+            return Json::error($response, 404, 'File not found.');
         }
         $this->files->delete($entry->tripId, $entry->id);
         return $response->withStatus(204);
@@ -127,6 +127,6 @@ final class MediaController
             return null;
         }
         $web = is_string($url) && strlen($url) <= self::MAX_URL && preg_match('#^https?://\S+$#i', $url) === 1 && filter_var($url, FILTER_VALIDATE_URL) !== false;
-        return $web ? null : 'A link needs an address of the web.';
+        return $web ? null : 'A link needs a web address.';
     }
 }

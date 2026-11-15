@@ -57,7 +57,7 @@ final class FileStore
             return null;
         }
         if (!$upload instanceof UploadedFileInterface) {
-            return 'One file at a time.';
+            return 'Only one file at a time.';
         }
         return match ($upload->getError()) {
             UPLOAD_ERR_OK => null,

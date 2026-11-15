@@ -58,7 +58,7 @@ final class GpxJoin
         $missing = '';
         foreach (self::prefixes($other) as $prefix => $namespace) {
             if (($has[$prefix] ?? $namespace) !== $namespace) {
-                throw new Unmergeable('Recordings of apps that write their values differently under one name cannot be merged.');
+                throw new Unmergeable('Recordings from apps that store different values under the same name cannot be merged.');
             }
             if (!isset($has[$prefix])) {
                 $missing .= " xmlns:$prefix=\"$namespace\"";

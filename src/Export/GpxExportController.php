@@ -29,7 +29,7 @@ final class GpxExportController
     {
         $document = $this->documents->load($this->currentUser->get()->id, (int) $args['id']);
         if ($document === null) {
-            return Json::error($response, 404, 'No such trip.');
+            return Json::error($response, 404, 'Trip not found.');
         }
         $query = $request->getQueryParams();
         $options = ExportOptions::from($query);
@@ -45,7 +45,7 @@ final class GpxExportController
         ));
         $partial = $dayIds !== null || $routeIds !== null;
         if ($indices === [] && $partial) {
-            return Json::error($response, 404, 'No such day or route.');
+            return Json::error($response, 404, 'Day or route not found.');
         }
         $now = new DateTimeImmutable();
         if (count($indices) === 1 && $partial) {

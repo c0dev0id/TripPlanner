@@ -75,7 +75,7 @@ export function timesText(time: EntryTime): string {
 
 /** Departure from the first timed stop to the arrival at the end, the riding time, and the pauses where there are any. */
 export function timelineText(timeline: DayTimeline): string {
-  return [`${timeText(timeline.departMin)} → ${timeText(timeline.endMin)}`, t('{time} riding', { time: durationText(timeline.ridingS) }), timeline.pauseMin > 0 && t('{time} of pauses', { time: durationText(timeline.pauseMin * 60) })]
+  return [`${timeText(timeline.departMin)} → ${timeText(timeline.endMin)}`, t('{time} riding', { time: durationText(timeline.ridingS) }), timeline.pauseMin > 0 && t('{time} of breaks', { time: durationText(timeline.pauseMin * 60) })]
     .filter(Boolean)
     .join(' · ');
 }

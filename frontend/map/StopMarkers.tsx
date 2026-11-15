@@ -46,9 +46,9 @@ function StopMarker(props: { map: MapLibreMap; stop: Stop }) {
     if (pointId !== null) {
       const at = pointOfDay(day, pointId);
       if (at && at.route.points[0] !== at.point) items.push(straightLegItem(at.route.id, at.point));
-      items.push({ label: t('Disconnect from the route'), run: () => disconnectStop(id) });
+      items.push({ label: t('Disconnect from route'), run: () => disconnectStop(id) });
     } else if (canConnect(id)) {
-      items.push({ label: t('Connect to the route'), run: () => connectStop(id) });
+      items.push({ label: t('Connect to route'), run: () => connectStop(id) });
     }
     items.push({ label: t('Remove stop'), run: () => removeStop(id) });
     return items;

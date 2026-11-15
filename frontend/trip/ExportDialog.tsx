@@ -97,12 +97,12 @@ export function ExportDialog() {
             </label>
           </fieldset>
           <fieldset>
-            <legend>{t('Routes as')}</legend>
+            <legend>{t('Export routes as')}</legend>
             <label>
-              <input type="radio" name="form" checked={options().form === 'tracks'} onChange={() => set('form', 'tracks')} /> {t('Tracks, the line as planned')}
+              <input type="radio" name="form" checked={options().form === 'tracks'} onChange={() => set('form', 'tracks')} /> {t('Tracks: the line as planned')}
             </label>
             <label>
-              <input type="radio" name="form" checked={options().form === 'routes'} onChange={() => set('form', 'routes')} /> {t('Routes of the points, for the device to route')}
+              <input type="radio" name="form" checked={options().form === 'routes'} onChange={() => set('form', 'routes')} /> {t('Routes: the points, routed by the device')}
             </label>
           </fieldset>
           <label class="toggle">
@@ -127,7 +127,7 @@ export function ExportDialog() {
             </button>
           </div>
           <Show when={naming()}>
-            <NameForm placeholder={t('Name of the preset')} button={t('Save')} onSubmit={savePreset} onCancel={() => setNaming(false)} />
+            <NameForm placeholder={t('Preset name')} button={t('Save')} onSubmit={savePreset} onCancel={() => setNaming(false)} />
           </Show>
           <Show when={error()}>{(message) => <p class="error">{message()}</p>}</Show>
           <div class="row end">

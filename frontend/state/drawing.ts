@@ -14,9 +14,9 @@ export type Tool = 'hand' | 'point' | 'stop' | 'delete';
 
 /** Each tool's caption and what it does, for the toolbar's buttons and their tooltips. */
 export const TOOLS: Record<Tool, { label: string; hint: string }> = {
-  hand: { label: t('Hand'), hint: t('Drag the map; tap a stop for its details; points and stops stay where they are. Hold Space for the hand with another tool.') },
-  point: { label: t('Point'), hint: t('Tap the map to add a point at the end of the route, or tap the route to insert one there; drag points and stops to move them.') },
-  stop: { label: t('Stop'), hint: t('Tap a route point or the route to make a stop there; tap elsewhere for a stop beside the route; drag points and stops to move them.') },
+  hand: { label: t('Hand'), hint: t('Drag the map; tap a stop to see its details. Points and stops cannot be moved. Hold Space to use the hand while another tool is active.') },
+  point: { label: t('Point'), hint: t('Tap the map to add a point at the end of the route, or tap the route to insert one there. Drag points and stops to move them.') },
+  stop: { label: t('Stop'), hint: t('Tap a route point or the route to add a stop there; tap elsewhere to add a stop beside the route. Drag points and stops to move them.') },
   delete: { label: t('Delete'), hint: t('Tap a point or a stop to delete it.') },
 };
 
@@ -77,10 +77,10 @@ export function spotItems(spot: LngLat): MenuItem[] {
   const route = editingRoute();
   const day = shownDay();
   const items: MenuItem[] = [];
-  if (route?.kind === 'routed') items.push({ label: t('Add a point here'), run: () => appendPoint(route.id, spot) });
-  if (route) items.push({ label: t('Add a stop here, beside the route'), run: () => addFreeStop(spot) });
-  if (day && openTrip()?.kind === 'trip') items.push({ label: t('Journal here…'), run: () => openJournal({ dayId: day.id }, spot) });
-  if (day && isPlaceList(openTripId())) items.push({ label: t('Add a place here…'), run: () => setEditTarget({ kind: 'stop', id: addPlace(spot) }) });
+  if (route?.kind === 'routed') items.push({ label: t('Add point'), run: () => appendPoint(route.id, spot) });
+  if (route) items.push({ label: t('Add stop'), run: () => addFreeStop(spot) });
+  if (day && openTrip()?.kind === 'trip') items.push({ label: t('Add journal entry…'), run: () => openJournal({ dayId: day.id }, spot) });
+  if (day && isPlaceList(openTripId())) items.push({ label: t('Add place…'), run: () => setEditTarget({ kind: 'stop', id: addPlace(spot) }) });
   items.push({ label: t('Open in Google Maps'), run: () => window.open(googleMapsUrl(spot), '_blank', 'noopener') });
   items.push({ label: t('Open in OpenStreetMap'), run: () => window.open(openStreetMapUrl(spot), '_blank', 'noopener') });
   items.push({ label: t('Open in Street View'), run: () => window.open(streetViewUrl(spot), '_blank', 'noopener') });
@@ -90,7 +90,7 @@ export function spotItems(spot: LngLat): MenuItem[] {
 /** The menu item that makes the leg to a point of a route straight, or routed again. */
 export function straightLegItem(routeId: string, point: RoutePoint): MenuItem {
   const straight = point.straight === true;
-  return { label: t(straight ? 'Route the leg to here' : 'Straight leg to here'), run: () => setStraight(routeId, point.id, !straight) };
+  return { label: t(straight ? 'Route leg to here' : 'Straight leg to here'), run: () => setStraight(routeId, point.id, !straight) };
 }
 
 /** The menu of a plain point of a route of the selected day, on the map and in the day's pane: a stop made of it, the leg to it straight or routed, the point removed. */

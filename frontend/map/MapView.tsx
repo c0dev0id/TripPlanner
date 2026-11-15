@@ -64,7 +64,7 @@ export function MapView() {
       new ToggleControl({
         pressed: placesHidden,
         setPressed: setPlacesHidden,
-        label: () => t(placesHidden() ? 'Show the places again' : 'Hide all places for now'),
+        label: () => t(placesHidden() ? 'Show places' : 'Hide places'),
         on: PinOffIcon,
         off: PinIcon,
       }),
@@ -74,7 +74,7 @@ export function MapView() {
       new ToggleControl({
         pressed: viewLocked,
         setPressed: setViewLocked,
-        label: () => t(viewLocked() ? 'The map stays where it is; let it follow what is taken up again' : 'Keep the map where it is while something else is taken up'),
+        label: () => t(viewLocked() ? 'Map view locked: click to let the map follow the selection again' : 'Lock map view: the map stays put when something else is selected'),
         on: LockIcon,
         off: LockOpenIcon,
       }),
