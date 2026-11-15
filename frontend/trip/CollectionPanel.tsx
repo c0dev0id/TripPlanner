@@ -5,7 +5,7 @@ import type { Day, Route, Stop } from '../model/trip';
 import { routeDistance, routePositions, routesDistance } from '../routing/legs';
 import { isCut } from '../state/clipboard';
 import { panTo, showWhole } from '../state/drawing';
-import { clickPart, isPartSelected } from '../state/partSelection';
+import { partSelect } from '../state/partSelection';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
 import { isPlaceList } from '../state/library';
@@ -62,17 +62,14 @@ function SectionItem(props: { day: Day; places: boolean; onRename: (day: Day) =>
   const distance = createMemo(() => routesDistance(routes()));
   const meta = () => dayDetail('collection', { date: null, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, media: mediaOf(props.day.id).length, distanceM: distance() }, props.places);
   const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
-  const click = (e: MouseEvent) => {
-    if (clickPart('day', openTrip()!.days.map((d) => d.id), props.day.id, e)) return;
-    pickDay(props.day.id);
-  };
+  const select = partSelect('day', props.day.id, () => openTrip()!.days.map((d) => d.id));
   let row!: HTMLLIElement;
   // The day shown is brought into view: one opened from elsewhere may lie far down its trip.
   createEffect(on(selected, (is) => is && requestAnimationFrame(() => row.scrollIntoView({ block: 'nearest' }))));
   return (
-    <li ref={row} class="day card" classList={{ open: selected(), current: isDayMarked(props.day.id), picked: isPartSelected('day', props.day.id), cut: isCut(props.day.id) }}>
+    <li ref={row} class="day card" classList={{ open: selected(), current: isDayMarked(props.day.id), selected: select.selected(), cut: isCut(props.day.id) }}>
       <div class="row" ref={(el) => cardMenu(el, items)}>
-        <button class="text grow" onClick={click} aria-pressed={selected()}>
+        <button class="text grow" onClick={(e) => select.onClick(e) || pickDay(props.day.id)} aria-pressed={selected()}>
           <Show when={props.places}>
             <PlaceKindMark id={props.day.id} />
           </Show>
@@ -135,13 +132,14 @@ function RouteItem(props: { route: Route; day: Day }) {
   let row!: HTMLDivElement;
   // A route taken up on the map is brought into view.
   createEffect(on(active, (is) => is && row.scrollIntoView({ block: 'nearest' })));
+  const select = partSelect('route', props.route.id, () => props.day.routes.map((r) => r.id));
   const click = (e: MouseEvent) => {
-    if (clickPart('route', props.day.routes.map((r) => r.id), props.route.id, e)) return;
+    if (select.onClick(e)) return;
     takeUpRoute(active() ? undefined : props.route.id);
     if (active()) showWhole(routePositions(props.route));
   };
   return (
-    <li class="route" classList={{ editing: active(), picked: isPartSelected('route', props.route.id), cut: isCut(props.route.id) }}>
+    <li class="route" classList={{ editing: active(), selected: select.selected(), cut: isCut(props.route.id) }}>
       <div
         class="row"
         ref={(el) => {
@@ -169,12 +167,10 @@ function RouteItem(props: { route: Route; day: Day }) {
 /** A waypoint of a section: a click pans the map there; its menu copies and removes it. */
 function WaypointItem(props: { stop: Stop; day: Day }) {
   const label = () => symbolLabel(props.stop.symbol);
-  const click = (e: MouseEvent) => {
-    if (!clickPart('stop', props.day.stops.map((s) => s.id), props.stop.id, e)) panTo(props.stop.lngLat);
-  };
+  const select = partSelect('stop', props.stop.id, () => props.day.stops.map((s) => s.id));
   return (
-    <li class="row sequence-item" classList={{ picked: isPartSelected('stop', props.stop.id), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
-      <button class="text grow" onClick={click}>
+    <li class="row sequence-item" classList={{ selected: select.selected(), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
+      <button class="text grow" onClick={(e) => select.onClick(e) || panTo(props.stop.lngLat)}>
         <Show when={isPlaceList(openTripId())} fallback={<StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />}>
           <PlaceKindMark id={props.day.id} />
         </Show>

@@ -5,7 +5,7 @@ import { GPX_FILE_TYPES } from '../gpx/import';
 import type { Day } from '../model/trip';
 import { totalDistance } from '../recording/rides';
 import { copyRecordings, isCutRecording } from '../state/clipboard';
-import { clearPartSelection, clickPart, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
+import { clearPartSelection, isPartSelected, partSelect, partsOfMenu, togglePart } from '../state/partSelection';
 import { showWhole } from '../state/drawing';
 import { isRecordingPinned, pinRecordings } from '../state/pins';
 import { toggleRecording } from '../state/recordingView';
@@ -204,15 +204,15 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
     return `${startedAt ? momentText(startedAt) : t('no times')} · ${distanceText(distanceM)}`;
   };
   const isOpened = () => activeRecordingId() === props.recording.id;
-  const click = (e: MouseEvent) => clickPart('recording', recordingsOf(props.recording.dayId).map((r) => String(r.id)), String(props.recording.id), e) || toggleRecording(props.recording);
+  const select = partSelect('recording', String(props.recording.id), () => recordingsOf(props.recording.dayId).map((r) => String(r.id)));
   return (
     <li
       class="recording"
-      classList={{ opened: isOpened(), picked: isPartSelected('recording', String(props.recording.id)), cut: isCutRecording(props.recording) }}
+      classList={{ opened: isOpened(), selected: select.selected(), cut: isCutRecording(props.recording) }}
       ref={(el) => cardMenu(el, () => recordingMenu(props.recording, props.onRename))}
     >
       <div class="row">
-        <button class="text grow" aria-pressed={isOpened()} onClick={click}>
+        <button class="text grow" aria-pressed={isOpened()} onClick={(e) => select.onClick(e) || toggleRecording(props.recording)}>
           <span class="swatch" style={{ background: recordingColor(props.recording) }} />
           <span class="lines grow">
             <span class="name">{props.recording.name}</span>

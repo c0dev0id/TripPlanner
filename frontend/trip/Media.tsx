@@ -7,7 +7,7 @@ import type { Day } from '../model/trip';
 import { webAddress } from '../poi/details';
 import { copyMedia, isCutMedia } from '../state/clipboard';
 import { addFiles, addLink, mediaAction, mediaById, mediaNote, mediaOf, moveToDay, removeMedia, renameMedia } from '../state/media';
-import { clearPartSelection, clickPart, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
+import { clearPartSelection, isPartSelected, partSelect, partsOfMenu, togglePart } from '../state/partSelection';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { EditDialog } from '../ui/EditDialog';
@@ -126,17 +126,17 @@ function mediaMenu(entry: Entry, onEdit: (entry: Entry) => void): MenuItem[] {
  * file; with Cmd, Ctrl or Shift it selects; its menu is mediaMenu.
  */
 function MediaItem(props: { entry: Entry; onEdit: (entry: Entry) => void }) {
-  const id = () => String(props.entry.id);
   const name = () => mediaName(props.entry);
   const opens = () => mediaOpens(props.entry);
   const href = () => props.entry.url ?? mediaFileUrl(props.entry.tripId, props.entry.id);
+  const select = partSelect('media', String(props.entry.id), () => mediaOf(props.entry.dayId!).map((m) => String(m.id)));
   const click = (e: MouseEvent) => {
-    if (clickPart('media', mediaOf(props.entry.dayId!).map((m) => String(m.id)), id(), e)) return e.preventDefault();
+    if (select.onClick(e)) return e.preventDefault();
     if (opens() === 'image') openImage(e, { src: href(), preview: mediaPreviewUrl(props.entry.tripId, props.entry.id), name: name() });
     else if (opens() === 'pdf') openDocument(e, { src: href(), name: name() });
   };
   return (
-    <li class="media-item" classList={{ picked: isPartSelected('media', id()), cut: isCutMedia(props.entry.id) }} ref={(el) => cardMenu(el, () => mediaMenu(props.entry, props.onEdit))}>
+    <li class="media-item" classList={{ selected: select.selected(), cut: isCutMedia(props.entry.id) }} ref={(el) => cardMenu(el, () => mediaMenu(props.entry, props.onEdit))}>
       <div class="row">
         <a class="text grow" href={href()} target="_blank" rel="noopener noreferrer" download={opens() === 'download' ? props.entry.file!.name : undefined} onClick={click}>
           <span class="media-kind">{opens() === 'link' ? <LinkIcon /> : opens() === 'image' ? <PhotoIcon /> : <FileIcon />}</span>

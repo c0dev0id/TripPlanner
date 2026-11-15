@@ -589,8 +589,8 @@ button.icon.pin[aria-pressed='true'] {
   display: block;
 }
 
-/* The tree's one mark, on the row clicked last: a folder, the open trip, or its day that is shown. Selected rows are tinted alike. */
-.tree .card:is(.current, .selected) > .row {
+/* The tree's one mark, on the row clicked last: a folder, the open trip, or its day that is shown. */
+.tree .card.current > .row {
   background: var(--active);
 }
 
@@ -662,11 +662,9 @@ button.icon.pin[aria-pressed='true'] {
 /*
  * The strip down the left of a row. In the tree it runs down what is open: the marked
  * row, the folders around it and its trip, and the trip on the map or the day in
- * the pane while the mark is elsewhere. In a trip it marks the parts selected and the
- * route being edited.
+ * the pane while the mark is elsewhere. In a trip it marks the route being edited.
  */
-:is(.tree .card.current, .tree .card:has(.card.current), .tree .card.open, .picked, .route.editing) > .row,
-li.row.picked {
+:is(.tree .card.current, .tree .card:has(.card.current), .tree .card.open, .route.editing) > .row {
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
@@ -696,9 +694,10 @@ li.row.picked {
   white-space: normal;
 }
 
-/* Parts of a trip selected to be acted on together, and those cut and waiting to be pasted. */
-.picked > .row,
-li.row.picked {
+/* A row selected to be acted on with others, in any list, is tinted as the tree's mark is; one cut and waiting to be pasted is dimmed. */
+.selected > .row,
+li.row.selected {
+  border-radius: 7px;
   background: var(--active);
 }
 
@@ -707,8 +706,8 @@ li.row.cut {
   opacity: 0.5;
 }
 
-/* A selected duplicate, the opened recording and what the map shows of the Stash are tinted as the tree's mark is. */
-.duplicates li:is(.selected, .opened) > .row,
+/* The opened ride or recording and what the map shows of the Stash are tinted as the tree's mark is. */
+.duplicates li.opened > .row,
 .tree .card.opened > .row,
 .results .card.opened > .row,
 .recording.opened > .row {
