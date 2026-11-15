@@ -13,9 +13,6 @@ import { Library, type FoundRoute } from './Library';
 import { LibraryActions } from './LibraryActions';
 import { Rides } from './Rides';
 
-/** The explorer's own name, its heading at the top of the library. */
-const EXPLORER = t('Trip Explorer');
-
 /** What the search says it looks through, by the tab shown. */
 const SEARCHES: Record<LibraryTab, string> = {
   stash: t('Search files, routes and tracks'),
@@ -27,7 +24,7 @@ const SEARCHES: Record<LibraryTab, string> = {
 /**
  * The library's pane: its switches and search, a tab for each of its views (the
  * collections, the trips, the lists of places and the rides), the open trip's name
- * with the trip's own actions while its tab is the one shown, and what the tab shown holds: a tree of folders and
+ * with the trip's own actions while its tab is the one shown and nothing in its place otherwise, and what the tab shown holds: a tree of folders and
  * trips, the open trip's days among them, or the rides. A tab only shows its view:
  * what is unfolded, marked and selected in the others stays, and how far each was
  * scrolled.
@@ -79,24 +76,22 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string, routeId?:
           )}
         </For>
       </div>
-      <div class="row explorer-heading">
-        <h2 class="path grow" title={headed()?.name ?? EXPLORER}>
-          {headed()?.name ?? EXPLORER}
-        </h2>
-        <Show when={headed()}>
-          {(trip) => (
-            <>
-              <Show when={trip().kind === 'trip'}>
-                <TripIcons />
-              </Show>
-              <SaveState />
-              <IconButton label={t('Close {what}', { what: trip().name })} onClick={() => void props.onLeave()}>
-                <CloseIcon />
-              </IconButton>
-            </>
-          )}
-        </Show>
-      </div>
+      <Show when={headed()}>
+        {(trip) => (
+          <div class="row explorer-heading">
+            <h2 class="path grow" title={trip().name}>
+              {trip().name}
+            </h2>
+            <Show when={trip().kind === 'trip'}>
+              <TripIcons />
+            </Show>
+            <SaveState />
+            <IconButton label={t('Close {what}', { what: trip().name })} onClick={() => void props.onLeave()}>
+              <CloseIcon />
+            </IconButton>
+          </div>
+        )}
+      </Show>
       <Show when={libraryProblem() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
       <Library onOpen={openIn} onOpenRoute={openRoute} onOpenFolder={openFolder} onLeave={props.onLeave}>
         <Show when={openTrip()?.kind === 'collection'} fallback={<TripPanel />}>

@@ -13,8 +13,7 @@
   user's own places, and Recordings, for the rides. A tab only shows its view: what is
   unfolded, marked and selected in the others stays as it is, each keeps how far it
   was scrolled, and the open trip stays open with its day in its pane. Its name and
-  its actions stand over the tab it is in and not over the others, which have the
-  explorer's own name there.
+  its actions stand over the tab it is in; a tab with nothing open has no heading.
   Under the tabs a line says what the view holds, with the button that folds its tree
   away and the menu of its top; the address keeps the tab, so that loading the page
   again comes back to it. Opening a trip from a ride or from the duplicates shows the
