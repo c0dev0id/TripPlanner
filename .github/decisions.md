@@ -413,6 +413,12 @@ entries at the end of their section.
   searched or the own position, is not held back. The lock is not kept from one
   loading of the page to the next: a map that does not follow, for a reason set days
   ago, reads as broken.
+- **Hiding all places is a switch over the kinds, not a state of them.** Setting every
+  kind to none and back would lose how each was set, so one signal empties what the map
+  draws of the places (`placesOnMap`, `ownPlacesOnMap`) and leaves the kinds alone. As
+  the lock, it is not kept beyond the page: places missing days later would read as
+  lost. It and the lock are one control, a toggle button given its state, labels and
+  icons (`map/ToggleControl.tsx`).
 - **A ride held against a day is red and narrow.** To judge whether a ride is a day's,
   both have to be seen. Rides shown from their list were drawn as wide as routes, over
   them, in the palette the routes take their colours from, so a ride that followed

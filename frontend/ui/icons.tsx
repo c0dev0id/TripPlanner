@@ -54,6 +54,14 @@ export const LockOpenIcon = () => (
   </Icon>
 );
 
+export const PinOffIcon = () => (
+  <Icon>
+    <path d="M3 3l18 18" />
+    <path d="M9.44 9.435a3 3 0 0 0 4.126 4.124m1.434 -2.559a3 3 0 0 0 -3 -3" />
+    <path d="M8.048 4.042a8 8 0 0 1 10.912 10.908m-1.8 2.206l-3.745 3.744a2 2 0 0 1 -2.827 0l-4.244 -4.243a8 8 0 0 1 -.488 -10.646" />
+  </Icon>
+);
+
 export const PinIcon = () => (
   <Icon>
     <path d="M9 11a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />

@@ -6,7 +6,7 @@ import { newStop } from '../routing/dayEdit';
 import { kindAround } from '../library/folders';
 import { placesNear } from '../poi/near';
 import { libraryFolders, libraryTab, libraryTrips, tripShown } from './library';
-import { anyOwnKindShown, alongLines, placeMode } from './places';
+import { anyOwnKindShown, alongLines, placeMode, placesHidden } from './places';
 import { placeReachM } from './preferences';
 import { addParts, openTripId, selectedDayId } from './trip';
 
@@ -48,7 +48,7 @@ export const ownKinds = own.kinds;
 export const ownKindColor = (dayId: string): string | undefined => own.colors().get(dayId);
 
 /** The own places the map shows, each with its kind's colour. */
-export const ownPlacesOnMap = own.shown;
+export const ownPlacesOnMap = () => (placesHidden() ? [] : own.shown());
 
 export const ownPlaceById = (id: string): OwnPlace | undefined => own.all().find((place) => place.id === id);
 

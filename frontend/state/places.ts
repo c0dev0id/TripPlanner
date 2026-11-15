@@ -131,5 +131,8 @@ const readIn = (tiles: readonly Tile[], kinds: readonly PoiCategory[]): Place[] 
 /** The places of the store along the day's routes, apart from those in view, so that moving the map does not measure them again. */
 const alongPlaces = createRoot(() => createMemo(() => placesNear(readIn(alongTiles(), alongKinds()), alongLines(), (place) => placeReachM(place.category.id))));
 
+/** Whether every place is hidden from the map for now, the store's and the user's own, whatever their kinds' states; for the page only. */
+export const [placesHidden, setPlacesHidden] = createSignal(false);
+
 /** The places of the store the map shows. */
-export const placesOnMap = createRoot(() => createMemo((): Place[] => [...readIn(viewTiles(), allKinds()), ...alongPlaces()]));
+export const placesOnMap = createRoot(() => createMemo((): Place[] => (placesHidden() ? [] : [...readIn(viewTiles(), allKinds()), ...alongPlaces()])));

@@ -451,6 +451,10 @@
   that one place can be looked at in one after the other. The place search and the
   button that shows where the user is still move it. The lock is open when the page
   is loaded.
+- A pin among the map's controls hides every place for now, the standard ones and the
+  user's own, whatever their kinds are set to, for a clean screenshot of a route or
+  where places crowd it; pressed again, they are back as they were. The places are
+  shown again when the page is loaded.
 - What is on the map follows what is taken up. With the whole trip shown, or a day and
   nothing taken up, the planned routes and tracks are all drawn, and no recordings.
   Taking up a route or opening a recording draws that one alone. One thing is taken up

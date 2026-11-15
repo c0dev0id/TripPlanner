@@ -1,7 +1,8 @@
 import { GeoJSONSource, LngLatBounds, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
+import { t } from '../i18n/t';
 import type { Day, LngLat, Route } from '../model/trip';
-import { panTarget, showNeighbours, viewLocked } from '../state/drawing';
+import { panTarget, setViewLocked, showNeighbours, viewLocked } from '../state/drawing';
 import { comparedLines } from '../state/duplicates';
 import { ridesOnMap } from '../state/rides';
 import { stashLines, stashWaypoints } from '../state/stash';
@@ -11,12 +12,14 @@ import { mapTab, tripShown } from '../state/library';
 import { sectionEnds } from '../state/section';
 import { isRoutePinned, pinnedAsideLines } from '../state/pins';
 import { keepsView } from '../state/place';
+import { placesHidden, setPlacesHidden } from '../state/places';
 import { ridesOpacity, routeWidth } from '../state/preferences';
 import { comparedCover, opened, openedLineColors, somethingTakenUp } from '../state/recordingView';
 import { loadedTrack, previewedLines, recordingColor, shownRecordings } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
 import { failedLegs } from '../state/routing';
 import { activeRouteId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
+import { LockIcon, LockOpenIcon, PinIcon, PinOffIcon } from '../ui/icons';
 import { newBaseMap } from './baseMap';
 import { OverlayInfo } from './OverlayInfo';
 import { Interactions } from './Interactions';
@@ -30,7 +33,7 @@ import { RouteHover } from './RouteHover';
 import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { SearchBox } from './SearchBox';
 import { StopMarkers } from './StopMarkers';
-import { ViewLockControl } from './ViewLockControl';
+import { ToggleControl } from './ToggleControl';
 
 /** The page's map, once it is loaded and while it stands. */
 const [shownMap, setShownMap] = createSignal<MapLibreMap>();
@@ -56,7 +59,26 @@ export function MapView() {
   onMount(() => {
     // The map keeps its view in the address, as `map=`, and starts from it.
     const m = newBaseMap(container, { hash: 'map' }, setShownMap, { routeWidth, overlays: true, ridesOpacity });
-    m.addControl(new ViewLockControl(), 'top-right');
+    m.addControl(
+      new ToggleControl({
+        pressed: viewLocked,
+        setPressed: setViewLocked,
+        label: () => t(viewLocked() ? 'The map stays where it is; let it follow what is taken up again' : 'Keep the map where it is while something else is taken up'),
+        on: LockIcon,
+        off: LockOpenIcon,
+      }),
+      'top-right',
+    );
+    m.addControl(
+      new ToggleControl({
+        pressed: placesHidden,
+        setPressed: setPlacesHidden,
+        label: () => t(placesHidden() ? 'Show the places again' : 'Hide all places for now'),
+        on: PinOffIcon,
+        off: PinIcon,
+      }),
+      'top-right',
+    );
     onCleanup(() => {
       setShownMap(undefined);
       m.remove();
