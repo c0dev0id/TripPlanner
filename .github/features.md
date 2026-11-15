@@ -176,9 +176,13 @@
   to a strip, which leaves the map the room, and brings it back. The strip keeps the
   open trip's days in reach: a numbered button each, in the colour its routes have
   where each day has one, the day shown ringed; a click shows the day, or the whole
-  trip again where that day is shown. On a screen without
-  room for three panes, narrower than 1200 px, the day's pane takes the library's place while a day is picked,
-  and its close button gives the library back; its heading then steps to the day before
+  trip again where that day is shown. The day's pane folds the library away to its
+  strip as it opens, and closing the pane brings the library back, unless the user had
+  folded it away before. On a screen without
+  room for three panes, narrower than 1200 px, the strip stands beside the day's pane,
+  and the library brought back by its button takes the pane's place until it is folded
+  again or another day is picked in it, which folds it away; the day stays picked
+  meanwhile, so that the tabs can be used and the day comes back. The pane's heading then steps to the day before
   and after, the day's name between the steps and the buttons under it. On a phone the map is the page: the day picked is a sheet under it, pulled
   up to nearly the whole screen or down to its heading by its top edge, and folded down
   by itself while a route is edited; the library lies over everything and folds away,

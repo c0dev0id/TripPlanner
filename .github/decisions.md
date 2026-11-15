@@ -744,10 +744,18 @@ entries at the end of their section.
   They are several lines on a phone and lay under the route tools; rather than fold
   them through the control's inner workings, the tools stand above them while they are
   spread out.
+- **The day's pane folds the library away.** A day open beside the library left the map
+  the room of neither, and the library is not needed while a day is worked on: the
+  strip keeps the days in reach. So the pane folds the library away as it opens and
+  brings it back as it closes, where it folded it; a library the user folded away
+  stays so. The duplicates' report does not fold it on a wide screen, since it shows
+  in the library where a duplicate lies.
 - **Small and touch screens by stylesheet rules, with two exceptions.** Between 721 and
-  1199 px, a tablet either way up, the panel takes at most 42 % of the width and the
-  day's pane takes the library's place: three panes at 1024 px left the map 324 px, of
-  which an opened recording's cards covered half. The day's heading there stands in two
+  1199 px, a tablet either way up, the panel takes at most 42 % of the width, and the
+  library unfolded and the day's pane take turns beside the folded strip: three panes
+  at 1024 px left the map 324 px, of which an opened recording's cards covered half.
+  The pane took the library's place before, strip and all, so that the tabs could only
+  be reached by closing the day, which a tab then could not reopen. The day's heading there stands in two
   lines, as on a phone, since the steps and the buttons at a finger's size left its
   name 30 px in one. On a touch
   screen every field's text is 16 px, below which Safari zooms into the page on focus
@@ -755,8 +763,8 @@ entries at the end of their section.
   narrow as before, since the row's name needs the room, and is hit in an area that
   reaches a finger's width around it; heights that follow the screen
   use `dvh`, which leaves out what the browser's own bars cover. What the stylesheet
-  cannot do is in `state/panel.ts`: a phone folds the library away when a day is
-  picked or the duplicates report asked for, and the sheet has a height the user sets
+  cannot do is in `state/panel.ts`: a phone or a tablet folds the library away when a
+  day is picked or the duplicates report asked for, and the sheet has a height the user sets
   and folds down while a route is edited. The width a phone ends at,
   720 px, therefore stands in the stylesheet and once in the script.
 - **A phone stacks the three panes.** The desktop's panes are the phone's layers: the

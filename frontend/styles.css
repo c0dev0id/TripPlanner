@@ -1672,21 +1672,22 @@ fieldset.symbols {
 
 /*
  * A screen that has room for a pane beside the map but not for two, such as a tablet
- * either way up: the map keeps the larger part, and the day's pane takes the library's
- * place while a day is picked.
+ * either way up: the map keeps the larger part. The library folded away leaves its strip
+ * beside the day's pane; unfolded, it takes the pane's place until it is folded again.
  */
 @media (min-width: 721px) and (max-width: 1199px) {
-  #root:has(> .side-pane) > .library-panel,
+  #root:has(> .library-panel:not(.folded)) > .side-pane,
   .side-pane > .panel-resizer {
     display: none;
   }
 
-  #root {
+  #root,
+  #root:has(> .side-pane):has(> .library-panel:not(.folded)) {
     grid-template-columns: min(var(--panel-shown, var(--panel-width)), 42vw) 1fr;
   }
 
-  #root:has(> .side-pane) {
-    grid-template-columns: min(var(--side-pane-width), 42vw) 1fr;
+  #root:has(> .side-pane):has(> .library-panel.folded) {
+    grid-template-columns: var(--panel-shown) min(var(--side-pane-width), 42vw) 1fr;
   }
 }
 
