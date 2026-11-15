@@ -4,7 +4,8 @@ import { currentTool, setTool, spotItems, tapAction, tool, type Tool } from '../
 import { isTextField } from '../ui/form';
 import { menu, setMenu } from '../ui/menu';
 import { pickPoint, setPickedIndex } from '../state/recordingView';
-import { addFreeStop, appendPoint, editingRoute, insertPoint, insertStop, openTrip, redo, takeUpRoute, takeUpRouteOf, undo } from '../state/trip';
+import { activeRecordingId } from '../state/recordings';
+import { activeRouteId, addFreeStop, appendPoint, editingRoute, insertPoint, insertStop, openTrip, redo, takeUpRoute, takeUpRouteOf, undo } from '../state/trip';
 import { fromMarker, toLngLat } from './markers';
 import { recordingPointAt } from './recordingPick';
 import { routeAt } from './RouteHover';
@@ -81,11 +82,13 @@ export function Interactions(props: { map: MapLibreMap }) {
       if (action === 'delete') return;
       const reach = tapReach(pointerType !== 'mouse');
       if (popupAt(e.point, e.lngLat, reach)) return;
+      // A route or a recording taken up leads: a tap picks points of the opened recording alone, and takes nothing else up.
+      const focused = activeRouteId() !== undefined || activeRecordingId() !== undefined;
       const hit = recordingPointAt(map, e.point, reach);
-      if (hit) return pickPoint(hit.id, hit.index);
+      if (hit && (!focused || hit.id === activeRecordingId())) return pickPoint(hit.id, hit.index);
       setPickedIndex(undefined);
-      // While none is edited, a tap on a route takes it up.
-      const tapped = route ? undefined : routeAt(map, e.point, reach);
+      // While nothing is taken up, a tap on a route takes it up.
+      const tapped = route || focused ? undefined : routeAt(map, e.point, reach);
       if (tapped) takeUpRouteOf(tapped.dayId, tapped.routeId);
       return;
     }

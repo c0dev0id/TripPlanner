@@ -466,8 +466,10 @@
   go of the route taken up.
 - A route under a mouse's pointer on the map is drawn wider and named, after its day while the
   whole trip is shown; a click or a tap on it shows its day and takes the route up, as a
-  click on its row does, which is brought into view. This holds while no route is being
-  edited, when a tap does the tool's work.
+  click on its row does, which is brought into view. This holds while nothing is taken up:
+  a route, a track or a recording taken up leads, and a click on another line on the map
+  neither takes that up nor names it; a click on the opened recording's own line picks
+  its point, and while a route is edited a tap does the tool's work.
 - A recording's figures: a click on it shows it whole, and round buttons take the place
   search's place over the map: the facts, one for each focus the file allows, and one
   that closes the figures. The facts, hidden at first, are its distance, time and

@@ -1,6 +1,7 @@
 import { Popup, type LngLat, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, on, onCleanup } from 'solid-js';
-import { editingRoute, editingRouteId, openTrip, selectedDayId } from '../state/trip';
+import { activeRecordingId } from '../state/recordings';
+import { activeRouteId, openTrip, selectedDayId } from '../state/trip';
 import { dayTitleOf, routeLabel } from '../trip/labels';
 import { ROUTE_LINE_LAYER, ROUTES_SOURCE } from './routeOverlay';
 
@@ -52,13 +53,15 @@ export function RouteHover(props: { map: MapLibreMap }) {
     const box = surface.getBoundingClientRect();
     const point = { x: e.clientX - box.left, y: e.clientY - box.top };
     const lngLat = map.unproject([point.x, point.y]);
-    hover(editingRoute() ? undefined : routeAt(map, point, HOVER_REACH), lngLat);
+    // With a route or a recording taken up nothing else is offered for a click.
+    const focused = activeRouteId() !== undefined || activeRecordingId() !== undefined;
+    hover(focused ? undefined : routeAt(map, point, HOVER_REACH), lngLat);
     // The name goes along with the pointer.
     if (hovered) popup.setLngLat(lngLat);
   };
   const onLeave = () => hover(undefined);
-  // The route taken up by the click is edited, and no longer one to point at.
-  createEffect(on(editingRouteId, (id) => id && onLeave()));
+  // What the click took up leads, and nothing is pointed at meanwhile.
+  createEffect(on([activeRouteId, activeRecordingId], ([route, recording]) => (route !== undefined || recording !== undefined) && onLeave()));
   surface.addEventListener('pointermove', onMove);
   surface.addEventListener('pointerleave', onLeave);
   onCleanup(() => {
