@@ -24,7 +24,7 @@ import { CollectionIcon, FoldIcon, FolderIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
-import { clickRow, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, toggleRow, type Selection } from '../ui/selection';
+import { clickRow, menuRows, NOTHING_SELECTED, selectIn, selectionOf, toggleRow, type Selection } from '../ui/selection';
 import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
 import { Pad } from '../ui/Pad';
@@ -314,6 +314,8 @@ export function Library(props: {
     const tree = shownTree();
     return tree ? selectionOf(ownerOf(tree)) : NOTHING_SELECTED;
   };
+  /** The rows a row's menu acts on, in the tree shown: the selection where it holds the row, else the row alone. */
+  const menuRowsOf = (key: string): Selection<string> => new Set(menuRows(ownerOf(shownTree()!), key));
   const setSelected = (rows: Selection<string>) => {
     const tree = shownTree();
     if (tree) selectIn(ownerOf(tree), rows);
@@ -458,8 +460,7 @@ export function Library(props: {
   };
   /** The menu of a route the search found: for the selected rows, or for it alone where it is not selected. */
   const routeMenu = (route: FoundRoute): MenuItem[] => {
-    const selection = menuSelection(selected(), routeKey(route));
-    setSelected(selection.size > 1 ? selection : NOTHING_SELECTED);
+    const selection = menuRowsOf(routeKey(route));
     return routesMenu(selection);
   };
   const merge = async (into: TripSummary, others: TripSummary[]) => {
@@ -734,8 +735,7 @@ export function Library(props: {
   };
   /** The menu of a route or a track of a file: for the selected rows, or for it alone where it is not selected. */
   const stashItemMenu = (at: FileItem): MenuItem[] => {
-    const selection = menuSelection(selected(), itemKey(at));
-    setSelected(selection.size > 1 ? selection : NOTHING_SELECTED);
+    const selection = menuRowsOf(itemKey(at));
     return itemsMenu(selection);
   };
 
@@ -750,8 +750,7 @@ export function Library(props: {
    * is theirs.
    */
   const itemMenu = (item: Item): MenuItem[] => {
-    const selection = menuSelection(selected(), keyOf(item));
-    setSelected(selection.size > 1 ? selection : NOTHING_SELECTED);
+    const selection = menuRowsOf(keyOf(item));
     if (routesIn(selection).length > 0) return routesMenu(selection);
     if (itemsIn(selection).length > 0) return itemsMenu(selection);
     const chosen = chosenWith(item, selection);

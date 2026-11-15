@@ -78,3 +78,15 @@ export function toggleRow(owner: string, key: string): void {
   clicked = { owner, key, plain: false };
   selectIn(owner, toggled(selectionOf(owner), key));
 }
+
+/**
+ * The rows a row's menu acts on in the list `owner`: the rows selected there where they
+ * are several and the row is one of them, else the row alone, which lets go of whatever
+ * is selected, as a plain click does.
+ */
+export function menuRows(owner: string, key: string): string[] {
+  const rows = menuSelection(selectionOf(owner), key);
+  if (rows.size > 1) return [...rows];
+  setHeld(undefined);
+  return [key];
+}

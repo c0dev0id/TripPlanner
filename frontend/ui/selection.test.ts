@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { clickRow, clickSelect, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, selectionOwner, toggleRow, type Selection } from './selection';
+import { clickRow, clickSelect, menuRows, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, selectionOwner, toggleRow, type Selection } from './selection';
 
 const order = ['a', 'b', 'c', 'd'];
 const plain = { metaKey: false, ctrlKey: false, shiftKey: false };
@@ -90,6 +90,31 @@ describe('clicks on the rows of a list', () => {
     expect(clickRow('routes', ['r1', 'r2', 'r3'], 'r3', shift)).toBe(true);
     expect([selectionOwner(), selected(), [...selectionOf('routes')]]).toEqual(['routes', [], ['r3']]);
     clickRow('routes', ['r1', 'r2', 'r3'], 'r1', plain);
+    expect(selectionOwner()).toBeUndefined();
+  });
+});
+
+describe('menuRows', () => {
+  beforeEach(() => selectIn(selectionOwner() ?? 'a', NOTHING_SELECTED));
+
+  it('acts on the selection that holds the row, and keeps it', () => {
+    selectIn('list', new Set(['a', 'b']));
+    expect(menuRows('list', 'b')).toEqual(['a', 'b']);
+    expect([...selectionOf('list')]).toEqual(['a', 'b']);
+  });
+
+  it('acts on the row alone and lets go of a selection that does not hold it', () => {
+    selectIn('list', new Set(['a', 'b']));
+    expect(menuRows('list', 'c')).toEqual(['c']);
+    expect(selectionOwner()).toBeUndefined();
+  });
+
+  it('lets go of a lone selected row and of what another list holds', () => {
+    selectIn('list', new Set(['a']));
+    expect(menuRows('list', 'a')).toEqual(['a']);
+    expect(selectionOwner()).toBeUndefined();
+    selectIn('other', new Set(['x', 'y']));
+    expect(menuRows('list', 'a')).toEqual(['a']);
     expect(selectionOwner()).toBeUndefined();
   });
 });

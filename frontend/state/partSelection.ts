@@ -1,6 +1,6 @@
 import { createEffect, createRoot, on } from 'solid-js';
 import type { PartKind } from '../routing/dayEdit';
-import { clickRow, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, selectionOwner, toggleRow } from '../ui/selection';
+import { clickRow, menuRows, NOTHING_SELECTED, selectIn, selectionOf, selectionOwner, toggleRow } from '../ui/selection';
 import { openTripId, selectedDayId } from './trip';
 
 /** What of the open trip is selected: a kind of its parts, or the recordings or the media on its days, by their id as text. */
@@ -33,13 +33,8 @@ export const clickPart = (kind: Selectable, order: readonly string[], id: string
 /** Adds the part to the selection or takes it away. */
 export const togglePart = (kind: Selectable, id: string): void => toggleRow(kind, id);
 
-/** The parts a part's menu acts on: the selection where it holds the part, else the part alone, which is then the selection. */
-export function partsOfMenu(kind: Selectable, id: string): string[] {
-  const rows = menuSelection(selectionOf(kind), id);
-  if (rows.size > 1) return [...rows];
-  clearPartSelection();
-  return [id];
-}
+/** The parts a part's menu acts on: the selection where it holds the part, else the part alone. */
+export const partsOfMenu = (kind: Selectable, id: string): string[] => menuRows(kind, id);
 
 /** The parts selected, where any are: their kind and ids. */
 export function selectedParts(): { kind: Selectable; ids: string[] } | undefined {

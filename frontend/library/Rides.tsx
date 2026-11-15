@@ -27,7 +27,7 @@ import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { Pad } from '../ui/Pad';
 import { pickFiles } from '../ui/pickFile';
-import { clickRow, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, toggleRow } from '../ui/selection';
+import { clickRow, menuRows, NOTHING_SELECTED, selectIn, selectionOf, toggleRow } from '../ui/selection';
 import { autoname } from './autoname';
 import { sourceOf } from './folderImport';
 import { addRides } from './importActions';
@@ -134,9 +134,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
   document.addEventListener('keydown', onKey);
   onCleanup(() => document.removeEventListener('keydown', onKey));
   const items = (ride: Ride): MenuItem[] => {
-    const ids = menuSelection(selectionOf(RIDES), String(ride.id));
-    selectIn(RIDES, ids);
-    const chosen = ridesAmong(ids);
+    const chosen = ridesAmong(new Set(menuRows(RIDES, String(ride.id))));
     const several = chosen.length > 1;
     const [only, ...more] = ride.days;
     return [
