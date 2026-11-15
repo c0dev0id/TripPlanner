@@ -395,7 +395,8 @@
   grows, and it is said above the rides how many were kept and how many were there already. A
   click or tap opens a ride as a recording on a day is opened: whole on the map, with
   its figures, its line coloured by a measure and its charts, without a day to be on;
-  a click on the opened one closes it. Cmd or Ctrl with a click selects a ride, Shift a
+  a click on the opened one closes it. Cmd or Ctrl with a click selects a ride, and the
+  first such click also the ride opened by the click before it; Shift a
   run, its pad adds it or takes it away; a day's or a month's heading selects all its
   rides. The map draws the
   selected rides, each in a colour its row shows, and brings them into view, so that

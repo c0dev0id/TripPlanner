@@ -65,6 +65,26 @@ describe('clicks on the rows of a list', () => {
     expect(selected()).toEqual(['s7', 's8', 's9']);
   });
 
+  it('start a Cmd or Ctrl selection with the row a plain click opened before', () => {
+    expect(click('s3', cmd)).toBe(true);
+    expect(selected()).toEqual(['s1', 's3']);
+    click('s5', ctrl);
+    expect(selected()).toEqual(['s1', 's3', 's5']);
+  });
+
+  it('start a Cmd selection with the row alone after a pad, a selecting click, or the same row', () => {
+    toggleRow('sections', 's2');
+    toggleRow('sections', 's2');
+    click('s4', cmd);
+    expect(selected()).toEqual(['s4']);
+    click('s4', cmd);
+    click('s6', cmd);
+    expect(selected()).toEqual(['s6']);
+    click('s7');
+    click('s7', cmd);
+    expect(selected()).toEqual(['s7']);
+  });
+
   it('let go of what another list held, and start no run from its row', () => {
     click('s2', cmd);
     expect(clickRow('routes', ['r1', 'r2', 'r3'], 'r3', shift)).toBe(true);

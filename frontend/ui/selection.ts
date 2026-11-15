@@ -36,8 +36,8 @@ export const menuSelection = <K>(selection: Selection<K>, key: K): Selection<K> 
  */
 const [held, setHeld] = createSignal<{ owner: string; rows: Selection<string> }>();
 
-/** The row clicked last, in whichever list: where a Shift-click in that list selects from. Nothing shows it. */
-let clicked: { owner: string; key: string } | undefined;
+/** The row clicked last, in whichever list, and whether by a plain click: where a Shift-click in that list selects from, and what a Cmd-click there starts a selection with. Nothing shows it. */
+let clicked: { owner: string; key: string; plain: boolean } | undefined;
 
 /** The list that holds the selection; none while nothing is selected. */
 export const selectionOwner = (): string | undefined => held()?.owner;
@@ -56,20 +56,25 @@ export const selects = (click: Pick<MouseEvent, 'metaKey' | 'ctrlKey' | 'shiftKe
 
 /**
  * A click on the row `key` of the list `owner`, whose rows are in `order`. With Cmd, Ctrl
- * or Shift held it selects, a Shift run starting at the row clicked last; without, it
- * lets go of whatever is selected. Either way the row is the one clicked last. Whether
- * it selected: a click that did not is left to open its row.
+ * or Shift held it selects, a Shift run starting at the row clicked last; a Cmd or Ctrl
+ * click that starts a selection takes in the row a plain click opened last, as a file
+ * manager does. Without, it lets go of whatever is selected. Either way the row is the
+ * one clicked last. Whether it selected: a click that did not is left to open its row.
  */
 export function clickRow(owner: string, order: readonly string[], key: string, click: Pick<MouseEvent, 'metaKey' | 'ctrlKey' | 'shiftKey'>): boolean {
-  const anchor = clicked?.owner === owner ? clicked.key : undefined;
-  clicked = { owner, key };
-  if (selects(click)) selectIn(owner, clickSelect(selectionOf(owner), order, key, click, anchor));
-  else setHeld(undefined);
-  return selects(click);
+  const last = clicked?.owner === owner ? clicked : undefined;
+  clicked = { owner, key, plain: !selects(click) };
+  if (!selects(click)) {
+    setHeld(undefined);
+    return false;
+  }
+  const opened = !click.shiftKey && last?.plain && last.key !== key && order.includes(last.key) && selectionOf(owner).size === 0;
+  selectIn(owner, clickSelect(opened ? new Set([last.key]) : selectionOf(owner), order, key, click, last?.key));
+  return true;
 }
 
 /** Adds the row to the selection of the list `owner` or takes it away, as its pad does; the row is the one clicked last. */
 export function toggleRow(owner: string, key: string): void {
-  clicked = { owner, key };
+  clicked = { owner, key, plain: false };
   selectIn(owner, toggled(selectionOf(owner), key));
 }

@@ -165,7 +165,11 @@ entries at the end of their section.
   before. Every click now leaves its row as the anchor: a plain one lets go of the
   selection and keeps the row as an anchor without selecting it, so that Delete and
   the menu still do not act on what was merely opened; a Shift-click selects from the
-  anchor to its row, drops everything else and moves the anchor there.
+  anchor to its row, drops everything else and moves the anchor there. A Cmd or Ctrl
+  click that starts a selection takes in the row a plain click opened just before, as
+  a file manager does: a click on one ride and a Cmd-click on the next selected the
+  next alone, while the opened row looked selected, and the menu then refused to
+  merge what the user saw as two.
 - **Rows are selected by a pad on touch screens.** A touch screen has no Cmd or Shift, and
   its long press already opens the menu, so a selectable row (a trip of a folder, a route
   of the duplicates report) has a pad drawn as a day's or a route's drag grip: a tap on it
