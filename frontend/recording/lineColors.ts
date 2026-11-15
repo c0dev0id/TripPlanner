@@ -21,6 +21,9 @@ const SIGNED = ['#2166ac', '#4393c3', '#74add1', '#abd9e9', '#bdbdbd', '#fdae61'
 /** Where a point has no value. */
 export const NO_VALUE = '#adb5bd';
 
+/** What a point of a line coloured by a difference is marked with where the other line has nothing to set against it: not overlapping, or without the value. The map draws it dimmed. */
+export const DIMMED = 'dimmed';
+
 /** The range a measure's values spread over and its colours from the low end to the high end. */
 export interface Scale {
   from: number;
@@ -54,10 +57,15 @@ export function scaleOf(coloring: Exclude<Coloring, 'surface'>, values: readonly
       return { from: -reach, to: reach, colors: SIGNED };
     }
     case 'lean':
-    case 'leanDifference':
-    case 'speedDifference': {
+    case 'leanDifference': {
       const reach = widest(5, 10);
       return { from: -reach, to: reach, colors: SIGNED };
+    }
+    case 'speedDifference': {
+      // As wide as the differences there are, in whole km/h below 10 and in fives above, so that small ones still show.
+      const reach = percentile(present.map(Math.abs), 0.98);
+      const to = Math.max(1, reach < 10 ? up(reach, 1) : up(reach, 5));
+      return { from: -to, to, colors: SIGNED };
     }
     case 'offset':
       return { from: 0, to: Math.max(100, up(percentile(present, 0.98), 50)), colors: RISING };

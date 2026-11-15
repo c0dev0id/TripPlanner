@@ -6,7 +6,7 @@ import { comparedLines } from '../state/duplicates';
 import { ridesOnMap } from '../state/rides';
 import { stashLines, stashWaypoints } from '../state/stash';
 import { routePositions } from '../routing/legs';
-import { colorRuns } from '../recording/lineColors';
+import { colorRuns, DIMMED, NO_VALUE } from '../recording/lineColors';
 import { mapTab, tripShown } from '../state/library';
 import { isRoutePinned, pinnedAsideLines } from '../state/pins';
 import { keepsView } from '../state/place';
@@ -150,7 +150,7 @@ function RecordingLines(props: { map: MapLibreMap }) {
     if (!o) return recordingFeatures([]);
     const colors = openedLineColors();
     const id = o.recording.id;
-    return recordingFeatures(colors ? colorRuns(o.track.points, colors).map((run) => ({ id, ...run })) : [{ id, points: o.track.points, color: recordingColor(o.recording) }]);
+    return recordingFeatures(colors ? colorRuns(o.track.points, colors).map((run) => ({ id, points: run.points, color: run.color === DIMMED ? NO_VALUE : run.color, dimmed: run.color === DIMMED })) : [{ id, points: o.track.points, color: recordingColor(o.recording) }]);
   });
   createEffect(() => props.map.getSource<GeoJSONSource>(RECORDINGS_SOURCE)?.setData(others()));
   createEffect(() => props.map.getSource<GeoJSONSource>(OPENED_RECORDING_SOURCE)?.setData(openedLine()));

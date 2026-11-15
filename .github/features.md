@@ -499,8 +499,11 @@
   at most, and follows the route as it is edited. Against another recording it also
   says the time ahead or behind at the end and the speed difference on average, at the
   same places along the way. The focus offers the distance from the other, and speed
-  and lean against another recording, each charted along the way. The point picked
-  says how it differs there.
+  and lean against another recording, each charted along the way. Focused on a
+  difference, the line is coloured where the two run together and both have the value,
+  and dimmed elsewhere; the speed against the other is coloured on a scale as wide as
+  its differences there, in whole km/h below 10. The point picked says how it differs
+  there.
 - Additional media on a day: files and links kept with it, listed in the day's pane under
   their own heading after Planning (the day's routes and stops) and Recordings. Files
   are picked, as many at once as wanted, and may be of any kind; a link is given a name

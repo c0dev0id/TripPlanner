@@ -1016,6 +1016,12 @@ entries at the end of their section.
   it. The point's popup follows the mouse along the line, so that reading the line needs
   no click, and a click pins it, as a click in the chart does, which also moves the map
   to the point.
+- **A difference is drawn only where there is one.** Where the other line was not on
+  the same way, or had no value, a difference was drawn in the grey of a missing value,
+  as loud as the rest, and the speed scale started at 10 km/h either way, so that small
+  differences all came out grey. The line is now dimmed where there is nothing to set
+  against it, and the speed difference's scale is as wide as its values: whole km/h
+  below 10, fives above.
 - **A recording has one focus.** The colour of its line and the chart along the bottom
   were chosen apart, with tabs for every chart the file allowed, so that the line could
   show one thing and the chart another. One select, Focus, now picks both: the line is

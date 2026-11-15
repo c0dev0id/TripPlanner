@@ -1,5 +1,5 @@
 import type { Feature, FeatureCollection, LineString, Point } from 'geojson';
-import type { LayerSpecification } from 'maplibre-gl';
+import type { ExpressionSpecification, LayerSpecification } from 'maplibre-gl';
 import type { LngLat } from '../model/trip';
 import { atZooms, lineAt } from './zoomSize';
 
@@ -11,6 +11,9 @@ import { atZooms, lineAt } from './zoomSize';
 
 export const RECORDINGS_SOURCE = 'recordings';
 export const OPENED_RECORDING_SOURCE = 'recording-opened';
+
+/** Whether a piece of a line is dimmed: one of a recording coloured by a difference where the other line has nothing to set against it. */
+const DIMMED: ExpressionSpecification = ['==', ['get', 'dimmed'], true];
 
 const SOURCES = [RECORDINGS_SOURCE, OPENED_RECORDING_SOURCE];
 
@@ -28,14 +31,14 @@ const lineLayers = (source: string, width: number, sharpUntil: number): LayerSpe
     type: 'line',
     source,
     layout: { 'line-join': 'round', 'line-cap': 'round' },
-    paint: { 'line-color': '#ffffff', 'line-width': atZooms((zoom) => lineAt(zoom, width, sharpUntil) + 2.5), 'line-opacity': 0.8 },
+    paint: { 'line-color': '#ffffff', 'line-width': atZooms((zoom) => lineAt(zoom, width, sharpUntil) + 2.5), 'line-opacity': ['case', DIMMED, 0.25, 0.8] },
   },
   {
     id: `${source}-line`,
     type: 'line',
     source,
     layout: { 'line-join': 'round', 'line-cap': 'round' },
-    paint: { 'line-color': ['get', 'color'], 'line-width': atZooms((zoom) => lineAt(zoom, width, sharpUntil)) },
+    paint: { 'line-color': ['get', 'color'], 'line-width': atZooms((zoom) => lineAt(zoom, width, sharpUntil)), 'line-opacity': ['case', DIMMED, 0.35, 1] },
   },
 ];
 
@@ -59,10 +62,10 @@ export function comparedLayers(width: number, sharpUntil: number): LayerSpecific
 export const dotFeatures = (positions: readonly LngLat[]): Feature<Point>[] => positions.map((coordinates) => ({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: coordinates as LngLat } }));
 
 /** Lines as features, each with its colour and an id: the recordings, a feature each or, coloured by a measure, a feature per piece of one colour, with the recording's id; or the routes compared, where `held` marks a ride held against a day's routes. */
-export function recordingFeatures(lines: readonly { id: number; points: readonly LngLat[]; color: string; held?: boolean }[]): FeatureCollection<LineString> {
+export function recordingFeatures(lines: readonly { id: number; points: readonly LngLat[]; color: string; held?: boolean; dimmed?: boolean }[]): FeatureCollection<LineString> {
   return {
     type: 'FeatureCollection',
-    features: lines.map(({ id, points, color, held = false }) => ({ type: 'Feature', properties: { id, color, held }, geometry: { type: 'LineString', coordinates: points as LngLat[] } })),
+    features: lines.map(({ id, points, color, held = false, dimmed = false }) => ({ type: 'Feature', properties: { id, color, held, dimmed }, geometry: { type: 'LineString', coordinates: points as LngLat[] } })),
   };
 }
 

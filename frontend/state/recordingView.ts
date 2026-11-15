@@ -3,7 +3,7 @@ import { createEffect, createMemo, createRoot, createSignal, on } from 'solid-js
 import type { KeptRide } from '../api';
 import { deltaToTrack, offsetsFrom, type Delta } from '../recording/delta';
 import { DIFFERENCE_FIGURES, FIGURES, METRICS } from '../recording/figures';
-import { colorAt, DIFFERENCE_SERIES, isDifference, scaleOf, surfaceColor, type Coloring, type Difference } from '../recording/lineColors';
+import { colorAt, DIFFERENCE_SERIES, DIMMED, isDifference, scaleOf, surfaceColor, type Coloring, type Difference } from '../recording/lineColors';
 import { measuresOf, type Measures } from '../recording/measures';
 import { trackSurfaces } from '../recording/surfaces';
 import type { RecordedTrack } from '../recording/track';
@@ -171,8 +171,9 @@ const view = createRoot(() => {
       const s = openedSurfaces();
       return Array.isArray(s) ? s.map(surfaceColor) : undefined;
     }
-    const shown = shownScale();
-    return shown && shown.values.map((v) => colorAt(shown.scale, v));
+    const [shown, focus] = [shownScale(), shownColoring()];
+    // A difference shows where the two lines run together and both have the value; the rest is dimmed.
+    return shown && shown.values.map((v) => (v === null && focus !== undefined && isDifference(focus) ? DIMMED : colorAt(shown.scale, v)));
   });
 
   // Another trip or day starts with none opened, as it starts with no route taken up; surfaces are matched for this page only.

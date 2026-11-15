@@ -16,6 +16,12 @@ describe('scaleOf', () => {
     expect(scaleOf('lean', [-2, 1])).toMatchObject({ from: -10, to: 10 });
   });
 
+  it('spreads speed differences as wide as they are, also when they are small', () => {
+    expect(scaleOf('speedDifference', [-2.5, 1, 3.2, null])).toMatchObject({ from: -4, to: 4 });
+    expect(scaleOf('speedDifference', [0, 0])).toMatchObject({ from: -1, to: 1 });
+    expect(scaleOf('speedDifference', [-12, 23])).toMatchObject({ from: -25, to: 25 });
+  });
+
   it('has no scale for a measure without values', () => {
     expect(scaleOf('altitude', [null, null])).toBeUndefined();
   });
