@@ -77,7 +77,7 @@ export function ExportDialog() {
           <fieldset>
             <legend>{t('Scope')}</legend>
             <label>
-              <input type="radio" name="scope" checked={scope() === 'trip'} onChange={() => setScope('trip')} /> {t('The whole trip')}
+              <input type="radio" name="scope" checked={scope() === 'trip'} onChange={() => setScope('trip')} /> {t('Entire trip')}
             </label>
             <Show when={part()}>
               {(p) => (
@@ -99,10 +99,10 @@ export function ExportDialog() {
           <fieldset>
             <legend>{t('Routes as')}</legend>
             <label>
-              <input type="radio" name="form" checked={options().form === 'tracks'} onChange={() => set('form', 'tracks')} /> {t('Tracks, the line as planned')}
+              <input type="radio" name="form" checked={options().form === 'tracks'} onChange={() => set('form', 'tracks')} /> {t('Tracks (the line exactly as planned)')}
             </label>
             <label>
-              <input type="radio" name="form" checked={options().form === 'routes'} onChange={() => set('form', 'routes')} /> {t('Routes of the points, for the device to route')}
+              <input type="radio" name="form" checked={options().form === 'routes'} onChange={() => set('form', 'routes')} /> {t('Routes (points only; the device calculates the way)')}
             </label>
           </fieldset>
           <label class="toggle">
@@ -127,7 +127,7 @@ export function ExportDialog() {
             </button>
           </div>
           <Show when={naming()}>
-            <NameForm placeholder={t('Name of the preset')} button={t('Save')} onSubmit={savePreset} onCancel={() => setNaming(false)} />
+            <NameForm placeholder={t('Preset name')} button={t('Save')} onSubmit={savePreset} onCancel={() => setNaming(false)} />
           </Show>
           <Show when={error()}>{(message) => <p class="error">{message()}</p>}</Show>
           <div class="row end">

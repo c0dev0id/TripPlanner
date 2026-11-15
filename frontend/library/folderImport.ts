@@ -210,7 +210,7 @@ export async function readPlannedDays(sources: readonly ImportSource[], planned:
       const source = sources[i]!;
       try {
         const read = await readDayParts(await source.open(), 'motorcycle');
-        if (read.routes.length === 0 && read.stops.length > 0) throw new Error(t('This file holds places and no route: add it to the folder for places.'));
+        if (read.routes.length === 0 && read.stops.length > 0) throw new Error(t('This file contains places but no route. Add it to Places instead.'));
         parts.push(read);
       } catch (error) {
         errors.push(`${source.path}: ${errorMessage(error)}`);

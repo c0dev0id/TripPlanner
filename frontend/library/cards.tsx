@@ -92,8 +92,8 @@ export function TripCard(props: {
   const held = createMemo(() => counted((outlineOf(props.trip.id) ?? []).reduce((sum, day) => sum + day.stops, 0), 'place'));
   const meta = () =>
     (props.trip.kind === 'collection'
-      ? [props.where, held(), counted(props.trip.dayCount, 'kind')]
-      : [props.where, counted(props.trip.dayCount, 'day'), props.trip.startsOn && t('from {date}', { date: dateText(props.trip.startsOn) }), props.trip.state === 'done' && t('done')]
+      ? [props.where, held(), counted(props.trip.dayCount, 'category')]
+      : [props.where, counted(props.trip.dayCount, 'day'), props.trip.startsOn && t('from {date}', { date: dateText(props.trip.startsOn) }), props.trip.state === 'done' && t('completed')]
     )
       .filter(Boolean)
       .join(' · ');

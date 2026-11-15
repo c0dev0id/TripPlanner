@@ -123,7 +123,7 @@ export async function readRouteFile(file: File): Promise<GpxContent> {
   if (/\.kmz$/i.test(file.name)) {
     // The KML of a KMZ lies at its top; what else it packs, icons and pictures, is left.
     const kmls = (await zipEntries(file)).filter((entry) => /\.kml$/i.test(entry.path)).sort((a, b) => a.path.split('/').length - b.path.split('/').length);
-    if (!kmls[0]) throw new Error(t('This KMZ file holds no KML.'));
+    if (!kmls[0]) throw new Error(t('This KMZ file contains no KML.'));
     return parseKml(await (await kmls[0].read()).text());
   }
   const text = await file.text();

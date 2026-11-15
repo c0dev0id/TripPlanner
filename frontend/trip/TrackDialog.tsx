@@ -13,9 +13,9 @@ import { routeLabelOf } from './labels';
 /** The two things the dialog does with a track; `tolerances` are how far the line may move, in metres. */
 const ACTIONS = {
   condense: {
-    title: t('Condense points'),
-    submit: t('Condense'),
-    intro: t('The track keeps the points that hold its line within the distance chosen.'),
+    title: t('Reduce points'),
+    submit: t('Reduce'),
+    intro: t('Points are kept so that the line stays within the chosen distance.'),
     field: t('Keep the line within'),
     tolerances: [5, 10, 25, 50, 100],
     initial: 10,
@@ -24,8 +24,8 @@ const ACTIONS = {
   convert: {
     title: t('Convert to route'),
     submit: t('Convert'),
-    intro: t('The route keeps a point where the track bends away by more than the distance chosen, and the routing follows the roads between them: the more points, the closer to the track.'),
-    field: t('Keep a point where the track bends away by'),
+    intro: t('A point is kept wherever the track deviates by more than the chosen distance, and routing follows the roads between the points. More points keep the route closer to the track.'),
+    field: t('Keep a point where the track deviates by'),
     tolerances: [50, 100, 250, 500, 1000],
     initial: 250,
     run: convertTrackToRoute,
@@ -63,7 +63,7 @@ export function TrackDialog() {
       {() => (
         <>
           <p class="muted">
-            {action().intro} {t('The track has {points} now.', { points: counted(tolerances().length, 'point') })}
+            {action().intro} {t('The track now has {points}.', { points: counted(tolerances().length, 'point') })}
           </p>
           <label>
             {action().field}

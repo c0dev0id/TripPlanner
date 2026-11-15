@@ -215,6 +215,6 @@ describe('a file of routes', () => {
   it('is read from a KMZ, whose KML lies at its top', async () => {
     const parts = await readDayParts(new File([stored('doc.kml', kml)], 'Vosges.kmz'), 'motorcycle');
     expect(parts.routes.map((route) => [route.kind, route.name])).toEqual([['track', 'Vosges']]);
-    await expect(readRouteFile(new File([stored('readme.txt', 'none')], 'empty.kmz'))).rejects.toThrow('holds no KML');
+    await expect(readRouteFile(new File([stored('readme.txt', 'none')], 'empty.kmz'))).rejects.toThrow('contains no KML');
   });
 });

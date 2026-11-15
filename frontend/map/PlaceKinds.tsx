@@ -22,9 +22,9 @@ const [edited, setEdited] = createSignal<EditedKind>();
 
 /** What a kind's switch says the map shows of it. */
 const MODE_TEXT: Record<PlaceMode, string> = {
-  all: t('All on the map'),
+  all: t('Show all'),
   along: t('Along the route'),
-  none: t('Not on the map'),
+  none: t('Hidden'),
 };
 
 /** A dot in the colour of a kind of the user's own places. */
@@ -49,7 +49,7 @@ export function PlaceKindControls(props: EditedKind) {
           <EyeIcon />
         </Show>
       </IconButton>
-      <IconButton label={t('Settings of {name}', { name: props.name })} onClick={() => setEdited({ id: props.id, name: props.name })}>
+      <IconButton label={t('{name} settings', { name: props.name })} onClick={() => setEdited({ id: props.id, name: props.name })}>
         <GearIcon />
       </IconButton>
     </>
@@ -88,11 +88,11 @@ export function PlaceKindDialog() {
     void changePlaceKind(kind.id, reach, picked === kind.id ? undefined : picked);
   };
   return (
-    <EditDialog label={t('Settings of a kind of place')} value={edited()} title={(kind) => kind.name} onClose={() => setEdited(undefined)} onSubmit={save}>
+    <EditDialog label={t('Place category settings')} value={edited()} title={(kind) => kind.name} onClose={() => setEdited(undefined)} onSubmit={save}>
       {(kind) => (
         <>
           <label>
-            {t('Along a route: how far from it, in km')}
+            {t('Distance from route (km)')}
             <input type="number" name="reach" min={0.1} max={MAX_KM} step={0.1} value={placeReachM(kind.id) / 1000} />
           </label>
           <fieldset class="choices place-icons">
@@ -101,7 +101,7 @@ export function PlaceKindDialog() {
               <label>
                 <input type="radio" name="icon" value="" checked={placeBadge(kind.id) === undefined} />
                 <KindDot id={kind.id} />
-                {t("The list's dot")}
+                {t("Colored dot")}
               </label>
             </Show>
             <For each={POI_CATEGORIES}>

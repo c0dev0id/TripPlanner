@@ -90,10 +90,10 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
     return `${trip?.name ?? ''} › ${!day ? '' : trip?.kind === 'collection' ? day.name : dayLabel(day, index)}`;
   };
   /** The days a ride is on, or that it is on none. */
-  const whereOf = (ride: Ride): string => (ride.days.length > 0 ? ride.days.map(dayText).join(', ') : t('On no day yet'));
+  const whereOf = (ride: Ride): string => (ride.days.length > 0 ? ride.days.map(dayText).join(', ') : t('Not assigned to a day'));
   const deleteAsked = async (rides: readonly Ride[]) => {
     const [first] = rides;
-    const question = rides.length > 1 ? t('Delete {what} with their files, from every day they are on?', { what: counted(rides.length, 'ride') }) : t('Delete the ride “{name}” with its file, from every day it is on?', { name: first!.name });
+    const question = rides.length > 1 ? t('Delete {what} and their files? They are removed from every day they are assigned to.', { what: counted(rides.length, 'ride') }) : t('Delete the ride “{name}” and its file? It is removed from every day it is assigned to.', { name: first!.name });
     if (!(await askConfirmation(question, t('Delete')))) return;
     selectIn(RIDES, NOTHING_SELECTED);
     await changeRides(async () => void (await Promise.all(rides.map((ride) => deleteRide(ride.id)))));
@@ -109,9 +109,9 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       const ids = rides.map((ride) => ride.id);
       const odd = (await rideJoints(ids)).filter(isOddJoint);
       const question = [
-        t('Merge {what} into one? It takes the place of their files.', { what: counted(rides.length, 'recording') }),
-        ...odd.map((joint) => t('Before the recording of {time} lie {pause} and {distance}.', { time: momentText(joint.startedAt!), pause: durationText(joint.pauseS ?? 0), distance: distanceText(joint.distanceM) })),
-        ...(odd.some((joint) => joint.distanceM > FAR_APART_M) ? [t('The merged recording draws a straight line over such a way.')] : []),
+        t('Merge {what} into one? It replaces the original files.', { what: counted(rides.length, 'recording') }),
+        ...odd.map((joint) => t('Gap before the recording at {time}: {pause} and {distance}.', { time: momentText(joint.startedAt!), pause: durationText(joint.pauseS ?? 0), distance: distanceText(joint.distanceM) })),
+        ...(odd.some((joint) => joint.distanceM > FAR_APART_M) ? [t('The merged recording draws a straight line across such a gap.')] : []),
       ].join(' ');
       if (!(await askConfirmation(question, t('Merge')))) return { text: '', errors: [] };
       const merged = await mergeRides(ids);
@@ -142,18 +142,18 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       ...(several ? pinItems((pinned) => pinRides(chosen.map((kept) => kept.id), pinned)) : []),
       { label: t('Merge'), disabled: !several || !followOneAnother(chosen), run: () => void mergeAsked(chosen) },
       only && more.length > 0 && !several
-        ? { label: t('Open location'), disabled: fetchingTrip(), items: ride.days.map((on) => ({ label: dayText(on), run: () => props.onOpen(on.tripId, on.dayId) })) }
-        : { label: t('Open location'), disabled: several || !only || fetchingTrip(), run: () => props.onOpen(only!.tripId, only!.dayId) },
+        ? { label: t('Show in trip'), disabled: fetchingTrip(), items: ride.days.map((on) => ({ label: dayText(on), run: () => props.onOpen(on.tripId, on.dayId) })) }
+        : { label: t('Show in trip'), disabled: several || !only || fetchingTrip(), run: () => props.onOpen(only!.tripId, only!.dayId) },
       { label: t('Delete'), run: () => void deleteAsked(chosen) },
     ];
   };
   /** Looks through the user's trips for the days the rides on no day may be of, to be gone through above the rides. */
   const suggest = () =>
     runRidesJob(async (onProgress) => {
-      onProgress(t('Looking through your trips for the days your rides may be of…'));
-      const found = await suggestRideDays(-new Date().getTimezoneOffset(), (done, of) => onProgress(t('Looked through {done} of {n} days of your trips…', { done, n: of })));
+      onProgress(t('Searching your trips for days that match your rides…'));
+      const found = await suggestRideDays(-new Date().getTimezoneOffset(), (done, of) => onProgress(t('Checked {done} of {n} trip days…', { done, n: of })));
       setSuggestions(found.sort(likelierFirst));
-      return { text: found.length > 0 ? '' : t('No ride that is on no day began on the date of a trip’s day or ran along its routes.'), errors: [] };
+      return { text: found.length > 0 ? '' : t('No unassigned rides match the date or routes of a trip day.'), errors: [] };
     }, false);
   const ridesOf = (suggestion: Suggestion): Ride[] => allRides().filter((ride) => suggestion.rideIds.includes(ride.id));
   /** What is suggested, and why: the riding by its date or its one ride's name, how many files and how far, and what it has in common with the day. */
@@ -193,7 +193,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
             {counted(listed().length, 'ride')} · {distanceText(totalDistance(listed()))}
           </Show>
         </span>
-        <IconButton label={t('Suggest days for the rides on no day')} onClick={() => void suggest()}>
+        <IconButton label={t('Suggest days for unassigned rides')} onClick={() => void suggest()}>
           <SearchIcon />
         </IconButton>
         <IconButton label={t('Add rides…')} onClick={() => void addPicked()}>
@@ -214,9 +214,9 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       </Show>
       <Show when={suggestions().length > 0}>
         <div class="row">
-          <h4 class="grow">{t('{what} to go through', { what: counted(suggestions().length, 'suggestion') })}</h4>
+          <h4 class="grow">{t('{what} to review', { what: counted(suggestions().length, 'suggestion') })}</h4>
           <IconButton
-            label={t('Put the suggestions away')}
+            label={t('Dismiss suggestions')}
             onClick={() => {
               setSuggestions([]);
               compareWithDay([]);
@@ -236,10 +236,10 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
                       <span class="muted detail">{suggestionDetail(suggestion)}</span>
                     </span>
                   </button>
-                  <IconButton label={t('Put on this day')} onClick={() => settle(suggestion, true)}>
+                  <IconButton label={t('Assign to this day')} onClick={() => settle(suggestion, true)}>
                     <CheckIcon />
                   </IconButton>
-                  <IconButton label={t('Not of this day')} onClick={() => settle(suggestion, false)}>
+                  <IconButton label={t('Reject suggestion')} onClick={() => settle(suggestion, false)}>
                     <CloseIcon />
                   </IconButton>
                 </div>
@@ -251,11 +251,11 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       <Show when={ridesLoading()}>
         <p class="muted row">
           <span class="spinner" />
-          {t('Reading the rides…')}
+          {t('Loading rides…')}
         </p>
       </Show>
       <Show when={!ridesLoading() && !ridesError() && allRides().length === 0}>
-        <p class="muted">{t('No rides yet: drop the GPX files of your recordings here or add them with the plus. A recording added to a day is listed here too.')}</p>
+        <p class="muted">{t('No rides yet. Drop the GPX files of your recordings here or add them with the plus button. Recordings added to a day are listed here too.')}</p>
       </Show>
       <Show when={allRides().length > 0 && listed().length === 0}>
         <p class="muted">{t('Nothing found.')}</p>
@@ -277,7 +277,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
                 {(month) => (
                   <>
                     <h4>
-                      <button type="button" class="text grow" title={t('Select the rides of this month')} onClick={() => select(month.days.flatMap((day) => day.rides))}>
+                      <button type="button" class="text grow" title={t('Select this month\'s rides')} onClick={() => select(month.days.flatMap((day) => day.rides))}>
                         <span class="grow">{monthText(month.month)}</span>
                         <span class="muted detail">
                           {counted(month.days.length, 'day')} · {distanceText(month.distanceM)}
@@ -300,7 +300,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       <NameDialog
         title={t('Rename recording')}
         open={renamed() !== undefined}
-        placeholder={t('Name of the recording')}
+        placeholder={t('Recording name')}
         initial={renamed()?.name}
         onClose={() => setRenamed(undefined)}
         onSubmit={(name) => void changeRides(() => renameRide(renamed()!.id, name))}
@@ -334,7 +334,7 @@ function RidingDayCard(props: {
   };
   return (
     <li class="card">
-      <button type="button" class="text riding-day" title={t('Select the rides of this day')} onClick={props.onSelectDay}>
+      <button type="button" class="text riding-day" title={t('Select this day\'s rides')} onClick={props.onSelectDay}>
         <span class="grow">{props.heading}</span>
         <span class="muted detail">{distanceText(props.distanceM)}</span>
       </button>
@@ -380,18 +380,18 @@ function SectionLine() {
       <Match when={section()}>
         {(line) => (
           <div class="row section-line">
-            <span class="grow">{t('Rides of a section of {distance}', { distance: distanceText(lineLength(line())) })}</span>
-            <IconButton label={t('Let go of the section')} onClick={clearSection}>
+            <span class="grow">{t('Rides on a {distance} section', { distance: distanceText(lineLength(line())) })}</span>
+            <IconButton label={t('Clear section')} onClick={clearSection}>
               <CloseIcon />
             </IconButton>
           </div>
         )}
       </Match>
       <Match when={sectionStart()}>
-        <p class="muted hint">{t('Cmd-click the other end of the section on the ride.')}</p>
+        <p class="muted hint">{t('Cmd-click the ride to set the other end of the section.')}</p>
       </Match>
       <Match when={opened() && opened()!.recording.dayId === undefined}>
-        <p class="muted hint">{t('Cmd-click two points on the ride to find the rides of that section.')}</p>
+        <p class="muted hint">{t('Cmd-click two points on the ride to find all rides on that section.')}</p>
       </Match>
     </Switch>
   );

@@ -33,7 +33,7 @@ async function post(url: string, body: unknown, timeoutMs: number, fetchFn: type
   try {
     return await response.json();
   } catch {
-    throw new Error(t('The routing server answered with status {status}.', { status: response.status }));
+    throw new Error(t('The routing server responded with status {status}.', { status: response.status }));
   }
 }
 
@@ -57,7 +57,7 @@ export function routeRequest(leg: LegRequest) {
 
 /** The trip's polyline6 shape, length and riding time, or throws with the server's message. */
 export function parseRouteResponse(data: unknown): RoutedLeg {
-  if (typeof data !== 'object' || data === null) throw new Error(t('Unexpected answer from the routing server.'));
+  if (typeof data !== 'object' || data === null) throw new Error(t('Unexpected response from the routing server.'));
   const response = data as { error?: unknown; error_code?: unknown; trip?: { summary?: { length?: unknown; time?: unknown }; legs?: { shape?: unknown }[] } };
   const shape = response.trip?.legs?.[0]?.shape;
   if (typeof shape === 'string') {

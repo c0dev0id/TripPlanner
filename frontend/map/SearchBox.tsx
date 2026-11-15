@@ -120,7 +120,7 @@ export function SearchBox(props: { map: MapLibreMap }) {
           }}
         />
         <Show when={query() || shown()}>
-          <button type="button" class="icon" title={t('Clear the search and its pin')} aria-label={t('Clear the search')} onClick={clear}>
+          <button type="button" class="icon" title={t('Clear search and pin')} aria-label={t('Clear search')} onClick={clear}>
             <CloseIcon />
           </button>
         </Show>

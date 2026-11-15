@@ -32,8 +32,8 @@ describe('readRecording', () => {
 
   it('refuses a file that is no single track', () => {
     const gpx = (inner: string) => `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">${inner}</gpx>`;
-    expect(() => readRecording(gpx('<trk/><trk/>'))).toThrow('one track');
-    expect(() => readRecording(gpx('<trk/><rte/>'))).toThrow('one track');
+    expect(() => readRecording(gpx('<trk/><trk/>'))).toThrow('single track');
+    expect(() => readRecording(gpx('<trk/><rte/>'))).toThrow('single track');
     expect(() => readRecording('<kml/>')).toThrow('not a GPX');
   });
 });

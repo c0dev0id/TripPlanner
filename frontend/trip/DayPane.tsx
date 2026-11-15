@@ -31,7 +31,7 @@ export function DayPane() {
         /** The day `by` days on from the one shown, where there is one. */
         const step = (by: number) => openTrip()!.days[openTrip()!.days.indexOf(shown()) + by];
         const detail = () => dayDetail(openTrip()!.kind, { date: shown().date, routes: shown().routes.length, stops: shown().stops.length, recordings: recordingsOf(shown().id).length, media: mediaOf(shown().id).length, distanceM: distance() }, isPlaceList(openTripId()));
-        const neighboursLabel = () => t(showNeighbours() ? 'Hide the neighbouring days on the map' : 'Show the neighbouring days on the map, dimmed');
+        const neighboursLabel = () => t(showNeighbours() ? 'Hide adjacent days' : 'Show adjacent days (dimmed)');
         return (
           <SidePane
             label={label()}
@@ -40,7 +40,7 @@ export function DayPane() {
               <>
                 <span class="day-title">
                   <span class="day-step">
-                    <IconButton label={t(collection() ? 'The section before' : 'The day before')} disabled={!step(-1)} onClick={() => selectDay(step(-1)!.id)}>
+                    <IconButton label={t(collection() ? 'Previous section' : 'Previous day')} disabled={!step(-1)} onClick={() => selectDay(step(-1)!.id)}>
                       <ChevronIcon />
                     </IconButton>
                   </span>
@@ -51,7 +51,7 @@ export function DayPane() {
                     <span class="muted detail">{detail()}</span>
                   </span>
                   <span class="day-step">
-                    <IconButton label={t(collection() ? 'The section after' : 'The day after')} disabled={!step(1)} onClick={() => selectDay(step(1)!.id)}>
+                    <IconButton label={t(collection() ? 'Next section' : 'Next day')} disabled={!step(1)} onClick={() => selectDay(step(1)!.id)}>
                       <ChevronIcon />
                     </IconButton>
                   </span>

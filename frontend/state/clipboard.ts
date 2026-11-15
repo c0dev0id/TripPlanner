@@ -5,6 +5,7 @@ import { parseGpx } from '../gpx/gpx';
 import { gpxToDayParts } from '../gpx/import';
 import { newId, type Day, type Stop } from '../model/trip';
 import { copiedRoute, defaultProfile, removeParts, type CopiedRoute, type PartKind } from '../routing/dayEdit';
+import { counted } from '../ui/format';
 import { askConfirmation } from '../ui/confirm';
 import type { MenuItem } from '../ui/menu';
 import { flushSave } from './autosave';
@@ -122,16 +123,15 @@ function recordingAsRoute(dayId: string, name: string, gpx: string): CopiedRoute
   return routes.map((route) => ({ route: { ...route, name }, stops: [], from: { date: null, name: '' } }));
 }
 
-/** What a paste menu item says it pastes: Paste route “Loop”, Paste 3 routes, Paste stop “Café”. */
+/** What a paste menu item says it pastes, by kind and number and never by name, which may be long: Paste 1 route, Paste 3 stops. */
 function pasteLabel(copied: Clip): string {
-  const of = (named: string, unnamed: string, several: string, names: string[]) =>
-    names.length > 1 ? t(several, { n: names.length }) : names[0] ? t(named, { name: names[0] }) : t(unnamed);
+  const of = (n: number, noun: string) => t('Paste {what}', { what: counted(n, noun) });
   if ('library' in copied) return t('Paste');
-  if ('recordings' in copied) return of('Paste recording “{name}”', 'Paste recording', 'Paste {n} recordings', copied.recordings.map((r) => r.name));
-  if ('media' in copied) return of('Paste “{name}”', 'Paste file', 'Paste {n} files and links', copied.media.names);
-  if ('days' in copied) return of('Paste day “{name}”', 'Paste day', 'Paste {n} days', copied.days.map((d) => d.name));
-  if ('stops' in copied) return of('Paste stop “{name}”', 'Paste stop', 'Paste {n} stops', copied.stops.map((s) => s.name));
-  return of('Paste route “{name}”', 'Paste route', 'Paste {n} routes', copied.routes.map((c) => c.route.name));
+  if ('recordings' in copied) return of(copied.recordings.length, 'recording');
+  if ('media' in copied) return of(copied.media.names.length, 'attachment');
+  if ('days' in copied) return of(copied.days.length, 'day');
+  if ('stops' in copied) return of(copied.stops.length, 'stop');
+  return of(copied.routes.length, 'route');
 }
 
 /**
@@ -143,7 +143,7 @@ async function removeFromSource(cut: NonNullable<Clip['cut']>): Promise<void> {
     await flushSave();
     await changeTrip(cut.tripId, (trip) => removeParts(trip, cut.kind, cut.ids));
   } catch (error) {
-    await askConfirmation(t('The parts are pasted here, but could not be taken from the trip they were cut from: {error}', { error: errorMessage(error) }), t('OK'));
+    await askConfirmation(t('The items were pasted here but could not be removed from the trip they were cut from: {error}', { error: errorMessage(error) }), t('OK'));
   }
 }
 
@@ -193,7 +193,7 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
     const [only, ...more] = recordings;
     return [
       { label, run: shown(() => void pasteRecordings(id, recordings, cutFrom)) },
-      ...(only && more.length === 0 && cutFrom === undefined ? [{ label: t('Paste “{name}” as a route', { name: only.name }), run: shown(() => {
+      ...(only && more.length === 0 && cutFrom === undefined ? [{ label: t('Paste as route'), run: shown(() => {
               setClip(undefined);
               void recordingAction(id, async () => pasteRoutes(id, recordingAsRoute(id, only.name, await fetchRideGpx(only.id))));
             }) }] : []),

@@ -25,7 +25,7 @@ final class PasswordController
     {
         $user = $this->currentUser->get();
         if ($this->users->authenticate($user->email, (string) Json::field($request, 'current')) === null) {
-            return Json::error($response, 403, 'The current password is not right.');
+            return Json::error($response, 403, 'The current password is incorrect.');
         }
         $password = (string) Json::field($request, 'password');
         $error = PasswordResetController::passwordError($password, (string) Json::field($request, 'repeat'));

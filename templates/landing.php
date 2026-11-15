@@ -6,10 +6,10 @@
 <section class="card">
   <?php if ($open): ?>
     <h2><?= $this->t('Create your account') ?></h2>
-    <p><?= $this->t('Enter your e-mail address; a link to set your password comes by mail.') ?></p>
+    <p><?= $this->t('Enter your e-mail address and we\'ll send you a link to set your password.') ?></p>
   <?php else: ?>
     <h2><?= $this->t('Get an invitation') ?></h2>
-    <p><?= $this->t('Sign-up is by invitation. Leave your e-mail address and one comes when a place is free.') ?></p>
+    <p><?= $this->t('Sign-up is by invitation. Leave your e-mail address and you\'ll get an invitation as soon as a place is free.') ?></p>
   <?php endif ?>
   <?php if (isset($notice)): ?><p class="notice"><?= $this->e($notice) ?></p><?php endif ?>
   <?php if (isset($error)): ?><p class="error"><?= $this->e($error) ?></p><?php endif ?>

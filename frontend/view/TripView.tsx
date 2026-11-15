@@ -69,7 +69,7 @@ function Header(props: { trip: Trip }) {
           {t('Print')}
         </button>
       </div>
-      <p class="muted">{[days(), distance() > 0 && distanceText(distance()), span(), props.trip.state === 'done' && t('ridden')].filter(Boolean).join(' · ')}</p>
+      <p class="muted">{[days(), distance() > 0 && distanceText(distance()), span(), props.trip.state === 'done' && t('completed')].filter(Boolean).join(' · ')}</p>
       <Show when={props.trip.description}>
         <p class="text">{props.trip.description}</p>
       </Show>

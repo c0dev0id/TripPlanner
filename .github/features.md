@@ -122,7 +122,9 @@
   stops become points of it where the route passes closest, or at its start or end where
   the stop lies off it. What was cut waits, dimmed, and moves when it is pasted: within
   the trip it keeps its journal; into another trip or out of a collection it is copied
-  there and then taken from where it was. Every such step is undone with Ctrl+Z.
+  there and then taken from where it was. Every such step is undone with Ctrl+Z. The
+  Paste entry says what it pastes by kind and number ("Paste 1 route", "Paste 3
+  stops"), never by name.
 - The keys of a file manager do what the menus do: Ctrl or Cmd with X and C cut and
   copy what is selected, Delete or Backspace removes it after the menu's question, a
   recording by taking it off its day, and Ctrl or Cmd with V pastes. In the open trip they act on the selected days, routes,
@@ -272,7 +274,7 @@
   a kind of a list of places or, from the list's menu among the Places, into the list:
   there each goes under the kind its waypoint is of (`<type>`), else under "Places",
   and a place the list holds already is left out, as when the file is added to the
-  list. Keep as ride keeps a track among the rides with
+  list. Save as ride keeps a track among the rides with
   everything the file tells of it, its times, heights and sensor values: a track that
   is all its file holds of routes and tracks as the file itself, so that it is known as
   the ride the same file was kept as before, any other alone, without the file's
@@ -343,11 +345,11 @@
   to undo. A list of places has no Convert.
 - Lists of the user's own places, in the Places folder: a list is a collection, opened
   like a trip but with sections instead of days and no dates, times, journal, tools or
-  export; its sections are the kinds of its places ("Kind of place…" under New in
+  export; its sections are the kinds of its places ("Place category…" under New in
   the list's menu), and a kind lists its places by name. A place is a stop without the
   fields of a ride (arrival, pause, booking reference, optional): symbol, name,
   address, contact, website and notes, edited in the stop's dialog and copied, cut
-  and removed from its menu. "Add a place here…" in the map's menu adds
+  and removed from its menu. "Add place…" in the map's menu adds
   one to the kind shown. A waypoint's link becomes the place's website; where most
   waypoints of a file link to the same host, such as the directory the file was
   downloaded from, those links are left out and the place's own link is kept.
@@ -414,7 +416,7 @@
   to be pasted onto a day, opens a day it is on,
   in the tab its trip is in, and deletes it with its file, from every day it
   is on, after a question; with several selected it copies, pins, unpins, adds and
-  deletes all of them. A recording's menu on its day has "Show in the rides", which
+  deletes all of them. A recording's menu on its day has "Show in Recordings", which
   leaves the day's tab as its button does, keeping what it had open for the way back,
   and shows the rides with that ride opened, selected and in view.
 - Autoname, in a ride's menu: the selected rides are named after the places they began
@@ -442,7 +444,7 @@
   they are not of it, which is remembered, so that they are not suggested for it
   again. Either way the suggestion leaves the list. While it looks, it says how many
   days it has looked through.
-- Looking up a day's rides: *Look up recordings…* beside *Add recording…* on a trip's
+- Looking up a day's rides: *Find recordings…* beside *Add recording…* on a trip's
   day goes through all the user's rides and lists the days of riding that may be the
   day's: begun on its date, or ridden along its routes, or its routes along them, a
   part of the day being enough. The files of one date are judged together, so that a

@@ -19,9 +19,9 @@ export function Settings() {
       <section>
         <h3>{t('User')}</h3>
         <label>
-          {t('Language, in this browser')}
+          {t('Language (this browser)')}
           <select value={languageChoice} onChange={(e) => chooseLanguage(e.currentTarget.value as Language | 'auto')}>
-            <For each={LANGUAGES}>{(choice) => <option value={choice.value}>{choice.value === 'auto' ? t('As the browser says') : choice.label}</option>}</For>
+            <For each={LANGUAGES}>{(choice) => <option value={choice.value}>{choice.value === 'auto' ? t('Browser default') : choice.label}</option>}</For>
           </select>
         </label>
         <PasswordForm />
@@ -29,13 +29,13 @@ export function Settings() {
       <section>
         <h3>{t('Map')}</h3>
         <label>
-          {t('Colors, in this browser')}
+          {t('Color scheme (this browser)')}
           <select value={theme()} onChange={(e) => chooseTheme(e.currentTarget.value as Theme)}>
             <For each={THEMES}>{(choice) => <option value={choice.value}>{choice.label}</option>}</For>
           </select>
         </label>
         <label>
-          {t('Width of the lines of routes and recordings, in pixels')}
+          {t('Line width of routes and recordings (px)')}
           <input
             type="number"
             min={ROUTE_WIDTHS.min}
@@ -46,14 +46,14 @@ export function Settings() {
           />
         </label>
         <label>
-          {t('Colors of routes that have none of their own')}
+          {t('Default colors for routes')}
           <select value={routeColoring()} onChange={(e) => void changePreferences({ routeColoring: e.currentTarget.value === 'route' ? 'route' : 'day' })}>
             <option value="day">{t('One color for each day')}</option>
             <option value="route">{t('One color for each route')}</option>
           </select>
         </label>
         <label>
-          {t('My rides on the map: how opaque one ride is, in percent')}
+          {t('My rides on the map: opacity per ride (%)')}
           <input
             type="range"
             min={5}
@@ -95,7 +95,7 @@ function PasswordForm() {
         <input type="password" name="password" autocomplete="new-password" required />
       </label>
       <label>
-        {t('New password again')}
+        {t('Repeat new password')}
         <input type="password" name="repeat" autocomplete="new-password" required />
       </label>
       <Show when={request.error()}>{(error) => <p class="error">{error()}</p>}</Show>

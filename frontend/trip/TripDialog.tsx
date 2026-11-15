@@ -25,7 +25,7 @@ export function TripDialog() {
             </textarea>
           </label>
           <label class="toggle">
-            <input type="checkbox" name="done" checked={item.state === 'done'} /> {t('Done: the trip has been ridden')}
+            <input type="checkbox" name="done" checked={item.state === 'done'} /> {t('Trip completed')}
           </label>
         </>
       )}

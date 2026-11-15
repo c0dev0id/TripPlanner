@@ -48,7 +48,7 @@ share work; sharing between users is on the way.
   a ride with all its data.
 - **GPX in as well as out** — a file from the device or BaseCamp drops into a day: its
   routes, tracks and waypoints become routes and stops. KML and KMZ files are read too. A recorded track keeps every
-  point; condense it or turn it into a route from its menu.
+  point; reduce its points or turn it into a route from its menu.
 - **GPX export the way the device wants it** — the trip or a day, one file or one per
   day, routes as tracks or as points for the device to route, with or without the
   optional parts; the settings kept as named presets.
@@ -103,7 +103,7 @@ share work; sharing between users is on the way.
 5. The download icon on the trip's path heading exports GPX: pick the scope and the
    form, download.
 6. After the ride, the journal icon on a day, a stop or a route takes the notes and
-   photos, *Journal here…* in the map's menu puts one at a spot, and the trip's journal
+   photos, *Add journal entry…* in the map's menu puts one at a spot, and the trip's journal
    icon reads it all top down; its share icon opens the trip's page or shares it under a
    link.
 

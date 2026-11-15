@@ -243,7 +243,7 @@ final class TripDocuments
                 return null;
             }
             if (array_diff(array_column($from, 'kind'), [$into['kind']]) !== []) {
-                throw new InvalidDocument('Only trips of one kind can be merged.');
+                throw new InvalidDocument('Only trips of the same type can be merged.');
             }
             $fromDays = array_merge(...array_column($from, 'days'));
             ['days' => $days, 'joined' => $joined] = TripMerge::days($into['kind'], $into['days'], $fromDays);
@@ -322,7 +322,7 @@ final class TripDocuments
             + $this->countElsewhere('routes', 'day_id NOT IN (SELECT id FROM days WHERE trip_id = ?)', $tripId, $routeIds)
             + $this->countElsewhere('stops', 'day_id NOT IN (SELECT id FROM days WHERE trip_id = ?)', $tripId, $stopIds);
         if ($elsewhere > 0) {
-            throw new InvalidDocument('The document names parts of another trip.');
+            throw new InvalidDocument('The document references parts of another trip.');
         }
     }
 

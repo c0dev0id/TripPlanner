@@ -28,7 +28,7 @@ function trackIn(xml: string): Element {
   const root = parseXml(xml);
   if (root?.localName !== 'gpx') throw new Error(t('This is not a GPX file.'));
   const tracks = children(root, 'trk');
-  if (tracks.length !== 1 || children(root, 'rte').length > 0) throw new Error(t('A recording is a GPX file of one track.'));
+  if (tracks.length !== 1 || children(root, 'rte').length > 0) throw new Error(t('A recording must be a GPX file with a single track.'));
   return tracks[0]!;
 }
 

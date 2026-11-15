@@ -69,7 +69,7 @@ export function JournalDialog() {
       const target = journalTarget()!;
       const entry = await addEntry(target, text, chosen && (await prepareUpload(chosen)), journalSpot());
       form.reset();
-      if (!onTarget(entry, target) && entry.dayId) setPlaced(t('{file} was placed on {day} by the time it was taken.', { file: entry.file!.name, day: targetLabel({ dayId: entry.dayId }) }));
+      if (!onTarget(entry, target) && entry.dayId) setPlaced(t('{file} was assigned to {day} based on when it was taken.', { file: entry.file!.name, day: targetLabel({ dayId: entry.dayId }) }));
     });
   };
   const close = () => {
@@ -128,13 +128,13 @@ export function JournalDialog() {
                   </ForById>
                 </Show>
                 <Show when={(wholeTrip() ? overview() : list()).length === 0}>
-                  <p class="muted">{t('Nothing noted yet.')}</p>
+                  <p class="muted">{t('No entries yet.')}</p>
                 </Show>
               </div>
             <form ref={form} onSubmit={add}>
               <label>
                 {t('Note')}
-                <textarea name="text" rows={3} maxlength={20000} placeholder={t('What to remember')} />
+                <textarea name="text" rows={3} maxlength={20000} placeholder={t('Write a note…')} />
               </label>
               <label>
                 {t('File or photo')}
@@ -171,9 +171,9 @@ function EntryList(props: { entries: Entry[]; run: Runner }) {
 
 /** An entry: its file, when a photo was taken, its text, editable, where it stands, and its deletion; its requests run through the dialog's runner. */
 /** The labels of each entry's buttons. */
-const SHOW_ON_MAP = t('Show on the map');
-const EDIT_NOTE = t('Edit the note');
-const DELETE_ENTRY = t('Delete the entry');
+const SHOW_ON_MAP = t('Show on map');
+const EDIT_NOTE = t('Edit note');
+const DELETE_ENTRY = t('Delete entry');
 
 function EntryItem(props: { entry: Entry; run: Runner }) {
   const [editing, setEditing] = createSignal(false);

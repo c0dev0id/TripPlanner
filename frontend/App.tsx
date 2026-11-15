@@ -139,7 +139,7 @@ export function App() {
     <>
       <aside class="panel library-panel" classList={{ folded: panelFolded() }} data-drop-folder={dropFolder()} data-drop-rides={libraryTab() === 'recordings' ? '' : undefined}>
         <header class="panel-header">
-          <IconButton label={t(panelFolded() ? 'Show the library' : 'Fold the library away')} pressed={!panelFolded()} onClick={() => foldPanel(!panelFolded())}>
+          <IconButton label={t(panelFolded() ? 'Show library' : 'Hide library')} pressed={!panelFolded()} onClick={() => foldPanel(!panelFolded())}>
             <MenuIcon />
           </IconButton>
           <Show when={openTrip()}>

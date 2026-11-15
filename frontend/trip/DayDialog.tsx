@@ -25,7 +25,7 @@ export function DayDialog() {
         <>
           <label>
             {t('Name')}
-            <input name="name" value={d.name} maxlength={200} placeholder={t('Where the day goes')} />
+            <input name="name" value={d.name} maxlength={200} placeholder={t('Day name, e.g. the destination')} />
           </label>
           <label>
             {t('Date')}

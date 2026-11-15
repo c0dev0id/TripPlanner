@@ -39,7 +39,7 @@ function SheetHandle() {
   const tap = () => {
     if (!dragged) setSheet(sheet() === 'peek' ? 'half' : 'peek');
   };
-  const label = () => t('Drag to give the list more or less room; tap to fold it away or bring it back');
+  const label = () => t('Drag to resize the list; tap to collapse or expand it');
   return <button class="sheet-handle" title={label()} aria-label={label()} aria-expanded={sheet() !== 'peek'} onPointerDown={drag} onClick={tap} />;
 }
 

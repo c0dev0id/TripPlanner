@@ -30,7 +30,7 @@ final class ArchiveController
         try {
             $names = $this->archive->write($file, $this->currentUser->get()->id, array_map(intval(...), explode(',', $ids)), new DateTimeImmutable());
             if ($names === []) {
-                return Json::error($response, 404, 'No such trip.');
+                return Json::error($response, 404, 'Trip not found.');
             }
             $body = (new StreamFactory())->createStreamFromFile($file);
         } finally {

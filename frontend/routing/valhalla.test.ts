@@ -32,7 +32,7 @@ describe('parseRouteResponse', () => {
   it('throws with the server message, or a plain one', () => {
     expect(() => parseRouteResponse({ error_code: 442, error: 'No path could be found for input' })).toThrow('No path could be found for input');
     expect(() => parseRouteResponse({ trip: {} })).toThrow('Routing failed (no route).');
-    expect(() => parseRouteResponse('nope')).toThrow('Unexpected answer');
+    expect(() => parseRouteResponse('nope')).toThrow('Unexpected response');
   });
 });
 

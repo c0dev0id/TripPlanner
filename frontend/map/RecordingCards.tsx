@@ -93,8 +93,8 @@ const FOCUS_ICONS: Record<Coloring, () => JSX.Element> = {
 /** The round buttons over the map: the facts, each focus the recording allows, and closing it. A pressed focus is let go by its button. */
 function FocusButtons() {
   return (
-    <div class="recording-buttons" role="toolbar" aria-label={t('Figures of the recording')}>
-      <IconButton label={t('Facts of the recording')} pressed={infoShown()} onClick={() => setInfoShown(!infoShown())}>
+    <div class="recording-buttons" role="toolbar" aria-label={t('Recording tools')}>
+      <IconButton label={t('Recording details')} pressed={infoShown()} onClick={() => setInfoShown(!infoShown())}>
         <InfoIcon />
       </IconButton>
       <For each={colorings()}>
@@ -104,7 +104,7 @@ function FocusButtons() {
           </IconButton>
         )}
       </For>
-      <IconButton label={t('Close the figures')} onClick={() => openRecording(undefined)}>
+      <IconButton label={t('Close recording')} onClick={() => openRecording(undefined)}>
         <CloseIcon />
       </IconButton>
     </div>
@@ -137,10 +137,10 @@ function InfoCard(props: { opened: Opened; summary: Summary }) {
     return [
       [t('Distance'), distanceText(s.distanceM)],
       [t('Time'), textOf(s.durationS, durationText)],
-      [t('Moving'), textOf(s.movingS, durationText)],
+      [t('Moving time'), textOf(s.movingS, durationText)],
       [t('Average speed'), textOf(s.averageSpeed, speed.text)],
       [t('Top speed'), textOf(s.maxSpeed, speed.text)],
-      [t('Climb'), textOf(s.ascentM, altitude.text)],
+      [t('Ascent'), textOf(s.ascentM, altitude.text)],
       [t('Descent'), textOf(s.descentM, altitude.text)],
       [t('Altitude'), textOf(s.altitudeRange, ([low, high]) => `${altitude.text(low)} – ${altitude.text(high)}`)],
       [t('Lean'), textOf(s.leanRange, ([left, right]) => t('{left} to {right}', { left: lean.text(left), right: lean.text(right) }))],
@@ -149,7 +149,7 @@ function InfoCard(props: { opened: Opened; summary: Summary }) {
     ];
   });
   return (
-    <section class="map-card info-card" aria-label={t('Facts of the recording')}>
+    <section class="map-card info-card" aria-label={t('Recording details')}>
       <h3 class="row">
         <span class="swatch" style={{ background: recordingColor(props.opened.recording) }} />
         <span class="grow name">{props.opened.recording.name}</span>
@@ -170,11 +170,11 @@ function focusRows(opened: Opened, s: Summary, focus: Coloring): [string, string
       return [
         [t('Average speed'), textOf(s.averageSpeed, speed.text)],
         [t('Top speed'), textOf(s.maxSpeed, speed.text)],
-        [t('Moving'), textOf(s.movingS, durationText)],
+        [t('Moving time'), textOf(s.movingS, durationText)],
       ];
     case 'altitude':
       return [
-        [t('Climb'), textOf(s.ascentM, altitude.text)],
+        [t('Ascent'), textOf(s.ascentM, altitude.text)],
         [t('Descent'), textOf(s.descentM, altitude.text)],
         [t('Altitude'), textOf(s.altitudeRange, ([low, high]) => `${altitude.text(low)} – ${altitude.text(high)}`)],
       ];
@@ -186,8 +186,8 @@ function focusRows(opened: Opened, s: Summary, focus: Coloring): [string, string
       return [];
     case 'offset':
       return [
-        [t('Off it'), textOf(d?.offM, distanceText)],
-        [t('Farthest off'), textOf(d?.furthestM, distanceText)],
+        [t('Off course'), textOf(d?.offM, distanceText)],
+        [t('Max. deviation'), textOf(d?.furthestM, distanceText)],
       ];
     case 'speedDifference':
       return [
@@ -245,7 +245,7 @@ function SurfaceLegend(props: { opened: Opened }) {
         <p class="muted hint">{t('Matching the track to the roads…')}</p>
       </Match>
       <Match when={openedSurfaces() instanceof Error}>
-        <p class="error hint">{t('The roads could not be matched: {error}', { error: (openedSurfaces() as Error).message })}</p>
+        <p class="error hint">{t('Road matching failed: {error}', { error: (openedSurfaces() as Error).message })}</p>
       </Match>
       <Match when={rows().length > 0}>
         <ul class="legend surfaces">
@@ -326,7 +326,7 @@ function ChartCard(props: { opened: Opened }) {
   const along = () => !(spreadShown() && spread());
   return (
     <Show when={lines().length > 0}>
-      <section class="map-card chart-card" aria-label={t('Charts of the recording')}>
+      <section class="map-card chart-card" aria-label={t('Recording charts')}>
         <div class="row">
           <div class="row tabs" role="tablist">
             <button role="tab" aria-selected={along()} onClick={() => setSpreadShown(false)}>

@@ -41,7 +41,7 @@ async function send(method: string, url: string, body?: unknown, keepalive = fal
       .json()
       .then((data: { error?: unknown }) => (typeof data.error === 'string' ? data.error : undefined))
       .catch(() => undefined);
-    throw new ApiError(response.status, message ?? t('The server answered {status}.', { status: response.status }));
+    throw new ApiError(response.status, message ?? t('The server responded with status {status}.', { status: response.status }));
   }
   return response;
 }

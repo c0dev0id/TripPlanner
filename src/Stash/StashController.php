@@ -46,7 +46,7 @@ final class StashController
             return Json::error($response, 422, $invalid->getMessage());
         }
         $kept = $this->files->keep($this->currentUser->get()->id, (int) ($body['folderId'] ?? 0), $name, $gzip, new DateTimeImmutable());
-        return $kept === null ? Json::error($response, 404, 'No such folder in the Stash.') : Json::of($response->withStatus($kept['added'] ? 201 : 200), $kept['file']);
+        return $kept === null ? Json::error($response, 404, 'Stash folder not found.') : Json::of($response->withStatus($kept['added'] ? 201 : 200), $kept['file']);
     }
 
     /** Renames the file with `{name}`, or moves it into another folder of the Stash with `{folderId}`. */
@@ -55,19 +55,19 @@ final class StashController
         $userId = $this->currentUser->get()->id;
         $folderId = Json::field($request, 'folderId');
         if (is_int($folderId)) {
-            return $this->files->move($userId, (int) $args['file'], $folderId) ? $response->withStatus(204) : Json::error($response, 404, 'No such file, or no such folder in the Stash.');
+            return $this->files->move($userId, (int) $args['file'], $folderId) ? $response->withStatus(204) : Json::error($response, 404, 'File or Stash folder not found.');
         }
         $name = Name::of(Json::field($request, 'name'));
         if ($name === null) {
             return Json::error($response, 422, 'A file needs a name of up to 200 characters.');
         }
-        return $this->files->rename($userId, (int) $args['file'], $name) ? $response->withStatus(204) : Json::error($response, 404, 'No such file.');
+        return $this->files->rename($userId, (int) $args['file'], $name) ? $response->withStatus(204) : Json::error($response, 404, 'File not found.');
     }
 
     public function delete(Request $request, Response $response, array $args): Response
     {
         $deleted = $this->files->delete($this->currentUser->get()->id, (int) $args['file']);
-        return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'No such file.');
+        return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'File not found.');
     }
 
     /** Renames a route or a track of the file, by its kind and its place among the file's routes or tracks, with `{name}`. */
@@ -78,7 +78,7 @@ final class StashController
             return Json::error($response, 422, 'A route needs a name of up to 200 characters.');
         }
         $renamed = $this->files->renameItem($this->currentUser->get()->id, (int) $args['file'], $args['kind'], (int) $args['position'], $name);
-        return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'No such route or track in the file.');
+        return $renamed ? $response->withStatus(204) : Json::error($response, 404, 'Route or track not found in the file.');
     }
 
     /** Removes routes and tracks from the file: `items=` names them, comma-separated, each as its kind and its place among the file's routes or tracks, as `track:0`. */
@@ -87,12 +87,12 @@ final class StashController
         $items = [];
         foreach (array_filter(explode(',', (string) ($request->getQueryParams()['items'] ?? ''))) as $item) {
             if (preg_match('/^(route|track):([0-9]+)$/', $item, $found) !== 1) {
-                return Json::error($response, 422, 'No such route or track in the file.');
+                return Json::error($response, 422, 'Route or track not found in the file.');
             }
             $items[] = ['kind' => $found[1], 'position' => (int) $found[2]];
         }
         $removed = $items !== [] && $this->files->removeItems($this->currentUser->get()->id, (int) $args['file'], $items);
-        return $removed ? $response->withStatus(204) : Json::error($response, 404, 'No such route or track in the file.');
+        return $removed ? $response->withStatus(204) : Json::error($response, 404, 'Route or track not found in the file.');
     }
 
     /** Keeps the file's tracks as rides: all of them, or with `{tracks}` those at these places among its tracks. Answers how many were `kept` and how many the user kept already, `known`. */
@@ -100,7 +100,7 @@ final class StashController
     {
         $tracks = Json::field($request, 'tracks');
         $kept = $this->rides->keep($this->currentUser->get()->id, (int) $args['file'], is_array($tracks) ? array_map('intval', $tracks) : null, new DateTimeImmutable());
-        return $kept === null ? Json::error($response, 404, 'No such file.') : Json::of($response, $kept);
+        return $kept === null ? Json::error($response, 404, 'File not found.') : Json::of($response, $kept);
     }
 
     /** The file as it is kept, compressed, which the browser unpacks itself, and saves under the file's name where it is asked to save. */
@@ -109,7 +109,7 @@ final class StashController
         $userId = $this->currentUser->get()->id;
         $file = $this->files->find($userId, (int) $args['file']);
         if ($file === null) {
-            return Json::error($response, 404, 'No such file.');
+            return Json::error($response, 404, 'File not found.');
         }
         $response->getBody()->write((string) $this->files->gzip($userId, $file['id']));
         return $response

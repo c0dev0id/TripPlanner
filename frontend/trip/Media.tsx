@@ -80,7 +80,7 @@ export function DayMedia(props: { day: Day }) {
             </label>
             <label>
               {t('Address')}
-              <input name="url" inputmode="url" value={link === true ? '' : (link.url ?? '')} placeholder="https://" maxlength={2000} pattern="\s*(https?://\S+|[\w\-]+(\.[\w\-]+)+(/\S*)?)\s*" title={t('An address of the web')} required />
+              <input name="url" inputmode="url" value={link === true ? '' : (link.url ?? '')} placeholder="https://" maxlength={2000} pattern="\s*(https?://\S+|[\w\-]+(\.[\w\-]+)+(/\S*)?)\s*" title={t('Web address')} required />
             </label>
           </>
         )}

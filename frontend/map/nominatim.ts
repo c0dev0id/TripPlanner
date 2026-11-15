@@ -62,7 +62,7 @@ interface NominatimPlace {
 
 /** The places in a Nominatim answer; entries without a position are left out. */
 export function parsePlaces(json: unknown): Place[] {
-  if (!Array.isArray(json)) throw new Error(t('The search did not answer with a list of places.'));
+  if (!Array.isArray(json)) throw new Error(t('Unexpected response from the place search.'));
   return (json as NominatimPlace[]).flatMap((p): Place[] => {
     const lng = Number(p.lon);
     const lat = Number(p.lat);

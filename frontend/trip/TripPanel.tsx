@@ -91,7 +91,7 @@ function DayItem(props: { day: Day; index: number }) {
   return (
     <li ref={row} class="day card" classList={{ open: selected(), current: isDayMarked(props.day.id), selected: select.selected(), cut: isCut(props.day.id) }}>
       <div class="row" ref={(el) => cardMenu(el, more)}>
-        <Grip label={t('Drag {what} to another place, or tap to select it', { what: label() })} index={props.index} onMove={(to) => moveDay(props.day.id, to)} onToggle={select.onToggle} />
+        <Grip label={t('Drag to reorder {what}, or tap to select', { what: label() })} index={props.index} onMove={(to) => moveDay(props.day.id, to)} onToggle={select.onToggle} />
         <button class="text grow" onClick={(e) => select.onClick(e) || pickDay(props.day.id)} aria-pressed={selected()}>
           <span class="lines">
             <span class="name">{dayHeading('trip', props.index, props.day.name)}</span>
@@ -138,7 +138,7 @@ export function DayDetails(props: { day: Day }) {
         <p class="muted notes">{props.day.notes}</p>
       </Show>
       <Show when={selectedSequence().some((e) => e.stop)}>
-        <Show when={selectedTimeline()} fallback={<p class="day-summary muted">{t("Give the first stop a time for the day's times.")}</p>}>
+        <Show when={selectedTimeline()} fallback={<p class="day-summary muted">{t("Set a time on the first stop to calculate the day's times.")}</p>}>
           {(timeline) => <DaySummary timeline={timeline()} />}
         </Show>
       </Show>
@@ -158,7 +158,7 @@ export function DayDetails(props: { day: Day }) {
       <Show when={importNote()}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
       <Show when={unplaced().length > 0}>
         <div class="row">
-          <h4 class="grow">{t('Stops beside no route')}</h4>
+          <h4 class="grow">{t('Free stops')}</h4>
         </div>
         <ol class="stops">
           <ForById each={unplaced()}>{(stop) => <AloneStopItem stop={stop()} />}</ForById>
@@ -209,7 +209,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
             ...ROUTE_PALETTE.map(({ color, label }) => ({ label, swatch: color, checked: props.route.color === color, run: () => updateRoute(props.route.id, { color }) })),
           ],
         },
-        ...(props.route.kind === 'track' ? [{ label: t('Condense points…'), run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) }] : []),
+        ...(props.route.kind === 'track' ? [{ label: t('Reduce points…'), run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) }] : []),
       ],
     });
   const [unfolded, setUnfolded] = createSignal(false);
@@ -238,7 +238,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
           cardMenu(el, items);
         }}
       >
-        <Grip label={t('Drag {what} to another place, or tap to select it', { what: label() })} index={props.index} onMove={(to) => moveRoute(props.route.id, to)} onToggle={select.onToggle} />
+        <Grip label={t('Drag to reorder {what}, or tap to select', { what: label() })} index={props.index} onMove={(to) => moveRoute(props.route.id, to)} onToggle={select.onToggle} />
         <button class="text grow" aria-pressed={editing()} aria-expanded={unfolded()} onClick={click}>
           <span class="lines">
             <span class="name" title={label()}>

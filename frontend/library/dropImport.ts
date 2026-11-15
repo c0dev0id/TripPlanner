@@ -37,7 +37,7 @@ async function eachFile(sources: readonly ImportSource[], onProgress: (text: str
 
 /** How many of a noun were kept and how many were there already, or `none` where there were neither. */
 export function keptText(kept: number, known: number, noun: string, none: string): string {
-  const texts = [kept > 0 && t('{trips} imported.', { trips: counted(kept, noun) }), known > 0 && t('{what} kept already.', { what: counted(known, noun) })].filter(Boolean);
+  const texts = [kept > 0 && t('{trips} imported.', { trips: counted(kept, noun) }), known > 0 && t('{what} already saved.', { what: counted(known, noun) })].filter(Boolean);
   return texts.length > 0 ? texts.join(' ') : none;
 }
 
@@ -58,7 +58,7 @@ export async function importRides(files: readonly ImportSource[], onProgress: (t
     if (added) kept++;
     else known++;
   });
-  return { text: keptText(kept, known, 'ride', t('No GPX files in there.')), errors };
+  return { text: keptText(kept, known, 'ride', t('No GPX files found.')), errors };
 }
 
 /** A place to be kept, with the kind it is of. */
@@ -122,7 +122,7 @@ async function importIntoStash(dropped: Dropped, folderId: number, onProgress: (
       onKept(answer.file);
     } else known++;
   });
-  return { text: keptText(kept, known, 'file', t('No GPX or KML files in there.')), errors };
+  return { text: keptText(kept, known, 'file', t('No GPX or KML files found.')), errors };
 }
 
 /** Keeps places in the list `tripId`, each in the section of its kind; a place the list holds already is left out. Answers how many were kept and how many were there already. */
@@ -150,7 +150,7 @@ async function importPlaces(files: readonly ImportSource[], into: { folderId: nu
   await eachFile(sources, onProgress, errors, async (source) => {
     const file = await source.open();
     const gpx = await readRouteFile(file);
-    if (gpx.routes.length + gpx.tracks.length > 0) errors.push(`${source.path}: ${t('Its routes and tracks were left out: a list holds places.')}`);
+    if (gpx.routes.length + gpx.tracks.length > 0) errors.push(`${source.path}: ${t('Its routes and tracks were skipped: a place list holds only places.')}`);
     const places = kindedWaypoints(gpx);
     if (places.length === 0) return;
     const name = asName(gpx.name ?? file.name.replace(ROUTE_FILE, '')) || t('Places');
@@ -160,7 +160,7 @@ async function importPlaces(files: readonly ImportSource[], into: { folderId: nu
     kept += count.kept;
     known += count.known;
   });
-  return { text: keptText(kept, known, 'place', t('No places in there.')), errors };
+  return { text: keptText(kept, known, 'place', t('No places found.')), errors };
 }
 
 /** Imports dropped files as a trip each, and the files in dropped folders as trips by their folders; exported trips among the folders come back as they were. */
@@ -185,8 +185,8 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
   const planned = planFolderImport(files.map((file) => file.path), 'trips');
   const days = await readPlannedDays(files, planned.flatMap((trip) => trip.days), errors);
   const media = files.filter((file) => isMediaPath(file.path));
-  if (days.length + media.length === 0) return { text: t('No GPX or KML files and no exported trips in there.'), errors };
-  if (!(await addDaysAndMedia(trip.id, days, media, errors))) errors.push(t('The trip has no day to keep files with.'));
+  if (days.length + media.length === 0) return { text: t('No GPX or KML files or exported trips found.'), errors };
+  if (!(await addDaysAndMedia(trip.id, days, media, errors))) errors.push(t('The trip has no day to attach files to.'));
   return { text: importedText([days.length > 0 && counted(days.length, 'day'), media.length > 0 && counted(media.length, 'attachment')]), errors };
 }
 
@@ -208,6 +208,6 @@ export async function importDropped(
   if (kind === 'places') return importPlaces([...dropped.files, ...dropped.inFolders], { folderId }, onProgress);
   if (kind === 'collections') return importIntoStash(dropped, folderId!, onProgress, onKept);
   const trees = await importTree(dropped.files, dropped.inFolders, folderId, onProgress);
-  if (trees.trips === 0) return { text: t('No GPX or KML files and no exported trips in there.'), errors: trees.errors };
+  if (trees.trips === 0) return { text: t('No GPX or KML files or exported trips found.'), errors: trees.errors };
   return { text: importedText([counted(trees.trips, 'trip')]), errors: trees.errors };
 }

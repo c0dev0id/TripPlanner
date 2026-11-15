@@ -246,6 +246,6 @@ final class FoldersTest extends TestCase
                 return $folder->parentId;
             }
         }
-        self::fail('No such folder.');
+        self::fail('Folder not found.');
     }
 }

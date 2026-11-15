@@ -53,10 +53,10 @@ type NewKind = 'folder' | 'trip' | 'list' | 'kind';
 
 /** How the dialog that names a new folder, trip, list of places or kind of place reads. */
 const NEW_DIALOG: Record<NewKind, { title: string; placeholder: string; submit: string }> = {
-  folder: { title: t('New folder'), placeholder: t('Name of the folder'), submit: t('Create') },
-  trip: { title: t('New trip'), placeholder: t('Name of the trip'), submit: t('Start') },
-  list: { title: t('New list of places'), placeholder: t('Name of the list'), submit: t('Start') },
-  kind: { title: t('New kind of place'), placeholder: t('Name of the kind'), submit: t('Create') },
+  folder: { title: t('New folder'), placeholder: t('Folder name'), submit: t('Create') },
+  trip: { title: t('New trip'), placeholder: t('Trip name'), submit: t('Start') },
+  list: { title: t('New place list'), placeholder: t('List name'), submit: t('Start') },
+  kind: { title: t('New place category'), placeholder: t('Category name'), submit: t('Create') },
 };
 
 /** The dialog the library has open: a new name for something of it, with how the dialog reads and what saves the name, or the name of a new one in a folder, null for the top; of a new kind of place, in the list `into`. */
@@ -196,8 +196,8 @@ export function Library(props: {
     const where = f.parentId === null ? t('to the top') : t('into “{path}”', { path: pathOf(f.parentId) });
     const question = t(
       all === own
-        ? 'The folder “{name}” holds {own}. Move them {where} and delete the folder, or delete it with everything in it?'
-        : 'The folder “{name}” holds {own} ({all} in all). Move them {where} and delete the folder, or delete it with everything in it?',
+        ? 'The folder “{name}” contains {own}. Move them {where} and delete the folder, or delete the folder with everything in it?'
+        : 'The folder “{name}” contains {own} ({all} in total). Move them {where} and delete the folder, or delete the folder with everything in it?',
       { name: f.name, own, all, where },
     );
     const deleteAll = t('Delete all');
@@ -278,8 +278,8 @@ export function Library(props: {
   const remove = async (doomed: readonly Item[]) => {
     const [only] = doomed;
     if (doomed.length === 1 && 'folder' in only!) return removeFolder(only.folder);
-    const one = doomed.length === 1 && ('trip' in only! ? t('Delete the trip “{name}” with all its days?', { name: only.trip.name }) : t('Delete the file “{name}”?', { name: nameOf(only!) }));
-    const all = foldersOf(doomed).length > 0 ? 'Delete {what} with everything in them?' : tripsOf(doomed).length > 0 ? 'Delete {what} with all their days?' : 'Delete {what}?';
+    const one = doomed.length === 1 && ('trip' in only! ? t('Delete the trip “{name}” and all its days?', { name: only.trip.name }) : t('Delete the file “{name}”?', { name: nameOf(only!) }));
+    const all = foldersOf(doomed).length > 0 ? 'Delete {what} and everything in them?' : tripsOf(doomed).length > 0 ? 'Delete {what} with all their days?' : 'Delete {what}?';
     if (!(await askConfirmation(one || t(all, { what: countText(doomed) }), t('Delete')))) return;
     if (holdsOpen(doomed)) await props.onLeave();
     await runLibrary(
@@ -308,7 +308,7 @@ export function Library(props: {
     const what = [others.length > 0 && countText(others), counted(routes.length, 'route')].filter(Boolean).join(', ');
     return [
       ...(selection.size > 1 ? [menuNote(t('{what} selected', { what }))] : []),
-      others.length > 0 ? menuNote(t('Routes are not deleted together with folders and trips')) : { label: t('Delete'), run: () => void removeRoutes(routes) },
+      others.length > 0 ? menuNote(t('Routes cannot be deleted together with folders and trips')) : { label: t('Delete'), run: () => void removeRoutes(routes) },
     ];
   };
   /** The menu of a route the search found: for the selected rows, or for it alone where it is not selected. */
@@ -318,7 +318,7 @@ export function Library(props: {
   };
   const merge = async (into: TripSummary, others: TripSummary[]) => {
     const what = counted(others.length, into.kind);
-    const where = t(into.kind === 'collection' ? 'Their sections move into it' : 'Their days and journal move into it, a day onto its day of the same date where it has one');
+    const where = t(into.kind === 'collection' ? 'Their sections are moved into it' : 'Their days and journal are moved into it; a day is combined with the day of the same date, if there is one');
     const question = plural(others.length, 'Merge {what} into “{name}”? {where}, and the merged one is deleted.|Merge {what} into “{name}”? {where}, and the merged ones are deleted.', { what, name: into.name, where });
     if (!(await askConfirmation(question, t('Merge')))) return;
     if (holdsOpen([{ trip: into }, ...others.map((trip) => ({ trip }))])) await props.onLeave();
@@ -329,7 +329,7 @@ export function Library(props: {
   const takerOf = (items: readonly Item[]) => takerAmong(all(), items);
   /** Refuses, as the server would, to put the items into a folder that does not hold their kind. */
   const assertFits = (items: readonly Item[], into: number | null) => {
-    if (!takerOf(items)(into)) throw new Error(t('Lists of places are kept among the Places, files in the Stash, trips in the other folders.'));
+    if (!takerOf(items)(into)) throw new Error(t('Place lists belong in Places, files in the Stash, and trips in the other folders.'));
   };
   /** Moves folders, trips and files into a folder, none for the top, those not in it already; the server refuses a folder inside itself. */
   const moveInto = (moved: readonly Item[], into: number | null) => {
@@ -411,7 +411,7 @@ export function Library(props: {
       items: [
         { label: t('Folder…'), run: () => setDialog({ kind: 'new', what: 'folder', into }) },
         // The Stash holds what is imported into it; nothing is started there.
-        ...(what === 'file' ? [] : [{ label: t(what === 'trip' ? 'Trip…' : 'List of places…'), run: () => setDialog({ kind: 'new', what, into }) }]),
+        ...(what === 'file' ? [] : [{ label: t(what === 'trip' ? 'Trip…' : 'Place list…'), run: () => setDialog({ kind: 'new', what, into }) }]),
       ],
     };
   };
@@ -448,7 +448,7 @@ export function Library(props: {
               left(async () => {
                 const places = stops.map((stop, i) => ({ kind: kinds[i] ?? t('Places'), stop: { ...stop, id: newId(), pointId: null } }));
                 const { kept, known } = await keepPlaces(id, places);
-                setImportNote({ text: keptText(kept, known, 'place', t('No places in there.')), errors: [] });
+                setImportNote({ text: keptText(kept, known, 'place', t('No places found.')), errors: [] });
               }),
           }
         : {}),
@@ -528,7 +528,7 @@ export function Library(props: {
         ? [newItem(item.folder.id), addItem(item.folder.id)]
         : [
             ...(item.trip.kind === 'trip' ? [{ label: t('New'), items: [{ label: t('Day'), run: () => addDayTo(item.trip) }] }] : []),
-            ...(isPlaceList(item.trip.id) ? [{ label: t('New'), items: [{ label: t('Kind of place…'), run: () => setDialog({ kind: 'new', what: 'kind' as const, into: item.trip.id }) }] }] : []),
+            ...(isPlaceList(item.trip.id) ? [{ label: t('New'), items: [{ label: t('Place category…'), run: () => setDialog({ kind: 'new', what: 'kind' as const, into: item.trip.id }) }] }] : []),
             { label: t('Add'), items: [{ label: t('Files…'), run: () => void imports.addToTrip(item.trip) }] },
           ];
     // A special folder stays as it is: it takes what is new, added and pasted, and exports what it holds.
@@ -542,10 +542,10 @@ export function Library(props: {
         disabled: several,
         run: () =>
           'folder' in item
-            ? rename(t('Rename folder'), t('Name of the folder'), item.folder.name, (name) => renameFolder(item.folder.id, name), relistFolders)
+            ? rename(t('Rename folder'), t('Folder name'), item.folder.name, (name) => renameFolder(item.folder.id, name), relistFolders)
             : item.trip.id === openTripId()
               ? setEditTarget({ kind: 'trip' })
-              : rename(t('Rename trip'), t('Name of the trip'), item.trip.name, (name) => renameTrip(item.trip.id, name), relistTrips),
+              : rename(t('Rename trip'), t('Trip name'), item.trip.name, (name) => renameTrip(item.trip.id, name), relistTrips),
       },
       { label: t('Duplicate'), disabled: !onlyTrips, run: () => void flushSave().then(() => runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist)) },
       { label: t('Cut'), run: () => clip(chosen, true) },
@@ -651,7 +651,7 @@ export function Library(props: {
           <button class="text grow" onClick={() => markFolderShown(root())}>
             <span class="muted detail">{heldText(held(), heldNoun(root()))}</span>
           </button>
-          <IconButton label={t('Fold all folders and trips away')} disabled={!keysWithin(root()).some((key) => unfolded().has(key))} onClick={() => foldAll(root())}>
+          <IconButton label={t('Collapse all')} disabled={!keysWithin(root()).some((key) => unfolded().has(key))} onClick={() => foldAll(root())}>
             <FoldIcon />
           </IconButton>
           <MenuButton of={pathOf(root()) || ALL_TRIPS} items={menu} />
@@ -700,7 +700,7 @@ export function Library(props: {
           <For each={listed().items}>{(at) => <StashItemRow file={at.file} item={at.item} where={at.file.name} onShow={(item) => revealFile(at.file, item)} items={() => stashItemMenu(at)} select={selectRow(results.tree, itemKey(at), listedKeys)} />}</For>
         </ul>
         <Show when={total() > SEARCH_LIMIT}>
-          <p class="muted">{t('{n} more; narrow the search.', { n: total() - SEARCH_LIMIT })}</p>
+          <p class="muted">{t('{n} more. Refine your search.', { n: total() - SEARCH_LIMIT })}</p>
         </Show>
       </Show>
     );

@@ -28,8 +28,8 @@ export function SaveProblem(props: { onReload: () => void }) {
   return (
     <Show when={trouble()}>
       <p class="map-card save-problem" role="alert">
-        <Show when={saveState() === 'conflict'} fallback={t('Saving failed; trying again shortly.')}>
-          {t('The trip was changed elsewhere.')} <button onClick={props.onReload}>{t('Reload it')}</button> {t('to go on; the changes made here since are lost.')}
+        <Show when={saveState() === 'conflict'} fallback={t('Saving failed; retrying shortly.')}>
+          {t('The trip was changed elsewhere.')} <button onClick={props.onReload}>{t('Reload')}</button> {t('to continue; changes made here since then are lost.')}
         </Show>
       </p>
     </Show>

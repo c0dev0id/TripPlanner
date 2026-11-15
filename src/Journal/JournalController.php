@@ -26,7 +26,7 @@ final class JournalController
     public function index(Request $request, Response $response, array $args): Response
     {
         $entries = $this->entries->listFor($this->currentUser->get()->id, (int) $args['id']);
-        return $entries === null ? Json::error($response, 404, 'No such trip.') : Json::of($response, $entries);
+        return $entries === null ? Json::error($response, 404, 'Trip not found.') : Json::of($response, $entries);
     }
 
     /**
@@ -50,11 +50,11 @@ final class JournalController
         }
         $target = array_filter(array_intersect_key($body, Entries::PARTS), is_string(...));
         if (count($target) > 1) {
-            return Json::error($response, 422, 'An entry is on one part at most.');
+            return Json::error($response, 422, 'An entry can belong to only one item.');
         }
         $spot = self::spotOf($body);
         if ($spot === false) {
-            return Json::error($response, 422, 'The spot is not a position.');
+            return Json::error($response, 422, 'Invalid position.');
         }
         $createdAt = isset($body['createdAt']) ? Timestamp::parse((string) $body['createdAt']) : new DateTimeImmutable();
         if ($createdAt === null) {
@@ -63,7 +63,7 @@ final class JournalController
         $tripId = (int) $args['id'];
         $entry = $this->entries->add($this->currentUser->get()->id, $tripId, $target, $text, $upload === null ? null : self::fileOf($upload), $createdAt, $spot);
         if ($entry === null) {
-            return Json::error($response, 404, 'No such trip or part of it.');
+            return Json::error($response, 404, 'Trip or item not found.');
         }
         if ($upload !== null) {
             $this->files->store($upload, $tripId, $entry->id);
@@ -78,14 +78,14 @@ final class JournalController
             return Json::error($response, 422, 'The text must be a string of up to 20000 characters.');
         }
         $updated = $this->entries->updateText($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry'], trim($text));
-        return $updated ? $response->withStatus(204) : Json::error($response, 404, 'No such entry.');
+        return $updated ? $response->withStatus(204) : Json::error($response, 404, 'Entry not found.');
     }
 
     public function delete(Request $request, Response $response, array $args): Response
     {
         $entry = $this->entries->delete($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry']);
         if ($entry === null) {
-            return Json::error($response, 404, 'No such entry.');
+            return Json::error($response, 404, 'Entry not found.');
         }
         $this->files->delete($entry->tripId, $entry->id);
         return $response->withStatus(204);

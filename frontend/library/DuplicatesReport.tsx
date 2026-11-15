@@ -94,9 +94,9 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   const copy = (chosen: DuplicateRoute[]) =>
     work(t('Copying…'), async () => {
       const copies = await copiesOf(chosen);
-      if (copies.length === 0) return t('Those routes are no longer there.');
+      if (copies.length === 0) return t('These routes no longer exist.');
       copyRoutes(copies);
-      return t('Copied {what}: paste from the menu of a day or a trip.', { what: counted(copies.length, 'route') });
+      return t('Copied {what}. Paste from the menu of a day or a trip.', { what: counted(copies.length, 'route') });
     });
   const remove = async (chosen: DuplicateRoute[]) => {
     const trips = tripIdsOf(chosen).length;
@@ -119,7 +119,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
     const one = chosen.length === 1 ? chosen[0] : undefined;
     const n = chosen.length;
     return [
-      ...(one ? [{ label: t('Open location'), disabled: fetchingTrip(), run: () => openLocation(one) }] : []),
+      ...(one ? [{ label: t('Show in trip'), disabled: fetchingTrip(), run: () => openLocation(one) }] : []),
       { label: one ? t('Copy') : t('Copy {n} routes', { n }), run: () => void copy(chosen) },
       { label: one ? t('Delete') : t('Delete {n} routes', { n }), run: () => void remove(chosen) },
     ];
@@ -148,12 +148,12 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   };
   return (
     <SidePane
-      label={t('Routes kept more than once')}
+      label={t('Duplicate routes')}
       onClose={() => setShowingDuplicates(false)}
       heading={
         <>
           <span class="lines grow">
-            <span class="name">{t('Routes kept more than once')}</span>
+            <span class="name">{t('Duplicate routes')}</span>
             <Show when={found()}>
               {(made) => (
                 <span class="muted detail">
@@ -162,7 +162,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
               )}
             </Show>
           </span>
-          <IconButton label={t('Make the report afresh')} disabled={groups.loading} onClick={refreshDuplicates}>
+          <IconButton label={t('Refresh report')} disabled={groups.loading} onClick={refreshDuplicates}>
             <RefreshIcon />
           </IconButton>
         </>
@@ -174,16 +174,16 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
           <Match when={groups.loading || !groups()}>
             <p class="muted row">
               <span class="spinner" />
-              {t('Comparing {routes} with each other… {seconds} s', { routes: counted(routeCount(), 'route'), seconds: seconds() })}
+              {t('Comparing {routes}… {seconds} s', { routes: counted(routeCount(), 'route'), seconds: seconds() })}
             </p>
           </Match>
           <Match when={groups()?.length === 0}>
-            <p class="muted">{t('No route is kept more than once.')}</p>
+            <p class="muted">{t('No duplicate routes found.')}</p>
           </Match>
           <Match when={groups()}>
             <Show when={note()}>{(n) => <p classList={{ error: n().error, muted: !n().error, hint: true }}>{n().text}</p>}</Show>
             <Section title={t('Exact copies: {what}', { what: counted(of('copies').length, 'group') })} groups={of('copies')} {...rows} />
-            <Section title={t('The same ride kept twice: {what}', { what: counted(of('same ride').length, 'group') })} groups={of('same ride')} {...rows} />
+            <Section title={t('Duplicate rides: {what}', { what: counted(of('same ride').length, 'group') })} groups={of('same ride')} {...rows} />
           </Match>
         </Switch>
       </div>

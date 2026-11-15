@@ -51,7 +51,7 @@ export function routeKindLabel(route: Route): string {
   if (route.kind === 'track') return t('Track');
   const profile = PROFILES.find((p) => p.value === route.profile)?.label ?? route.profile;
   if (!takesMotorwayDial(route.profile) || route.highways === 'allow') return profile;
-  return t(route.highways === 'avoid' ? '{profile}, no motorways' : '{profile}, motorways first', { profile });
+  return t(route.highways === 'avoid' ? '{profile}, avoid motorways' : '{profile}, prefer motorways', { profile });
 }
 
 /** What riding found for a day has in common with it, as its row says: that it began on the day's date, and how much of it ran along the day's routes. */

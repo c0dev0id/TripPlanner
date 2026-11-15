@@ -426,6 +426,13 @@ entries at the end of their section.
   says it in a ride's own terms rather than as a grade: who wrote the file, how many
   points, the median time and the mean way between them, and the values by the names
   the file gives them, since those names are what the user knows from the app.
+- **Texts are written as software says things.** Labels and messages are the
+  conventional short forms ("Assign to this day", "Trip not found.", "No GPX files
+  found.") and not descriptive sentences, in English and in German alike, so that a
+  menu reads as menus elsewhere do. A menu entry never carries the name of what it
+  acts on: a paste says the kind and the number ("Paste 1 route"), since a file's name
+  can be as wide as the screen. A place's "kind" is a category in the texts; the code
+  keeps `kind`.
 - **The open trip is acted on only while it is shown.** A trip stays open, with its day
   selected, while another tab is shown, so that coming back finds it as it was. What
   acts on it from the map or the keyboard (undo and redo, paste, the map's spot menu, an

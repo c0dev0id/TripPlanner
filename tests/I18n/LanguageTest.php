@@ -51,8 +51,8 @@ final class LanguageTest extends TestCase
     public function testApiErrorsAreAnsweredInTheLanguage(): void
     {
         Language::set('de');
-        $answer = Json::error(new Response(), 404, 'No such trip.');
+        $answer = Json::error(new Response(), 404, 'Trip not found.');
         self::assertSame(404, $answer->getStatusCode());
-        self::assertSame('{"error":"Diese Tour gibt es nicht."}', (string) $answer->getBody());
+        self::assertSame('{"error":"Tour nicht gefunden."}', (string) $answer->getBody());
     }
 }

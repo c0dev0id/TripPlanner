@@ -14,17 +14,17 @@ export async function autoname(rides: readonly Ride[], onProgress: (text: string
   const errors: string[] = [];
   let named = 0;
   for (const [n, ride] of rides.entries()) {
-    onProgress(t('Naming {i} of {n}: {name}', { i: n + 1, n: rides.length, name: ride.name }));
+    onProgress(t('Renaming {i} of {n}: {name}', { i: n + 1, n: rides.length, name: ride.name }));
     try {
       const line = decodePolyline(ride.line);
       const from = line[0] && (await placeNameAt(line[0]));
       const to = from && (await placeNameAt(line.at(-1)!));
-      if (!to) throw new Error(t('No place is known where it begins or ends.'));
+      if (!to) throw new Error(t('No place name found for its start or end.'));
       if (ride.name !== `${from} - ${to}`) await renameRide(ride.id, `${from} - ${to}`);
       named++;
     } catch (error) {
       errors.push(`${ride.name}: ${errorMessage(error)}`);
     }
   }
-  return { text: named > 0 ? t('{what} named.', { what: counted(named, 'ride') }) : '', errors };
+  return { text: named > 0 ? t('{what} renamed.', { what: counted(named, 'ride') }) : '', errors };
 }
