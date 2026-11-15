@@ -61,21 +61,21 @@ export function MapView() {
     const m = newBaseMap(container, { hash: 'map' }, setShownMap, { routeWidth, overlays: true, ridesOpacity });
     m.addControl(
       new ToggleControl({
-        pressed: viewLocked,
-        setPressed: setViewLocked,
-        label: () => t(viewLocked() ? 'The map stays where it is; let it follow what is taken up again' : 'Keep the map where it is while something else is taken up'),
-        on: LockIcon,
-        off: LockOpenIcon,
-      }),
-      'top-right',
-    );
-    m.addControl(
-      new ToggleControl({
         pressed: placesHidden,
         setPressed: setPlacesHidden,
         label: () => t(placesHidden() ? 'Show the places again' : 'Hide all places for now'),
         on: PinOffIcon,
         off: PinIcon,
+      }),
+      'top-right',
+    );
+    m.addControl(
+      new ToggleControl({
+        pressed: viewLocked,
+        setPressed: setViewLocked,
+        label: () => t(viewLocked() ? 'The map stays where it is; let it follow what is taken up again' : 'Keep the map where it is while something else is taken up'),
+        on: LockIcon,
+        off: LockOpenIcon,
       }),
       'top-right',
     );

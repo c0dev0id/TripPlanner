@@ -451,7 +451,7 @@
   that one place can be looked at in one after the other. The place search and the
   button that shows where the user is still move it. The lock is open when the page
   is loaded.
-- A pin among the map's controls hides every place for now, the standard ones and the
+- A pin among the map's controls, above the lock, hides every place for now, the standard ones and the
   user's own, whatever their kinds are set to, for a clean screenshot of a route or
   where places crowd it; pressed again, they are back as they were. The places are
   shown again when the page is loaded.
