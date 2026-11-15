@@ -12,6 +12,17 @@
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
 }
 
+/* A place of a list drawn as its kind's badge stands centred on its spot, as the places of the store do. */
+.stop-marker .stop.badged {
+  transform: translateY(50%);
+}
+
+.stop-marker .stop.badged img {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
 .stop-marker .stop-name {
   position: absolute;
   left: 100%;

@@ -31,7 +31,7 @@ import { dragToFolder } from './dragToFolder';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow, stashItemName } from './StashFileCard';
 import { stashCopies, stashStops, type Picked } from './stashOut';
-import { PlaceKindControls, StandardPlaces } from './PlaceKinds';
+import { PlaceKindControls, PlaceKindMark, StandardPlaces } from './PlaceKinds';
 import { keepPlaces, keptText } from './dropImport';
 import { TripShape } from './TripShape';
 
@@ -116,6 +116,9 @@ function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void })
                 <span class="grip-space" />
               </Show>
               <button class="text grow" onClick={() => props.onOpen(day().id)}>
+                <Show when={collection()}>
+                  <PlaceKindMark id={day().id} />
+                </Show>
                 <span class="lines">
                   <span class="name">{dayHeading(props.trip.kind, index(), day().name)}</span>
                   <span class="muted detail">{dayDetail(props.trip.kind, day(), collection())}</span>

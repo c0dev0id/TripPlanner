@@ -1,3 +1,4 @@
+import { Show } from 'solid-js';
 import { entryFileUrl, entryPreviewUrl } from '../api';
 import { entryTitle, type Entry } from '../model/journal';
 import type { Stop } from '../model/trip';
@@ -16,11 +17,17 @@ export function markerElement(className: string, content: Node): HTMLDivElement 
   return root;
 }
 
-/** A stop drawn by its kind, in the colour of its binding, named beside it; its foot is the anchor. Follows the stop as it changes. */
-export function stopContent(stop: () => Stop): HTMLElement {
+/**
+ * A stop drawn by its kind, in the colour of its binding, named beside it; its foot is the
+ * anchor. A place of a list whose kind has a badge picked is drawn as that badge
+ * (`badge`, its address), centred on its spot. Follows the stop as it changes.
+ */
+export function stopContent(stop: () => Stop, badge: () => string | undefined = () => undefined): HTMLElement {
   return (
-    <div class="stop" classList={{ free: stop().pointId === null }}>
-      <StopShape symbol={stop().symbol} color={stop().pointId === null ? FREE_COLOR : BOUND_COLOR} foot />
+    <div class="stop" classList={{ free: stop().pointId === null, badged: badge() !== undefined }}>
+      <Show when={badge()} fallback={<StopShape symbol={stop().symbol} color={stop().pointId === null ? FREE_COLOR : BOUND_COLOR} foot />}>
+        {(url) => <img class="poi-badge" src={url()} alt="" />}
+      </Show>
       <span class="stop-name">{stop().name}</span>
     </div>
   ) as HTMLElement;

@@ -28,12 +28,19 @@ const MODE_TEXT: Record<PlaceMode, string> = {
   none: t('Not on the map'),
 };
 
-/** The look of a kind of place: the badge picked for it, else that of the store's kind of the id, else a dot in `color`. */
-export function PlaceKindMark(props: { id: string; color?: string }) {
-  const badge = () => POI_CATEGORIES.find((category) => category.id === (placeIcon(props.id) ?? props.id));
+/** The address of the badge picked for a kind of place, none where none is picked. */
+export function pickedBadgeUrl(kind: string): string | undefined {
+  const category = POI_CATEGORIES.find((each) => each.id === placeIcon(kind));
+  return category && poiBadgeUrl(category);
+}
+
+/** The look of a kind of place: the badge picked for it, else that of the store's kind of the id, else a dot in its list's colour. */
+export function PlaceKindMark(props: { id: string }) {
+  const badge = () => pickedBadgeUrl(props.id) ?? POI_CATEGORIES.filter((category) => category.id === props.id).map(poiBadgeUrl)[0];
+  const color = () => ownKinds().find((kind) => kind.dayId === props.id)?.color ?? 'transparent';
   return (
-    <Show when={badge()} fallback={<span class="own-dot" style={{ background: props.color ?? 'transparent' }} />}>
-      {(category) => <img class="poi-badge" src={poiBadgeUrl(category())} alt="" />}
+    <Show when={badge()} fallback={<span class="own-dot" style={{ background: color() }} />}>
+      {(url) => <img class="poi-badge" src={url()} alt="" />}
     </Show>
   );
 }

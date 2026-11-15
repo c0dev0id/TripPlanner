@@ -19,7 +19,7 @@ import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, routeKindLabel, routeLabel } from './labels';
-import { PlaceKindControls } from '../library/PlaceKinds';
+import { PlaceKindControls, PlaceKindMark, pickedBadgeUrl } from '../library/PlaceKinds';
 import { partMenu } from './partMenu';
 import { RoutePin } from './Pin';
 import { DayMedia } from './Media';
@@ -73,6 +73,9 @@ function SectionItem(props: { day: Day; places: boolean; onRename: (day: Day) =>
     <li ref={row} class="day card" classList={{ open: selected(), current: isDayMarked(props.day.id), picked: isPartSelected('day', props.day.id), cut: isCut(props.day.id) }}>
       <div class="row" ref={(el) => cardMenu(el, items)}>
         <button class="text grow" onClick={click} aria-pressed={selected()}>
+          <Show when={props.places}>
+            <PlaceKindMark id={props.day.id} />
+          </Show>
           <span class="lines">
             <span class="name">{props.day.name}</span>
             <span class="muted detail">{meta()}</span>
@@ -172,7 +175,9 @@ function WaypointItem(props: { stop: Stop; day: Day }) {
   return (
     <li class="row sequence-item" classList={{ picked: isPartSelected('stop', props.stop.id), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
       <button class="text grow" onClick={click}>
-        <StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />
+        <Show when={isPlaceList(openTripId()) && pickedBadgeUrl(props.day.id)} fallback={<StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />}>
+          {(url) => <img class="poi-badge" src={url()} alt="" />}
+        </Show>
         <span class="lines">
           <span class="name">{props.stop.name}</span>
           <Show when={label()}>

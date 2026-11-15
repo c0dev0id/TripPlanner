@@ -5,8 +5,9 @@ import type { Stop } from '../model/trip';
 import { pointOfDay } from '../routing/dayEdit';
 import { dragsMarkers, setEditTarget, straightLegItem, tapAction } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
-import { tripShown } from '../state/library';
-import { canConnect, connectStop, disconnectStop, editingRouteId, moveStop, removeStop, selectedDay } from '../state/trip';
+import { pickedBadgeUrl } from '../library/PlaceKinds';
+import { isPlaceList, tripShown } from '../state/library';
+import { canConnect, connectStop, disconnectStop, editingRouteId, moveStop, openTripId, removeStop, selectedDay, selectedDayId } from '../state/trip';
 import { stopContent } from './markerContent';
 import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
 import { ForById } from '../ui/ForById';
@@ -25,7 +26,9 @@ function StopMarker(props: { map: MapLibreMap; stop: Stop }) {
   const id = stop().id;
   const editing = () => editingRouteId() !== undefined;
 
-  const handle = new MarkerHandle(props.map, stopContent(stop), 'stop-marker', 'bottom');
+  // A list's places wear the badge picked for their kind.
+  const badge = () => (isPlaceList(openTripId()) ? pickedBadgeUrl(selectedDayId() ?? '') : undefined);
+  const handle = new MarkerHandle(props.map, stopContent(stop, badge), 'stop-marker', 'bottom');
   createEffect(() => handle.setPosition(stop().lngLat));
   createEffect(() => {
     handle.setInteractive(editing());

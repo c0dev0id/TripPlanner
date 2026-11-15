@@ -356,7 +356,9 @@
   the map). A place is a dot in its kind's colour, or the badge picked for the kind; a
   tap says its name, list and kind, address, contact, notes and website, and with a
   day of a trip shown offers "Add as stop", which adds a copy of the place to the day
-  as a free stop. The places of the open list are its stops and drawn as those.
+  as a free stop. The places of the open list are its stops and drawn as those, but
+  where a badge is picked for their kind they wear it, in the list as on the map. A
+  kind's row shows its look: the badge picked, or the dot in its list's colour.
 - Routes and stops can be marked optional, each in its dialog, and are shown so.
 - GPX export from a dialog: the whole trip, the day picked, or the days or routes
   selected, from Export GPX… in their menu; what is exported is saved first; one file
