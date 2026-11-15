@@ -7,15 +7,19 @@ import { colorAt, DIFFERENCE_SERIES, isDifference, scaleOf, surfaceColor, type C
 import { measuresOf, type Measures } from '../recording/measures';
 import { trackSurfaces } from '../recording/surfaces';
 import type { RecordedTrack } from '../recording/track';
-import { legCoordinates, routeLegs } from '../routing/legs';
+import type { Route } from '../model/trip';
+import { routeLine } from '../routing/legs';
 import { showWhole } from './drawing';
+import { isRecordingPinned, isRoutePinned } from './pins';
 import { activeRecordingId, loadedTrack, setActiveRecordingId, shownRecordings, type ShownRecording } from './recordings';
-import { openTrip, openTripId, selectedDayId } from './trip';
+import { activeRouteId, openTrip, openTripId, selectedDayId, takeUpRoute } from './trip';
 
 /**
- * The recording opened for its figures, on its day or in the list of rides: its cards over the map, its line coloured by a
- * measure or a difference, what it is compared with, and the point of it picked on the
- * map or in its chart.
+ * The recording opened for its figures, on its day or in the list of rides: its cards
+ * over the map, what it is focused on (a measure, the surface or a difference, which
+ * colours its line and picks its chart), what it is compared with, and the point of it
+ * picked on the map or in its chart. It is compared with what is pinned beside it on the
+ * map where that is one route, track or recording, and with nothing where it is more.
  */
 
 /** The point under the pointer in the chart, and the point picked on the map or by a click in the chart, by their index in the track. */
@@ -37,7 +41,8 @@ export function openRecording(id: number | undefined): void {
  */
 export function toggleRecording(recording: KeptRide): void {
   if (activeRecordingId() === recording.id) return openRecording(undefined);
-  // Opened first, so that it is shown whole beside its cards.
+  // One thing is taken up at a time: the route taken up is let go. Opened first, so that it is shown whole beside its cards.
+  takeUpRoute(undefined);
   openRecording(recording.id);
   const track = loadedTrack(recording);
   if (track) showWhole(track.points);
@@ -49,14 +54,12 @@ export function pickPoint(id: number, index: number): void {
   setPickedIndex(index);
 }
 
-/** What the lines of opened recordings are coloured by; nothing for their own colour. */
+/** What the opened recording is focused on, which colours its line and picks its chart; nothing for its own colour and no chart. */
 const [coloring, setColoring] = createSignal<Coloring>();
 export { setColoring };
 
-/** What the opened recording is compared with: the planned routes of its day, or another recording shown, by its id. */
-export type Comparand = 'plan' | number;
-const [comparand, setComparand] = createSignal<Comparand>();
-export { setComparand };
+/** What the opened recording is compared with: a route or a track of its day, or another recording. */
+type Comparand = { route: Route; label: string } | { recording: ShownRecording };
 
 /** The surfaces under each opened recording's points, once asked for, by recording id. */
 const [surfaces, setSurfaces] = createSignal<ReadonlyMap<number, (string | null)[] | 'matching' | Error>>(new Map());
@@ -83,7 +86,6 @@ export interface Opened {
 
 /** The opened recording against what it is compared with, named as a sentence names it. */
 export interface Comparison {
-  comparand: Comparand;
   name: string;
   delta: Delta;
 }
@@ -104,37 +106,39 @@ const view = createRoot(() => {
     const dayId = opened()?.recording.dayId;
     return openTrip()?.days.find((d) => d.id === dayId);
   });
-  /** The lines of the planned routes of the opened recording's day, as routed so far. */
-  const planLines = createMemo(() => day()?.routes.flatMap((route) => routeLegs(route).map((leg) => legCoordinates(route, leg))) ?? []);
-  /** The other recording compared with, while it is shown. */
-  const other = createMemo(() => {
-    const c = comparand();
-    return typeof c === 'number' ? shownRecordings().find((r) => r.id === c) : undefined;
-  });
-  const otherTrack = createMemo(() => {
-    const r = other();
-    return r && loadedTrack(r);
-  });
-  const comparands = createMemo((): { comparand: Comparand; label: string }[] => {
-    const o = opened();
-    if (!o) return [];
-    const plan = planLines().length > 0 ? [{ comparand: 'plan' as const, label: t('The planned route') }] : [];
-    const others = shownRecordings().filter((r) => r.id !== o.recording.id);
-    return [...plan, ...others.map((r) => ({ comparand: r.id, label: r.name }))];
-  });
-  const delta = createMemo((): Delta | undefined => {
+  /** What is pinned beside the opened recording, where it is one thing: a route or a track of its day, or another recording shown. */
+  const comparand = createMemo((): Comparand | undefined => {
     const o = opened();
     if (!o) return undefined;
-    if (comparand() === 'plan') {
-      const lines = planLines();
-      return lines.length > 0 ? { offset: offsetsFrom(o.track.points, lines) } : undefined;
+    const routes = day()?.routes ?? [];
+    const pinned: Comparand[] = [
+      ...routes.flatMap((route, i) => (isRoutePinned(route.id) ? [{ route, label: route.name || t('Route {n}', { n: i + 1 }) }] : [])),
+      ...shownRecordings().flatMap((recording) => (recording.id !== o.recording.id && isRecordingPinned(recording.id) ? [{ recording }] : [])),
+    ];
+    return pinned.length === 1 ? pinned[0] : undefined;
+  });
+  /** What the comparison is with, as a key that stays the same while the route or the recording does. */
+  const comparedKey = createMemo(() => {
+    const c = comparand();
+    return c && ('route' in c ? `route:${c.route.id}` : `recording:${c.recording.id}`);
+  });
+  const otherTrack = createMemo(() => {
+    const c = comparand();
+    return c && 'recording' in c ? loadedTrack(c.recording) : undefined;
+  });
+  const delta = createMemo((): Delta | undefined => {
+    const [o, c] = [opened(), comparand()];
+    if (!o || !c) return undefined;
+    if ('route' in c) {
+      const line = routeLine(c.route);
+      return line.length > 1 ? { offset: offsetsFrom(o.track.points, [line]) } : undefined;
     }
     const track = otherTrack();
     return track && track !== o.track ? deltaToTrack({ points: o.track.points, measures: o.measures }, { points: track.points, measures: measuresFor(track) }) : undefined;
   });
   const comparison = createMemo((): Comparison | undefined => {
     const [d, c] = [delta(), comparand()];
-    return d && c !== undefined ? { comparand: c, name: c === 'plan' ? t('the planned route') : `“${other()!.name}”`, delta: d } : undefined;
+    return d && c ? { name: `“${'route' in c ? c.label : c.recording.name}”`, delta: d } : undefined;
   });
   const colorings = createMemo((): Coloring[] => {
     const o = opened();
@@ -168,15 +172,12 @@ const view = createRoot(() => {
     return shown && shown.values.map((v) => colorAt(shown.scale, v));
   });
 
-  // Another trip starts with no recording opened or compared; surfaces are matched for this page only.
-  createEffect(
-    on(openTripId, () => {
-      openRecording(undefined);
-      setComparand(undefined);
-    }),
-  );
-  // Another day starts with none opened, as it starts with no route taken up.
-  createEffect(on(selectedDayId, () => openRecording(undefined)));
+  // Another trip or day starts with none opened, as it starts with no route taken up; surfaces are matched for this page only.
+  createEffect(on([openTripId, selectedDayId], () => openRecording(undefined)));
+  // One thing is taken up at a time: a route taken up closes the recording opened.
+  createEffect(on(activeRouteId, (id) => id !== undefined && openRecording(undefined), { defer: true }));
+  // Something new pinned beside the recording is compared with at once: the focus goes to the distance from it.
+  createEffect(on(comparedKey, (key) => key !== undefined && setColoring('offset'), { defer: true }));
   // The surfaces are matched once a line is coloured by them.
   createEffect(() => {
     const o = opened();
@@ -188,22 +189,19 @@ const view = createRoot(() => {
       (fault: unknown) => keepSurfaces(id, fault instanceof Error ? fault : new Error(String(fault))),
     );
   });
-  return { opened, comparands, comparison, colorings, shownColoring, openedSurfaces, shownScale, colors };
+  return { opened, comparison, colorings, shownColoring, openedSurfaces, shownScale, colors };
 });
 
 /** The opened recording with its track and measures, while it is shown and its track is read. */
 export const opened = view.opened;
 
-/** What the opened recording can be compared with: its day's planned routes, and the other recordings shown. */
-export const comparands = view.comparands;
-
-/** The opened recording against what it is compared with, once both are there. */
+/** The opened recording against the one route, track or recording pinned beside it, once both are there. */
 export const comparison = view.comparison;
 
-/** The colourings the opened recording allows: the measures its file has, the surface, and the differences its comparison has. */
+/** What the opened recording can be focused on: the measures its file has, the surface, and the differences its comparison has. */
 export const colorings = view.colorings;
 
-/** What the opened recording's line is coloured by, where it allows the colouring chosen. */
+/** What the opened recording is focused on, where it allows the focus chosen. */
 export const shownColoring = view.shownColoring;
 
 /** The surfaces under the opened recording's points: being matched, matched, or why they could not be. */

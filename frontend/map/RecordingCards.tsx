@@ -5,12 +5,11 @@ import uPlot from 'uplot';
 import { deltaSummaryOf, type Delta } from '../recording/delta';
 import { fileFacts, type FileFacts } from '../recording/file';
 import { DIFFERENCE_FIGURES, FIGURES, type Figure } from '../recording/figures';
-import { kmBySurface, NO_VALUE, SURFACES, surfaceLabel, type Coloring } from '../recording/lineColors';
-import { histogram, summaryOf, type Measures, type Metric } from '../recording/measures';
+import { isDifference, kmBySurface, NO_VALUE, SURFACES, surfaceLabel, type Coloring, type Difference } from '../recording/lineColors';
+import { histogram, summaryOf, type Metric } from '../recording/measures';
 import { onPhone } from '../state/panel';
 import {
   colorings,
-  comparands,
   comparison,
   hoverIndex,
   opened,
@@ -18,7 +17,6 @@ import {
   openRecording,
   pickedIndex,
   setColoring,
-  setComparand,
   setHoverIndex,
   setPickedIndex,
   shownColoring,
@@ -32,7 +30,7 @@ import { distanceText, durationText } from '../ui/format';
 import { Figures } from '../ui/Figures';
 import { CloseIcon } from '../ui/icons';
 
-/** The opened recording's figures over the map: its summary with the colouring of its line, and its charts. */
+/** The opened recording's figures over the map: its summary with what it is focused on, and the chart of the focus. */
 export function RecordingCards() {
   return (
     <Show when={opened()}>
@@ -46,7 +44,7 @@ export function RecordingCards() {
   );
 }
 
-/** What a colouring is called in its list: a difference with what it is against. */
+/** What a focus is called in its list: a difference with what it is against. */
 function coloringLabel(c: Coloring): string {
   const against = comparison()?.name ?? '';
   switch (c) {
@@ -81,7 +79,7 @@ function fileRows(file: FileFacts): [string, string | undefined][] {
   ];
 }
 
-/** The recording in figures, what it is compared with, the colouring of its line with its legend; folded at first on a narrow screen. */
+/** The recording in figures, how it differs from what it is compared with, and what it is focused on with its legend; folded at first on a narrow screen. */
 function SummaryCard(props: { opened: Opened }) {
   const rows = createMemo((): [string, string | undefined][] => {
     const s = summaryOf(props.opened.measures);
@@ -110,28 +108,21 @@ function SummaryCard(props: { opened: Opened }) {
         </button>
       </summary>
       <Figures rows={rows()} />
-      <Show when={comparands().length > 0}>
-        <label class="row">
-          <span>{t('Compare')}</span>
-          <select
-            class="grow"
-            value={String(comparison()?.comparand ?? '')}
-            onChange={(e) => {
-              const value = e.currentTarget.value;
-              setComparand(value === '' ? undefined : value === 'plan' ? 'plan' : Number(value));
-            }}
-          >
-            <option value="">{t('With nothing')}</option>
-            <For each={comparands()}>{(c) => <option value={String(c.comparand)}>{c.label}</option>}</For>
-          </select>
-        </label>
-      </Show>
       <Show when={comparison()}>{(c) => <ComparisonFigures opened={props.opened} comparison={c()} />}</Show>
       <label class="row">
-        <span>{t('Colour')}</span>
-        <select class="grow" value={shownColoring() ?? ''} onChange={(e) => setColoring((e.currentTarget.value || undefined) as Coloring | undefined)}>
-          <option value="">{t("The recording's own")}</option>
-          <For each={colorings()}>{(c) => <option value={c}>{coloringLabel(c)}</option>}</For>
+        <span>{t('Focus')}</span>
+        {/* Each option says whether it is chosen: the focus can change with the options, which a select's value does not follow. */}
+        <select class="grow" onChange={(e) => setColoring((e.currentTarget.value || undefined) as Coloring | undefined)}>
+          <option value="" selected={shownColoring() === undefined}>
+            {t('None')}
+          </option>
+          <For each={colorings()}>
+            {(c) => (
+              <option value={c} selected={c === shownColoring()}>
+                {coloringLabel(c)}
+              </option>
+            )}
+          </For>
         </select>
       </label>
       <Switch>
@@ -150,6 +141,7 @@ function ComparisonFigures(props: { opened: Opened; comparison: Comparison }) {
     const s = deltaSummaryOf(props.opened.measures, props.comparison.delta);
     const { time, speed } = DIFFERENCE_FIGURES;
     return [
+      [t('Against'), props.comparison.name],
       [t('Off it'), distanceText(s.offM)],
       [t('Farthest off'), distanceText(s.furthestM)],
       [t('At the end'), textOf(s.timeS, time.text)],
@@ -208,9 +200,7 @@ function SurfaceLegend(props: { opened: Opened }) {
   );
 }
 
-type ChartKind = 'profile' | 'difference' | Metric;
-
-/** The measures charted as a spread of the distance over their values, in bins of this width. */
+/** The measures charted also as a spread of the distance over their values, in bins of this width. */
 const BIN_WIDTH: Partial<Record<Metric, number>> = { speed: 10, slope: 2, lean: 5 };
 
 /** What the spreads' tabs say. */
@@ -224,35 +214,44 @@ interface AlongLine {
   fill?: string;
 }
 
-const profileLines = (m: Measures): AlongLine[] => [
-  ...(m.altitude ? [{ values: m.altitude, figure: FIGURES.altitude, color: '#868e96', fill: 'rgba(134, 142, 150, 0.25)' }] : []),
-  ...(m.speed ? [{ values: m.speed, figure: FIGURES.speed, color: '#1971c2' }] : []),
-];
+/** The colour of each measure's series along the track. */
+const METRIC_LINES: Record<Metric, Pick<AlongLine, 'color' | 'fill'>> = {
+  altitude: { color: '#868e96', fill: 'rgba(134, 142, 150, 0.25)' },
+  speed: { color: '#1971c2' },
+  slope: { color: '#2b8a3e' },
+  lean: { color: '#ae3ec9' },
+};
 
-/** Time and speed against the other recording where both have them, else the distance from what the track is compared with. */
-function differenceLines(d: Delta): AlongLine[] {
-  const lines = [
-    ...(d.time ? [{ values: d.time, figure: DIFFERENCE_FIGURES.time, color: '#c2255c' }] : []),
-    ...(d.speed ? [{ values: d.speed, figure: DIFFERENCE_FIGURES.speed, color: '#1971c2' }] : []),
-  ];
-  return lines.length > 0 ? lines : [{ values: d.offset.map((v) => (Number.isFinite(v) ? v : null)), figure: DIFFERENCE_FIGURES.offset, color: '#e8590c' }];
+/** The series along the track of a difference: the distance off, the lean against, or the speed against with the time gained or lost where the other recording has times. */
+function differenceLines(d: Delta, focus: Difference): AlongLine[] {
+  const offset = { values: d.offset.map((v) => (Number.isFinite(v) ? v : null)), figure: DIFFERENCE_FIGURES.offset, color: '#e8590c' };
+  if (focus === 'offset') return [offset];
+  if (focus === 'leanDifference') return d.lean ? [{ values: d.lean, figure: DIFFERENCE_FIGURES.lean, color: '#ae3ec9' }] : [];
+  return [...(d.time ? [{ values: d.time, figure: DIFFERENCE_FIGURES.time, color: '#c2255c' }] : []), ...(d.speed ? [{ values: d.speed, figure: DIFFERENCE_FIGURES.speed, color: '#1971c2' }] : [])];
 }
 
-/** The profile and the difference along the track, and the spread of each measure over the distance; with the values under the pointer. */
+/** The chart of what the recording is focused on: a measure or a difference along the track, and a measure's spread over the distance; none for no focus and the surface, whose legend says it. */
 function ChartCard(props: { opened: Opened }) {
-  const kinds = createMemo((): ChartKind[] => {
-    const m = props.opened.measures;
-    const spreads = (Object.keys(BIN_WIDTH) as Metric[]).filter((metric) => m[metric] !== undefined);
-    return [...(m.altitude || m.speed ? ['profile' as const] : []), ...(comparison() ? ['difference' as const] : []), ...spreads];
+  const focus = () => {
+    const c = shownColoring();
+    return c === 'surface' ? undefined : c;
+  };
+  const lines = createMemo((): AlongLine[] => {
+    const f = focus();
+    if (f === undefined) return [];
+    if (isDifference(f)) {
+      const c = comparison();
+      return c ? differenceLines(c.delta, f) : [];
+    }
+    const values = props.opened.measures[f];
+    return values ? [{ values, figure: FIGURES[f], ...METRIC_LINES[f] }] : [];
   });
-  const [chosen, setChosen] = createSignal<ChartKind>('profile');
-  // The chart is made again only when its kind or its own series change.
-  const kind = createMemo(() => (kinds().includes(chosen()) ? chosen() : kinds()[0]));
-  const lines = createMemo(() => {
-    if (kind() === 'profile') return profileLines(props.opened.measures);
-    const c = kind() === 'difference' ? comparison() : undefined;
-    return c ? differenceLines(c.delta) : [];
-  });
+  /** The measure focused on where it is also charted as a spread. */
+  const spread = () => {
+    const f = focus();
+    return f !== undefined && !isDifference(f) && BIN_WIDTH[f] !== undefined ? f : undefined;
+  };
+  const [spreadShown, setSpreadShown] = createSignal(false);
   const [spreadReadout, setSpreadReadout] = createSignal<string>();
   const alongReadout = () => {
     const i = hoverIndex();
@@ -260,28 +259,29 @@ function ChartCard(props: { opened: Opened }) {
     const parts = [distanceText(props.opened.measures.distance[i]!), ...lines().map((line) => textOf(line.values[i] ?? undefined, line.figure.text))];
     return parts.filter((p) => p !== undefined).join(' · ');
   };
-  const tabLabel = (k: ChartKind) => t(k === 'profile' ? 'Profile' : k === 'difference' ? 'Difference' : SPREADS[k]);
+  const along = () => !(spreadShown() && spread());
   return (
-    <Show when={kind()}>
-      {(k) => (
-        <section class="map-card chart-card" aria-label={t('Charts of the recording')}>
-          <div class="row">
-            <div class="row tabs" role="tablist">
-              <For each={kinds()}>
-                {(each) => (
-                  <button role="tab" aria-selected={each === k()} onClick={() => setChosen(each)}>
-                    {tabLabel(each)}
-                  </button>
-                )}
-              </For>
-            </div>
-            <span class="grow muted name readout">{lines().length > 0 ? alongReadout() : spreadReadout()}</span>
+    <Show when={lines().length > 0}>
+      <section class="map-card chart-card" aria-label={t('Charts of the recording')}>
+        <div class="row">
+          <div class="row tabs" role="tablist">
+            <button role="tab" aria-selected={along()} onClick={() => setSpreadShown(false)}>
+              {t(isDifference(focus()!) ? 'Difference' : 'Profile')}
+            </button>
+            <Show when={spread()}>
+              {(metric) => (
+                <button role="tab" aria-selected={!along()} onClick={() => setSpreadShown(true)}>
+                  {t(SPREADS[metric()])}
+                </button>
+              )}
+            </Show>
           </div>
-          <Show when={lines().length > 0} fallback={<SpreadChart opened={props.opened} metric={k() as Metric} onHover={setSpreadReadout} />}>
-            <AlongChart distance={props.opened.measures.distance} lines={lines()} />
-          </Show>
-        </section>
-      )}
+          <span class="grow muted name readout">{along() ? alongReadout() : spreadReadout()}</span>
+        </div>
+        <Show when={along()} fallback={<SpreadChart opened={props.opened} metric={spread()!} onHover={setSpreadReadout} />}>
+          <AlongChart distance={props.opened.measures.distance} lines={lines()} />
+        </Show>
+      </section>
     </Show>
   );
 }

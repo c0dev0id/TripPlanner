@@ -445,15 +445,17 @@
   is loaded.
 - What is on the map follows what is taken up. With the whole trip shown, or a day and
   nothing taken up, the planned routes and tracks are all drawn, and no recordings.
-  Taking up a route or opening a recording draws that one alone; a route being edited
-  and a recording opened are both drawn. Every route and every recording has a pin on
+  Taking up a route or opening a recording draws that one alone. One thing is taken up
+  at a time: taking up a route closes the recording opened, and opening a recording
+  lets go of the route taken up. Every route and every recording has a pin on
   its row: pinned, it stays on the map of its day whatever else is taken up, and a
   pinned recording is drawn also while nothing is. Several selected are pinned or let
   go from their menu. The neighbouring days draw their pinned routes. The pins are the
   open trip's, for all of its days, and go when it is left in its own tab or the page
   is loaded again; a trip left while another tab is shown leaves its pinned lines on
-  the map and is pinned again when it is opened. A recording added to a day, or put on it by the lookup, is pinned. Another
-  day closes the recording opened, as it lets go of the route taken up.
+  the map and is pinned again when it is opened. A recording added to a day, or put on
+  it by the lookup, is not pinned. Another day closes the recording opened, as it lets
+  go of the route taken up.
 - A route under a mouse's pointer on the map is drawn wider and named, after its day while the
   whole trip is shown; a click or a tap on it shows its day and takes the route up, as a
   click on its row does, which is brought into view. This holds while no route is being
@@ -466,21 +468,25 @@
   the average way from one to the next, its segments where it has more than one, and
   what it tells of each point, by the names the file has for it, with the share of the
   points that have it where not all do.
-  Its line can be coloured by speed, altitude, slope, lean angle or the road surface,
-  with a legend; the surfaces, matched once by the routing server, are listed with the
-  distance on each. A card along the bottom charts altitude and speed along the way, and
-  how far was ridden at each speed, slope and lean angle. Pointing in the chart marks the
+  Its Focus picks what to look at: none, speed, altitude, slope, lean angle, the road
+  surface, or a difference to what it is compared with. The focus colours the line,
+  with a legend, and opens a card along the bottom that charts it along the way and,
+  for speed, slope and lean angle, how far was ridden at each value; with none, the
+  line has the recording's colour and there is no chart. The surfaces, matched once by
+  the routing server, are listed with the distance on each. Pointing in the chart marks the
   place on the map; a click in the chart or on the line on the map shows everything known
   of that point: the distance along, the time, the measures, the surface and the file's
   other values. On a narrow screen the figures start folded.
-- Comparing a recording: its card compares it with its day's planned route or another
-  recording shown on the map. Against the plan it says how far it went off the route
-  and how far at most, and follows the route as it is edited. Against another recording
-  it also says the time ahead or behind at the end and the speed difference on average,
-  at the same places along the way. The line can be coloured by the distance from the
-  other, and by speed and lean against the other recording; a Difference chart shows
-  the time and speed against it along the way, or the distance from the plan. The point
-  picked says how it differs there.
+- Comparing a recording: the recording opened is compared with what is pinned beside
+  it on the map where that is one route or track of its day or one other recording;
+  with two or more pinned there is no comparison, and the focus offers the measures
+  alone. Something new to compare with turns the focus to the distance from it. Against
+  a route or a track the card says what it is against, how far it went off and how far
+  at most, and follows the route as it is edited. Against another recording it also
+  says the time ahead or behind at the end and the speed difference on average, at the
+  same places along the way. The focus offers the distance from the other, and speed
+  and lean against another recording, each charted along the way. The point picked
+  says how it differs there.
 - Additional media on a day: files and links kept with it, listed in the day's pane under
   their own heading after Planning (the day's routes and stops) and Recordings. Files
   are picked, as many at once as wanted, and may be of any kind; a link is given a name

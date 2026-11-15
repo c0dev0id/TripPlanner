@@ -986,8 +986,26 @@ entries at the end of their section.
   context for what is taken up, chosen like the rest of it. Recordings are drawn for
   the day shown only: each is a file of megabytes. The pins are kept with the open
   trip in the page and no longer: they say what is looked at now, not what the trip
-  is. A recording added to a day or put on it by the lookup is pinned, so that it is
-  seen where it was just put.
+  is. A recording added to a day or put on it by the lookup is not pinned: a pin is the
+  user's own choice, and the comparison reads it (see below).
+- **A recording is compared with what is pinned beside it.** A choice of "the planned
+  route" in a list compared with all of the day's routes at once, which said nothing
+  where a day has several routes or a route and a track. What is on the map says what
+  the user looks at: the recording opened is the one compared, and the one route, track
+  or recording pinned beside it the one it is compared with. With more than one pinned
+  the comparison stops, since a third line leaves open which two are meant and three
+  at once would be too much to read. Comparing is what pinning one thing beside an
+  opened recording is for, so the focus turns to the distance from it at once.
+- **A recording has one focus.** The colour of its line and the chart along the bottom
+  were chosen apart, with tabs for every chart the file allowed, so that the line could
+  show one thing and the chart another. One select, Focus, now picks both: the line is
+  coloured by what is focused on and the chart shows it, and with no focus the line has
+  the recording's colour and the chart stays away, so that a recording opened for its
+  figures covers less of the map.
+- **One thing is taken up at a time.** A recording opened stayed open while a route was
+  taken up, and two things in focus left unclear which one the cards and the map spoke
+  of. Taking up a route closes the recording, opening a recording lets go of the route;
+  what is to stay in sight besides is pinned.
 - **A route on the map is taken up by a click on it.** With the whole trip or a day
   shown, finding the row of a line seen on the map meant opening days and reading
   names. The line under the pointer is named and drawn wider, by a feature state on the

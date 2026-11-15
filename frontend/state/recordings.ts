@@ -7,7 +7,7 @@ import { readRecording, type RecordedTrack } from '../recording/track';
 import { decodeCached } from '../routing/polyline';
 import { flushSave } from './autosave';
 import { showWhole } from './drawing';
-import { isRecordingPinned, pinRecordings } from './pins';
+import { isRecordingPinned } from './pins';
 import { allRides, rideChanges, ridesChanged } from './rides';
 import { mapTab, tripShown } from './library';
 import { openTrip, openTripId, selectedDayId } from './trip';
@@ -134,13 +134,12 @@ createRoot(() => {
   );
 });
 
-/** Lists a ride as on a day of the open trip, where it is not yet, and pins it to the map, where it is to be seen. */
+/** Lists a ride as on a day of the open trip, where it is not yet. */
 function listOnDay({ id, name, distanceM, startedAt }: KeptRide, dayId: string): void {
   change((recordings) => (recordings.some(isOn(dayId, id)) ? recordings : [...recordings, { id, dayId, name, distanceM, startedAt }].sort(byStart)));
-  pinRecordings([id], true);
 }
 
-/** Puts a ride on a day, which leaves it on the days it is on; on a day of the open trip it is listed and pinned there. */
+/** Puts a ride on a day, which leaves it on the days it is on; on a day of the open trip it is listed there. */
 export async function putOnDay(ride: KeptRide, dayId: string): Promise<void> {
   await putRideOnDay(ride.id, dayId);
   if (openTrip()?.days.some((day) => day.id === dayId)) listOnDay(ride, dayId);
