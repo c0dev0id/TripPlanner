@@ -19,7 +19,7 @@ import { moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, openTripId
  * clipboard, or until something else is copied or cut. What was cut is taken from where
  * it was once it is pasted.
  */
-type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[] } | { recordings: KeptRide[]; cutFrom?: string } | { media: CopiedMedia } | { library: LibraryClip }) & {
+type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[]; kinds?: readonly string[] } | { recordings: KeptRide[]; cutFrom?: string } | { media: CopiedMedia } | { library: LibraryClip }) & {
   /** Where the parts were cut from. */
   cut?: { tripId: number; kind: PartKind; ids: string[] };
 };
@@ -60,9 +60,9 @@ export function copyRoutes(routes: CopiedRoute[]): void {
   setClip({ routes });
 }
 
-/** Copies stops that stand free. */
-export function copyStops(stops: Stop[]): void {
-  setClip({ stops });
+/** Copies stops that stand free; `kinds` names for each, where a file gave them, the kind it sorts the stop under, empty for none. */
+export function copyStops(stops: Stop[], kinds?: readonly string[]): void {
+  setClip({ stops, ...(kinds ? { kinds } : {}) });
 }
 
 /** Copies days, routes or stops of the open trip; cut, they leave it when they are pasted. */
@@ -203,15 +203,26 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
 }
 
 /**
- * The menu item that hands the copied routes to `routes`, or the copied days to `days`,
- * which put them into a trip or a folder of the library; once that is done, what was cut
- * is taken from its trip. None where the clipboard holds neither, or what it holds has
- * nowhere to go.
+ * The menu item that hands the copied routes to `routes`, the copied days to `days`, or
+ * the copied stops, with the kind of each, to `stops`, which put them into a trip or a
+ * folder of the library; once that is done, what was cut is taken from its trip. None
+ * where the clipboard holds none of them, or what it holds has nowhere to go.
  */
-export function libraryPasteItem(into: { routes?: (routes: CopiedRoute[]) => Promise<unknown>; days?: (days: Day[]) => Promise<unknown> }): MenuItem[] {
+export function libraryPasteItem(into: {
+  routes?: (routes: CopiedRoute[]) => Promise<unknown>;
+  days?: (days: Day[]) => Promise<unknown>;
+  stops?: (stops: Stop[], kinds: readonly string[]) => Promise<unknown>;
+}): MenuItem[] {
   const copied = clip();
   if (!copied) return [];
-  const paste = 'routes' in copied && into.routes ? () => into.routes!(copied.routes) : 'days' in copied && into.days ? () => into.days!(copied.days) : undefined;
+  const paste =
+    'routes' in copied && into.routes
+      ? () => into.routes!(copied.routes)
+      : 'days' in copied && into.days
+        ? () => into.days!(copied.days)
+        : 'stops' in copied && into.stops
+          ? () => into.stops!(copied.stops, copied.kinds ?? [])
+          : undefined;
   if (!paste) return [];
   const run = async () => {
     await paste();

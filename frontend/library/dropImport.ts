@@ -62,7 +62,7 @@ export async function importRides(files: readonly ImportSource[], onProgress: (t
 }
 
 /** A place to be kept, with the kind it is of. */
-interface KindedPlace {
+export interface KindedPlace {
   kind: string;
   stop: Stop;
 }
@@ -122,6 +122,13 @@ async function importIntoStash(dropped: Dropped, folderId: number, onProgress: (
   return { text: keptText(kept, known, 'file', t('No GPX or KML files in there.')), errors };
 }
 
+/** Keeps places in the list `tripId`, each in the section of its kind; a place the list holds already is left out. Answers how many were kept and how many were there already. */
+export async function keepPlaces(tripId: number, places: readonly KindedPlace[]): Promise<{ kept: number; known: number }> {
+  let added: KindedPlace[] = [];
+  await changeTrip(tripId, (list) => withPlaces(list, (added = newPlaces(list, places))));
+  return { kept: added.length, known: places.length - added.length };
+}
+
 /**
  * Keeps the waypoints of the files of routes among `files` as places: in the list `tripId`, or
  * in the folder `folderId` in a list per file, named as the file names itself or after
@@ -146,10 +153,9 @@ async function importPlaces(files: readonly ImportSource[], into: { folderId: nu
     const name = asName(gpx.name ?? file.name.replace(ROUTE_FILE, '')) || t('Places');
     const tripId = 'tripId' in into ? into.tripId : (lists.get(name) ?? (await collectionIn(trips, into.folderId, name)));
     lists.set(name, tripId);
-    let added: KindedPlace[] = [];
-    await changeTrip(tripId, (list) => withPlaces(list, (added = newPlaces(list, places))));
-    kept += added.length;
-    known += places.length - added.length;
+    const count = await keepPlaces(tripId, places);
+    kept += count.kept;
+    known += count.known;
   });
   return { text: keptText(kept, known, 'place', t('No places in there.')), errors };
 }

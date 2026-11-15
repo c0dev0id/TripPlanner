@@ -31,7 +31,7 @@ import { dragToFolder } from './dragToFolder';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow, stashItemName } from './StashFileCard';
 import { stashCopies, stashStops, type Picked } from './stashOut';
-import { keptText } from './dropImport';
+import { keepPlaces, keptText } from './dropImport';
 import { TripShape } from './TripShape';
 
 /** A folder, a trip or a file of the Stash, as what is selected, moved and deleted together. */
@@ -562,7 +562,7 @@ export function Library(props: {
   });
   /** Pastes copied routes into the trip where an import would put them, and saves it. */
   const pasteInto = (tripId: number, routes: CopiedRoute[]) => changeTrip(tripId, (trip) => pasteIntoTrip(trip, routes, newId));
-  /** What is pasted into the one folder or trip: folders and trips into a folder, routes and days into a trip. Nothing is pasted into the Stash. */
+  /** What is pasted into the one folder or trip: folders and trips into a folder, routes and days into a trip, stops into a list of places as places of their kinds. Nothing is pasted into the Stash. */
   const pasteItems = (item: Item): MenuItem[] => {
     if ('folder' in item) {
       const f = item.folder;
@@ -579,6 +579,16 @@ export function Library(props: {
     return libraryPasteItem({
       routes: (routes) => left(() => pasteInto(id, routes)),
       days: (days) => left(() => changeTrip(id, (trip) => pasteDays(trip, days, undefined, newId))),
+      ...(isPlaceList(id)
+        ? {
+            stops: (stops, kinds) =>
+              left(async () => {
+                const places = stops.map((stop, i) => ({ kind: kinds[i] || t('Places'), stop: { ...stop, id: newId(), pointId: null } }));
+                const { kept, known } = await keepPlaces(id, places);
+                setImportNote({ text: keptText(kept, known, 'place', t('No places in there.')), errors: [] });
+              }),
+          }
+        : {}),
     });
   };
   /** Puts folders and trips on the clipboard: cut, to be moved where they are pasted; copied, which only trips are. */
@@ -630,9 +640,9 @@ export function Library(props: {
   /** Copies the waypoints of files of the Stash, to be pasted as stops or as places. */
   const copyWaypoints = (of: readonly StashFile[]) =>
     takeOut(async () => {
-      const stops = await stashStops(of);
-      copyStops(stops);
-      return t('Copied {what}: paste from the menu of a day, or of a kind in a list of places.', { what: counted(stops.length, 'waypoint') });
+      const { stops, kinds } = await stashStops(of);
+      copyStops(stops, kinds);
+      return t('Copied {what}: paste from the menu of a day, or of a list of places or a kind in it.', { what: counted(stops.length, 'waypoint') });
     });
   /** Keeps tracks of the Stash as rides, which the rides then list. */
   const keepRides = (picked: readonly Picked[]) =>

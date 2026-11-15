@@ -321,7 +321,10 @@ entries at the end of their section.
     there is one way to the file and no second route for saving it.
   - Nothing goes into the Stash from the app; things only come out of it, into a
     trip, among the rides or into a list of places. Into a trip and a list they go by
-    the clipboard, which every day and kind already pastes from. A track becomes a
+    the clipboard, which every day and kind already pastes from. A list also takes
+    waypoints whole, from its menu among the Places, and files them as an import of
+    the file would: a new list has no kind to paste into, and a file's waypoints name
+    their kinds, which a paste into one kind drops. A track becomes a
     ride on the server, from the stored file: alone, cut out of its file with the DOM
     (`GpxEdit`), or, where it is all the file holds of routes and tracks, as the file's
     own bytes, since a ride is known by its file's digest and the same recording is
