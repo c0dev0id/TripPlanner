@@ -12,6 +12,7 @@ import { askConfirmation } from '../ui/confirm';
 import { counted } from '../ui/format';
 import type { Stop } from '../model/trip';
 import { menuNote, type MenuItem } from '../ui/menu';
+import { pinItems } from '../ui/Pin';
 import { dayTitleOf } from './labels';
 import { removeDayAsked, removeRouteAsked } from './remove';
 
@@ -54,14 +55,6 @@ function moveItems(kind: PartKind, ids: readonly string[]): MenuItem[] {
   const trip = openTrip()!;
   const from = kind === 'route' ? dayOfRoute(trip, ids[0]!) : dayOfStop(trip, ids[0]!);
   return moveToDayItem(from?.id, (dayId) => movePartsToDay(kind, ids, dayId));
-}
-
-/** The menu items that pin what is selected to the map and let go of it, which `pin` does. */
-export function pinItems(pin: (pinned: boolean) => void): MenuItem[] {
-  return [
-    { label: t('Pin selected to the map'), run: () => pin(true) },
-    { label: t('Unpin selected'), run: () => pin(false) },
-  ];
 }
 
 /** Icon, with our icons as its submenu, each drawn before its name: the one all the stops have is checked, and a pick gives it to all of them. */

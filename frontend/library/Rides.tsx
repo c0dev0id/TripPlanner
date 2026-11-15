@@ -10,8 +10,7 @@ import { fetchingTrip, libraryTab, libraryTrips, outlineOf, searchedFor } from '
 import { activeRecordingId, putOnDay, recordingColor, shownRecordings } from '../state/recordings';
 import { isRidePinned, pinRides } from '../state/pins';
 import { COMPARED_RIDE_COLOR } from '../model/routeLook';
-import { pinItems } from '../trip/partMenu';
-import { Pin } from '../trip/Pin';
+import { Pin, pinItems } from '../ui/Pin';
 import { opened, toggleRecording } from '../state/recordingView';
 import { clearSection, ridesOnSection, section, sectionStart } from '../state/section';
 import { allRides, askOfRides, changeRides, compareWithDay, revealedRide, revealRide, RIDES, ridesCompared, ridesError, ridesLoading, ridesNote, ridesOnMap, runRidesJob } from '../state/rides';

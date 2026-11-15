@@ -41,8 +41,8 @@ import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { Pad } from '../ui/Pad';
 import { foundBecause } from './labels';
-import { moveToDayItem, pinItems } from './partMenu';
-import { Pin } from './Pin';
+import { Pin, pinItems } from '../ui/Pin';
+import { moveToDayItem } from './partMenu';
 import { pickFile } from '../ui/pickFile';
 
 /** Keeps a GPX file of one track the user picks as a ride on the day, and shows it whole on the map. */

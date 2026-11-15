@@ -43,7 +43,7 @@ import { Pad } from '../ui/Pad';
 import type { RowSelect } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, dayHeading, dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
-import { RoutePin } from './Pin';
+import { RoutePin } from './RoutePin';
 import { DayMedia } from './Media';
 import { addRecordingPicked, DayRecordings } from './Recordings';
 import { partMenu } from './partMenu';

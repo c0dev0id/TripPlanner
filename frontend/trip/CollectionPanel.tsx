@@ -22,7 +22,7 @@ import { StopShape } from '../ui/StopShape';
 import { dayDetail, routeKindLabel, routeLabel } from './labels';
 import { PlaceKindControls, PlaceKindMark } from '../library/PlaceKinds';
 import { partMenu } from './partMenu';
-import { RoutePin } from './Pin';
+import { RoutePin } from './RoutePin';
 import { DayMedia } from './Media';
 import { DayRecordings } from './Recordings';
 
