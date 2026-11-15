@@ -10,7 +10,7 @@ import type { RecordedTrack } from '../recording/track';
 import type { Route } from '../model/trip';
 import { routeLine } from '../routing/legs';
 import { showWhole } from './drawing';
-import { isRecordingPinned, isRoutePinned } from './pins';
+import { isRecordingPinned, isRidePinned, isRoutePinned } from './pins';
 import { shownTrack } from './section';
 import { activeRecordingId, loadedTrack, setActiveRecordingId, shownRecordings, type ShownRecording } from './recordings';
 import { activeRouteId, openTrip, openTripId, selectedDayId, takeUpRoute } from './trip';
@@ -130,8 +130,8 @@ const view = createRoot(() => {
     const routes = day()?.routes ?? [];
     const pinned: Comparand[] = [
       ...routes.flatMap((route, i) => (isRoutePinned(route.id) ? [{ route, label: route.name || t('Route {n}', { n: i + 1 }) }] : [])),
-      // Of a day, the recordings pinned beside it; in the rides' tab, the one selected beside it.
-      ...shownRecordings().flatMap((recording) => (recording.id !== o.recording.id && (isRecordingPinned(recording.id) || o.recording.dayId === undefined) ? [{ recording }] : [])),
+      // Of a day, the recordings pinned on it; in the rides' tab, the rides pinned there.
+      ...shownRecordings().flatMap((recording) => (recording.id !== o.recording.id && (recording.dayId === undefined ? isRidePinned(recording.id) : isRecordingPinned(recording.id)) ? [{ recording }] : [])),
     ];
     return pinned.length === 1 ? pinned[0] : undefined;
   }, undefined, { equals: sameComparand });

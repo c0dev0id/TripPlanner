@@ -75,7 +75,7 @@ share work; sharing between users is on the way.
 - **Where you have been** — a third button draws every recorded ride at once: the roads
   you ride often dark, the ones you never took not at all. It stays on while planning.
 - **Rides by date** — every recording in years, months and days of riding, kept once
-  whatever plans it followed; drop your tracker's files there, select some and compare
+  whatever plans it followed; drop your tracker's files there, pin some and compare
   them on the map. Mark a section of road on one to find every ride over it and set two
   of them against each other there. Name them after where they began and ended, and
   merge the pieces of one outing.

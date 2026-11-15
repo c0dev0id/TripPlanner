@@ -203,7 +203,7 @@ function RecordingLines(props: { map: MapLibreMap }) {
 
 /**
  * Draws the routes the duplicates report compares, each in its colour, the recording a
- * day's lookup shows, the rides selected while the map follows their tab, what is shown
+ * day's lookup shows, the rides held against a day while the map follows their tab, what is shown
  * of the Stash while it follows the Stash's, the pinned lines of trips set aside, and the
  * ends of the section looked up among the rides.
  */
@@ -211,7 +211,7 @@ function ComparedLines(props: { map: MapLibreMap }) {
   createEffect(() => {
     const stash = mapTab() === 'stash';
     const aside = pinnedAsideLines().map((line) => ({ id: 0, ...line }));
-    // A ride drawn whole as a recording, opened or compared, is not drawn again as a selected ride.
+    // A ride drawn whole as a recording, opened or pinned, is not drawn again as one held against a day.
     const drawn = new Set(shownRecordings().map((recording) => recording.id));
     const rides = mapTab() === 'recordings' ? ridesOnMap().filter((ride) => !drawn.has(ride.id)) : [];
     const lines = recordingFeatures([...comparedLines(), ...previewedLines(), ...rides, ...(stash ? stashLines() : []), ...aside]);

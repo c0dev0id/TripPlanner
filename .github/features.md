@@ -14,8 +14,8 @@
   unfolded, marked and selected in the others stays as it is, and each keeps how far it
   was scrolled. The map and the pane beside the library show what belongs to the tab
   shown, and under the gear what the tab before showed: the open trip and its day in
-  Trips, the open list in Places, the file shown in Stash, the rides opened and
-  selected in Recordings; pinned routes and recordings stay on the map whatever tab is
+  Trips, the open list in Places, the file shown in Stash, the ride opened and the
+  rides pinned in Recordings; pinned routes and recordings stay on the map whatever tab is
   shown. Trips and Places each keep what they had open when the user left them by
   their tab, the trip or list, its day, the route taken up and the recording opened,
   and open it again when the user comes back by their tab; only one trip is open at a
@@ -405,14 +405,16 @@
   a click on the opened one closes it. Cmd or Ctrl with a click selects a ride, and the
   first such click also the ride opened by the click before it; Shift a
   run, its pad adds it or takes it away; a day's or a month's heading selects all its
-  rides. The map draws the
-  selected rides, each in a colour its row shows, and brings them into view, so that
-  rides of different years are looked at together. A ride's menu renames it, copies it
+  rides, for the menu to act on together. A ride's pin keeps it on the map as a
+  recording, as a pin does on a day, each in a colour its row shows, so that rides of
+  different years are looked at together, and the opened ride is compared with the one
+  pinned beside it as on a day. The rides' pins are not the open trip's: they stay for
+  the page, whatever trip is opened. A ride's menu renames it, copies it
   to be pasted onto a day, opens a day it is on,
   in the tab its trip is in, and deletes it with its file, from every day it
-  is on, after a question; with several selected it copies, adds and deletes all of
-  them. A recording's menu on its day has "Show in the rides", which shows the tab
-  with it selected and in view. The rides selected stay drawn while another tab is shown.
+  is on, after a question; with several selected it copies, pins, unpins, adds and
+  deletes all of them. A recording's menu on its day has "Show in the rides", which
+  shows the tab with it selected and in view.
 - Autoname, in a ride's menu: the selected rides are named after the places they began
   and ended in, as "Hockenheim - Walldorf", for files an app names all alike. The
   places are asked of Nominatim, one a second, each position once; it is said above
@@ -524,9 +526,9 @@
   rides then holds only the rides that rode that section in the same direction, under
   a line that names its length, whose ✕ lets go of the section. A ride opened shows its
   figures, focus cards, chart and point popup for the section alone, with the rest of
-  it dimmed; a second ride selected beside the opened one is compared with it on the
-  section, so that two passes of one road are set against each other. More than one
-  selected beside it compares with nothing.
+  it dimmed; the one ride pinned beside it is compared with it on the section, so that
+  two passes of one road are set against each other, and is itself drawn bright on the
+  section alone. With more than one pinned there is no comparison.
 - Additional media on a day: files and links kept with it, listed in the day's pane under
   their own heading after Planning (the day's routes and stops) and Recordings. Files
   are picked, as many at once as wanted, and may be of any kind; a link is given a name

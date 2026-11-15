@@ -7,10 +7,14 @@ import type { Ride, Suggestion } from '../recording/rides';
 import { FAR_APART_M, isOddJoint, likelierFirst, ridingYears, totalDistance } from '../recording/rides';
 import { copyRecordings } from '../state/clipboard';
 import { fetchingTrip, libraryTab, libraryTrips, outlineOf, searchedFor } from '../state/library';
-import { activeRecordingId, putOnDay } from '../state/recordings';
+import { activeRecordingId, putOnDay, recordingColor, shownRecordings } from '../state/recordings';
+import { isRidePinned, pinRides } from '../state/pins';
+import { COMPARED_RIDE_COLOR } from '../model/routeLook';
+import { pinItems } from '../trip/partMenu';
+import { Pin } from '../trip/Pin';
 import { opened, toggleRecording } from '../state/recordingView';
 import { clearSection, ridesOnSection, section, sectionStart } from '../state/section';
-import { allRides, askOfRides, changeRides, compareWithDay, revealedRide, revealRide, rideColor, RIDES, ridesCompared, ridesError, ridesLoading, ridesNote, runRidesJob } from '../state/rides';
+import { allRides, askOfRides, changeRides, compareWithDay, revealedRide, revealRide, RIDES, ridesCompared, ridesError, ridesLoading, ridesNote, ridesOnMap, runRidesJob } from '../state/rides';
 import { dayLabel, foundBecause } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
@@ -44,9 +48,9 @@ const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>();
  * or a tap on a ride opens it, which shows it whole on the map with its figures, as a
  * recording on a day is opened, and a click on the opened one closes it; with Cmd or
  * Ctrl it selects, with Shift a run of them; its pad adds or takes it away; a day's or
- * a month's heading selects all its rides. The map draws what is selected, each ride
- * in a colour its row shows too. A ride's
- * menu renames it, names it after where it began and ended, copies it to be pasted
+ * a month's heading selects all its rides, for the menu to act on together. Its pin
+ * keeps it on the map beside the one opened, as on a day, in a colour its row shows
+ * too; the one opened is compared with the one pinned. A ride's menu renames it, names it after where it began and ended, copies it to be pasted
  * onto a day, puts it on a day of the open trip, merges it with the selected rides it
  * follows or that follow it, opens a day it is on, and deletes it. The magnifier above
  * them asks for the days of trips the rides on no day may be of, which are then listed
@@ -126,6 +130,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       { label: t('Rename…'), disabled: several, run: () => setRenamed(ride) },
       { label: t('Autoname'), run: () => void runRidesJob((onProgress) => autoname(chosen, onProgress)) },
       { label: t('Copy'), run: () => copyRecordings(chosen) },
+      ...(several ? pinItems((pinned) => pinRides(chosen.map((kept) => kept.id), pinned)) : []),
       { label: t('Merge'), disabled: !several || !followOneAnother(chosen), run: () => void mergeAsked(chosen) },
       only && more.length > 0 && !several
         ? { label: t('Open location'), disabled: fetchingTrip(), items: ride.days.map((on) => ({ label: dayText(on), run: () => props.onOpen(on.tripId, on.dayId) })) }
@@ -162,7 +167,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       else await Promise.all(suggestion.rideIds.map((id) => declineRideDay(id, suggestion.dayId)));
       setSuggestions(suggestions().filter((other) => other !== suggestion));
       // What was held against the day to be judged is let go of with the judgement.
-      if (shownSuggestion() === suggestion) selectIn(RIDES, NOTHING_SELECTED);
+      if (shownSuggestion() === suggestion) compareWithDay([]);
     });
   const card = (heading: string, rides: Ride[], distanceM: number) => (
     <RidingDayCard heading={heading} rides={rides} distanceM={distanceM} where={whereOf} selected={isSelected} onSelectDay={() => select(rides)} onClick={(ride, e) => clickRow(RIDES, order(), String(ride.id), e) || toggleRecording(ride)} onToggle={(ride) => toggleRow(RIDES, String(ride.id))} items={items} />
@@ -201,7 +206,13 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       <Show when={suggestions().length > 0}>
         <div class="row">
           <h4 class="grow">{t('{what} to go through', { what: counted(suggestions().length, 'suggestion') })}</h4>
-          <IconButton label={t('Put the suggestions away')} onClick={() => setSuggestions([])}>
+          <IconButton
+            label={t('Put the suggestions away')}
+            onClick={() => {
+              setSuggestions([]);
+              compareWithDay([]);
+            }}
+          >
             <CloseIcon />
           </IconButton>
         </div>
@@ -289,6 +300,12 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
   );
 }
 
+/** The colour a ride is drawn in on the map, which its row shows: of one pinned or opened, as a recording; of one held against a day, red; none for one not drawn. */
+function drawnColor(ride: Ride): string | undefined {
+  if (shownRecordings().some((shown) => shown.id === ride.id && shown.dayId === undefined)) return recordingColor(ride);
+  return ridesOnMap().some((line) => line.id === ride.id) ? COMPARED_RIDE_COLOR : undefined;
+}
+
 /** A day of riding as a card: its heading over how far it went, which selects all its rides, then a row per ride with when it began, its name, its length and the days it is on. */
 function RidingDayCard(props: {
   heading: string;
@@ -326,7 +343,7 @@ function RidingDayCard(props: {
               <div class="row">
                 <Pad label={t('Select {name}', { name: ride.name })} selected={props.selected(String(ride.id))} onToggle={() => props.onToggle(ride)} />
                 <button class="text grow" onClick={(e) => props.onClick(ride, e)}>
-                  <Show when={rideColor(ride)}>{(color) => <span class="swatch" style={{ background: color() }} />}</Show>
+                  <Show when={drawnColor(ride)}>{(color) => <span class="swatch" style={{ background: color() }} />}</Show>
                   <span class="lines">
                     <span class="name">{[ride.startedAt !== null && timeOfDayText(ride.startedAt), ride.name].filter(Boolean).join(' · ')}</span>
                     <span class="muted detail">
@@ -334,6 +351,7 @@ function RidingDayCard(props: {
                     </span>
                   </span>
                 </button>
+                <Pin of={ride.name} pinned={isRidePinned(ride.id)} onToggle={(pinned) => pinRides([ride.id], pinned)} />
                 <MenuButton of={ride.name} items={() => props.items(ride)} />
               </div>
             </li>

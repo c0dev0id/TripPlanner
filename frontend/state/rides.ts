@@ -1,10 +1,9 @@
 import { batch, createEffect, createMemo, createResource, createRoot, createSignal } from 'solid-js';
 import { errorMessage, fetchRides } from '../api';
-import { COMPARED_RIDE_COLOR, ROUTE_PALETTE } from '../model/routeLook';
-import type { LngLat } from '../model/trip';
+import { COMPARED_RIDE_COLOR } from '../model/routeLook';
 import type { Ride } from '../recording/rides';
 import { decodePolyline } from '../routing/polyline';
-import { selectIn, selectionOf } from '../ui/selection';
+import { selectIn } from '../ui/selection';
 import { showWhole } from './drawing';
 import { libraryTab, libraryTrips, setQuery, showTab } from './library';
 import { foldPanel } from './panel';
@@ -12,7 +11,8 @@ import { foldPanel } from './panel';
 /**
  * The rides: every recording the user keeps, read while their tab is shown, again when
  * the library is listed afresh and when one of them changes, the lines of the rides
- * selected there, which the map draws, and how what is done to them goes.
+ * held against a day they are suggested for, which the map draws, and how what is done
+ * to them goes.
  */
 
 /** How often rides were changed since the page was loaded: what lists them reads them again when it goes up. */
@@ -38,13 +38,13 @@ const rides = createRoot(() => {
   );
   const all = createMemo((): Ride[] => (list.error ? [] : (list.latest ?? [])));
   const byId = createMemo(() => new Map(all().map((ride) => [String(ride.id), ride])));
-  /** The rides drawn on the map: the selected ones, the first selected first; the same while their lines are, however often they are read. */
-  const drawn = createMemo(() => [...selectionOf(RIDES)].flatMap((id) => byId().get(id) ?? []), [], { equals: (a, b) => a.length === b.length && a.every((ride, i) => ride.id === b[i]!.id && ride.line === b[i]!.line) });
-  /** Whether the rides drawn are those held against a day, and none else. */
-  const compared = createMemo(() => drawn().length > 0 && drawn().every((ride) => heldAgainstDay().includes(ride.id)));
-  /** Their lines, each in the palette's colour at its place, which starts over where the palette ends; those held against a day in the red that tells them apart from its routes, and narrow over them. */
-  const lines = createMemo(() => drawn().map((ride, i) => ({ id: ride.id, points: decodePolyline(ride.line) as LngLat[], color: compared() ? COMPARED_RIDE_COLOR : ROUTE_PALETTE[i % ROUTE_PALETTE.length]!.color, held: compared() })));
-  // What is selected is brought into view.
+  /** The rides held against a day; the same while their lines are, however often they are read. */
+  const drawn = createMemo(() => heldAgainstDay().flatMap((id) => byId().get(String(id)) ?? []), [], { equals: (a, b) => a.length === b.length && a.every((ride, i) => ride.id === b[i]!.id && ride.line === b[i]!.line) });
+  /** Whether rides are held against a day. */
+  const compared = createMemo(() => drawn().length > 0);
+  /** Their lines, in the red that tells them apart from the day's routes, and narrow over them. */
+  const lines = createMemo(() => drawn().map((ride) => ({ id: ride.id, points: decodePolyline(ride.line), color: COMPARED_RIDE_COLOR, held: true })));
+  // What is held against a day is brought into view.
   createEffect(() => {
     const points = lines().flatMap((line) => line.points);
     if (points.length > 0) showWhole(points);
@@ -62,19 +62,11 @@ export const ridesError = (): unknown => rides.list.error;
 /** Whether the rides on the map are held against a day they are suggested for. */
 export const ridesCompared = rides.compared;
 
-/** Holds rides against a day they are suggested for: they are selected, and so drawn, in the red that tells them apart from the day's routes. */
-export function compareWithDay(ids: readonly number[]): void {
-  batch(() => {
-    holdAgainstDay(ids);
-    selectIn(RIDES, new Set(ids.map(String)));
-  });
-}
+/** Holds rides against a day they are suggested for, which draws them in the red that tells them apart from the day's routes; none lets go of them. */
+export const compareWithDay = (ids: readonly number[]): void => void holdAgainstDay(ids);
 
-/** The lines the map draws of the rides selected. */
+/** The lines the map draws of the rides held against a day. */
 export const ridesOnMap = rides.lines;
-
-/** The colour a selected ride is drawn in on the map; none for one that is not drawn. */
-export const rideColor = (ride: Ride): string | undefined => rides.lines().find((line) => line.id === ride.id)?.color;
 
 /** The ride to be brought into view among the rides, once: one shown from a day it is on. */
 export const [revealedRide, revealRide] = createSignal<number>();

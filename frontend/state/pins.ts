@@ -5,9 +5,10 @@ import { openTripId } from './trip';
 /**
  * What the user has pinned to the map: routes and recordings that stay on it while
  * something else is taken up, which otherwise is drawn alone, or while another tab is
- * shown. Nothing is pinned to begin with. The pins are those of the open trip, for all of
- * its days, and go when it is left; a trip set aside for another tab's leaves its pinned
- * lines on the map and takes its pins back when it is opened again.
+ * shown, and the rides pinned in their own tab. Nothing is pinned to begin with. The
+ * pins of routes and recordings are those of the open trip, for all of its days, and go
+ * when it is left; a trip set aside for another tab's leaves its pinned lines on the map
+ * and takes its pins back when it is opened again.
  */
 
 const [pinnedRoutes, setPinnedRoutes] = createSignal<ReadonlySet<string>>(new Set());
@@ -39,6 +40,14 @@ export const isRecordingPinned = (id: number): boolean => pinnedRecordings().has
 export const pinRoutes = (ids: readonly string[], pinned: boolean): void => void setPinnedRoutes(withIds(pinnedRoutes(), ids, pinned));
 
 export const pinRecordings = (ids: readonly number[], pinned: boolean): void => void setPinnedRecordings(withIds(pinnedRecordings(), ids, pinned));
+
+/** The rides pinned in their tab, in the order they were pinned. Unlike a trip's pins they are not the open trip's: they are kept for the page, whatever trip is open. */
+const [pinnedRides, setPinnedRides] = createSignal<ReadonlySet<number>>(new Set());
+export { pinnedRides };
+
+export const isRidePinned = (id: number): boolean => pinnedRides().has(id);
+
+export const pinRides = (ids: readonly number[], pinned: boolean): void => void setPinnedRides(withIds(pinnedRides(), ids, pinned));
 
 /** A pinned line of a trip set aside, as the map draws it. */
 export interface PinnedLine {

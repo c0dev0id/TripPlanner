@@ -1052,9 +1052,17 @@ entries at the end of their section.
   goes through), and all their figures
   are worked out on that part, since a ride's whole average or top speed says nothing
   about one road. Ranking the list was left out: the comparison of two chosen rides
-  answers the question, and the order by date stays readable. In the rides' list,
-  nothing is pinned, so the ride compared with is the one other ride selected beside
-  the opened one.
+  answers the question, and the order by date stays readable. The ride compared with
+  is the one pinned beside the opened one, as on a day.
+- **Rides are on the map by their pins, as recordings are on a day.** Selecting rides
+  drew them, in thinned lines, and the comparison of a section took the one other
+  ride selected, so that selecting a few to merge or delete redrew the map and changed
+  what was compared. Selection now only gathers rides for the menu; a pin puts a ride
+  on the map as a recording, with its track read, in a colour of its own, and the
+  opened ride is compared with the one pinned, as on a day. The rides' pins are kept
+  apart from the open trip's (`pinnedRides`), for the page: a ride belongs to no trip,
+  and opening one would otherwise throw them away. The rides suggested for a day are
+  held against it on their own (`compareWithDay`), no longer through the selection.
 - **A recording has one focus.** The colour of its line and the chart along the bottom
   were chosen apart, with tabs for every chart the file allowed, so that the line could
   show one thing and the chart another. One select, Focus, now picks both: the line is

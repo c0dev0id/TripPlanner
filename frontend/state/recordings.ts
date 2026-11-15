@@ -7,9 +7,8 @@ import { readRecording, type RecordedTrack } from '../recording/track';
 import { decodeCached } from '../routing/polyline';
 import { flushSave } from './autosave';
 import { showWhole } from './drawing';
-import { isRecordingPinned } from './pins';
-import { allRides, rideChanges, ridesChanged, RIDES } from './rides';
-import { selectionOf } from '../ui/selection';
+import { isRecordingPinned, isRidePinned, pinnedRides } from './pins';
+import { allRides, rideChanges, ridesChanged } from './rides';
 import { mapTab, tripShown } from './library';
 import { openTrip, openTripId, selectedDayId } from './trip';
 
@@ -49,11 +48,13 @@ export const recordingsAmong = (dayId: string, ids: readonly string[]): Recordin
 /** A recording as it is on the map: one of a day, or a ride opened in the list of rides, which is there for itself and has no day. */
 export type ShownRecording = KeptRide & { dayId?: string };
 
-/** The colours recordings are drawn in, apart from the planned routes', by their place on their day; a ride without a day in the first. */
+/** The colours recordings are drawn in, apart from the planned routes', by their place on their day; a ride without a day by its place among the rides pinned, one that is not pinned in the colour after theirs. */
 const COLORS = ['#7048e8', '#0c8599', '#c2255c', '#5c940d', '#e67700', '#3b5bdb'];
 
 export function recordingColor(recording: ShownRecording): string {
-  return recording.dayId === undefined ? COLORS[0]! : COLORS[recordingsOf(recording.dayId).findIndex((r) => r.id === recording.id) % COLORS.length]!;
+  if (recording.dayId !== undefined) return COLORS[recordingsOf(recording.dayId).findIndex((r) => r.id === recording.id) % COLORS.length]!;
+  const pinned = [...pinnedRides()].indexOf(recording.id);
+  return COLORS[(pinned === -1 ? pinnedRides().size : pinned) % COLORS.length]!;
 }
 
 /** The recording opened for its figures. */
@@ -82,24 +83,17 @@ const listedRide = createRoot(() =>
   ),
 );
 
-/** The ride a ride opened in the list is compared with: the one other ride selected there, where there is exactly one. */
-const comparedRide = createRoot(() =>
-  createMemo(
-    (): KeptRide | undefined => {
-      const listed = listedRide();
-      const others = listed ? [...selectionOf(RIDES)].filter((id) => id !== String(listed.id)) : [];
-      return others.length === 1 ? keptRide(Number(others[0])) : undefined;
-    },
-    undefined,
-    { equals: sameRide },
-  ),
+/** The rides pinned in their tab, in the order they were pinned; the same while they read the same. */
+const ridesPinned = createRoot(() =>
+  createMemo((): KeptRide[] => [...pinnedRides()].flatMap((id) => keptRide(id) ?? []), [], { equals: (a, b) => a.length === b.length && a.every((ride, i) => sameRide(ride, b[i])) }),
 );
 
-/** The recordings on the map: of the day shown, the pinned ones and, while the map follows the trip's tab, the one opened; and while it follows the rides, a ride opened in their list with the one it is compared with. */
+/** The recordings on the map: of the day shown, the pinned ones and, while the map follows the trip's tab, the one opened; and while it follows the rides, the rides pinned in their list and the one opened there. */
 export function shownRecordings(): ShownRecording[] {
   const dayId = selectedDayId();
   const active = tripShown() ? activeRecordingId() : undefined;
-  const rides = mapTab() === 'recordings' ? [listedRide(), comparedRide()].filter((ride): ride is KeptRide => ride !== undefined) : [];
+  const listed = listedRide();
+  const rides = mapTab() === 'recordings' ? [...ridesPinned(), ...(listed && !isRidePinned(listed.id) ? [listed] : [])] : [];
   return [...allRecordings().filter((r) => r.dayId === dayId && (r.id === active || isRecordingPinned(r.id))), ...rides];
 }
 
@@ -145,9 +139,9 @@ createRoot(() => {
         .finally(() => reading.delete(recording.id));
     }
   });
-  // A track is kept while its recording is on the open trip, or is the ride opened or compared in the list of rides: the list is long, and a track is megabytes.
+  // A track is kept while its recording is on the open trip, or is a ride opened or pinned in the list of rides: the list is long, and a track is megabytes.
   createEffect(() => {
-    const wanted = new Set([...allRecordings(), listedRide(), comparedRide()].flatMap((r) => (r ? [r.id] : [])));
+    const wanted = new Set([...allRecordings(), ...ridesPinned(), listedRide()].flatMap((r) => (r ? [r.id] : [])));
     const kept = untrack(tracks);
     if ([...kept.keys()].some((id) => !wanted.has(id))) setTracks(new Map([...kept].filter(([id]) => wanted.has(id))));
   });
