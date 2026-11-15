@@ -79,7 +79,7 @@ share work; sharing between users is on the way.
   them on the map. Name them after where they began and ended, and merge the pieces
   of one outing.
 - **Fuel, beds and food** — fuel stations, hotels, restaurants, cafes, viewpoints and
-  parking, each kind all in view, along the day's routes or off.
+  parking, each kind all in view, along the route or ride you look at, or off.
 - **Find the place** — search a town, a pass or an address; the map flies there and pins
   it, ready to become a point or a stop.
 - **Your map, your colours** — OpenFreeMap styles, OpenTopoMap, OpenStreetMap,

@@ -23,7 +23,7 @@ const [edited, setEdited] = createSignal<EditedKind>();
 /** What a kind's switch says the map shows of it. */
 const MODE_TEXT: Record<PlaceMode, string> = {
   all: t('All on the map'),
-  along: t("Along the day's routes"),
+  along: t('Along the route'),
   none: t('Not on the map'),
 };
 
@@ -39,7 +39,7 @@ export function PlaceKindMark(props: { id: string }) {
   );
 }
 
-/** A kind's switch through all, along the day's routes and none on the map, and the gear to its settings. */
+/** A kind's switch through all, along the route or ride looked at, and none on the map, and the gear to its settings. */
 export function PlaceKindControls(props: EditedKind) {
   const mode = () => placeMode(props.id);
   return (

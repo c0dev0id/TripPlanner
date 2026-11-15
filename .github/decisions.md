@@ -713,7 +713,9 @@ entries at the end of their section.
   routes, or none, per kind: a hotel is wanted anywhere near the day's end, fuel only
   along the way, and a single switch for "along" across all kinds could not say that.
   "Along" without a day shown shows nothing rather than all in view, so that a state
-  means one thing. The states are the browser's, as the map's other layers are; how far
+  means one thing. "Along" follows what is looked at: the recording opened or the route
+  taken up, else the day's routes, since the places along a plan are of no use beside a
+  ride that went another way. The states are the browser's, as the map's other layers are; how far
   "along" reaches and the badge a kind is drawn with are the account's, set from the
   kind's gear, the badge one of those the kinds of the store have, so that every place
   on the map looks like a place and none like a stop.

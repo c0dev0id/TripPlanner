@@ -586,7 +586,8 @@
 - Places on the map from the planner's own store of OpenStreetMap data: fuel stations,
   hotels, restaurants, cafes, viewpoints and parking, under "Standard" on top of the
   Places tab. Each kind's switch goes through all in view (from zoom 10 on), those
-  along the selected day's routes, and none; without a day shown, "along" shows none.
+  along what is looked at, and none: along the recording opened or the route taken up,
+  else along the selected day's routes; without a day shown, "along" shows none.
   Its gear opens the kind's settings: how far from a route its places are still shown
   along it, 200 m to begin with, and the badge they are drawn with, one of the kinds'
   badges. The switches are kept for the browser, the settings with the account. A tap on a place shows name, address, cuisine, opening hours, phone and links to

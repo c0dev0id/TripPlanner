@@ -6,11 +6,14 @@ import { tilesAlong, tilesOfView, type Tile } from '../poi/tiles';
 import { routeLine } from '../routing/legs';
 import { readPreference, writePreference } from '../ui/preferences';
 import { placeReachM } from './preferences';
-import { selectedDay } from './trip';
+import type { LngLat } from '../model/trip';
+import { opened } from './recordingView';
+import { activeRouteId, selectedDay } from './trip';
 
 /**
  * The places on the map: of each kind, of the store's and of the user's own lists alike,
- * all of them, those along the selected day's routes, or none, as the kind's mode says.
+ * all of them, those along what is looked at (the recording or route taken up, else the
+ * selected day's routes), or none, as the kind's mode says.
  * The store's are read tile by tile. The modes are kept for this browser.
  */
 
@@ -52,9 +55,19 @@ export function cyclePlaceMode(kind: string): void {
   writePreference(PLACE_MODES, next.size > 0 ? [...next].map(([id, shown]) => `${id}:${shown}`).join(',') : undefined);
 }
 
-/** The lines of the selected day's routes, which places are shown along; none while no kind is shown along them. */
-export const dayRouteLines = createRoot(() =>
-  createMemo(() => ([...modes().values()].includes('along') ? (selectedDay()?.routes ?? []).map(routeLine).filter((line) => line.length > 1) : [])),
+/**
+ * The lines places are shown along: of what is taken up, the recording opened or the
+ * route, else the selected day's routes; none while no kind is shown along them.
+ */
+export const alongLines = createRoot(() =>
+  createMemo((): LngLat[][] => {
+    if (![...modes().values()].includes('along')) return [];
+    const recording = opened();
+    if (recording) return [recording.track.points];
+    const routes = selectedDay()?.routes ?? [];
+    const taken = routes.find((route) => route.id === activeRouteId());
+    return (taken ? [taken] : routes).map(routeLine).filter((line) => line.length > 1);
+  }),
 );
 
 /** What the map shows: its bounds (west, south, east, north) and zoom, as the map says them. */
@@ -79,7 +92,7 @@ const viewTiles = createRoot(() =>
 const alongTiles = createRoot(() =>
   createMemo((): Tile[] => {
     const kinds = alongKinds();
-    const lines = dayRouteLines();
+    const lines = alongLines();
     return kinds.length > 0 && lines.length > 0 ? tilesAlong(lines, Math.max(...kinds.map((kind) => placeReachM(kind.id)))) : [];
   }),
 );
@@ -116,7 +129,7 @@ createRoot(() => {
 const readIn = (tiles: readonly Tile[], kinds: readonly PoiCategory[]): Place[] => tiles.flatMap((tile) => kinds.flatMap((kind) => read().get(keyOf(tile, kind.id)) ?? []));
 
 /** The places of the store along the day's routes, apart from those in view, so that moving the map does not measure them again. */
-const alongPlaces = createRoot(() => createMemo(() => placesNear(readIn(alongTiles(), alongKinds()), dayRouteLines(), (place) => placeReachM(place.category.id))));
+const alongPlaces = createRoot(() => createMemo(() => placesNear(readIn(alongTiles(), alongKinds()), alongLines(), (place) => placeReachM(place.category.id))));
 
 /** The places of the store the map shows. */
 export const placesOnMap = createRoot(() => createMemo((): Place[] => [...readIn(viewTiles(), allKinds()), ...alongPlaces()]));
