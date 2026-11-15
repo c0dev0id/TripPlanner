@@ -561,7 +561,7 @@ entries at the end of their section.
   trip, a new folder and the two imports acted on "the folder shown", which the user
   had to set first and could not see in the icon. New and Add are now in the menu of
   the folder or trip they go into, the top of a tab's tree included, and the toolbar keeps only
-  its two switches. New lists what the row can hold, so a collection, which holds
+  its switches. New lists what the row can hold, so a collection, which holds
   nothing that is made empty, has none.
 - **An import is never asked how it is organized; the folder and the tree say.** The
   dialog offered a trip per folder or a trip per file for the whole tree. One rule
@@ -699,10 +699,20 @@ entries at the end of their section.
   points, which leave a winding road by kilometres. The distances are a preference of the
   account, 200 m for every kind to begin with: narrow, so that a route stays readable,
   and changed in a moment, since nothing is fetched for it.
-- **The kinds of places are a list in the panel, not a menu on the map.** Several kinds
-  are switched at a time, and the app's menu closes with each pick; a list of checkboxes
-  that stays open under the panel's icons takes as many ticks as wanted. The map's own
-  controls stay for what belongs to the map alone: the base map and the two overlays.
+- **The kinds of places are rows of the Places tab, not a menu on the map.** Several
+  kinds are switched at a time, and the app's menu closes with each pick. The store's
+  kinds stand under "Standard" on top of the tab, above the user's own lists, whose
+  kinds are their sections: one place for all places, and no second list behind an
+  icon. The map's own controls stay for what belongs to the map alone: the base map and
+  the overlays.
+- **A kind of place has one switch of three states.** All in view, along the day's
+  routes, or none, per kind: a hotel is wanted anywhere near the day's end, fuel only
+  along the way, and a single switch for "along" across all kinds could not say that.
+  "Along" without a day shown shows nothing rather than all in view, so that a state
+  means one thing. The states are the browser's, as the map's other layers are; how far
+  "along" reaches and the badge a kind is drawn with are the account's, set from the
+  kind's gear, the badge one of those the kinds of the store have, so that every place
+  on the map looks like a place and none like a stop.
 - **A route's colour says which route it is, not what state it is in.** Routes were
   orange, the neighbouring days' grey: among roads drawn in orange and yellow and the red
   of closures and roadworks the line was hard to follow, and with every day shown nothing

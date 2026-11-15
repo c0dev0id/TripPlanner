@@ -212,6 +212,8 @@ export const fetchOwnPlaces = (): Promise<OwnPlace[]> => request('GET', '/api/pl
 export interface Preferences {
   /** How far from a route a place of each kind is still shown along it, in metres, by kind. */
   placeReachM?: Record<string, number>;
+  /** The badge each kind of place is drawn with where it is not its own, by kind: the id of a kind of the store. */
+  placeIcons?: Record<string, string>;
   /** The width of a route's line in pixels. */
   routeWidth?: number;
   /** Whether routes without a colour of their own get one per day or one per route. */

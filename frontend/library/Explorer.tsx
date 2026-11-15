@@ -1,6 +1,5 @@
 import { createEffect, For, on, onCleanup, onMount, Show } from 'solid-js';
 import { t } from '../i18n/t';
-import { PlacesList } from '../map/PlacesList';
 import type { TripSummary } from '../model/trip';
 import { LIBRARY_TABS, libraryProblem, libraryTab, libraryTrips, openTree, query, setQuery, showFolder, showTab, TAB_NAMES, type LibraryTab } from '../state/library';
 import { openTrip, openTripId, selectDay, takeUpRouteOf } from '../state/trip';
@@ -71,7 +70,6 @@ export function Explorer(props: { onOpen: (id: number, dayId?: string, routeId?:
   return (
     <section class="explorer" ref={section}>
       <LibraryActions />
-      <PlacesList />
       <Show when={searched()}>
         {(tab) => <input class="search" type="search" placeholder={SEARCHES[tab()]} aria-label={SEARCHES[tab()]} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />}
       </Show>

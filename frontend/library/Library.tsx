@@ -31,6 +31,7 @@ import { dragToFolder } from './dragToFolder';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow, stashItemName } from './StashFileCard';
 import { stashCopies, stashStops, type Picked } from './stashOut';
+import { PlaceKindControls, StandardPlaces } from './PlaceKinds';
 import { keepPlaces, keptText } from './dropImport';
 import { TripShape } from './TripShape';
 
@@ -120,6 +121,9 @@ function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void })
                   <span class="muted detail">{dayDetail(props.trip.kind, day(), collection())}</span>
                 </span>
               </button>
+              <Show when={collection()}>
+                <PlaceKindControls id={day().id} name={day().name} own />
+              </Show>
             </div>
           </li>
         )}
@@ -858,6 +862,9 @@ export function Library(props: {
     };
     return (
       <div hidden={libraryTab() !== tree.tab}>
+        <Show when={tree.tab === 'places'}>
+          <StandardPlaces />
+        </Show>
         <div class="row tab-summary" classList={{ current: isMarkedFolder(root()) }} ref={(el) => cardMenu(el, menu)}>
           <button class="text grow" onClick={() => markFolderShown(root())}>
             <span class="muted detail">{heldText(held(), heldNoun(root()))}</span>

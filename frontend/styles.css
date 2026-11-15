@@ -1227,38 +1227,34 @@ fieldset.choices legend {
   vertical-align: -4px;
 }
 
-/* The kinds of places as layers, a list in the panel under its row of icons. */
-.places-list {
-  gap: 4px;
-  padding: 6px 8px 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
+/* The store's kinds of places, on top of the Places tab, each with its switch and its gear. */
+.standard-places {
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
 }
 
-.panel .places-list label {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
+.standard-places h3 {
+  margin: 4px 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.standard-places ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.place-kind {
   gap: 8px;
-  color: var(--fg);
+  min-height: 34px;
+  padding-left: 6px;
 }
 
-.panel .places-list .along {
-  margin-top: 4px;
-  padding-top: 6px;
-  border-top: 1px solid var(--line);
-}
-
-.places-list p {
+.standard-places p {
   margin: 2px 0 0;
   font-size: 13px;
-}
-
-/* The name of one of the user's own lists, over its kinds. */
-.places-list .own-list {
-  margin-top: 6px;
-  padding-top: 6px;
-  border-top: 1px solid var(--line);
 }
 
 /* The colour a kind's places are drawn in, as on the map. */
@@ -1272,12 +1268,8 @@ fieldset.choices legend {
   box-shadow: 0 0 0 1px var(--line);
 }
 
-.place-reaches label {
+.dialog .place-icons label {
   align-items: center;
-}
-
-.place-reaches input {
-  width: 5em;
 }
 
 /* What went wrong saving stands over the map, under the place search, whatever panes are shown. */

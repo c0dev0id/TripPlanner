@@ -2,6 +2,7 @@ import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { webAddress } from '../poi/details';
+import { placeIcon } from '../state/preferences';
 import { addOwnPlaceAsStop, ownPlaceById, ownPlacesOnMap } from '../state/ownPlaces';
 import { openTrip, selectedDay } from '../state/trip';
 import { OWN_PLACES_LAYERS, OWN_PLACES_SOURCE, ownPlaceFeatures } from './ownPlacesOverlay';
@@ -60,7 +61,7 @@ export function OwnPlaceMarkers(props: { map: MapLibreMap }) {
   );
   createEffect(() => {
     const places = ownPlacesOnMap();
-    props.map.getSource<GeoJSONSource>(OWN_PLACES_SOURCE)?.setData(ownPlaceFeatures(places));
+    props.map.getSource<GeoJSONSource>(OWN_PLACES_SOURCE)?.setData(ownPlaceFeatures(places, placeIcon));
     if (places.length === 0) popup.remove();
   });
   return null;

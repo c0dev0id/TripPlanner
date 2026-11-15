@@ -3,6 +3,7 @@ import { createEffect, For, onCleanup, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { poiDetails } from '../poi/details';
 import { placesOnMap, setMapView } from '../state/places';
+import { placeIcon } from '../state/preferences';
 import { POI_LAYERS, POI_SOURCE, poiFeatures } from './poiOverlay';
 import { popupOnTap } from './tapPopup';
 
@@ -51,7 +52,7 @@ export function PlaceMarkers(props: { map: MapLibreMap }) {
   );
   createEffect(() => {
     const places = placesOnMap();
-    props.map.getSource<GeoJSONSource>(POI_SOURCE)?.setData(poiFeatures(places));
+    props.map.getSource<GeoJSONSource>(POI_SOURCE)?.setData(poiFeatures(places, (kind) => placeIcon(kind) ?? kind));
     if (places.length === 0) popup.remove();
   });
   return null;

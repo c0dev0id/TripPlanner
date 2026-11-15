@@ -2,19 +2,15 @@ import { createSignal, For, Show } from 'solid-js';
 import { changePassword, errorMessage } from '../api';
 import { chooseLanguage, LANGUAGES, languageChoice, type Language } from '../i18n/language';
 import { t } from '../i18n/t';
-import { poiBadgeUrl } from '../map/poiImages';
 import { DEFAULT_RIDES_OPACITY, DEFAULT_ROUTE_WIDTH, ROUTE_WIDTHS } from '../model/routeLook';
-import { POI_CATEGORIES } from '../poi/categories';
-import { changePreferences, placeReachM, ridesOpacity, routeColoring, routeWidth } from '../state/preferences';
+import { changePreferences, ridesOpacity, routeColoring, routeWidth } from '../state/preferences';
 import { chooseTheme, theme, THEMES, type Theme } from '../ui/theme';
-
-/** The farthest a place may be from a route and still be shown along it, in kilometres. */
-const MAX_KM = 20;
 
 /**
  * What the user sets for the planner as a whole, in the library's pane under its own
  * tab, each setting kept as soon as it changes: the account's language and password,
- * then how the map draws routes, rides and places.
+ * then how the map draws routes and rides. A kind of place has its own settings, in the
+ * Places tab.
  */
 export function Settings() {
   return (
@@ -66,25 +62,6 @@ export function Settings() {
             onChange={(e) => void changePreferences({ ridesOpacity: Math.max(0.05, Math.min(1, Number(e.currentTarget.value) / 100 || DEFAULT_RIDES_OPACITY)) })}
           />
         </label>
-      </section>
-      <section class="place-reaches">
-        <h3>{t('Places along a route: how far from it, in km')}</h3>
-        <For each={POI_CATEGORIES}>
-          {(category) => (
-            <label class="row">
-              <img class="poi-badge" src={poiBadgeUrl(category)} alt="" />
-              <span class="grow">{category.label}</span>
-              <input
-                type="number"
-                min={0.1}
-                max={MAX_KM}
-                step={0.1}
-                value={placeReachM(category.id) / 1000}
-                onChange={(e) => void changePreferences({ placeReachM: { ...Object.fromEntries(POI_CATEGORIES.map((c) => [c.id, placeReachM(c.id)])), [category.id]: Math.round(Math.max(0.1, Math.min(MAX_KM, Number(e.currentTarget.value) || 0.2)) * 1000) } })}
-              />
-            </label>
-          )}
-        </For>
       </section>
     </div>
   );

@@ -19,6 +19,7 @@ import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, routeKindLabel, routeLabel } from './labels';
+import { PlaceKindControls } from '../library/PlaceKinds';
 import { partMenu } from './partMenu';
 import { RoutePin } from './Pin';
 import { DayMedia } from './Media';
@@ -77,6 +78,9 @@ function SectionItem(props: { day: Day; places: boolean; onRename: (day: Day) =>
             <span class="muted detail">{meta()}</span>
           </span>
         </button>
+        <Show when={props.places}>
+          <PlaceKindControls id={props.day.id} name={props.day.name} own />
+        </Show>
         <MenuButton of={props.day.name} items={items} />
       </div>
     </li>

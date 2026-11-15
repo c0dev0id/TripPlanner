@@ -54,8 +54,7 @@
   says so. The button in the line under the tabs folds every
   folder and trip of the tree shown away.
   The open trip stays in the tree, the others around it, so that another trip is one
-  click away. Above the tree stand the library's two switches as icons (the duplicates
-  report, the places on the map), the search, and
+  click away. Above the tree stand the duplicates report's switch as an icon, the search, and
   the open trip's name with its own icons (edit, export, journal, print and share,
   whether it is saved, and a button that closes the trip, saved, and leaves the map
   empty).
@@ -341,13 +340,12 @@
   one to the kind shown. A waypoint's link becomes the place's website; where most
   waypoints of a file link to the same host, such as the directory the file was
   downloaded from, those links are left out and the place's own link is kept.
-- The user's own places on the map while planning: under the places of OpenStreetMap,
-  the list the places icon opens names every list with its kinds, each a layer to
-  tick, with the colour its places are drawn in and how many it holds. A place is a
-  dot in its kind's colour; a tap says its name, list and kind, address, contact,
-  notes and website, and with a day of a trip shown offers "Add as stop", which adds a
-  copy of the place to the day as a free stop. Which kinds are on is kept for the
-  browser.
+- The user's own places on the map while planning: in the Places tab every kind of a
+  list, open or not, has the switch and the gear the standard kinds have (see Places on
+  the map). A place is a dot in its kind's colour, or the badge picked for the kind; a
+  tap says its name, list and kind, address, contact, notes and website, and with a
+  day of a trip shown offers "Add as stop", which adds a copy of the place to the day
+  as a free stop. The places of the open list are its stops and drawn as those.
 - Routes and stops can be marked optional, each in its dialog, and are shown so.
 - GPX export from a dialog: the whole trip, the day picked, or the days or routes
   selected, from Export GPX… in their menu; what is exported is saved first; one file
@@ -544,10 +542,12 @@
   is drawn is set in the settings. It reads the rides anew each time it is switched
   on.
 - Places on the map from the planner's own store of OpenStreetMap data: fuel stations,
-  hotels, restaurants, cafes, viewpoints and parking, each kind a layer to tick in the
-  list the places icon of the panel opens. Shown are those along the selected day's routes,
-  each kind within its own distance, or, with that switched off, all in view from zoom 10
-  on. A tap on a place shows name, address, cuisine, opening hours, phone and links to
+  hotels, restaurants, cafes, viewpoints and parking, under "Standard" on top of the
+  Places tab. Each kind's switch goes through all in view (from zoom 10 on), those
+  along the selected day's routes, and none; without a day shown, "along" shows none.
+  Its gear opens the kind's settings: how far from a route its places are still shown
+  along it, 200 m to begin with, and the badge they are drawn with, one of the kinds'
+  badges. The switches are kept for the browser, the settings with the account. A tap on a place shows name, address, cuisine, opening hours, phone and links to
   its homepage and OpenStreetMap. The store is filled area by area by `make places`, which lists
   the areas to pick from when run without one, and names those of which a kind of place
   is behind the others or missing.
@@ -555,9 +555,8 @@
   other tabs show their tree, by section, each kept as soon as it changes. User: the
   language, kept in the browser, and the password, changed with the one in use. Map:
   light or dark colours, kept in the browser; kept with the account, how wide route
-  lines are drawn, how routes get their colours, how opaque a ride is in the overlay of
-  all rides, and how far from a route a place of each kind is still shown along it,
-  200 m to begin with.
+  lines are drawn, how routes get their colours, and how opaque a ride is in the
+  overlay of all rides. A kind of place has its own settings, in the Places tab.
 - Route lines in colour: one colour for each day, or the palette's next colour for each
   route of the trip, as the settings say; a route's menu gives it a colour of its own,
   which it keeps wherever it is drawn. A route's row shows its colour. Lines are 5 pixels

@@ -1,6 +1,7 @@
 import { createEffect, createResource, createSignal, onCleanup, onMount, Show, untrack } from 'solid-js';
 import { errorMessage, fetchMe, fetchTrip, logout, type Progress } from './api';
 import { DuplicatesReport } from './library/DuplicatesReport';
+import { PlaceKindDialog } from './library/PlaceKinds';
 import { Explorer } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';
@@ -177,6 +178,7 @@ export function App() {
       <StopDialog />
       <ExportDialog />
       <JournalDialog />
+      <PlaceKindDialog />
       <ShareDialog />
     </>
   );

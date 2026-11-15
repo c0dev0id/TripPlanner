@@ -1,7 +1,7 @@
 import { createMemo, createResource, createRoot } from 'solid-js';
 import { fetchPreferences, savePreferences, type Preferences } from '../api';
 import { DEFAULT_RIDES_OPACITY, DEFAULT_ROUTE_COLORING, DEFAULT_ROUTE_WIDTH, type RouteColoring } from '../model/routeLook';
-import type { PoiCategoryId } from '../poi/categories';
+import { POI_CATEGORIES, type PoiCategoryId } from '../poi/categories';
 
 /** What the user set for the planner as a whole, kept with the account: loaded once, saved as it changes. */
 
@@ -12,8 +12,20 @@ const preferences = (): Preferences => loaded() ?? {};
 /** How far from a route a place is shown along it where the user set nothing: narrow, so that a route stays readable. */
 const DEFAULT_PLACE_REACH_M = 200;
 
-/** How far from a route a place of the kind is still shown along it, in metres. */
-export const placeReachM = (kind: PoiCategoryId): number => preferences().placeReachM?.[kind] ?? DEFAULT_PLACE_REACH_M;
+/** How far from a route a place of the kind is still shown along it, in metres: a kind of the store by its id, one of the user's own by its section's. */
+export const placeReachM = (kind: string): number => preferences().placeReachM?.[kind] ?? DEFAULT_PLACE_REACH_M;
+
+/** The badge the places of the kind are drawn with, where the user picked one: that of a kind of the store, by its id. */
+export function placeIcon(kind: string): PoiCategoryId | undefined {
+  const icon = preferences().placeIcons?.[kind];
+  return POI_CATEGORIES.some((category) => category.id === icon) ? (icon as PoiCategoryId) : undefined;
+}
+
+/** Sets how far from a route the places of the kind are shown along it, and the badge they are drawn with, none for the kind's own look. */
+export function changePlaceKind(kind: string, reachM: number, icon: PoiCategoryId | undefined): Promise<void> {
+  const { [kind]: _, ...icons } = preferences().placeIcons ?? {};
+  return changePreferences({ placeReachM: { ...preferences().placeReachM, [kind]: reachM }, placeIcons: icon ? { ...icons, [kind]: icon } : icons });
+}
 
 /** The width of a route's line in pixels. */
 export const routeWidth = createRoot(() => createMemo((): number => preferences().routeWidth ?? DEFAULT_ROUTE_WIDTH));
