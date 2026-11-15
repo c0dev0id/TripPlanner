@@ -533,13 +533,21 @@ export function Library(props: {
   const newTexts = () => NEW_DIALOG[newIn()?.what ?? 'folder'];
   /** Export, which downloads the trips as a zip once the open one is saved. */
   const exportItem = (of: readonly TripSummary[]): MenuItem => ({ label: t('Export'), disabled: of.length === 0, run: () => void flushSave().then(() => window.location.assign(tripArchiveUrl(of.map((trip) => trip.id)))) });
-  /** Makes a folder, or a trip or collection, which is opened, in a folder, null for the top; the folder unfolds so that what is new is in view. A kind of place is a section of the list `into`. */
+  /** Makes a folder, or a trip with its first day or a list of places, which is opened, in a folder, null for the top; the folder unfolds so that what is new is in view. A kind of place is a section of the list `into`. */
   const createNew = (what: NewKind, into: number | null, name: string) => {
     if (what === 'kind') return addSectionTo(into!, name);
     const parent = folders().find((f) => f.id === into);
     if (parent) fold([keyOf({ folder: parent })], true);
     if (what === 'folder') void runLibrary(() => createFolder(name, into), relistFolders);
-    else void runLibrary(async () => props.onOpen(await createTrip(name, into, what === 'trip' ? 'trip' : 'collection')), relistTrips);
+    else if (what === 'list') void runLibrary(async () => props.onOpen(await createTrip(name, into, 'collection')), relistTrips);
+    else void runLibrary(() => startTrip(name, into), relistTrips);
+  };
+  /** Makes a trip with its first day, since a trip is planned by its days, and opens it at that day. */
+  const startTrip = async (name: string, into: number | null) => {
+    const trip = await createTrip(name, into, 'trip');
+    const dayId = newId();
+    await changeTrip(trip.id, (made) => withDayAdded(made, dayId));
+    props.onOpen(trip, dayId);
   };
   /** A new section of the name in the collection: in the open one as an edit, in another on the server. */
   const addSectionTo = (tripId: number, name: string) =>
