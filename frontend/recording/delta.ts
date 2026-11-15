@@ -40,10 +40,10 @@ export function offsetsFrom(points: readonly LngLat[], lines: readonly (readonly
 }
 
 /** A place on a line: on its segment `segment`, the fraction `t` of the way along it, `distance` from the point it was found for. */
-type Place = { segment: number; t: number; distance: number };
+export type Place = { segment: number; t: number; distance: number };
 
 /** The place on the line nearest p between `from` and `to` metres along it; `segment` is one of the line's segments within that stretch or after it. */
-function nearestWithin(p: XY, line: readonly XY[], along: Float64Array, from: number, to: number, segment: number): Place | undefined {
+export function nearestWithin(p: XY, line: readonly XY[], along: Float64Array, from: number, to: number, segment: number): Place | undefined {
   let s = segment;
   while (s > 0 && along[s]! > from) s--;
   let best: Place | undefined;
