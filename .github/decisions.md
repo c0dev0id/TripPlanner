@@ -1021,7 +1021,11 @@ entries at the end of their section.
   as loud as the rest, and the speed scale started at 10 km/h either way, so that small
   differences all came out grey. The line is now dimmed where there is nothing to set
   against it, and the speed difference's scale is as wide as its values: whole km/h
-  below 10, fives above.
+  below 10, fives above. A point off the other line for good, whose distance is
+  infinite, is dimmed as one without a value. The other recording is dimmed in turn
+  where the opened one did not run along it (`Delta.covered`, the stretches of the
+  other between the first and last place of each run of the opened one's points on
+  it), so that the two lines left bright are the ones compared.
 - **A recording has one focus.** The colour of its line and the chart along the bottom
   were chosen apart, with tabs for every chart the file allowed, so that the line could
   show one thing and the chart another. One select, Focus, now picks both: the line is

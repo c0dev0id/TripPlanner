@@ -14,6 +14,9 @@ const ON_LINE_M = 50;
 const LOOK_AHEAD_M = 1000;
 const LOOK_BACK_M = 30;
 
+/** The differences of a comparison that are series along the track, one value a point. */
+export type DeltaSeries = 'offset' | 'time' | 'speed' | 'lean';
+
 /** How a track compares with another line, point by point. */
 export interface Delta {
   /** Metres from each point to the other line. */
@@ -24,6 +27,8 @@ export interface Delta {
   speed?: (number | null)[];
   /** Degrees leaned further than the other at the same place, to whichever side. */
   lean?: (number | null)[];
+  /** Of another recording, for each of its points whether the track ran along it there. */
+  covered?: boolean[];
 }
 
 /** The distance from each point to the nearest of the lines, in metres. */
@@ -126,7 +131,20 @@ export function deltaToTrack(track: { points: readonly LngLat[]; measures: Measu
     time: clock && start !== undefined && start !== null ? clock.map((v) => (v === null ? null : (v - start) / 1000)) : undefined,
     speed: against(track.measures.speed, other.measures.speed),
     lean: against(sideless(track.measures.lean), sideless(other.measures.lean)),
+    covered: coveredOf(along, other.measures.distance),
   };
+}
+
+/** For each point of the other track, whether it lies on a stretch the track ran along it: between the first and last place of each run of its points on the other. */
+export function coveredOf(along: readonly (number | null)[], otherDistance: Float64Array): boolean[] {
+  const stretches: [number, number][] = [];
+  let open: [number, number] | undefined;
+  for (const at of along) {
+    if (at === null) open = undefined;
+    else if (!open) stretches.push((open = [at, at]));
+    else [open[0], open[1]] = [Math.min(open[0], at), Math.max(open[1], at)];
+  }
+  return Array.from(otherDistance, (metres) => stretches.some(([from, to]) => metres >= from && metres <= to));
 }
 
 /** A comparison in figures. */

@@ -487,9 +487,10 @@
   has the recording's colour and neither card nor chart shows. The surfaces, matched once
   by the routing server, are listed with the distance on each. Pointing in the chart
   marks the place on the map, and a click there moves the map to it. A point is said in
-  a popup that follows the mouse along the line and goes when it leaves it: the distance
-  along and the value focused on, or the differences of a difference; with no focus,
-  everything known of it (the time, the measures, the surface and the file's other
+  a popup that follows the mouse along the line and goes when it leaves it: the value
+  focused on, or the differences of a difference (the distance from the other, or the
+  speed against it and the time ahead or behind); with no focus, everything known of it
+  (the distance along, the time, the measures, the surface and the file's other
   values); a click on the line, or in the chart, pins the popup there, another click on
   the line moves it, and closing it lets it follow the mouse again.
 - Comparing a recording: the recording opened is compared with what is pinned beside
@@ -503,7 +504,9 @@
   same places along the way. The focus offers the distance from the other, and speed
   and lean against another recording, each charted along the way. Focused on a
   difference, the line is coloured where the two run together and both have the value,
-  and dimmed elsewhere; the speed against the other is coloured on a scale as wide as
+  and dimmed elsewhere, as is the other recording where the opened one did not run
+  along it; speed and lean against the other are written with their sign, + for more
+  and − for less; the speed against the other is coloured on a scale as wide as
   its differences there, in whole km/h below 10. The point picked says how it differs
   there.
 - Additional media on a day: files and links kept with it, listed in the day's pane under

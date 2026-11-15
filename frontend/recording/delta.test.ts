@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { METRES_PER_DEGREE } from '../geo/measure';
 import type { LngLat } from '../model/trip';
-import { alignAlong, deltaSummaryOf, deltaToTrack, offsetsFrom, valueAt } from './delta';
+import { alignAlong, coveredOf, deltaSummaryOf, deltaToTrack, offsetsFrom, valueAt } from './delta';
 import { measuresOf } from './measures';
 
 /** A place `east` and `north` metres from a corner near the equator, where degrees of longitude and latitude are alike. */
@@ -61,6 +61,12 @@ describe('deltaToTrack', () => {
     expect(round(d.lean!)).toEqual([0, 5, 0, 0, 0]);
     const s = deltaSummaryOf(quick.measures, d);
     expect([s.offM, Math.round(s.timeS!), Math.round(s.speed!)]).toEqual([0, -8, 6]);
+  });
+
+  it('marks the points of the other that the track ran along, in each run apart', () => {
+    const other = Float64Array.from([0, 100, 200, 300, 400, 500, 600]);
+    expect(coveredOf([null, 90, 210, null, 410, 520], other)).toEqual([false, true, true, false, false, true, false]);
+    expect(coveredOf([null, null], other)).toEqual([false, false, false, false, false, false, false]);
   });
 
   it('counts the distance off the other and how far it went', () => {

@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import type { LngLat } from '../model/trip';
-import type { Delta } from './delta';
+import type { DeltaSeries } from './delta';
 import type { Metric } from './measures';
 
 /** What a recording's line can be coloured by: one of its measures, the surface of the roads under it, or a difference to what it is compared with. */
@@ -10,7 +10,7 @@ export type Coloring = Metric | 'surface' | Difference;
 export type Difference = 'offset' | 'speedDifference' | 'leanDifference';
 
 /** The series of a comparison each difference colours by. */
-export const DIFFERENCE_SERIES: Record<Difference, keyof Delta> = { offset: 'offset', speedDifference: 'speed', leanDifference: 'lean' };
+export const DIFFERENCE_SERIES: Record<Difference, DeltaSeries> = { offset: 'offset', speedDifference: 'speed', leanDifference: 'lean' };
 
 export const isDifference = (coloring: Coloring): coloring is Difference => coloring in DIFFERENCE_SERIES;
 

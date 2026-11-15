@@ -182,8 +182,9 @@ const view = createRoot(() => {
       return Array.isArray(s) ? s.map(surfaceColor) : undefined;
     }
     const [shown, focus] = [shownScale(), shownColoring()];
-    // A difference shows where the two lines run together and both have the value; the rest is dimmed.
-    return shown && shown.values.map((v) => (v === null && focus !== undefined && isDifference(focus) ? DIMMED : colorAt(shown.scale, v)));
+    // A difference shows where the two lines run together and both have the value; the rest, without a value or off the other line for good (no finite distance), is dimmed.
+    const dims = focus !== undefined && isDifference(focus);
+    return shown && shown.values.map((v) => (dims && (v === null || !Number.isFinite(v)) ? DIMMED : colorAt(shown.scale, v)));
   });
 
   // Another trip or day starts with none opened, as it starts with no route taken up; surfaces are matched for this page only.
@@ -203,7 +204,12 @@ const view = createRoot(() => {
       (fault: unknown) => keepSurfaces(id, fault instanceof Error ? fault : new Error(String(fault))),
     );
   });
-  return { opened, comparison, colorings, shownColoring, openedSurfaces, shownScale, colors };
+  /** The recording compared with, where it is one and a difference is focused on, with which of its points the opened one ran along. */
+  const comparedCover = createMemo(() => {
+    const [c, focus, covered] = [comparand(), shownColoring(), delta()?.covered];
+    return c && 'recording' in c && focus !== undefined && isDifference(focus) && covered ? { id: c.recording.id, covered } : undefined;
+  });
+  return { opened, comparison, colorings, shownColoring, openedSurfaces, shownScale, colors, comparedCover };
 });
 
 /** The opened recording with its track and measures, while it is shown and its track is read. */
@@ -226,3 +232,6 @@ export const shownScale = view.shownScale;
 
 /** The colour of each point of the opened recording's line, while it is coloured. */
 export const openedLineColors = view.colors;
+
+/** The recording the opened one is compared with while a difference is focused on, and of each of its points whether the two ran together there; elsewhere it is dimmed. */
+export const comparedCover = view.comparedCover;

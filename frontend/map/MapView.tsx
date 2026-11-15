@@ -11,7 +11,7 @@ import { mapTab, tripShown } from '../state/library';
 import { isRoutePinned, pinnedAsideLines } from '../state/pins';
 import { keepsView } from '../state/place';
 import { ridesOpacity, routeWidth } from '../state/preferences';
-import { opened, openedLineColors, somethingTakenUp } from '../state/recordingView';
+import { comparedCover, opened, openedLineColors, somethingTakenUp } from '../state/recordingView';
 import { loadedTrack, previewedLines, recordingColor, shownRecordings } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
 import { failedLegs } from '../state/routing';
@@ -134,6 +134,10 @@ function dimStops(): LngLat[] {
   return dim.flatMap(({ day }) => day.stops.map((stop) => stop.lngLat));
 }
 
+/** A recording's line in pieces of one colour each, those marked DIMMED drawn dimmed. */
+const colorPieces = (id: number, points: readonly LngLat[], colors: readonly string[]) =>
+  colorRuns(points, colors).map((run) => ({ id, points: run.points, color: run.color === DIMMED ? NO_VALUE : run.color, dimmed: run.color === DIMMED }));
+
 /** Keeps the recordings shown on the map once their tracks are read, each in its colour; the opened one apart, coloured by a measure where chosen. */
 function RecordingLines(props: { map: MapLibreMap }) {
   const openedId = createMemo(() => opened()?.recording.id);
@@ -141,7 +145,11 @@ function RecordingLines(props: { map: MapLibreMap }) {
     recordingFeatures(
       shownRecordings().flatMap((recording) => {
         const track = recording.id === openedId() ? undefined : loadedTrack(recording);
-        return track ? [{ id: recording.id, points: track.points, color: recordingColor(recording) }] : [];
+        if (!track) return [];
+        const color = recordingColor(recording);
+        // The recording compared with is dimmed where the opened one did not run along it.
+        const cover = comparedCover();
+        return cover?.id === recording.id ? colorPieces(recording.id, track.points, cover.covered.map((on) => (on ? color : DIMMED))) : [{ id: recording.id, points: track.points, color }];
       }),
     ),
   );
@@ -150,7 +158,7 @@ function RecordingLines(props: { map: MapLibreMap }) {
     if (!o) return recordingFeatures([]);
     const colors = openedLineColors();
     const id = o.recording.id;
-    return recordingFeatures(colors ? colorRuns(o.track.points, colors).map((run) => ({ id, points: run.points, color: run.color === DIMMED ? NO_VALUE : run.color, dimmed: run.color === DIMMED })) : [{ id, points: o.track.points, color: recordingColor(o.recording) }]);
+    return recordingFeatures(colors ? colorPieces(id, o.track.points, colors) : [{ id, points: o.track.points, color: recordingColor(o.recording) }]);
   });
   createEffect(() => props.map.getSource<GeoJSONSource>(RECORDINGS_SOURCE)?.setData(others()));
   createEffect(() => props.map.getSource<GeoJSONSource>(OPENED_RECORDING_SOURCE)?.setData(openedLine()));

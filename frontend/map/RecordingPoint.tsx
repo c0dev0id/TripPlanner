@@ -3,7 +3,7 @@ import { Popup, type GeoJSONSource, type MapMouseEvent, type Map as MapLibreMap 
 import { createEffect, createSignal, onCleanup } from 'solid-js';
 import { render } from 'solid-js/web';
 import { DIFFERENCE_FIGURES, FIGURES, METRICS } from '../recording/figures';
-import type { Delta } from '../recording/delta';
+import type { DeltaSeries } from '../recording/delta';
 import { isDifference, surfaceLabel, type Difference } from '../recording/lineColors';
 import type { Metric } from '../recording/measures';
 import { comparison, hoverIndex, opened, openedSurfaces, pickedIndex, setPickedIndex, shownColoring } from '../state/recordingView';
@@ -17,12 +17,12 @@ import { tapReach } from './tapFilter';
 const MEASURED = new Set(['time', 'ele', 'speed', 'lean_angle']);
 
 /** What the differences of each focus on a difference are, by their series in the comparison. */
-const DIFFERENCES: Record<Difference, readonly (keyof Delta)[]> = { offset: ['offset'], speedDifference: ['speed', 'time'], leanDifference: ['lean'] };
+const DIFFERENCES: Record<Difference, readonly DeltaSeries[]> = { offset: ['offset'], speedDifference: ['speed', 'time'], leanDifference: ['lean'] };
 
 /**
- * What is known of a point of the opened recording, as far as the focus asks: where
- * along it lies, and the value focused on, or the differences of a difference focused
- * on; with no focus, its time, its measures, its surface and the file's other values.
+ * What is known of a point of the opened recording, as far as the focus asks: the value
+ * focused on, or the differences of a difference focused on; with no focus, how far
+ * along it lies, its time, its measures, its surface and the file's other values.
  */
 function PointDetails(props: { index: number | undefined }) {
   const rows = (): [string, string][] => {
@@ -30,7 +30,7 @@ function PointDetails(props: { index: number | undefined }) {
     const i = props.index;
     if (!o || i === undefined) return [];
     const m = o.measures;
-    const rows: [string, string][] = [[t('Along'), distanceText(m.distance[i]!)]];
+    const rows: [string, string][] = [];
     const measure = (metric: Metric) => {
       const value = m[metric]?.[i];
       if (value !== null && value !== undefined) rows.push([FIGURES[metric].label, FIGURES[metric].text(value)]);
@@ -49,6 +49,7 @@ function PointDetails(props: { index: number | undefined }) {
       }
     } else if (focus !== undefined) measure(focus);
     else {
+      rows.push([t('Distance'), distanceText(m.distance[i]!)]);
       const time = m.time?.[i];
       if (time !== null && time !== undefined) rows.push([t('Time'), clockText(time)]);
       METRICS.forEach(measure);
