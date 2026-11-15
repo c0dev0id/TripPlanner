@@ -20,7 +20,7 @@ is the planner itself.
 | `npm run dev` | Vite dev server on port 5173; set `vite_dev_server` in `config/local.php` so the PHP templates load from it. |
 | `php bin/planner <command>` | `db:init`, `db:recreate`, `invite`, `user:create`, `user:password`, `admin:grant`, `garmin:icons`, `closures:fetch`, `places:fetch <area>`. |
 
-The Makefile targets `init`, `recreate`, `invite`, `user`, `password` and `admin` wrap
+The Makefile targets `init`, `recreate`, `invite`, `user`, `password`, `admin` and `places` wrap
 `bin/planner` with `doas -u www` and `pass` for the production OpenBSD box; in
 development call `php bin/planner` directly. The Makefile must stay portable between
 OpenBSD make and GNU make: no conditionals, no shell functions.
@@ -49,14 +49,16 @@ There is no linter beyond `php -l` and `tsc`. PHPUnit fails on warnings and depr
   `Http/Routes.php` is the one list of routes: a pages group behind the CSRF guard and an
   `/api` group answering JSON.
 - Folders are features (`Trip/`, `Journal/`, `Export/`, `Recording/`, `Poi/`, `Signup/`,
-  `Account/`, `Share/`, `Stash/`). Each holds its controllers, value objects and PDO repositories
+  `Account/`, `Share/`, `Stash/`, `Media/`). Each holds its controllers, value objects and PDO repositories
   (plural class names: `Trips`, `Folders`, `Entries`).
 - Public pages (landing, sign-up, sign-in) are Plates templates in `templates/` and work
   without JavaScript. `/app` and the read-only trip page (`/trips/{id}`, `/t/{token}`)
   are templates that load a Vite bundle through `Pages/ViteAssets`, which reads the build
   manifest or points at the dev server.
-- The schema is `db/schema.sql`. There are no migrations before 1.0: a schema change is
-  deployed by `db:recreate`, which drops everything.
+- The schema is `db/schema.sql`. There are no migrations before 1.0. A new table or index
+  is deployed by `db:init` (`make init`), which adds what is missing; a changed table by
+  `db:recreate`, which drops everything, or, where the data is to stay, by a one-shot
+  `bin/migrate-…` script that is run once on the server and then deleted.
 - The SQLite file, the journal's file store and `config/local.php` live outside the
   deployed checkout; php-fpm runs chrooted, so paths are given relative to the checkout.
 
@@ -67,7 +69,7 @@ goes to `public/build`; static paths and page routes never share a name.
 
 Layers, each depending only on the ones below:
 
-- Presentation: `library/`, `trip/`, `map/`, `ui/`, `view/`.
+- Presentation: `library/`, `trip/`, `map/`, `preferences/`, `ui/`, `view/`.
 - Application state: `state/` (the open trip, undo and redo, the routing pump, autosave,
   journal, recordings, clipboard, library).
 - Domain, pure and unit-tested: `routing/`, `gpx/`, `recording/`, `poi/`, `geo/`,
@@ -81,8 +83,9 @@ mark and selection while another tab is shown.
 
 The Stash is folders of GPX files kept whole (`stash_files`, `src/Stash/`), with an
 index of each file's routes and tracks beside it (`stash_items`); it is not made of trip
-documents. It works on whole routes, tracks and files: rename, delete, and the ways out,
-into a day by the clipboard or among the rides. Cleaning up rewrites the stored file.
+documents. It works on whole routes, tracks and files: rename, delete, export the file,
+and the ways out: by the clipboard into a day or a list of places, or among the rides.
+Cleaning up rewrites the stored file.
 Nothing goes into the Stash from the app. The Trips are where things are edited and
 tied together. A collection (`trips.kind`) is a list of places and lives among the
 Places alone.
@@ -130,7 +133,13 @@ validator's messages, the command line and Garmin symbol names are not translate
 PHPUnit covers repositories, the validator and the export against an in-memory SQLite
 database (`tests/TestDatabase.php`); there are no controller tests. Vitest covers the pure
 frontend modules and the open trip's state. The HTTP layer and the editor are exercised by
-hand with Playwright against `php -S`, not in CI.
+hand with Playwright against `php -S`, not in CI:
+
+- `rm -rf var && php bin/planner db:init && php bin/planner user:create <email>` gives a
+  fresh database and prints a generated password, which the first sign-in must replace.
+- `npm run build`, then `php -S 127.0.0.1:8080 -t public`.
+- Headless Chromium needs `--use-gl=swiftshader --enable-unsafe-swiftshader
+  --ignore-gpu-blocklist` for MapLibre to draw.
 
 ## Constraints
 
@@ -143,5 +152,3 @@ hand with Playwright against `php -S`, not in CI.
 - Places (fuel, hotels and the like) are never fetched by the browser: `places:fetch`
   fills the `places` table from the Overpass API, from cron, and the planner reads it by
   tile. `frontend/poi/places.json` lists the kinds for both sides.
-- A new table is deployed with `db:init`, which adds what is missing; only a changed
-  table needs `db:recreate`.
