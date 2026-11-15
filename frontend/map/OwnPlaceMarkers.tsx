@@ -4,7 +4,8 @@ import { t } from '../i18n/t';
 import { webAddress } from '../poi/details';
 import { placeBadge } from '../state/preferences';
 import { addOwnPlaceAsStop, ownPlaceById, ownPlacesOnMap } from '../state/ownPlaces';
-import { openTrip, selectedDay } from '../state/trip';
+import { shownDay } from '../state/library';
+import { openTrip } from '../state/trip';
 import { OWN_PLACES_LAYERS, OWN_PLACES_SOURCE, ownPlaceFeatures } from './ownPlacesOverlay';
 import { popupOnTap } from './tapPopup';
 
@@ -48,7 +49,7 @@ export function OwnPlaceMarkers(props: { map: MapLibreMap }) {
               </p>
             )}
           </Show>
-          <Show when={openTrip()?.kind === 'trip' && selectedDay()}>
+          <Show when={openTrip()?.kind === 'trip' && shownDay()}>
             <p>
               <button type="button" onClick={add}>
                 {t('Add as stop')}

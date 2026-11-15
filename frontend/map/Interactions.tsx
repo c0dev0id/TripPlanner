@@ -4,7 +4,7 @@ import { currentTool, setTool, spotItems, tapAction, tool, type Tool } from '../
 import { isTextField } from '../ui/form';
 import { menu, setMenu } from '../ui/menu';
 import { opened, pickPoint, setPickedIndex, somethingTakenUp } from '../state/recordingView';
-import { mapTab } from '../state/library';
+import { mapTab, tripShown } from '../state/library';
 import { markSectionEnd } from '../state/section';
 import { activeRecordingId } from '../state/recordings';
 import { addFreeStop, appendPoint, editingRoute, insertPoint, insertStop, openTrip, redo, takeUpRoute, takeUpRouteOf, undo } from '../state/trip';
@@ -99,8 +99,8 @@ export function Interactions(props: { map: MapLibreMap }) {
       const hit = focused && only === undefined ? undefined : recordingPointAt(map, e.point, reach, only);
       if (hit) return pickPoint(hit.id, hit.index);
       setPickedIndex(undefined);
-      // While nothing is taken up, a tap on a route takes it up.
-      const tapped = focused ? undefined : routeAt(map, e.point, reach);
+      // While nothing is taken up, a tap on a route takes it up; on a pinned route of a trip not shown, nothing.
+      const tapped = focused || !tripShown() ? undefined : routeAt(map, e.point, reach);
       if (tapped) takeUpRouteOf(tapped.dayId, tapped.routeId);
       return;
     }
@@ -120,8 +120,8 @@ export function Interactions(props: { map: MapLibreMap }) {
   let toolBeforeSpace: Tool | undefined;
   const onKeyDown = (e: KeyboardEvent) => {
     // Text fields keep their own undo and Escape handling, and an open modal dialog has
-    // the keyboard to itself.
-    if (e.defaultPrevented || isTextField(e.target) || document.querySelector('dialog:modal') || !openTrip()) return;
+    // the keyboard to itself. The keys act on the open trip only while it is shown.
+    if (e.defaultPrevented || isTextField(e.target) || document.querySelector('dialog:modal') || !openTrip() || !tripShown()) return;
     const key = e.key.toLowerCase();
     // Undo and redo take back any edit of the trip, those made in the panel as well.
     if ((e.ctrlKey || e.metaKey) && !e.altKey && (key === 'z' || key === 'y')) {

@@ -2,6 +2,7 @@ import { copyParts, pasteItems } from '../state/clipboard';
 import { selectedParts } from '../state/partSelection';
 import { mediaById } from '../state/media';
 import { recordingsAmong } from '../state/recordings';
+import { tripShown } from '../state/library';
 import { editingRouteId, openTrip, selectedDayId } from '../state/trip';
 import { fileVerb } from '../ui/fileVerb';
 import { selectionOwner } from '../ui/selection';
@@ -10,14 +11,14 @@ import { removeAsked } from './partMenu';
 import { clipRecordings, takeRecordingsOff } from './Recordings';
 
 /**
- * The keys that cut, copy, paste and delete in the open trip, as its menus do. Cut, copy
+ * The keys that cut, copy, paste and delete in the open trip while it is shown, as its menus do. Cut, copy
  * and delete act on the selected days, routes, stops, recordings or media, where delete
  * takes a recording off its day; with nothing
  * selected in any list, cut and copy take the route being edited. Paste goes into the route being
  * edited where it takes what was copied, else into the day picked.
  */
 export function partKeys(e: KeyboardEvent): void {
-  const verb = openTrip() && fileVerb(e);
+  const verb = openTrip() && tripShown() && fileVerb(e);
   if (!verb) return;
   if (verb === 'paste') {
     const route = editingRouteId();
