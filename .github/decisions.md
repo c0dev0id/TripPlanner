@@ -1230,8 +1230,9 @@ entries at the end of their section.
   recording (Aufzeichnung) wherever the user reads it, on a day and in the library
   alike: apps call it either, and the recording is what the file is. A dialog that
   renames is titled "Rename", since the menu it came from was the thing's own. What
-  a request names and the server does not have is "… not found." The code keeps its
-  own names (`kind`, `pause`, `ride`).
+  a request names and the server does not have is "… not found." The first tab is the Inbox (Eingang): files
+  arrive there by import, uncurated, and leave it as they are worked into trips. The
+  code keeps its own names (`kind`, `pause`, `ride`, `stash`).
 - **Not translated.** The validator's messages about a malformed trip document, which a
   client bug causes, not a user; the command line; the Garmin symbol names in a GPX file,
   which the device matches; and "Trip Planner" itself.

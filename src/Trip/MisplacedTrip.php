@@ -11,6 +11,6 @@ final class MisplacedTrip extends RuntimeException
 {
     public function __construct()
     {
-        parent::__construct('Place lists belong under Places, files in the Stash, and trips in the other folders.');
+        parent::__construct('Place lists belong under Places, files in the Inbox, and trips in the other folders.');
     }
 }

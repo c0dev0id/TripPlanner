@@ -30,8 +30,8 @@ export const TREES: Record<TreeTab, Tree> = {
   stash: {
     top: 'collections',
     holds: 'file',
-    name: t('Stash'),
-    empty: t('The Stash is empty. Drop GPX files and folders here, or add them from the menu above.'),
+    name: t('Inbox'),
+    empty: t('The Inbox is empty. Drop GPX files and folders here, or add them from the menu above.'),
     search: t('Search files, routes and tracks'),
   },
   trips: {

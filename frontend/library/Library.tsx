@@ -329,7 +329,7 @@ export function Library(props: {
   const takerOf = (items: readonly Item[]) => takerAmong(all(), items);
   /** Refuses, as the server would, to put the items into a folder that does not hold their kind. */
   const assertFits = (items: readonly Item[], into: number | null) => {
-    if (!takerOf(items)(into)) throw new Error(t('Place lists belong under Places, files in the Stash, and trips in the other folders.'));
+    if (!takerOf(items)(into)) throw new Error(t('Place lists belong under Places, files in the Inbox, and trips in the other folders.'));
   };
   /** Moves folders, trips and files into a folder, none for the top, those not in it already; the server refuses a folder inside itself. */
   const moveInto = (moved: readonly Item[], into: number | null) => {

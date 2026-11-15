@@ -46,7 +46,7 @@ final class StashController
             return Json::error($response, 422, $invalid->getMessage());
         }
         $kept = $this->files->keep($this->currentUser->get()->id, (int) ($body['folderId'] ?? 0), $name, $gzip, new DateTimeImmutable());
-        return $kept === null ? Json::error($response, 404, 'Stash folder not found.') : Json::of($response->withStatus($kept['added'] ? 201 : 200), $kept['file']);
+        return $kept === null ? Json::error($response, 404, 'Inbox folder not found.') : Json::of($response->withStatus($kept['added'] ? 201 : 200), $kept['file']);
     }
 
     /** Renames the file with `{name}`, or moves it into another folder of the Stash with `{folderId}`. */
@@ -55,7 +55,7 @@ final class StashController
         $userId = $this->currentUser->get()->id;
         $folderId = Json::field($request, 'folderId');
         if (is_int($folderId)) {
-            return $this->files->move($userId, (int) $args['file'], $folderId) ? $response->withStatus(204) : Json::error($response, 404, 'File or Stash folder not found.');
+            return $this->files->move($userId, (int) $args['file'], $folderId) ? $response->withStatus(204) : Json::error($response, 404, 'File or Inbox folder not found.');
         }
         $name = Name::of(Json::field($request, 'name'));
         if ($name === null) {

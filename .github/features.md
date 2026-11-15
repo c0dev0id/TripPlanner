@@ -9,12 +9,12 @@
   an account without an invitation and prints a generated password; at the first
   sign-in the user has to replace it before the planner opens.
 - The library has four tabs under its search, which stay in view while it scrolls:
-  Stash, for the files that wait to be worked on, Trips, Places, for the lists of the
+  Inbox, for the files that wait to be worked on, Trips, Places, for the lists of the
   user's own places, and Recordings, for the rides. A tab is a view of its own: what is
   unfolded, marked and selected in the others stays as it is, and each keeps how far it
   was scrolled. The map and the pane beside the library show what belongs to the tab
   shown, and under the gear what the tab before showed: the open trip and its day in
-  Trips, the open list in Places, the file shown in Stash, the ride opened and the
+  Trips, the open list in Places, the file shown in Inbox, the ride opened and the
   rides pinned in Recordings; pinned routes and recordings stay on the map whatever tab is
   shown. Trips and Places each keep what they had open when the user left them by
   their tab, the trip or list, its day, the route taken up and the recording opened,
@@ -25,7 +25,7 @@
   again comes back to it. Opening a trip from a ride or from the duplicates shows the
   tab it is in.
 - The search over the tabs limits the tab shown to what it finds there, and stays as
-  typed when another tab is shown. In Stash, Trips and Places it lists the tree's
+  typed when another tab is shown. In Inbox, Trips and Places it lists the tree's
   folders and trips whose names contain it, and the routes and tracks of those trips
   that are named so, each with its trip and day, at most twenty in all; a folder found
   is shown in the tree, a trip opens, and a route or a track opens its trip at its day
@@ -36,7 +36,7 @@
   folders or trips are not deleted, and the menu says so. A changed search starts with
   nothing selected. In Recordings it leaves the rides whose names contain it, every
   year of them unfolded, with their count and length over them.
-- Stash, Trips and Places are each a tree: its folders and trips as rows, each unfolding
+- Inbox, Trips and Places are each a tree: its folders and trips as rows, each unfolding
   in place by a click on it, a folder to its folders and trips, a trip to its days, as
   many at once as wanted; what is unfolded is kept per browser. The tree has one mark,
   on the row clicked last: a folder, a trip or a day. A click on a folder marks it,
@@ -77,7 +77,7 @@
 - Folders and trips answer to one menu: New, Add, Rename, Duplicate, Cut, Copy, Paste,
   Move…, Merge, Export, Delete; what does not apply is greyed out. New makes what the
   row can hold, named in a dialog: in a folder a folder or a trip, which starts with
-  Day 1 and opens at it, among the Places a list, in the Stash a folder alone; in a trip a day at its end, whether the trip is
+  Day 1 and opens at it, among the Places a list, in the Inbox a folder alone; in a trip a day at its end, whether the trip is
   open or not, in the open one as an edit that can be undone and that shows the day.
   Add takes files from the computer: into a folder GPX files, zips of exported trips
   or a whole folder, imported as if dropped there; into a trip GPX files as days. The
@@ -242,29 +242,29 @@
 - Opening a trip says how far it has come on the trip's row: a ring turns where its
   icon stands, and under its name stands how much of its document has arrived of how
   much ("Loading 2.3 of 4.1 MB"), then "Opening…" until the map has drawn its routes.
-- The Stash (its tab yellow) holds files and Places (green) lists of places, each in
+- The Inbox (its tab yellow) holds files and Places (green) lists of places, each in
   folders of their own; the Trips hold trips. The server refuses a list made or moved
   outside the Places, a trip made or moved into either, a file kept outside the
-  Stash, and a folder moved across with contents of the wrong kind. The library follows: New in a folder's menu offers a
-  list among the Places where others offer a trip, and in the Stash a folder alone;
+  Inbox, and a folder moved across with contents of the wrong kind. The library follows: New in a folder's menu offers a
+  list among the Places where others offer a trip, and in the Inbox a folder alone;
   Move… offers, from the folder the thing is in, the top of its tree as "/", the folder
   around it as "..", the folders beside it as "../name" and the folders in it, so that its list
   stays short in a large tree, and only those that take what is moved; anything
   further off is reached in steps or by dragging. A folder's card counts files
-  in the Stash and lists among the Places.
-- The Stash is folders of files: every file is kept whole, as it was imported, so that
+  in the Inbox and lists among the Places.
+- The Inbox is folders of files: every file is kept whole, as it was imported, so that
   nothing it holds is lost before it is worked on. A file's card says what it holds,
   its routes, tracks and waypoints and how far they go, and shows its shape; a click
   unfolds it to its routes and tracks, each with its length and, a track with times,
   when it began, and shows the file whole on the map, each line in the colour its row
   has and the waypoints as dots; a click on a route or a track shows that one alone,
   another click the file again. Files are selected as folders are, dragged or moved
-  into the Stash's folders, renamed and deleted from their menu; a folder deleted
+  into the Inbox's folders, renamed and deleted from their menu; a folder deleted
   takes its files with it or gives them to the folder around it. Nothing is started
-  in the Stash and nothing is pasted into it: a folder is all that is made there. The
+  in the Inbox and nothing is pasted into it: a folder is all that is made there. The
   search finds files by name and their routes and tracks by theirs, and shows what it
   found in its folder and on the map.
-- Things leave the Stash from the menu of a file, of several selected, or of one route
+- Things leave the Inbox from the menu of a file, of several selected, or of one route
   or track. Copy puts routes and tracks on the clipboard as an import would read them,
   a route with its points and the way Garmin gave between them, a track with its line,
   each with the waypoints on its points, to be pasted into a day of any trip. Copy
@@ -276,15 +276,15 @@
   everything the file tells of it, its times, heights and sensor values: a track that
   is all its file holds of routes and tracks as the file itself, so that it is known as
   the ride the same file was kept as before, any other alone, without the file's
-  other tracks, routes and waypoints. The file stays in the Stash either way. Export
+  other tracks, routes and waypoints. The file stays in the Inbox either way. Export
   in a file's menu saves the file as it is kept.
-- A file of the Stash is cleaned up by whole routes and tracks: one is renamed, and one
+- A file of the Inbox is cleaned up by whole routes and tracks: one is renamed, and one
   or the selected ones, of any files, are deleted from their files, from the menu or
   with the Delete key, after a question. Either rewrites the stored file and leaves the
   rest of it as it was; the same file imported again is still known as kept. Routes
   and tracks are selected with their pads, Cmd or Ctrl and Shift as files are; selected
   together with files or folders they are not acted on, and the menu says so. Nothing
-  finer is changed in the Stash: no geometry, no symbols, and waypoints only with
+  finer is changed in the Inbox: no geometry, no symbols, and waypoints only with
   their file.
 - Import by dropping GPX files, zips of exported trips and folders from the computer on
   a folder of the tree, or by Add in its menu; what they become follows from the folder.
@@ -295,11 +295,11 @@
   adds only what is new. Routes and tracks in such a file are left out and said so.
   A file that holds waypoints and no route is refused elsewhere, with the pointer to
   this folder. A file that holds KML under a GPX file's name, or the other way round,
-  is read as what it holds, wherever it is imported. On the Stash or a folder in it,
+  is read as what it holds, wherever it is imported. On the Inbox or a folder in it,
   every GPX file is kept as a file, as it is, a KML or KMZ file as the GPX it is turned
   into, and the folders of a dropped
-  folder are made as they are; a file the Stash keeps already, wherever, is left out
-  and counted, and so is a file of any other kind. While a long import runs, the Stash
+  folder are made as they are; a file the Inbox keeps already, wherever, is left out
+  and counted, and so is a file of any other kind. While a long import runs, the Inbox
   lists every ten seconds what it has kept so far, after what it held, and in order
   once the import is done. On any other folder or the top, a file becomes a trip and a dropped folder
   is imported as the folder tree above says. Exported trips in dropped folders and in
@@ -547,7 +547,7 @@
 - Files that come with an import: the files in a folder that are neither GPX nor
   hidden are kept with what the folder becomes: a trip made of a folder keeps them
   with its first day, from where they are moved to the day they belong to. Files
-  added to a trip from its menu go the same way. The Stash keeps files of routes
+  added to a trip from its menu go the same way. The Inbox keeps files of routes
   alone and leaves the others out.
 - A journal on the trip, on a day, on a stop and on a route, opened from the icon on
   their rows, which counts their entries: entries of a note, a file (a photo, a receipt, a document) or both, edited and
