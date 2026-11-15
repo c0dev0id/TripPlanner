@@ -64,6 +64,9 @@ export const [infoShown, setInfoShown] = createSignal(false);
 const [coloring, setColoring] = createSignal<Coloring>();
 export { setColoring };
 
+/** The foci in the order their buttons stand: those nearly every recording has first, the rare ones last, so that a button keeps its place from one recording to the next. */
+const FOCUS_ORDER: readonly Coloring[] = ['speed', 'offset', 'speedDifference', 'surface', 'altitude', 'slope', 'lean', 'leanDifference'];
+
 /** What the opened recording is compared with: a route or a track of its day, or another recording. */
 type Comparand = { route: Route; label: string } | { recording: ShownRecording };
 
@@ -158,7 +161,8 @@ const view = createRoot(() => {
     if (!o) return [];
     const d = delta();
     const differences = d ? (Object.keys(DIFFERENCE_SERIES) as Difference[]).filter((difference) => d[DIFFERENCE_SERIES[difference]] !== undefined) : [];
-    return [...METRICS.filter((metric) => o.measures[metric] !== undefined), 'surface', ...differences];
+    const offered = new Set<Coloring>([...METRICS.filter((metric) => o.measures[metric] !== undefined), 'surface', ...differences]);
+    return FOCUS_ORDER.filter((focus) => offered.has(focus));
   });
   /** The colouring chosen where the opened recording allows it. */
   const shownColoring = createMemo(() => {

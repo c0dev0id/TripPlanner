@@ -479,9 +479,11 @@
   many points it has, the usual time and the average way from one to the next, its
   segments where it has more than one, and what it tells of each point, by the names the
   file has for it, with the share of the points that have it where not all do.
-  A focus button picks what to look at, and its button again lets go of it: speed,
-  altitude, slope, lean angle, the road surface, or a difference to what it is compared
-  with. The focus colours the line, opens a card of the figures that belong to it alone
+  A focus button picks what to look at, and its button again lets go of it: speed, the
+  distance and speed against what it is compared with, the road surface, altitude,
+  slope, lean angle and lean against the other, in that order, the ones nearly every
+  recording has first, so that a button keeps its place from one recording to the
+  next. The focus colours the line, opens a card of the figures that belong to it alone
   with the legend of the colours, and a chart along the bottom of it along the way and,
   for speed, slope and lean angle, how far was ridden at each value; with none, the line
   has the recording's colour and neither card nor chart shows. The surfaces, matched once
