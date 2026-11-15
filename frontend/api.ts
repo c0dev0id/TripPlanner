@@ -292,8 +292,11 @@ export const renameStashItem = (id: number, item: Pick<StashItem, 'kind' | 'posi
 export const removeStashItems = (id: number, items: readonly Pick<StashItem, 'kind' | 'position'>[]): Promise<void> =>
   request('DELETE', `/api/stash/files/${id}/items?items=${items.map((item) => `${item.kind}:${item.position}`).join(',')}`);
 
+/** Where a file of the Stash is downloaded from, as it is kept. */
+export const stashFileUrl = (id: number): string => `/api/stash/files/${id}/gpx`;
+
 /** A file of the Stash as it is kept. */
-export const fetchStashGpx = async (id: number): Promise<string> => (await send('GET', `/api/stash/files/${id}/gpx`)).text();
+export const fetchStashGpx = async (id: number): Promise<string> => (await send('GET', stashFileUrl(id))).text();
 
 /** A day of riding that may be a day's: its date, null for a ride without times, whether that is the day's, the share of it that ran along the day's routes, or of them along it, and those of its rides that are not on the day yet. */
 export interface FoundRidingDay {

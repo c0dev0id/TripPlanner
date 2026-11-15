@@ -6,6 +6,7 @@ namespace Planner\Stash;
 
 use DateTimeImmutable;
 use Planner\Account\CurrentUser;
+use Planner\Export\TripGpx;
 use Planner\Http\GpxUpload;
 use Planner\Http\InvalidUpload;
 use Planner\Http\Json;
@@ -102,14 +103,19 @@ final class StashController
         return $kept === null ? Json::error($response, 404, 'No such file.') : Json::of($response, $kept);
     }
 
-    /** The file as it is kept, compressed, which the browser unpacks itself. */
+    /** The file as it is kept, compressed, which the browser unpacks itself, and saves under the file's name where it is asked to save. */
     public function gpx(Request $request, Response $response, array $args): Response
     {
-        $gzip = $this->files->gzip($this->currentUser->get()->id, (int) $args['file']);
-        if ($gzip === null) {
+        $userId = $this->currentUser->get()->id;
+        $file = $this->files->find($userId, (int) $args['file']);
+        if ($file === null) {
             return Json::error($response, 404, 'No such file.');
         }
-        $response->getBody()->write($gzip);
-        return $response->withHeader('Content-Type', 'application/gpx+xml')->withHeader('Content-Encoding', 'gzip')->withHeader('Cache-Control', 'private, no-cache');
+        $response->getBody()->write((string) $this->files->gzip($userId, $file['id']));
+        return $response
+            ->withHeader('Content-Type', 'application/gpx+xml')
+            ->withHeader('Content-Encoding', 'gzip')
+            ->withHeader('Content-Disposition', "attachment; filename*=UTF-8''" . rawurlencode(TripGpx::fileName($file['name']) . '.gpx'))
+            ->withHeader('Cache-Control', 'private, no-cache');
     }
 }

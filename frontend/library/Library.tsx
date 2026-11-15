@@ -1,6 +1,6 @@
 import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSelector, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
-import { changeTrip, keepStashRides, removeStashItems, renameStashItem, type NamedRoute, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, renameStashFile, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
+import { changeTrip, keepStashRides, removeStashItems, renameStashItem, type NamedRoute, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, renameStashFile, stashFileUrl, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import type { StashFile, StashItem } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
@@ -649,8 +649,8 @@ export function Library(props: {
   /**
    * The menu of what is selected once files of the Stash are among it. Files alone are
    * taken out of the Stash: their routes and tracks copied, their waypoints copied,
-   * their tracks kept as rides. One file is renamed, and files, with the folders
-   * selected beside them, are moved and deleted.
+   * their tracks kept as rides. One file is renamed, or exported as it is kept, and
+   * files, with the folders selected beside them, are moved and deleted.
    */
   const filesMenu = (chosen: readonly Item[]): MenuItem[] => {
     const several = chosen.length > 1;
@@ -664,6 +664,7 @@ export function Library(props: {
       { label: t('Keep tracks as rides'), disabled: !onlyFiles || !chosenFiles.some((file) => file.items.some((item) => item.kind === 'track')), run: () => keepRides(whole) },
       { label: t('Rename…'), disabled: several, run: () => rename(t('Rename file'), t('Name of the file'), chosenFiles[0]!.name, (name) => renameStashFile(chosenFiles[0]!.id, name), relistStash) },
       ...moveItem(chosen),
+      { label: t('Export'), disabled: several, run: () => window.location.assign(stashFileUrl(chosenFiles[0]!.id)) },
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
   };

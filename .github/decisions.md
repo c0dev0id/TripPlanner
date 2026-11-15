@@ -316,6 +316,9 @@ entries at the end of their section.
     asked for, not a loss, so no original is kept behind it; `digest` stays that of
     the file as imported, so the same file imported again is known as kept, cleaned up
     or not.
+  - A file is exported by the request the app reads it with. Its answer always names
+    itself a download under the file's name, which a read by the app ignores, so
+    there is one way to the file and no second route for saving it.
   - Nothing goes into the Stash from the app; things only come out of it, into a
     trip, among the rides or into a list of places. Into a trip and a list they go by
     the clipboard, which every day and kind already pastes from. A track becomes a

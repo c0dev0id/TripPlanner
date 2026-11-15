@@ -264,7 +264,8 @@
   everything the file tells of it, its times, heights and sensor values: a track that
   is all its file holds of routes and tracks as the file itself, so that it is known as
   the ride the same file was kept as before, any other alone, without the file's
-  other tracks, routes and waypoints. The file stays in the Stash either way.
+  other tracks, routes and waypoints. The file stays in the Stash either way. Export
+  in a file's menu saves the file as it is kept.
 - A file of the Stash is cleaned up by whole routes and tracks: one is renamed, and one
   or the selected ones, of any files, are deleted from their files, from the menu or
   with the Delete key, after a question. Either rewrites the stored file and leaves the
