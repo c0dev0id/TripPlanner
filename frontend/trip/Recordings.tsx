@@ -5,7 +5,7 @@ import { GPX_FILE_TYPES } from '../gpx/import';
 import type { Day } from '../model/trip';
 import { totalDistance } from '../recording/rides';
 import { copyRecordings, isCutRecording } from '../state/clipboard';
-import { clearPartSelection, isPartSelected, partSelect, partsOfMenu, togglePart } from '../state/partSelection';
+import { clearPartSelection, partSelect, partsOfMenu } from '../state/partSelection';
 import { showWhole } from '../state/drawing';
 import { isRecordingPinned, pinRecordings } from '../state/pins';
 import { toggleRecording } from '../state/recordingView';
@@ -39,6 +39,7 @@ import { CloseIcon, PlusIcon, SearchIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
+import { Pad } from '../ui/Pad';
 import { foundBecause } from './labels';
 import { moveToDayItem, pinItems } from './partMenu';
 import { Pin } from './Pin';
@@ -164,7 +165,7 @@ export async function takeRecordingsOff(chosen: readonly Recording[]): Promise<v
 
 /**
  * The menu of a recording, or of the selected recordings it is one of: rename, cut, copy,
- * move to another day, show it among the rides, for several their pins, select, take off
+ * move to another day, show it among the rides, for several their pins, take off
  * the day. What takes one recording alone is greyed out for several.
  */
 function recordingMenu(recording: Recording, onRename: (recording: Recording) => void): MenuItem[] {
@@ -184,7 +185,6 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
     ...moveToDayItem(dayId, move),
     { label: t('Show in the rides'), disabled: several, run: () => showInRides(recording) },
     ...(several ? pinItems((pinned) => pinRecordings(chosen.map((r) => r.id), pinned)) : []),
-    ...(several || isPartSelected('recording', String(recording.id)) ? [] : [{ label: t('Select'), run: () => togglePart('recording', String(recording.id)) }]),
     { label: t('Take off this day'), run: () => void takeRecordingsOff(chosen) },
   ];
 }
@@ -193,7 +193,7 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
  * A recording as a row: its colour, its name over when it began and its length, or over
  * why its file cannot be read, and its pin; a click opens it, which shows it whole on the
  * map with its figures, and a click on the opened one closes it;
- * with Cmd, Ctrl or Shift it selects; its menu is recordingMenu.
+ * with Cmd, Ctrl or Shift it selects, as a tap on its pad does; its menu is recordingMenu.
  */
 function RecordingItem(props: { recording: Recording; onRename: (recording: Recording) => void }) {
   const track = () => trackOf(props.recording);
@@ -212,6 +212,7 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
       ref={(el) => cardMenu(el, () => recordingMenu(props.recording, props.onRename))}
     >
       <div class="row">
+        <Pad label={t('Select {name}', { name: props.recording.name })} selected={select.selected()} onToggle={select.onToggle} />
         <button class="text grow" aria-pressed={isOpened()} onClick={(e) => select.onClick(e) || toggleRecording(props.recording)}>
           <span class="swatch" style={{ background: recordingColor(props.recording) }} />
           <span class="lines grow">

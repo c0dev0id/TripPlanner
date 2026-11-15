@@ -5,7 +5,7 @@ import { copyParts, pasteItems } from '../state/clipboard';
 import { setEditTarget, setExportScope, setTrackAction } from '../state/drawing';
 import { pinRoutes } from '../state/pins';
 import { isPlaceList } from '../state/library';
-import { clearPartSelection, isPartSelected, partsOfMenu, togglePart } from '../state/partSelection';
+import { clearPartSelection, partsOfMenu } from '../state/partSelection';
 import { duplicateParts, makeRouteOfStops, movePartsToDay, openTrip, removeParts, routeById, setStopSymbols } from '../state/trip';
 import { OUR_ICONS, PLAIN_SYMBOL } from '../symbols/symbols';
 import { askConfirmation } from '../ui/confirm';
@@ -98,7 +98,7 @@ function convertItem(kind: PartKind, ids: readonly string[]): MenuItem[] {
 /**
  * The menu of a day, a route or a stop of the open trip, the same for each kind and in a
  * trip as in a collection: edit, a stop's icon, duplicate, cut, copy, paste into it, move,
- * export as GPX (days and routes), what only its kind has (`more`), what it converts to, for sections of planning material the trip made of them, for several routes their pins, select, remove. Opened on a part of a selection it acts on all of
+ * export as GPX (days and routes), what only its kind has (`more`), what it converts to, for sections of planning material the trip made of them, for several routes their pins, remove. Opened on a part of a selection it acts on all of
  * them; what takes one part alone is then greyed out. `edit` stands in where a part is
  * edited otherwise than in its dialog.
  */
@@ -120,7 +120,6 @@ export function partMenu(kind: PartKind, id: string, own: { edit?: () => void; m
     ...(several ? [] : (own.more ?? [])),
     ...convertItem(kind, ids),
     ...(several && kind === 'route' ? pinItems((pinned) => pinRoutes(ids, pinned)) : []),
-    ...(several || isPartSelected(kind, id) ? [] : [{ label: t('Select'), run: () => togglePart(kind, id) }]),
     { label: t('Remove'), run: () => void removeAsked(kind, ids) },
   ];
 }

@@ -39,6 +39,7 @@ import { ClockIcon, FileImportIcon, NotebookIcon, PencilIcon, PlusIcon } from '.
 import { Grip } from '../ui/Grip';
 import { IconButton } from '../ui/IconButton';
 import { MenuButton } from '../ui/MenuButton';
+import { Pad } from '../ui/Pad';
 import type { RowSelect } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, dayHeading, dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
@@ -308,6 +309,9 @@ function SequenceItem(props: { entry: SequenceEntry; routeId: string; time: Entr
         classList={{ point: !stop(), selected: select()?.selected(), cut: !!stop() && isCut(stop()!.id) }}
         ref={(el) => hasMenu() && cardMenu(el, menu)}
       >
+        <Show when={select()} fallback={<span class="grip-space" />}>
+          {(row) => <Pad label={t('Select {name}', { name: stop()!.name })} selected={row().selected()} onToggle={row().onToggle} />}
+        </Show>
         <button class="text grow" onClick={(e) => select()?.onClick(e) || panTo(props.entry.lngLat)}>
           <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
             {(s) => <StopShape symbol={s().symbol} color={s().pointId === null ? FREE_COLOR : BOUND_COLOR} height={22} />}
@@ -340,6 +344,7 @@ function AloneStopItem(props: { stop: Stop }) {
   const select = stopSelect(props.stop.id);
   return (
     <li class="row sequence-item" classList={{ selected: select.selected(), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
+      <Pad label={t('Select {name}', { name: props.stop.name })} selected={select.selected()} onToggle={select.onToggle} />
       <button class="text grow" onClick={(e) => select.onClick(e) || panTo(props.stop.lngLat)}>
         <StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />
         <span class="lines">

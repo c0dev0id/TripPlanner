@@ -44,9 +44,7 @@ export function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => 
         {(day, index) => (
           <li class="day card">
             <div class="row">
-              <Show when={!collection()}>
-                <span class="grip-space" />
-              </Show>
+              <span class="grip-space" />
               <button class="text grow" onClick={() => props.onOpen(day().id)}>
                 <Show when={collection()}>
                   <PlaceKindMark id={day().id} />

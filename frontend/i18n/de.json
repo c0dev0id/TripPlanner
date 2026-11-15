@@ -681,7 +681,6 @@
   "createdAt is not a time.": "createdAt ist keine Zeitangabe.",
   "Cut": "Ausschneiden",
   "Paste": "Einfügen",
-  "Select": "Auswählen",
   "{what} selected": "{what} ausgewählt",
   "Remove {what}?": "{what} entfernen?",
   "Paste stops": "Stopps einfügen",

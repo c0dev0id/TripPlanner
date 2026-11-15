@@ -17,6 +17,7 @@ import { distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
+import { Pad } from '../ui/Pad';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, routeKindLabel, routeLabel } from './labels';
 import { PlaceKindControls, PlaceKindMark } from '../library/PlaceKinds';
@@ -69,6 +70,7 @@ function SectionItem(props: { day: Day; places: boolean; onRename: (day: Day) =>
   return (
     <li ref={row} class="day card" classList={{ open: selected(), current: isDayMarked(props.day.id), selected: select.selected(), cut: isCut(props.day.id) }}>
       <div class="row" ref={(el) => cardMenu(el, items)}>
+        <Pad label={t('Select {name}', { name: props.day.name })} selected={select.selected()} onToggle={select.onToggle} />
         <button class="text grow" onClick={(e) => select.onClick(e) || pickDay(props.day.id)} aria-pressed={selected()}>
           <Show when={props.places}>
             <PlaceKindMark id={props.day.id} />
@@ -147,6 +149,7 @@ function RouteItem(props: { route: Route; day: Day }) {
           cardMenu(el, () => partMenu('route', props.route.id));
         }}
       >
+        <Pad label={t('Select {name}', { name: label() })} selected={select.selected()} onToggle={select.onToggle} />
         <button class="text grow" aria-pressed={active()} onClick={click}>
           <span class="lines">
             <span class="name" title={label()}>
@@ -170,6 +173,7 @@ function WaypointItem(props: { stop: Stop; day: Day }) {
   const select = partSelect('stop', props.stop.id, () => props.day.stops.map((s) => s.id));
   return (
     <li class="row sequence-item" classList={{ selected: select.selected(), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
+      <Pad label={t('Select {name}', { name: props.stop.name })} selected={select.selected()} onToggle={select.onToggle} />
       <button class="text grow" onClick={(e) => select.onClick(e) || panTo(props.stop.lngLat)}>
         <Show when={isPlaceList(openTripId())} fallback={<StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />}>
           <PlaceKindMark id={props.day.id} />

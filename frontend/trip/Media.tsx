@@ -7,7 +7,7 @@ import type { Day } from '../model/trip';
 import { webAddress } from '../poi/details';
 import { copyMedia, isCutMedia } from '../state/clipboard';
 import { addFiles, addLink, mediaAction, mediaById, mediaNote, mediaOf, moveToDay, removeMedia, renameMedia } from '../state/media';
-import { clearPartSelection, isPartSelected, partSelect, partsOfMenu, togglePart } from '../state/partSelection';
+import { clearPartSelection, partSelect, partsOfMenu } from '../state/partSelection';
 import { cardMenu } from '../ui/cardMenu';
 import { askConfirmation } from '../ui/confirm';
 import { EditDialog } from '../ui/EditDialog';
@@ -19,6 +19,7 @@ import { openDocument, openImage } from '../ui/Lightbox';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
+import { Pad } from '../ui/Pad';
 import { pickFiles } from '../ui/pickFile';
 import { moveToDayItem } from './partMenu';
 
@@ -98,7 +99,7 @@ export function DayMedia(props: { day: Day }) {
 
 /**
  * The menu of a file or a link, or of the selected ones it is one of: rename or edit,
- * cut, copy, move to another day, select, delete. What takes one alone is greyed out
+ * cut, copy, move to another day, delete. What takes one alone is greyed out
  * for several.
  */
 function mediaMenu(entry: Entry, onEdit: (entry: Entry) => void): MenuItem[] {
@@ -115,7 +116,6 @@ function mediaMenu(entry: Entry, onEdit: (entry: Entry) => void): MenuItem[] {
     { label: t('Cut'), run: () => clipMedia(chosen, true) },
     { label: t('Copy'), run: () => clipMedia(chosen, false) },
     ...moveToDayItem(entry.dayId!, move),
-    ...(several || isPartSelected('media', String(entry.id)) ? [] : [{ label: t('Select'), run: () => togglePart('media', String(entry.id)) }]),
     { label: t('Delete'), run: () => void deleteMediaAsked(chosen) },
   ];
 }
@@ -123,7 +123,7 @@ function mediaMenu(entry: Entry, onEdit: (entry: Entry) => void): MenuItem[] {
 /**
  * A file or a link as a row: what it is, its name over its size or its address. A click
  * opens an image or a PDF over the page, a link in a new tab, and downloads any other
- * file; with Cmd, Ctrl or Shift it selects; its menu is mediaMenu.
+ * file; with Cmd, Ctrl or Shift it selects, as a tap on its pad does; its menu is mediaMenu.
  */
 function MediaItem(props: { entry: Entry; onEdit: (entry: Entry) => void }) {
   const name = () => mediaName(props.entry);
@@ -138,6 +138,7 @@ function MediaItem(props: { entry: Entry; onEdit: (entry: Entry) => void }) {
   return (
     <li class="media-item" classList={{ selected: select.selected(), cut: isCutMedia(props.entry.id) }} ref={(el) => cardMenu(el, () => mediaMenu(props.entry, props.onEdit))}>
       <div class="row">
+        <Pad label={t('Select {name}', { name: name() })} selected={select.selected()} onToggle={select.onToggle} />
         <a class="text grow" href={href()} target="_blank" rel="noopener noreferrer" download={opens() === 'download' ? props.entry.file!.name : undefined} onClick={click}>
           <span class="media-kind">{opens() === 'link' ? <LinkIcon /> : opens() === 'image' ? <PhotoIcon /> : <FileIcon />}</span>
           <span class="lines grow">

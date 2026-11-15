@@ -176,7 +176,15 @@ entries at the end of their section.
   selects or deselects the row, a tap elsewhere on a trip opens it. The row's highlight
   is the only mark of the selection; a checkbox in the pad looked dated. The pad works
   for a mouse too. In the duplicates report a click or a tap on the row selects it
-  alone, which is what draws it on the map.
+  alone, which is what draws it on the map. Every selectable row has one: the rows of
+  the open trip that have no grip (stops, recordings, media, and everything in a
+  collection) had a Select entry in their menu instead, which made selecting several
+  on a touch screen one long press per row. A tap on the pad selects, the long press
+  stays the menu's, and the entry is gone. A selected row looks the same in every list
+  (`.selected`, a tint); the accent strip says what is open or taken up, not what is
+  selected. What a row needs to take part, its click, its pad and its highlight, is
+  one value (`RowSelect` in `ui/selection.ts`), and the rows a menu acts on are
+  decided there too (`menuRows`).
 - **The search runs in the browser.** The library loads all trip summaries and folders of
   the user (a few hundred small rows at most for a personal planner) and filters them by
   name; the results are capped at twenty. A server search would add an endpoint for
