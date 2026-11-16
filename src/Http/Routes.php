@@ -124,7 +124,6 @@ final class Routes
             $api->post('/stash/files/{file:[0-9]+}/parts', [StashController::class, 'addParts']);
             $api->post('/stash/files/{file:[0-9]+}/media', [StashMediaController::class, 'add']);
             $api->delete('/stash/files/{file:[0-9]+}/media', [StashMediaController::class, 'delete']);
-            $api->delete('/stash/files/{file:[0-9]+}/media/{media:[0-9]+}', [StashMediaController::class, 'delete']);
             $api->get('/stash/files/{file:[0-9]+}/media/{media:[0-9]+}/file', [StashMediaController::class, 'file']);
             $api->get('/stash/files/{file:[0-9]+}/media/{media:[0-9]+}/preview', [StashMediaController::class, 'preview']);
             $api->get('/folders', [FolderController::class, 'index']);

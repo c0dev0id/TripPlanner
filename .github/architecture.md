@@ -149,7 +149,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `POST /stash/files/{id}/parts` | Adds parts of the user's other files to the file, which rewrites it and leaves the others as they are: `{parts}`, each with its `fileId`, its `items` as `{kind, position}` among that file's routes or tracks, and whether all its `waypoints` come along. Answers 204, or 404 where a file or one of the items is missing. |
 | `POST /stash/files/{id}/rides` | Keeps the file's tracks as rides, all of them or with `{tracks}` those at these places among its tracks, each named after itself or else its file. Answers `{rides}`, the ride of each track with its `name`, when it `startedAt` (null without times) and whether it was `added`; where the user kept it already, the name and time are those of the ride kept. |
 | `POST /stash/files/{id}/media` | Keeps a media file with the file, from a multipart form with the `file`. Answers the media file as it is listed, with 201, or with 200 the one the file has already. |
-| `DELETE /stash/files/{id}/media`, `DELETE /stash/files/{id}/media/{media}` | Removes all the media of the file, or the one named. |
+| `DELETE /stash/files/{id}/media` | Removes all the media of the file. |
 | `GET /stash/files/{id}/media/{media}/file`, `…/preview` | The media file as it was kept, shown in the browser where it can be and offered for download otherwise; of an image a small JPEG. |
 | `GET /folders` | The user's folders, each with the folder it is in (`parentId`, null at the top) and its `kind`: the two special ones first (`collections`, `places`), the others (`folder`) by name. |
 | `POST /folders` | Creates a folder from `{name, parentId}`; the parent may be null. |

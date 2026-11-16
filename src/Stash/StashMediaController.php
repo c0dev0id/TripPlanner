@@ -31,10 +31,7 @@ final class StashMediaController
         if ($problem !== null) {
             return Json::error($response, 422, $problem);
         }
-        $file = FileStore::describe($upload);
-        $stream = $upload->getStream();
-        $preview = in_array($file['mediaType'], FileStore::PREVIEWABLE, true) ? FileStore::previewOf((string) $stream->getMetadata('uri'), $file['mediaType']) : null;
-        $kept = $this->media->keep($this->currentUser->get()->id, (int) $args['file'], $file, (string) $stream, $preview, new DateTimeImmutable());
+        $kept = $this->media->keep($this->currentUser->get()->id, (int) $args['file'], FileStore::describe($upload), (string) $upload->getStream()->getMetadata('uri'), new DateTimeImmutable());
         return $kept === null ? Json::error($response, 404, 'File not found.') : Json::of($response->withStatus($kept['added'] ? 201 : 200), $kept['media']);
     }
 
@@ -56,13 +53,13 @@ final class StashMediaController
             return Json::error($response, 404, 'Image not found.');
         }
         $response->getBody()->write($preview);
-        return $response->withHeader('Content-Type', 'image/jpeg')->withHeader('Cache-Control', EntryFiles::CACHE);
+        return EntryFiles::asPreview($response);
     }
 
-    /** Removes one media file of the file, or without one named all of them. */
+    /** Removes all the media of the file. */
     public function delete(Request $request, Response $response, array $args): Response
     {
-        $deleted = $this->media->delete($this->currentUser->get()->id, (int) $args['file'], isset($args['media']) ? (int) $args['media'] : null);
+        $deleted = $this->media->delete($this->currentUser->get()->id, (int) $args['file']);
         return $deleted ? $response->withStatus(204) : Json::error($response, 404, 'File not found.');
     }
 }

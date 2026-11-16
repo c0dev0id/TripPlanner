@@ -15,7 +15,7 @@ final class EntryFiles
     private const INLINE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
 
     /** A file never changes under its entry's id, so the browser may keep it a day. */
-    public const CACHE = 'private, max-age=86400';
+    private const CACHE = 'private, max-age=86400';
 
     public function __construct(private readonly FileStore $files)
     {
@@ -55,9 +55,12 @@ final class EntryFiles
         if ($preview === null) {
             return Json::error($response, 404, 'The image cannot be read.');
         }
-        return $response
-            ->withBody((new StreamFactory())->createStreamFromFile($preview))
-            ->withHeader('Content-Type', 'image/jpeg')
-            ->withHeader('Cache-Control', self::CACHE);
+        return self::asPreview($response->withBody((new StreamFactory())->createStreamFromFile($preview)));
+    }
+
+    /** The response as a preview is answered: a JPEG the browser may keep a day. */
+    public static function asPreview(Response $response): Response
+    {
+        return $response->withHeader('Content-Type', 'image/jpeg')->withHeader('Cache-Control', self::CACHE);
     }
 }
