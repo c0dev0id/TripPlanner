@@ -537,9 +537,9 @@ export function Library(props: {
    * to it from the computer, rename, duplicate, cut, copy, paste into it, move, merge,
    * export, delete. New in a folder is a folder and a trip or, among the Places, a list;
    * in a trip a day, in a list of places a kind. Added to a folder are files or a
-   * folder, to a trip files. Opened on a card of the selection it acts on all of it;
-   * what does not apply to what is selected is greyed out, and new and add are left
-   * out. With files of the Stash, or routes and tracks, among what is selected, the menu
+   * folder, to a trip files. Opened on a card of the selection it acts on all of it,
+   * and holds only what can be done with what is selected: what takes one alone, or
+   * trips alone, is left out otherwise. With files of the Stash, or routes and tracks, among what is selected, the menu
    * is theirs.
    */
   const itemMenu = (item: Item): MenuItem[] => {
@@ -552,9 +552,10 @@ export function Library(props: {
     const chosenTrips = tripsOf(chosen);
     const onlyTrips = chosenTrips.length === chosen.length;
     const [first, ...others] = chosenTrips;
-    const paste = several ? [] : pasteItems(item);
     const within = tripsWithin(chosen);
-    const pasteEntries = paste.length > 0 ? paste : [menuNote(t('Paste'))];
+    // One folder or trip takes a paste, greyed out while the clipboard holds nothing for it; several take none.
+    const paste = several ? [] : pasteItems(item);
+    const pasteEntries = several ? [] : paste.length > 0 ? paste : [menuNote(t('Paste'))];
     // The export is of trips, which the Stash has none of: its folders have no such entry.
     const exportEntries = 'folder' in item && treeOf(item.folder.id) === 'stash' ? [] : [exportItem(within)];
     const fresh: MenuItem[] = several
@@ -571,21 +572,24 @@ export function Library(props: {
     return [
       ...(several ? [menuNote(t('{what} selected', { what: countText(chosen) }))] : []),
       ...fresh,
-      // The open trip is edited in its dialog, its name with the rest; the others are renamed on the server.
-      {
-        label: 'trip' in item && item.trip.id === openTripId() ? t('Edit…') : t('Rename…'),
-        disabled: several,
-        run: () =>
-          'folder' in item
-            ? rename(t('Rename folder'), t('Folder name'), item.folder.name, (name) => renameFolder(item.folder.id, name), relistFolders)
-            : item.trip.id === openTripId()
-              ? setEditTarget({ kind: 'trip' })
-              : rename(t('Rename trip'), t('Trip name'), item.trip.name, (name) => renameTrip(item.trip.id, name), relistTrips),
-      },
-      // Only trips are duplicated and copied: with folders among the trips selected the two are greyed out, and with no trip at all, as on a folder and anywhere in the Stash, they are left out.
-      ...(chosenTrips.length > 0 ? [{ label: t('Duplicate'), disabled: !onlyTrips, run: () => void flushSave().then(() => runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist)) }] : []),
+      // One is renamed. The open trip is edited in its dialog, its name with the rest; the others are renamed on the server.
+      ...(several
+        ? []
+        : [
+            {
+              label: 'trip' in item && item.trip.id === openTripId() ? t('Edit…') : t('Rename…'),
+              run: () =>
+                'folder' in item
+                  ? rename(t('Rename folder'), t('Folder name'), item.folder.name, (name) => renameFolder(item.folder.id, name), relistFolders)
+                  : item.trip.id === openTripId()
+                    ? setEditTarget({ kind: 'trip' })
+                    : rename(t('Rename trip'), t('Trip name'), item.trip.name, (name) => renameTrip(item.trip.id, name), relistTrips),
+            },
+          ]),
+      // Only trips are duplicated and copied: with a folder among what is selected, as on a folder and anywhere in the Stash, the two are left out.
+      ...(onlyTrips ? [{ label: t('Duplicate'), run: () => void flushSave().then(() => runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist)) }] : []),
       { label: t('Cut'), run: () => clip(chosen, true) },
-      ...(chosenTrips.length > 0 ? [{ label: t('Copy'), disabled: !onlyTrips, run: () => clip(chosen, false) }] : []),
+      ...(onlyTrips ? [{ label: t('Copy'), run: () => clip(chosen, false) }] : []),
       ...pasteEntries,
       ...moveItem(chosen),
       ...(onlyTrips && several

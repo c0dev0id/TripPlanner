@@ -78,9 +78,13 @@
   file; a trip's card also shows its shape, small, each line in the colour its route
   has on the map; right-click or a long press on a card opens its menu.
 - Folders and trips answer to one menu: New, Add, Rename, Duplicate, Cut, Copy, Paste,
-  Move…, Merge, Export, Delete; what does not apply is greyed out, and Duplicate and
-  Copy, which only trips have, are left out where no trip is selected: on a folder, and
-  everywhere in the Stash, whose folders have no Export either. New makes what the
+  Move…, Merge, Export, Delete. Every menu of the planner holds only what can be done
+  with what it is opened on, by its kind and by how many are selected: Rename is not
+  offered for several, Merge not for one, Duplicate and Copy, which only trips have,
+  not on a folder or with one among what is selected, Export not on the Stash's
+  folders. An entry is greyed out only where it could be used and something else is
+  in the way: Paste while the clipboard holds nothing for the place, Export of a
+  folder without trips, Merge of rides that do not follow one another. New makes what the
   row can hold, named in a dialog: in a folder a folder or a trip, which starts with
   Day 1 and opens at it, among the Places a list, in the Stash a folder alone; in a trip a day at its end, whether the trip is
   open or not, in the open one as an edit that can be undone and that shows the day.
@@ -115,7 +119,7 @@
   long press), where Move… opens the other days.
 - Days, routes and stops answer to one menu, in a trip and in a collection alike: Edit,
   Duplicate, Cut, Copy, Paste, Move…, what only the kind has (a route's colour, a track's
-  condensing), Convert, for several routes pinning them to the map or letting go of them, Remove. What does not apply is greyed out. A stop's menu has
+  condensing), Convert, for several routes pinning them to the map or letting go of them, Remove; what takes one part alone is left out for several. A stop's menu has
   Icon besides: our twelve icons, each drawn before its name and the stop's own marked,
   one of which a click gives to the stop, or to all the stops selected in one step;
   Garmin's symbols stay in the stop's dialog. Several of a kind are
@@ -355,8 +359,8 @@
   while on a large library, a ring turns beside how many routes are compared and the
   seconds gone.
 - Convert, in the menu of a day or section, of a route and of several selected stops,
-  with what the part can be turned into as its submenu, greyed out where it does not
-  apply. A track becomes a route ("Track to route…", in its dialog). The free stops of
+  with what the part can be turned into as its submenu; a route that is no track has
+  none. A track becomes a route ("Track to route…", in its dialog). The free stops of
   a day or section, or those selected, become a route ("Waypoints to route", in a trip
   "Stops to route"), for a file that kept a route as a string of waypoints, which a
   collection keeps in the file's order: "By order" takes them all, top down; "By

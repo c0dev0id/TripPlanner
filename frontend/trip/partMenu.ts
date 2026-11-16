@@ -67,8 +67,7 @@ function iconItem(ids: readonly string[]): MenuItem {
 }
 
 /**
- * Convert, with what a part can be turned into as its submenu, greyed out where it does
- * not apply: a track into a route; the free stops of a day, or those selected, into a
+ * Convert, with what a part can be turned into as its submenu: a track into a route; the free stops of a day, or those selected, into a
  * route, for a file that kept a route as waypoints, in the order they are listed or, the
  * numbered ones, by their number. None for a single stop, for several days or routes, or
  * in a list of places.
@@ -77,9 +76,9 @@ function convertItem(kind: PartKind, ids: readonly string[]): MenuItem[] {
   const trip = openTrip()!;
   const several = ids.length > 1;
   if (isPlaceList(trip.id) || (kind === 'stop' ? !several : several)) return [];
+  // Of the routes a track alone is converted.
   if (kind === 'route') {
-    const track = routeById(ids[0]!)?.kind === 'track';
-    return [{ label: t('Convert'), items: [{ label: t('Track to route…'), disabled: !track, run: () => setTrackAction({ routeId: ids[0]!, action: 'convert' }) }] }];
+    return routeById(ids[0]!)?.kind === 'track' ? [{ label: t('Convert'), items: [{ label: t('Track to route…'), run: () => setTrackAction({ routeId: ids[0]!, action: 'convert' }) }] }] : [];
   }
   const day = kind === 'day' ? trip.days.find((d) => d.id === ids[0]) : dayOfStop(trip, ids[0]!);
   const listed = (day?.stops ?? []).filter((stop) => stop.pointId === null && (kind === 'day' || ids.includes(stop.id)));
@@ -92,7 +91,7 @@ function convertItem(kind: PartKind, ids: readonly string[]): MenuItem[] {
  * The menu of a day, a route or a stop of the open trip, the same for each kind and in a
  * trip as in a collection: edit, a stop's icon, duplicate, cut, copy, paste into it, move,
  * export as GPX (days and routes), what only its kind has (`more`), what it converts to, for sections of planning material the trip made of them, for several routes their pins, remove. Opened on a part of a selection it acts on all of
- * them; what takes one part alone is then greyed out. `edit` stands in where a part is
+ * them; what takes one part alone is then left out. `edit` stands in where a part is
  * edited otherwise than in its dialog.
  */
 export function partMenu(kind: PartKind, id: string, own: { edit?: () => void; more?: MenuItem[] } = {}): MenuItem[] {
@@ -101,12 +100,13 @@ export function partMenu(kind: PartKind, id: string, own: { edit?: () => void; m
   const paste = several ? [] : pasteItems(kind, id);
   return [
     ...(several ? [menuNote(t('{what} selected', { what: counted(ids.length, NOUNS[kind][openTrip()!.kind]) }))] : []),
-    { label: t('Edit…'), disabled: several, run: own.edit ?? (() => setEditTarget({ kind, id })) },
+    ...(several ? [] : [{ label: t('Edit…'), run: own.edit ?? (() => setEditTarget({ kind, id })) }]),
     ...(kind === 'stop' ? [iconItem(ids)] : []),
     { label: t('Duplicate'), run: () => duplicateParts(kind, ids) },
     { label: t('Cut'), run: () => copyParts(kind, ids, true) },
     { label: t('Copy'), run: () => copyParts(kind, ids) },
-    ...(paste.length > 0 || kind === 'stop' ? paste : [menuNote(t('Paste'))]),
+    // One day or route takes a paste, greyed out while the clipboard holds nothing for it; a stop and several parts take none.
+    ...(several || kind === 'stop' ? [] : paste.length > 0 ? paste : [menuNote(t('Paste'))]),
     ...moveItems(kind, ids),
     ...(kind === 'stop' ? [] : [{ label: t('Export GPX…'), run: () => setExportScope({ kind, ids }) }]),
     ...(several ? [] : (own.more ?? [])),

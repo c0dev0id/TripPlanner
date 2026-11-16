@@ -99,7 +99,7 @@ export function DayMedia(props: { day: Day }) {
 
 /**
  * The menu of a file or a link, or of the selected ones it is one of: rename or edit,
- * cut, copy, move to another day, delete. What takes one alone is greyed out
+ * cut, copy, move to another day, delete. What takes one alone is left out
  * for several.
  */
 function mediaMenu(entry: Entry, onEdit: (entry: Entry) => void): MenuItem[] {
@@ -112,7 +112,7 @@ function mediaMenu(entry: Entry, onEdit: (entry: Entry) => void): MenuItem[] {
     });
   return [
     ...(several ? [menuNote(t('{what} selected', { what: counted(chosen.length, 'attachment') }))] : []),
-    { label: t(entry.url === null ? 'Rename…' : 'Edit…'), disabled: several, run: () => onEdit(entry) },
+    ...(several ? [] : [{ label: t(entry.url === null ? 'Rename…' : 'Edit…'), run: () => onEdit(entry) }]),
     { label: t('Cut'), run: () => clipMedia(chosen, true) },
     { label: t('Copy'), run: () => clipMedia(chosen, false) },
     ...moveToDayItem(entry.dayId!, move),

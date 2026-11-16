@@ -463,6 +463,16 @@ entries at the end of their section.
   px, and the panel's default leaves 290 beside the fold button and the gear. The
   letters grow with the panel by a container query, to a size, so that a wider panel
   does not leave them small.
+- **A menu holds what can be done; greyed out means not now.** Menus were shared by
+  kinds of things and showed every entry to each, greyed out where it did not apply:
+  Duplicate on every folder, Export on the Stash's, Rename for several. An entry that
+  can never be used where it stands teaches nothing and makes the greyed ones
+  meaningless. Each menu now holds only what can be done with what it is opened on,
+  by its kind and by how many are selected, and greys out an entry only where
+  something outside the selection is in the way and may change: the clipboard is
+  empty, the folder holds no trip, the rides do not follow one another, a trip is
+  still being read. A line that says what is selected, or why two kinds are not
+  acted on together, is a note and not an entry.
 - **Texts are written as software says things.** Labels and messages are the
   conventional short forms ("Assign to this day", "Trip not found.", "No GPX files
   found.") and not descriptive sentences, in English and in German alike, so that a

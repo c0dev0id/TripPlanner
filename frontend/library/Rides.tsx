@@ -136,14 +136,19 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
     const several = chosen.length > 1;
     const [only, ...more] = ride.days;
     return [
-      { label: t('Rename…'), disabled: several, run: () => setRenamed(ride) },
+      ...(several ? [] : [{ label: t('Rename…'), run: () => setRenamed(ride) }]),
       { label: t('Autoname'), run: () => void runRidesJob((onProgress) => autoname(chosen, onProgress)) },
       { label: t('Copy'), run: () => copyRecordings(chosen) },
-      ...(several ? pinItems((pinned) => pinRides(chosen.map((kept) => kept.id), pinned)) : []),
-      { label: t('Merge'), disabled: !several || !followOneAnother(chosen), run: () => void mergeAsked(chosen) },
-      only && more.length > 0 && !several
-        ? { label: t('Show in trip'), disabled: fetchingTrip(), items: ride.days.map((on) => ({ label: dayText(on), run: () => props.onOpen(on.tripId, on.dayId) })) }
-        : { label: t('Show in trip'), disabled: several || !only || fetchingTrip(), run: () => props.onOpen(only!.tripId, only!.dayId) },
+      // Several are pinned together and merged, which is greyed out where they do not follow one another.
+      ...(several ? [...pinItems((pinned) => pinRides(chosen.map((kept) => kept.id), pinned)), { label: t('Merge'), disabled: !followOneAnother(chosen), run: () => void mergeAsked(chosen) }] : []),
+      // One is shown on a day it is on, greyed out while it is on none.
+      ...(several
+        ? []
+        : [
+            only && more.length > 0
+              ? { label: t('Show in trip'), disabled: fetchingTrip(), items: ride.days.map((on) => ({ label: dayText(on), run: () => props.onOpen(on.tripId, on.dayId) })) }
+              : { label: t('Show in trip'), disabled: !only || fetchingTrip(), run: () => props.onOpen(only!.tripId, only!.dayId) },
+          ]),
       { label: t('Delete'), run: () => void deleteAsked(chosen) },
     ];
   };

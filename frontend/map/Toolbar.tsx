@@ -38,7 +38,8 @@ export function Toolbar() {
     const box = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const items: MenuItem[] = [
       { label: t('Redo'), disabled: !redoLabel(), run: redo },
-      { label: t('Reroute'), disabled: routedLegs(route).length === 0, run: () => recalculateRoute(route.id) },
+      // A track has no legs to route.
+      ...(route.kind === 'track' ? [] : [{ label: t('Reroute'), disabled: routedLegs(route).length === 0, run: () => recalculateRoute(route.id) }]),
       { label: t("Route settings…"), run: () => settings(route) },
     ];
     setMenu({ x: box.left, y: box.top, touch: false, items });

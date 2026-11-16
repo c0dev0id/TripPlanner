@@ -166,7 +166,7 @@ export async function takeRecordingsOff(chosen: readonly Recording[]): Promise<v
 /**
  * The menu of a recording, or of the selected recordings it is one of: rename, cut, copy,
  * move to another day, show it among the rides, for several their pins, take off
- * the day. What takes one recording alone is greyed out for several.
+ * the day. What takes one recording alone is left out for several.
  */
 function recordingMenu(recording: Recording, onRename: (recording: Recording) => void): MenuItem[] {
   const dayId = recording.dayId;
@@ -179,11 +179,11 @@ function recordingMenu(recording: Recording, onRename: (recording: Recording) =>
     });
   return [
     ...(several ? [menuNote(t('{what} selected', { what: counted(chosen.length, 'recording') }))] : []),
-    { label: t('Rename…'), disabled: several, run: () => onRename(recording) },
+    ...(several ? [] : [{ label: t('Rename…'), run: () => onRename(recording) }]),
     { label: t('Cut'), run: () => clipRecordings(chosen, true) },
     { label: t('Copy'), run: () => clipRecordings(chosen, false) },
     ...moveToDayItem(dayId, move),
-    { label: t('Show in Recordings'), disabled: several, run: () => showInRides(recording) },
+    ...(several ? [] : [{ label: t('Show in Recordings'), run: () => showInRides(recording) }]),
     ...(several ? pinItems((pinned) => pinRecordings(chosen.map((r) => r.id), pinned)) : []),
     { label: t('Remove from this day'), run: () => void takeRecordingsOff(chosen) },
   ];

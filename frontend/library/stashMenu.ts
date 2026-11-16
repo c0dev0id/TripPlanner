@@ -44,6 +44,9 @@ const keepRides = (picked: readonly Picked[]) =>
     return keptText(kept, known, 'ride', t('No tracks found.'));
   });
 
+/** The paste entries, or Paste greyed out where the clipboard holds nothing for the place. */
+const pasteOr = (paste: MenuItem[]): MenuItem[] => (paste.length > 0 ? paste : [menuNote(t('Paste'))]);
+
 /**
  * The menu of what is selected once files of the Stash are among it. Files alone are
  * copied, to be imported where they are pasted. One file is renamed, takes the routes,
@@ -56,11 +59,12 @@ export function filesMenu(chosen: readonly Item[], host: StashMenuHost): MenuIte
   const onlyFiles = chosenFiles.length === chosen.length;
   return [
     ...(several ? [menuNote(t('{what} selected', { what: countText(chosen) }))] : []),
-    { label: t('Copy'), disabled: !onlyFiles, run: () => copyStashFiles(chosenFiles) },
-    ...(several || !onlyFiles ? [] : host.pasteInto(chosenFiles[0]!)),
-    { label: t('Rename…'), disabled: several, run: () => host.rename(t('Rename file'), t('File name'), chosenFiles[0]!.name, (name) => renameStashFile(chosenFiles[0]!.id, name), relistStash) },
+    // Files alone are copied; one file takes what is copied of others, greyed out while the clipboard holds none of it, and is renamed and exported.
+    ...(onlyFiles ? [{ label: t('Copy'), run: () => copyStashFiles(chosenFiles) }] : []),
+    ...(several ? [] : pasteOr(host.pasteInto(chosenFiles[0]!))),
+    ...(several ? [] : [{ label: t('Rename…'), run: () => host.rename(t('Rename file'), t('File name'), chosenFiles[0]!.name, (name) => renameStashFile(chosenFiles[0]!.id, name), relistStash) }]),
     ...host.moveItem(chosen),
-    { label: t('Export'), disabled: several, run: () => window.location.assign(stashFileUrl(chosenFiles[0]!.id)) },
+    ...(several ? [] : [{ label: t('Export'), run: () => window.location.assign(stashFileUrl(chosenFiles[0]!.id)) }]),
     { label: t('Delete'), run: () => host.remove(chosen) },
   ];
 }
@@ -103,8 +107,9 @@ export function partsMenu(taken: readonly StashPart[], selected: number, host: S
     ...(waypoints > 0
       ? []
       : [
-          { label: t(one ? 'Save as ride' : 'Save tracks as rides'), disabled: tracks.length === 0, run: () => keepRides(pickedOf(tracks)) },
-          { label: t('Rename…'), disabled: !one, run: () => host.rename(one!.item.kind === 'track' ? t('Rename track') : t('Rename route'), t('Name'), one!.item.name, (name) => renameStashItem(one!.file.id, one!.item, name), relistStash) },
+          // Tracks are kept as rides, routes are not; one route or track is renamed.
+          ...(tracks.length > 0 ? [{ label: t(one ? 'Save as ride' : 'Save tracks as rides'), run: () => keepRides(pickedOf(tracks)) }] : []),
+          ...(one ? [{ label: t('Rename…'), run: () => host.rename(one.item.kind === 'track' ? t('Rename track') : t('Rename route'), t('Name'), one.item.name, (name) => renameStashItem(one.file.id, one.item, name), relistStash) }] : []),
           { label: t('Delete'), run: () => void removeItems(parts, host.relist) },
         ]),
   ];
