@@ -91,11 +91,8 @@
   "Convert": "Umwandeln",
   "Convert to route": "In Route umwandeln",
   "Convert to stop": "In Stopp umwandeln",
-  "Copied {what}. Paste from the menu of a day, a place list or a category.": "{what} kopiert. Im Menü eines Tages, einer Ortsliste oder einer Kategorie einfügen.",
   "Copied": "Kopiert",
   "Copied {what}. Paste from the menu of a day or a trip.": "{what} kopiert. Im Menü eines Tages oder einer Tour einfügen.",
-  "Copy routes and tracks": "Routen und Tracks kopieren",
-  "Copy waypoints": "Wegpunkte kopieren",
   "Copy": "Kopieren",
   "Copy link": "Link kopieren",
   "Copy {n} routes": "{n} Routen kopieren",
@@ -683,5 +680,6 @@
   "Move {what} to “{where}”": "{what} nach „{where}“ verschieben",
   "Paste a copy of {what} into “{where}”": "Kopie von {what} in „{where}“ einfügen",
   "Paste {what}": "{what} einfügen",
-  "Paste as route": "Als Route einfügen"
+  "Paste as route": "Als Route einfügen",
+  "Import {what} into “{where}”": "{what} in „{where}“ importieren"
 }

@@ -272,15 +272,17 @@
   in the Stash and nothing is pasted into it: a folder is all that is made there. The
   search finds files by name and their routes and tracks by theirs, and shows what it
   found in its folder and on the map.
-- Things leave the Stash from the menu of a file, of several selected, or of one route
-  or track. Copy puts routes and tracks on the clipboard as an import would read them,
-  a route with its points and the way Garmin gave between them, a track with its line,
-  each with the waypoints on its points, to be pasted into a day of any trip. Copy
-  waypoints puts a file's waypoints there as free stops, to be pasted into a day, into
-  a kind of a list of places or, from the list's menu among the Places, into the list:
-  there each goes under the kind its waypoint is of (`<type>`), else under "Places",
-  and a place the list holds already is left out, as when the file is added to the
-  list. Save as ride keeps a track among the rides with
+- Things leave the Stash by Copy, in the menu of a file, of several selected, or of
+  one route or track, and with Ctrl or Cmd with C. A copied file is imported where it
+  is pasted, as the same file picked there would be: into a folder of the trips, or
+  their top, as a trip; into a trip as a day at its end; into a day of the open trip
+  as its routes and tracks with the waypoints on them and the other waypoints as free
+  stops; into a folder of the places as a list of its waypoints, and into a list or a
+  category of it as places, each under the kind its waypoint is of (`<type>`), else
+  under "Places", a place the list holds already left out. Copied routes and tracks go
+  as an import would read them, a route with its points and the way Garmin gave
+  between them, a track with its line, each with the waypoints on its points, to be
+  pasted into a day of any trip. Save as ride, in the menu of a route or a track, keeps a track among the rides with
   everything the file tells of it, its times, heights and sensor values: a track that
   is all its file holds of routes and tracks as the file itself, so that it is known as
   the ride the same file was kept as before, any other alone, without the file's

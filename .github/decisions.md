@@ -429,6 +429,14 @@ entries at the end of their section.
   says it in a ride's own terms rather than as a grade: who wrote the file, how many
   points, the median time and the mean way between them, and the values by the names
   the file gives them, since those names are what the user knows from the app.
+- **A file of the Stash is copied whole, and pasting it imports it.** Its menu had
+  three ways out, Copy routes and tracks, Copy waypoints and Save tracks as rides, which
+  asked the user to decide what the file was before knowing where it would go. One Copy
+  puts the file on the clipboard, and the place it is pasted decides, by the rules an
+  import of that file there already follows: a trip in a folder of trips, a day in a
+  trip, routes and stops in a day, places in a list. Nothing new is read: the paste
+  hands the file's GPX to the import of the place. A track still becomes a ride from
+  its own row's menu.
 - **Texts are written as software says things.** Labels and messages are the
   conventional short forms ("Assign to this day", "Trip not found.", "No GPX files
   found.") and not descriptive sentences, in English and in German alike, so that a

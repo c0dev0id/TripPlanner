@@ -1,3 +1,4 @@
+import { fetchStashGpx } from '../api';
 import type { TripSummary } from '../model/trip';
 import { libraryFolders, relistFolders, relistTrips, runLibrary, setImportNote, showTab } from '../state/library';
 import type { StashFile } from '../model/stash';
@@ -31,6 +32,12 @@ async function unpacked(dropped: Dropped): Promise<Dropped[]> {
   }
   return rest.files.length + rest.inFolders.length > 0 || zips.length === 0 ? [rest, ...zips] : zips;
 }
+
+/** A file of the Stash as a source to import: its GPX as the Stash keeps it, read when it is needed, under its name. */
+const stashSource = (file: StashFile): ImportSource => {
+  const name = `${file.name.replaceAll('/', '_')}.gpx`;
+  return { path: name, open: async () => new File([await fetchStashGpx(file.id)], name) };
+};
 
 /** Keeps the GPX files dropped or picked as rides and shows the rides, where it is said how it goes. */
 export function addRides(dropped: Dropped | Promise<Dropped>): Promise<void> {
@@ -81,7 +88,16 @@ export function libraryImports(onLeave: () => Promise<void>) {
     (data, folderId) => void intoFolder(folderId, droppedSources(data)),
     (data) => void addRides(droppedSources(data)),
   );
+  /** Adds files to a trip, as its kind says: files of routes as days and any other file as media; to a list of places the waypoints as places. */
+  const intoTrip = (trip: TripSummary, files: readonly ImportSource[]) => {
+    const kind = kindAround(libraryFolders() ?? [], trip.folderId);
+    return run((onProgress) => importIntoTrip(trip, files, kind, onProgress));
+  };
   return {
+    /** Imports files of the Stash into the folder, as files picked for it are: each a trip, or among the places a list of its waypoints. */
+    pasteFiles: (folderId: number | null, files: readonly StashFile[]) => intoFolder(folderId, { files: files.map(stashSource), inFolders: [] }),
+    /** Imports files of the Stash into the trip, as files picked for it are. */
+    pasteFilesIntoTrip: (trip: TripSummary, files: readonly StashFile[]) => intoTrip(trip, files.map(stashSource)),
     /** Asks for files of routes and zips, of exported trips or of such files, and imports them into the folder. */
     addFiles: async (folderId: number | null) => {
       const files = await pickFiles({ accept: `${ROUTE_FILE_TYPES},.zip,application/zip` });
@@ -97,9 +113,8 @@ export function libraryImports(onLeave: () => Promise<void>) {
      * file as media; to a list of places the waypoints of files of routes as places.
      */
     addToTrip: async (trip: TripSummary) => {
-      const kind = kindAround(libraryFolders() ?? [], trip.folderId);
-      const files = await pickFiles(kind === 'places' ? { accept: ROUTE_FILE_TYPES } : {});
-      if (files.length > 0) void run((onProgress) => importIntoTrip(trip, files.map(sourceOf), kind, onProgress));
+      const files = await pickFiles(kindAround(libraryFolders() ?? [], trip.folderId) === 'places' ? { accept: ROUTE_FILE_TYPES } : {});
+      if (files.length > 0) void intoTrip(trip, files.map(sourceOf));
     },
   };
 }

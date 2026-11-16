@@ -5,7 +5,7 @@ import { TAB_NAMES, TREE_TABS, TREES, type TreeTab } from '../model/library';
 import type { StashFile, StashItem } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
-import { clearClip, copyLibraryItems, libraryClip, libraryPasteItem, type LibraryClip } from '../state/clipboard';
+import { clearClip, copyLibraryItems, copyStashFiles, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip } from '../state/clipboard';
 import { heldOf, importNote, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
@@ -425,12 +425,14 @@ export function Library(props: {
   });
   /** Pastes copied routes into the trip where an import would put them, and saves it. */
   const pasteInto = (tripId: number, routes: CopiedRoute[]) => changeTrip(tripId, (trip) => pasteIntoTrip(trip, routes, newId));
-  /** What is pasted into the one folder or trip: folders and trips into a folder, routes and days into a trip, stops into a list of places as places of their kinds. Nothing is pasted into the Stash. */
+  /** The item that imports the copied files of the Stash into a folder, null for the top of the trips; none for a folder of the Stash, where they are. */
+  const pasteFilesItem = (into: number | null): MenuItem[] => (treeOf(into) === 'stash' ? [] : libraryPasteItem({ files: (files) => imports.pasteFiles(into, files) }));
+  /** What is pasted into the one folder or trip: folders and trips into a folder, and files of the Stash, which are imported there; routes, days and files of the Stash into a trip, stops into a list of places as places of their kinds. Nothing is pasted into the Stash. */
   const pasteItems = (item: Item): MenuItem[] => {
     if ('folder' in item) {
       const f = item.folder;
       const copied = libraryClip();
-      return copied && takerOf(clipItems(copied))(f.id) ? [{ label: t('Paste'), run: () => pasteLibrary(f.id) }] : [];
+      return copied && takerOf(clipItems(copied))(f.id) ? [{ label: t('Paste'), run: () => pasteLibrary(f.id) }] : pasteFilesItem(f.id);
     }
     if ('file' in item) return [];
     const id = item.trip.id;
@@ -440,6 +442,7 @@ export function Library(props: {
       await runLibrary(paste, relistTrips);
     };
     return libraryPasteItem({
+      files: (files) => imports.pasteFilesIntoTrip(item.trip, files),
       routes: (routes) => left(() => pasteInto(id, routes)),
       days: (days) => left(() => changeTrip(id, (trip) => pasteDays(trip, days, undefined, newId))),
       ...(isPlaceList(id)
@@ -459,7 +462,8 @@ export function Library(props: {
   /**
    * The keys that cut, copy and delete the selected folders and trips, and paste those on
    * the clipboard into the folder shown, as the menu does; none while the rides are
-   * shown. With routes the search found selected, or routes and tracks of files,
+   * shown. Files of the Stash are copied, and pasted into the folder shown of another
+   * tree, which imports them there. With routes the search found selected, or routes and tracks of files,
    * Delete deletes them where nothing else is selected, and the other keys do nothing.
    */
   const onKey = (e: KeyboardEvent) => {
@@ -473,9 +477,19 @@ export function Library(props: {
       e.preventDefault();
       return void (routes.length > 0 ? removeRoutes(routes) : removeItems(parts, relist));
     }
-    // Files of the Stash are deleted and moved, not cut or copied.
+    // Files of the Stash are copied, to be imported where they are pasted, by themselves alone, and never cut.
+    const files = filesOf(chosen);
+    const pasteFiles = verb === 'paste' && shownTree() ? pasteFilesItem(shownFolderId())[0] : undefined;
+    if (pasteFiles && 'run' in pasteFiles) {
+      e.preventDefault();
+      return pasteFiles.run();
+    }
+    if (verb === 'copy' && files.length > 0 && files.length === chosen.length) {
+      e.preventDefault();
+      return copyStashFiles(files);
+    }
     const clips = verb === 'cut' || verb === 'copy';
-    if (!shownTree() || (verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0) || (clips && filesOf(chosen).length > 0)) return;
+    if (!shownTree() || (verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0) || (clips && files.length > 0)) return;
     e.preventDefault();
     if (verb === 'paste') pasteLibrary(shownFolderId());
     else if (verb === 'delete') void remove(chosen);
@@ -575,10 +589,11 @@ export function Library(props: {
   /** The menu of the top of the library: what is new there and added to it, what is pasted, and the export of every trip. */
   const topMenu = (): MenuItem[] => {
     const copied = libraryClip();
+    const files = pasteFilesItem(null);
     return [
       newItem(null),
       addItem(null),
-      { label: t('Paste'), disabled: !copied || !takerOf(clipItems(copied))(null), run: () => pasteLibrary(null) },
+      ...(files.length > 0 ? files : [{ label: t('Paste'), disabled: !copied || !takerOf(clipItems(copied))(null), run: () => pasteLibrary(null) }]),
       exportItem(trips()),
     ];
   };
@@ -729,6 +744,13 @@ export function Library(props: {
                   {(copied) => (
                     <button class="paste-here" onClick={() => pasteLibrary(shownFolderId())}>
                       {t(copied().move ? 'Move {what} to “{where}”' : 'Paste a copy of {what} into “{where}”', { what: clipText(copied()), where: pathOf(shownFolderId()) || ALL_TRIPS })}
+                    </button>
+                  )}
+                </Show>
+                <Show when={shownTree() !== 'stash' && stashFilesClip()}>
+                  {(files) => (
+                    <button class="paste-here" onClick={() => void imports.pasteFiles(shownFolderId(), files()).then(clearClip)}>
+                      {t('Import {what} into “{where}”', { what: counted(files().length, 'file'), where: pathOf(shownFolderId()) || ALL_TRIPS })}
                     </button>
                   )}
                 </Show>

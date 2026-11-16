@@ -4,7 +4,6 @@ import { gpxToDayParts } from '../gpx/import';
 import type { StashFile, StashItem } from '../model/stash';
 import { newId } from '../model/trip';
 import { stopsBoundTo, type CopiedRoute } from '../routing/dayEdit';
-import { kindedWaypoints, type KindedPlace } from './dropImport';
 
 /** A file of the Stash with what is taken of it: all its routes and tracks, or those named. */
 export interface Picked {
@@ -27,11 +26,4 @@ export async function stashCopies(picked: readonly Picked[]): Promise<CopiedRout
     copies.push(...parts.routes.map((route) => ({ route, stops: stopsBoundTo(route, parts.stops), from: { date: null, name: file.name } })));
   }
   return copies;
-}
-
-/** The waypoints of files of the Stash as places to paste into a day or a list of places, each standing free, with the kind its file sorts it under. */
-export async function stashPlaces(files: readonly StashFile[]): Promise<KindedPlace[]> {
-  const places: KindedPlace[] = [];
-  for (const file of files) places.push(...kindedWaypoints(parseGpx(await fetchStashGpx(file.id))));
-  return places;
 }

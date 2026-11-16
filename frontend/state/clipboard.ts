@@ -1,26 +1,29 @@
 import { t } from '../i18n/t';
 import { createSignal } from 'solid-js';
-import { changeTrip, errorMessage, fetchRideGpx, type KeptRide, type Recording } from '../api';
+import { changeTrip, errorMessage, fetchRideGpx, fetchStashGpx, type KeptRide, type Recording } from '../api';
 import { parseGpx } from '../gpx/gpx';
 import { gpxToDayParts } from '../gpx/import';
-import { newId, type Day, type Stop } from '../model/trip';
+import type { StashFile } from '../model/stash';
+import { newId, type Day, type Route, type Stop } from '../model/trip';
 import { copiedRoute, defaultProfile, removeParts, type CopiedRoute, type PartKind } from '../routing/dayEdit';
 import { counted } from '../ui/format';
 import { askConfirmation } from '../ui/confirm';
 import type { MenuItem } from '../ui/menu';
 import { flushSave } from './autosave';
+import { isPlaceList } from './library';
 import { bringMedia, mediaAction } from './media';
 import { addedText, putOnDay, recordingAction, takeOffDay } from './recordings';
-import { moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, openTripId, pasteDays, pasteRoutes, pasteStops, pasteStopsIntoRoute, selectDay } from './trip';
+import { addParts, moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, openTripId, pasteDays, pasteRoutes, pasteStops, pasteStopsIntoRoute, selectDay } from './trip';
 
 /**
  * What was copied or cut to be pasted: days with all they hold, routes with the stops
  * bound to them, stops, rides, the files and links kept with
- * days, or trips and folders of the library. Kept from one trip to another until it is pasted, which empties the
+ * days, trips and folders of the library, or files of the Stash, which are imported
+ * where they are pasted. Kept from one trip to another until it is pasted, which empties the
  * clipboard, or until something else is copied or cut. What was cut is taken from where
  * it was once it is pasted.
  */
-type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[]; kinds?: readonly string[] } | { recordings: KeptRide[]; cutFrom?: string } | { media: CopiedMedia } | { library: LibraryClip }) & {
+type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[]; kinds?: readonly string[] } | { recordings: KeptRide[]; cutFrom?: string } | { media: CopiedMedia } | { library: LibraryClip } | { files: StashFile[] }) & {
   /** Where the parts were cut from. */
   cut?: { tripId: number; kind: PartKind; ids: string[] };
 };
@@ -51,6 +54,17 @@ export function copyLibraryItems(items: LibraryClip): void {
 export function libraryClip(): LibraryClip | undefined {
   const copied = clip();
   return copied && 'library' in copied ? copied.library : undefined;
+}
+
+/** Copies files of the Stash, to be imported where they are pasted: as trips into a folder, as days into a trip, their routes and waypoints into a day, their waypoints into a list of places. */
+export function copyStashFiles(files: StashFile[]): void {
+  setClip({ files });
+}
+
+/** The files of the Stash on the clipboard, if that is what it holds. */
+export function stashFilesClip(): StashFile[] | undefined {
+  const copied = clip();
+  return copied && 'files' in copied ? copied.files : undefined;
 }
 
 /** Empties the clipboard: what is on it is pasted once. */
@@ -127,11 +141,37 @@ function recordingAsRoute(dayId: string, name: string, gpx: string): CopiedRoute
 function pasteLabel(copied: Clip): string {
   const of = (n: number, noun: string) => t('Paste {what}', { what: counted(n, noun) });
   if ('library' in copied) return t('Paste');
+  if ('files' in copied) return of(copied.files.length, 'file');
   if ('recordings' in copied) return of(copied.recordings.length, 'recording');
   if ('media' in copied) return of(copied.media.names.length, 'attachment');
   if ('days' in copied) return of(copied.days.length, 'day');
   if ('stops' in copied) return of(copied.stops.length, 'stop');
   return of(copied.routes.length, 'route');
+}
+
+/**
+ * Imports files of the Stash into a day of the open trip, as a file picked for the day
+ * is: their routes and tracks with the waypoints on them, and the other waypoints as
+ * free stops; into a kind of a list of places, the waypoints alone.
+ */
+async function pasteFilesIntoDay(dayId: string, files: readonly StashFile[]): Promise<void> {
+  const tripId = openTripId();
+  const day = openTrip()?.days.find((d) => d.id === dayId);
+  if (!day) return;
+  try {
+    const parts = { routes: [] as Route[], stops: [] as Stop[] };
+    for (const file of files) {
+      const read = gpxToDayParts(parseGpx(await fetchStashGpx(file.id)), { fileName: file.name, profile: defaultProfile(day), newId });
+      const places = isPlaceList(tripId);
+      parts.routes.push(...(places ? [] : read.routes));
+      parts.stops.push(...(places ? read.stops.map((stop) => ({ ...stop, pointId: null })) : read.stops));
+    }
+    if (openTripId() !== tripId) return;
+    selectDay(dayId);
+    addParts(parts);
+  } catch (error) {
+    await askConfirmation(errorMessage(error), t('OK'));
+  }
 }
 
 /**
@@ -179,6 +219,13 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
     paste();
     selectDay(id);
   };
+  if ('files' in copied) {
+    const { files } = copied;
+    return [{ label, run: () => {
+          setClip(undefined);
+          void pasteFilesIntoDay(id, files);
+        } }];
+  }
   if ('days' in copied) return [{ label, run: pasted(copied, (ids) => moveDaysAfter(ids, id), () => pasteDays(copied.days, id)) }];
   if ('stops' in copied) return [{ label, run: shown(pasted(copied, (ids) => movePartsToDay('stop', ids, id), () => pasteStops(id, copied.stops))) }];
   if ('media' in copied) {
@@ -203,15 +250,16 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
 }
 
 /**
- * The menu item that hands the copied routes to `routes`, the copied days to `days`, or
- * the copied stops, with the kind of each, to `stops`, which put them into a trip or a
- * folder of the library; once that is done, what was cut is taken from its trip. None
+ * The menu item that hands the copied routes to `routes`, the copied days to `days`,
+ * the copied stops, with the kind of each, to `stops`, or the copied files of the Stash
+ * to `files`, which put them into a trip or a folder of the library; once that is done, what was cut is taken from its trip. None
  * where the clipboard holds none of them, or what it holds has nowhere to go.
  */
 export function libraryPasteItem(into: {
   routes?: (routes: CopiedRoute[]) => Promise<unknown>;
   days?: (days: Day[]) => Promise<unknown>;
   stops?: (stops: Stop[], kinds: readonly string[]) => Promise<unknown>;
+  files?: (files: StashFile[]) => Promise<unknown>;
 }): MenuItem[] {
   const copied = clip();
   if (!copied) return [];
@@ -222,7 +270,9 @@ export function libraryPasteItem(into: {
         ? () => into.days!(copied.days)
         : 'stops' in copied && into.stops
           ? () => into.stops!(copied.stops, copied.kinds ?? [])
-          : undefined;
+          : 'files' in copied && into.files
+            ? () => into.files!(copied.files)
+            : undefined;
   if (!paste) return [];
   const run = async () => {
     await paste();
