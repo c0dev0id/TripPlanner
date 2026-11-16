@@ -112,6 +112,22 @@ export const FolderIcon = () => (
   </Icon>
 );
 
+/** The Stash: a box with a lid. */
+export const ArchiveIcon = () => (
+  <Icon>
+    <path d="M3 6a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2" />
+    <path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-10" />
+    <path d="M10 12h4" />
+  </Icon>
+);
+
+/** Recordings: a line as an instrument writes it. */
+export const ActivityIcon = () => (
+  <Icon>
+    <path d="M3 12h4l3 8l4 -16l3 8h4" />
+  </Icon>
+);
+
 /** A trip: a folded map. */
 export const TripIcon = () => (
   <Icon>

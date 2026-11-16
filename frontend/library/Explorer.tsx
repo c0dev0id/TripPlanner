@@ -7,13 +7,16 @@ import { panelFolded } from '../state/panel';
 import { openTrip, openTripId, selectDay, takeUpRouteOf } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
 import { TripPanel } from '../trip/TripPanel';
-import { GearIcon } from '../ui/icons';
+import { ActivityIcon, ArchiveIcon, GearIcon, PinIcon, TripIcon } from '../ui/icons';
 import { Settings } from '../settings/Settings';
 import { FoldButton } from './FoldButton';
 import { Library } from './Library';
 import { LibraryActions } from './LibraryActions';
 import { Rides } from './Rides';
 import type { FoundRoute } from './search';
+
+/** The icon before each tab's name; the settings' tab is its gear alone. */
+const TAB_ICONS = { stash: ArchiveIcon, trips: TripIcon, places: PinIcon, recordings: ActivityIcon };
 
 /** What the search says it looks through, in the tab shown. */
 const searchText = (tab: Exclude<LibraryTab, 'settings'>): string => (tab === 'recordings' ? t('Search rides') : TREES[tab].search);
@@ -71,9 +74,6 @@ export function Explorer(props: {
   return (
     <section class="explorer" ref={section}>
       <LibraryActions />
-      <Show when={searched()}>
-        {(tab) => <input class="search" type="search" placeholder={searchText(tab())} aria-label={searchText(tab())} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />}
-      </Show>
       <div class="row library-bar">
         {/* Folded away, the strip has the button. */}
         <Show when={!panelFolded()}>
@@ -83,7 +83,15 @@ export function Explorer(props: {
         <For each={LIBRARY_TABS}>
           {(tab) => (
             <button role="tab" classList={{ grow: tab !== 'settings' }} data-tab={tab} aria-selected={libraryTab() === tab} aria-label={TAB_NAMES[tab]} title={TAB_NAMES[tab]} onClick={() => props.onTab(tab)}>
-              <Show when={tab === 'settings'} fallback={TAB_NAMES[tab]}>
+              <Show
+                when={tab === 'settings'}
+                fallback={
+                  <>
+                    {TAB_ICONS[tab as keyof typeof TAB_ICONS]()}
+                    {TAB_NAMES[tab]}
+                  </>
+                }
+              >
                 <GearIcon />
               </Show>
             </button>
@@ -91,6 +99,9 @@ export function Explorer(props: {
         </For>
         </div>
       </div>
+      <Show when={searched()}>
+        {(tab) => <input class="search" type="search" placeholder={searchText(tab())} aria-label={searchText(tab())} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />}
+      </Show>
       <Show when={libraryProblem() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
       <Library onOpen={openIn} onOpenRoute={openRoute} onOpenFolder={openFolder} onLeave={props.onLeave}>
         <Show when={openTrip()?.kind === 'collection'} fallback={<TripPanel />}>

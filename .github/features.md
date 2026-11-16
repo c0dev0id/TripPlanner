@@ -8,9 +8,10 @@
   reset by mail. `make user EMAIL=…` makes
   an account without an invitation and prints a generated password; at the first
   sign-in the user has to replace it before the planner opens.
-- The library has four tabs under its search, which stay in view while it scrolls:
-  Stash, for the files that wait to be worked on, Trips, Places, for the lists of the
-  user's own places, and Recordings, for the rides. A tab is a view of its own: what is
+- The library has four tabs, which stay in view while it scrolls: Stash, for the files
+  that wait to be worked on, Trips, Places, for the lists of the user's own places,
+  and Recordings, for the rides; each is its name in bold capitals under its icon, the
+  one shown in full ink over a line. A tab is a view of its own: what is
   unfolded, marked and selected in the others stays as it is, and each keeps how far it
   was scrolled. The map and the pane beside the library show what belongs to the tab
   shown, and under the gear what the tab before showed: the open trip and its day in
@@ -24,8 +25,10 @@
   away and the menu of its top; the address keeps the tab, so that loading the page
   again comes back to it. Opening a trip from a ride or from the duplicates shows the
   tab it is in.
-- The search over the tabs limits the tab shown to what it finds there, and stays as
-  typed when another tab is shown. In Stash, Trips and Places it lists the tree's
+- Each tab has its own search, under the tabs: it limits its tab to what it finds
+  there, and what is typed into it stays with that tab while another is shown, so
+  that each tab can be narrowed by another word and the results are still there on
+  coming back. The settings have none, and the tabs stand where they are either way. In Stash, Trips and Places it lists the tree's
   folders and trips whose names contain it, and the routes and tracks of those trips
   that are named so, each with its trip and day, at most twenty in all; a folder found
   is shown in the tree, a trip opens, and a route or a track opens its trip at its day

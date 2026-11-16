@@ -610,33 +610,44 @@ button.icon.pin[aria-pressed='true'] {
   background: var(--panel);
 }
 
-/* The library's tabs, one for each of its views, sharing the row; the one shown is tinted, the collections' and the places' in their own tints. */
+/*
+ * The library's tabs, one for each of its views, sharing the row: the page's main way
+ * around, so in bold capitals, each under its icon; the one shown is in full ink over a
+ * line. Icon over name, since four names with icons beside them do not fit the panel at
+ * its default width; the letters grow with the panel, up to a size.
+ */
 .library-tabs {
   flex: 1;
   gap: 2px;
+  container-type: inline-size;
 }
 
 .panel .library-tabs button {
-  padding: 6px 4px;
-  overflow: hidden;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 2px 5px;
   border: none;
-  border-radius: 6px 6px 0 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   background: none;
-  font-size: 0.85rem;
-  text-overflow: ellipsis;
+  color: var(--muted);
+  font-size: clamp(0.66rem, 4.2cqw, 0.78rem);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
+.panel .library-tabs button:hover {
+  background: none;
+  color: var(--fg);
+}
+
 .panel .library-tabs button[aria-selected='true'] {
-  background: var(--active);
-}
-
-.panel .library-tabs button[aria-selected='true'][data-tab='stash'] {
-  background: var(--collections);
-}
-
-.panel .library-tabs button[aria-selected='true'][data-tab='places'] {
-  background: var(--places);
+  border-bottom-color: currentColor;
+  color: var(--fg);
 }
 
 /* The line over a tab's view: what it holds, with its actions. In a tree it stands for the tree's top and is marked as a folder is. */
@@ -2045,7 +2056,9 @@ fieldset.symbols {
   align-self: flex-start;
 }
 
+/* The settings' tab is its gear alone, as high as the others. */
 .panel .library-tabs button[data-tab='settings'] {
   flex: none;
-  padding: 6px 8px;
+  justify-content: center;
+  padding: 6px 8px 5px;
 }

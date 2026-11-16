@@ -49,8 +49,14 @@ export const fetchingTrip = createRoot(() =>
   }),
 );
 
-/** The search typed into the library, which limits the tab shown to what it finds there. */
-export const [query, setQuery] = createSignal('');
+/** What is typed into each tab's search, kept for the tab while another is shown. */
+const [queries, setQueries] = createSignal<Partial<Record<LibraryTab, string>>>({});
+
+/** The search typed into the tab shown, which limits it to what it finds there. */
+export const query = (): string => queries()[libraryTab()] ?? '';
+
+/** Sets the search of the tab shown. */
+export const setQuery = (text: string): void => void setQueries({ ...queries(), [libraryTab()]: text });
 
 /** What the search looks for, as it is compared with names in lower case; empty while nothing is typed. */
 export const searchedFor = createRoot(() => createMemo(() => query().trim().toLowerCase()));

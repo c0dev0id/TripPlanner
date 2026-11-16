@@ -203,9 +203,11 @@ entries at the end of their section.
   data the client already holds.
 - **The search limits the tab shown.** Searching all tabs at once mixed collections,
   trips and lists of places in one list and had nothing to say about the rides; a tab
-  switch ended it. The query is now one filter over whichever tab is shown and stays
-  when the tab changes, so the same word can be looked up in the Stash and then in the
-  Trips. In a tree the results stay a flat list with where each is, rather than the
+  switch ended it. Each tab then got the filter, but one word for all of them, which
+  stayed when the tab changed: a word typed for the Stash narrowed the Trips without
+  being asked to. Each tab now keeps its own word (`queries` by tab), and its field
+  stands inside the tab, under the bar of tabs, where it says whose it is; the bar no
+  longer moves when the settings, which have no search, are shown. In a tree the results stay a flat list with where each is, rather than the
   tree with rows left out: a tree filtered in place needs its matches' ancestors
   unfolded and a rule for what a matching folder shows of its content, and the list
   says the same with the path. The special folders are the tabs and are never found.
@@ -448,6 +450,13 @@ entries at the end of their section.
   The clipboard holds what was taken by file, kind and place, and each place it is
   pasted reads it its own way: a file of the Stash through the server, a day or a
   list of places through the import's reader.
+- **The tabs are capitals under icons.** As the page's main way around they were four
+  plain words in a row, lighter than the rows under them. They are now bold capitals
+  with letter-spacing, the one shown over a line in full ink, each under a drawn icon.
+  Icon over name and not beside it: four names with icons beside them need about 330
+  px, and the panel's default leaves 290 beside the fold button and the gear. The
+  letters grow with the panel by a container query, to a size, so that a wider panel
+  does not leave them small.
 - **Texts are written as software says things.** Labels and messages are the
   conventional short forms ("Assign to this day", "Trip not found.", "No GPX files
   found.") and not descriptive sentences, in English and in German alike, so that a
