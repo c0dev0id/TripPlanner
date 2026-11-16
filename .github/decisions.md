@@ -1072,9 +1072,8 @@ entries at the end of their section.
   Trips and Places therefore remember what they had open when the user left them by
   their tab (`state/tabs.ts`) and open it again, saved, when the user comes back by
   their tab; undo does not survive that. Only the tab buttons do this: a tab shown
-  because a ride or a duplicate opens a trip there opens that trip and nothing else. A
-  trip closed while another tab is shown keeps its pins aside with their lines, and
-  takes them back when it is opened again.
+  because a ride or a duplicate opens a trip there opens that trip and nothing else. What is
+  pinned stays on the map either way (see the pins).
 - **The settings are a tab.** A dialog over the map hid what a setting changes, and was
   a second way into the planner beside the library's tabs. The gear is a fifth tab, and
   its pane lists the settings by section, each kept as it changes, so that the map
@@ -1234,10 +1233,23 @@ entries at the end of their section.
   its route is drawn must not read as "hidden", so it is a pin and not an eye. The
   neighbouring days draw their pinned routes only, by the same reading: they are
   context for what is taken up, chosen like the rest of it. Recordings are drawn for
-  the day shown only: each is a file of megabytes. The pins are kept with the open
-  trip in the page and no longer: they say what is looked at now, not what the trip
+  the day shown only, but for the pinned: each is a file of megabytes. The pins are
+  kept in the page and no longer: they say what is looked at now, not what the trip
   is. A recording added to a day or put on it by the lookup is not pinned: a pin is the
   user's own choice, and the comparison reads it (see below).
+- **A pin outlives the trip it was set in.** The pins were the open trip's and went
+  when another was opened, so a route of one trip could not be held against a route of
+  another, and a pinned route of a day that was neither shown nor next to it was not
+  drawn either. A pin now says "keep this on the map" without a condition. It names
+  its trip and keeps a copy of its line, taken when the trip is left
+  (`state/pins.ts`, `state/pinnedLines.ts`): the map draws the copy while the trip is
+  not open, and the route itself while it is, so the pin has nothing to do then.
+  Keeping whole trips loaded for their pins was considered and dropped: it would need
+  every loaded document kept in step with what the library does to it on the server,
+  for the sake of one line. The copy is as old as the last time its trip was open;
+  what the library changes in a trip that is not open does not reach it until then. A
+  pin is let go of where it was set, on its row, which needs its trip open: a pinned
+  line on the map is not acted on. Pins of a deleted trip go with it.
 - **A recording is compared with what is pinned beside it.** A choice of "the planned
   route" in a list compared with all of the day's routes at once, which said nothing
   where a day has several routes or a route and a track. What is on the map says what

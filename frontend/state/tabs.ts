@@ -1,24 +1,20 @@
-import { routePositions } from '../routing/legs';
 import { batch } from 'solid-js';
 import type { KeptRide } from '../api';
 import { selectIn } from '../ui/selection';
 import { isTreeTab, type LibraryTab, type TreeTab } from '../model/library';
-import { libraryTrips, mapTab, openTree, setQuery, showTab, tripShown } from './library';
+import { libraryTrips, mapTab, openTree, setQuery, showTab } from './library';
 import { foldPanel } from './panel';
 import { revealRide, RIDES } from './rides';
-import { isRecordingPinned, isRoutePinned, setPinsAside, type PinnedLine } from './pins';
 import { openRecording, toggleRecording } from './recordingView';
-import { activeRecordingId, loadedTrack, recordingColor, shownRecordings } from './recordings';
-import { openRouteColors } from './routeColors';
-import { activeRouteId, openTrip, openTripId, selectedDayId, takeUpRoute } from './trip';
+import { activeRecordingId } from './recordings';
+import { activeRouteId, openTripId, selectedDayId, takeUpRoute } from './trip';
 
 /**
  * The library's tabs as views of their own: what a tab with a tree had open when the user
  * left it by its button (the trip or list, its day, the route taken up, the recording
  * opened), opened again when the user comes back to it. Only one trip is open at a time,
  * so coming back to a tab whose trip is not the open one opens it again, saved, as
- * picking it would. A trip left while another tab's things are shown keeps its pins
- * aside.
+ * picking it would.
  */
 
 interface LeftOpen {
@@ -29,25 +25,6 @@ interface LeftOpen {
 }
 
 const leftOpen: Partial<Record<TreeTab, LeftOpen>> = {};
-
-/** The open trip's pinned routes and recordings as the map draws them. */
-function pinnedLines(): PinnedLine[] {
-  const routes = (openTrip()?.days ?? []).flatMap((day) => day.routes.filter((route) => isRoutePinned(route.id)));
-  const recordings = shownRecordings().filter((recording) => isRecordingPinned(recording.id));
-  return [
-    ...routes.map((route) => ({ points: routePositions(route), color: openRouteColors().get(route.id) ?? '#495057' })),
-    ...recordings.flatMap((recording) => {
-      const track = loadedTrack(recording);
-      return track ? [{ points: track.points, color: recordingColor(recording) }] : [];
-    }),
-  ];
-}
-
-/** Keeps the open trip's pins aside, with their lines on the map, where the trip is left while the map follows another tab. */
-export function setPinsAsideIfHidden(): void {
-  const tripId = openTripId();
-  if (tripId !== undefined && !tripShown()) setPinsAside(tripId, pinnedLines());
-}
 
 /** Leaves the tab the map follows for another, which is shown: what it had open is kept for it and let go of on the map. */
 function leaveFor(to: Exclude<LibraryTab, 'settings'>): void {

@@ -15,6 +15,7 @@ import { GroupDialog, type Grouping } from './GroupDialog';
 import { groupFiles } from './grouping';
 import { setEditTarget, setExportScope, setShareOpen } from '../state/drawing';
 import { openJournal } from '../state/journal';
+import { unpinTrips } from '../state/pins';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, openTrip, openTripId, pickDay, selectDay, selectedDayId } from '../state/trip';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
@@ -236,7 +237,14 @@ export function Library(props: {
   const removeFolder = async (f: Folder) => {
     const contents = await askFolderDeletion(f);
     if (!contents) return;
-    await runLibrary(() => deleteFolder(f.id, contents), relist);
+    const gone = contents === 'delete' ? tripsWithin([{ folder: f }]).map((trip) => trip.id) : [];
+    await runLibrary(
+      () => deleteFolder(f.id, contents),
+      () => {
+        unpinTrips(gone);
+        relist();
+      },
+    );
   };
   /** The tree shown; none while the rides are. */
   const shownTree = (): TreeTab | undefined => TREE_TABS.find((tree) => tree === libraryTab());
@@ -317,9 +325,13 @@ export function Library(props: {
     const all = foldersOf(doomed).length > 0 ? 'Delete {what} and everything in them?' : tripsOf(doomed).length > 0 ? 'Delete {what} with all their days?' : 'Delete {what}?';
     if (!(await askConfirmation(one || t(all, { what: countText(doomed) }), t('Delete')))) return;
     if (holdsOpen(doomed)) await props.onLeave();
+    const gone = tripsWithin(doomed).map((trip) => trip.id);
     await runLibrary(
       () => Promise.all([...tripsOf(doomed).map((trip) => deleteTrip(trip.id)), ...foldersOf(doomed).map((f) => deleteFolder(f.id, 'delete')), ...filesOf(doomed).map((file) => deleteStashFile(file.id))]),
-      relist,
+      () => {
+        unpinTrips(gone);
+        relist();
+      },
     );
   };
   /** Deletes routes the search found from their trips, once that is confirmed. */
@@ -357,7 +369,14 @@ export function Library(props: {
     const question = plural(others.length, 'Merge {what} into “{name}”? {where}, and the merged one is deleted.|Merge {what} into “{name}”? {where}, and the merged ones are deleted.', { what, name: into.name, where });
     if (!(await askConfirmation(question, t('Merge')))) return;
     if (holdsOpen([{ trip: into }, ...others.map((trip) => ({ trip }))])) await props.onLeave();
-    await runLibrary(() => mergeTrips(into.id, others.map((t) => t.id)), relist);
+    const merged = others.map((trip) => trip.id);
+    await runLibrary(
+      () => mergeTrips(into.id, merged),
+      () => {
+        unpinTrips(merged);
+        relist();
+      },
+    );
   };
   /** What a folder holds besides folders, as it is counted: trips, in the Stash files or, among the places, lists. */
   const heldNoun = (id: number | null) => TREES[treeOf(id)].holds;

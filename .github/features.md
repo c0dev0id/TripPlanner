@@ -586,12 +586,12 @@
   Taking up a route or opening a recording draws that one alone. One thing is taken up
   at a time: taking up a route closes the recording opened, and opening a recording
   lets go of the route taken up. Every route and every recording has a pin on
-  its row: pinned, it stays on the map of its day whatever else is taken up, and a
-  pinned recording is drawn also while nothing is. Several selected are pinned or let
-  go from their menu. The neighbouring days draw their pinned routes. The pins are the
-  open trip's, for all of its days, and go when it is left in its own tab or the page
-  is loaded again; a trip left while another tab is shown leaves its pinned lines on
-  the map and is pinned again when it is opened. A recording added to a day, or put on
+  its row: pinned, it stays on the map whatever else is taken up, whatever day is
+  shown and whatever trip is open, until it is let go of on its row. Several selected
+  are pinned or let go from their menu. A pinned route of another day is drawn as the
+  neighbouring days are, one of another trip as a plain line in its colour, as it
+  stood when its trip was left. The pins go when the page is loaded again, and with a
+  trip that is deleted. A recording added to a day, or put on
   it by the lookup, is not pinned. Another day closes the recording opened, as it lets
   go of the route taken up.
 - A route under a mouse's pointer on the map is drawn wider and named, after its day while the

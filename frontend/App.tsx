@@ -1,8 +1,8 @@
 import { createEffect, createSignal, onCleanup, onMount, Show, untrack } from 'solid-js';
 import { errorMessage, fetchTrip, type Progress } from './api';
 import { DuplicatesReport } from './library/DuplicatesReport';
-import { setPinsAsideIfHidden, switchTab } from './state/tabs';
-import { takePinsBack } from './state/pins';
+import { switchTab } from './state/tabs';
+import { keepPinsOfOpenTrip } from './state/pinnedLines';
 import { PlaceKindDialog } from './map/PlaceKinds';
 import { isTreeTab } from './model/library';
 import { Explorer } from './library/Explorer';
@@ -55,9 +55,8 @@ export function App() {
       say('arrived');
       if (!document.hidden) await new Promise((painted) => requestAnimationFrame(() => setTimeout(painted)));
       if (ask !== latest) return;
-      setPinsAsideIfHidden();
+      keepPinsOfOpenTrip();
       loadTrip(trip, dayId);
-      takePinsBack(id);
       if (selectedDay()?.routes.some((route) => route.id === routeId)) takeUpRoute(routeId);
       resetSaveState();
       // The trip is open; its row keeps saying that it opens until the map has drawn the routes.
@@ -77,7 +76,7 @@ export function App() {
     if (!openTrip()) return;
     await flushSave();
     const changed = savedSinceLoad();
-    setPinsAsideIfHidden();
+    keepPinsOfOpenTrip();
     closeTrip();
     resetSaveState();
     if (changed) relistTrips();

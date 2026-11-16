@@ -11,7 +11,8 @@ import { colorRuns, DIMMED, NO_VALUE } from '../recording/lineColors';
 import type { RecordedTrack } from '../recording/track';
 import { mapTab, tripShown } from '../state/library';
 import { sectionEnds, shownTrack } from '../state/section';
-import { isRoutePinned, pinnedAsideLines } from '../state/pins';
+import { isRoutePinned } from '../state/pins';
+import { pinnedLines } from '../state/pinnedLines';
 import { keepsView } from '../state/place';
 import { placesHidden, setPlacesHidden } from '../state/places';
 import { ridesOpacity, routeWidth } from '../state/preferences';
@@ -118,17 +119,23 @@ export function MapView() {
 type ShownDay = { day: Day; role: RouteRole };
 
 /**
- * The days drawn: the selected one, and of a trip with `showNeighbours` the ones before
- * and after; every day while none is selected. While the map follows another tab, the
- * days with pinned routes, which draw those alone (see routeDrawn).
+ * The days drawn: the selected one, of a trip with `showNeighbours` the ones before and
+ * after, and any other that holds a pinned route, which draws that alone (see
+ * routeDrawn); every day while none is selected. While the map follows another tab, the
+ * days with pinned routes.
  */
 function shownDays(): ShownDay[] {
-  if (!tripShown()) return (openTrip()?.days ?? []).filter((d) => d.routes.some((route) => isRoutePinned(route.id))).map((d) => ({ day: d, role: 'selected' as const }));
+  const pinned = (day: Day) => day.routes.some((route) => isRoutePinned(route.id));
+  if (!tripShown()) return (openTrip()?.days ?? []).filter(pinned).map((d) => ({ day: d, role: 'selected' as const }));
   const day = selectedDay();
   if (!day) return (openTrip()?.days ?? []).map((d) => ({ day: d, role: 'selected' as const }));
-  const neighbours = showNeighbours() && openTrip()!.kind === 'trip' ? neighbourDays().map((d) => ({ day: d, role: 'neighbour' as const })) : [];
-  return [...neighbours, { day, role: 'selected' }];
+  const neighbours = contextDays();
+  const others = openTrip()!.days.filter((d) => d !== day && (neighbours.includes(d) || pinned(d)));
+  return [...others.map((d) => ({ day: d, role: 'neighbour' as const })), { day, role: 'selected' }];
 }
+
+/** The days before and after the selected one, where a trip shows them for context. */
+const contextDays = (): Day[] => (showNeighbours() && openTrip()?.kind === 'trip' ? neighbourDays() : []);
 
 /** Whether the lines of the days drawn are the same: the same routes in the same roles. */
 const sameLines = (a: ShownDay[], b: ShownDay[]): boolean => a.length === b.length && a.every((d, i) => d.day.routes === b[i]!.day.routes && d.role === b[i]!.role);
@@ -136,7 +143,7 @@ const sameLines = (a: ShownDay[], b: ShownDay[]): boolean => a.length === b.leng
 /**
  * Whether a route of a day drawn is on the map. The one taken up and the pinned ones
  * always are; the others of the day shown, or of the whole trip, while nothing is taken
- * up, which draws what is taken up alone among them. Of a neighbouring day, the pinned;
+ * up, which draws what is taken up alone among them. Of any other day, the pinned;
  * while the map follows another tab, the pinned alone.
  */
 function routeDrawn(route: Route, role: RouteRole): boolean {
@@ -149,13 +156,14 @@ const sameIds = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean => a.s
 const samePlaces = (a: readonly LngLat[], b: readonly LngLat[]): boolean => a.length === b.length && a.every((p, i) => p[0] === b[i]![0] && p[1] === b[i]![1]);
 
 /**
- * Where the stops drawn as grey dots stand: of a trip, those of the days drawn but the
- * selected one, whose stops are markers; none of a collection, which can hold thousands.
+ * Where the stops drawn as grey dots stand: of a trip, those of the days shown for
+ * context beside the selected one, whose stops are markers, or of every day while none
+ * is selected; none of a collection, which can hold thousands.
  */
 function dimStops(): LngLat[] {
   if (openTrip()?.kind !== 'trip' || !tripShown()) return [];
-  const dim = shownDays().filter((d) => d.day !== selectedDay());
-  return dim.flatMap(({ day }) => day.stops.map((stop) => stop.lngLat));
+  const dim = selectedDay() ? contextDays() : openTrip()!.days;
+  return dim.flatMap((day) => day.stops.map((stop) => stop.lngLat));
 }
 
 /** A recording's line in pieces of one colour each, those marked DIMMED drawn dimmed. */
@@ -204,17 +212,17 @@ function RecordingLines(props: { map: MapLibreMap }) {
 /**
  * Draws the routes the duplicates report compares, each in its colour, the recording a
  * day's lookup shows, the rides held against a day while the map follows their tab, what is shown
- * of the Stash while it follows the Stash's, the pinned lines of trips set aside, and the
+ * of the Stash while it follows the Stash's, the pinned lines nothing else draws, and the
  * ends of the section looked up among the rides.
  */
 function ComparedLines(props: { map: MapLibreMap }) {
   createEffect(() => {
     const stash = mapTab() === 'stash';
-    const aside = pinnedAsideLines().map((line) => ({ id: 0, ...line }));
+    const pinned = pinnedLines().map((line) => ({ id: 0, ...line }));
     // A ride drawn whole as a recording, opened or pinned, is not drawn again as one held against a day.
     const drawn = new Set(shownRecordings().map((recording) => recording.id));
     const rides = mapTab() === 'recordings' ? ridesOnMap().filter((ride) => !drawn.has(ride.id)) : [];
-    const lines = recordingFeatures([...comparedLines(), ...previewedLines(), ...rides, ...(stash ? stashLines() : []), ...aside]);
+    const lines = recordingFeatures([...comparedLines(), ...previewedLines(), ...rides, ...(stash ? stashLines() : []), ...pinned]);
     props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData({ type: 'FeatureCollection', features: [...lines.features, ...dotFeatures([...(stash ? stashWaypoints() : []), ...sectionEnds()])] });
   });
   return null;
