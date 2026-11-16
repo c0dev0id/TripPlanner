@@ -951,16 +951,29 @@ entries at the end of their section.
   changed is still sent, for what needs to know that it was. The row of the open
   trip shows the name the trip has now, and the trips are listed afresh once a save
   renamed one: the list had only learned of it when it was next read.
-- **A trip of one day has no level of days.** Most trips are of one day, and each
-  showed a row for it that had to be clicked to get to the day. The trip's row now
-  stands for the day: a click opens the day's pane, with the library folding as it
-  does for any pane (and staying where that is turned off). Of the day's menu, all
-  but three entries were in the pane or the trip's menu already. Paste was not, so
-  the row of the open trip also pastes into its day what a trip does not take; what
-  a trip takes (days, routes, files) it takes as a trip, open or not, so that the
-  same paste does not mean two things. Cut, Copy and Duplicate of the one day are
-  not offered: a trip is duplicated, and merged into another, instead. A list of
-  places keeps the level, since its one category says what its places are.
+- **A trip's days are in its pane, not in the tree.** The tree listed the days of every
+  unfolded trip, the open trip's from its document and the others' from their
+  outlines. The two kinds of row looked alike and were not: one had a grip that
+  sorted, a journal and a menu, the other a click that loaded its trip. Which trip
+  was open was a state the tree did not show, and it changed with every click, taking
+  the rows' controls from one trip to another. Most trips are of one day, and each
+  showed a level of days for it; hiding that level for them made a third kind of row.
+  Keeping every unfolded trip loaded would have made the rows equal, at the price of
+  several open documents, each with its own undo, autosave, journal, recordings and
+  selection, where one is edited at a time. The tree now stops at the trip. A click
+  on a trip opens it and shows it on the map, and the tree stays as it is; the days
+  stand under each other in the pane beside the library, where they were shown one at
+  a time before, and the one shown has what it holds under its row. One day is shown
+  at a time, since the map, the routing and the selection are of the day shown. The
+  pane is opened by a button on the trip's row, which is one click for an open trip
+  and for any other, and it is the user's: it stays open while trips are looked
+  through, showing each, and is not opened by a click on a row. A trip of one day
+  shows that day when its pane opens, so that it takes no click more than before. Its
+  row still pastes into its day what a trip does not take; what a trip takes (days,
+  routes, files) it takes as a trip, open or not, so that the same paste does not
+  mean two things. A list of places keeps its categories in the tree: its one
+  category says what its places are, and a category is picked there far more often
+  than a day of a trip was.
 - **Whether the library folds by itself is the user's to say.** The pane folding the
   library was a rule with a memory: unfolded by hand beside a day, the library folded
   again at the next day picked after a trip was opened, and nothing on the screen said
@@ -1051,9 +1064,9 @@ entries at the end of their section.
 - **The library is a tree, and the open trip stays in it.** The explorer showed one
   level at a time and replaced the library by the open trip: to look into another trip
   or folder meant leaving where one was. As a tree, folders and trips unfold in place,
-  several at once, and the open trip keeps its place among the others. A trip's days are
-  listed without its document from the outlines, so any trip unfolds; only opening one
-  loads it. Since the library is now in reach while a trip is open, what the library
+  several at once, and the open trip keeps its place among the others. A list's
+  categories are listed without its document from the outlines, so any list unfolds;
+  only opening one loads it (a trip's days have since moved to its pane, see there). Since the library is now in reach while a trip is open, what the library
   does to the open trip on the server (deleting, merging, pasting onto it) leaves the
   trip first, saved, and renaming it is the edit of the trip itself: the open document
   is never changed behind its back.
@@ -1083,14 +1096,17 @@ entries at the end of their section.
   account away.
 - **What is unfolded in the tree is the user's doing.** The open trip was always
   unfolded: opening a trip listed its days and folded those of the one open before, so
-  the tree moved under the pointer with every trip opened. A trip now lists its days
-  only while it is unfolded, open or not, and opening a trip folds no other. One thing
+  the tree moved under the pointer with every trip opened. A list now lists its
+  categories only while it is unfolded, open or not, and opening one folds no other;
+  a trip's days are not in the tree at all. One thing
   still unfolds by itself, to keep something in reach rather than to rearrange the
   tree: the folders around a trip when it opens, since a trip opened from the search or
   from the address would otherwise be out of sight.
 - **A row unfolds and folds by a click on it; there are no arrowheads.** A folder, a
   trip and a route each had an arrowhead beside the row that did part of what a click
-  on the row did. They answer to one rule instead. The tree has one mark, on the row
+  on the row did. They answer to one rule instead (which holds for folders and lists
+  of places since a trip's days moved to its pane; a trip's row opens it, and a day
+  in the pane is shown and closed by a click). The tree has one mark, on the row
   clicked last. A click on a row that is not marked marks it and unfolds it, and for a
   trip that opens it, for a day that shows it; a click on the marked row folds it, or
   unfolds it where it was folded. A click on the trip while its day is shown closes the

@@ -407,6 +407,7 @@ a {
 
 /* The place what is dragged would be dropped on: a folder's, a trip's or a day's row, the line over the view shown for the view's top, a route, a day's button in the strip. */
 .tree li.drop-target > .row,
+.side-pane .days > li.drop-target > .row,
 .library-panel.drop-target .tab-summary,
 .routes > li.drop-target > .row,
 .panel button.day-chip.drop-target {
@@ -647,6 +648,20 @@ button.icon.pin[aria-pressed='true'] {
 /* The tree's one mark, on the row clicked last: a folder, the open trip, or its day that is shown. */
 .tree .card.current > .row {
   background: var(--active);
+}
+
+/* A trip's days in its pane: rows as the tree's, the day shown marked as the tree marks what is open, with what it holds under its row. */
+.side-pane .days > .card > .row {
+  border-radius: 7px;
+}
+
+.side-pane .days .name {
+  display: block;
+}
+
+.side-pane .days > .card.open > .row {
+  background: var(--active);
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 /* The button that folds the library away and its tabs, in one bar that stays at the top while the panel scrolls, so that folding it and another view are one click away from anywhere in a long one. */

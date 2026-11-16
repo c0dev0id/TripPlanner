@@ -9,7 +9,8 @@ import { dayDetail, dayHeading, routeOrTrack } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { counted, dateText, openingText } from '../ui/format';
-import { CollectionIcon, FolderIcon, GripIcon, TripIcon } from '../ui/icons';
+import { IconButton } from '../ui/IconButton';
+import { ChevronIcon, CollectionIcon, FolderIcon, GripIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { Pad } from '../ui/Pad';
@@ -26,6 +27,12 @@ export interface CardSelect extends RowSelect {
   place: (el: HTMLElement) => void;
 }
 
+/** The button on a trip's row that opens the pane of its days: whether the pane shows them, and what a press does. */
+export interface CardPane {
+  open: () => boolean;
+  onToggle: () => void;
+}
+
 /** How a card unfolds in the tree, whether it holds the tree's one mark, and of a trip whether it is the open one. */
 export interface CardFold {
   unfolded: () => boolean;
@@ -34,10 +41,10 @@ export interface CardFold {
 }
 
 /**
- * The one day of a trip that has no other: the trip's row stands for that day, and the
- * level of days is not shown under it. Of the open trip it is the day as it stands, of
- * any other the day as the library knows it. None for a list of places, whose one
- * category still says what its places are.
+ * The one day of a trip that has no other: the trip's row tells of that day, and takes
+ * what only a day takes. Of the open trip it is the day as it stands, of any other the
+ * day as the library knows it. None for a list of places, whose one category still says
+ * what its places are.
  */
 export function loneDay(trip: TripSummary): Day | OutlineDay | undefined {
   if (trip.kind !== 'trip') return undefined;
@@ -46,12 +53,12 @@ export function loneDay(trip: TripSummary): Day | OutlineDay | undefined {
 }
 
 /**
- * The days of a trip that is not open, as the library knows them, drawn as the open trip
- * draws its own, grip and all: a click opens the trip at the day. What needs the trip's
- * document (reordering by the grip, the journal, the recordings) comes with opening it.
+ * The categories of a list of places that is not open, as the library knows them, drawn
+ * as the open list draws its own, grip and all: a click opens the list at the category.
+ * What needs the list's document (reordering by the grip, the menu) comes with opening
+ * it.
  */
 export function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void }) {
-  const collection = () => props.trip.kind === 'collection';
   const days = () => outlineOf(props.trip.id) ?? [];
   return (
     <ol class="days">
@@ -59,28 +66,24 @@ export function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => 
         {(day, index) => (
           <li class="day card">
             <div class="row">
-              {/* The grip the day has once its trip is open, drawn here as well, so that the rows do not change as another trip is opened. */}
+              {/* The grip the category has once its list is open, drawn here as well, so that the rows do not change as another list is opened. */}
               <span class="grip-space" aria-hidden="true">
                 <GripIcon />
               </span>
               <button class="text grow" onClick={() => props.onOpen(day().id)}>
-                <Show when={collection()}>
-                  <PlaceKindMark id={day().id} />
-                </Show>
+                <PlaceKindMark id={day().id} />
                 <span class="lines">
-                  <span class="name">{dayHeading(props.trip.kind, index(), day().name)}</span>
-                  <span class="muted detail">{dayDetail(props.trip.kind, day(), collection())}</span>
+                  <span class="name">{dayHeading('collection', index(), day().name)}</span>
+                  <span class="muted detail">{dayDetail('collection', day(), true)}</span>
                 </span>
               </button>
-              <Show when={collection()}>
-                <PlaceKindControls id={day().id} name={day().name} />
-              </Show>
+              <PlaceKindControls id={day().id} name={day().name} />
             </div>
           </li>
         )}
       </ForById>
       <Show when={days().length === 0}>
-        <li class="muted no-days">{t(collection() ? 'No sections yet.' : 'No days yet.')}</li>
+        <li class="muted no-days">{t('No sections yet.')}</li>
       </Show>
     </ol>
   );
@@ -101,6 +104,7 @@ export function TripCard(props: {
   where?: string;
   select?: CardSelect;
   fold?: CardFold;
+  pane?: CardPane;
   children?: JSX.Element;
 }) {
   const shape = createMemo(() => outlineOf(props.trip.id)?.map((day) => day.lines).filter((lines) => lines.length > 0));
@@ -138,7 +142,7 @@ export function TripCard(props: {
         </Show>
         <button
           class="text grow"
-          aria-expanded={props.fold?.unfolded()}
+          aria-expanded={props.trip.kind === 'collection' ? props.fold?.unfolded() : undefined}
           onClick={(e) => props.select?.onClick(e) || props.onOpen(props.trip)}
           disabled={fetchingTrip()}
         >
@@ -158,6 +162,13 @@ export function TripCard(props: {
           <Show when={shape()?.length ? shape() : undefined}>{(days) => <TripShape days={days()} />}</Show>
         </button>
         <MenuButton of={props.trip.name} items={props.items} />
+        <Show when={props.pane}>
+          {(pane) => (
+            <IconButton label={t(pane().open() ? 'Hide the days of {name}' : 'Show the days of {name}', { name: props.trip.name })} pressed={pane().open()} onClick={pane().onToggle}>
+              <ChevronIcon />
+            </IconButton>
+          )}
+        </Show>
       </div>
       <Show when={props.fold?.unfolded()}>
         <div class="tree-children">{props.children}</div>

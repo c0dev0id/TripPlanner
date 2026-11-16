@@ -93,7 +93,7 @@ export function straightLegItem(routeId: string, point: RoutePoint): MenuItem {
   return { label: t(straight ? 'Route leg to here' : 'Straight leg to here'), run: () => setStraight(routeId, point.id, !straight) };
 }
 
-/** The menu of a plain point of a route of the selected day, on the map and in the day's pane: a stop made of it, the leg to it straight or routed, the point removed. */
+/** The menu of a plain point of a route of the selected day, on the map and in the pane: a stop made of it, the leg to it straight or routed, the point removed. */
 export function pointItems(routeId: string, point: RoutePoint): MenuItem[] {
   return [
     { label: t('Convert to stop'), run: () => convertPoint(point.id) },

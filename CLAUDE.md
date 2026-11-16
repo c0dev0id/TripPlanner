@@ -85,6 +85,15 @@ Trips, Places and Recordings. The folders of kind `collections` and `places` are
 tops of the Stash's and the Places' trees and are never rows; each tree keeps its own
 mark and selection while another tab is shown.
 
+The Trips' tree stops at the trip: a click on a trip opens it, the one trip document
+that is loaded, and shows it on the map; its days are listed in the pane beside the
+library (`trip/DayPane.tsx`, `trip/TripPanel.tsx`), one shown at a time, and the pane is
+opened by the button on the trip's row (`daysPaneOpen` in `state/trip.ts`, `paneShown`
+in `state/library.ts`). A list of places keeps its categories in the tree, the open
+list's from its document (`trip/CollectionPanel.tsx`), the others' from the outlines,
+and the pane shows the category picked. What is pinned stays on the map whatever trip
+is open (`state/pins.ts`): a pin keeps a copy of its line for while its trip is not.
+
 `library/Library.tsx` holds the trees, their menus and keys; beside it are its cards
 (`cards.tsx`, `StashFileCard.tsx`), the Stash's verbs and menus (`stashMenu.ts`) and what
 is pure and tested: the rows' keys and what a folder takes (`items.ts`), the search

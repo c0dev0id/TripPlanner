@@ -26,6 +26,7 @@ import {
   moveRoute,
   openTrip,
   pickDay,
+  selectDay,
   selectedDayId,
   updateRoute,
   selectedSequence,
@@ -63,7 +64,7 @@ export function JournalButton(props: { target: EntryTarget; of: string }) {
   );
 }
 
-/** The open trip's days, under its row in the library's tree. */
+/** The open trip's days under each other, in the pane beside the library: the one shown with what it holds under its row. */
 export function TripPanel() {
   return (
     <section class="trip">
@@ -77,7 +78,7 @@ export function TripPanel() {
   );
 }
 
-/** A day as a card: its number and name over its date and length; its menu edits, duplicates, pastes into and removes it. */
+/** A day as a card: its number and name over its date and length; its menu edits, duplicates, pastes into and removes it. A click shows the day, with what it holds under its row, or closes it where it is shown, which shows the whole trip. */
 function DayItem(props: { day: Day; index: number }) {
   const selected = () => selectedDayId() === props.day.id;
   const label = createMemo(() => dayLabel(props.day, props.index));
@@ -107,7 +108,7 @@ function DayItem(props: { day: Day; index: number }) {
           onToggle={select.onToggle}
           carries={() => carriedWith('day', props.day.id, label())}
         />
-        <button class="text grow" onClick={(e) => select.onClick(e) || pickDay(props.day.id)} aria-pressed={selected()}>
+        <button class="text grow" onClick={(e) => select.onClick(e) || (selected() ? selectDay(undefined) : pickDay(props.day.id))} aria-expanded={selected()}>
           <span class="lines">
             <span class="name">{dayHeading('trip', props.index, props.day.name)}</span>
             <span class="muted detail">{meta()}</span>
@@ -121,12 +122,15 @@ function DayItem(props: { day: Day; index: number }) {
         <JournalButton target={{ dayId: props.day.id }} of={label()} />
         <MenuButton of={label()} items={more} />
       </div>
+      <Show when={selected()}>
+        <DayDetails day={props.day} />
+      </Show>
     </li>
   );
 }
 
-/** The selected day's notes and times, its routes with their stops, and the stops that stand beside no route: what the day's pane shows. */
-export function DayDetails(props: { day: Day }) {
+/** The selected day's notes and times, its routes with their stops, and the stops that stand beside no route. */
+function DayDetails(props: { day: Day }) {
   const unplaced = createMemo(() => standingAlone(props.day, selectedSequence()));
   /** The sequence by route, in order: each route's points and the stops placed along it. */
   const byRoute = createMemo(() => {

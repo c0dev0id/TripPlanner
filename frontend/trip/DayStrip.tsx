@@ -20,7 +20,7 @@ import { dayDetail, dayHeading, dayHolds, dayTitleOf } from './labels';
  * what is behind it (`DayTip`).
  */
 export function DayStrip() {
-  /** Closes the day shown and leaves the library folded away, as it is asked for here: the pane's own button brings the library back. */
+  /** Closes the day shown and leaves the library folded away, as it is asked for here: the pane's own button brings the library back. A trip's pane stays, with no day shown. */
   const closeDay = () => {
     foldPanel(true);
     selectDay(undefined);

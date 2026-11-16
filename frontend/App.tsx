@@ -17,9 +17,9 @@ import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { folderOfTrip, libraryFolders, libraryTab, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab, tripShown } from './state/library';
 import { setShowingDuplicates, showingDuplicates } from './state/pane';
-import { panelFolded } from './state/panel';
+import { panelFolded, showDaysPane } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
-import { closeTrip, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
+import { closeTrip, daysPaneOpen, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
 import { DayDialog } from './trip/DayDialog';
 import { DayPane } from './trip/DayPane';
 import { DayStrip } from './trip/DayStrip';
@@ -39,8 +39,8 @@ export function App() {
 
   /** Counts the trips asked for and the leavings, so that a trip that arrives after the user went elsewhere is not opened. */
   let latest = 0;
-  /** Opens a trip, at the day `dayId` where one is given, with that day's route `routeId` taken up; a trip open before is saved first. */
-  const open = async (id: number, dayId?: string, routeId?: string) => {
+  /** Opens a trip, at the day `dayId` where one is given, with that day's route `routeId` taken up, and with `pane` the pane of its days; a trip open before is saved first. */
+  const open = async (id: number, dayId?: string, routeId?: string, pane?: boolean) => {
     const ask = ++latest;
     /** Says on the trip's row how far the opening has come, while it is still the trip asked for. */
     const say = (progress: Progress | 'arrived') => void (ask === latest && setOpening({ tripId: id, progress }));
@@ -57,6 +57,7 @@ export function App() {
       if (ask !== latest) return;
       keepPinsOfOpenTrip();
       loadTrip(trip, dayId);
+      if (pane) showDaysPane();
       if (selectedDay()?.routes.some((route) => route.id === routeId)) takeUpRoute(routeId);
       resetSaveState();
       // The trip is open; its row keeps saying that it opens until the map has drawn the routes.
@@ -82,10 +83,10 @@ export function App() {
     if (changed) relistTrips();
   };
 
-  /** Opens a trip picked in the library; a day picked with it takes the pane beside the library. */
-  const openPicked = (id: number, dayId?: string, routeId?: string) => {
-    if (dayId !== undefined) setShowingDuplicates(false);
-    void open(id, dayId, routeId);
+  /** Opens a trip picked in the library; a day picked with it, or the pane of its days asked for, takes the pane beside the library. */
+  const openPicked = (id: number, dayId?: string, routeId?: string, pane?: boolean) => {
+    if (dayId !== undefined || pane) setShowingDuplicates(false);
+    void open(id, dayId, routeId, pane);
   };
 
   /** Opens a trip at a day from a report in the pane, which stays there; as a trip opened in the tree, it makes its folder the one shown. */
@@ -113,7 +114,7 @@ export function App() {
   onMount(async () => {
     if (place.tripId !== undefined) {
       if (/(^#|&)map=/.test(location.hash)) keepViewOf(place.tripId);
-      await open(place.tripId, place.dayId, place.routeId);
+      await open(place.tripId, place.dayId, place.routeId, place.pane);
     }
     setReturned(true);
   });
@@ -121,7 +122,7 @@ export function App() {
     // The folder shown is only known once the folders are listed.
     if (!returned() || libraryFolders.loading) return;
     const tab = libraryTab();
-    const now = { folderId: shownFolderId(), ...(isTreeTab(tab) ? {} : { view: tab }), tripId: openTripId(), dayId: selectedDayId(), routeId: editingRouteId() };
+    const now = { folderId: shownFolderId(), ...(isTreeTab(tab) ? {} : { view: tab }), tripId: openTripId(), pane: openTrip()?.kind === 'trip' && daysPaneOpen(), dayId: selectedDayId(), routeId: editingRouteId() };
     history.replaceState(history.state, '', location.pathname + location.search + withPlace(location.hash, now));
   });
 

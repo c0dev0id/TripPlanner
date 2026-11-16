@@ -16,7 +16,9 @@ import { groupFiles } from './grouping';
 import { setEditTarget, setExportScope, setShareOpen } from '../state/drawing';
 import { openJournal } from '../state/journal';
 import { unpinTrips } from '../state/pins';
-import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, openTrip, openTripId, pickDay, selectDay, selectedDayId } from '../state/trip';
+import { addDay, addSection, closeDaysPane, daysPaneOpen, isMarkInTrip, isTripMarked, markFolder, markInOpenTrip, markTrip, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
+import { showingDuplicates } from '../state/pane';
+import { showDaysPane } from '../state/panel';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
@@ -32,7 +34,7 @@ import { NameDialog } from '../ui/NameDialog';
 import { menuRows, NOTHING_SELECTED, rowSelect, selectIn, selectionOf, type RowSelect, type Selection } from '../ui/selection';
 import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
-import { FolderCard, loneDay, RouteCard, TripCard, TripDays, type CardSelect } from './cards';
+import { FolderCard, loneDay, RouteCard, TripCard, TripDays, type CardPane, type CardSelect } from './cards';
 import { countText, fileItemsOf, filesOf, folderOf, foldersOf, itemKey, itemsOf, keyOf, mediaKey, nameOf, partsOf, waypointsKey, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow } from './StashFileCard';
@@ -77,7 +79,8 @@ const ITEMS = 'items';
  * copied, pasted into, moved, merged, renamed, exported and deleted.
  */
 export function Library(props: {
-  onOpen: (trip: TripSummary, dayId?: string) => void;
+  /** Opens a trip, at a day where one is given, and with `pane` the pane of its days. */
+  onOpen: (trip: TripSummary, dayId?: string, pane?: boolean) => void;
   /** Opens a route the search found, in its trip and day. */
   onOpenRoute: (found: FoundRoute) => void;
   onOpenFolder: (id: number) => void;
@@ -114,13 +117,13 @@ export function Library(props: {
     for (let f = folders().find((folder) => folder.id === folderId); f; f = folders().find((folder) => folder.id === f!.parentId)) keys.push(keyOf({ folder: f }));
     return keys;
   };
-  // The folders a trip lies in unfold when it opens, so that it is in view, and the trip itself once a day of it is shown, wherever that was asked for: the day's row is then in view as if it had been clicked.
+  // The folders a trip lies in unfold when it opens, so that it is in view, and a list itself once a category of it is shown, wherever that was asked for: the category's row is then in view as if it had been clicked.
   createEffect(
     on([openTripId, selectedDayId], ([id, dayId], before) => {
       // A day that closes leaves the tree as it is: it may have closed because its folder was folded.
       if (dayId === undefined && before?.[0] === id) return;
       const trip = trips().find((candidate) => candidate.id === id);
-      const keys = [...(trip && dayId !== undefined ? [keyOf({ trip })] : []), ...(trip ? keysAround(trip.folderId) : [])];
+      const keys = [...(trip?.kind === 'collection' && dayId !== undefined ? [keyOf({ trip })] : []), ...(trip ? keysAround(trip.folderId) : [])];
       if (keys.some((key) => !unfolded().has(key))) fold(keys, true);
     }),
   );
@@ -151,51 +154,63 @@ export function Library(props: {
     setMarkInFile(true);
     showInStash(to);
   };
-  /** The keys of all a folder holds, at any depth; null is the top of the trips. */
+  /** The keys of all a folder holds that unfolds, at any depth: folders, lists of places and files; null is the top of the trips. */
   const keysWithin = (id: number | null): string[] => [
     ...childFolders(id).flatMap((f) => [keyOf({ folder: f }), ...keysWithin(f.id)]),
-    ...childTrips(id).map((trip) => keyOf({ trip })),
+    ...childTrips(id).flatMap((trip) => (trip.kind === 'collection' ? [keyOf({ trip })] : [])),
     ...childFiles(id).map((file) => keyOf({ file })),
   ];
+  /** Closes the category shown of the open list, whose row folds away; a trip's days are not in the tree and stay as they are. */
+  const closeListCategory = () => {
+    if (openTrip()?.kind === 'collection') selectDay(undefined);
+  };
   /**
    * A click on a folder marks it, which makes it the one that takes what is pasted with the keys,
    * and unfolds it; marked and unfolded already, it folds. A folder that folds takes all it holds with it:
-   * its folders and trips fold too, and the day shown of an open trip among them closes.
+   * its folders and lists fold too, and the category shown of an open list among them closes.
    */
   const clickFolder = (f: Folder) => {
     const key = keyOf({ folder: f });
     if (unfolded().has(key) && isMarkedFolder(f.id)) {
       fold([key, ...keysWithin(f.id)], false);
-      if (holdsOpen([{ folder: f }])) selectDay(undefined);
+      if (holdsOpen([{ folder: f }])) closeListCategory();
     } else fold([key], true);
     markFolderShown(f.id);
   };
-  /** Folds away every folder and trip of a tree, by its top, which closes the day shown with its trip where that is among them. */
+  /** Folds away every folder and list of a tree, by its top, which closes the category shown with its list where that is among them. */
   const foldAll = (root: number | null) => {
     fold(keysWithin(root), false);
-    if (openTree() === treeOf(root)) selectDay(undefined);
+    if (openTree() === treeOf(root)) closeListCategory();
   };
-  /** Whether the trip is the open one and holds the mark, rather than the day of it that is shown. */
-  /** Whether the trip holds the tree's mark: itself, or by its one day where it has no other and no row of its own for it. */
-  const isMarkedTrip = (trip: TripSummary): boolean => trip.id === openTripId() && (isTripMarked() || (loneDay(trip) !== undefined && isMarkInTrip()));
+  /** Whether the trip holds the tree's mark: a trip while the mark is in it, on itself or on a day in its pane; a list itself, rather than its category shown under it. */
+  const isMarkedTrip = (trip: TripSummary): boolean => trip.id === openTripId() && (trip.kind === 'trip' ? isMarkInTrip() : isTripMarked());
   /**
-   * A click on a trip, which is a folder of days. It marks the trip and unfolds it: one
-   * that is not open opens, and the open one closes its day that is shown. Marked
-   * already, the trip folds, and unfolds again at the next click.
+   * A click on a trip opens it, which shows it whole on the map, and marks it; the tree
+   * stays as it is, since a trip's days are in its pane. A list of places is a folder
+   * of categories: a click marks it and unfolds it, one that is not open opens, and the
+   * open one closes its category that is shown; marked already, it folds, and unfolds
+   * again at the next click.
    */
   const clickTrip = (trip: TripSummary) => {
-    // A trip of one day is that day: a click shows the day, with no level of days to unfold.
-    const lone = loneDay(trip);
+    if (trip.kind === 'trip') return trip.id === openTripId() ? markInOpenTrip() : props.onOpen(trip);
     const key = keyOf({ trip });
-    if (lone) {
-      // Unfolded all the same, so that its days show once it has a second.
-      fold([key], true);
-      return trip.id === openTripId() ? pickDay(lone.id) : props.onOpen(trip, lone.id);
-    }
     if (isMarkedTrip(trip)) return fold([key], !unfolded().has(key));
     fold([key], true);
     if (trip.id === openTripId()) markTrip();
     else props.onOpen(trip);
+  };
+  /** The button on a trip's row: it opens the pane of the trip's days, opening the trip first where another is open, and closes the pane where it shows this trip's. */
+  const paneOf = (trip: TripSummary): CardPane => {
+    const open = () => trip.id === openTripId() && daysPaneOpen() && !showingDuplicates();
+    return {
+      open,
+      onToggle: () => {
+        if (trip.id !== openTripId()) return props.onOpen(trip, undefined, true);
+        if (open()) return closeDaysPane();
+        markInOpenTrip();
+        showDaysPane();
+      },
+    };
   };
   /** A click on a file unfolds it and shows it whole on the map; shown whole already, it folds and leaves the map. */
   const clickFile = (file: StashFile) => {
@@ -734,12 +749,11 @@ export function Library(props: {
             onOpen={clickTrip}
             items={() => itemMenu({ trip: trip() })}
             select={select(branch.tree, { trip: trip() })}
-            fold={{ unfolded: () => isUnfolded({ trip: trip() }), current: () => isMarkedTrip(trip()), open: () => openTripId() === trip().id }}
+            fold={{ unfolded: () => trip().kind === 'collection' && isUnfolded({ trip: trip() }), current: () => isMarkedTrip(trip()), open: () => openTripId() === trip().id }}
+            pane={trip().kind === 'trip' ? paneOf(trip()) : undefined}
           >
-            <Show when={!loneDay(trip())}>
-              <Show when={openTripId() === trip().id} fallback={<TripDays trip={trip()} onOpen={(dayId) => props.onOpen(trip(), dayId)} />}>
-                {props.children}
-              </Show>
+            <Show when={openTripId() === trip().id} fallback={<TripDays trip={trip()} onOpen={(dayId) => props.onOpen(trip(), dayId)} />}>
+              {props.children}
             </Show>
           </TripCard>
         )}
@@ -826,7 +840,16 @@ export function Library(props: {
             )}
           </For>
           <For each={listed().trips}>
-            {(trip) => <TripCard trip={trip} onOpen={props.onOpen} items={() => itemMenu({ trip })} where={pathOf(trip.folderId) || t('No folder')} select={select(results.tree, { trip }, listedKeys)} />}
+            {(trip) => (
+              <TripCard
+                trip={trip}
+                onOpen={props.onOpen}
+                items={() => itemMenu({ trip })}
+                where={pathOf(trip.folderId) || t('No folder')}
+                select={select(results.tree, { trip }, listedKeys)}
+                pane={trip.kind === 'trip' ? paneOf(trip) : undefined}
+              />
+            )}
           </For>
           <For each={listed().files}>
             {(file) => (

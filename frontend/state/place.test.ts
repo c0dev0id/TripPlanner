@@ -11,6 +11,13 @@ describe('readPlace', () => {
     expect(readPlace('')).toEqual({ folderId: null });
   });
 
+  it('reads and writes whether the pane of the trip\'s days is open', () => {
+    expect(readPlace('#trip=12&pane=1')).toEqual({ folderId: null, tripId: 12, pane: true });
+    expect(readPlace('#pane=1')).toEqual({ folderId: null });
+    expect(withPlace('#pane=1&map=1/2/3', { folderId: null, tripId: 12, pane: true, dayId: 'd' })).toBe('#trip=12&pane=1&day=d&map=1/2/3');
+    expect(withPlace('#trip=12&pane=1', { folderId: null, tripId: 12, pane: false })).toBe('#trip=12');
+  });
+
   it('leaves out what is no id, and a day or a route without what it is of', () => {
     expect(readPlace('#folder=x&trip=1e3&day=d')).toEqual({ folderId: null });
     expect(readPlace('#route=r&trip=4')).toEqual({ folderId: null, tripId: 4 });

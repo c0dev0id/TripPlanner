@@ -2,83 +2,112 @@ import { createMemo, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import type { Day } from '../model/trip';
 import { routesDistance } from '../routing/legs';
-import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
+import { setShowNeighbours, showNeighbours } from '../state/drawing';
 import { mediaOf } from '../state/media';
 import { unfoldAfterPane } from '../state/panel';
 import { recordingsOf } from '../state/recordings';
-import { isPlaceList, shownDay } from '../state/library';
-import { openTrip, openTripId, selectDay } from '../state/trip';
+import { isPlaceList, paneShown, shownDay } from '../state/library';
+import { addDay, closeDaysPane, openTrip, openTripId, selectDay } from '../state/trip';
+import { counted, distanceText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
-import { ChevronIcon, NeighboursIcon, PencilIcon } from '../ui/icons';
+import { ChevronIcon, NeighboursIcon, PlusIcon } from '../ui/icons';
 import { SidePane } from '../ui/SidePane';
 import { SectionDetails } from './CollectionPanel';
 import { dayDetail, dayHeading, dayTitleOf } from './labels';
-import { DayDetails, JournalButton } from './TripPanel';
+import { TripPanel } from './TripPanel';
 
 /** A day as its labels count it: its date, what it holds and how far its routes go. */
 export const dayCounts = (day: Day) => ({ date: day.date, routes: day.routes.length, stops: day.stops.length, recordings: recordingsOf(day.id).length, media: mediaOf(day.id).length, distanceM: routesDistance(day.routes) });
 
 /**
- * The pane of the day picked in the list, beside it: a trip's day with its routes, stops
- * and recordings, or a collection's section with its routes and waypoints. Not there
- * while no day is picked.
+ * The pane beside the library: of a trip its days under each other, of a list of places
+ * the category picked in the tree. Not there while a trip's pane is closed, or no
+ * category is picked.
  */
 export function DayPane() {
-  const day = shownDay;
   return (
-    <Show when={day()}>
+    <Show when={paneShown()}>
+      <Show when={openTrip()!.kind === 'trip'} fallback={<SectionPane />}>
+        <DaysPane />
+      </Show>
+    </Show>
+  );
+}
+
+/** Closed by its own button, a pane gives the library its room back where the library folds by itself; to keep the library folded, a day is closed from its chip in the strip. */
+const closePane = () => {
+  closeDaysPane();
+  unfoldAfterPane();
+};
+
+/** The pane of the open trip: its name over how many days it has and how far they go, and its days, of which one at a time is shown with what it holds. */
+function DaysPane() {
+  const trip = () => openTrip()!;
+  const distance = createMemo(() => routesDistance(trip().days.flatMap((day) => day.routes)));
+  const detail = () => [counted(trip().days.length, 'day'), distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
+  const neighboursLabel = () => t(showNeighbours() ? 'Hide adjacent days' : 'Show adjacent days (dimmed)');
+  return (
+    <SidePane
+      label={trip().name}
+      onClose={closePane}
+      heading={
+        <>
+          <span class="lines grow">
+            <span class="name" title={trip().name}>
+              {trip().name}
+            </span>
+            <span class="muted detail">{detail()}</span>
+          </span>
+          <IconButton label={neighboursLabel()} pressed={showNeighbours()} onClick={() => setShowNeighbours(!showNeighbours())}>
+            <NeighboursIcon />
+          </IconButton>
+          <IconButton label={t('Add day')} onClick={addDay}>
+            <PlusIcon />
+          </IconButton>
+        </>
+      }
+    >
+      <TripPanel />
+    </SidePane>
+  );
+}
+
+/** The pane of the category picked in a list: its name between the steps to the ones before and after, over what it holds. */
+function SectionPane() {
+  return (
+    <Show when={shownDay()}>
       {(shown) => {
-        const collection = () => openTrip()!.kind === 'collection';
         const label = createMemo(() => dayTitleOf(openTrip()!, shown()));
-        /** The label without the date, which stands under it. */
         const heading = () => dayHeading(openTrip()!.kind, openTrip()!.days.indexOf(shown()), shown().name);
-        /** The day `by` days on from the one shown, where there is one. */
+        /** The section `by` sections on from the one shown, where there is one. */
         const step = (by: number) => openTrip()!.days[openTrip()!.days.indexOf(shown()) + by];
         const detail = () => dayDetail(openTrip()!.kind, dayCounts(shown()), isPlaceList(openTripId()));
-        const neighboursLabel = () => t(showNeighbours() ? 'Hide adjacent days' : 'Show adjacent days (dimmed)');
         return (
           <SidePane
             label={label()}
-            // Closed by its own button, the pane gives the library its room back where the library folds by itself; to keep the library folded, the day is closed from its chip in the strip.
-            onClose={() => {
-              selectDay(undefined);
-              unfoldAfterPane();
-            }}
+            onClose={closePane}
             heading={
-              <>
-                <span class="day-title">
-                  <span class="day-step">
-                    <IconButton label={t(collection() ? 'Previous section' : 'Previous day')} disabled={!step(-1)} onClick={() => selectDay(step(-1)!.id)}>
-                      <ChevronIcon />
-                    </IconButton>
-                  </span>
-                  <span class="lines grow">
-                    <span class="name" title={label()}>
-                      {heading()}
-                    </span>
-                    <span class="muted detail">{detail()}</span>
-                  </span>
-                  <span class="day-step">
-                    <IconButton label={t(collection() ? 'Next section' : 'Next day')} disabled={!step(1)} onClick={() => selectDay(step(1)!.id)}>
-                      <ChevronIcon />
-                    </IconButton>
-                  </span>
+              <span class="day-title">
+                <span class="day-step">
+                  <IconButton label={t('Previous section')} disabled={!step(-1)} onClick={() => selectDay(step(-1)!.id)}>
+                    <ChevronIcon />
+                  </IconButton>
                 </span>
-                <Show when={!collection()}>
-                  <IconButton label={neighboursLabel()} pressed={showNeighbours()} onClick={() => setShowNeighbours(!showNeighbours())}>
-                    <NeighboursIcon />
+                <span class="lines grow">
+                  <span class="name" title={label()}>
+                    {heading()}
+                  </span>
+                  <span class="muted detail">{detail()}</span>
+                </span>
+                <span class="day-step">
+                  <IconButton label={t('Next section')} disabled={!step(1)} onClick={() => selectDay(step(1)!.id)}>
+                    <ChevronIcon />
                   </IconButton>
-                  <IconButton label={t('Edit {what}', { what: label() })} onClick={() => setEditTarget({ kind: 'day', id: shown().id })}>
-                    <PencilIcon />
-                  </IconButton>
-                  <JournalButton target={{ dayId: shown().id }} of={label()} />
-                </Show>
-              </>
+                </span>
+              </span>
             }
           >
-            <Show when={collection()} fallback={<DayDetails day={shown()} />}>
-              <SectionDetails day={shown()} />
-            </Show>
+            <SectionDetails day={shown()} />
           </SidePane>
         );
       }}

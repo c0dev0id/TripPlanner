@@ -5,9 +5,8 @@ import { LIBRARY_TABS, TAB_NAMES, TREES, type LibraryTab } from '../model/librar
 import { libraryProblem, libraryTab, libraryTrips, query, setQuery, showFolder } from '../state/library';
 import { setShowingDuplicates, showingDuplicates } from '../state/pane';
 import { panelFolded } from '../state/panel';
-import { openTrip, openTripId, selectDay, takeUpRouteOf } from '../state/trip';
+import { openTripId, selectDay, takeUpRouteOf } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
-import { TripPanel } from '../trip/TripPanel';
 import { IconButton } from '../ui/IconButton';
 import { ActivityIcon, ArchiveIcon, CopyIcon, GearIcon, PinIcon, TripIcon } from '../ui/icons';
 import { Settings } from '../settings/Settings';
@@ -26,21 +25,22 @@ const searchText = (tab: Exclude<LibraryTab, 'settings'>): string => (tab === 'r
  * The library's pane: its switches and search, a tab for each of its views (the
  * collections, the trips, the lists of places, the rides and, as a gear, the settings), the open trip's name
  * with the trip's own actions while its tab is the one shown and nothing in its place otherwise, and what the tab shown holds: a tree of folders and
- * trips, the open trip's days among them, or the rides. A tab only shows its view:
+ * trips, the open list's categories among them, or the rides. A tab only shows its view:
  * what is unfolded, marked and selected in the others stays, and how far each was
  * scrolled.
  */
 export function Explorer(props: {
-  onOpen: (id: number, dayId?: string, routeId?: string) => void;
+  /** Opens a trip, at a day and with a route of it taken up where they are given, and with `pane` the pane of its days. */
+  onOpen: (id: number, dayId?: string, routeId?: string, pane?: boolean) => void;
   onLeave: () => Promise<void>;
   /** Shows the tab the user picked, with what it had open. */
   onTab: (tab: LibraryTab) => void;
   error: string | undefined;
 }) {
   /** Opens a trip and makes its folder the one shown: a trip of the tree or the search, or one just made. */
-  const openIn = (trip: TripSummary, dayId?: string) => {
+  const openIn = (trip: TripSummary, dayId?: string, pane?: boolean) => {
     showFolder(trip.folderId);
-    props.onOpen(trip.id, dayId);
+    props.onOpen(trip.id, dayId, undefined, pane);
   };
   /** Shows a route the search found: its trip at its day, opened where another is open, with the route taken up. */
   const openRoute = (found: FoundRoute) => {
@@ -117,9 +117,7 @@ export function Explorer(props: {
       </Show>
       <Show when={libraryProblem() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
       <Library onOpen={openIn} onOpenRoute={openRoute} onOpenFolder={openFolder} onLeave={props.onLeave}>
-        <Show when={openTrip()?.kind === 'collection'} fallback={<TripPanel />}>
-          <CollectionPanel />
-        </Show>
+        <CollectionPanel />
       </Library>
       <div hidden={libraryTab() !== 'recordings'}>
         <Rides onOpen={openDay} onShow={showDay} />

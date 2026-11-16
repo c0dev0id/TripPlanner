@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Trip } from '../model/trip';
 import { routedOf } from '../routing/testing';
-import { activeRouteId, addDay, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markShownDay, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
+import { activeRouteId, addDay, closeDaysPane, daysPaneOpen, openDaysPane, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -143,11 +143,35 @@ describe('the open trip', () => {
     markFolder();
     expect([isTripMarked(), isDayMarked(dayId), isMarkInTrip()]).toEqual([false, false, false]);
     expect(selectedDay()?.id).toBe(dayId);
-    markShownDay();
+    markInOpenTrip();
     expect(isDayMarked(dayId)).toBe(true);
     markFolder();
     markTrip();
     expect([isTripMarked(), isMarkInTrip(), selectedDay()]).toEqual([true, true, undefined]);
+  });
+
+  it('opens the pane of the days for a day shown, and keeps it as it is for another trip', () => {
+    expect(daysPaneOpen()).toBe(false);
+    addDay();
+    const dayId = openTrip()!.days[0]!.id;
+    expect(daysPaneOpen()).toBe(true);
+    closeDaysPane();
+    expect([daysPaneOpen(), selectedDay()]).toEqual([false, undefined]);
+    // Opened on a trip of one day, the pane shows that day; a trip of several shows none.
+    openDaysPane();
+    expect(selectedDay()?.id).toBe(dayId);
+    const two = { ...empty(), id: 2, days: [openTrip()!.days[0]!, { ...openTrip()!.days[0]!, id: 'second' }] };
+    loadTrip(two);
+    expect([daysPaneOpen(), selectedDay()]).toEqual([true, undefined]);
+    loadTrip({ ...two, id: 3, days: [two.days[1]!] });
+    expect(selectedDay()?.id).toBe('second');
+    closeDaysPane();
+    loadTrip(two);
+    expect(daysPaneOpen()).toBe(false);
+    loadTrip(two, 'second');
+    expect(daysPaneOpen()).toBe(true);
+    closeTrip();
+    expect(daysPaneOpen()).toBe(false);
   });
 
   it('keeps the saved version through an undo', () => {

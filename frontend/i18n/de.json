@@ -180,6 +180,7 @@
   "Hand": "Hand",
   "Hide all places": "Alle Orte ausblenden",
   "Hide adjacent days": "Nachbartage ausblenden",
+  "Hide the days of {name}": "Tage von {name} ausblenden",
   "History": "Verlauf",
   "Homepage": "Homepage",
   "Hotel": "Hotel",
@@ -485,8 +486,6 @@
   "Tap the map to add a point at the end of the route, or tap the route to insert one there; drag points and stops to move them.": "Karte antippen für einen Punkt am Ende der Route, oder die Route antippen, um dort einen einzufügen; Punkte und Stopps zum Verschieben ziehen.",
   "Invalid e-mail address.": "Ungültige E-Mail-Adresse.",
   "The current password is incorrect.": "Das aktuelle Passwort ist falsch.",
-  "Next day": "Nächster Tag",
-  "Previous day": "Vorheriger Tag",
   "The upload failed or the file is too large.": "Das Hochladen ist fehlgeschlagen oder die Datei ist zu groß.",
   "The file is not a GPX file compressed with gzip.": "Die Datei ist keine mit gzip komprimierte GPX-Datei.",
   "The HEIC could not be decoded.": "Das HEIC ließ sich nicht dekodieren.",
@@ -708,5 +707,6 @@
   "Add media…": "Medien hinzufügen…",
   "Delete the media of “{name}”?": "Die Medien von „{name}“ löschen?",
   "Delete the media of {files}?": "Die Medien von {files} löschen?",
-  "{what} kept with them.": "{what} dazu gespeichert."
+  "{what} kept with them.": "{what} dazu gespeichert.",
+  "Show the days of {name}": "Tage von {name} anzeigen"
 }
