@@ -12,15 +12,17 @@ import { CollectionIcon, FolderIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { Pad } from '../ui/Pad';
+import { dropTarget, type Drop } from '../ui/carry';
 import type { RowSelect } from '../ui/selection';
 import { PlaceKindControls, PlaceKindMark } from '../map/PlaceKinds';
 import type { FoundRoute } from './search';
 import { TripShape } from './TripShape';
 
-/** How a card takes part in the selection: as a row does, and besides whether it is cut and what a press on its pad drags. */
+/** How a card takes part in the selection: as a row does, and besides whether it is cut, what a press on its pad drags, and what a drop of what is carried does on it. */
 export interface CardSelect extends RowSelect {
   cut: () => boolean;
   onDrag: (e: PointerEvent, dragged: () => void) => void;
+  drop: (carried: unknown) => Drop;
 }
 
 /** How a card unfolds in the tree, whether it holds the tree's one mark, and of a trip whether it is the open one. */
@@ -98,7 +100,11 @@ export function TripCard(props: {
       .filter(Boolean)
       .join(' · ');
   return (
-    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current(), open: props.fold?.open?.(), opening: loading() !== undefined }}>
+    <li
+      class="card"
+      classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current(), open: props.fold?.open?.(), opening: loading() !== undefined }}
+      ref={(el) => dropTarget(el, (carried) => props.select?.drop(carried))}
+    >
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Show when={props.select}>
           {(select) => (
@@ -140,12 +146,18 @@ export function TripCard(props: {
 
 /**
  * A folder as a card: its name over `note`, what it holds and in search results where it
- * is; its menu is the library's. Trips and folders dragged onto it move into it; with
- * `select`, its pad selects it or drags it into another.
+ * is; its menu is the library's. Trips and folders dragged onto it move into it, as files
+ * dropped from the computer are imported there (`data-drop-folder`); with `select`, its
+ * pad selects it or drags it into another.
  */
 export function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[]; select?: CardSelect; fold?: CardFold; children?: JSX.Element }) {
   return (
-    <li class="card" classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current() }} data-drop-folder={String(props.folder.id)}>
+    <li
+      class="card"
+      classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current() }}
+      data-drop-folder={String(props.folder.id)}
+      ref={(el) => dropTarget(el, (carried) => props.select?.drop(carried))}
+    >
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Show when={props.select}>
           {(select) => (

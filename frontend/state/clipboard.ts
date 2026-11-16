@@ -9,9 +9,10 @@ import { newId, type Day, type Route, type Stop } from '../model/trip';
 import { copiedRoute, defaultProfile, removeParts, stopsBoundTo, type CopiedRoute, type PartKind } from '../routing/dayEdit';
 import { counted, listText } from '../ui/format';
 import { askConfirmation } from '../ui/confirm';
+import type { Drop } from '../ui/carry';
 import type { MenuItem } from '../ui/menu';
 import { flushSave } from './autosave';
-import { addFiles, bringMedia, mediaAction, relistMedia } from './media';
+import { addFiles, bringMedia, mediaAction, mediaById, relistMedia } from './media';
 import { addedText, putOnDay, recordingAction, takeOffDay } from './recordings';
 import { addParts, mergeDaysInto, moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, openTripId, pasteDays, pasteRoutes, pasteStops, pasteStopsIntoRoute, removeParts as removeFromOpenTrip, selectDay } from './trip';
 
@@ -92,6 +93,16 @@ export function stashFilesClip(): { files: StashFile[]; folders: CopiedFolder[] 
 /** Empties the clipboard: what is on it is pasted once. */
 export const clearClip = (): void => void setClip(undefined);
 
+/** Takes what was pasted off the clipboard, where it came from there: what a drag carried never did. */
+const spent = (copied: Clip): void => void (clip() === copied && setClip(undefined));
+
+/** What a drag carries of a trip: what a cut would put on the clipboard, which the drag leaves alone. */
+export interface Carried {
+  clip: Clip;
+}
+
+const isCarried = (carried: unknown): carried is Carried => typeof carried === 'object' && carried !== null && 'clip' in carried;
+
 /** Copies routes with the stops bound to them. */
 export function copyRoutes(routes: CopiedRoute[]): void {
   setClip({ routes });
@@ -103,18 +114,34 @@ export function copyRoutes(routes: CopiedRoute[]): void {
  * with the name of its category.
  */
 export function copyParts(kind: PartKind, ids: readonly string[], cut = false): void {
+  const parts = partsClip(kind, ids, cut);
+  if (parts) setClip(parts);
+}
+
+/** Days, routes or stops of the open trip as the clipboard holds them, copied or cut. */
+function partsClip(kind: PartKind, ids: readonly string[], cut: boolean): Clip | undefined {
   const trip = openTrip();
-  if (!trip) return;
+  if (!trip) return undefined;
   const from = cut ? { cut: { tripId: trip.id, kind, ids: [...ids] } } : {};
   const list = trip.kind === 'collection';
   const days = trip.days.filter((d) => ids.includes(d.id));
-  if (kind === 'day') setClip(list ? { categories: days, ...from } : { days, tripId: trip.id, ...from });
-  else if (kind === 'route') setClip({ routes: trip.days.flatMap((d) => d.routes.filter((r) => ids.includes(r.id)).map((r) => copiedRoute(d, r))), ...from });
-  else {
-    const stops = trip.days.flatMap((d) => d.stops.filter((s) => ids.includes(s.id)).map((stop) => ({ stop, kind: d.name })));
-    setClip({ stops: stops.map(({ stop }) => stop), ...(list ? { kinds: stops.map(({ kind: of }) => of) } : {}), ...from });
-  }
+  if (kind === 'day') return list ? { categories: days, ...from } : { days, tripId: trip.id, ...from };
+  if (kind === 'route') return { routes: trip.days.flatMap((d) => d.routes.filter((r) => ids.includes(r.id)).map((r) => copiedRoute(d, r))), ...from };
+  const stops = trip.days.flatMap((d) => d.stops.filter((s) => ids.includes(s.id)).map((stop) => ({ stop, kind: d.name })));
+  return { stops: stops.map(({ stop }) => stop), ...(list ? { kinds: stops.map(({ kind: of }) => of) } : {}), ...from };
 }
+
+/** The days, routes or stops of the open trip as a drag carries them: as cut. */
+export function carriedParts(kind: PartKind, ids: readonly string[]): Carried | undefined {
+  const parts = partsClip(kind, ids, true);
+  return parts && { clip: parts };
+}
+
+/** Files and links of days as a drag carries them: to be moved. */
+export const carriedMedia = (media: CopiedMedia): Carried => ({ clip: { media } });
+
+/** Rides on a day as a drag carries them: to be taken off that day where they are dropped on another. */
+export const carriedRecordings = (recordings: KeptRide[], cutFrom: string): Carried => ({ clip: { recordings, cutFrom } });
 
 /** Whether the part of the open trip is cut and waits to be pasted. */
 export function isCut(id: string): boolean {
@@ -146,7 +173,6 @@ export function isCutMedia(id: number): boolean {
 
 /** Pastes rides onto a day of the open trip: each is put on it, and what was cut is taken off the day it was cut from. */
 async function pasteRecordings(dayId: string, recordings: readonly KeptRide[], cutFrom: string | undefined): Promise<void> {
-  setClip(undefined);
   await recordingAction(dayId, async () => {
     for (const ride of recordings) {
       await putOnDay(ride, dayId);
@@ -292,11 +318,21 @@ async function pasteDaysAfter(afterId: string, days: readonly Day[], tripId: num
 function pasted(copied: Clip, move: (ids: string[]) => void, paste: () => void): () => void {
   return () => {
     const cut = copied.cut;
-    setClip(undefined);
+    spent(copied);
     if (cut && cut.tripId === openTripId()) move(cut.ids);
     else paste();
     if (cut && cut.tripId !== openTripId()) void removeFromSource(cut);
   };
+}
+
+/** Whether all that was cut is on the day already and would stay as it is there: a paste onto it changes nothing. */
+function isAtHome(copied: Clip, dayId: string): boolean {
+  if ('recordings' in copied) return copied.cutFrom === dayId;
+  if ('media' in copied) return copied.media.move && copied.media.ids.every((id) => mediaById(id)?.dayId === dayId);
+  const day = copied.cut?.tripId === openTripId() ? openTrip()?.days.find((d) => d.id === dayId) : undefined;
+  if (!day || !copied.cut) return false;
+  const { kind, ids } = copied.cut;
+  return kind === 'route' ? ids.every((id) => day.routes.some((r) => r.id === id)) : kind === 'stop' && ids.every((id) => day.stops.some((s) => s.id === id && s.pointId === null));
 }
 
 /**
@@ -307,10 +343,22 @@ function pasted(copied: Clip, move: (ids: string[]) => void, paste: () => void):
  */
 export function pasteItems(kind: PartKind, id: string): MenuItem[] {
   const copied = clip();
+  return copied ? partPaste(copied, kind, id) : [];
+}
+
+/** What a drop of what a drag carries onto a day, a category or a route of the open trip does: what a paste of it there would, the clipboard left alone. */
+export function dropOnPart(carried: unknown, kind: PartKind, id: string): Drop {
+  if (!isCarried(carried)) return undefined;
+  const [paste] = partPaste(carried.clip, kind, id);
+  return paste && 'run' in paste ? paste.run : null;
+}
+
+/** The items that paste `copied` into a part of the open trip; none where the part takes none of it, it was cut from the part, or all of it is there already. */
+function partPaste(copied: Clip, kind: PartKind, id: string): MenuItem[] {
   const trip = openTrip();
-  if (!copied || !trip || kind === 'stop') return [];
+  if (!trip || kind === 'stop') return [];
   const place: Place = kind === 'route' ? 'route' : trip.kind === 'collection' ? 'category' : 'day';
-  if (!taken(place, copied) || copied.cut?.ids.includes(id)) return [];
+  if (!taken(place, copied) || copied.cut?.ids.includes(id) || (place !== 'route' && isAtHome(copied, id))) return [];
   const label = pasteLabel(copied, place);
   if (place === 'route') return 'stops' in copied ? [{ label, run: pasted(copied, (ids) => moveStopsIntoRoute(ids, id), () => pasteStopsIntoRoute(id, copied.stops)) }] : [];
   const shown = (paste: () => void) => () => {
@@ -320,7 +368,7 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
   const parts = stashParts(copied);
   if (parts) {
     return [{ label, run: () => {
-          setClip(undefined);
+          spent(copied);
           void pastePartsIntoDay(id, sharesOf(place, parts));
         } }];
   }
@@ -328,7 +376,7 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
     // Within the open trip cut days move and keep all that hangs on them; anything else is pasted as copies, which their media and rides follow.
     return [{ label, run: () => {
           const { cut } = copied;
-          setClip(undefined);
+          spent(copied);
           if (cut && cut.tripId === openTripId()) moveDaysAfter(cut.ids, id);
           else void pasteDaysAfter(id, copied.days, copied.tripId, cut);
         } }];
@@ -339,7 +387,7 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
   if ('media' in copied) {
     const { media } = copied;
     return [{ label, run: shown(() => {
-          setClip(undefined);
+          spent(copied);
           void mediaAction(id, () => bringMedia(media, id, media.move));
         }) }];
   }
@@ -347,9 +395,12 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
     const { recordings, cutFrom } = copied;
     const [only, ...more] = recordings;
     return [
-      { label, run: shown(() => void pasteRecordings(id, recordings, cutFrom)) },
+      { label, run: shown(() => {
+          spent(copied);
+          void pasteRecordings(id, recordings, cutFrom);
+        }) },
       ...(only && more.length === 0 && cutFrom === undefined ? [{ label: t('Paste as route'), run: shown(() => {
-              setClip(undefined);
+              spent(copied);
               void recordingAction(id, async () => pasteRoutes(id, recordingAsRoute(id, only.name, await fetchRideGpx(only.id))));
             }) }] : []),
     ];
@@ -375,7 +426,19 @@ export interface PasteInto {
  */
 export function libraryPasteItem(place: Place, into: PasteInto, tripId?: number): MenuItem[] {
   const copied = clip();
-  if (!copied || !taken(place, copied) || (copied.cut && copied.cut.tripId === tripId)) return [];
+  return copied ? rowPaste(copied, place, into, tripId) : [];
+}
+
+/** What a drop of what a drag carries onto the row of a trip or a list does: what a paste of it there would, the clipboard left alone. */
+export function dropOnRow(carried: unknown, place: Place, into: PasteInto, tripId: number): Drop {
+  if (!isCarried(carried)) return undefined;
+  const [paste] = rowPaste(carried.clip, place, into, tripId);
+  return paste && 'run' in paste ? paste.run : null;
+}
+
+/** The item that pastes `copied` into a place of the library; none where the place takes none of it, or it was cut from the trip `tripId`. */
+function rowPaste(copied: Clip, place: Place, into: PasteInto, tripId?: number): MenuItem[] {
+  if (!taken(place, copied) || (copied.cut && copied.cut.tripId === tripId)) return [];
   const paste = async (): Promise<unknown> => {
     if ('routes' in copied) return into.routes?.(copied.routes);
     if ('days' in copied) return into.days?.(copied.days, { tripId: copied.tripId, cut: copied.cut !== undefined });
@@ -386,7 +449,7 @@ export function libraryPasteItem(place: Place, into: PasteInto, tripId?: number)
   };
   const run = async () => {
     await paste();
-    setClip(undefined);
+    spent(copied);
     if (copied.cut) await removeFromSource(copied.cut);
   };
   return [{ label: pasteLabel(copied, place), run: () => void run() }];

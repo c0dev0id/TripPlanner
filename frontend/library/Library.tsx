@@ -1,11 +1,11 @@
 import { plural, t } from '../i18n/t';
-import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, onMount, Show, Switch, type JSX } from 'solid-js';
 import { changeTrip, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import { TAB_NAMES, TREE_TABS, TREES, type TreeTab } from '../model/library';
 import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
-import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip } from '../state/clipboard';
+import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, dropOnRow, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip, type PasteInto } from '../state/clipboard';
 import { heldOf, importNote, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
@@ -22,14 +22,15 @@ import { askChoice, askConfirmation } from '../ui/confirm';
 import { counted, listText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { FoldIcon } from '../ui/icons';
+import { carry, dropTarget, type Drop } from '../ui/carry';
 import { menuNote, type MenuItem } from '../ui/menu';
+import type { Place } from '../model/paste';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { menuRows, NOTHING_SELECTED, rowSelect, selectIn, selectionOf, type RowSelect, type Selection } from '../ui/selection';
 import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
 import { FolderCard, RouteCard, TripCard, TripDays, type CardSelect } from './cards';
-import { dragToFolder } from './dragToFolder';
 import { countText, fileItemsOf, filesOf, folderOf, foldersOf, inTreeOf, itemKey, itemsOf, keyOf, mediaKey, nameOf, partsOf, waypointsKey, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow } from './StashFileCard';
@@ -271,13 +272,19 @@ export function Library(props: {
   const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.has(keyOf(item)) ? itemsOf(all(), selection) : [item]);
   /** How a row of a tree is selected by its key, among the rows of the tree or, with `order`, among those the search lists. */
   const selectRow = (tree: TreeTab, key: string, order: () => string[] = () => shownKeys(rootOf(tree))): RowSelect => rowSelect(ownerOf(tree), key, order);
-  /** How a folder's, a trip's or a file's card is selected, cut and dragged into a folder. */
+  /** How a folder's, a trip's or a file's card is selected, cut and dragged into a folder, and what a drop on it does: into a folder go the folders, trips and files dragged, onto a trip or a list what was dragged out of the open one. */
   const select = (tree: TreeTab, item: Item, order?: () => string[]): CardSelect => ({
     ...selectRow(tree, keyOf(item), order),
     cut: () => isCut(item),
     onDrag: (e: PointerEvent, dragged: () => void) => {
       const moved = chosenWith(item);
-      dragToFolder(e, moved.length === 1 ? nameOf(item) : countText(moved), (into) => moveInto(moved, into), dragged);
+      carry(e, () => ({ what: moved.length === 1 ? nameOf(item) : countText(moved), carried: { items: moved } }), dragged);
+    },
+    drop: (carried) => {
+      if ('folder' in item) return dropInto(carried, item.folder.id);
+      if ('file' in item) return undefined;
+      const { place, into } = rowOf(item.trip);
+      return dropOnRow(carried, place, into, item.trip.id);
     },
   });
   const isCut = (item: Item): boolean => {
@@ -349,16 +356,22 @@ export function Library(props: {
   const assertFits = (items: readonly Item[], into: number | null) => {
     if (!inTreeOf(all(), items)(into)) throw new Error(t('Place lists belong in Places, files in the Stash, and trips in the other folders.'));
   };
+  /** Those of the items that a move into the folder, null for the top, would move: not the folder itself, and not what is in it already. */
+  const goingInto = (moved: readonly Item[], into: number | null): Item[] => moved.filter((item) => folderOf(item) !== into && !('folder' in item && item.folder.id === into));
   /** Moves folders, trips and files into a folder, none for the top, those not in it already; the server refuses a folder inside itself. */
   const moveInto = (moved: readonly Item[], into: number | null) => {
-    const goingTrips = tripsOf(moved).filter((trip) => trip.folderId !== into);
-    const goingFolders = foldersOf(moved).filter((f) => f.id !== into && f.parentId !== into);
-    const goingFiles = filesOf(moved).filter((file) => file.folderId !== into);
-    if (goingTrips.length + goingFolders.length + goingFiles.length === 0) return;
+    const going = goingInto(moved, into);
+    if (going.length === 0) return;
     void runLibrary(async () => {
       assertFits(moved, into);
-      await Promise.all([...goingTrips.map((trip) => moveTrip(trip.id, into)), ...goingFolders.map((f) => moveFolder(f.id, into)), ...goingFiles.map((file) => moveStashFile(file.id, into!))]);
+      await Promise.all([...tripsOf(going).map((trip) => moveTrip(trip.id, into)), ...foldersOf(going).map((f) => moveFolder(f.id, into)), ...filesOf(going).map((file) => moveStashFile(file.id, into!))]);
     }, relist);
+  };
+  /** What a drop of dragged folders, trips and files into the folder, null for the top, does: moves them there; refused where the folder does not take them or holds them all. Not for anything else that is carried. */
+  const dropInto = (carried: unknown, into: number | null): Drop => {
+    if (typeof carried !== 'object' || carried === null || !('items' in carried)) return undefined;
+    const items = carried.items as Item[];
+    return takerOf(items)(into) && goingInto(items, into).length > 0 ? () => moveInto(items, into) : null;
   };
   /**
    * Move… with where what is moved can go from where the first of it is, as its submenu:
@@ -458,16 +471,22 @@ export function Library(props: {
   const pasteItems = (item: Item): MenuItem[] => {
     if ('folder' in item) return takesClip(item.folder.id) ? [{ label: t('Paste'), run: () => pasteLibrary(item.folder.id) }] : pasteFilesItem(item.folder.id);
     if ('file' in item) return [];
-    const id = item.trip.id;
+    const { place, into } = rowOf(item.trip);
+    return libraryPasteItem(place, into, item.trip.id);
+  };
+  /** How the row of a trip or of a list of places takes what is pasted or dropped onto it: its kind of place, and what it does with each kind of thing. */
+  const rowOf = (of: TripSummary): { place: Place; into: PasteInto } => {
+    const item = { trip: of };
+    const id = of.id;
     /** The open trip is left, saved, before it is changed on the server. */
     const left = async (paste: () => Promise<unknown>) => {
       if (holdsOpen([item])) await props.onLeave();
       await runLibrary(paste, relistTrips);
     };
     if (!isPlaceList(id)) {
-      return libraryPasteItem(
-        'trip',
-        {
+      return {
+        place: 'trip',
+        into: {
           routes: (routes) => left(() => pasteInto(id, routes)),
           days: (days, from) =>
             left(async () => {
@@ -482,8 +501,7 @@ export function Library(props: {
           files: (files, copied) => imports.pasteAsDays(item.trip, files, copied),
           parts: (parts) => left(async () => pasteInto(id, await stashCopies(parts))),
         },
-        id,
-      );
+      };
     }
     /** Keeps places in the list, each under its kind, and says how many it took and how many it had. */
     const keep = (places: () => Promise<KindedPlace[]> | KindedPlace[]) =>
@@ -491,15 +509,14 @@ export function Library(props: {
         const { kept, known } = await keepPlaces(id, await places());
         setImportNote({ text: keptText(kept, known, 'place', t('No places found.')), errors: [] });
       });
-    return libraryPasteItem(
-      'list',
-      {
+    return {
+      place: 'list',
+      into: {
         places: (stops, kinds) => keep(() => stops.map((stop, i) => ({ kind: kinds[i] ?? t('Places'), stop: { ...stop, id: newId(), pointId: null } }))),
         files: (files) => imports.pasteFilesIntoList(item.trip, files),
         parts: (parts) => keep(() => stashPlaces(parts)),
       },
-      id,
-    );
+    };
   };
   /** Puts folders, trips and files of the Stash on the clipboard: cut, to be moved where they are pasted; copied, which only trips are. */
   const clip = (chosen: readonly Item[], move: boolean) =>
@@ -551,6 +568,12 @@ export function Library(props: {
   };
   document.addEventListener('keydown', onKey);
   onCleanup(() => document.removeEventListener('keydown', onKey));
+  let root!: HTMLDivElement;
+  // The panel around the tree is the top of the tree shown: what is dragged there and lies deeper moves up to it.
+  onMount(() => {
+    const panel = root.closest<HTMLElement>('.library-panel');
+    if (panel) dropTarget(panel, (carried) => (shownTree() ? dropInto(carried, rootOf(shownTree()!)) : undefined));
+  });
 
   /** Adds a day at the end of a trip: of the open one as an edit that can be undone, which shows the day; of another on the server. */
   const addDayTo = (trip: TripSummary) => (trip.id === openTripId() ? addDay() : void runLibrary(() => changeTrip(trip.id, (loaded) => withDayAdded(loaded, newId())), relistTrips));
@@ -804,7 +827,7 @@ export function Library(props: {
   };
 
   return (
-    <div class="library" hidden={!shownTree()}>
+    <div class="library" ref={root} hidden={!shownTree()}>
       <Show when={importNote()}>
         {(note) => (
           <>

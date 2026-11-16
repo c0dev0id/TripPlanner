@@ -41,7 +41,7 @@ export async function droppedSources(data: DataTransfer): Promise<Dropped> {
 
 /**
  * Takes files dragged in from outside the browser: the folder they are over is marked as
- * for a dragged trip (see dragToFolder), and dropped there, `onDrop` gets the drop and the
+ * for a dragged trip (see `ui/carry.ts`), and dropped there, `onDrop` gets the drop and the
  * folder, null for the top; over what is marked with `data-drop-rides`, the library
  * while it shows the rides, the drop goes to `onRides`. Anywhere else the drop is refused, so that the browser does
  * not open the file in the planner's place.
