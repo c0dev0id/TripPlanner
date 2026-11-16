@@ -37,6 +37,10 @@ describe('a folder name from what names have in common', () => {
     expect(commonName(['Lakeside ride', 'Lakeside ride (362)'])).toBe('Lakeside ride');
   });
 
+  it('cuts a word that both ends share only in part off at either end', () => {
+    expect(commonName(['Xalpen passes tourer 1', 'Yalpen passes tourist 2'])).toBe('passes');
+  });
+
   it('is the first name where they share nothing that says which tour', () => {
     expect(commonName(['Tag 01_ Altdorf bis Brig', 'Tag 02_ Brig bis Aosta'])).toBe('Tag 01_ Altdorf bis Brig');
   });

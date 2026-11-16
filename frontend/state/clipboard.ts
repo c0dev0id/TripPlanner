@@ -6,7 +6,7 @@ import { gpxToDayParts } from '../gpx/import';
 import type { StashFile, StashItem, StashPart } from '../model/stash';
 import { newId, type Day, type Route, type Stop } from '../model/trip';
 import { copiedRoute, defaultProfile, removeParts, stopsBoundTo, type CopiedRoute, type PartKind } from '../routing/dayEdit';
-import { counted } from '../ui/format';
+import { counted, listText } from '../ui/format';
 import { askConfirmation } from '../ui/confirm';
 import type { MenuItem } from '../ui/menu';
 import { flushSave } from './autosave';
@@ -64,12 +64,6 @@ export function copyStashFiles(files: StashFile[]): void {
 /** Copies routes, tracks and waypoints of files of the Stash, to be pasted into another file there, into a day, a trip or a list of places. */
 export function copyStashParts(parts: StashPart[]): void {
   setClip({ parts });
-}
-
-/** Whether the clipboard holds parts of files of the Stash with routes, tracks or waypoints among them: media alone go with a day or a file, and a trip takes none by itself. */
-export function holdsStashRoutes(): boolean {
-  const copied = clip();
-  return copied !== undefined && 'parts' in copied && copied.parts.some((part) => part.items.length > 0 || part.waypoints);
 }
 
 /** The files of the Stash on the clipboard, if that is what it holds. */
@@ -157,8 +151,7 @@ function pasteLabel(copied: Clip): string {
     const items = copied.parts.reduce((sum, part) => sum + part.items.length, 0);
     const waypoints = copied.parts.reduce((sum, part) => sum + (part.waypoints ? part.file.waypoints : 0), 0);
     const media = copied.parts.reduce((sum, part) => sum + (part.media ? part.file.media.length : 0), 0);
-    const what = [items > 0 && counted(items, 'route'), waypoints > 0 && counted(waypoints, 'waypoint'), media > 0 && counted(media, 'attachment')].filter((part) => part !== false);
-    return t('Paste {what}', { what: what.length > 1 ? t('{a} and {b}', { a: what.slice(0, -1).join(', '), b: what.at(-1)! }) : (what[0] ?? '') });
+    return t('Paste {what}', { what: listText([items > 0 && counted(items, 'route'), waypoints > 0 && counted(waypoints, 'waypoint'), media > 0 && counted(media, 'attachment')]) });
   }
   if ('recordings' in copied) return of(copied.recordings.length, 'recording');
   if ('media' in copied) return of(copied.media.names.length, 'attachment');
@@ -194,9 +187,9 @@ async function pastePartsIntoDay(dayId: string, parts: readonly StashPart[]): Pr
     if (openTripId() !== tripId) return;
     selectDay(dayId);
     addParts(added);
-    // The media taken are kept with the day, as files added to it are.
-    for (const part of parts) {
-      if (part.media && part.file.media.length > 0) await addFiles(dayId, await fetchStashMedia(part.file));
+    // The media taken are kept with the day, as files added to it are, one after the other.
+    for (const part of parts.filter((taken) => taken.media)) {
+      for (const one of part.file.media) await addFiles(dayId, [await fetchStashMedia(part.file.id, one)]);
     }
   } catch (error) {
     await askConfirmation(errorMessage(error), t('OK'));
@@ -278,22 +271,36 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
   return [{ label, run: shown(pasted(copied, (ids) => movePartsToDay('route', ids, id), () => pasteRoutes(id, copied.routes))) }];
 }
 
+/** A place that takes parts of files of the Stash: what it takes of them, their routes and tracks, their waypoints or their media, and how they are pasted there. */
+export interface PartsTaker {
+  takes: readonly ('items' | 'waypoints' | 'media')[];
+  paste: (parts: StashPart[]) => Promise<unknown>;
+}
+
+/** The parts as a place takes them: of each what the place takes of it, and none of a part it takes nothing of. */
+const takenBy = ({ takes }: PartsTaker, parts: readonly StashPart[]): StashPart[] =>
+  parts
+    .map((part) => ({ file: part.file, items: takes.includes('items') ? part.items : [], waypoints: takes.includes('waypoints') && part.waypoints, media: takes.includes('media') && part.media }))
+    .filter((part) => part.items.length > 0 || part.waypoints || part.media);
+
 /**
  * The menu item that hands the copied routes to `routes`, the copied days to `days`,
  * the copied stops, with the kind of each, to `stops`, the copied files of the Stash
- * to `files`, or the copied parts of such files to `parts`, which put them into a trip,
- * a folder of the library or a file of the Stash; once that is done, what was cut is taken from its trip. None
- * where the clipboard holds none of them, or what it holds has nowhere to go.
+ * to `files`, or of the copied parts of such files what `parts` takes to it, which put
+ * them into a trip, a folder of the library or a file of the Stash; once that is done,
+ * what was cut is taken from its trip. None where the clipboard holds none of them, or
+ * what it holds has nowhere to go; the item says what will be pasted there.
  */
 export function libraryPasteItem(into: {
   routes?: (routes: CopiedRoute[]) => Promise<unknown>;
   days?: (days: Day[]) => Promise<unknown>;
   stops?: (stops: Stop[], kinds: readonly string[]) => Promise<unknown>;
   files?: (files: StashFile[]) => Promise<unknown>;
-  parts?: (parts: StashPart[]) => Promise<unknown>;
+  parts?: PartsTaker;
 }): MenuItem[] {
   const copied = clip();
   if (!copied) return [];
+  const parts = 'parts' in copied && into.parts ? takenBy(into.parts, copied.parts) : [];
   const paste =
     'routes' in copied && into.routes
       ? () => into.routes!(copied.routes)
@@ -303,8 +310,8 @@ export function libraryPasteItem(into: {
           ? () => into.stops!(copied.stops, copied.kinds ?? [])
           : 'files' in copied && into.files
             ? () => into.files!(copied.files)
-            : 'parts' in copied && into.parts
-              ? () => into.parts!(copied.parts)
+            : parts.length > 0
+              ? () => into.parts!.paste(parts)
               : undefined;
   if (!paste) return [];
   const run = async () => {
@@ -312,5 +319,5 @@ export function libraryPasteItem(into: {
     setClip(undefined);
     if (copied.cut) await removeFromSource(copied.cut);
   };
-  return [{ label: pasteLabel(copied), run: () => void run() }];
+  return [{ label: pasteLabel('parts' in copied ? { ...copied, parts } : copied), run: () => void run() }];
 }

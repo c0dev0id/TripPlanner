@@ -1,3 +1,4 @@
+import type { EntryFile } from './journal';
 /**
  * What a route or a track of the Stash carries that its row would not show otherwise:
  * times, elevation, lean angles or accelerations on its points, however its file writes
@@ -17,13 +18,9 @@ export interface StashItem {
   features: StashFeature[];
 }
 
-/** A media file kept with a file of the Stash: its name, its type, its size, and whether it is an image that has a preview. */
-export interface StashMedia {
+/** A media file kept with a file of the Stash, as a kept file is described: its name, its type, its size, and whether it is an image that has a preview. */
+export interface StashMedia extends EntryFile {
   id: number;
-  name: string;
-  mediaType: string;
-  size: number;
-  image: boolean;
 }
 
 /** A file of the Stash: a GPX file kept whole in a folder there, with how many waypoints it holds, what wrote it and when, as its head says, its routes and tracks in the file's order, and the media kept with it, by name. */

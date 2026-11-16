@@ -386,6 +386,14 @@ entries at the end of their section.
     kept with the day or the other file as files picked there would be. That is two
     transfers where the server could copy, and no second way to keep a file with a
     day, of which the import already has one that names, checks and reports.
+    A file of the Stash pasted as a trip or a day brings its media as its own
+    (`ImportSource.media`), not as files laid beside it under a made-up name for the
+    import to find: two files of one name, or a media file named as a route file,
+    would otherwise be told wrong.
+  - What a paste takes of copied parts is said by the place it is pasted into
+    (`PartsTaker`): a trip's row takes routes and tracks, a list of places waypoints, a
+    file of the Stash and a day everything. The item counts what will be pasted
+    there, and is not offered where that is nothing.
   - Which files are a file's media is told from where they lie, since nothing in a
     GPX file names them: a folder beside the file named as the file is, also with
     " (media)" after the name, as one app exports them, or files beside it whose

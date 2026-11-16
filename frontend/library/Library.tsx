@@ -5,13 +5,13 @@ import { TAB_NAMES, TREE_TABS, TREES, type TreeTab } from '../model/library';
 import type { StashFile, StashItem, StashPart } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
-import { clearClip, copyLibraryItems, copyStashFiles, copyStashParts, holdsStashRoutes, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip } from '../state/clipboard';
+import { clearClip, copyLibraryItems, copyStashFiles, copyStashParts, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip } from '../state/clipboard';
 import { heldOf, importNote, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
 import { flushSave } from '../state/autosave';
 import { isShownItem, isShownWaypoints, isShownWhole, relistStash, showInStash, shownInStash, stashFiles, stashProblem, type ShownStash } from '../state/stash';
-import { applyGroups, GroupDialog, type Grouping } from './GroupDialog';
+import { GroupDialog, type Grouping } from './GroupDialog';
 import { groupFiles } from './grouping';
 import { setEditTarget, setExportScope, setShareOpen } from '../state/drawing';
 import { openJournal } from '../state/journal';
@@ -33,7 +33,7 @@ import { dragToFolder } from './dragToFolder';
 import { countText, fileItemsOf, filesOf, folderOf, foldersOf, itemKey, itemsOf, keyOf, mediaKey, nameOf, partsOf, waypointsKey, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow } from './StashFileCard';
-import { addPartsTo, filesMenu, partsMenu, removeItems, type StashMenuHost } from './stashMenu';
+import { addPartsTo, applyGroups, filesMenu, partsMenu, removeItems, takeOut, type StashMenuHost } from './stashMenu';
 import { stashCopies, stashPlaces } from './stashOut';
 import { StandardPlaces } from '../map/PlaceKinds';
 import { keepPlaces, keptText } from './dropImport';
@@ -461,15 +461,16 @@ export function Library(props: {
     };
     return libraryPasteItem({
       files: (files) => imports.pasteFilesIntoTrip(item.trip, files),
-      // Parts of files of the Stash: into a list of places the waypoints, as places of their kinds; into a trip the routes and tracks, where an import would put them. Media alone are for a day or a file.
-      ...(holdsStashRoutes() && {
-        parts: (parts: StashPart[]) =>
+      // Of parts of files of the Stash a list of places takes the waypoints, as places of their kinds, and a trip the routes and tracks, where an import would put them. Media are for a day or a file.
+      parts: {
+        takes: [isPlaceList(id) ? 'waypoints' : 'items'],
+        paste: (parts) =>
           left(async () => {
             if (!isPlaceList(id)) return pasteInto(id, await stashCopies(parts));
             const { kept, known } = await keepPlaces(id, await stashPlaces(parts));
             setImportNote({ text: keptText(kept, known, 'place', t('No places found.')), errors: [] });
           }),
-      }),
+      },
       routes: (routes) => left(() => pasteInto(id, routes)),
       days: (days) => left(() => changeTrip(id, (trip) => pasteDays(trip, days, undefined, newId))),
       ...(isPlaceList(id)
@@ -540,7 +541,7 @@ export function Library(props: {
     setDialog({ kind: 'rename', title, placeholder, name, save, saved });
   /** What the Stash's menus ask of the library around them. */
   /** The item that adds the copied routes, tracks, waypoints and media of other files to a file of the Stash. */
-  const pasteIntoFile = (file: StashFile): MenuItem[] => libraryPasteItem({ parts: (parts) => runLibrary(() => addPartsTo(file, parts), relistStash) });
+  const pasteIntoFile = (file: StashFile): MenuItem[] => libraryPasteItem({ parts: { takes: ['items', 'waypoints', 'media'], paste: (parts) => runLibrary(() => addPartsTo(file, parts), relistStash) } });
   const stashHost: StashMenuHost = { rename, moveItem, pasteInto: pasteIntoFile, remove: (chosen) => void remove(chosen), relist };
   /** The menu of a route or a track of a file, or of a file's waypoints or media, by the row's key: for the selected rows, or for it alone where it is not selected. */
   const stashPartMenu = (key: string): MenuItem[] => {
@@ -847,7 +848,7 @@ export function Library(props: {
         onClose={() => setGrouping(undefined)}
         onApply={(groups) => {
           const { id } = grouping()!;
-          if (groups.length > 0) void runLibrary(async () => setImportNote({ text: await applyGroups(id, groups), errors: [] }), relist);
+          if (groups.length > 0) takeOut(() => applyGroups(id, groups), relist);
         }}
       />
     </div>

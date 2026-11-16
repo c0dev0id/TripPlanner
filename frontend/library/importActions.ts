@@ -33,16 +33,10 @@ async function unpacked(dropped: Dropped): Promise<Dropped[]> {
   return rest.files.length + rest.inFolders.length > 0 || zips.length === 0 ? [rest, ...zips] : zips;
 }
 
-/**
- * A file of the Stash as sources to import: its GPX as the Stash keeps it, under its
- * name, and its media in the folder beside it that an import knows as the file's, each
- * read when it is needed.
- */
-const stashSources = (file: StashFile): ImportSource[] => {
-  const stem = file.name.replaceAll('/', '_');
-  const gpx: ImportSource = { path: `${stem}.gpx`, open: async () => new File([await fetchStashGpx(file.id)], `${stem}.gpx`) };
-  const media = file.media.map((one): ImportSource => ({ path: `${stem} (media)/${one.name.replaceAll('/', '_')}`, open: async () => (await fetchStashMedia({ ...file, media: [one] }))[0]! }));
-  return [gpx, ...media];
+/** A file of the Stash as a source to import: its GPX as the Stash keeps it, under its name, with its media, each read when it is needed. */
+const stashSource = (file: StashFile): ImportSource => {
+  const name = `${file.name.replaceAll('/', '_')}.gpx`;
+  return { path: name, open: async () => new File([await fetchStashGpx(file.id)], name), media: file.media.map((one) => ({ path: `${file.name}: ${one.name}`, open: () => fetchStashMedia(file.id, one) })) };
 };
 
 /** Keeps the GPX files dropped or picked as rides and shows the rides, where it is said how it goes. */
@@ -101,9 +95,9 @@ export function libraryImports(onLeave: () => Promise<void>) {
   };
   return {
     /** Imports files of the Stash into the folder, as files picked for it are: each a trip, or among the places a list of its waypoints. */
-    pasteFiles: (folderId: number | null, files: readonly StashFile[]) => intoFolder(folderId, { files: files.flatMap(stashSources), inFolders: [] }),
+    pasteFiles: (folderId: number | null, files: readonly StashFile[]) => intoFolder(folderId, { files: files.map(stashSource), inFolders: [] }),
     /** Imports files of the Stash into the trip, as files picked for it are. */
-    pasteFilesIntoTrip: (trip: TripSummary, files: readonly StashFile[]) => intoTrip(trip, files.flatMap(stashSources)),
+    pasteFilesIntoTrip: (trip: TripSummary, files: readonly StashFile[]) => intoTrip(trip, files.map(stashSource)),
     /** Asks for files of routes and zips, of exported trips or of such files, and imports them into the folder. */
     addFiles: async (folderId: number | null) => {
       const files = await pickFiles({ accept: `${ROUTE_FILE_TYPES},.zip,application/zip` });

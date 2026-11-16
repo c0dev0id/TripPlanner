@@ -31,6 +31,12 @@ const englishPlural = (noun: string): string => (/[^aeiou]y$/.test(noun) ? `${no
 /** A count with its noun in the right number: "1 trip", "1,234 trips"; the noun in English, as "trip|trips" in de.json. */
 export const counted = (n: number, noun: string): string => `${n.toLocaleString(locale)} ${plural(n, `${noun}|${englishPlural(noun)}`)}`;
 
+/** The parts there are, as a sentence lists them: "3 days, 2 routes and 1 attachment"; empty for none. */
+export function listText(parts: readonly (string | false)[]): string {
+  const said = parts.filter((part) => part !== false);
+  return said.length > 1 ? t('{a} and {b}', { a: said.slice(0, -1).join(', '), b: said.at(-1)! }) : (said[0] ?? '');
+}
+
 const LONG_DATE = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 const SHORT_DATE = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' });
 

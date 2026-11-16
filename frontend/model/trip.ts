@@ -38,6 +38,9 @@ function clipped(text: string, max: number): string {
 /** Text from a file or a path as a name: composed (NFC), one line, at most MAX_NAME characters. */
 export const asName = (text: string): string => clipped(text.normalize('NFC').replace(/\s+/g, ' ').trim(), MAX_NAME);
 
+/** Names in the order a person reads them: "day 2" before "day 10". */
+export const byName = new Intl.Collator(undefined, { numeric: true }).compare;
+
 /** Text from a file as notes: composed (NFC), no blanks at the ends of lines, no more than one empty line in a row, at most MAX_TEXT characters. */
 export const asNotes = (text: string): string => clipped(text.normalize('NFC').replace(/[^\S\n]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim(), MAX_TEXT);
 

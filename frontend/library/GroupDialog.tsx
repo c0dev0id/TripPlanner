@@ -1,10 +1,8 @@
 import { For } from 'solid-js';
-import { moveStashFile } from '../api';
 import { t } from '../i18n/t';
 import { asName } from '../model/trip';
 import { EditDialog } from '../ui/EditDialog';
-import { counted } from '../ui/format';
-import { foldersUnder } from './folderImport';
+import { field } from '../ui/form';
 import type { FileGroup, GroupClue } from './grouping';
 
 /** A folder of the Stash with the groups proposed among its loose files. */
@@ -22,27 +20,13 @@ const CLUES: Record<GroupClue, string> = {
 };
 
 /**
- * Gives each group a folder in the folder, the one of its name where there is one, and
- * moves the group's files into it. Says how many files went into how many folders.
- */
-export async function applyGroups(folderId: number, groups: readonly FileGroup[]): Promise<string> {
-  const folderOf = await foldersUnder(folderId);
-  for (const group of groups) {
-    const into = await folderOf([group.name]);
-    await Promise.all(group.files.map((file) => moveStashFile(file.id, into)));
-  }
-  const files = groups.reduce((n, group) => n + group.files.length, 0);
-  return t('{files} moved into {folders}.', { files: counted(files, 'file'), folders: counted(groups.length, 'folder') });
-}
-
-/**
  * The groups proposed among a folder's files, to confirm: each with the name its folder
  * gets, which can be changed, what tied its files, and the files. A group unticked stays
  * as it is; the others are handed to `onApply` under their names.
  */
 export function GroupDialog(props: { grouping: Grouping | undefined; onClose: () => void; onApply: (groups: FileGroup[]) => void }) {
   const ticked = (form: FormData, groups: readonly FileGroup[]): FileGroup[] =>
-    groups.flatMap((group, i) => (form.has(`group-${i}`) ? [{ ...group, name: asName(String(form.get(`name-${i}`))) || group.name }] : []));
+    groups.flatMap((group, i) => (form.has(`group-${i}`) ? [{ ...group, name: asName(field(form, `name-${i}`)) || group.name }] : []));
   return (
     <EditDialog label={t('Group files')} value={props.grouping} title={() => t('Group files')} submit={t('Create folders')} onClose={props.onClose} onSubmit={(form, { groups }) => props.onApply(ticked(form, groups))}>
       {({ groups }) => (

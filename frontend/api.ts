@@ -308,24 +308,24 @@ export const renameStashItem = (id: number, item: Pick<StashItem, 'kind' | 'posi
 export const removeStashItems = (id: number, items: readonly Pick<StashItem, 'kind' | 'position'>[]): Promise<void> =>
   request('DELETE', `/api/stash/files/${id}/items?items=${items.map((item) => `${item.kind}:${item.position}`).join(',')}`);
 
-/** Keeps a media file with a file of the Stash; one the file has already is not kept again. */
-export function addStashMedia(id: number, file: File): Promise<StashMedia> {
+/** Keeps a media file with a file of the Stash. One the file has already is not kept again: the answer is then the media file as it is kept, and that it was not added. */
+export async function addStashMedia(id: number, file: File): Promise<{ media: StashMedia; added: boolean }> {
   const form = new FormData();
   form.set('file', file);
-  return request('POST', `/api/stash/files/${id}/media`, form);
+  const response = await send('POST', `/api/stash/files/${id}/media`, form);
+  return { media: (await response.json()) as StashMedia, added: response.status === 201 };
 }
 
-/** Removes one media file of a file of the Stash, or with none named all of them. */
-export const deleteStashMedia = (id: number, mediaId?: number): Promise<void> => request('DELETE', `/api/stash/files/${id}/media${mediaId === undefined ? '' : `/${mediaId}`}`);
+/** Removes all the media of a file of the Stash. */
+export const deleteStashMedia = (id: number): Promise<void> => request('DELETE', `/api/stash/files/${id}/media`);
 
 /** Where a media file of a file of the Stash is, as it was kept. */
 export const stashMediaUrl = (id: number, mediaId: number): string => `/api/stash/files/${id}/media/${mediaId}/file`;
 
 export const stashMediaPreviewUrl = (id: number, mediaId: number): string => `/api/stash/files/${id}/media/${mediaId}/preview`;
 
-/** The media of a file of the Stash as files, to be kept elsewhere: with a day, or with another file of the Stash. */
-export const fetchStashMedia = (file: StashFile): Promise<File[]> =>
-  Promise.all(file.media.map(async (media) => new File([await (await send('GET', stashMediaUrl(file.id, media.id))).blob()], media.name, { type: media.mediaType })));
+/** A media file of a file of the Stash as a file, to be kept elsewhere: with a day, or with another file of the Stash. */
+export const fetchStashMedia = async (id: number, media: StashMedia): Promise<File> => new File([await (await send('GET', stashMediaUrl(id, media.id))).blob()], media.name, { type: media.mediaType });
 
 /** Where a file of the Stash is downloaded from, as it is kept. */
 export const stashFileUrl = (id: number): string => `/api/stash/files/${id}/gpx`;

@@ -471,6 +471,8 @@ a {
 .stops,
 .recordings,
 .media,
+.groups,
+.groups ul,
 .legend {
   list-style: none;
   margin: 0;
@@ -1046,10 +1048,8 @@ fieldset.choices legend {
   flex-direction: column;
   gap: 14px;
   max-height: 60dvh;
-  margin: 0;
-  padding: 0 4px 0 0;
+  padding-right: 4px;
   overflow-y: auto;
-  list-style: none;
 }
 
 .groups > li {
@@ -1059,9 +1059,7 @@ fieldset.choices legend {
 }
 
 .groups ul {
-  margin: 0;
   padding-left: 26px;
-  list-style: none;
 }
 
 /* The map */

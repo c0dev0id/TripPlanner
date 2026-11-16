@@ -1,8 +1,7 @@
 import { distanceBetween } from '../geo/measure';
-import type { StashFile } from '../model/stash';
-import type { LngLat } from '../model/trip';
+import type { StashFile, StashItem } from '../model/stash';
+import { byName, type LngLat } from '../model/trip';
 import { decodePolyline } from '../routing/polyline';
-import { byName } from './folderImport';
 
 /**
  * Which files of a folder of the Stash belong together, as a proposal: the legs of a
@@ -77,25 +76,22 @@ interface Candidate {
   end?: LngLat;
   loop: boolean;
   written?: number;
-  /** Whether it leaves from a common point of departure, where arriving goes on to nothing. */
-  common: boolean;
 }
 
 /** Where the file's longest route starts, or its longest track where it has no route. */
 function ends(file: StashFile): { start?: LngLat; end?: LngLat } {
   const routes = file.items.filter((item) => item.kind === 'route');
-  const longest = (routes.length > 0 ? routes : file.items).reduce<StashFile['items'][number] | undefined>((a, b) => (a && a.distanceM >= b.distanceM ? a : b), undefined);
+  const longest = (routes.length > 0 ? routes : file.items).reduce<StashItem | undefined>((a, b) => (a && a.distanceM >= b.distanceM ? a : b), undefined);
   const line = longest ? decodePolyline(longest.line) : [];
   return { start: line[0], end: line.at(-1) };
 }
 
+const near = (a: LngLat | undefined, b: LngLat | undefined, metres: number): boolean => !!a && !!b && distanceBetween(a, b) < metres;
+
 function candidate(file: StashFile): Candidate {
   const { start, end } = ends(file);
-  const written = file.exportedAt === null ? NaN : Date.parse(file.exportedAt);
-  return { file, words: tourWords(file.name), start, end, loop: !!start && !!end && distanceBetween(start, end) < LOOP_M, written: Number.isNaN(written) ? undefined : written, common: false };
+  return { file, words: tourWords(file.name), start, end, loop: near(start, end, LOOP_M), written: file.exportedAt === null ? undefined : Date.parse(file.exportedAt) };
 }
-
-const near = (a: LngLat | undefined, b: LngLat | undefined, metres: number): boolean => !!a && !!b && distanceBetween(a, b) < metres;
 
 /** Whether some word of one name is a word of the other. */
 const related = (a: Candidate, b: Candidate): boolean => a.words.some((x) => b.words.some((y) => sameWord(x, y)));
@@ -107,23 +103,23 @@ const beginAlike = (a: Candidate, b: Candidate): boolean => a.words.length >= 2 
 const together = (a: Candidate, b: Candidate): boolean =>
   a.written !== undefined && b.written !== undefined && a.file.creator === b.file.creator && Math.abs(a.written - b.written) <= TOGETHER_MS;
 
-/** Whether `b` goes on where `a` ends; two rounds do not go on from each other, and `strict` leaves out a `b` that leaves from a common point of departure. */
-const goesOn = (a: Candidate, b: Candidate, strict: boolean): boolean => !(a.loop && b.loop) && near(a.end, b.start, ONWARD_M) && !(strict && b.common);
+/** Whether `b` goes on where `a` ends; two rounds do not go on from each other. */
+const goesOn = (a: Candidate, b: Candidate): boolean => !(a.loop && b.loop) && near(a.end, b.start, ONWARD_M);
 
 /** Whether one is the way there and the other the way back. */
 const thereAndBack = (a: Candidate, b: Candidate): boolean =>
   !a.loop && !b.loop && ((near(a.end, b.start, ONWARD_M) && near(b.end, a.start, BACK_M)) || (near(b.end, a.start, ONWARD_M) && near(a.end, b.start, BACK_M)));
 
-/** The clues that tie two files, none where they do not belong together. */
-function tie(a: Candidate, b: Candidate): GroupClue[] {
+/** The clues that tie two files, none where they do not belong together. Arriving where one of `common` leaves from, a common point of departure, goes on to nothing by the names alone. */
+function tie(a: Candidate, b: Candidate, common: ReadonlySet<Candidate>): GroupClue[] {
   if (beginAlike(a, b)) return ['name'];
   const written = together(a, b);
   if (related(a, b)) {
     if (written) return ['name', 'together'];
-    if (goesOn(a, b, true) || goesOn(b, a, true)) return ['name', 'onward'];
+    if ((goesOn(a, b) && !common.has(b)) || (goesOn(b, a) && !common.has(a))) return ['name', 'onward'];
     if (thereAndBack(a, b)) return ['name', 'thereAndBack'];
   }
-  return written && (goesOn(a, b, false) || goesOn(b, a, false)) ? ['together', 'onward'] : [];
+  return written && (goesOn(a, b) || goesOn(b, a)) ? ['together', 'onward'] : [];
 }
 
 /** The longest text every name holds, compared without regard to case, as the first name writes it. */
@@ -146,13 +142,14 @@ const LETTER = /[\p{L}\p{N}]/u;
  * days or legs; the first name where what they share says nothing of the tour.
  */
 export function commonName(names: readonly string[]): string {
-  let part = commonPart(names);
+  const part = commonPart(names);
   const at = names.map((name) => name.toLowerCase().indexOf(part.toLowerCase()));
   // Inside a word in every name, the text's first or last word is none of theirs.
-  if (LETTER.test(part[0] ?? '') && names.every((name, i) => LETTER.test(name[at[i]! - 1] ?? ''))) part = part.replace(/^[\p{L}\p{N}]+/u, '');
-  if (LETTER.test(part.at(-1) ?? '') && names.every((name, i) => LETTER.test(name[at[i]! + part.length] ?? ''))) part = part.replace(/[\p{L}\p{N}]+$/u, '');
+  const cutsFirst = names.every((name, i) => LETTER.test(name[at[i]! - 1] ?? ''));
+  const cutsLast = names.every((name, i) => LETTER.test(name[at[i]! + part.length] ?? ''));
+  const whole = part.replace(cutsFirst ? /^[\p{L}\p{N}]+/u : /^/, '').replace(cutsLast ? /[\p{L}\p{N}]+$/u : /$/, '');
   const bare = (text: string) => text.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N})]+$/gu, '');
-  const name = bare(bare(part.replace(/\([^)]*$/, '')).replace(COUNTER, '$1'));
+  const name = bare(bare(whole.replace(/\([^)]*$/, '')).replace(COUNTER, '$1'));
   return tourWords(name).length > 0 ? name : names[0]!;
 }
 
@@ -165,17 +162,19 @@ export function commonName(names: readonly string[]): string {
 export function groupFiles(files: readonly StashFile[], elsewhere: readonly StashFile[]): FileGroup[] {
   const candidates = files.map(candidate);
   const departures = elsewhere.map((file) => ends(file).start);
-  for (const b of candidates) {
-    b.common =
-      departures.filter((start) => near(start, b.start, ONWARD_M)).length >= DEPARTURES_ELSEWHERE ||
-      candidates.filter((a) => a !== b && near(a.start, b.start, ONWARD_M) && !related(a, b)).length > UNRELATED_DEPARTURES;
-  }
+  const common = new Set(
+    candidates.filter(
+      (b) =>
+        departures.filter((start) => near(start, b.start, ONWARD_M)).length >= DEPARTURES_ELSEWHERE ||
+        candidates.filter((a) => a !== b && near(a.start, b.start, ONWARD_M) && !related(a, b)).length > UNRELATED_DEPARTURES,
+    ),
+  );
   const group = candidates.map((_, i) => i);
   const top = (i: number): number => (group[i] === i ? i : (group[i] = top(group[i]!)));
   const clues = new Map<number, Set<GroupClue>>();
   for (let i = 0; i < candidates.length; i++) {
     for (let j = i + 1; j < candidates.length; j++) {
-      const found = tie(candidates[i]!, candidates[j]!);
+      const found = tie(candidates[i]!, candidates[j]!, common);
       if (found.length === 0) continue;
       const [a, b] = [top(i), top(j)];
       group[a] = b;

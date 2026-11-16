@@ -2,6 +2,7 @@ import { createSignal, For, Show, type JSX } from 'solid-js';
 import { stashMediaPreviewUrl, stashMediaUrl } from '../api';
 import { t } from '../i18n/t';
 import { sizeText } from '../model/journal';
+import { fileOpens } from '../model/media';
 import type { StashFeature, StashFile, StashItem, StashMedia } from '../model/stash';
 import { isShownItem, isShownWaypoints, isShownWhole, stashColor } from '../state/stash';
 import { cardMenu } from '../ui/cardMenu';
@@ -102,15 +103,15 @@ function StashWaypointsRow(props: { file: StashFile; onShow: () => void; items: 
 /** A media file of a file as a line under the media's row: what it is, its name over its size. A click opens an image or a PDF over the page and downloads any other file, as a day's media do. */
 function StashMediaItem(props: { file: StashFile; media: StashMedia }) {
   const href = () => stashMediaUrl(props.file.id, props.media.id);
-  const pdf = () => props.media.mediaType === 'application/pdf';
+  const opens = () => fileOpens(props.media);
   const click = (e: MouseEvent) => {
-    if (props.media.image) openImage(e, { src: href(), preview: stashMediaPreviewUrl(props.file.id, props.media.id), name: props.media.name });
-    else if (pdf()) openDocument(e, { src: href(), name: props.media.name });
+    if (opens() === 'image') openImage(e, { src: href(), preview: stashMediaPreviewUrl(props.file.id, props.media.id), name: props.media.name });
+    else if (opens() === 'pdf') openDocument(e, { src: href(), name: props.media.name });
   };
   return (
     <li class="media-item">
-      <a class="text grow" href={href()} target="_blank" rel="noopener noreferrer" download={props.media.image || pdf() ? undefined : props.media.name} onClick={click}>
-        <span class="media-kind">{props.media.image ? <PhotoIcon /> : <FileIcon />}</span>
+      <a class="text grow" href={href()} target="_blank" rel="noopener noreferrer" download={opens() === 'download' ? props.media.name : undefined} onClick={click}>
+        <span class="media-kind">{opens() === 'image' ? <PhotoIcon /> : <FileIcon />}</span>
         <span class="lines grow">
           <span class="name">{props.media.name}</span>
           <span class="muted detail">{sizeText(props.media.size)}</span>

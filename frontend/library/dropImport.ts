@@ -3,11 +3,11 @@ import { addStashMedia, changeTrip, createTrip, errorMessage, keepRide, keepStas
 import { readRouteFile, ROUTE_FILE, waypointStops } from '../gpx/import';
 import { isGpxText, type GpxContent } from '../gpx/gpx';
 import { gpxText } from '../gpx/write';
-import type { StashFile } from '../model/stash';
+import type { StashFile, StashMedia } from '../model/stash';
 import { asName, newId, type FolderKind, type Stop, type Trip, type TripSummary } from '../model/trip';
 import { addParts } from '../routing/dayEdit';
 import { recordingName } from '../recording/track';
-import { counted } from '../ui/format';
+import { counted, listText } from '../ui/format';
 import type { Dropped } from './fileDrop';
 import { addDaysAndMedia, foldersUnder, importFolder, isGpxPath, isMediaPath, isRoutePath, mediaBeside, planFolderImport, readPlannedDays, withImportedDay, type ImportSource } from './folderImport';
 import { archiveFolders, inFolders } from './tripArchive';
@@ -17,11 +17,7 @@ const collectionIn = async (trips: readonly TripSummary[], folderId: number | nu
   trips.find((trip) => trip.kind === 'collection' && trip.folderId === folderId && trip.name === name)?.id ?? (await createTrip(name, folderId, 'collection')).id;
 
 /** What an import brought, in a sentence: "3 days and 2 attachments imported." */
-function importedText(made: readonly (string | false)[]): string {
-  const said = made.filter((part) => part !== false);
-  const last = said.at(-1)!;
-  return t('{trips} imported.', { trips: said.length > 1 ? t('{a} and {b}', { a: said.slice(0, -1).join(', '), b: last }) : last });
-}
+const importedText = (made: readonly (string | false)[]): string => t('{trips} imported.', { trips: listText(made) });
 
 /** Runs `work` on each file in turn, saying how far the import is; what fails is reported under the file's path, and the import goes on. */
 async function eachFile(sources: readonly ImportSource[], onProgress: (text: string) => void, errors: string[], work: (source: ImportSource) => Promise<void>): Promise<void> {
@@ -122,12 +118,11 @@ async function importIntoStash(dropped: Dropped, folderId: number, onProgress: (
     const folder = await folderIn(source.path.split('/').slice(0, -1).map(asName));
     const answer = await keepStashFile(folder, asName(file.name.replace(ROUTE_FILE, '')) || t('File'), gpx);
     // Its media are kept with it, also with a file the Stash had already; those it has are not kept again.
-    const had = new Set(answer.file.media.map((one) => one.id));
-    const added: StashFile['media'] = [];
+    const added: StashMedia[] = [];
     for (const i of beside.of.get(sources.indexOf(source)) ?? []) {
       try {
         const one = await addStashMedia(answer.file.id, await sources[i]!.open());
-        if (!had.has(one.id)) added.push(one);
+        if (one.added) added.push(one.media);
       } catch (error) {
         errors.push(`${sources[i]!.path}: ${errorMessage(error)}`);
       }
@@ -135,7 +130,7 @@ async function importIntoStash(dropped: Dropped, folderId: number, onProgress: (
     media += added.length;
     if (answer.added) {
       kept++;
-      onKept({ ...answer.file, media: [...answer.file.media, ...added] });
+      onKept({ ...answer.file, media: added });
     } else known++;
   });
   const text = keptText(kept, known, 'file', t('No GPX or KML files found.'));
@@ -204,9 +199,9 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
   // The media that lie beside a file as its own go with its day; the other files with the trip's first day.
   const { taken } = mediaBeside(files.map((file) => file.path));
   const media = files.filter((file, i) => isMediaPath(file.path) && !taken.has(i));
-  const kept = media.length + days.reduce((n, { day }) => n + day.media.length, 0);
+  const kept = media.length + days.reduce((n, day) => n + day.media.length, 0);
   if (days.length + media.length === 0) return { text: t('No GPX or KML files or exported trips found.'), errors };
-  if (!(await addDaysAndMedia(trip.id, days, files, media, errors))) errors.push(t('The trip has no day to attach files to.'));
+  if (!(await addDaysAndMedia(trip.id, days, media, errors))) errors.push(t('The trip has no day to attach files to.'));
   return { text: importedText([days.length > 0 && counted(days.length, 'day'), kept > 0 && counted(kept, 'attachment')]), errors };
 }
 
