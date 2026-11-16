@@ -42,6 +42,7 @@ body {
   flex-direction: column;
   padding: 0 6px;
   overflow: hidden;
+  scrollbar-gutter: auto;
 }
 
 .panel.folded > :not(.panel-header),
@@ -179,6 +180,8 @@ a {
 
 .panel {
   overflow: auto;
+  /* The room of the scrollbar is kept while there is none, so that a tab with a short list is as wide as one with a long one and the tabs stay where they are. */
+  scrollbar-gutter: stable;
   border-right: 1px solid var(--line);
   padding: 0 12px 12px;
   background: var(--panel);
