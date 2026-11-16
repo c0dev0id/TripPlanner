@@ -1,6 +1,6 @@
-import { Show, type JSX } from 'solid-js';
+import { For, Show, type JSX } from 'solid-js';
 import { t } from '../i18n/t';
-import type { StashFile, StashItem } from '../model/stash';
+import type { StashFeature, StashFile, StashItem } from '../model/stash';
 import { isShownItem, isShownWaypoints, isShownWhole, stashColor } from '../state/stash';
 import { cardMenu } from '../ui/cardMenu';
 import { counted, distanceText, momentText } from '../ui/format';
@@ -11,6 +11,16 @@ import { Pad } from '../ui/Pad';
 import type { RowSelect } from '../ui/selection';
 import type { CardSelect } from './cards';
 import { TripShape } from './TripShape';
+
+/** What a route or a track carries, as its row's chips say it, each with what it means. */
+const FEATURES: Record<StashFeature, { label: string; title: string }> = {
+  time: { label: t('Time'), title: t('Its points have timestamps') },
+  elevation: { label: t('Elevation'), title: t('Its points have elevations') },
+  lean: { label: t('Lean angle'), title: t('Its points have lean angles') },
+  acceleration: { label: t('G-force'), title: t('Its points have accelerations') },
+  routeExtension: { label: t('GPXX route'), title: t('The route has Garmin’s route extension') },
+  routePointExtension: { label: t('GPXX route points'), title: t('Its points have Garmin’s route point extension: the way calculated between them') },
+};
 
 /** What a route or a track of a file is called: its name, or what it is where it has none. */
 export const stashItemName = (item: StashItem): string => item.name || (item.kind === 'track' ? t('Unnamed track') : t('Unnamed route'));
@@ -29,7 +39,7 @@ function heldIn(file: StashFile): string {
     .join(' · ') || t('Empty');
 }
 
-/** A route or a track of a file as a row: its name over what it is, how far it goes and, of a track with times, when it began; a click shows it alone on the map, in the colour its row has, and its menu takes it out of the Stash. */
+/** A route or a track of a file as a row: its name over what it is, how far it goes and, of a track with times, when it began, and under that a chip for each thing it carries besides; a click shows it alone on the map, in the colour its row has, and its menu takes it out of the Stash. */
 export function StashItemRow(props: { file: StashFile; item: StashItem; where?: string; onShow: (item: StashItem) => void; items: () => MenuItem[]; select: RowSelect }) {
   return (
     <li class="card" classList={{ selected: props.select.selected(), opened: isShownItem(props.file.id, props.item) }}>
@@ -44,6 +54,17 @@ export function StashItemRow(props: { file: StashFile; item: StashItem; where?: 
                 .filter(Boolean)
                 .join(' · ')}
             </span>
+            <Show when={props.item.features.length > 0}>
+              <span class="chips">
+                <For each={props.item.features}>
+                  {(feature) => (
+                    <span class="chip" title={FEATURES[feature].title}>
+                      {FEATURES[feature].label}
+                    </span>
+                  )}
+                </For>
+              </span>
+            </Show>
           </span>
         </button>
         <MenuButton of={stashItemName(props.item)} items={props.items} />

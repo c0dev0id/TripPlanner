@@ -502,6 +502,24 @@ a {
   overflow-wrap: anywhere;
 }
 
+/* What a route or a track of the Stash carries, as chips under its row's detail: one tone, since they tell and do not rank. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.chip {
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
 /* A tab's search, under the bar of tabs; beside the trips' the switch of the duplicates report. */
 .search-row {
   margin: 8px 0 4px;

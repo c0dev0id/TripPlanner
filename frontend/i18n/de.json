@@ -682,5 +682,15 @@
   "Recording “{name}” added to {date}.": "Aufzeichnung „{name}“ zum {date} hinzugefügt.",
   "Recording “{name}” added.": "Aufzeichnung „{name}“ hinzugefügt.",
   "Already available as “{name}” on {date}.": "Bereits vorhanden als „{name}“ am {date}.",
-  "Already available as “{name}”.": "Bereits vorhanden als „{name}“."
+  "Already available as “{name}”.": "Bereits vorhanden als „{name}“.",
+  "Elevation": "Höhe",
+  "G-force": "G-Kräfte",
+  "GPXX route": "GPXX-Route",
+  "GPXX route points": "GPXX-Routenpunkte",
+  "Its points have timestamps": "Die Punkte haben Zeitstempel",
+  "Its points have elevations": "Die Punkte haben Höhenangaben",
+  "Its points have lean angles": "Die Punkte haben Schräglagen",
+  "Its points have accelerations": "Die Punkte haben Beschleunigungswerte",
+  "The route has Garmin’s route extension": "Die Route hat Garmins Routen-Erweiterung",
+  "Its points have Garmin’s route point extension: the way calculated between them": "Die Punkte haben Garmins Routenpunkt-Erweiterung: den berechneten Weg dazwischen"
 }

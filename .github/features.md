@@ -276,7 +276,9 @@
   nothing it holds is lost before it is worked on. A file's card says what it holds,
   its routes, tracks and waypoints and how far they go, and shows its shape; a click
   unfolds it to its routes and tracks, each with its length and, a track with times,
-  when it began, and shows the file whole on the map, each line in the colour its row
+  when it began, and under that what it carries that is not seen otherwise, as chips:
+  times, elevation, lean angles and G-forces on its points, however the file writes
+  them, and Garmin's extension of a route and of its points. It shows the file whole on the map, each line in the colour its row
   has and the waypoints as dots; a click on a route or a track, or on the row of the
   file's waypoints, shows that alone, another click the file again. What is shown
   holds the Stash's mark: its row is tinted, one at a time, and the strip down the
