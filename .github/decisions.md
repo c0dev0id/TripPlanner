@@ -798,9 +798,10 @@ entries at the end of their section.
   library unfolded and the day's pane take turns beside the folded strip: three panes
   at 1024 px left the map 324 px, of which an opened recording's cards covered half.
   The pane took the library's place before, strip and all, so that the tabs could only
-  be reached by closing the day, which a tab then could not reopen. The day's heading there stands in two
-  lines, as on a phone, since the steps and the buttons at a finger's size left its
-  name 30 px in one. On a touch
+  be reached by closing the day, which a tab then could not reopen. The day's heading
+  steps to the days before and after on a phone alone, in two lines: on a tablet the
+  strip beside the pane picks the day, and steps in the heading said the same twice and
+  took a line from the pane. On a touch
   screen every field's text is 16 px, below which Safari zooms into the page on focus
   and stays there, and an icon button is at least 36 px; a grip or a pad is drawn as
   narrow as before, since the row's name needs the room, and is hit in an area that

@@ -184,10 +184,11 @@
   room for three panes, narrower than 1200 px, the strip stands beside the day's pane,
   and the library brought back by its button takes the pane's place until it is folded
   again or another day is picked in it, which folds it away; the day stays picked
-  meanwhile, so that the tabs can be used and the day comes back. The pane's heading then steps to the day before
-  and after, the day's name between the steps and the buttons under it. On a phone the map is the page: the day picked is a sheet under it, pulled
+  meanwhile, so that the tabs can be used and the day comes back. Another day is picked
+  in the strip. On a phone the map is the page: the day picked is a sheet under it, pulled
   up to nearly the whole screen or down to its heading by its top edge, and folded down
-  by itself while a route is edited; the library lies over everything and folds away,
+  by itself while a route is edited; its heading steps to the day before and after, the
+  day's name between the steps and the buttons under it, since no strip is beside it; the library lies over everything and folds away,
   when a day is picked in it, to its button over the map, beside the open trip's name
   and whether it is saved. There the menus come up from the bottom edge, a submenu in the list's place under a
   row that leads back, and the route

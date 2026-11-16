@@ -130,7 +130,7 @@ body {
   white-space: normal;
 }
 
-/* The days before and after, by buttons in the heading where the list of days is not beside it. */
+/* The days before and after, by buttons in the heading on a phone, where neither the list of days nor the strip of them is beside it. */
 .day-step {
   display: none;
 }
@@ -139,13 +139,13 @@ body {
   transform: rotate(180deg);
 }
 
-/* A day's name between its steps: a line of its own where the list of days is not beside it, part of the heading's row elsewhere. */
+/* A day's name between its steps: a line of its own on a phone, part of the heading's row elsewhere. */
 .day-title {
   display: contents;
 }
 
-/* Without the list of days beside it, the heading has the steps and stands in two lines: the name between the steps, the buttons under it, which would leave the name no room beside them. */
-@media (max-width: 1199px) {
+/* On a phone the heading has the steps and stands in two lines: the name between the steps, the buttons under it, which would leave the name no room beside them. */
+@media (max-width: 720px) {
   .day-step {
     display: contents;
   }
