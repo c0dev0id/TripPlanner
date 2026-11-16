@@ -231,6 +231,8 @@ CREATE TABLE IF NOT EXISTS stash_files (
     name TEXT NOT NULL,
     created_at TEXT NOT NULL,
     waypoints INTEGER NOT NULL DEFAULT 0,
+    creator TEXT,
+    exported_at TEXT,
     digest TEXT NOT NULL,
     gpx BLOB NOT NULL
 );

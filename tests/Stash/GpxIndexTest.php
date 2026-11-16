@@ -73,6 +73,18 @@ final class GpxIndexTest extends TestCase
         self::assertSame([['dmd'], ['rumo'], ['dmd']], array_column(GpxIndex::of($gpx)->items, 'features'));
     }
 
+    public function testSaysWhatWroteTheFileAndWhenByItsHead(): void
+    {
+        $garmin = '<gpx creator=" Garmin Desktop App "><metadata><link href="x"><text>t</text><time>2001-01-01T00:00:00Z</time></link><time>2024-07-14T18:08:55Z</time></metadata>'
+            . '<rte><rtept lat="49.4" lon="8.7"><time>2024-06-19T20:02:06Z</time></rtept></rte></gpx>';
+        $index = GpxIndex::of($garmin);
+        self::assertSame(['Garmin Desktop App', '2024-07-14T18:08:55Z'], [$index->creator, $index->exportedAt]);
+        $old = GpxIndex::of('<gpx version="1.0" creator="MapSource"><time>2014-06-14T06:18:00Z</time><rte/></gpx>');
+        self::assertSame(['MapSource', '2014-06-14T06:18:00Z'], [$old->creator, $old->exportedAt]);
+        $bare = GpxIndex::of('<gpx><trk><trkseg><trkpt lat="1" lon="1"><time>2024-07-14T18:08:55Z</time></trkpt></trkseg></trk></gpx>');
+        self::assertSame([null, null], [$bare->creator, $bare->exportedAt]);
+    }
+
     public function testAFileThatIsNoXmlHoldsNothing(): void
     {
         $index = GpxIndex::of('not a file');

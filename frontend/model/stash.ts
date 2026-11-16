@@ -17,13 +17,15 @@ export interface StashItem {
   features: StashFeature[];
 }
 
-/** A file of the Stash: a GPX file kept whole in a folder there, with how many waypoints it holds and its routes and tracks in the file's order. */
+/** A file of the Stash: a GPX file kept whole in a folder there, with how many waypoints it holds, what wrote it and when, as its head says, and its routes and tracks in the file's order. */
 export interface StashFile {
   id: number;
   folderId: number;
   name: string;
   createdAt: string;
   waypoints: number;
+  creator: string | null;
+  exportedAt: string | null;
   items: StashItem[];
 }
 

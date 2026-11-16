@@ -41,6 +41,7 @@ final class StashFilesTest extends TestCase
         $kept = $this->keep(StashFixture::gpx());
         self::assertTrue($kept['added']);
         self::assertSame(['A day out', $this->stash, 2], [$kept['file']['name'], $kept['file']['folderId'], $kept['file']['waypoints']]);
+        self::assertSame(['Test', null], [$kept['file']['creator'], $kept['file']['exportedAt']]);
         self::assertSame(['Over the pass', 'Morning', ''], array_column($kept['file']['items'], 'name'));
         self::assertSame([$kept['file']], $this->files->listFor($this->userId));
         self::assertSame(StashFixture::gpx(), gzdecode($this->files->gzip($this->userId, $kept['file']['id'])));

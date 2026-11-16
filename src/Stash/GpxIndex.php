@@ -18,7 +18,8 @@ use XMLReader;
  * follows the way Garmin's extension gives between its points, where the file has it.
  * Each also says what it carries that its row would not show otherwise: values on its
  * points, however the file writes them, Garmin's extensions of a route, and what DMD
- * and Rumo wrote into it.
+ * and Rumo wrote into it. Of the file itself it says what wrote it and when, as its
+ * head has them: files written together belong together.
  */
 final readonly class GpxIndex
 {
@@ -56,7 +57,7 @@ final readonly class GpxIndex
     private const SAMPLED_POINTS = 10;
 
     /** @param list<array{kind: string, position: int, name: string, line: string, distanceM: int, points: int, startedAt: ?string, features: list<string>}> $items */
-    private function __construct(public int $waypoints, public array $items)
+    private function __construct(public int $waypoints, public array $items, public ?string $creator, public ?string $exportedAt)
     {
     }
 
@@ -64,6 +65,9 @@ final readonly class GpxIndex
     {
         $waypoints = 0;
         $items = [];
+        $creator = null;
+        $exportedAt = null;
+        $inMetadata = false;
         $counts = ['route' => 0, 'track' => 0];
         // The route or track being read, its line as positions, how deep its track points stand, and how deep the point being read stands.
         $open = null;
@@ -89,7 +93,16 @@ final readonly class GpxIndex
                 continue;
             }
             $element = $reader->localName;
+            if ($reader->depth === 0) {
+                $creator = trim((string) $reader->getAttribute('creator')) ?: null;
+                continue;
+            }
+            // The file's time stands in its metadata, in GPX 1.0 at its top.
+            if ($element === 'time' && ($reader->depth === 1 || ($inMetadata && $reader->depth === 2))) {
+                $exportedAt = TrackSummary::time($reader->readString());
+            }
             if ($reader->depth === 1) {
+                $inMetadata = $element === 'metadata';
                 $waypoints += $element === 'wpt' ? 1 : 0;
                 if (isset(self::KINDS[$element])) {
                     $kind = self::KINDS[$element];
@@ -134,6 +147,6 @@ final readonly class GpxIndex
         $reader->close();
         libxml_clear_errors();
         libxml_use_internal_errors($errors);
-        return new self($waypoints, $items);
+        return new self($waypoints, $items, $creator, $exportedAt);
     }
 }

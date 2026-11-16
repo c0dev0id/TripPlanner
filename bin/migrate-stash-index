@@ -1,0 +1,59 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Planner\Kernel;
+use Planner\Stash\GpxIndex;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Run once after the Stash's index learned what wrote a file and when, and whose
+// extensions a route or track carries, then delete this file. It gives stash_files its
+// two new columns, before the file itself, which is why the table is made anew and not
+// altered, and reads every file of the Stash again. Running it twice does no harm.
+$db = Kernel::container(dirname(__DIR__))->get(PDO::class);
+
+$db->exec('PRAGMA foreign_keys = OFF');
+$db->beginTransaction();
+$columns = array_column($db->query('PRAGMA table_info(stash_files)')->fetchAll(), 'name');
+if (!in_array('creator', $columns, true)) {
+    $db->exec('CREATE TABLE stash_files_new (
+        id INTEGER PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        folder_id INTEGER NOT NULL REFERENCES folders(id),
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        waypoints INTEGER NOT NULL DEFAULT 0,
+        creator TEXT,
+        exported_at TEXT,
+        digest TEXT NOT NULL,
+        gpx BLOB NOT NULL
+    )');
+    $db->exec('INSERT INTO stash_files_new (id, user_id, folder_id, name, created_at, waypoints, digest, gpx) SELECT id, user_id, folder_id, name, created_at, waypoints, digest, gpx FROM stash_files');
+    $db->exec('DROP TABLE stash_files');
+    $db->exec('ALTER TABLE stash_files_new RENAME TO stash_files');
+    $db->exec('CREATE UNIQUE INDEX stash_files_file ON stash_files(user_id, digest)');
+    $db->exec('CREATE INDEX stash_files_folder ON stash_files(folder_id)');
+}
+
+$head = $db->prepare('UPDATE stash_files SET creator = ?, exported_at = ? WHERE id = ?');
+$features = $db->prepare('UPDATE stash_items SET features = ? WHERE file_id = ? AND kind = ? AND position = ?');
+$ids = $db->query('SELECT id FROM stash_files')->fetchAll(PDO::FETCH_COLUMN);
+$file = $db->prepare('SELECT gpx FROM stash_files WHERE id = ?');
+foreach ($ids as $id) {
+    $file->execute([$id]);
+    $index = GpxIndex::of((string) gzdecode($file->fetchColumn()));
+    $head->execute([$index->creator, $index->exportedAt, $id]);
+    foreach ($index->items as $item) {
+        $features->execute([implode(',', $item['features']), $id, $item['kind'], $item['position']]);
+    }
+}
+$db->commit();
+$db->exec('PRAGMA foreign_keys = ON');
+$broken = count($db->query('PRAGMA foreign_key_check')->fetchAll());
+echo 'Read ' . count($ids) . " files of the Stash again for what wrote them, when, and what their routes and tracks carry.\n";
+if ($broken > 0) {
+    echo "$broken rows refer to rows that are not there: check the database before going on.\n";
+    exit(1);
+}

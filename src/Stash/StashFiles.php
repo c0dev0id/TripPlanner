@@ -15,17 +15,17 @@ use Planner\Trip\Folders;
  */
 final class StashFiles
 {
-    private const FILE = 'SELECT id, folder_id, name, created_at, waypoints FROM stash_files';
+    private const FILE = 'SELECT id, folder_id, name, created_at, waypoints, creator, exported_at FROM stash_files';
 
     public function __construct(private readonly PDO $db, private readonly Folders $folders)
     {
     }
 
     /**
-     * The user's files by name, each with its folder, how many waypoints it holds and
-     * its routes and tracks in the file's order.
+     * The user's files by name, each with its folder, how many waypoints it holds, what
+     * wrote it and when, and its routes and tracks in the file's order.
      *
-     * @return list<array{id: int, folderId: int, name: string, createdAt: string, waypoints: int, items: list<array<string, mixed>>}>
+     * @return list<array{id: int, folderId: int, name: string, createdAt: string, waypoints: int, creator: ?string, exportedAt: ?string, items: list<array<string, mixed>>}>
      */
     public function listFor(int $userId): array
     {
@@ -63,8 +63,8 @@ final class StashFiles
         if ($added) {
             $index = GpxIndex::of($gpx);
             $this->db->beginTransaction();
-            $this->db->prepare('INSERT INTO stash_files (user_id, folder_id, name, created_at, waypoints, digest, gpx) VALUES (?, ?, ?, ?, ?, ?, ?)')
-                ->execute([$userId, $folderId, $name, Timestamp::of($now), $index->waypoints, $digest, $gzip]);
+            $this->db->prepare('INSERT INTO stash_files (user_id, folder_id, name, created_at, waypoints, creator, exported_at, digest, gpx) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+                ->execute([$userId, $folderId, $name, Timestamp::of($now), $index->waypoints, $index->creator, $index->exportedAt, $digest, $gzip]);
             $id = $this->db->lastInsertId();
             $this->index((int) $id, $index);
             $this->db->commit();
@@ -209,6 +209,15 @@ final class StashFiles
 
     private static function file(array $row, array $items): array
     {
-        return ['id' => (int) $row['id'], 'folderId' => (int) $row['folder_id'], 'name' => $row['name'], 'createdAt' => $row['created_at'], 'waypoints' => (int) $row['waypoints'], 'items' => $items];
+        return [
+            'id' => (int) $row['id'],
+            'folderId' => (int) $row['folder_id'],
+            'name' => $row['name'],
+            'createdAt' => $row['created_at'],
+            'waypoints' => (int) $row['waypoints'],
+            'creator' => $row['creator'],
+            'exportedAt' => $row['exported_at'],
+            'items' => $items,
+        ];
     }
 }
