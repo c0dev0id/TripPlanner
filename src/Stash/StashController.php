@@ -95,6 +95,31 @@ final class StashController
         return $removed ? $response->withStatus(204) : Json::error($response, 404, 'Route or track not found in the file.');
     }
 
+    /**
+     * Adds parts of the user's other files to the file, which stay where they are:
+     * `{parts}`, each with its `fileId`, its `items` as a kind and a place among the
+     * source's routes or tracks, and whether all its `waypoints` come along.
+     */
+    public function addParts(Request $request, Response $response, array $args): Response
+    {
+        $parts = [];
+        foreach ((array) Json::field($request, 'parts') as $part) {
+            $items = [];
+            foreach (is_array($part) && is_array($part['items'] ?? null) ? $part['items'] : [] as $item) {
+                if (!is_array($item) || !in_array($item['kind'] ?? null, ['route', 'track'], true) || !is_int($item['position'] ?? null)) {
+                    return Json::error($response, 422, 'Route or track not found in the file.');
+                }
+                $items[] = ['kind' => $item['kind'], 'position' => $item['position']];
+            }
+            if (!is_array($part) || !is_int($part['fileId'] ?? null)) {
+                return Json::error($response, 422, 'File not found.');
+            }
+            $parts[] = ['fileId' => $part['fileId'], 'items' => $items, 'waypoints' => ($part['waypoints'] ?? false) === true];
+        }
+        $added = $parts !== [] && $this->files->addParts($this->currentUser->get()->id, (int) $args['file'], $parts);
+        return $added ? $response->withStatus(204) : Json::error($response, 404, 'Route or track not found in the file.');
+    }
+
     /** Keeps the file's tracks as rides: all of them, or with `{tracks}` those at these places among its tracks. Answers how many were `kept` and how many the user kept already, `known`. */
     public function keepRides(Request $request, Response $response, array $args): Response
     {

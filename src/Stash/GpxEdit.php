@@ -95,6 +95,48 @@ final class GpxEdit
         return (string) $document->saveXML();
     }
 
+    /**
+     * The file with routes, tracks and waypoints of other files added as they stand in
+     * those: of each source the routes and tracks named, each by its kind and its place
+     * among the source's elements of the kind, and all its waypoints where asked. Each
+     * goes after the file's own of its kind, in the order the format has them:
+     * waypoints, routes, tracks. Null where a source lacks one of them.
+     *
+     * @param list<array{gpx: string, items: list<array{kind: string, position: int}>, waypoints: bool}> $sources
+     */
+    public static function with(string $gpx, array $sources): ?string
+    {
+        $document = self::read($gpx);
+        $root = $document->documentElement;
+        foreach ($sources as $source) {
+            $from = self::read($source['gpx']);
+            $taken = $source['waypoints'] ? self::elements($from, self::ELEMENTS['waypoint']) : [];
+            foreach ($source['items'] as $item) {
+                $taken[] = self::elements($from, self::ELEMENTS[$item['kind']])[$item['position']] ?? null;
+            }
+            if (in_array(null, $taken, true)) {
+                return null;
+            }
+            foreach ($taken as $element) {
+                $root->insertBefore($document->importNode($element, true), self::firstAfter($root, (string) $element->localName));
+            }
+        }
+        return (string) $document->saveXML();
+    }
+
+    /** The first element of the file that the format has after those of the name, before which another of the name goes; null where it goes last. */
+    private static function firstAfter(DOMElement $root, string $name): ?DOMElement
+    {
+        $order = ['wpt', 'rte', 'trk', 'extensions'];
+        $later = array_slice($order, array_search($name, $order, true) + 1);
+        foreach ($root->childNodes as $node) {
+            if ($node instanceof DOMElement && in_array($node->localName, $later, true)) {
+                return $node;
+            }
+        }
+        return null;
+    }
+
     private static function read(string $gpx): DOMDocument
     {
         $document = new DOMDocument();

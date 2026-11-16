@@ -110,6 +110,27 @@ final class StashFilesTest extends TestCase
         self::assertFalse($this->keep(StashFixture::gpx())['added']);
     }
 
+    public function testAddingPartsOfOtherFilesRewritesTheFileInTheFormatsOrderAndLeavesTheSources(): void
+    {
+        $source = $this->keep(StashFixture::gpx())['file']['id'];
+        $bare = '<?xml version="1.0"?><gpx version="1.1" creator="Other" xmlns="http://www.topografix.com/GPX/1/1"><wpt lat="1" lon="2"><name>Own</name></wpt><trk><name>Own track</name><trkseg><trkpt lat="1" lon="2"/><trkpt lat="1.1" lon="2.1"/></trkseg></trk></gpx>';
+        $id = $this->keep($bare, null, 'Other')['file']['id'];
+        self::assertFalse($this->files->addParts($this->userId, $id, [['fileId' => $source, 'items' => [['kind' => 'route', 'position' => 1]], 'waypoints' => false]]));
+        self::assertFalse($this->files->addParts($this->userId + 1, $id, [['fileId' => $source, 'items' => [], 'waypoints' => true]]));
+        self::assertTrue($this->files->addParts($this->userId, $id, [['fileId' => $source, 'items' => [['kind' => 'route', 'position' => 0], ['kind' => 'track', 'position' => 0]], 'waypoints' => true]]));
+        $file = $this->files->find($this->userId, $id);
+        self::assertSame(3, $file['waypoints']);
+        self::assertSame([['route', 'Over the pass'], ['track', 'Own track'], ['track', 'Morning']], array_map(fn (array $item) => [$item['kind'], $item['name']], $file['items']));
+        $gpx = (string) gzdecode($this->files->gzip($this->userId, $id));
+        // The format's order holds: waypoints, then routes, then tracks.
+        self::assertSame(1, preg_match('/Own<.*Start<.*End<.*<rte[ >].*Over the pass.*<trk>.*Own track.*<trk>.*Morning/s', $gpx));
+        // What a source's root declared comes along with what uses it.
+        self::assertStringContainsString('gpxx:rpt lat="49.45" lon="8.75"', $gpx);
+        $read = new \DOMDocument();
+        self::assertTrue($read->loadXML($gpx));
+        self::assertCount(3, $this->files->find($this->userId, $source)['items']);
+    }
+
     public function testAFolderDeletedGivesItsFilesToTheFolderAroundItOrTakesThemAlong(): void
     {
         $year = $this->folders->create($this->userId, '2025', $this->stash, $this->now)->id;

@@ -120,6 +120,7 @@ final class Routes
             $api->post('/stash/files/{file:[0-9]+}/rides', [StashController::class, 'keepRides']);
             $api->patch('/stash/files/{file:[0-9]+}/items/{kind:route|track}/{position:[0-9]+}', [StashController::class, 'renameItem']);
             $api->delete('/stash/files/{file:[0-9]+}/items', [StashController::class, 'removeItems']);
+            $api->post('/stash/files/{file:[0-9]+}/parts', [StashController::class, 'addParts']);
             $api->get('/folders', [FolderController::class, 'index']);
             $api->post('/folders', [FolderController::class, 'create']);
             $api->patch('/folders/{id:[0-9]+}', [FolderController::class, 'change']);

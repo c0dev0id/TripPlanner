@@ -139,6 +139,27 @@ final class StashFiles
         return $this->rewrite($userId, $id, fn (string $gpx) => GpxEdit::without($gpx, $items));
     }
 
+    /**
+     * Adds routes, tracks and waypoints of the user's other files to a file, which
+     * rewrites it: of each source the routes and tracks named and, where asked, all its
+     * waypoints. The sources stay as they are. False when the user has no such file or
+     * source, or a source lacks one of them.
+     *
+     * @param list<array{fileId: int, items: list<array{kind: string, position: int}>, waypoints: bool}> $parts
+     */
+    public function addParts(int $userId, int $id, array $parts): bool
+    {
+        $sources = [];
+        foreach ($parts as $part) {
+            $gzip = $this->gzip($userId, $part['fileId']);
+            if ($gzip === null) {
+                return false;
+            }
+            $sources[] = ['gpx' => (string) gzdecode($gzip), 'items' => $part['items'], 'waypoints' => $part['waypoints']];
+        }
+        return $this->rewrite($userId, $id, fn (string $gpx) => GpxEdit::with($gpx, $sources));
+    }
+
     /** Puts the file a change makes of the stored one in its place, with what is read from it; false where there is no such file or the change does not apply. */
     private function rewrite(int $userId, int $id, callable $change): bool
     {
