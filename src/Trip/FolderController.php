@@ -63,7 +63,7 @@ final class FolderController
         }
         try {
             $moved = $this->folders->move($this->currentUser->get()->id, (int) $args['id'], $parentId);
-        } catch (UnknownFolder | FolderInsideItself | MisplacedTrip $refused) {
+        } catch (UnknownFolder | FolderInsideItself | FolderOutOfItsTree $refused) {
             return Json::error($response, 422, $refused->getMessage());
         }
         return $moved ? $response->withStatus(204) : Json::error($response, 404, 'Folder not found.');

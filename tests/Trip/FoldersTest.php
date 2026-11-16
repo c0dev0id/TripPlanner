@@ -13,6 +13,7 @@ use Planner\Stash\StashMedia;
 use Planner\Tests\TestDatabase;
 use Planner\Trip\FolderInsideItself;
 use Planner\Trip\Folders;
+use Planner\Trip\FolderOutOfItsTree;
 use Planner\Trip\MisplacedTrip;
 use Planner\Trip\Trips;
 use Planner\Trip\UnknownFolder;
@@ -194,7 +195,6 @@ final class FoldersTest extends TestCase
         self::assertNull($this->folders->deleteWithContents($this->userId, $collections->id));
         self::assertSame(['Collections', null], [$this->folders->listFor($this->userId)[0]->name, $this->parentOf($collections->id)]);
         self::assertSame($collections->id, $this->parentOf($inside->id));
-        self::assertTrue($this->folders->move($this->userId, $alps->id, $collections->id));
     }
 
     public function testKeepsListsAmongThePlacesFilesInTheStashAndTripsOutOfBoth(): void
@@ -215,23 +215,34 @@ final class FoldersTest extends TestCase
             fn () => $this->trips->move($this->userId, $list->id, null),
             fn () => $this->trips->move($this->userId, $list->id, $stash->id),
             fn () => $this->trips->move($this->userId, $trip->id, $stash->id),
-            fn () => $this->folders->move($this->userId, $clubs->id, null),
-            fn () => $this->folders->move($this->userId, $clubs->id, $dump->id),
-            fn () => $this->folders->move($this->userId, $alps->id, $clubs->id),
-            fn () => $this->folders->move($this->userId, $dump->id, $alps->id),
-            fn () => $this->folders->move($this->userId, $dump->id, $places->id),
         ];
         foreach ($refused as $n => $misplace) {
             try {
                 $misplace();
-                self::fail("Case $n put a trip, a list or a file where it does not belong.");
+                self::fail("Case $n put a trip or a list where it does not belong.");
             } catch (MisplacedTrip) {
             }
         }
         self::assertTrue($this->trips->move($this->userId, $list->id, $places->id));
-        self::assertTrue($this->folders->move($this->userId, $clubs->id, $alps->id));
-        self::assertTrue($this->folders->move($this->userId, $clubs->id, $dump->id));
         self::assertSame([[$list->id, $places->id], [$trip->id, $alps->id]], array_map(fn ($t) => [$t->id, $t->folderId], $this->trips->listFor($this->userId)));
+    }
+
+    public function testKeepsAFolderInItsTreeEvenWhenItIsEmpty(): void
+    {
+        [$stash, $places] = $this->folders->listFor($this->userId);
+        $alps = $this->folders->create($this->userId, 'Alps', null, $this->now);
+        $dump = $this->folders->create($this->userId, '2025', $stash->id, $this->now);
+        $clubs = $this->folders->create($this->userId, 'Clubs', $places->id, $this->now);
+        foreach ([[$clubs->id, null], [$clubs->id, $dump->id], [$alps->id, $clubs->id], [$alps->id, $stash->id], [$dump->id, $alps->id], [$dump->id, $places->id]] as [$folderId, $parentId]) {
+            try {
+                $this->folders->move($this->userId, $folderId, $parentId);
+                self::fail("The folder $folderId left its tree.");
+            } catch (FolderOutOfItsTree) {
+            }
+        }
+        $inner = $this->folders->create($this->userId, 'Inner', $clubs->id, $this->now);
+        self::assertTrue($this->folders->move($this->userId, $inner->id, $places->id));
+        self::assertSame($places->id, $this->parentOf($inner->id));
     }
 
     /** @return \Planner\Trip\Folder[] the user's folders without the two special ones */

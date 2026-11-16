@@ -1,5 +1,4 @@
 import { countsText, kindAround } from '../model/folders';
-import { TREES, treeOfKind } from '../model/library';
 import type { StashFile, StashItem, StashPart } from '../model/stash';
 import type { Folder, TripSummary } from '../model/trip';
 
@@ -87,14 +86,26 @@ export function tripsWithin(listed: Listed, items: readonly Item[]): TripSummary
   return [...tripsOf(items), ...listed.trips.filter((trip) => trip.folderId !== null && inside.has(trip.folderId))];
 }
 
-/** Says of a folder, null for the top, whether it takes the items: lists of places go among the Places, trips into the other folders, and files into the Stash alone. */
+/** The kind of the top folder an item lies in, which names its tree. */
+const treeOf = (listed: Listed, item: Item): ReturnType<typeof kindAround> => kindAround(listed.folders, 'folder' in item ? item.folder.id : folderOf(item));
+
+/** Whether a folder is the folder `id` or lies inside it; the top, null, lies in none. */
+function isWithin(listed: Listed, folder: number | null, id: number): boolean {
+  for (let at = listed.folders.find((f) => f.id === folder); at; at = listed.folders.find((f) => f.id === at!.parentId)) if (at.id === id) return true;
+  return false;
+}
+
+/** Says of a folder, null for the top of the trips, whether it lies in the tree of the items: each stays in its own, a folder too, even an empty one. */
+export function inTreeOf(listed: Listed, items: readonly Item[]): (into: number | null) => boolean {
+  const trees = new Set(items.map((item) => treeOf(listed, item)));
+  return (into) => [...trees].every((tree) => tree === kindAround(listed.folders, into));
+}
+
+/** Says of a folder, null for the top of the trips, whether it takes the items: it lies in their tree, and is none of the folders among them nor inside one. */
 export function takerOf(listed: Listed, items: readonly Item[]): (into: number | null) => boolean {
-  const within = tripsWithin(listed, items);
-  const files = filesOf(items).length > 0;
-  return (into) => {
-    const holds = TREES[treeOfKind(kindAround(listed.folders, into))].holds;
-    return within.every((trip) => (trip.kind === 'collection' ? 'list' : 'trip') === holds) && (!files || holds === 'file');
-  };
+  const inTree = inTreeOf(listed, items);
+  const folders = foldersOf(items);
+  return (into) => inTree(into) && !folders.some((folder) => isWithin(listed, into, folder.id));
 }
 
 /** How many folders and trips, or files, which no tree holds beside trips: 2 folders and 3 trips. */

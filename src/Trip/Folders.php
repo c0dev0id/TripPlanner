@@ -93,7 +93,7 @@ final class Folders
      *
      * @throws UnknownFolder for a parent the user does not have
      * @throws FolderInsideItself for a parent that is the folder or inside it
-     * @throws MisplacedTrip for a folder whose trips, lists of places or files would come to lie where their kind is not kept
+     * @throws FolderOutOfItsTree for a parent among the trips, the places or the Stash where the folder is in another of them
      */
     public function move(int $userId, int $folderId, ?int $parentId): bool
     {
@@ -108,12 +108,8 @@ final class Folders
             if ($parentId !== null && in_array($parentId, $inside, true)) {
                 throw new FolderInsideItself();
             }
-            $around = $this->kindAround($userId, $parentId);
-            $in = Database::placeholders($inside);
-            $misplaced = $this->db->prepare("SELECT 1 FROM trips WHERE kind <> ? AND folder_id IN ($in) UNION ALL SELECT 1 FROM stash_files WHERE ? <> 'collections' AND folder_id IN ($in)");
-            $misplaced->execute([self::HELD[$around], ...$inside, $around, ...$inside]);
-            if ($misplaced->fetchColumn() !== false) {
-                throw new MisplacedTrip();
+            if ($this->kindAround($userId, $folderId) !== $this->kindAround($userId, $parentId)) {
+                throw new FolderOutOfItsTree();
             }
             $this->db->prepare('UPDATE folders SET parent_id = ? WHERE id = ?')->execute([$parentId, $folderId]);
             $this->db->commit();

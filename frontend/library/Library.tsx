@@ -30,7 +30,7 @@ import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
 import { FolderCard, RouteCard, TripCard, TripDays, type CardSelect } from './cards';
 import { dragToFolder } from './dragToFolder';
-import { countText, fileItemsOf, filesOf, folderOf, foldersOf, itemKey, itemsOf, keyOf, mediaKey, nameOf, partsOf, waypointsKey, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
+import { countText, fileItemsOf, filesOf, folderOf, foldersOf, inTreeOf, itemKey, itemsOf, keyOf, mediaKey, nameOf, partsOf, waypointsKey, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow } from './StashFileCard';
 import { addPartsTo, applyGroups, filesMenu, partsMenu, removeItems, takeOut, type StashMenuHost } from './stashMenu';
@@ -347,7 +347,7 @@ export function Library(props: {
   const takerOf = (items: readonly Item[]) => takerAmong(all(), items);
   /** Refuses, as the server would, to put the items into a folder that does not hold their kind. */
   const assertFits = (items: readonly Item[], into: number | null) => {
-    if (!takerOf(items)(into)) throw new Error(t('Place lists belong in Places, files in the Stash, and trips in the other folders.'));
+    if (!inTreeOf(all(), items)(into)) throw new Error(t('Place lists belong in Places, files in the Stash, and trips in the other folders.'));
   };
   /** Moves folders, trips and files into a folder, none for the top, those not in it already; the server refuses a folder inside itself. */
   const moveInto = (moved: readonly Item[], into: number | null) => {
