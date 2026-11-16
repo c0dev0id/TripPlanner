@@ -61,15 +61,18 @@ export function Explorer(props: {
     const tab = libraryTab();
     return tab === 'settings' ? undefined : tab;
   };
-  // The panel scrolls as a whole, so how far it was scrolled is kept for each tab and given back when the tab is shown again.
+  // The panel scrolls as a whole, so how far it was scrolled is kept for each tab and given back when the tab is shown again, and when the library folded away is brought back: folded, it holds nothing to scroll and stands at its top.
   let section!: HTMLElement;
   const scrolled: Partial<Record<LibraryTab, number>> = {};
   onMount(() => {
     const panel = section.closest<HTMLElement>('.panel')!;
-    const keep = () => (scrolled[libraryTab()] = panel.scrollTop);
+    const keep = () => {
+      if (!panelFolded()) scrolled[libraryTab()] = panel.scrollTop;
+    };
     panel.addEventListener('scroll', keep, { passive: true });
     onCleanup(() => panel.removeEventListener('scroll', keep));
     createEffect(on(libraryTab, (tab) => (panel.scrollTop = scrolled[tab] ?? 0), { defer: true }));
+    createEffect(on(panelFolded, (folded) => !folded && (panel.scrollTop = scrolled[libraryTab()] ?? 0), { defer: true }));
   });
   return (
     <section class="explorer" ref={section}>

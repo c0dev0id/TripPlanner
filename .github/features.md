@@ -13,7 +13,7 @@
   and Recordings, for the rides; each is its name in bold capitals under its icon, the
   one shown in full ink over a line. A tab is a view of its own: what is
   unfolded, marked and selected in the others stays as it is, and each keeps how far it
-  was scrolled. The map and the pane beside the library show what belongs to the tab
+  was scrolled, also while the library is folded away. The map and the pane beside the library show what belongs to the tab
   shown, and under the gear what the tab before showed: the open trip and its day in
   Trips, the open list in Places, the file shown in Stash, the ride opened and the
   rides pinned in Recordings; pinned routes and recordings stay on the map whatever tab is
