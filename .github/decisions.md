@@ -1307,6 +1307,39 @@ entries at the end of their section.
   open trip is saved, and only then are they taken from the trip they came from: if that
   last step fails they are in both trips, never in neither. The journal of a part that
   left its trip stays behind with the trip. Only the open trip's side can be undone.
+- **A drop is a cut and a paste in one move.** Pads had grown onto every row and
+  dragged only trips, folders and Stash files, into folders. What a drag may do
+  elsewhere needed no new rules: a row is dropped where a cut of it is pasted, within
+  the tab, so the drops follow `model/paste.ts` as the menus do. The paste of the
+  clipboard runs on any clip handed to it, and what a drag carries is such a clip made
+  for the drag (`carriedParts`): the clipboard itself is left alone, as a file
+  manager's is. A place lights up only where the drop changes something, which also
+  means that a cut is no longer pasted onto the day it is on already.
+- **A place says what a drop on it does.** The row dragged used to find a marked folder
+  under the pointer and move itself there. With days, routes and rows of the library
+  as places, the row dragged would have to know how each of them takes it, across
+  modules. A place is now an element with a taker (`ui/carry.ts`, `dropTarget`): asked
+  what is carried, it answers with the drop, with a refusal, or that it is not for
+  that, and the nearest place around the pointer that is for it decides. A folder's
+  row answers for dragged trips, folders and files, the row of a trip or a list and a
+  day or a route answer with the paste they offer in their menu. `data-drop-folder`
+  stays for files dropped from the computer alone.
+- **A grip sorts within its list and carries out of it.** A day and a route were
+  dragged to sort them, and now also to another trip or day. Both are one drag: while
+  the pointer is over a place outside the row's list that takes it, the list stands
+  still and the place is marked; anywhere else the row is sorted as before, also past
+  the ends of its list. Places inside the row's own list are passed over, so a
+  category dragged among the categories of its list is sorted, not merged into the one
+  under it: merging by a slip of the hand was not wanted, and cut and paste, which
+  merge, had left categories without a way to be sorted. What is carried is asked for
+  only once the pointer moves, since asking lets go of a selection the row is not in,
+  and a tap on a pad must add to it.
+- **A pad that only selects is a ring.** Every pad was drawn as a grip, also on rows
+  that are never dragged (the routes, tracks, waypoints and media of Stash files, the
+  rides, the rows of the search and the duplicates report), since they are copied and
+  never cut. Six dots now mean that the row is dragged; the others show a ring, filled
+  while the row is selected. An earlier checkbox in the pad had looked dated; the ring
+  is the mark of the same size that does not promise a drag.
 - **A folder is cut, not copied.** Copying or duplicating a folder is a copy of every
   trip in it, at any depth: megabytes started by one click. Trips are copied one by
   one, where the size is in view.

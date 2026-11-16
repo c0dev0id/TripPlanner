@@ -73,7 +73,7 @@
   from New in the menu of the folder it goes into. Trips and folders are dragged by their pad into a folder to move them there: onto its
   row or onto anything it holds while unfolded, the folder lighting up; anywhere else in
   the library's pane, the line under the tabs lights up and the drop goes to the top of the tree shown; selected trips go together, and a
-  folder never goes into itself. Folders and trips are cards with the name over a line
+  folder never goes into itself. Nothing lights up where the drop would change nothing: not the folder a row is in already. Folders and trips are cards with the name over a line
   of metadata, each with the icon of its kind: a folder, a trip, a list of places, a
   file; a trip's card also shows its shape, small, each line in the colour its route
   has on the map; right-click or a long press on a card opens its menu.
@@ -93,7 +93,7 @@
   line under the tabs has a menu too, with New and Add
   for the top of the tree shown, Paste, and Export for what the tree holds, every trip there is in the trips' case. Several are selected
   together, folders and trips alike: a tap or click on a card's pad (drawn as a drag
-  grip), Cmd or Ctrl with a click, Shift with a click for a run: the cards from the one
+  grip where the row can be dragged, and as a ring, filled while its row is selected, where it is only selected), Cmd or Ctrl with a click, Shift with a click for a run: the cards from the one
   clicked last to the one clicked now, and no others. A plain click or tap
   still opens, lets go of what was selected and is where the next run starts. The menu then acts on all of them, and a press on a pad drags them all
   onto a folder. Cut folders and trips move to where they are pasted, copied trips get a
@@ -120,6 +120,18 @@
   undated); a route is dragged into another place within its day, duplicated, or
   moved to another day with the stops bound to it, from its row's menu (right-click or
   long press), where Move… opens the other days.
+- A drop is a cut and a paste in one move, within the tab and without the clipboard: a
+  row is dragged by its grip or pad onto every place where a cut of it would be pasted,
+  and the place lights up under it. A day goes onto another trip's row, with its media
+  and recordings; a route onto another day or another trip's row; a stop onto another
+  day or onto a route, as a point of it; a day's media and recordings onto another day.
+  Among the Places a place goes onto another category or another list's row, and a
+  category onto another list's row, into the category of its name. A day is the day's
+  row in the tree or its button in the strip beside the day's pane. Several selected
+  rows go together, and the label that follows the pointer says how many. Within its
+  own list a day, a route and a category are sorted by the grip instead, which merges
+  nothing. The routes, tracks, waypoints and media of Stash files and the rides are
+  not dragged: they are copied, never cut.
 - Days, routes and stops answer to one menu, in a trip and in a collection alike: Edit,
   Duplicate, Cut, Copy, Paste, Move…, what only the kind has (a route's colour, a track's
   condensing), Convert, for several routes pinning them to the map or letting go of them, Remove; what takes one part alone is left out for several. A stop's menu has
