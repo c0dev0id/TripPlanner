@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Trip } from '../model/trip';
 import { routedOf } from '../routing/testing';
-import { activeRouteId, addDay, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markShownDay, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
+import { activeRouteId, addDay, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markShownDay, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -55,6 +55,27 @@ describe('the open trip', () => {
     ]);
     updateStop(stops[0]!.id, { name: 'Lunch', symbol: 'Restaurant' });
     expect(sent().days[0]!.stops[0]).toMatchObject({ name: 'Lunch', symbol: 'Restaurant' });
+  });
+
+  it('pastes days after a day and answers the ids it gave them, in their order', () => {
+    addDay();
+    addDay();
+    const [first, second] = sent().days;
+    const made = pasteDays([{ ...second!, name: 'B' }, { ...first!, name: 'A' }], first!.id);
+    expect(sent().days.map((day) => day.id)).toEqual([first!.id, ...made, second!.id]);
+    expect(made.map((id) => sent().days.find((day) => day.id === id)!.name)).toEqual(['B', 'A']);
+  });
+
+  it('merges days into another as one step: their stops move and the days go', () => {
+    addDay();
+    addFreeStop([1, 1]);
+    addDay();
+    addFreeStop([2, 2]);
+    const [into, merged] = sent().days;
+    mergeDaysInto([merged!.id], into!.id);
+    expect(sent().days.map((day) => day.stops.map((stop) => stop.lngLat))).toEqual([[[1, 1], [2, 2]]]);
+    undo();
+    expect(sent().days.map((day) => day.stops.length)).toEqual([1, 1]);
   });
 
   it('undoes and redoes edits without losing the rest of the trip', () => {

@@ -410,9 +410,11 @@ export function pasteStopsIntoRoute(routeId: string, stops: readonly Stop[]): vo
   );
 }
 
-/** Adds copied days, with all they hold, after a day or at the trip's end. */
-export function pasteDays(days: readonly Day[], afterId: string | undefined): void {
+/** Adds copied days, with their routes and stops, after a day or at the trip's end; answers the ids of the days made, in the order of `days`. */
+export function pasteDays(days: readonly Day[], afterId: string | undefined): string[] {
+  const before = new Set(openTrip()?.days.map((day) => day.id));
   edit((trip) => dayEdit.pasteDays(trip, days, afterId, newId), t(days.length > 1 ? 'Paste days' : 'Paste day'));
+  return (openTrip()?.days ?? []).filter((day) => !before.has(day.id)).map((day) => day.id);
 }
 
 /** Shows no day and takes up no route that an edit took away. */

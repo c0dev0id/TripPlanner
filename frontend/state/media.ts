@@ -21,6 +21,9 @@ export const mediaOf = (dayId: string): Entry[] => allMedia().filter((m) => m.da
 
 export const mediaById = (id: number): Entry | undefined => allMedia().find((m) => m.id === id);
 
+/** Lists the open trip's media afresh, after the server moved or copied some. */
+export const relistMedia = (): void => void refetch();
+
 const changed = (change: (media: Entry[]) => Entry[]) => mutate((loaded) => loaded && { ...loaded, media: change(loaded.media) });
 
 /** Keeps files with a day of the open trip, which is saved first so that the server knows a day just added. What cannot be kept is thrown once the others are in. */

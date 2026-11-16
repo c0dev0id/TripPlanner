@@ -5,7 +5,7 @@ import { TAB_NAMES, TREE_TABS, TREES, type TreeTab } from '../model/library';
 import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
-import { clearClip, copyLibraryItems, copyStashFiles, copyStashParts, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip } from '../state/clipboard';
+import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip } from '../state/clipboard';
 import { heldOf, importNote, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
@@ -469,7 +469,16 @@ export function Library(props: {
         'trip',
         {
           routes: (routes) => left(() => pasteInto(id, routes)),
-          days: (days) => left(() => changeTrip(id, (trip) => pasteDays(trip, days, undefined, newId))),
+          days: (days, from) =>
+            left(async () => {
+              let made: string[] = [];
+              await changeTrip(id, (trip) => {
+                const pasted = pasteDays(trip, days, undefined, newId);
+                made = pasted.days.slice(trip.days.length).map((day) => day.id);
+                return pasted;
+              });
+              await bringWithDays(from.tripId, days, made, from.cut);
+            }),
           files: (files) => imports.pasteFilesIntoTrip(item.trip, files),
           parts: (parts) => left(async () => pasteInto(id, await stashCopies(parts))),
         },

@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { createSignal } from 'solid-js';
-import { changeTrip, errorMessage, fetchRideGpx, fetchStashGpx, fetchStashMedia, type KeptRide, type Recording } from '../api';
+import { changeTrip, copyMedia as copyMediaTo, errorMessage, fetchRideGpx, fetchStashGpx, fetchStashMedia, listMedia, listRecordings, moveMedia, type KeptRide, type Recording } from '../api';
 import { parseGpx } from '../gpx/gpx';
 import { gpxToDayParts } from '../gpx/import';
 import { filesIn, sharesOf, takes, wholeFile, type ClipKind, type Place } from '../model/paste';
@@ -11,12 +11,12 @@ import { counted, listText } from '../ui/format';
 import { askConfirmation } from '../ui/confirm';
 import type { MenuItem } from '../ui/menu';
 import { flushSave } from './autosave';
-import { addFiles, bringMedia, mediaAction } from './media';
+import { addFiles, bringMedia, mediaAction, relistMedia } from './media';
 import { addedText, putOnDay, recordingAction, takeOffDay } from './recordings';
-import { addParts, mergeDaysInto, moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, openTripId, pasteDays, pasteRoutes, pasteStops, pasteStopsIntoRoute, selectDay } from './trip';
+import { addParts, mergeDaysInto, moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, openTripId, pasteDays, pasteRoutes, pasteStops, pasteStopsIntoRoute, removeParts as removeFromOpenTrip, selectDay } from './trip';
 
 /**
- * What was copied or cut to be pasted: days with their routes and stops, categories of a
+ * What was copied or cut to be pasted: days of a trip (`tripId`) with their routes and stops, categories of a
  * list of places, routes with the stops bound to them, stops, or places with the
  * category each is of (`kinds`), rides, the files and links kept with days, trips and
  * folders of the library, files of the Stash, which are imported where they are pasted,
@@ -25,7 +25,7 @@ import { addParts, mergeDaysInto, moveDaysAfter, movePartsToDay, moveStopsIntoRo
  * cut. What was cut is taken from where it was once it is pasted.
  */
 type Clip = (
-  | { days: Day[] }
+  | { days: Day[]; tripId: number }
   | { categories: Day[] }
   | { routes: CopiedRoute[] }
   | { stops: Stop[]; kinds?: readonly string[] }
@@ -107,7 +107,7 @@ export function copyParts(kind: PartKind, ids: readonly string[], cut = false): 
   const from = cut ? { cut: { tripId: trip.id, kind, ids: [...ids] } } : {};
   const list = trip.kind === 'collection';
   const days = trip.days.filter((d) => ids.includes(d.id));
-  if (kind === 'day') setClip(list ? { categories: days, ...from } : { days, ...from });
+  if (kind === 'day') setClip(list ? { categories: days, ...from } : { days, tripId: trip.id, ...from });
   else if (kind === 'route') setClip({ routes: trip.days.flatMap((d) => d.routes.filter((r) => ids.includes(r.id)).map((r) => copiedRoute(d, r))), ...from });
   else {
     const stops = trip.days.flatMap((d) => d.stops.filter((s) => ids.includes(s.id)).map((stop) => ({ stop, kind: d.name })));
@@ -238,16 +238,49 @@ async function pastePartsIntoDay(dayId: string, parts: readonly StashPart[]): Pr
 }
 
 /**
- * Takes what was cut from the trip it was cut from, once it is pasted into the open one,
- * which is saved first: the parts are then in both trips for a moment, never in neither.
+ * Takes what was cut from the trip it was cut from, once it is pasted elsewhere: from
+ * the open trip as an edit of it, from another on the server, after the open one is
+ * saved: the parts are then in both trips for a moment, never in neither.
  */
 async function removeFromSource(cut: NonNullable<Clip['cut']>): Promise<void> {
   try {
+    if (cut.tripId === openTripId()) return removeFromOpenTrip(cut.kind, cut.ids);
     await flushSave();
     await changeTrip(cut.tripId, (trip) => removeParts(trip, cut.kind, cut.ids));
   } catch (error) {
     await askConfirmation(t('The items were pasted here but could not be removed from the trip they were cut from: {error}', { error: errorMessage(error) }), t('OK'));
   }
+}
+
+/**
+ * Brings what the days of a trip hold beside their routes and stops to the days pasted
+ * of them (`made`, in their order), which the server knows by then: their media, moved
+ * where the days were cut and copied otherwise, and the rides they are on.
+ */
+export async function bringWithDays(tripId: number, days: readonly Day[], made: readonly string[], move: boolean): Promise<void> {
+  const [media, recordings] = await Promise.all([listMedia(tripId), listRecordings(tripId)]);
+  for (const [n, day] of days.entries()) {
+    for (const entry of media.filter((kept) => kept.dayId === day.id)) await (move ? moveMedia(tripId, entry.id, made[n]!) : copyMediaTo(tripId, entry.id, made[n]!));
+    for (const ride of recordings.filter((on) => on.dayId === day.id)) await putOnDay(ride, made[n]!);
+  }
+  relistMedia();
+}
+
+/**
+ * Pastes days of whichever trip after a day of the open one, with their media and the
+ * rides they are on, and takes those that were cut from their trip once all of it has
+ * arrived.
+ */
+async function pasteDaysAfter(afterId: string, days: readonly Day[], tripId: number, cut: Clip['cut']): Promise<void> {
+  try {
+    const made = pasteDays(days, afterId);
+    await flushSave();
+    await bringWithDays(tripId, days, made, cut !== undefined);
+  } catch (error) {
+    await askConfirmation(errorMessage(error), t('OK'));
+    return;
+  }
+  if (cut) await removeFromSource(cut);
 }
 
 /**
@@ -290,7 +323,15 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
           void pastePartsIntoDay(id, sharesOf(place, parts));
         } }];
   }
-  if ('days' in copied) return [{ label, run: pasted(copied, (ids) => moveDaysAfter(ids, id), () => pasteDays(copied.days, id)) }];
+  if ('days' in copied) {
+    // Within the open trip cut days move and keep all that hangs on them; anything else is pasted as copies, which their media and rides follow.
+    return [{ label, run: () => {
+          const { cut } = copied;
+          setClip(undefined);
+          if (cut && cut.tripId === openTripId()) moveDaysAfter(cut.ids, id);
+          else void pasteDaysAfter(id, copied.days, copied.tripId, cut);
+        } }];
+  }
   // The places of a category join the day or the category it is pasted onto; cut within its list, the category goes.
   if ('categories' in copied) return [{ label, run: shown(pasted(copied, (ids) => mergeDaysInto(ids, id), () => pasteStops(id, placesOf(copied.categories).stops))) }];
   if ('stops' in copied) return [{ label, run: shown(pasted(copied, (ids) => movePartsToDay('stop', ids, id), () => pasteStops(id, copied.stops))) }];
@@ -315,10 +356,10 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
   return 'routes' in copied ? [{ label, run: shown(pasted(copied, (ids) => movePartsToDay('route', ids, id), () => pasteRoutes(id, copied.routes))) }] : [];
 }
 
-/** How a row of the library takes what is pasted onto it: routes, days, places with the category of each, files of the Stash with the folders copied beside them, or parts of such files. */
+/** How a row of the library takes what is pasted onto it: routes, days with the trip they are of and whether they were cut from it, places with the category of each, files of the Stash with the folders copied beside them, or parts of such files. */
 export interface PasteInto {
   routes?: (routes: CopiedRoute[]) => Promise<unknown>;
-  days?: (days: Day[]) => Promise<unknown>;
+  days?: (days: Day[], from: { tripId: number; cut: boolean }) => Promise<unknown>;
   places?: (stops: Stop[], kinds: readonly string[]) => Promise<unknown>;
   files?: (files: StashFile[], folders: CopiedFolder[]) => Promise<unknown>;
   parts?: (parts: StashPart[]) => Promise<unknown>;
@@ -336,7 +377,7 @@ export function libraryPasteItem(place: Place, into: PasteInto, tripId?: number)
   if (!copied || !taken(place, copied) || (copied.cut && copied.cut.tripId === tripId)) return [];
   const paste = async (): Promise<unknown> => {
     if ('routes' in copied) return into.routes?.(copied.routes);
-    if ('days' in copied) return into.days?.(copied.days);
+    if ('days' in copied) return into.days?.(copied.days, { tripId: copied.tripId, cut: copied.cut !== undefined });
     if ('categories' in copied) return into.places?.(placesOf(copied.categories).stops, placesOf(copied.categories).kinds);
     if ('stops' in copied) return into.places?.(copied.stops, copied.kinds ?? []);
     if ('files' in copied) return into.files?.(copied.files, copied.folders);
