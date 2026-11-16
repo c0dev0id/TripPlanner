@@ -1015,6 +1015,10 @@ entries at the end of their section.
   drawn, where a thumbnail of the line would come from the outline, which is as old as
   the last save, shows two days of a loop alike and an empty day as nothing. A phone
   has no strip; its sheet steps through the days.
+  What a number stands for is said by a card of the strip's own, not by the button's
+  `title`: the browser shows a title only after the mouse has rested, in one line, and
+  the strip is passed over to find a day. The card is there with the mouse and gone
+  with it, and is for the mouse alone; the button keeps its name for a screen reader.
 - **Routes are folded until asked.** A day of a collection may hold hundreds of routes;
   each unfolds on its own when it is clicked, and none does by itself.
 - **One menu for days, routes and stops, built in one place.** The menus had grown per

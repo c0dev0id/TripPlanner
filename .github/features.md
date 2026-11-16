@@ -191,7 +191,10 @@
   open trip's days in reach: a numbered button each, in the colour its routes have
   where each day has one, the day shown ringed; a click shows the day, or the whole
   trip again where that day is shown. Of an open list of places it keeps the
-  categories instead, each by its icon, or its dot where it has none. The strip has
+  categories instead, each by its icon, or its dot where it has none. A button
+  under the mouse says at once, in a card beside it, what is behind it: the day's
+  number and name, its date and length and what it holds, a category's name and how
+  many places it has. The strip has
   them only while the trip or list is the one shown: with another tab's things on the
   map it holds the button alone. The day's pane folds the library away to its
   strip as it opens. Closed by its own button, the pane always brings the library
