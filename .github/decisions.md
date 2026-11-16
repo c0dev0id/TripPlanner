@@ -302,6 +302,9 @@ entries at the end of their section.
   The trees stay in the page while another is shown, so nothing is rebuilt; the panel
   scrolls as a whole, so each tab's scroll is kept and given back, and the tabs stay at
   the top of it, since a tab that scrolled away would have to be scrolled back to. The
+  button that folds the library away stands in that bar for the same reason: in the
+  heading above it scrolled out of reach, and keeping the whole heading in view would
+  have cost every list two lines for a title and the sign-out. The
   search stays above the tabs and limits the one shown (see "The search limits the tab
   shown"). The address names the tab by the folder shown and, for the
   rides, by `view=recordings`.

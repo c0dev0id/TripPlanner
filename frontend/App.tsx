@@ -6,6 +6,7 @@ import { takePinsBack } from './state/pins';
 import { PlaceKindDialog } from './map/PlaceKinds';
 import { isTreeTab } from './model/library';
 import { Explorer } from './library/Explorer';
+import { FoldButton } from './library/FoldButton';
 import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';
 import { PanelResizer } from './ui/PanelResizer';
@@ -14,9 +15,9 @@ import { MapView, routesDrawn } from './map/MapView';
 import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
-import { folderOfTrip, libraryFolders, libraryTab, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab } from './state/library';
+import { folderOfTrip, libraryFolders, libraryTab, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab, tripShown } from './state/library';
 import { setShowingDuplicates, showingDuplicates } from './state/pane';
-import { foldPanel, panelFolded } from './state/panel';
+import { panelFolded } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
 import { DayDialog } from './trip/DayDialog';
@@ -32,8 +33,6 @@ import { StopDialog } from './trip/StopDialog';
 import { TrackDialog } from './trip/TrackDialog';
 import { TripDialog } from './trip/TripDialog';
 import { ConfirmDialog } from './ui/ConfirmDialog';
-import { IconButton } from './ui/IconButton';
-import { MenuIcon } from './ui/icons';
 import { t } from './i18n/t';
 
 export function App() {
@@ -139,9 +138,10 @@ export function App() {
     <>
       <aside class="panel library-panel" classList={{ folded: panelFolded() }} data-drop-folder={dropFolder()} data-drop-rides={libraryTab() === 'recordings' ? '' : undefined}>
         <header class="panel-header">
-          <IconButton label={t(panelFolded() ? 'Show library' : 'Hide library')} pressed={!panelFolded()} onClick={() => foldPanel(!panelFolded())}>
-            <MenuIcon />
-          </IconButton>
+          {/* Folded away, the strip has the button; unfolded, the tabs have it, which stay in view while the library scrolls. */}
+          <Show when={panelFolded()}>
+            <FoldButton />
+          </Show>
           <Show when={openTrip()}>
             {(trip) => (
               <span class="open-trip">
@@ -156,7 +156,7 @@ export function App() {
             {t('Sign out')}
           </button>
         </header>
-        <Show when={panelFolded() && openTrip()}>
+        <Show when={panelFolded() && tripShown() && openTrip()}>
           <DayStrip />
         </Show>
         <Explorer onOpen={openPicked} onLeave={leave} onTab={(tab) => switchTab(tab, open)} error={error()} />

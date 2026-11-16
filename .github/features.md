@@ -175,10 +175,14 @@
   menu its marker has on the map: Convert to stop, the leg to it straight or routed,
   Remove point. Free stops farther away, or
   of a day without a route, are listed on their own. The button with three lines folds the library away
-  to a strip, which leaves the map the room, and brings it back. The strip keeps the
+  to a strip, which leaves the map the room, and brings it back; it stands before the
+  tabs and stays in view with them while the library scrolls. The strip keeps the
   open trip's days in reach: a numbered button each, in the colour its routes have
   where each day has one, the day shown ringed; a click shows the day, or the whole
-  trip again where that day is shown. The day's pane folds the library away to its
+  trip again where that day is shown. Of an open list of places it keeps the
+  categories instead, each by its icon, or its dot where it has none. The strip has
+  them only while the trip or list is the one shown: with another tab's things on the
+  map it holds the button alone. The day's pane folds the library away to its
   strip as it opens, and closing the pane brings the library back, unless the user had
   folded it away before. On a screen without
   room for three panes, narrower than 1200 px, the strip stands beside the day's pane,

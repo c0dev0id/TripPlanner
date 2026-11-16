@@ -3,11 +3,13 @@ import { t } from '../i18n/t';
 import type { TripSummary } from '../model/trip';
 import { LIBRARY_TABS, TAB_NAMES, TREES, type LibraryTab } from '../model/library';
 import { libraryProblem, libraryTab, libraryTrips, query, setQuery, showFolder } from '../state/library';
+import { panelFolded } from '../state/panel';
 import { openTrip, openTripId, selectDay, takeUpRouteOf } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
 import { TripPanel } from '../trip/TripPanel';
 import { GearIcon } from '../ui/icons';
 import { Settings } from '../settings/Settings';
+import { FoldButton } from './FoldButton';
 import { Library } from './Library';
 import { LibraryActions } from './LibraryActions';
 import { Rides } from './Rides';
@@ -72,7 +74,12 @@ export function Explorer(props: {
       <Show when={searched()}>
         {(tab) => <input class="search" type="search" placeholder={searchText(tab())} aria-label={searchText(tab())} value={query()} onInput={(e) => setQuery(e.currentTarget.value)} />}
       </Show>
-      <div class="row library-tabs" role="tablist" aria-label={t('Library')}>
+      <div class="row library-bar">
+        {/* Folded away, the strip has the button. */}
+        <Show when={!panelFolded()}>
+          <FoldButton />
+        </Show>
+        <div class="row library-tabs" role="tablist" aria-label={t('Library')}>
         <For each={LIBRARY_TABS}>
           {(tab) => (
             <button role="tab" classList={{ grow: tab !== 'settings' }} data-tab={tab} aria-selected={libraryTab() === tab} aria-label={TAB_NAMES[tab]} title={TAB_NAMES[tab]} onClick={() => props.onTab(tab)}>
@@ -82,6 +89,7 @@ export function Explorer(props: {
             </button>
           )}
         </For>
+        </div>
       </div>
       <Show when={libraryProblem() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
       <Library onOpen={openIn} onOpenRoute={openRoute} onOpenFolder={openFolder} onLeave={props.onLeave}>
