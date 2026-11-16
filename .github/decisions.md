@@ -965,12 +965,21 @@ entries at the end of their section.
   library was a rule with a memory: unfolded by hand beside a day, the library folded
   again at the next day picked after a trip was opened, and nothing on the screen said
   why. The rule now has a name and a switch, "Fold automatically" in the menu of the
-  button that folds the library, on by default and marked on the button by an A:
+  button that folds the library, on by default and marked by the button's colour:
   one pane at most beside the map, the library gives way to a pane as it opens and
   comes back as it closes. Off, nothing folds or unfolds it but the user, and the
-  pane's own button leaves it as it is. Where the library and a pane have no room
-  side by side, below 1200 px, it folds either way, and the switch is greyed out. It
-  is a preference of the browser, as the folded state is: it goes with the screen.
+  pane's own button leaves it as it is. It is a preference of the browser, as the
+  folded state is: it goes with the screen. The switch was first greyed out below
+  1200 px, where the library and a pane take turns and the library was to fold either
+  way; on a tablet that made the switch look broken, and whoever turns it off there
+  means it: the library then stays, the day's pane behind it until the library is
+  folded by hand. Only a phone folds either way, since the library lies over the map
+  there. The mark was first a small A on the button, which the edge of the strip cut
+  off; the button's colour says the same and needs no room.
+- **The edge of a pane has a handle.** The edge was a strip of 6 px that showed only
+  under the mouse, which a finger neither sees nor hits. It now bears a handle at its
+  middle, and where the pointer is coarse the strip is 22 px wide, most of it over the
+  map, so that it does not take the taps meant for the buttons at the end of a row.
 - **Small and touch screens by stylesheet rules, with two exceptions.** Between 721 and
   1199 px, a tablet either way up, the panel takes at most 42 % of the width, and the
   library unfolded and the day's pane take turns beside the folded strip: three panes

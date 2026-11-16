@@ -224,30 +224,9 @@ a {
   padding-top: 4px;
 }
 
-/* The button that folds the library bears an A while the library folds by itself, which it always does where it has no room beside a pane. */
-.panel button.icon.fold-button {
-  position: relative;
-}
-
-.panel button.icon.fold-button::after {
-  content: var(--auto-mark, none);
-  position: absolute;
-  top: 1px;
-  right: 1px;
-  font-size: 9px;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--accent);
-}
-
+/* The button that folds the library is drawn in the accent colour while the library folds by itself. */
 .panel button.icon.fold-button.auto {
-  --auto-mark: 'A';
-}
-
-@media (max-width: 1199px) {
-  .panel button.icon.fold-button {
-    --auto-mark: 'A';
-  }
+  color: var(--accent);
 }
 
 .panel h2 {
@@ -1116,6 +1095,45 @@ fieldset.choices legend {
 .panel-resizer:active {
   background: var(--accent);
   opacity: 0.5;
+}
+
+/* The handle on the edge, which shows that the edge is dragged and where to take it. */
+.panel-resizer::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 40px;
+  margin: -20px 0 0 -2px;
+  border-radius: 2px;
+  background: var(--muted);
+}
+
+.panel-resizer:hover::after,
+.panel-resizer:active::after {
+  background: var(--accent);
+}
+
+/* Under a finger the edge is wider than it looks, more so over the map than over the rows' own buttons, and the handle larger. */
+@media (pointer: coarse) {
+  .panel-resizer {
+    left: -6px;
+    width: 22px;
+  }
+
+  .panel-resizer:hover,
+  .panel-resizer:active {
+    background: none;
+    opacity: 1;
+  }
+
+  .panel-resizer::after {
+    left: 6px;
+    width: 6px;
+    height: 56px;
+    margin: -28px 0 0 -3px;
+  }
 }
 
 /* The place search, top left over the map. */

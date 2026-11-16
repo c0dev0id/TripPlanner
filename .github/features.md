@@ -231,7 +231,7 @@
   strip as it opens, so that one pane at most stands beside the map, and the library
   comes back when the pane closes. That is "Fold automatically" in the menu of the
   button with three lines (right-click or a long press), on unless it is turned off
-  there, kept per browser; while it is on, the button bears a small A. Turned off,
+  there, kept per browser; while it is on, the button is drawn in the accent colour. Turned off,
   the library stays as the user leaves it, beside the pane or folded, and turning it
   on or off takes effect at once. Closed by its own button, the pane brings the library
   back where it folds by itself, also where the user had folded it away before; closed by a click on the day's
@@ -253,7 +253,8 @@
   that failed, or a trip changed elsewhere, is said over the map. The days before and after
   the selected one are drawn dimmed on the map, switchable. The library and the pane
   beside it are each as wide as their edge is dragged, kept per browser; a double click
-  on the edge puts the default back.
+  on the edge puts the default back. The edge bears a handle at its middle, and under a
+  finger it is taken in a wider strip than it shows.
 - A date per day; a new day after a dated one is dated the day after, and the library
   shows a trip as starting on its first dated day. A stop can have a fixed arrival time
   and a pause. From the first timed stop and the routed legs' durations the panel
