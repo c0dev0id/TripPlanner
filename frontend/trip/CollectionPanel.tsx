@@ -3,16 +3,18 @@ import { createEffect, createMemo, createSignal, on, Show } from 'solid-js';
 import { FREE_COLOR } from '../model/routeLook';
 import type { Day, Route, Stop } from '../model/trip';
 import { routeDistance, routePositions, routesDistance } from '../routing/legs';
-import { isCut } from '../state/clipboard';
+import { dropOnPart, isCut } from '../state/clipboard';
 import { panTo, showWhole } from '../state/drawing';
 import { partSelect } from '../state/partSelection';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
 import { isPlaceList } from '../state/library';
-import { isDayMarked, isRouteActive, openTrip, openTripId, pickDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
+import { isDayMarked, isRouteActive, moveDay, openTrip, openTripId, pickDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
 import { symbolLabel } from '../symbols/symbols';
 import { cardMenu } from '../ui/cardMenu';
+import { dropTarget } from '../ui/carry';
 import { ForById } from '../ui/ForById';
+import { Grip } from '../ui/Grip';
 import { distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
@@ -21,7 +23,7 @@ import { Pad } from '../ui/Pad';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, routeKindLabel, routeLabel } from './labels';
 import { PlaceKindControls, PlaceKindMark } from '../map/PlaceKinds';
-import { partMenu } from './partMenu';
+import { carriedWith, carryPart, partMenu } from './partMenu';
 import { RoutePin } from './RoutePin';
 import { DayMedia } from './Media';
 import { DayRecordings } from './Recordings';
@@ -38,7 +40,7 @@ export function CollectionPanel() {
   return (
     <section class="trip">
       <ol class="days">
-        <ForById each={collection().days}>{(day) => <SectionItem day={day()} places={places()} onRename={setRenamed} />}</ForById>
+        <ForById each={collection().days}>{(day, index) => <SectionItem day={day()} index={index()} places={places()} onRename={setRenamed} />}</ForById>
       </ol>
       <NameDialog
         title={t('Rename section')}
@@ -56,7 +58,7 @@ export function CollectionPanel() {
 }
 
 /** A section as a card: its name over what it holds, which in a list of places (`places`) are places; opened, its routes and waypoints. Its menu renames and removes it. */
-function SectionItem(props: { day: Day; places: boolean; onRename: (day: Day) => void }) {
+function SectionItem(props: { day: Day; index: number; places: boolean; onRename: (day: Day) => void }) {
   const selected = () => selectedDayId() === props.day.id;
   // The section's routes change less often than the section.
   const routes = createMemo(() => props.day.routes);
@@ -68,9 +70,22 @@ function SectionItem(props: { day: Day; places: boolean; onRename: (day: Day) =>
   // The day shown is brought into view: one opened from elsewhere may lie far down its trip.
   createEffect(on(selected, (is) => is && requestAnimationFrame(() => row.scrollIntoView({ block: 'nearest' }))));
   return (
-    <li ref={row} class="day card" classList={{ open: selected(), current: isDayMarked(props.day.id), selected: select.selected(), cut: isCut(props.day.id) }}>
+    <li
+      ref={(el) => {
+        row = el;
+        dropTarget(el, (carried) => dropOnPart(carried, 'day', props.day.id));
+      }}
+      class="day card"
+      classList={{ open: selected(), current: isDayMarked(props.day.id), selected: select.selected(), cut: isCut(props.day.id) }}
+    >
       <div class="row" ref={(el) => cardMenu(el, items)}>
-        <Pad label={t('Select {name}', { name: props.day.name })} selected={select.selected()} onToggle={select.onToggle} />
+        <Grip
+          label={t('Drag to reorder {what}, or tap to select', { what: props.day.name })}
+          index={props.index}
+          onMove={(to) => moveDay(props.day.id, to)}
+          onToggle={select.onToggle}
+          carries={() => carriedWith('day', props.day.id, props.day.name)}
+        />
         <button class="text grow" onClick={(e) => select.onClick(e) || pickDay(props.day.id)} aria-pressed={selected()}>
           <Show when={props.places}>
             <PlaceKindMark id={props.day.id} />
@@ -173,7 +188,7 @@ function WaypointItem(props: { stop: Stop; day: Day }) {
   const select = partSelect('stop', props.stop.id, () => props.day.stops.map((s) => s.id));
   return (
     <li class="row sequence-item" classList={{ selected: select.selected(), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
-      <Pad label={t('Select {name}', { name: props.stop.name })} selected={select.selected()} onToggle={select.onToggle} />
+      <Pad label={t('Select {name}, or drag it', { name: props.stop.name })} selected={select.selected()} onToggle={select.onToggle} onPress={carryPart('stop', props.stop.id, props.stop.name)} />
       <button class="text grow" onClick={(e) => select.onClick(e) || panTo(props.stop.lngLat)}>
         <Show when={isPlaceList(openTripId())} fallback={<StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />}>
           <PlaceKindMark id={props.day.id} />

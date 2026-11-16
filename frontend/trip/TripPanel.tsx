@@ -14,7 +14,7 @@ import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
 import { recordingsOf } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
-import { isCut } from '../state/clipboard';
+import { dropOnPart, isCut } from '../state/clipboard';
 import { partSelect } from '../state/partSelection';
 import {
   addParts,
@@ -35,6 +35,7 @@ import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { counted, distanceText, timeText } from '../ui/format';
 import { ClockIcon, FileImportIcon, NotebookIcon, PencilIcon, PlusIcon } from '../ui/icons';
+import { dropTarget } from '../ui/carry';
 import { Grip } from '../ui/Grip';
 import { IconButton } from '../ui/IconButton';
 import { MenuButton } from '../ui/MenuButton';
@@ -45,7 +46,7 @@ import { dayDetail, dayHeading, dayLabel, offTime, routeKindLabel, routeLabel, t
 import { RoutePin } from './RoutePin';
 import { DayMedia } from './Media';
 import { addRecordingPicked, DayRecordings } from './Recordings';
-import { partMenu } from './partMenu';
+import { carriedWith, carryPart, partMenu } from './partMenu';
 
 /** The journal of a part as an icon, with the number of its entries where it has any. */
 export function JournalButton(props: { target: EntryTarget; of: string }) {
@@ -89,9 +90,22 @@ function DayItem(props: { day: Day; index: number }) {
   // The day shown is brought into view: one opened from elsewhere may lie far down its trip.
   createEffect(on(selected, (is) => is && requestAnimationFrame(() => row.scrollIntoView({ block: 'nearest' }))));
   return (
-    <li ref={row} class="day card" classList={{ open: selected(), current: isDayMarked(props.day.id), selected: select.selected(), cut: isCut(props.day.id) }}>
+    <li
+      ref={(el) => {
+        row = el;
+        dropTarget(el, (carried) => dropOnPart(carried, 'day', props.day.id));
+      }}
+      class="day card"
+      classList={{ open: selected(), current: isDayMarked(props.day.id), selected: select.selected(), cut: isCut(props.day.id) }}
+    >
       <div class="row" ref={(el) => cardMenu(el, more)}>
-        <Grip label={t('Drag to reorder {what}, or tap to select', { what: label() })} index={props.index} onMove={(to) => moveDay(props.day.id, to)} onToggle={select.onToggle} />
+        <Grip
+          label={t('Drag to reorder {what}, or tap to select', { what: label() })}
+          index={props.index}
+          onMove={(to) => moveDay(props.day.id, to)}
+          onToggle={select.onToggle}
+          carries={() => carriedWith('day', props.day.id, label())}
+        />
         <button class="text grow" onClick={(e) => select.onClick(e) || pickDay(props.day.id)} aria-pressed={selected()}>
           <span class="lines">
             <span class="name">{dayHeading('trip', props.index, props.day.name)}</span>
@@ -230,7 +244,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
     takeUpRoute(editing() ? undefined : props.route.id);
   };
   return (
-    <li class="route" classList={{ editing: editing(), selected: select.selected(), cut: isCut(props.route.id) }}>
+    <li class="route" classList={{ editing: editing(), selected: select.selected(), cut: isCut(props.route.id) }} ref={(el) => dropTarget(el, (carried) => dropOnPart(carried, 'route', props.route.id))}>
       <div
         class="row"
         ref={(el) => {
@@ -238,7 +252,13 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
           cardMenu(el, items);
         }}
       >
-        <Grip label={t('Drag to reorder {what}, or tap to select', { what: label() })} index={props.index} onMove={(to) => moveRoute(props.route.id, to)} onToggle={select.onToggle} />
+        <Grip
+          label={t('Drag to reorder {what}, or tap to select', { what: label() })}
+          index={props.index}
+          onMove={(to) => moveRoute(props.route.id, to)}
+          onToggle={select.onToggle}
+          carries={() => carriedWith('route', props.route.id, label())}
+        />
         <button class="text grow" aria-pressed={editing()} aria-expanded={unfolded()} onClick={click}>
           <span class="lines">
             <span class="name" title={label()}>
@@ -309,7 +329,7 @@ function SequenceItem(props: { entry: SequenceEntry; routeId: string; time: Entr
         ref={(el) => hasMenu() && cardMenu(el, menu)}
       >
         <Show when={select()} fallback={<span class="grip-space" />}>
-          {(row) => <Pad label={t('Select {name}', { name: stop()!.name })} selected={row().selected()} onToggle={row().onToggle} />}
+          {(row) => <Pad label={t('Select {name}, or drag it', { name: stop()!.name })} selected={row().selected()} onToggle={row().onToggle} onPress={carryPart('stop', stop()!.id, stop()!.name)} />}
         </Show>
         <button class="text grow" onClick={(e) => select()?.onClick(e) || panTo(props.entry.lngLat)}>
           <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
@@ -343,7 +363,7 @@ function AloneStopItem(props: { stop: Stop }) {
   const select = stopSelect(props.stop.id);
   return (
     <li class="row sequence-item" classList={{ selected: select.selected(), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
-      <Pad label={t('Select {name}', { name: props.stop.name })} selected={select.selected()} onToggle={select.onToggle} />
+      <Pad label={t('Select {name}, or drag it', { name: props.stop.name })} selected={select.selected()} onToggle={select.onToggle} onPress={carryPart('stop', props.stop.id, props.stop.name)} />
       <button class="text grow" onClick={(e) => select.onClick(e) || panTo(props.stop.lngLat)}>
         <StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />
         <span class="lines">

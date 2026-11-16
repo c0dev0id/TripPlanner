@@ -1,13 +1,14 @@
 import { t } from '../i18n/t';
 import { FREE_COLOR } from '../model/routeLook';
 import { dayOfRoute, dayOfStop, numberedStops, type PartKind } from '../routing/dayEdit';
-import { copyParts, pasteItems } from '../state/clipboard';
+import { carriedParts, copyParts, pasteItems } from '../state/clipboard';
 import { setEditTarget, setExportScope, setTrackAction } from '../state/drawing';
 import { pinRoutes } from '../state/pins';
 import { isPlaceList } from '../state/library';
 import { clearPartSelection, partsOfMenu } from '../state/partSelection';
 import { duplicateParts, makeRouteOfStops, movePartsToDay, openTrip, removeParts, routeById, setStopSymbols } from '../state/trip';
 import { OUR_ICONS, PLAIN_SYMBOL } from '../symbols/symbols';
+import { carry, type Held } from '../ui/carry';
 import { askConfirmation } from '../ui/confirm';
 import { counted } from '../ui/format';
 import type { Stop } from '../model/trip';
@@ -22,6 +23,20 @@ export const NOUNS: Record<PartKind, { trip: string; collection: string }> = {
   route: { trip: 'route', collection: 'route' },
   stop: { trip: 'stop', collection: 'place' },
 };
+
+/**
+ * What a drag of a day, a route or a stop carries, and what the label that follows the
+ * pointer calls it: the selection where it holds the part, else the part alone, as cut;
+ * one by `name`, several by their number.
+ */
+export function carriedWith(kind: PartKind, id: string, name: string): Held | undefined {
+  const ids = partsOfMenu(kind, id);
+  const carried = carriedParts(kind, ids);
+  return carried && { what: ids.length === 1 ? name : counted(ids.length, NOUNS[kind][openTrip()!.kind]), carried };
+}
+
+/** A pad's press that carries the part, where the pointer moves, to a place that takes it. */
+export const carryPart = (kind: PartKind, id: string, name: string) => (e: PointerEvent, onDrag: () => void): void => carry(e, () => carriedWith(kind, id, name), onDrag);
 
 /** Removes the parts: one after the question its kind asks, several after one question for all. */
 export async function removeAsked(kind: PartKind, ids: readonly string[]): Promise<void> {

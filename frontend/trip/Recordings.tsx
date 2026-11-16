@@ -4,7 +4,7 @@ import type { FoundRidingDay, Recording } from '../api';
 import { GPX_FILE_TYPES } from '../gpx/import';
 import type { Day } from '../model/trip';
 import { totalDistance } from '../recording/rides';
-import { copyRecordings, isCutRecording } from '../state/clipboard';
+import { carriedRecordings, copyRecordings, isCutRecording } from '../state/clipboard';
 import { clearPartSelection, partSelect, partsOfMenu } from '../state/partSelection';
 import { showWhole } from '../state/drawing';
 import { isRecordingPinned, pinRecordings } from '../state/pins';
@@ -33,6 +33,7 @@ import {
 } from '../state/recordings';
 import { openTrip } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
+import { carry } from '../ui/carry';
 import { counted, dateText, distanceText, momentText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { CloseIcon, PlusIcon, SearchIcon } from '../ui/icons';
@@ -212,7 +213,21 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
       ref={(el) => cardMenu(el, () => recordingMenu(props.recording, props.onRename))}
     >
       <div class="row">
-        <Pad label={t('Select {name}', { name: props.recording.name })} selected={select.selected()} onToggle={select.onToggle} />
+        <Pad
+          label={t('Select {name}, or drag it', { name: props.recording.name })}
+          selected={select.selected()}
+          onToggle={select.onToggle}
+          onPress={(e, onDrag) =>
+            carry(
+              e,
+              () => {
+                const chosen = recordingsAmong(props.recording.dayId, partsOfMenu('recording', String(props.recording.id)));
+                return { what: chosen.length === 1 ? props.recording.name : counted(chosen.length, 'recording'), carried: carriedRecordings(chosen, props.recording.dayId) };
+              },
+              onDrag,
+            )
+          }
+        />
         <button class="text grow" aria-pressed={isOpened()} onClick={(e) => select.onClick(e) || toggleRecording(props.recording)}>
           <span class="swatch" style={{ background: recordingColor(props.recording) }} />
           <span class="lines grow">

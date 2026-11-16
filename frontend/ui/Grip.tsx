@@ -1,12 +1,15 @@
+import { carrying, type Held } from './carry';
 import { followPointer } from './followPointer';
 import { GripIcon } from './icons';
 
 /**
  * Drags the list item the pressed handle belongs to into another place in its list: the
  * item follows the pointer, the others make room, and `onDrop` gets the place it goes to,
- * counted in the list as it will be.
+ * counted in the list as it will be. Where the item `carries` something as well, a place outside
+ * its list that takes it is marked while the pointer is over it, the list stands as it
+ * is meanwhile, and released there the place's drop runs instead.
  */
-function dragToSort(e: PointerEvent, onDrop: (to: number) => void, onDrag: () => void): void {
+function dragToSort(e: PointerEvent, onDrop: (to: number) => void, onDrag: () => void, carries?: () => Held | undefined): void {
   if (e.button !== 0) return;
   const item = (e.currentTarget as HTMLElement).closest('li')!;
   const items = [...item.parentElement!.children].filter((c): c is HTMLLIElement => c instanceof HTMLLIElement);
@@ -16,33 +19,46 @@ function dragToSort(e: PointerEvent, onDrop: (to: number) => void, onDrag: () =>
     return box.top + box.height / 2;
   });
   const height = item.getBoundingClientRect().height;
-  const startY = e.clientY;
+  const start = { x: e.clientX, y: e.clientY };
+  let moved = false;
+  let held: ReturnType<typeof carrying> | undefined;
   let to = from;
   const follow = (m: PointerEvent) => {
-    const dy = m.clientY - startY;
-    if (Math.abs(dy) > 4) onDrag();
-    to = middles.filter((middle, i) => i !== from && middle < middles[from]! + dy).length;
-    item.style.transform = `translateY(${dy}px)`;
+    const dy = m.clientY - start.y;
+    if (!moved && Math.hypot(m.clientX - start.x, dy) > 4) {
+      moved = true;
+      onDrag();
+      item.classList.add('dragged');
+      // What the item is carried as is asked once it is dragged: a tap asks nothing.
+      const of = carries?.();
+      held = of && carrying(of.what, of.carried, item.parentElement);
+    }
+    const away = held?.to(m.clientX, m.clientY) ?? false;
+    to = away ? from : middles.filter((middle, i) => i !== from && middle < middles[from]! + dy).length;
+    item.style.transform = away ? '' : `translateY(${dy}px)`;
     items.forEach((other, i) => {
       if (i === from) return;
       const shift = i > from && i <= to ? -height : i < from && i >= to ? height : 0;
       other.style.transform = shift === 0 ? '' : `translateY(${shift}px)`;
     });
   };
-  item.classList.add('dragged');
   followPointer(e, follow, () => {
     for (const i of items) i.style.transform = '';
     item.classList.remove('dragged');
-    if (to !== from) onDrop(to);
+    const drop = held?.end();
+    if (drop) drop();
+    else if (to !== from) onDrop(to);
   });
 }
 
 /**
  * The handle a list item is dragged by into another place; the arrow keys move it one
  * place, within the list's ends. A tap or click that drags nothing goes to `onToggle`,
- * which adds the item to a selection or takes it away.
+ * which adds the item to a selection or takes it away. With `carries`, which says what
+ * a drag of the item carries and what to call it, the item is also dropped on places
+ * outside its list that take it (see `ui/carry.ts`).
  */
-export function Grip(props: { label: string; index: number; onMove: (to: number) => void; onToggle?: () => void }) {
+export function Grip(props: { label: string; index: number; onMove: (to: number) => void; onToggle?: () => void; carries?: () => Held | undefined }) {
   let dragged = false;
   const key = (e: KeyboardEvent) => {
     if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
@@ -52,7 +68,7 @@ export function Grip(props: { label: string; index: number; onMove: (to: number)
   return (
     <button type="button" class="icon grip" title={props.label} aria-label={props.label} onPointerDown={(e) => {
         dragged = false;
-        dragToSort(e, props.onMove, () => (dragged = true));
+        dragToSort(e, props.onMove, () => (dragged = true), props.carries);
       }}
       onClick={() => {
         if (!dragged) props.onToggle?.();

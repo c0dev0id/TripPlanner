@@ -5,10 +5,11 @@ import type { Entry } from '../model/journal';
 import { mediaDetail, mediaName, mediaOpens } from '../model/media';
 import type { Day } from '../model/trip';
 import { webAddress } from '../poi/details';
-import { copyMedia, isCutMedia } from '../state/clipboard';
+import { carriedMedia, copyMedia, isCutMedia, type CopiedMedia } from '../state/clipboard';
 import { addFiles, addLink, mediaAction, mediaById, mediaNote, mediaOf, moveToDay, removeMedia, renameMedia } from '../state/media';
 import { clearPartSelection, partSelect, partsOfMenu } from '../state/partSelection';
 import { cardMenu } from '../ui/cardMenu';
+import { carry } from '../ui/carry';
 import { askConfirmation } from '../ui/confirm';
 import { EditDialog } from '../ui/EditDialog';
 import { field } from '../ui/form';
@@ -23,10 +24,12 @@ import { Pad } from '../ui/Pad';
 import { pickFiles } from '../ui/pickFile';
 import { moveToDayItem } from './partMenu';
 
+/** Files and links of days of the open trip as the clipboard holds them: copied, or to be moved. */
+const copied = (chosen: readonly Entry[], move: boolean): CopiedMedia => ({ tripId: chosen[0]!.tripId, ids: chosen.map((m) => m.id), names: chosen.map(mediaName), move });
+
 /** Puts files and links of days of the open trip on the clipboard: cut, to be moved where they are pasted. */
 export function clipMedia(chosen: readonly Entry[], move: boolean): void {
-  const [first] = chosen;
-  if (first) copyMedia({ tripId: first.tripId, ids: chosen.map((m) => m.id), names: chosen.map(mediaName), move });
+  if (chosen.length > 0) copyMedia(copied(chosen, move));
 }
 
 /** Deletes files and links of a day of the open trip, once the user agrees. */
@@ -138,7 +141,21 @@ function MediaItem(props: { entry: Entry; onEdit: (entry: Entry) => void }) {
   return (
     <li class="media-item" classList={{ selected: select.selected(), cut: isCutMedia(props.entry.id) }} ref={(el) => cardMenu(el, () => mediaMenu(props.entry, props.onEdit))}>
       <div class="row">
-        <Pad label={t('Select {name}', { name: name() })} selected={select.selected()} onToggle={select.onToggle} />
+        <Pad
+          label={t('Select {name}, or drag it', { name: name() })}
+          selected={select.selected()}
+          onToggle={select.onToggle}
+          onPress={(e, onDrag) =>
+            carry(
+              e,
+              () => {
+                const chosen = partsOfMenu('media', String(props.entry.id)).flatMap((id) => mediaById(Number(id)) ?? []);
+                return { what: chosen.length === 1 ? name() : counted(chosen.length, 'attachment'), carried: carriedMedia(copied(chosen, true)) };
+              },
+              onDrag,
+            )
+          }
+        />
         <a class="text grow" href={href()} target="_blank" rel="noopener noreferrer" download={opens() === 'download' ? props.entry.file!.name : undefined} onClick={click}>
           <span class="media-kind">{opens() === 'link' ? <LinkIcon /> : opens() === 'image' ? <PhotoIcon /> : <FileIcon />}</span>
           <span class="lines grow">

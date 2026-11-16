@@ -343,7 +343,7 @@ a {
   }
 }
 
-/* The handle a day or a route is dragged by into another place, and the pad a trip, a folder or a duplicate is selected or dragged by, drawn alike. */
+/* The handle a row is dragged by, drawn as a grip, and the pad of a row that is only selected by it, drawn as a ring. */
 .panel button.icon:is(.grip, .pad) {
   padding: 2px 0;
   color: var(--muted);
@@ -352,6 +352,11 @@ a {
 /* Neither is highlighted under the pointer: they are handles of the row, not buttons of their own. */
 .panel button.icon:is(.grip, .pad):hover:not(:disabled) {
   background: none;
+}
+
+/* The ring of a selected row is filled. */
+.panel button.icon.pad[aria-pressed='true']:not(.drags) svg {
+  fill: currentColor;
 }
 
 /* The trip being opened waits like the others, but is the one worked on: it is not dimmed. */
@@ -396,13 +401,16 @@ a {
   pointer-events: none;
 }
 
-.tree li.dragged {
+.tree li.dragged,
+.side-pane li.dragged {
   opacity: 0.5;
 }
 
 /* The folder a dragged trip or folder would go into: its row, or the line over the view shown while it would go to the view's top. */
 .tree li.drop-target > .row,
-.library-panel.drop-target .tab-summary {
+.library-panel.drop-target .tab-summary,
+.routes > li.drop-target > .row,
+.panel button.day-chip.drop-target {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   background: var(--active);
@@ -421,6 +429,8 @@ a {
   background: var(--panel);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   transition: none;
+  /* What lies under the row is what the pointer is over: a place that may take it. */
+  pointer-events: none;
 }
 
 /* A part's journal: its count of entries over the icon. */
