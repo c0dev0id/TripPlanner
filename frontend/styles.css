@@ -347,8 +347,7 @@ a {
 }
 
 .panel button.icon,
-.map-card button.icon,
-.save-state {
+.map-card button.icon {
   display: inline-grid;
   place-items: center;
   padding: 2px 4px;
@@ -591,10 +590,6 @@ a {
 /* The account in the settings: whose it is, and the way out. */
 .settings .account {
   margin: 0 0 8px;
-}
-
-.save-state {
-  color: var(--muted);
 }
 
 /* A route's colour, before its details in the panel and before a colour's name in the menu. */

@@ -6,7 +6,6 @@ import { fetchingTrip, isOpening, opening, outlineOf } from '../state/library';
 import { openTrip, openTripId } from '../state/trip';
 import { dayCounts } from '../trip/DayPane';
 import { dayDetail, dayHeading, routeOrTrack } from '../trip/labels';
-import { SaveState } from '../trip/SaveStatus';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { counted, dateText, openingText } from '../ui/format';
@@ -153,9 +152,6 @@ export function TripCard(props: {
           </span>
           <Show when={shape()?.length ? shape() : undefined}>{(days) => <TripShape days={days()} />}</Show>
         </button>
-        <Show when={props.trip.id === openTripId()}>
-          <SaveState />
-        </Show>
         <MenuButton of={props.trip.name} items={props.items} />
       </div>
       <Show when={props.fold?.unfolded()}>

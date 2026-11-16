@@ -1016,8 +1016,10 @@ entries at the end of their section.
   are the menu of a button that shows at that width alone.
 - **A failed save is said over the map.** The notice stood in the library, which can be
   folded away and on a phone mostly is. Over the map it is seen whatever panes are
-  shown; the save state itself stands beside the library's button while the library is
-  folded.
+  shown. The mark on the open trip's row that said the trip was saved, changed or
+  being saved was dropped: saving is automatic, and a mark that nearly always shows a
+  tick says nothing. What needs saying is that it failed, which the notice does, and
+  the browser asks before a page with unsaved changes is left.
 - **A day keeps an outline of its routes, made by the server.** Showing a trip's shape
   in the library must not cost its document, which is megabytes for a collection of
   tracks. So each day keeps the lines of its routes thinned to at most 32 points each

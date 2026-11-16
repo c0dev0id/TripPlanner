@@ -243,7 +243,7 @@
   by itself while a route is edited; its heading steps to the day before and after, the
   day's name between the steps and the buttons under it, since no strip is beside it; the library lies over everything and folds away,
   when a day is picked in it, to its button over the map, beside the open trip's name.
-  Whether the trip is saved is said on its row in the library; a save that fails is
+  A trip is saved by itself and nothing says so while that goes well; a save that fails is
   said over the map. There the menus come up from the bottom edge, a submenu in the list's place under a
   row that leads back, and the route
   tools are one bar with captions: the tools, undo and done, the rest under More. On a
