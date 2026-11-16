@@ -104,11 +104,20 @@ belong to a file (`stash_media`, in the database too); it is not made of trip
 documents. It works on whole routes, tracks and files: rename, delete, export the file,
 and the ways out: by the clipboard, a file imported where it is pasted (a trip in a folder,
 a day in a trip, routes and stops in a day, places in a list), its media with it as the
-day's, a folder pasted among the trips as a trip of its files, or a track among the rides.
-Cleaning up rewrites the stored file.
+day's, a folder pasted among the trips as a trip of its files or onto a trip as days of
+it, or a track among the rides. Cleaning up rewrites the stored file.
 Nothing goes into the Stash from the app. The Trips are where things are edited and
-tied together. A collection (`trips.kind`) is a list of places and lives among the
-Places alone.
+tied together. A collection (`trips.kind`) is a list of places, lives among the
+Places alone and takes places alone.
+
+What is pasted where is one table, `model/paste.ts`: for each kind of place (a folder of
+the trips or the places, a trip's row, a list's row, a day, a category, a route, a file
+of the Stash, the recordings) the kinds of clipboard it takes, and what it has a use for
+of Stash files. Every paste entry, the line above a list and the keys ask it through
+`state/clipboard.ts` (`pasteItems` for the open trip, `libraryPasteItem` for the
+library); a change to what is offered where is a change to that table and its test.
+Trips, lists and folders moved among folders follow their trees instead (`takerOf` in
+`library/items.ts`): a folder never leaves its tree.
 
 ### The trip document
 

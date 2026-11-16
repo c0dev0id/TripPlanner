@@ -98,14 +98,17 @@
   still opens, lets go of what was selected and is where the next run starts. The menu then acts on all of them, and a press on a pad drags them all
   onto a folder. Cut folders and trips move to where they are pasted, copied trips get a
   copy there, and either way the clipboard is empty after: what is on it is pasted
-  once, and a new cut or copy takes its place before that. A folder that does not hold
-  what is on the clipboard offers no paste: from Paste in a folder's menu, or from the line that offers it at the top
-  of the folder shown. Export takes the trips of selected folders along, at any depth;
+  once, and a new cut or copy takes its place before that. A folder stays in the tree
+  it is in, an empty one too, and is not pasted into itself or a folder inside it. A
+  folder that does not take what is on the clipboard offers no paste, neither as Paste
+  in its menu nor as the line that offers it at the top of the folder shown, nor by
+  the key. Export takes the trips of selected folders along, at any depth;
   Delete asks once for all. Several trips of a kind merge into the one selected first:
   a day joins that trip's day of the same date or goes in among its days by date, an
   undated day at the end; a collection's sections go at its end. The journal moves
   along, and the merged trips are deleted. Trips and collections are not merged with
-  each other. Copied days are pasted onto a trip from its menu, at its end.
+  each other. Copied days are pasted onto a trip from its menu, at its end, with their
+  media and the rides they are on.
 - Trips as a sequence of days; a day as one or more routes and its stops. A day is a
   card with its number and name over its date and length, and its menu (right-click or
   long press) edits, duplicates, pastes into and removes it. Their headers carry their
@@ -127,13 +130,16 @@
   pad, as are recordings and media; the menu then acts on all of them. A run goes from the row clicked last,
   with or without a key held, to the row clicked now and holds nothing else; a plain
   click lets go of what was selected. Pasted into a day go routes with the stops
-  bound to them, stops, which stand free, and days, which follow it; pasted into a route,
+  bound to them, stops, which stand free, and days, which follow it and bring their
+  media and recordings: copied, the files are copied and the rides are on both days;
+  cut into another trip, they move with the day. Pasted into a route,
   stops become points of it where the route passes closest, or at its start or end where
   the stop lies off it. What was cut waits, dimmed, and moves when it is pasted: within
   the trip it keeps its journal; into another trip or out of a collection it is copied
   there and then taken from where it was. Every such step is undone with Ctrl+Z. The
   Paste entry says what it pastes by kind and number ("Paste 1 route", "Paste 3
-  stops"), never by name.
+  stops", "Paste 1 category"), never by name, and counts what the place takes of it.
+  Nothing is pasted onto what it was cut from.
 - The keys of a file manager do what the menus do: Ctrl or Cmd with X and C cut and
   copy what is selected, Delete or Backspace removes it after the menu's question, a
   recording by taking it off its day, and Ctrl or Cmd with V pastes. In the open trip they act on the selected days, routes,
@@ -141,7 +147,8 @@
   A paste goes into the route being edited where it takes what was copied (stops, as
   its points), else into the day picked, days after it. In the library they act on the
   selected folders and trips, and a paste goes into the folder shown; among the rides
-  they copy and delete the selected ones. Selecting in the
+  they copy and delete the selected ones, and a paste keeps the tracks copied in the
+  Stash. Selecting in the
   library clears the selection in the trip and the other way round, as does selecting
   in the duplicates report, and what is selected of a day is forgotten when another day
   is shown. In a text field the keys
@@ -297,7 +304,7 @@
   them under it, each opening as a day's media do, an image or a PDF over the page
   and any other file as a download. They are selected, copied and deleted together,
   by the row's menu, which also adds more; the file's menu adds media too. Files are selected as folders are, dragged or moved
-  into the Stash's folders, renamed and deleted from their menu; a folder deleted
+  into the Stash's folders, cut and pasted into them, renamed and deleted from their menu; a folder deleted
   takes its files with it or gives them to the folder around it. Nothing is started
   in the Stash, and no trip or day is pasted into it: a folder is all that is made
   there, and a file takes only what is copied from other files of the Stash. The
@@ -314,7 +321,9 @@
   stay where they are, and the folder is asked again whenever more should be sorted.
 - Things leave the Stash by Copy, in the menu of a file, of a folder, of several
   selected, or of one route or track, and with Ctrl or Cmd with C. A copied folder is
-  pasted into a folder of the trips, or their top, and nowhere else: a folder of files
+  pasted into a folder of the trips, or their top, or onto a trip, and nowhere else:
+  onto a trip its files, and those of the folders in it, become days of that trip; in a
+  folder, a folder of files
   becomes a trip named after it, a folder that also holds folders a folder of trips,
   each of its own files a trip of one day. A trip's days are made of the folder's
   files: the files of one date are one day, the date being the one in a file's name
@@ -327,11 +336,13 @@
   order ridden: along the line they form, a closed one from where the Stash's files
   usually leave, or by name where the lines do not say. A copied file is imported where it
   is pasted, as the same file picked there would be: into a folder of the trips, or
-  their top, as a trip of one day, dated as a day of a folder is; into a trip as a day at its end; into a day of the open trip
+  their top, as a trip of one day, dated as a day of a folder is; into a trip as a day dated the same way, where its date puts it among the trip's days, an undated one at the end; into a day of the open trip
   as its routes and tracks with the waypoints on them and the other waypoints as free
   stops; into a folder of the places as a list of its waypoints, and into a list or a
-  category of it as places, each under the kind its waypoint is of (`<type>`), else
-  under "Places", a place the list holds already left out. Copied routes and tracks go
+  category of it as places: in a list each under the kind its waypoint is of (`<type>`), else
+  under "Places", a place the list holds already left out; in a category all of them. A
+  file is offered only where it holds something for the place: routes or tracks for the
+  trips, waypoints for the places. Copied routes and tracks go
   as an import would read them, a route with its points and the way Garmin gave
   between them, a track with its line, each with the waypoints on its points, to be
   pasted into a day of any trip. A file's waypoints are one row under its routes and
@@ -340,14 +351,16 @@
   goes: with a file pasted as a trip or as a day they are that day's additional media,
   and their row, copied, is pasted into a day of the open trip, where they are kept
   with the day, or into another file of the Stash; a trip's row takes no media by
-  themselves. Add to recordings, in the menu of a track, keeps it among the rides with
+  themselves, and a list of places none at all. Add to recordings, in the menu of a track, keeps it among the rides with
   everything the file tells of it, its times, heights and sensor values: a track that
   is all its file holds of routes and tracks as the file itself, so that it is known as
   the ride the same file was kept as before, any other alone, without the file's
   other tracks, routes and waypoints. A line over the list then says what came of it,
   by the ride's name and the date it is listed under: that it was added, or that it
   is there already and as what; of more than three tracks, how many of either. The
-  file stays in the Stash either way. Export
+  file stays in the Stash either way. Copied tracks, and copied files for the tracks
+  they hold, are pasted among the recordings to the same effect: by the line that
+  offers it above the rides, or by the paste key. Export
   in a file's menu saves the file as it is kept.
 - A file of the Stash is cleaned up by whole routes and tracks: one is renamed, and one
   or the selected ones, of any files, are deleted from their files, from the menu or
@@ -421,7 +434,12 @@
   the list's menu), and a kind lists its places by name. A place is a stop without the
   fields of a ride (arrival, pause, booking reference, optional): symbol, name,
   address, contact, website and notes, edited in the stop's dialog and copied, cut
-  and removed from its menu. "Add place…" in the map's menu adds
+  and removed from its menu. A list takes places alone: stops of trips, places, the
+  waypoints of files of the Stash, and categories, which are pasted as their places;
+  routes, days, media and recordings are not offered there. A copied place goes with
+  its category: onto a list's row into the category of that name, made where the list
+  has none; onto a category into that one; onto a day of a trip as a free stop. A
+  category cut and pasted onto another of its list is merged into it. "Add place…" in the map's menu adds
   one to the kind shown. A waypoint's link becomes the place's website; where most
   waypoints of a file link to the same host, such as the directory the file was
   downloaded from, those links are left out and the place's own link is kept.

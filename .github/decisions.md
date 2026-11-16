@@ -536,7 +536,7 @@ entries at the end of their section.
   extensions, symbols, a track's sensor values. The server copies the elements whole
   from the stored source into the stored target (`GpxEdit::with`), in the order the
   format gives them, and reads the index again. The source keeps its part: a copy,
-  since nothing else in the Stash is cut. A file's waypoints are one row and go all
+  since a part cut would rewrite the file it is taken from as well. A file's waypoints are one row and go all
   together: picking single waypoints would make the Stash an editor, which it is not.
   The clipboard holds what was taken by file, kind and place, and each place it is
   pasted reads it its own way: a file of the Stash through the server, a day or a
@@ -1310,6 +1310,62 @@ entries at the end of their section.
 - **A folder is cut, not copied.** Copying or duplicating a folder is a copy of every
   trip in it, at any depth: megabytes started by one click. Trips are copied one by
   one, where the size is in view.
+- **What is pasted where is one table.** The paste of a day and a route, of a trip's
+  row and a folder, the line above the list and the keys had each grown their own
+  answer to what is taken where, and disagreed: the line offered a trip among the
+  places, a category offered a route it then dropped, a cut folder was offered to
+  itself. `model/paste.ts` now says for each kind of place which kinds of clipboard it
+  takes, and what use it has for the routes, tracks, waypoints and media of Stash
+  files; a file or a part that holds none of it is not offered there. Every paste entry,
+  the lines and the keys ask it, and its test spells the matrix out cell by cell.
+  Trips, lists and folders moved among folders are not in it: they follow their trees
+  (`library/items.ts`), which needs the folders and not a kind.
+- **A list of places takes places alone.** A category is a day underneath, so it took
+  whatever a day takes: routes, whole days, media, recordings, all stored and shown,
+  left from when collections were planning material. A list and its categories now take
+  stops, places, categories and the waypoints of Stash files, and nothing else is
+  offered there.
+- **A copied category is its places.** As a day it was pasted as a second category of
+  the same name in a list that had one, and as an undated day in a trip. Its places now
+  go where places go: into the list's category of that name, into the category or onto
+  the day it is pasted on, and not onto a trip's row, which has no day for them. Cut
+  and pasted onto another category of its list it is merged into that one, as one step
+  to undo. For the same reason a place is copied with the name of its category, which
+  a paste onto another list's row had lost.
+- **A pasted day brings its media and its recordings.** They are not in the trip's
+  document, so a day pasted into another trip came without them, and a day cut that way
+  lost them: its media were deleted with the day it left behind (see "A day takes its
+  media along"). The days a paste makes are saved first and then given the media of the
+  days they were copied from, moved for a cut and copied otherwise, and their rides;
+  only then is a cut day removed. A day means the same thing copied, cut and moved.
+  The journal still stays with the trip.
+- **What was cut from the open trip leaves it as an edit.** Pasted onto another trip's
+  row, parts cut from the open trip were removed on the server behind its back, which
+  left it showing them and saving against an old version. They are now removed as any
+  edit of the open trip is, saved with it and undone like it.
+- **Nothing is pasted onto what it was cut from.** A cut pasted onto its own trip's row
+  or its own category would be copied to where it is and then removed: for places,
+  which a list holds only once, that removed them. The entry is not offered there.
+- **A folder stays in its tree.** An empty folder could be cut among the trips and
+  pasted into the Places or the Stash, since only what a folder holds was checked. It
+  then was a folder of that tree, which says the trees are one, and they are not. The
+  server compares the tree of the folder with that of its new parent, which also covers
+  what the folder holds, and the library's own check does the same.
+- **Files of the Stash are cut, to be moved within it.** A folder there had Cut and the
+  files in it had only Move… and dragging, so the cut key did nothing on a file. A cut
+  file is pasted into a folder of the Stash and nowhere else: out of the Stash things
+  are copied, never moved.
+- **A folder of the Stash pasted onto a trip adds days, and a file's day has one date.**
+  A folder made a trip among the trips and nothing on a trip that was there. Its files,
+  and those of the folders in it, now become days of that trip by the rule that makes a
+  trip of a folder (`daysOf`). Files pasted onto a trip follow the same rule, where
+  they had been planned by their paths as files picked from the computer are: the same
+  file gave a dated day among the trips and an undated one in a trip. A day an import
+  adds to a trip goes before the first day of a later date instead of at the end.
+- **The recordings take tracks copied in the Stash.** It was the one tab that took no
+  paste, while a track's row offered Add to recordings. The line above the rides and
+  the paste key now do what that entry does, for copied tracks and for copied files by
+  the tracks they hold. A track of a trip still does not become a recording.
 - **Undo is not bound to editing a route.** Ctrl+Z took back steps only while a route
   was being edited, although every edit of the trip is recorded; moving and removing in
   the panel is now as much of the work, so it is undone whenever a trip is open.
