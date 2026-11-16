@@ -24,7 +24,7 @@ export function partKeys(e: KeyboardEvent): void {
     const route = editingRouteId();
     const day = selectedDayId();
     const [paste] = [...(route ? pasteItems('route', route) : []), ...(day ? pasteItems('day', day) : [])];
-    if (!paste || !('run' in paste)) return;
+    if (!paste) return;
     e.preventDefault();
     paste.run();
     return;

@@ -5,7 +5,7 @@ import { TAB_NAMES, TREE_TABS, TREES, type TreeTab } from '../model/library';
 import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
-import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, dropOnRow, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip, type PasteInto } from '../state/clipboard';
+import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, dropsOnRow, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip, type PasteInto, type PasteItem } from '../state/clipboard';
 import { heldOf, importNote, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
@@ -19,11 +19,12 @@ import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, o
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
-import { counted, listText } from '../ui/format';
+import { counted } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { FoldIcon } from '../ui/icons';
-import { carry, dropTarget, type Drop } from '../ui/carry';
+import { dropTarget, type Drop } from '../ui/carry';
 import { menuNote, type MenuItem } from '../ui/menu';
+import { Said } from '../ui/Said';
 import type { Place } from '../model/paste';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
@@ -31,7 +32,7 @@ import { menuRows, NOTHING_SELECTED, rowSelect, selectIn, selectionOf, type RowS
 import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
 import { FolderCard, RouteCard, TripCard, TripDays, type CardSelect } from './cards';
-import { countText, fileItemsOf, filesOf, folderOf, foldersOf, inTreeOf, itemKey, itemsOf, keyOf, mediaKey, nameOf, partsOf, waypointsKey, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
+import { countText, fileItemsOf, filesOf, folderOf, foldersOf, itemKey, itemsOf, keyOf, mediaKey, nameOf, partsOf, waypointsKey, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow } from './StashFileCard';
 import { addPartsTo, applyGroups, filesMenu, partsMenu, removeItems, takeOut, type StashMenuHost } from './stashMenu';
@@ -65,6 +66,9 @@ const NEW_DIALOG: Record<NewKind, { title: string; placeholder: string; submit: 
 
 /** The dialog the library has open: a new name for something of it, with how the dialog reads and what saves the name, or the name of a new one in a folder, null for the top; of a new kind of place, in the list `into`. */
 type LibraryDialog = { kind: 'rename'; title: string; placeholder: string; name: string; save: (name: string) => Promise<unknown>; saved: () => void } | { kind: 'new'; what: NewKind; into: number | null };
+
+/** The kind folders, trips and files of the library are carried as when they are dragged (see `ui/carry.ts`). */
+const ITEMS = 'items';
 
 /**
  * The library as a tree: folders and trips unfolding in place, the open trip's days among
@@ -276,15 +280,13 @@ export function Library(props: {
   const select = (tree: TreeTab, item: Item, order?: () => string[]): CardSelect => ({
     ...selectRow(tree, keyOf(item), order),
     cut: () => isCut(item),
-    onDrag: (e: PointerEvent, dragged: () => void) => {
+    carries: () => {
       const moved = chosenWith(item);
-      carry(e, () => ({ what: moved.length === 1 ? nameOf(item) : countText(moved), carried: { items: moved } }), dragged);
+      return { kind: ITEMS, what: moved.length === 1 ? nameOf(item) : countText(moved), carried: moved };
     },
-    drop: (carried) => {
-      if ('folder' in item) return dropInto(carried, item.folder.id);
-      if ('file' in item) return undefined;
-      const { place, into } = rowOf(item.trip);
-      return dropOnRow(carried, place, into, item.trip.id);
+    place: (el) => {
+      if ('folder' in item) dropTarget<Item[]>(el, ITEMS, (items) => dropInto(items, item.folder.id));
+      else if ('trip' in item) dropsOnRow(el, () => item.trip.id, () => rowOf(item.trip));
     },
   });
   const isCut = (item: Item): boolean => {
@@ -352,27 +354,16 @@ export function Library(props: {
   /** What a folder holds besides folders, as it is counted: trips, in the Stash files or, among the places, lists. */
   const heldNoun = (id: number | null) => TREES[treeOf(id)].holds;
   const takerOf = (items: readonly Item[]) => takerAmong(all(), items);
-  /** Refuses, as the server would, to put the items into a folder that does not hold their kind. */
-  const assertFits = (items: readonly Item[], into: number | null) => {
-    if (!inTreeOf(all(), items)(into)) throw new Error(t('Place lists belong in Places, files in the Stash, and trips in the other folders.'));
-  };
   /** Those of the items that a move into the folder, null for the top, would move: not the folder itself, and not what is in it already. */
   const goingInto = (moved: readonly Item[], into: number | null): Item[] => moved.filter((item) => folderOf(item) !== into && !('folder' in item && item.folder.id === into));
   /** Moves folders, trips and files into a folder, none for the top, those not in it already; the server refuses a folder inside itself. */
   const moveInto = (moved: readonly Item[], into: number | null) => {
     const going = goingInto(moved, into);
     if (going.length === 0) return;
-    void runLibrary(async () => {
-      assertFits(moved, into);
-      await Promise.all([...tripsOf(going).map((trip) => moveTrip(trip.id, into)), ...foldersOf(going).map((f) => moveFolder(f.id, into)), ...filesOf(going).map((file) => moveStashFile(file.id, into!))]);
-    }, relist);
+    void runLibrary(() => Promise.all([...tripsOf(going).map((trip) => moveTrip(trip.id, into)), ...foldersOf(going).map((f) => moveFolder(f.id, into)), ...filesOf(going).map((file) => moveStashFile(file.id, into!))]), relist);
   };
-  /** What a drop of dragged folders, trips and files into the folder, null for the top, does: moves them there; refused where the folder does not take them or holds them all. Not for anything else that is carried. */
-  const dropInto = (carried: unknown, into: number | null): Drop => {
-    if (typeof carried !== 'object' || carried === null || !('items' in carried)) return undefined;
-    const items = carried.items as Item[];
-    return takerOf(items)(into) && goingInto(items, into).length > 0 ? () => moveInto(items, into) : null;
-  };
+  /** What a drop of dragged folders, trips and files into the folder, null for the top, does: moves them there; refused where the folder does not take them or holds them all. */
+  const dropInto = (items: Item[], into: number | null): Drop => (takerOf(items)(into) && goingInto(items, into).length > 0 ? () => moveInto(items, into) : null);
   /**
    * Move… with where what is moved can go from where the first of it is, as its submenu:
    * the top of its tree as "/", the folder around its own as "..", the folders beside
@@ -390,18 +381,13 @@ export function Library(props: {
   const clipText = (copied: LibraryClip): string => countsText(copied.folderIds.length, copied.tripIds.length + copied.fileIds.length, heldNoun(shownFolderId()));
   /** The folders, trips and files on the clipboard, those still there. */
   const clipItems = (copied: LibraryClip): Item[] => itemsOf(all(), [...copied.folderIds.map((id) => `folder:${id}`), ...copied.tripIds.map((id) => `trip:${id}`), ...copied.fileIds.map((id) => `file:${id}`)]);
-  /** Pastes the folders and trips on the clipboard into a folder, which empties it: cut, they move there; copied, each trip gets a copy there. */
+  /** Pastes the folders, trips and files on the clipboard into a folder that takes them (see `takesClip`), which empties it: cut, they move there; copied, each trip gets a copy there. */
   const pasteLibrary = (into: number | null) => {
     const copied = libraryClip();
     if (!copied) return;
-    const items = clipItems(copied);
-    // A paste the folder refuses leaves the clipboard as it was.
-    if (takerOf(items)(into)) clearClip();
-    if (copied.move) return moveInto(items, into);
-    void runLibrary(async () => {
-      assertFits(items, into);
-      await Promise.all(copied.tripIds.map(async (id) => moveTrip((await duplicateTrip(id)).id, into)));
-    }, relist);
+    clearClip();
+    if (copied.move) return moveInto(clipItems(copied), into);
+    void runLibrary(() => Promise.all(copied.tripIds.map(async (id) => moveTrip((await duplicateTrip(id)).id, into))), relist);
   };
   const renamed = () => {
     const d = dialog();
@@ -457,7 +443,7 @@ export function Library(props: {
   /** Pastes copied routes into the trip where an import would put them, and saves it. */
   const pasteInto = (tripId: number, routes: CopiedRoute[]) => changeTrip(tripId, (trip) => pasteIntoTrip(trip, routes, newId));
   /** The item that imports what was copied of the Stash into a folder, null for the top of the trips: among the trips files and folders, as trips; among the places files, as lists. None for a folder of the Stash, where they are. */
-  const pasteFilesItem = (into: number | null): MenuItem[] => {
+  const pasteFilesItem = (into: number | null): PasteItem[] => {
     const tree = treeOf(into);
     if (tree === 'trips') return libraryPasteItem('tripsFolder', { files: (files, copied) => imports.pasteAsTrips(into, files, copied) });
     return tree === 'places' ? libraryPasteItem('placesFolder', { files: (files) => imports.pasteFiles(into, files) }) : [];
@@ -476,11 +462,10 @@ export function Library(props: {
   };
   /** How the row of a trip or of a list of places takes what is pasted or dropped onto it: its kind of place, and what it does with each kind of thing. */
   const rowOf = (of: TripSummary): { place: Place; into: PasteInto } => {
-    const item = { trip: of };
     const id = of.id;
     /** The open trip is left, saved, before it is changed on the server. */
     const left = async (paste: () => Promise<unknown>) => {
-      if (holdsOpen([item])) await props.onLeave();
+      if (holdsOpen([{ trip: of }])) await props.onLeave();
       await runLibrary(paste, relistTrips);
     };
     if (!isPlaceList(id)) {
@@ -498,7 +483,7 @@ export function Library(props: {
               });
               await bringWithDays(from.tripId, days, made, from.cut);
             }),
-          files: (files, copied) => imports.pasteAsDays(item.trip, files, copied),
+          files: (files, copied) => imports.pasteAsDays(of, files, copied),
           parts: (parts) => left(async () => pasteInto(id, await stashCopies(parts))),
         },
       };
@@ -513,7 +498,7 @@ export function Library(props: {
       place: 'list',
       into: {
         places: (stops, kinds) => keep(() => stops.map((stop, i) => ({ kind: kinds[i] ?? t('Places'), stop: { ...stop, id: newId(), pointId: null } }))),
-        files: (files) => imports.pasteFilesIntoList(item.trip, files),
+        files: (files) => imports.pasteFilesIntoList(of, files),
         parts: (parts) => keep(() => stashPlaces(parts)),
       },
     };
@@ -552,7 +537,7 @@ export function Library(props: {
     }
     // Files and folders of the Stash are copied, to be imported where they are pasted; cut, they move within the Stash.
     const pasteFiles = verb === 'paste' && shownTree() ? pasteFilesItem(shownFolderId())[0] : undefined;
-    if (pasteFiles && 'run' in pasteFiles) {
+    if (pasteFiles) {
       e.preventDefault();
       return pasteFiles.run();
     }
@@ -572,7 +557,7 @@ export function Library(props: {
   // The panel around the tree is the top of the tree shown: what is dragged there and lies deeper moves up to it.
   onMount(() => {
     const panel = root.closest<HTMLElement>('.library-panel');
-    if (panel) dropTarget(panel, (carried) => (shownTree() ? dropInto(carried, rootOf(shownTree()!)) : undefined));
+    if (panel) dropTarget<Item[]>(panel, ITEMS, (items) => (shownTree() ? dropInto(items, rootOf(shownTree()!)) : null));
   });
 
   /** Adds a day at the end of a trip: of the open one as an edit that can be undone, which shows the day; of another on the server. */
@@ -581,9 +566,9 @@ export function Library(props: {
   /** Asks for a new name for something of the library, which `save` then gives it; `saved` lists afresh what it is among. */
   const rename = (title: string, placeholder: string, name: string, save: (name: string) => Promise<unknown>, saved: () => void) =>
     setDialog({ kind: 'rename', title, placeholder, name, save, saved });
-  /** What the Stash's menus ask of the library around them. */
   /** The item that adds the copied routes, tracks, waypoints and media of other files to a file of the Stash. */
   const pasteIntoFile = (file: StashFile): MenuItem[] => libraryPasteItem('stashFile', { parts: (parts) => runLibrary(() => addPartsTo(file, parts), relistStash) });
+  /** What the Stash's menus ask of the library around them. */
   const stashHost: StashMenuHost = { rename, cut: (chosen) => clip(chosen, true), copy: copyStash, moveItem, pasteInto: pasteIntoFile, remove: (chosen) => void remove(chosen), relist };
   /** The menu of a route or a track of a file, or of a file's waypoints or media, by the row's key: for the selected rows, or for it alone where it is not selected. */
   const stashPartMenu = (key: string): MenuItem[] => {
@@ -828,14 +813,7 @@ export function Library(props: {
 
   return (
     <div class="library" ref={root} hidden={!shownTree()}>
-      <Show when={importNote()}>
-        {(note) => (
-          <>
-            <p class="muted hint">{note().text}</p>
-            <For each={note().errors}>{(error) => <p class="error">{error}</p>}</For>
-          </>
-        )}
-      </Show>
+      <Show when={importNote()}>{(note) => <Said note={note()} />}</Show>
       {/* Reading a resource that failed throws; its error is shown instead. */}
       <Switch fallback={<p class="muted">{t('Loading…')}</p>}>
         <Match when={libraryTrips.error ?? libraryFolders.error ?? stashFiles.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
@@ -854,11 +832,8 @@ export function Library(props: {
                 </Show>
                 <Show when={stashFilesClip() && pasteFilesItem(shownFolderId())[0]}>
                   {(paste) => (
-                    <button class="paste-here" onClick={() => 'run' in paste() && (paste() as { run: () => void }).run()}>
-                      {t('Import {what} into “{where}”', {
-                        what: listText([stashFilesClip()!.folders.length > 0 && counted(stashFilesClip()!.folders.length, 'folder'), stashFilesClip()!.files.length > 0 && counted(stashFilesClip()!.files.length, 'file')]),
-                        where: pathOf(shownFolderId()) || ALL_TRIPS,
-                      })}
+                    <button class="paste-here" onClick={() => paste().run()}>
+                      {t('Import {what} into “{where}”', { what: countsText(stashFilesClip()!.folders.length, stashFilesClip()!.files.length, 'file'), where: pathOf(shownFolderId()) || ALL_TRIPS })}
                     </button>
                   )}
                 </Show>

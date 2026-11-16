@@ -1322,15 +1322,16 @@ entries at the end of their section.
   elsewhere needed no new rules: a row is dropped where a cut of it is pasted, within
   the tab, so the drops follow `model/paste.ts` as the menus do. The paste of the
   clipboard runs on any clip handed to it, and what a drag carries is such a clip made
-  for the drag (`carriedParts`): the clipboard itself is left alone, as a file
+  for the drag (`heldParts`): the clipboard itself is left alone, as a file
   manager's is. A place lights up only where the drop changes something, which also
   means that a cut is no longer pasted onto the day it is on already.
 - **A place says what a drop on it does.** The row dragged used to find a marked folder
   under the pointer and move itself there. With days, routes and rows of the library
   as places, the row dragged would have to know how each of them takes it, across
-  modules. A place is now an element with a taker (`ui/carry.ts`, `dropTarget`): asked
-  what is carried, it answers with the drop, with a refusal, or that it is not for
-  that, and the nearest place around the pointer that is for it decides. A folder's
+  modules. A place is now an element with a taker for a kind of thing (`ui/carry.ts`,
+  `dropTarget`): what a drag holds says its kind, a place for that kind answers with
+  the drop or with a refusal, and the nearest such place around the pointer decides.
+  The kind keeps the takers typed: a folder is never asked about a clip. A folder's
   row answers for dragged trips, folders and files, the row of a trip or a list and a
   day or a route answer with the paste they offer in their menu. `data-drop-folder`
   stays for files dropped from the computer alone.

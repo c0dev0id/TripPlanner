@@ -1,5 +1,5 @@
 import { plural, t } from '../i18n/t';
-import { createEffect, createMemo, createSignal, For, on, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, on, Show } from 'solid-js';
 import { errorMessage } from '../api';
 import { readDayParts, ROUTE_FILE_TYPES } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR, ROUTE_PALETTE } from '../model/routeLook';
@@ -14,7 +14,7 @@ import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
 import { recordingsOf } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
-import { dropOnPart, isCut } from '../state/clipboard';
+import { dropsOnPart, isCut } from '../state/clipboard';
 import { partSelect } from '../state/partSelection';
 import {
   addParts,
@@ -35,8 +35,8 @@ import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { counted, distanceText, timeText } from '../ui/format';
 import { ClockIcon, FileImportIcon, NotebookIcon, PencilIcon, PlusIcon } from '../ui/icons';
-import { dropTarget } from '../ui/carry';
 import { Grip } from '../ui/Grip';
+import { Said } from '../ui/Said';
 import { IconButton } from '../ui/IconButton';
 import { MenuButton } from '../ui/MenuButton';
 import { Pad } from '../ui/Pad';
@@ -46,7 +46,7 @@ import { dayDetail, dayHeading, dayLabel, offTime, routeKindLabel, routeLabel, t
 import { RoutePin } from './RoutePin';
 import { DayMedia } from './Media';
 import { addRecordingPicked, DayRecordings } from './Recordings';
-import { carriedWith, carryPart, partMenu } from './partMenu';
+import { carriedWith, partMenu } from './partMenu';
 import { routeNamesNote } from './routeNames';
 
 /** The journal of a part as an icon, with the number of its entries where it has any. */
@@ -94,7 +94,7 @@ function DayItem(props: { day: Day; index: number }) {
     <li
       ref={(el) => {
         row = el;
-        dropTarget(el, (carried) => dropOnPart(carried, 'day', props.day.id));
+        dropsOnPart(el, 'day', () => props.day.id);
       }}
       class="day card"
       classList={{ open: selected(), current: isDayMarked(props.day.id), selected: select.selected(), cut: isCut(props.day.id) }}
@@ -171,16 +171,7 @@ export function DayDetails(props: { day: Day }) {
         <ForById each={props.day.routes}>{(route, index) => <RouteItem route={route()} index={index()} day={props.day} sequence={byRoute()[index()] ?? []} />}</ForById>
       </ul>
       <Show when={importNote()}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
-      <Show when={routeNamesNote(props.day.id)}>
-        {(said) => (
-          <>
-            <Show when={said().text}>
-              <p class="muted hint">{said().text}</p>
-            </Show>
-            <For each={said().errors}>{(error) => <p class="error">{error}</p>}</For>
-          </>
-        )}
-      </Show>
+      <Show when={routeNamesNote(props.day.id)}>{(note) => <Said note={note()} />}</Show>
       <Show when={unplaced().length > 0}>
         <div class="row">
           <h4 class="grow">{t('Free stops')}</h4>
@@ -255,7 +246,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
     takeUpRoute(editing() ? undefined : props.route.id);
   };
   return (
-    <li class="route" classList={{ editing: editing(), selected: select.selected(), cut: isCut(props.route.id) }} ref={(el) => dropTarget(el, (carried) => dropOnPart(carried, 'route', props.route.id))}>
+    <li class="route" classList={{ editing: editing(), selected: select.selected(), cut: isCut(props.route.id) }} ref={(el) => dropsOnPart(el, 'route', () => props.route.id)}>
       <div
         class="row"
         ref={(el) => {
@@ -340,7 +331,7 @@ function SequenceItem(props: { entry: SequenceEntry; routeId: string; time: Entr
         ref={(el) => hasMenu() && cardMenu(el, menu)}
       >
         <Show when={select()} fallback={<span class="grip-space" />}>
-          {(row) => <Pad label={t('Select {name}, or drag it', { name: stop()!.name })} selected={row().selected()} onToggle={row().onToggle} onPress={carryPart('stop', stop()!.id, stop()!.name)} />}
+          {(row) => <Pad label={t('Select {name}, or drag it', { name: stop()!.name })} selected={row().selected()} onToggle={row().onToggle} carries={() => carriedWith('stop', stop()!.id, stop()!.name)} />}
         </Show>
         <button class="text grow" onClick={(e) => select()?.onClick(e) || panTo(props.entry.lngLat)}>
           <Show when={stop()} fallback={<span class="point-dot" style={{ 'border-color': BOUND_COLOR }} />}>
@@ -374,7 +365,7 @@ function AloneStopItem(props: { stop: Stop }) {
   const select = stopSelect(props.stop.id);
   return (
     <li class="row sequence-item" classList={{ selected: select.selected(), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
-      <Pad label={t('Select {name}, or drag it', { name: props.stop.name })} selected={select.selected()} onToggle={select.onToggle} onPress={carryPart('stop', props.stop.id, props.stop.name)} />
+      <Pad label={t('Select {name}, or drag it', { name: props.stop.name })} selected={select.selected()} onToggle={select.onToggle} carries={() => carriedWith('stop', props.stop.id, props.stop.name)} />
       <button class="text grow" onClick={(e) => select.onClick(e) || panTo(props.stop.lngLat)}>
         <StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />
         <span class="lines">

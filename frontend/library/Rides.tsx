@@ -3,7 +3,6 @@ import { t } from '../i18n/t';
 import { declineRideDay, deleteRide, errorMessage, mergeRides, renameRide, rideJoints, suggestRideDays } from '../api';
 import { lineLength } from '../geo/measure';
 import { GPX_FILE_TYPES } from '../gpx/import';
-import { sharesOf, wholeFile } from '../model/paste';
 import type { StashPart } from '../model/stash';
 import type { Ride, Suggestion } from '../recording/rides';
 import { FAR_APART_M, isOddJoint, likelierFirst, ridingYears, totalDistance } from '../recording/rides';
@@ -29,6 +28,7 @@ import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { Pad } from '../ui/Pad';
 import { pickFiles } from '../ui/pickFile';
+import { Said } from '../ui/Said';
 import { menuRows, NOTHING_SELECTED, rowSelect, selectIn, selectionOf, type RowSelect } from '../ui/selection';
 import { autoname } from '../map/autoname';
 import { sourceOf } from './folderImport';
@@ -130,15 +130,15 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
   /** Keeps tracks of files of the Stash as rides and says under the heading which. */
   const keep = (parts: readonly StashPart[]) => runRidesJob(async () => ({ text: await keepTracks(parts), errors: [] }));
   /** The item that keeps the tracks copied in the Stash, alone or with their files, as rides; none while the clipboard holds none. */
-  const pasteTracks = (): MenuItem | undefined => libraryPasteItem('recordings', { files: (files) => keep(sharesOf('recordings', files.map(wholeFile))), parts: keep })[0];
+  const pasteTracks = () => libraryPasteItem('recordings', { parts: keep })[0];
   /** The keys, while the rides are shown: paste keeps the tracks copied in the Stash, copy and delete act on the selected rides, as the menu does. */
   const onKey = (e: KeyboardEvent) => {
     const verb = libraryTab() === 'recordings' ? fileVerb(e) : undefined;
     const paste = verb === 'paste' ? pasteTracks() : undefined;
     const chosen = ridesAmong(selectionOf(RIDES));
-    if (!(paste && 'run' in paste) && (chosen.length === 0 || (verb !== 'copy' && verb !== 'delete'))) return;
+    if (!paste && (chosen.length === 0 || (verb !== 'copy' && verb !== 'delete'))) return;
     e.preventDefault();
-    if (paste && 'run' in paste) paste.run();
+    if (paste) paste.run();
     else if (verb === 'copy') copyRecordings(chosen);
     else void deleteAsked(chosen);
   };
@@ -221,22 +221,13 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       <SectionLine />
       <Show when={pasteTracks()}>
         {(paste) => (
-          <button class="paste-here" onClick={() => 'run' in paste() && (paste() as { run: () => void }).run()}>
+          <button class="paste-here" onClick={() => paste().run()}>
             {paste().label}
           </button>
         )}
       </Show>
       <Show when={ridesError()}>{(error) => <p class="error">{errorMessage(error())}</p>}</Show>
-      <Show when={ridesNote()}>
-        {(said) => (
-          <>
-            <Show when={said().text}>
-              <p class="muted hint">{said().text}</p>
-            </Show>
-            <For each={said().errors}>{(error) => <p class="error">{error}</p>}</For>
-          </>
-        )}
-      </Show>
+      <Show when={ridesNote()}>{(note) => <Said note={note()} />}</Show>
       <Show when={suggestions().length > 0}>
         <div class="row">
           <h4 class="grow">{t('{what} to review', { what: counted(suggestions().length, 'suggestion') })}</h4>

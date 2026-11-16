@@ -13,7 +13,7 @@ export type Place = 'tripsFolder' | 'placesFolder' | 'trip' | 'list' | 'day' | '
 export type ClipKind = 'days' | 'categories' | 'routes' | 'stops' | 'recordings' | 'media' | 'files' | 'folders' | 'parts';
 
 /** The kinds of clipboard each place takes. */
-export const TAKES: Record<Place, readonly ClipKind[]> = {
+const TAKES: Record<Place, readonly ClipKind[]> = {
   tripsFolder: ['files', 'folders'],
   placesFolder: ['files'],
   trip: ['days', 'routes', 'files', 'folders', 'parts'],
@@ -26,10 +26,10 @@ export const TAKES: Record<Place, readonly ClipKind[]> = {
 };
 
 /** What a file of the Stash holds, as the places tell it apart. */
-export type Share = 'routes' | 'tracks' | 'waypoints' | 'media';
+type Share = 'routes' | 'tracks' | 'waypoints' | 'media';
 
 /** What each place has a use for of files of the Stash and of their parts: a file or a part with none of it is not pasted there. */
-export const SHARES: Partial<Record<Place, readonly Share[]>> = {
+const SHARES: Partial<Record<Place, readonly Share[]>> = {
   tripsFolder: ['routes', 'tracks'],
   placesFolder: ['waypoints'],
   trip: ['routes', 'tracks'],

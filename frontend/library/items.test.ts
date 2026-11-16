@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { StashFile, StashItem } from '../model/stash';
 import type { Folder, TripSummary } from '../model/trip';
-import { countText, fileItemsOf, inTreeOf, itemKey, itemOf, itemsOf, keyOf, mediaKey, partsOf, takerOf, tripsWithin, waypointsKey, type Listed } from './items';
+import { countText, fileItemsOf, itemKey, itemOf, itemsOf, keyOf, mediaKey, partsOf, takerOf, tripsWithin, waypointsKey, type Listed } from './items';
 
 const folder = (id: number, parentId: number | null, kind: Folder['kind'] = 'folder'): Folder => ({ id, name: `f${id}`, parentId, kind });
 const trip = (id: number, folderId: number | null, kind: TripSummary['kind'] = 'trip') => ({ id, name: `t${id}`, folderId, kind }) as TripSummary;
@@ -76,7 +76,6 @@ describe('takerOf', () => {
 
   it('takes no folder into itself or into a folder inside it', () => {
     expect([null, 1, 2, 3].map(takerOf(listed, [{ folder: listed.folders[0]! }]))).toEqual([true, false, false, false]);
-    expect([null, 1, 2, 3].map(inTreeOf(listed, [{ folder: listed.folders[0]! }]))).toEqual([true, true, true, true]);
   });
 });
 

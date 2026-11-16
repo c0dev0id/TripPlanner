@@ -34,16 +34,19 @@ export function foldPanel(folded: boolean): void {
   setFolded(folded);
 }
 
-/** Folds the library away for the pane beside it, where it is not folded already and does not stay beside the pane as the user asked. */
+/** Whether the library folds by itself now: where it has no room beside a pane, and elsewhere unless the user turned that off. */
+export const foldsByItself = (): boolean => autoFold() || !sideBySide();
+
+/** Folds the library away for the pane beside it, where it folds by itself and is not folded already. */
 function foldForPane(): void {
-  if (panelFolded() || (sideBySide() && !autoFold())) return;
+  if (panelFolded() || !foldsByItself()) return;
   setFolded(true);
   foldedForPane = true;
 }
 
 /** Brings the library back as the pane beside it closes by its own button; not where it does not fold by itself, and so stays as the user left it. */
 export function unfoldAfterPane(): void {
-  if (!sideBySide() || autoFold()) foldPanel(false);
+  if (foldsByItself()) foldPanel(false);
 }
 
 /** Turns the folding by itself on or off, at once: on, the library gives way to a pane that is open; off, it comes back where it was folded for one. */

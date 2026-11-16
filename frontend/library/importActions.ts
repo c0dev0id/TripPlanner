@@ -121,7 +121,7 @@ export function libraryImports(onLeave: () => Promise<void>) {
       return run((onProgress) => importIntoTrip(trip, all.map(stashSource), 'folder', onProgress, planStashDays(all, departures())));
     },
     /** Keeps the waypoints of files of the Stash as places of the list, as those of files picked for it are. */
-    pasteFilesIntoList: (list: TripSummary, files: readonly StashFile[]) => run((onProgress) => importIntoTrip(list, files.map(stashSource), 'places', onProgress)),
+    pasteFilesIntoList: (list: TripSummary, files: readonly StashFile[]) => intoTrip(list, files.map(stashSource)),
     /** Asks for files of routes and zips, of exported trips or of such files, and imports them into the folder. */
     addFiles: async (folderId: number | null) => {
       const files = await pickFiles({ accept: `${ROUTE_FILE_TYPES},.zip,application/zip` });

@@ -8,37 +8,44 @@ import { followPointer } from './followPointer';
 /** How far a pressed pad moves, in CSS pixels, before the press is a drag rather than a tap. */
 const DRAG_FROM_PX = 6;
 
-/**
- * What a drop on a place does: the drop itself; null where the place is for what is
- * carried but a drop there is refused or would change nothing; undefined where the place
- * is not for it, and a place around it may be.
- */
-export type Drop = (() => void) | null | undefined;
+/** What a drop on a place does: the drop itself, or null where a drop there is refused or would change nothing. */
+export type Drop = (() => void) | null;
 
-const takers = new WeakMap<Element, (carried: unknown) => Drop>();
+/** What a drag carries: its kind, by which the places for it are known, what the label that follows the pointer calls it, and the thing itself. */
+export interface Held {
+  kind: string;
+  what: string;
+  carried: unknown;
+}
 
-/** Makes the element a place to drop: `taker` says of whatever is carried what a drop there does. */
-export function dropTarget(el: HTMLElement, taker: (carried: unknown) => Drop): void {
-  takers.set(el, taker);
+const takers = new WeakMap<Element, Map<string, (carried: never) => Drop>>();
+
+/** Makes the element a place to drop what is carried of a `kind`: `taker` says what a drop of it there does. */
+export function dropTarget<T>(el: HTMLElement, kind: string, taker: (carried: T) => Drop): void {
+  takers.set(el, (takers.get(el) ?? new Map()).set(kind, taker));
   el.dataset.drop = '';
 }
 
-/** The place under the point that takes what is carried, with what a drop there does: the nearest place around the point that is for it, none where that one refuses, and none inside `own`. */
-function placeAt(x: number, y: number, carried: unknown, own?: Element | null): { el: HTMLElement; drop: () => void } | undefined {
+/** What a drop of what is held on the element does; undefined where the element is no place for its kind. */
+export function dropOn(el: Element, held: Held): Drop | undefined {
+  return takers.get(el)?.get(held.kind)?.(held.carried as never);
+}
+
+/** The place under the point that takes what is held, with what a drop there does: the nearest place around the point that is for its kind, none where that one refuses, and none inside `own`. */
+function placeAt(x: number, y: number, held: Held, own?: Element | null): { el: HTMLElement; drop: () => void } | undefined {
   for (let el = document.elementFromPoint(x, y)?.closest<HTMLElement>('[data-drop]'); el; el = el.parentElement?.closest<HTMLElement>('[data-drop]')) {
-    if (own?.contains(el)) continue;
-    const drop = takers.get(el)?.(carried);
+    const drop = own?.contains(el) ? undefined : dropOn(el, held);
     if (drop !== undefined) return drop ? { el, drop } : undefined;
   }
   return undefined;
 }
 
 /**
- * What is carried, shown: a label saying `what` follows the pointer, and the place it is
+ * What is held, shown: a label saying what it is follows the pointer, and the place it is
  * over, outside `own`, is marked. `to` moves it and says whether it is over a place;
  * `end` takes both away and answers the drop on the place it was over last, if any.
  */
-export function carrying(what: string, carried: unknown, own?: Element | null): { to: (x: number, y: number) => boolean; end: () => (() => void) | undefined } {
+export function carrying(held: Held, own?: Element | null): { to: (x: number, y: number) => boolean; end: () => (() => void) | undefined } {
   let label: HTMLElement | undefined;
   let place: ReturnType<typeof placeAt>;
   const mark = (next: ReturnType<typeof placeAt>) => {
@@ -50,7 +57,7 @@ export function carrying(what: string, carried: unknown, own?: Element | null): 
   };
   return {
     to: (x, y) => {
-      mark(placeAt(x, y, carried, own));
+      mark(placeAt(x, y, held, own));
       // Within the list of what is carried the label is in the way of the row that follows the pointer there.
       if (own && !place) {
         label?.remove();
@@ -60,7 +67,7 @@ export function carrying(what: string, carried: unknown, own?: Element | null): 
       if (!label) {
         label = document.createElement('div');
         label.className = 'drag-label';
-        label.textContent = what;
+        label.textContent = held.what;
         document.body.append(label);
       }
       label.style.transform = `translate(${x + 14}px, ${y + 10}px)`;
@@ -73,12 +80,6 @@ export function carrying(what: string, carried: unknown, own?: Element | null): 
       return drop;
     },
   };
-}
-
-/** What a drag carries, and what the label that follows the pointer calls it. */
-export interface Held {
-  what: string;
-  carried: unknown;
 }
 
 /**
@@ -102,7 +103,7 @@ export function carry(e: PointerEvent, held: () => Held | undefined, onDrag: () 
         moved = true;
         onDrag();
         const of = held();
-        shown = of && carrying(of.what, of.carried);
+        shown = of && carrying(of);
         if (shown) row?.classList.add('dragged');
       }
       shown?.to(m.clientX, m.clientY);

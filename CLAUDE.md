@@ -99,14 +99,16 @@ itself through `ui/fileVerb.ts`. A selectable row has a pad (`ui/Pad.tsx`) or a 
 whose tap selects; a pad that also drags is drawn as a grip, one that only selects as a
 ring.
 
-A drop is a cut and a paste in one move, within the tab (`ui/carry.ts`). A place to drop
-is an element made one with `dropTarget`: asked what is carried, it answers with the
-drop, a refusal (null) or that it is not for that (undefined), and the nearest place
-that is for it decides. Rows of the open trip are carried as the clip a cut would make
-(`carriedParts` and its kin in `state/clipboard.ts`) and dropped by the paste the place
-offers (`dropOnPart`, `dropOnRow`), so drops follow `model/paste.ts` and leave the
-clipboard alone. A grip (`ui/Grip.tsx`) sorts its row within its list and carries it
-only to places outside it.
+A drop is a cut and a paste in one move, within the tab (`ui/carry.ts`). What a drag
+holds has a kind, and a place to drop is an element made one for a kind with
+`dropTarget`: asked what is carried, it answers with the drop or a refusal (null), and
+the nearest place around the pointer that is for the kind decides. Rows of the open
+trip are held as the clip a cut would make (`heldParts` and its kin in
+`state/clipboard.ts`) and dropped by the paste the place offers (`dropsOnPart`,
+`dropsOnRow`), so drops follow `model/paste.ts` and leave the clipboard alone; folders,
+trips and files of the library are held as items and dropped into folders. A pad
+(`ui/Pad.tsx`) and a grip (`ui/Grip.tsx`) both take what they carry as `carries`; a
+grip sorts its row within its list and carries it only to places outside it.
 
 The Stash is folders of GPX files kept whole (`stash_files`, `src/Stash/`), with an
 index of each file's routes and tracks beside it (`stash_items`) and the media that

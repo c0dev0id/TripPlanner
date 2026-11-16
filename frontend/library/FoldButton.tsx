@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import { autoFold, foldPanel, panelFolded, setAutoFold, sideBySide } from '../state/panel';
+import { autoFold, foldPanel, foldsByItself, panelFolded, setAutoFold, sideBySide } from '../state/panel';
 import { cardMenu } from '../ui/cardMenu';
 import { MenuIcon } from '../ui/icons';
 
@@ -18,7 +18,7 @@ export function FoldButton() {
       title={label()}
       aria-label={label()}
       aria-pressed={!panelFolded()}
-      ref={(el) => cardMenu(el, () => [{ label: t('Fold automatically'), checked: autoFold() || !sideBySide(), disabled: !sideBySide(), run: () => setAutoFold(!autoFold()) }])}
+      ref={(el) => cardMenu(el, () => [{ label: t('Fold automatically'), checked: foldsByItself(), disabled: !sideBySide(), run: () => setAutoFold(!autoFold()) }])}
       onClick={() => foldPanel(!panelFolded())}
     >
       <MenuIcon />

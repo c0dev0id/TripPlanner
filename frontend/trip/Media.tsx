@@ -5,11 +5,10 @@ import type { Entry } from '../model/journal';
 import { mediaDetail, mediaName, mediaOpens } from '../model/media';
 import type { Day } from '../model/trip';
 import { webAddress } from '../poi/details';
-import { carriedMedia, copyMedia, isCutMedia, type CopiedMedia } from '../state/clipboard';
+import { copyMedia, heldMedia, isCutMedia, type CopiedMedia } from '../state/clipboard';
 import { addFiles, addLink, mediaAction, mediaById, mediaNote, mediaOf, moveToDay, removeMedia, renameMedia } from '../state/media';
 import { clearPartSelection, partSelect, partsOfMenu } from '../state/partSelection';
 import { cardMenu } from '../ui/cardMenu';
-import { carry } from '../ui/carry';
 import { askConfirmation } from '../ui/confirm';
 import { EditDialog } from '../ui/EditDialog';
 import { field } from '../ui/form';
@@ -145,16 +144,10 @@ function MediaItem(props: { entry: Entry; onEdit: (entry: Entry) => void }) {
           label={t('Select {name}, or drag it', { name: name() })}
           selected={select.selected()}
           onToggle={select.onToggle}
-          onPress={(e, onDrag) =>
-            carry(
-              e,
-              () => {
-                const chosen = partsOfMenu('media', String(props.entry.id)).flatMap((id) => mediaById(Number(id)) ?? []);
-                return { what: chosen.length === 1 ? name() : counted(chosen.length, 'attachment'), carried: carriedMedia(copied(chosen, true)) };
-              },
-              onDrag,
-            )
-          }
+          carries={() => {
+            const chosen = partsOfMenu('media', String(props.entry.id)).flatMap((id) => mediaById(Number(id)) ?? []);
+            return heldMedia(chosen.length === 1 ? name() : counted(chosen.length, 'attachment'), copied(chosen, true));
+          }}
         />
         <a class="text grow" href={href()} target="_blank" rel="noopener noreferrer" download={opens() === 'download' ? props.entry.file!.name : undefined} onClick={click}>
           <span class="media-kind">{opens() === 'link' ? <LinkIcon /> : opens() === 'image' ? <PhotoIcon /> : <FileIcon />}</span>

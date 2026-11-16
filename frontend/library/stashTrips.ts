@@ -98,7 +98,7 @@ export function daysOf(files: readonly StashFile[], departures: readonly LngLat[
 const plannedDay = (date: string | null, of: readonly StashFile[], at: (file: StashFile) => number): PlannedDay => ({ date, name: of.length === 1 ? asName(withoutDate(of[0]!.name)) : '', files: of.map(at), media: [] });
 
 /** The days the files make in a trip that is there already, by the rule of daysOf, each naming its files by their place among `files`. */
-export const planStashDays = (files: readonly StashFile[], departures: readonly LngLat[] = []): PlannedDay[] => daysOf(files, departures).map(({ date, files: of }) => plannedDay(date, of, (file) => files.indexOf(file)));
+export const planStashDays = (files: readonly StashFile[], departures: readonly LngLat[]): PlannedDay[] => daysOf(files, departures).map(({ date, files: of }) => plannedDay(date, of, (file) => files.indexOf(file)));
 
 /**
  * The trips the copied folders and files make, with the files they are read from, each
@@ -107,7 +107,7 @@ export const planStashDays = (files: readonly StashFile[], departures: readonly 
  * was copied with. `departures` are where the Stash's files start, by which a closed
  * line is known to start at home.
  */
-export function planStashTrips(folders: readonly CopiedFolder[], loose: readonly StashFile[], departures: readonly LngLat[] = []): { files: StashFile[]; plan: PlannedTrip[] } {
+export function planStashTrips(folders: readonly CopiedFolder[], loose: readonly StashFile[], departures: readonly LngLat[]): { files: StashFile[]; plan: PlannedTrip[] } {
   const files: StashFile[] = [];
   const day = (date: string | null, of: readonly StashFile[]): PlannedDay => plannedDay(date, of, (file) => files.push(file) - 1);
   const tripOfFile = (above: string[], file: StashFile): PlannedTrip => ({ folders: above, name: asName(withoutDate(file.name) || file.name), days: [{ ...day(dateOf(file) ?? null, [file]), name: '' }], media: [] });

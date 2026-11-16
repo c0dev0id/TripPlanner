@@ -31,7 +31,7 @@ function dragToSort(e: PointerEvent, onDrop: (to: number) => void, onDrag: () =>
       item.classList.add('dragged');
       // What the item is carried as is asked once it is dragged: a tap asks nothing.
       const of = carries?.();
-      held = of && carrying(of.what, of.carried, item.parentElement);
+      held = of && carrying(of, item.parentElement);
     }
     const away = held?.to(m.clientX, m.clientY) ?? false;
     to = away ? from : middles.filter((middle, i) => i !== from && middle < middles[from]! + dy).length;

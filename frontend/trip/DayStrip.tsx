@@ -4,11 +4,10 @@ import type { Day } from '../model/trip';
 import { dayColor } from '../model/routeLook';
 import { routeColoring } from '../state/preferences';
 import { PlaceKindMark } from '../map/PlaceKinds';
-import { dropOnPart } from '../state/clipboard';
+import { dropsOnPart } from '../state/clipboard';
 import { isPlaceList } from '../state/library';
 import { foldPanel } from '../state/panel';
 import { openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
-import { dropTarget } from '../ui/carry';
 import { ForById } from '../ui/ForById';
 import { dayCounts } from './DayPane';
 import { dayDetail, dayHeading, dayHolds, dayTitleOf } from './labels';
@@ -46,7 +45,7 @@ export function DayStrip() {
             return (
               <li>
                 <button
-                  ref={(el) => dropTarget(el, (carried) => dropOnPart(carried, 'day', day().id))}
+                  ref={(el) => dropsOnPart(el, 'day', () => day().id)}
                   class="day-chip"
                   classList={{ colored: color() !== undefined }}
                   style={{ background: color() }}

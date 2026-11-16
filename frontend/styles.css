@@ -432,7 +432,7 @@ a {
   opacity: 0.5;
 }
 
-/* The folder a dragged trip or folder would go into: its row, or the line over the view shown while it would go to the view's top. */
+/* The place what is dragged would be dropped on: a folder's, a trip's or a day's row, the line over the view shown for the view's top, a route, a day's button in the strip. */
 .tree li.drop-target > .row,
 .library-panel.drop-target .tab-summary,
 .routes > li.drop-target > .row,

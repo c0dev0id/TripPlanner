@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Trip } from '../model/trip';
-import { carriedParts, clearClip, copyParts, dropOnPart, pasteItems } from './clipboard';
+import { dropOn, dropTarget } from '../ui/carry';
+import { clearClip, copyParts, dropsOnPart, heldParts, pasteItems } from './clipboard';
 import { addDay, addFreeStop, closeTrip, loadTrip, openTrip, selectDay } from './trip';
 
 // The library and the open trip's media list themselves when they are imported or a trip is loaded.
@@ -19,6 +20,13 @@ function twoDays(): { first: string; second: string; stop: string } {
   return { first: first!.id, second: second!.id, stop: first!.stops[0]!.id };
 }
 
+/** What a drop of a stop, as a drag holds it, onto a day does. */
+function dropStopOnDay(stop: string, day: string) {
+  const row = document.createElement('li');
+  dropsOnPart(row, 'day', () => day);
+  return dropOn(row, heldParts('a stop', 'stop', [stop])!);
+}
+
 describe('what a drag carries', () => {
   beforeEach(() => {
     closeTrip();
@@ -28,7 +36,7 @@ describe('what a drag carries', () => {
 
   it('is dropped as a cut is pasted: a stop moves to the day it is dropped on', () => {
     const { first, second, stop } = twoDays();
-    const drop = dropOnPart(carriedParts('stop', [stop]), 'day', second);
+    const drop = dropStopOnDay(stop, second);
     expect(drop).toBeTypeOf('function');
     drop!();
     expect(days().map((day) => day.stops.map((s) => s.id))).toEqual([[], [stop]]);
@@ -38,15 +46,16 @@ describe('what a drag carries', () => {
   it('leaves the clipboard as it was', () => {
     const { first, second, stop } = twoDays();
     copyParts('day', [first]);
-    dropOnPart(carriedParts('stop', [stop]), 'day', second)!();
+    dropStopOnDay(stop, second)!();
     expect(pasteItems('day', second)).toHaveLength(1);
   });
 
-  it('is refused where the drop would change nothing, and is not for a place that is for something else', () => {
+  it('is refused where the drop would change nothing, and passes by a place that is for another kind of thing', () => {
     const { first, stop } = twoDays();
-    expect(dropOnPart(carriedParts('stop', [stop]), 'day', first)).toBeNull();
-    expect(dropOnPart(carriedParts('day', [first]), 'day', first)).toBeNull();
-    expect(dropOnPart({ items: [] }, 'day', first)).toBeUndefined();
+    expect(dropStopOnDay(stop, first)).toBeNull();
+    const folder = document.createElement('li');
+    dropTarget<number[]>(folder, 'items', () => () => undefined);
+    expect(dropOn(folder, heldParts('a stop', 'stop', [stop])!)).toBeUndefined();
   });
 });
 

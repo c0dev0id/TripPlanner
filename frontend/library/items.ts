@@ -95,17 +95,11 @@ function isWithin(listed: Listed, folder: number | null, id: number): boolean {
   return false;
 }
 
-/** Says of a folder, null for the top of the trips, whether it lies in the tree of the items: each stays in its own, a folder too, even an empty one. */
-export function inTreeOf(listed: Listed, items: readonly Item[]): (into: number | null) => boolean {
-  const trees = new Set(items.map((item) => treeOf(listed, item)));
-  return (into) => [...trees].every((tree) => tree === kindAround(listed.folders, into));
-}
-
-/** Says of a folder, null for the top of the trips, whether it takes the items: it lies in their tree, and is none of the folders among them nor inside one. */
+/** Says of a folder, null for the top of the trips, whether it takes the items: it lies in the tree each of them is in, which a folder stays in too, even an empty one, and is none of the folders among them nor inside one. */
 export function takerOf(listed: Listed, items: readonly Item[]): (into: number | null) => boolean {
-  const inTree = inTreeOf(listed, items);
+  const trees = new Set(items.map((item) => treeOf(listed, item)));
   const folders = foldersOf(items);
-  return (into) => inTree(into) && !folders.some((folder) => isWithin(listed, into, folder.id));
+  return (into) => [...trees].every((tree) => tree === kindAround(listed.folders, into)) && !folders.some((folder) => isWithin(listed, into, folder.id));
 }
 
 /** How many folders and trips, or files, which no tree holds beside trips: 2 folders and 3 trips. */

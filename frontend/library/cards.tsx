@@ -12,17 +12,17 @@ import { CollectionIcon, FolderIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { Pad } from '../ui/Pad';
-import { dropTarget, type Drop } from '../ui/carry';
+import type { Held } from '../ui/carry';
 import type { RowSelect } from '../ui/selection';
 import { PlaceKindControls, PlaceKindMark } from '../map/PlaceKinds';
 import type { FoundRoute } from './search';
 import { TripShape } from './TripShape';
 
-/** How a card takes part in the selection: as a row does, and besides whether it is cut, what a press on its pad drags, and what a drop of what is carried does on it. */
+/** How a card takes part in the selection: as a row does, and besides whether it is cut, what a drag by its pad carries, and how its row is made a place to drop (see `ui/carry.ts`). */
 export interface CardSelect extends RowSelect {
   cut: () => boolean;
-  onDrag: (e: PointerEvent, dragged: () => void) => void;
-  drop: (carried: unknown) => Drop;
+  carries: () => Held | undefined;
+  place: (el: HTMLElement) => void;
 }
 
 /** How a card unfolds in the tree, whether it holds the tree's one mark, and of a trip whether it is the open one. */
@@ -103,12 +103,12 @@ export function TripCard(props: {
     <li
       class="card"
       classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current(), open: props.fold?.open?.(), opening: loading() !== undefined }}
-      ref={(el) => dropTarget(el, (carried) => props.select?.drop(carried))}
+      ref={(el) => props.select?.place(el)}
     >
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Show when={props.select}>
           {(select) => (
-            <Pad label={t('Select {name}, or drag it into a folder', { name: props.trip.name })} selected={select().selected()} onToggle={select().onToggle} onPress={select().onDrag} />
+            <Pad label={t('Select {name}, or drag it into a folder', { name: props.trip.name })} selected={select().selected()} onToggle={select().onToggle} carries={select().carries} />
           )}
         </Show>
         <button
@@ -156,12 +156,12 @@ export function FolderCard(props: { folder: Folder; note: string; onOpen: (id: n
       class="card"
       classList={{ selected: props.select?.selected(), cut: props.select?.cut(), current: props.fold?.current() }}
       data-drop-folder={String(props.folder.id)}
-      ref={(el) => dropTarget(el, (carried) => props.select?.drop(carried))}
+      ref={(el) => props.select?.place(el)}
     >
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Show when={props.select}>
           {(select) => (
-            <Pad label={t('Select {name}, or drag it into a folder', { name: props.folder.name })} selected={select().selected()} onToggle={select().onToggle} onPress={select().onDrag} />
+            <Pad label={t('Select {name}, or drag it into a folder', { name: props.folder.name })} selected={select().selected()} onToggle={select().onToggle} carries={select().carries} />
           )}
         </Show>
         <button class="text grow" aria-expanded={props.fold?.unfolded()} onClick={(e) => props.select?.onClick(e) || props.onOpen(props.folder.id)}>
