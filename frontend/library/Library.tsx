@@ -5,7 +5,7 @@ import { TAB_NAMES, TREE_TABS, TREES, type TreeTab } from '../model/library';
 import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
-import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, dropsOnRow, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip, type PasteInto, type PasteItem } from '../state/clipboard';
+import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, dropsOnRow, libraryClip, libraryPasteItem, pasteItems as pasteIntoPart, stashFilesClip, type LibraryClip, type PasteInto, type PasteItem } from '../state/clipboard';
 import { heldOf, importNote, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
@@ -15,7 +15,7 @@ import { GroupDialog, type Grouping } from './GroupDialog';
 import { groupFiles } from './grouping';
 import { setEditTarget, setExportScope, setShareOpen } from '../state/drawing';
 import { openJournal } from '../state/journal';
-import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
+import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, openTrip, openTripId, pickDay, selectDay, selectedDayId } from '../state/trip';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
@@ -31,7 +31,7 @@ import { NameDialog } from '../ui/NameDialog';
 import { menuRows, NOTHING_SELECTED, rowSelect, selectIn, selectionOf, type RowSelect, type Selection } from '../ui/selection';
 import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
-import { FolderCard, RouteCard, TripCard, TripDays, type CardSelect } from './cards';
+import { FolderCard, loneDay, RouteCard, TripCard, TripDays, type CardSelect } from './cards';
 import { countText, fileItemsOf, filesOf, folderOf, foldersOf, itemKey, itemsOf, keyOf, mediaKey, nameOf, partsOf, waypointsKey, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow } from './StashFileCard';
@@ -175,14 +175,22 @@ export function Library(props: {
     if (openTree() === treeOf(root)) selectDay(undefined);
   };
   /** Whether the trip is the open one and holds the mark, rather than the day of it that is shown. */
-  const isMarkedTrip = (trip: TripSummary): boolean => trip.id === openTripId() && isTripMarked();
+  /** Whether the trip holds the tree's mark: itself, or by its one day where it has no other and no row of its own for it. */
+  const isMarkedTrip = (trip: TripSummary): boolean => trip.id === openTripId() && (isTripMarked() || (loneDay(trip) !== undefined && isMarkInTrip()));
   /**
    * A click on a trip, which is a folder of days. It marks the trip and unfolds it: one
    * that is not open opens, and the open one closes its day that is shown. Marked
    * already, the trip folds, and unfolds again at the next click.
    */
   const clickTrip = (trip: TripSummary) => {
+    // A trip of one day is that day: a click shows the day, with no level of days to unfold.
+    const lone = loneDay(trip);
     const key = keyOf({ trip });
+    if (lone) {
+      // Unfolded all the same, so that its days show once it has a second.
+      fold([key], true);
+      return trip.id === openTripId() ? pickDay(lone.id) : props.onOpen(trip, lone.id);
+    }
     if (isMarkedTrip(trip)) return fold([key], !unfolded().has(key));
     fold([key], true);
     if (trip.id === openTripId()) markTrip();
@@ -458,7 +466,10 @@ export function Library(props: {
     if ('folder' in item) return takesClip(item.folder.id) ? [{ label: t('Paste'), run: () => pasteLibrary(item.folder.id) }] : pasteFilesItem(item.folder.id);
     if ('file' in item) return [];
     const { place, into } = rowOf(item.trip);
-    return libraryPasteItem(place, into, item.trip.id);
+    const onRow = libraryPasteItem(place, into, item.trip.id);
+    // The row of the open trip stands for its one day as well: what only a day takes is pasted into that.
+    const lone = item.trip.id === openTripId() ? loneDay(item.trip) : undefined;
+    return onRow.length > 0 || !lone ? onRow : pasteIntoPart('day', lone.id);
   };
   /** How the row of a trip or of a list of places takes what is pasted or dropped onto it: its kind of place, and what it does with each kind of thing. */
   const rowOf = (of: TripSummary): { place: Place; into: PasteInto } => {
@@ -706,8 +717,10 @@ export function Library(props: {
             select={select(branch.tree, { trip: trip() })}
             fold={{ unfolded: () => isUnfolded({ trip: trip() }), current: () => isMarkedTrip(trip()), open: () => openTripId() === trip().id }}
           >
-            <Show when={openTripId() === trip().id} fallback={<TripDays trip={trip()} onOpen={(dayId) => props.onOpen(trip(), dayId)} />}>
-              {props.children}
+            <Show when={!loneDay(trip())}>
+              <Show when={openTripId() === trip().id} fallback={<TripDays trip={trip()} onOpen={(dayId) => props.onOpen(trip(), dayId)} />}>
+                {props.children}
+              </Show>
             </Show>
           </TripCard>
         )}

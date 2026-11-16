@@ -943,6 +943,16 @@ entries at the end of their section.
   the map alone. The earlier rule, bring it back only where the pane had folded it,
   made the same button do two things by a past the user does not see. The duplicates' report does not fold it on a wide screen, since it shows
   in the library where a duplicate lies.
+- **A trip of one day has no level of days.** Most trips are of one day, and each
+  showed a row for it that had to be clicked to get to the day. The trip's row now
+  stands for the day: a click opens the day's pane, with the library folding as it
+  does for any pane (and staying where that is turned off). Of the day's menu, all
+  but three entries were in the pane or the trip's menu already. Paste was not, so
+  the row of the open trip also pastes into its day what a trip does not take; what
+  a trip takes (days, routes, files) it takes as a trip, open or not, so that the
+  same paste does not mean two things. Cut, Copy and Duplicate of the one day are
+  not offered: a trip is duplicated, and merged into another, instead. A list of
+  places keeps the level, since its one category says what its places are.
 - **Whether the library folds by itself is the user's to say.** The pane folding the
   library was a rule with a memory: unfolded by hand beside a day, the library folded
   again at the next day picked after a trip was opened, and nothing on the screen said

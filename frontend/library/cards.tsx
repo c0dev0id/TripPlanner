@@ -1,8 +1,10 @@
 import { createMemo, Show, type JSX } from 'solid-js';
 import { t } from '../i18n/t';
-import type { Folder, TripSummary } from '../model/trip';
+import type { OutlineDay } from '../api';
+import type { Day, Folder, TripSummary } from '../model/trip';
 import { fetchingTrip, isOpening, opening, outlineOf } from '../state/library';
-import { openTripId } from '../state/trip';
+import { openTrip, openTripId } from '../state/trip';
+import { dayCounts } from '../trip/DayPane';
 import { dayDetail, dayHeading, routeOrTrack } from '../trip/labels';
 import { SaveState } from '../trip/SaveStatus';
 import { cardMenu } from '../ui/cardMenu';
@@ -30,6 +32,18 @@ export interface CardFold {
   unfolded: () => boolean;
   current: () => boolean;
   open?: () => boolean;
+}
+
+/**
+ * The one day of a trip that has no other: the trip's row stands for that day, and the
+ * level of days is not shown under it. Of the open trip it is the day as it stands, of
+ * any other the day as the library knows it. None for a list of places, whose one
+ * category still says what its places are.
+ */
+export function loneDay(trip: TripSummary): Day | OutlineDay | undefined {
+  if (trip.kind !== 'trip') return undefined;
+  const days = trip.id === openTripId() ? openTrip()?.days : trip.dayCount === 1 ? outlineOf(trip.id) : undefined;
+  return days?.length === 1 ? days[0] : undefined;
 }
 
 /**
@@ -92,10 +106,17 @@ export function TripCard(props: {
   const loading = () => (isOpening(props.trip.id) ? opening()?.progress : undefined);
   /** How many places a list holds. */
   const held = createMemo(() => counted((outlineOf(props.trip.id) ?? []).reduce((sum, day) => sum + day.stops, 0), 'place'));
+  /** How many days the trip has: of the open one as it stands, which the library learns with the next listing. */
+  const days = () => (props.trip.id === openTripId() ? (openTrip()?.days.length ?? props.trip.dayCount) : props.trip.dayCount);
+  /** The trip's one day as its row tells it, where it has no other: its date and its length. */
+  const lone = () => {
+    const day = loneDay(props.trip);
+    return day && (typeof day.routes === 'number' ? (day as OutlineDay) : dayCounts(day as Day));
+  };
   const meta = () =>
     (props.trip.kind === 'collection'
       ? [props.where, held(), counted(props.trip.dayCount, 'category')]
-      : [props.where, counted(props.trip.dayCount, 'day'), props.trip.startsOn && t('from {date}', { date: dateText(props.trip.startsOn) }), props.trip.state === 'done' && t('completed')]
+      : [props.where, ...(lone() ? [dayDetail('trip', lone()!)] : [counted(days(), 'day'), props.trip.startsOn && t('from {date}', { date: dateText(props.trip.startsOn) })]), props.trip.state === 'done' && t('completed')]
     )
       .filter(Boolean)
       .join(' · ');

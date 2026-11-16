@@ -109,6 +109,12 @@
   along, and the merged trips are deleted. Trips and collections are not merged with
   each other. Copied days are pasted onto a trip from its menu, at its end, with their
   media and the rides they are on.
+- A trip of one day shows no level of days: its row stands for the day. It says the
+  day's date and length in place of the count of its days, a click on it opens the
+  trip with the day's pane at once, and its Paste also takes what only a day takes
+  (stops, media, recordings), into that day, while the trip is open. The days appear
+  under the row once the trip has a second, and go again when it is back to one. A
+  list of places always shows its categories.
 - Trips as a sequence of days; a day as one or more routes and its stops. A day is a
   card with its number and name over its date and length, and its menu (right-click or
   long press) edits, duplicates, pastes into and removes it. Their headers carry their
