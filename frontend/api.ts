@@ -4,7 +4,7 @@ import { daysToSend } from './model/delta';
 import type { Entry, EntryTarget } from './model/journal';
 import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Route, Trip, TripKind, TripSummary } from './model/trip';
-import type { StashFile, StashItem } from './model/stash';
+import type { StashPart, StashFile, StashItem } from './model/stash';
 import type { OwnPlace } from './poi/ownPlaces';
 import type { Joint, Ride, Suggestion } from './recording/rides';
 import { stopsInRidingOrder } from './routing/sequence';
@@ -288,6 +288,10 @@ export const moveStashFile = (id: number, folderId: number): Promise<void> => re
 export const deleteStashFile = (id: number): Promise<void> => request('DELETE', `/api/stash/files/${id}`);
 
 /** Keeps the tracks of a file of the Stash as rides: all of them, or those at the places given among its tracks. Answers how many were kept and how many the user kept already. */
+/** Adds parts of other files of the Stash to a file, which stay where they are: of each its routes and tracks named and, where asked, all its waypoints. */
+export const addStashParts = (id: number, parts: readonly StashPart[]): Promise<void> =>
+  request('POST', `/api/stash/files/${id}/parts`, { parts: parts.map((part) => ({ fileId: part.file.id, items: part.items.map(({ kind, position }) => ({ kind, position })), waypoints: part.waypoints })) });
+
 export const keepStashRides = (id: number, tracks?: readonly number[]): Promise<{ kept: number; known: number }> => request('POST', `/api/stash/files/${id}/rides`, tracks ? { tracks } : {});
 
 /** Renames a route or a track of a file of the Stash, which rewrites the file. */

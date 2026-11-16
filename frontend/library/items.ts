@@ -1,6 +1,6 @@
 import { countsText, kindAround } from '../model/folders';
 import { TREES, treeOfKind } from '../model/library';
-import type { StashFile, StashItem } from '../model/stash';
+import type { StashFile, StashItem, StashPart } from '../model/stash';
 import type { Folder, TripSummary } from '../model/trip';
 
 /** A folder, a trip or a file of the Stash, as what is selected, moved and deleted together. */
@@ -24,6 +24,9 @@ export const keyOf = (item: Item): string => ('folder' in item ? `folder:${item.
 
 /** The key of the row of a route or a track of a file. */
 export const itemKey = ({ file, item }: FileItem): string => `item:${file.id}:${item.kind}:${item.position}`;
+
+/** The key of the row of a file's waypoints, which are one row together. */
+export const waypointsKey = (file: StashFile): string => `waypoints:${file.id}`;
 
 export const nameOf = (item: Item): string => ('folder' in item ? item.folder : 'trip' in item ? item.trip : item.file).name;
 
@@ -58,6 +61,14 @@ export const itemsOf = (listed: Listed, keys: Iterable<string>): Item[] => [...k
 /** The routes and tracks of files among the rows of the keys. */
 export const fileItemsOf = (files: readonly StashFile[], keys: ReadonlySet<string>): FileItem[] =>
   [...keys].some((key) => key.startsWith('item:')) ? files.flatMap((file) => file.items.map((item) => ({ file, item })).filter((at) => keys.has(itemKey(at)))) : [];
+
+/** What the rows of the keys take of the files: of each file its routes and tracks selected and whether its waypoints are; the files with neither left out. */
+export const partsOf = (files: readonly StashFile[], keys: ReadonlySet<string>): StashPart[] =>
+  [...keys].some((key) => key.startsWith('item:') || key.startsWith('waypoints:'))
+    ? files
+        .map((file) => ({ file, items: file.items.filter((item) => keys.has(itemKey({ file, item }))), waypoints: keys.has(waypointsKey(file)) }))
+        .filter((part) => part.items.length > 0 || part.waypoints)
+    : [];
 
 /** The trips among the items and those in their folders, at any depth. */
 export function tripsWithin(listed: Listed, items: readonly Item[]): TripSummary[] {

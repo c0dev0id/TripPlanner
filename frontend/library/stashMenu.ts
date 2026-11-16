@@ -1,6 +1,6 @@
 import { keepStashRides, removeStashItems, renameStashFile, renameStashItem, stashFileUrl } from '../api';
 import { t } from '../i18n/t';
-import { copyRoutes, copyStashFiles } from '../state/clipboard';
+import { copyStashFiles, copyStashParts } from '../state/clipboard';
 import { runLibrary, setImportNote } from '../state/library';
 import { ridesChanged } from '../state/rides';
 import { relistStash, showInStash, shownInStash } from '../state/stash';
@@ -10,7 +10,8 @@ import { menuNote, type MenuItem } from '../ui/menu';
 import { keptText } from './dropImport';
 import { countText, filesOf, type FileItem, type Item } from './items';
 import { stashItemName } from './StashFileCard';
-import { stashCopies, type Picked } from './stashOut';
+import type { StashFile, StashPart } from '../model/stash';
+import type { Picked } from './stashOut';
 
 /**
  * What is done with the Stash's files and their routes and tracks, and the menus that
@@ -18,25 +19,17 @@ import { stashCopies, type Picked } from './stashOut';
  * a track also among the rides, renamed, moved and deleted.
  */
 
-/** What the menus ask of the library around them: its rename dialog, where the chosen can be moved, deleting them, and listing afresh. */
+/** What the menus ask of the library around them: its rename dialog, where the chosen can be moved, what is pasted into a file, deleting them, and listing afresh. */
 export interface StashMenuHost {
   rename: (title: string, placeholder: string, name: string, save: (name: string) => Promise<unknown>, saved: () => void) => void;
   moveItem: (chosen: readonly Item[]) => MenuItem[];
+  pasteInto: (file: StashFile) => MenuItem[];
   remove: (chosen: readonly Item[]) => void;
   relist: () => void;
 }
 
 /** Takes something out of the Stash and says, where the imports say what they did, what came of it. */
 const takeOut = (work: () => Promise<string>): void => void runLibrary(async () => setImportNote({ text: await work(), errors: [] }));
-
-/** Copies routes and tracks of the Stash, to be pasted into a day. */
-const copyOut = (picked: readonly Picked[]) =>
-  takeOut(async () => {
-    const copies = await stashCopies(picked);
-    if (copies.length === 0) return t('No routes or tracks found.');
-    copyRoutes(copies);
-    return t('Copied {what}. Paste from the menu of a day or a trip.', { what: counted(copies.length, 'route') });
-  });
 
 /** Keeps tracks of the Stash as rides, which the rides then list. */
 const keepRides = (picked: readonly Picked[]) =>
@@ -53,8 +46,9 @@ const keepRides = (picked: readonly Picked[]) =>
 
 /**
  * The menu of what is selected once files of the Stash are among it. Files alone are
- * copied, to be imported where they are pasted. One file is renamed, or exported as
- * it is kept, and files, with the folders selected beside them, are moved and deleted.
+ * copied, to be imported where they are pasted. One file is renamed, takes the routes,
+ * tracks and waypoints copied from other files, or is exported as it is kept, and
+ * files, with the folders selected beside them, are moved and deleted.
  */
 export function filesMenu(chosen: readonly Item[], host: StashMenuHost): MenuItem[] {
   const several = chosen.length > 1;
@@ -63,6 +57,7 @@ export function filesMenu(chosen: readonly Item[], host: StashMenuHost): MenuIte
   return [
     ...(several ? [menuNote(t('{what} selected', { what: countText(chosen) }))] : []),
     { label: t('Copy'), disabled: !onlyFiles, run: () => copyStashFiles(chosenFiles) },
+    ...(several || !onlyFiles ? [] : host.pasteInto(chosenFiles[0]!)),
     { label: t('Rename…'), disabled: several, run: () => host.rename(t('Rename file'), t('File name'), chosenFiles[0]!.name, (name) => renameStashFile(chosenFiles[0]!.id, name), relistStash) },
     ...host.moveItem(chosen),
     { label: t('Export'), disabled: several, run: () => window.location.assign(stashFileUrl(chosenFiles[0]!.id)) },
@@ -90,20 +85,27 @@ export async function removeItems(doomed: readonly FileItem[], removed: () => vo
 }
 
 /**
- * The menu of the routes and tracks of files among the `selected` rows. They
- * are copied to be pasted into a day, the tracks kept as rides, one renamed, and
- * deleted from their files. With anything else selected besides, it says that they
- * are not acted on together.
+ * The menu of what the `selected` rows take of files: their routes and tracks and their
+ * waypoints, which are one row of a file. They are copied, to be pasted into another
+ * file, a day, a trip or a list of places; routes and tracks alone are kept as rides,
+ * one renamed, and deleted from their files. With anything else selected besides, it
+ * says that they are not acted on together.
  */
-export function itemsMenu(parts: readonly FileItem[], selected: number, host: StashMenuHost): MenuItem[] {
-  if (parts.length < selected) return [menuNote(t('Routes and tracks inside files cannot be changed together with files and folders'))];
-  const one = parts.length === 1 ? parts[0]! : undefined;
+export function partsMenu(taken: readonly StashPart[], selected: number, host: StashMenuHost): MenuItem[] {
+  const parts: FileItem[] = taken.flatMap(({ file, items }) => items.map((item) => ({ file, item })));
+  const waypoints = taken.filter((part) => part.waypoints).length;
+  if (parts.length + waypoints < selected) return [menuNote(t('Routes and tracks inside files cannot be changed together with files and folders'))];
+  const one = parts.length === 1 && waypoints === 0 ? parts[0]! : undefined;
   const tracks = parts.filter((at) => at.item.kind === 'track');
   return [
-    ...(one ? [] : [menuNote(t('{what} selected', { what: t('{n} routes and tracks', { n: parts.length }) }))]),
-    { label: t('Copy'), run: () => copyOut(pickedOf(parts)) },
-    { label: t(one ? 'Save as ride' : 'Save tracks as rides'), disabled: tracks.length === 0, run: () => keepRides(pickedOf(tracks)) },
-    { label: t('Rename…'), disabled: !one, run: () => host.rename(one!.item.kind === 'track' ? t('Rename track') : t('Rename route'), t('Name'), one!.item.name, (name) => renameStashItem(one!.file.id, one!.item, name), relistStash) },
-    { label: t('Delete'), run: () => void removeItems(parts, host.relist) },
+    ...(parts.length > 1 ? [menuNote(t('{what} selected', { what: t('{n} routes and tracks', { n: parts.length }) }))] : []),
+    { label: t('Copy'), run: () => copyStashParts([...taken]) },
+    ...(waypoints > 0
+      ? []
+      : [
+          { label: t(one ? 'Save as ride' : 'Save tracks as rides'), disabled: tracks.length === 0, run: () => keepRides(pickedOf(tracks)) },
+          { label: t('Rename…'), disabled: !one, run: () => host.rename(one!.item.kind === 'track' ? t('Rename track') : t('Rename route'), t('Name'), one!.item.name, (name) => renameStashItem(one!.file.id, one!.item, name), relistStash) },
+          { label: t('Delete'), run: () => void removeItems(parts, host.relist) },
+        ]),
   ];
 }

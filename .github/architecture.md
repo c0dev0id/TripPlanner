@@ -146,6 +146,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `GET /stash/files/{id}/gpx` | The file as it is kept, compressed with gzip, as a download under its name. |
 | `PATCH /stash/files/{id}/items/{kind}/{position}` | Renames the file's route or track at that place among its routes or tracks (`kind`: `route` or `track`) with `{name}`, which rewrites the file. |
 | `DELETE /stash/files/{id}/items?items=` | Removes routes and tracks from the file, named comma-separated as kind and place (`track:0,route:2`), which rewrites the file. |
+| `POST /stash/files/{id}/parts` | Adds parts of the user's other files to the file, which rewrites it and leaves the others as they are: `{parts}`, each with its `fileId`, its `items` as `{kind, position}` among that file's routes or tracks, and whether all its `waypoints` come along. Answers 204, or 404 where a file or one of the items is missing. |
 | `POST /stash/files/{id}/rides` | Keeps the file's tracks as rides, all of them or with `{tracks}` those at these places among its tracks, each named after itself or else its file. Answers `{kept, known}`: how many rides were kept, and how many the user kept already. |
 | `GET /folders` | The user's folders, each with the folder it is in (`parentId`, null at the top) and its `kind`: the two special ones first (`collections`, `places`), the others (`folder`) by name. |
 | `POST /folders` | Creates a folder from `{name, parentId}`; the parent may be null. |

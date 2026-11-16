@@ -269,7 +269,8 @@
   another click the file again. Files are selected as folders are, dragged or moved
   into the Stash's folders, renamed and deleted from their menu; a folder deleted
   takes its files with it or gives them to the folder around it. Nothing is started
-  in the Stash and nothing is pasted into it: a folder is all that is made there. The
+  in the Stash, and no trip or day is pasted into it: a folder is all that is made
+  there, and a file takes only what is copied from other files of the Stash. The
   search finds files by name and their routes and tracks by theirs, and shows what it
   found in its folder and on the map.
 - Things leave the Stash by Copy, in the menu of a file, of several selected, or of
@@ -282,7 +283,9 @@
   under "Places", a place the list holds already left out. Copied routes and tracks go
   as an import would read them, a route with its points and the way Garmin gave
   between them, a track with its line, each with the waypoints on its points, to be
-  pasted into a day of any trip. Save as ride, in the menu of a route or a track, keeps a track among the rides with
+  pasted into a day of any trip. A file's waypoints are one row under its routes and
+  tracks, selected and copied all together: pasted into a day they are free stops,
+  into a list of places or a category of it places. Save as ride, in the menu of a route or a track, keeps a track among the rides with
   everything the file tells of it, its times, heights and sensor values: a track that
   is all its file holds of routes and tracks as the file itself, so that it is known as
   the ride the same file was kept as before, any other alone, without the file's
@@ -293,9 +296,12 @@
   with the Delete key, after a question. Either rewrites the stored file and leaves the
   rest of it as it was; the same file imported again is still known as kept. Routes
   and tracks are selected with their pads, Cmd or Ctrl and Shift as files are; selected
-  together with files or folders they are not acted on, and the menu says so. Nothing
-  finer is changed in the Stash: no geometry, no symbols, and waypoints only with
-  their file.
+  together with files or folders they are not acted on, and the menu says so. What is
+  copied of files, routes, tracks and the waypoints of a file, is pasted from another
+  file's menu into that file: added to it as it stands in its own, in the format's
+  order, while its own file keeps it, so that files are put together from others.
+  Nothing finer is changed in the Stash: no geometry, no symbols, and waypoints only
+  all of a file together.
 - Import by dropping GPX files, zips of exported trips and folders from the computer on
   a folder of the tree, or by Add in its menu; what they become follows from the folder.
   On Places or a folder in it, a GPX file's waypoints

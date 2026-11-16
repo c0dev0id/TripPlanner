@@ -437,6 +437,17 @@ entries at the end of their section.
   trip, routes and stops in a day, places in a list. Nothing new is read: the paste
   hands the file's GPX to the import of the place. A track still becomes a ride from
   its own row's menu.
+- **Parts of Stash files are copied between files on the server, as XML.** Putting a
+  file together from others, a route from one, the waypoints from another, would lose
+  what the planner does not read if it went through the planner's own model: device
+  extensions, symbols, a track's sensor values. The server copies the elements whole
+  from the stored source into the stored target (`GpxEdit::with`), in the order the
+  format gives them, and reads the index again. The source keeps its part: a copy,
+  since nothing else in the Stash is cut. A file's waypoints are one row and go all
+  together: picking single waypoints would make the Stash an editor, which it is not.
+  The clipboard holds what was taken by file, kind and place, and each place it is
+  pasted reads it its own way: a file of the Stash through the server, a day or a
+  list of places through the import's reader.
 - **Texts are written as software says things.** Labels and messages are the
   conventional short forms ("Assign to this day", "Trip not found.", "No GPX files
   found.") and not descriptive sentences, in English and in German alike, so that a

@@ -18,3 +18,10 @@ export interface StashFile {
   waypoints: number;
   items: StashItem[];
 }
+
+/** What is taken of a file of the Stash: routes and tracks of it, and whether its waypoints, which go all together. */
+export interface StashPart {
+  file: StashFile;
+  items: StashItem[];
+  waypoints: boolean;
+}
