@@ -288,8 +288,8 @@ final class TripDocumentsTest extends TestCase
         self::assertNotSame('day1', $copy['days'][0]['id']);
         self::assertSame(['Home', 'Hotel Post', 'Café & Bar'], array_column($copy['days'][0]['stops'], 'name'));
         self::assertSame($copy['days'][0]['routes'][0]['points'][0]['id'], $copy['days'][0]['stops'][0]['pointId']);
-        self::assertSame(['Alps copy', 'Alps'], array_map(fn ($t) => $t->name, $this->trips->listFor($this->userId)));
-        self::assertSame(1, $this->trips->listFor($this->userId)[0]->dayCount);
+        self::assertSame(['Alps', 'Alps copy'], array_map(fn ($t) => $t->name, $this->trips->listFor($this->userId)));
+        self::assertSame(1, $this->trips->listFor($this->userId)[1]->dayCount);
     }
 
     public function testKeepsACollectionAsOneThroughListsLoadsAndCopies(): void
@@ -297,22 +297,23 @@ final class TripDocumentsTest extends TestCase
         $id = $this->trips->create($this->userId, 'TET', $this->now, $this->placesFolder(), 'collection')->id;
         self::assertSame('collection', $this->documents->load($this->userId, $id)['kind']);
         $copyId = $this->documents->copy($this->userId, $id, $this->now);
-        self::assertSame(['collection', 'collection', 'trip'], array_map(fn ($t) => $t->kind, $this->trips->listFor($this->userId)));
+        self::assertSame([['Alps', 'trip'], ['TET', 'collection'], ['TET copy', 'collection']], array_map(fn ($t) => [$t->name, $t->kind], $this->trips->listFor($this->userId)));
         self::assertSame('collection', $this->documents->load($this->userId, (int) $copyId)['kind']);
     }
 
     public function testListsTripsWithTheirDayCountAndDeletesThemWithTheirContent(): void
     {
         $this->save(TripFixture::document(), 1);
-        $this->trips->create($this->userId, 'Later', $this->now->modify('+1 hour'));
+        $this->trips->create($this->userId, 'later', $this->now->modify('+1 hour'));
+        $this->trips->create($this->userId, 'Brenner', $this->now->modify('+2 hours'));
         $list = $this->trips->listFor($this->userId);
-        self::assertSame(['Later', 'Alps'], array_map(fn ($t) => $t->name, $list));
-        self::assertSame([0, 1], array_map(fn ($t) => $t->dayCount, $list));
-        self::assertSame('{"id":' . $this->tripId . ',"kind":"trip","name":"Alps","folderId":null,"state":"planned","startsOn":"2027-06-12","dayCount":1,"updatedAt":"2026-10-27T10:00:00Z"}', json_encode($list[1]));
+        self::assertSame(['Alps', 'Brenner', 'later'], array_map(fn ($t) => $t->name, $list), 'Trips are listed by name, whatever the case and whenever they were changed.');
+        self::assertSame([1, 0, 0], array_map(fn ($t) => $t->dayCount, $list));
+        self::assertSame('{"id":' . $this->tripId . ',"kind":"trip","name":"Alps","folderId":null,"state":"planned","startsOn":"2027-06-12","dayCount":1,"updatedAt":"2026-10-27T10:00:00Z"}', json_encode($list[0]));
         self::assertFalse($this->trips->delete($this->userId + 1, $this->tripId));
         self::assertTrue($this->trips->delete($this->userId, $this->tripId));
         self::assertSame(0, (int) $this->db->query('SELECT COUNT(*) FROM stops')->fetchColumn());
-        self::assertSame(['Later'], array_map(fn ($t) => $t->name, $this->trips->listFor($this->userId)));
+        self::assertSame(['Brenner', 'later'], array_map(fn ($t) => $t->name, $this->trips->listFor($this->userId)));
     }
 
     public function testMergesTripsWithTheirJournalUnderTheSameIds(): void

@@ -17,13 +17,13 @@ final class Trips
     ) {
     }
 
-    /** @return TripSummary[] the user's trips, last changed first, each starting on its first dated day */
+    /** @return TripSummary[] the user's trips by name, as folders and files are listed, each starting on its first dated day */
     public function listFor(int $userId): array
     {
         $statement = $this->db->prepare(
             'SELECT t.id, t.kind, t.name, t.folder_id, t.state, t.updated_at, MIN(d.date) AS starts_on, COUNT(d.id) AS day_count
              FROM trips t LEFT JOIN days d ON d.trip_id = t.id
-             WHERE t.user_id = ? GROUP BY t.id ORDER BY t.updated_at DESC, t.id DESC',
+             WHERE t.user_id = ? GROUP BY t.id ORDER BY t.name COLLATE NOCASE, t.id',
         );
         $statement->execute([$userId]);
         return array_map($this->summary(...), $statement->fetchAll());

@@ -943,6 +943,12 @@ entries at the end of their section.
   the map alone. The earlier rule, bring it back only where the pane had folded it,
   made the same button do two things by a past the user does not see. The duplicates' report does not fold it on a wide screen, since it shows
   in the library where a duplicate lies.
+- **Trips are listed by name.** They were listed last changed first, which put the
+  trip worked on at the top. But anything that changes a trip moves it: a route moved
+  from one trip to another sent both to the top of a long folder, out of sight of
+  where the pointer was. Folders and files of the Stash were by name already; the
+  trips now are too, on the server, with the same collation. The time a trip was
+  changed is still sent, for what needs to know that it was.
 - **A trip of one day has no level of days.** Most trips are of one day, and each
   showed a row for it that had to be clicked to get to the day. The trip's row now
   stands for the day: a click opens the day's pane, with the library folding as it

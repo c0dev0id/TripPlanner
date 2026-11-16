@@ -93,7 +93,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `PUT /password` | Sets a new password, `{current, password, repeat}`, once `current` is the password in use. |
 | `GET /places/own` | The places the user keeps in the lists of the Places folder, by list, kind and name: id, name, symbol, position, address, contact, website, notes, and the list (`tripId`, `list`) and kind (`dayId`, `kind`) each is in. |
 | `GET /places/{x}/{y}` | The places in a tile of the web's maps at zoom 10 whose kind is among `kinds=` (comma-separated): id, kind, position and tags. Cacheable for a day. |
-| `GET /trips` | The user's trips and collections, last changed first, with their kind, folder, state, day count and first dated day. |
+| `GET /trips` | The user's trips and collections by name, with their kind, folder, state, day count and first dated day. |
 | `POST /trips` | Creates a trip from `{name, folderId, kind}`; the folder may be null, the kind is `trip` (the default) or `collection`. A collection goes into a special folder or a folder in one, a trip anywhere else; 422 otherwise. |
 | `GET /trips/{id}` | The trip document: kind, name, description, state, version, days (each with its date) with routes and stops in riding order. |
 | `PUT /trips/{id}` | Replaces the trip's content with the document sent, which carries the version it was loaded at. A day, or a route of a day sent whole, may be sent as `{id, unchanged: true}` and then stands for the stored one. 409 when the version is no longer the current one, 422 when the document is malformed, names parts of another trip or leaves out as unchanged what the trip does not hold. |

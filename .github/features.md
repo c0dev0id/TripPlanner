@@ -41,7 +41,9 @@
   year of them unfolded, with their count and length over them.
 - Stash, Trips and Places are each a tree: its folders and trips as rows, each unfolding
   in place by a click on it, a folder to its folders and trips, a trip to its days, as
-  many at once as wanted; what is unfolded is kept per browser. The tree has one mark,
+  many at once as wanted; what is unfolded is kept per browser. In a folder its folders
+  stand first, then its trips, lists or files, each by name whatever the case, so that
+  a row stays where it is when what it holds is changed. The tree has one mark,
   on the row clicked last: a folder, a trip or a day. A click on a folder marks it,
   which makes it the one new trips, imports and pasted ones go into, and unfolds it;
   marked and unfolded already, it folds. A trip is a folder of days and answers the
