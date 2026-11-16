@@ -1,5 +1,5 @@
-import { createSignal, For, Show } from 'solid-js';
-import { changePassword } from '../api';
+import { createResource, createRoot, createSignal, For, Show } from 'solid-js';
+import { changePassword, fetchMe, logout } from '../api';
 import { createRequest } from '../ui/request';
 import { chooseLanguage, LANGUAGES, languageChoice, type Language } from '../i18n/language';
 import { t } from '../i18n/t';
@@ -7,10 +7,13 @@ import { DEFAULT_RIDES_OPACITY, DEFAULT_ROUTE_WIDTH, ROUTE_WIDTHS } from '../mod
 import { changePreferences, ridesOpacity, routeColoring, routeWidth } from '../state/preferences';
 import { chooseTheme, theme, THEMES, type Theme } from '../ui/theme';
 
+/** Whose account it is, asked once. */
+const [me] = createRoot(() => createResource(fetchMe));
+
 /**
  * What the user sets for the planner as a whole, in the library's pane under its own
- * tab, each setting kept as soon as it changes: the account's language and password,
- * then how the map draws routes and rides. A kind of place has its own settings, in the
+ * tab, each setting kept as soon as it changes: the account with the way out of it, its
+ * language and password, then how the map draws routes and rides. A kind of place has its own settings, in the
  * Places tab.
  */
 export function Settings() {
@@ -18,6 +21,12 @@ export function Settings() {
     <div class="settings">
       <section>
         <h3>{t('User')}</h3>
+        <p class="row account">
+          <span class="grow">{me()?.email}</span>
+          <button type="button" class="link" onClick={logout}>
+            {t('Sign out')}
+          </button>
+        </p>
         <label>
           {t('Language (this browser)')}
           <select value={languageChoice} onChange={(e) => chooseLanguage(e.currentTarget.value as Language | 'auto')}>

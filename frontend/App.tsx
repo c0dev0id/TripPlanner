@@ -1,5 +1,5 @@
-import { createEffect, createResource, createSignal, onCleanup, onMount, Show, untrack } from 'solid-js';
-import { errorMessage, fetchMe, fetchTrip, logout, type Progress } from './api';
+import { createEffect, createSignal, onCleanup, onMount, Show, untrack } from 'solid-js';
+import { errorMessage, fetchTrip, type Progress } from './api';
 import { DuplicatesReport } from './library/DuplicatesReport';
 import { setPinsAsideIfHidden, switchTab } from './state/tabs';
 import { takePinsBack } from './state/pins';
@@ -33,10 +33,8 @@ import { StopDialog } from './trip/StopDialog';
 import { TrackDialog } from './trip/TrackDialog';
 import { TripDialog } from './trip/TripDialog';
 import { ConfirmDialog } from './ui/ConfirmDialog';
-import { t } from './i18n/t';
 
 export function App() {
-  const [me] = createResource(fetchMe);
   const [error, setError] = createSignal<string>();
 
   /** Counts the trips asked for and the leavings, so that a trip that arrives after the user went elsewhere is not opened. */
@@ -137,24 +135,19 @@ export function App() {
   return (
     <>
       <aside class="panel library-panel" classList={{ folded: panelFolded() }} data-drop-folder={dropFolder()} data-drop-rides={libraryTab() === 'recordings' ? '' : undefined}>
-        <header class="panel-header">
-          {/* Folded away, the strip has the button; unfolded, the tabs have it, which stay in view while the library scrolls. */}
-          <Show when={panelFolded()}>
+        {/* Folded away, the strip has the button, where the bar of tabs has it while unfolded: the first thing of the panel either way, so that it stays under the pointer. */}
+        <Show when={panelFolded()}>
+          <header class="panel-header">
             <FoldButton />
-          </Show>
-          <Show when={openTrip()}>
-            {(trip) => (
-              <span class="open-trip">
-                <span class="name">{trip().name}</span>
-              </span>
-            )}
-          </Show>
-          <h1>Trip Planner</h1>
-          <Show when={me()}>{(user) => <span class="user">{user().email}</span>}</Show>
-          <button type="button" class="link" onClick={logout}>
-            {t('Sign out')}
-          </button>
-        </header>
+            <Show when={openTrip()}>
+              {(trip) => (
+                <span class="open-trip">
+                  <span class="name">{trip().name}</span>
+                </span>
+              )}
+            </Show>
+          </header>
+        </Show>
         <Show when={panelFolded() && tripShown() && openTrip()}>
           <DayStrip />
         </Show>

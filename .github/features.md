@@ -63,8 +63,8 @@
   says so. The button in the line under the tabs folds every
   folder and trip of the tree shown away.
   The open trip stays in the tree, the others around it, so that another trip is one
-  click away. Above the tree stand the duplicates report's switch as an icon and the
-  search. The open trip's row says whether it is saved, and its menu has what only the
+  click away. Above the tree stands the search, and beside the trips' the duplicates
+  report's switch as an icon. The open trip's row says whether it is saved, and its menu has what only the
   open trip has: Edit… in place of Rename…, Export GPX…, Journal…, Print, share… and
   Close, which leaves it saved; a list of places has Close alone.
 - A library of the user's trips in folders, which may hold folders: create, open, rename,
@@ -179,7 +179,9 @@
   Remove point. Free stops farther away, or
   of a day without a route, are listed on their own. The button with three lines folds the library away
   to a strip, which leaves the map the room, and brings it back; it stands before the
-  tabs and stays in view with them while the library scrolls. The strip keeps the
+  tabs, in the panel's first row, and at the same spot at the head of the strip, so
+  that a second click where the pointer is brings the library back. Nothing stands
+  over the tabs: the account, with the way to sign out, is under the settings. The strip keeps the
   open trip's days in reach: a numbered button each, in the colour its routes have
   where each day has one, the day shown ringed; a click shows the day, or the whole
   trip again where that day is shown. Of an open list of places it keeps the
@@ -323,7 +325,7 @@
   once the import is done. On any other folder or the top, a file becomes a trip and a dropped folder
   is imported as the folder tree above says. Exported trips in dropped folders and in
   zips come back as they were.
-- A duplicates report, switched on by its icon among the library's actions, in the pane
+- A duplicates report, switched on by its icon beside the trips' search, in the pane
   between the library and the map: the routes kept more than once across all trips
   and collections, grouped as exact copies (the same points or the same line, whatever
   the date) or as the same ride kept twice (the same way within a kilometre at both

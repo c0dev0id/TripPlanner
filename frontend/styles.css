@@ -1,5 +1,7 @@
 :root {
   --panel-width: 340px;
+  /* How high the bar of the library's tabs is, and with it the head of the strip the library folds away to. */
+  --library-bar-height: 55px;
   --side-pane-width: 360px;
 }
 
@@ -45,10 +47,6 @@ body {
 .panel.folded > :not(.panel-header),
 .panel.folded > .panel-header > :not(.icon) {
   display: none;
-}
-
-.panel.folded > .panel-header {
-  border-bottom: 0;
 }
 
 /* The open trip's name beside the button of the library folded away, on a phone, where no strip stands beside the map. */
@@ -186,19 +184,20 @@ a {
   background: var(--panel);
 }
 
+/*
+ * The head of the strip the library folds away to, with the button that brings it back.
+ * It is as high as the bar of tabs, and the button stands in it where it stands in that
+ * bar: the panel's first row either way, so that folding and unfolding leave the button
+ * under the pointer.
+ */
 .panel-header {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 12px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.panel-header h1 {
-  flex: 1 1 auto;
-  margin: 0;
-  font-size: 1.1rem;
+  align-items: center;
+  box-sizing: border-box;
+  height: var(--library-bar-height);
+  /* The strip is padded 6 px, the panel unfolded 12. */
+  margin-left: 6px;
+  padding-top: 4px;
 }
 
 .panel h2 {
@@ -500,20 +499,18 @@ a {
   overflow-wrap: anywhere;
 }
 
-/* The library's pane: its switches and search on top, then the open trip's name over the tree. */
-.library-actions {
-  gap: 2px;
-  margin-top: 8px;
-}
-
-.panel .library-actions button.icon {
-  padding: 6px;
-  border-radius: 6px;
+/* A tab's search, under the bar of tabs; beside the trips' the switch of the duplicates report. */
+.search-row {
+  margin: 8px 0 4px;
 }
 
 .explorer .search {
-  width: 100%;
-  margin: 8px 0 4px;
+  min-width: 0;
+}
+
+/* The account in the settings: whose it is, and the way out. */
+.settings .account {
+  margin: 0 0 8px;
 }
 
 .save-state {
@@ -603,7 +600,9 @@ button.icon.pin[aria-pressed='true'] {
   position: sticky;
   top: 0;
   z-index: 1;
+  box-sizing: border-box;
   gap: 2px;
+  min-height: var(--library-bar-height);
   margin-bottom: 4px;
   padding-top: 4px;
   border-bottom: 1px solid var(--line);
@@ -1791,10 +1790,6 @@ fieldset.symbols {
     border: 0;
   }
 
-  .library-panel .user {
-    display: none;
-  }
-
   .library-panel.folded {
     inset: 10px auto auto 10px;
     z-index: 5;
@@ -1805,9 +1800,10 @@ fieldset.symbols {
   }
 
   .panel.folded > .panel-header {
-    flex-wrap: nowrap;
     align-items: stretch;
     gap: 8px;
+    height: auto;
+    margin: 0;
     padding: 0;
   }
 

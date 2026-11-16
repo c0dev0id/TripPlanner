@@ -305,9 +305,15 @@ entries at the end of their section.
   scrolls as a whole, so each tab's scroll is kept and given back, and the tabs stay at
   the top of it, since a tab that scrolled away would have to be scrolled back to. The
   button that folds the library away stands in that bar for the same reason: in the
-  heading above it scrolled out of reach, and keeping the whole heading in view would
-  have cost every list two lines for a title and the sign-out. The
-  search stays above the tabs and limits the one shown (see "The search limits the tab
+  heading above it scrolled out of reach. That heading, a title, the account and the
+  sign-out, then went altogether: with it over the tabs the button stood 130 px lower
+  unfolded than at the head of the strip, and slipped from under the pointer at every
+  fold. The bar is the panel's first row now, the strip's head as high as it
+  (`--library-bar-height`) with the button at the same offset, the account and the
+  sign-out are under the settings, where the user's other things are, and the browser's
+  tab says what the page is. The duplicates report's switch, which had a row of its
+  own under the heading, stands beside the trips' search: it is a report of trips'
+  routes. Each tab's search is under the bar (see "The search limits the tab
   shown"). The address names the tab by the folder shown and, for the
   rides, by `view=recordings`.
 - **A folder's place says what it holds.** Lists of places live among the Places,
