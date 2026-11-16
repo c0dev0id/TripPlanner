@@ -1,15 +1,14 @@
-import { createSignal, Show } from 'solid-js';
+import { createMemo, createSignal, Show } from 'solid-js';
+import { Portal } from 'solid-js/web';
 import type { Day } from '../model/trip';
 import { dayColor } from '../model/routeLook';
 import { routeColoring } from '../state/preferences';
 import { PlaceKindMark } from '../map/PlaceKinds';
-import { routesDistance } from '../routing/legs';
 import { isPlaceList } from '../state/library';
-import { mediaOf } from '../state/media';
 import { foldPanel } from '../state/panel';
-import { recordingsOf } from '../state/recordings';
 import { openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
 import { ForById } from '../ui/ForById';
+import { dayCounts } from './DayPane';
 import { dayDetail, dayHeading, dayHolds, dayTitleOf } from './labels';
 
 /**
@@ -76,15 +75,17 @@ export function DayStrip() {
 /** What the strip says of the day under the mouse: its heading, its date and length, and what it holds; of a list's kind, its name and its places. */
 function DayTip(props: { day: Day; top: number; left: number }) {
   const trip = () => openTrip()!;
-  const holds = () => ({ date: props.day.date, routes: props.day.routes.length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, media: mediaOf(props.day.id).length, distanceM: routesDistance(props.day.routes) });
+  const counts = createMemo(() => dayCounts(props.day));
   return (
-    // Kept on the page where the button stands near its top or bottom.
-    <div class="strip-tip" style={{ top: `clamp(40px, ${props.top}px, 100dvh - 40px)`, left: `${props.left}px` }}>
-      <span class="name">{dayHeading(trip().kind, trip().days.indexOf(props.day), props.day.name)}</span>
-      <span class="muted">{dayDetail(trip().kind, holds(), isPlaceList(openTripId()))}</span>
-      <Show when={trip().kind === 'trip'}>
-        <span class="muted">{dayHolds(holds(), 'stop')}</span>
-      </Show>
-    </div>
+    // Outside the panel, which hides and clips what is in it while folded; kept on the page where the button stands near its top or bottom.
+    <Portal>
+      <div class="strip-tip" style={{ top: `clamp(40px, ${props.top}px, 100dvh - 40px)`, left: `${props.left}px` }}>
+        <span class="name">{dayHeading(trip().kind, trip().days.indexOf(props.day), props.day.name)}</span>
+        <span class="muted">{dayDetail(trip().kind, counts(), isPlaceList(openTripId()))}</span>
+        <Show when={trip().kind === 'trip'}>
+          <span class="muted">{dayHolds(counts(), 'stop')}</span>
+        </Show>
+      </div>
+    </Portal>
   );
 }

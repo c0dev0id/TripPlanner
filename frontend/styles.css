@@ -111,7 +111,7 @@ body {
 }
 
 /* What the strip says of the day under the mouse, beside its button and level with it. */
-.panel.folded > .strip-tip {
+.strip-tip {
   position: fixed;
   z-index: 10;
   display: flex;

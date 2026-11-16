@@ -1,5 +1,6 @@
 import { createMemo, Show } from 'solid-js';
 import { t } from '../i18n/t';
+import type { Day } from '../model/trip';
 import { routesDistance } from '../routing/legs';
 import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
 import { mediaOf } from '../state/media';
@@ -13,6 +14,9 @@ import { SidePane } from '../ui/SidePane';
 import { SectionDetails } from './CollectionPanel';
 import { dayDetail, dayHeading, dayTitleOf } from './labels';
 import { DayDetails, JournalButton } from './TripPanel';
+
+/** A day as its labels count it: its date, what it holds and how far its routes go. */
+export const dayCounts = (day: Day) => ({ date: day.date, routes: day.routes.length, stops: day.stops.length, recordings: recordingsOf(day.id).length, media: mediaOf(day.id).length, distanceM: routesDistance(day.routes) });
 
 /**
  * The pane of the day picked in the list, beside it: a trip's day with its routes, stops
@@ -28,10 +32,9 @@ export function DayPane() {
         const label = createMemo(() => dayTitleOf(openTrip()!, shown()));
         /** The label without the date, which stands under it. */
         const heading = () => dayHeading(openTrip()!.kind, openTrip()!.days.indexOf(shown()), shown().name);
-        const distance = createMemo(() => routesDistance(shown().routes));
         /** The day `by` days on from the one shown, where there is one. */
         const step = (by: number) => openTrip()!.days[openTrip()!.days.indexOf(shown()) + by];
-        const detail = () => dayDetail(openTrip()!.kind, { date: shown().date, routes: shown().routes.length, stops: shown().stops.length, recordings: recordingsOf(shown().id).length, media: mediaOf(shown().id).length, distanceM: distance() }, isPlaceList(openTripId()));
+        const detail = () => dayDetail(openTrip()!.kind, dayCounts(shown()), isPlaceList(openTripId()));
         const neighboursLabel = () => t(showNeighbours() ? 'Hide adjacent days' : 'Show adjacent days (dimmed)');
         return (
           <SidePane
