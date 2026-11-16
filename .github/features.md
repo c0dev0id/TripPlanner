@@ -294,6 +294,15 @@
   there, and a file takes only what is copied from other files of the Stash. The
   search finds files by name and their routes and tracks by theirs, and shows what it
   found in its folder and on the map.
+- A folder of the Stash that holds files of its own offers Group files… in its menu:
+  it proposes which of them belong together, the legs of a ride, the days of a tour,
+  the versions of a route, and makes nothing by itself. Each proposed group stands in
+  a dialog with the name its folder would get, which can be changed, with what tied
+  its files (names alike, one continuing the other, a way there and a way back,
+  exported together) and with its files; a group unticked is left as it is. Create
+  folders makes a folder in the folder for each group ticked, takes the one of that
+  name where there is one, and moves the files into it. Files that belong to no group
+  stay where they are, and the folder is asked again whenever more should be sorted.
 - Things leave the Stash by Copy, in the menu of a file, of several selected, or of
   one route or track, and with Ctrl or Cmd with C. A copied file is imported where it
   is pasted, as the same file picked there would be: into a folder of the trips, or

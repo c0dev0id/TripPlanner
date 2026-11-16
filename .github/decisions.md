@@ -389,6 +389,31 @@ entries at the end of their section.
     by a tool carry `ns2:` where Garmin wrote `gpxx:`, and Rumo has a `RouteExtension`
     of its own. What was found is kept with the row (`stash_items.features`), as its
     line is.
+  - Sorting a pile into tours is proposed, never done: no clue in a pile of files is
+    reliable alone. Tried on some five hundred files of a club's routes, a shared word
+    tied unrelated rides of one region, the end of one route meeting the start of
+    another tied every ride that came home to the next that left, and "written by the
+    same program" was true of three in four. Two files are therefore tied where two
+    clues agree: their names share a word that may name a tour, and one goes on where
+    the other ends, or they are a way there and a way back, or they were written
+    within the hour by the same program; or, names apart, they were written together
+    and one goes on from the other. Names that begin with the same two such words are
+    tied alone. Arriving where files of other folders leave from as well, or several
+    files of the folder with other names, goes on to nothing: that is a home or a
+    meeting point. A hotel that every day of a tour leaves from is none, since those
+    files share the tour's name. The words that name no tour (day, part, outbound,
+    the weekdays, the small words between, in German and English) are a list in
+    `library/grouping.ts`.
+  - A group becomes a folder and nothing more. Whether its files are the days of a
+    tour, the legs of one day or versions of one route often cannot be told from
+    them, and the Stash has no days; that is decided where a folder is made a trip.
+    The order in a group is by name, not the order ridden: the Stash lists by name.
+  - What wrote a file and when (`stash_files.creator`, `exported_at`) is read from the
+    file's head with the rest of the index. The time on a route's points is not used:
+    a planning program writes there when a point was made, months before the ride.
+    The two columns stand before the file itself, as every column does, so that a
+    listing does not read through the files; a table that gains a column is
+    therefore made anew by its one-shot script, not altered.
   - KML and KMZ are turned into GPX in the browser before they are kept. The user's
     devices write GPX, and what such files hold beyond what GPX can say is little.
 - **A ride is kept once, for itself, and is on days by a link.** The library is a tree

@@ -1031,6 +1031,34 @@ fieldset.choices legend {
   color: var(--fg);
 }
 
+/* The groups proposed among a folder's files: each its tick and name, what tied it, and its files. The dialog is wider for the names, and the list scrolls in it. */
+.dialog:has(.groups) {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 60dvh;
+  margin: 0;
+  padding: 0 4px 0 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.groups > li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.groups ul {
+  margin: 0;
+  padding-left: 26px;
+  list-style: none;
+}
+
 /* The map */
 
 .map-wrap {

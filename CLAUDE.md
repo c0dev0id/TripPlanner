@@ -58,7 +58,10 @@ There is no linter beyond `php -l` and `tsc`. PHPUnit fails on warnings and depr
 - The schema is `db/schema.sql`. There are no migrations before 1.0. A new table or index
   is deployed by `db:init` (`make init`), which adds what is missing; a changed table by
   `db:recreate`, which drops everything, or, where the data is to stay, by a one-shot
-  `bin/migrate-…` script that is run once on the server and then deleted.
+  `bin/migrate-…` script that is run once on the server and then deleted. A table that
+  keeps files (`stash_files`, `recordings`) has the file as its last column, so that a
+  listing does not read through it: such a table gains a column by being made anew in
+  its script, never by `ALTER TABLE … ADD COLUMN`.
 - The SQLite file, the journal's file store and `config/local.php` live outside the
   deployed checkout; php-fpm runs chrooted, so paths are given relative to the checkout.
 
@@ -85,7 +88,8 @@ mark and selection while another tab is shown.
 `library/Library.tsx` holds the trees, their menus and keys; beside it are its cards
 (`cards.tsx`, `StashFileCard.tsx`), the Stash's verbs and menus (`stashMenu.ts`) and what
 is pure and tested: the rows' keys and what a folder takes (`items.ts`), the search
-(`search.ts`).
+(`search.ts`), and which files of a Stash folder belong together (`grouping.ts`, proposed
+in `GroupDialog.tsx`).
 
 Every list selects through `ui/selection.ts`: there is one selection for the page, held
 by one list at a time. `rowSelect` gives a row its click, its pad and its highlight

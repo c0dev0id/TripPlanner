@@ -45,7 +45,7 @@ share work; sharing between users is on the way.
   library, copies and the same ride from two apps; select some to copy or delete them.
 - **A Stash that loses nothing** — GPX files and folders dumped there are kept whole.
   Browse them on the map, clean them up, copy routes into your days or keep a track as
-  a ride with all its data.
+  a ride with all its data. A folder proposes which of its files belong to one tour.
 - **GPX in as well as out** — a file from the device or BaseCamp drops into a day: its
   routes, tracks and waypoints become routes and stops. KML and KMZ files are read too. A recorded track keeps every
   point; reduce its points or turn it into a route from its menu.

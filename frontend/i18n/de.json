@@ -694,5 +694,16 @@
   "The route has Garmin’s route extension": "Die Route hat Garmins Routen-Erweiterung",
   "Its points have Garmin’s route point extension: the way calculated between them": "Die Punkte haben Garmins Routenpunkt-Erweiterung: den berechneten Weg dazwischen",
   "Has data DMD wrote into it": "Enthält Daten, die DMD hineingeschrieben hat",
-  "Has data Rumo wrote into it": "Enthält Daten, die Rumo hineingeschrieben hat"
+  "Has data Rumo wrote into it": "Enthält Daten, die Rumo hineingeschrieben hat",
+  "Group files…": "Dateien gruppieren…",
+  "Group files": "Dateien gruppieren",
+  "Create folders": "Ordner anlegen",
+  "Each group becomes a folder holding its files. Untick a group to leave its files where they are.": "Jede Gruppe wird ein Ordner mit ihren Dateien. Ohne Haken bleiben die Dateien einer Gruppe, wo sie sind.",
+  "Group “{name}”": "Gruppe „{name}“",
+  "Names alike": "Ähnliche Namen",
+  "One continues the other": "Eine setzt die andere fort",
+  "There and back": "Hin und zurück",
+  "Exported together": "Zusammen exportiert",
+  "{files} moved into {folders}.": "{files} in {folders} verschoben.",
+  "Found no files that belong together.": "Keine zusammengehörigen Dateien gefunden."
 }

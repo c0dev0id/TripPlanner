@@ -11,6 +11,8 @@ import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
 import { flushSave } from '../state/autosave';
 import { isShownItem, isShownWaypoints, isShownWhole, relistStash, showInStash, shownInStash, stashFiles, stashProblem, type ShownStash } from '../state/stash';
+import { applyGroups, GroupDialog, type Grouping } from './GroupDialog';
+import { groupFiles } from './grouping';
 import { setEditTarget, setExportScope, setShareOpen } from '../state/drawing';
 import { openJournal } from '../state/journal';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
@@ -79,6 +81,7 @@ export function Library(props: {
   children: JSX.Element;
 }) {
   const [dialog, setDialog] = createSignal<LibraryDialog>();
+  const [grouping, setGrouping] = createSignal<Grouping>();
   const imports = libraryImports(props.onLeave);
   const folders = () => libraryFolders() ?? [];
   const trips = () => libraryTrips() ?? [];
@@ -570,6 +573,8 @@ export function Library(props: {
     const pasteEntries = several ? [] : paste.length > 0 ? paste : [menuNote(t('Paste'))];
     // The export is of trips, which the Stash has none of: its folders have no such entry.
     const exportEntries = 'folder' in item && treeOf(item.folder.id) === 'stash' ? [] : [exportItem(within)];
+    // A folder of the Stash with files of its own offers to sort them into folders.
+    const groupEntries = !several && 'folder' in item && treeOf(item.folder.id) === 'stash' && childFiles(item.folder.id).length > 1 ? [{ label: t('Group files…'), run: () => proposeGroups(item.folder.id) }] : [];
     const fresh: MenuItem[] = several
       ? []
       : 'folder' in item
@@ -580,7 +585,7 @@ export function Library(props: {
             { label: t('Add'), items: [{ label: t('Files…'), run: () => void imports.addToTrip(item.trip) }] },
           ];
     // A special folder stays as it is: it takes what is new, added and pasted, and exports what it holds.
-    if ('folder' in item && item.folder.kind !== 'folder') return [...fresh, ...pasteEntries, ...exportEntries];
+    if ('folder' in item && item.folder.kind !== 'folder') return [...fresh, ...pasteEntries, ...groupEntries, ...exportEntries];
     return [
       ...(several ? [menuNote(t('{what} selected', { what: countText(chosen) }))] : []),
       ...fresh,
@@ -607,10 +612,18 @@ export function Library(props: {
       ...(onlyTrips && several
         ? [{ label: t('Merge into “{name}”', { name: first!.name }), run: () => void merge(first!, others) }]
         : []),
+      ...groupEntries,
       ...exportEntries,
       ...(!several && 'trip' in item && item.trip.id === openTripId() ? openTripItems(item.trip) : []),
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
+  };
+
+  /** Proposes which of the files a folder of the Stash holds itself belong together, or says that none do. */
+  const proposeGroups = (folderId: number) => {
+    const groups = groupFiles(childFiles(folderId), files().filter((file) => file.folderId !== folderId));
+    if (groups.length > 0) setGrouping({ id: folderId, groups });
+    else setImportNote({ text: t('Found no files that belong together.'), errors: [] });
   };
 
   /** What the open trip's menu has besides: its GPX export, its journal, printing and sharing a trip, and closing it, saved. */
@@ -824,6 +837,14 @@ export function Library(props: {
         onSubmit={(name) => {
           const { name: before, save, saved } = renamed()!;
           if (name !== before) void runLibrary(() => save(name), saved);
+        }}
+      />
+      <GroupDialog
+        grouping={grouping()}
+        onClose={() => setGrouping(undefined)}
+        onApply={(groups) => {
+          const { id } = grouping()!;
+          if (groups.length > 0) void runLibrary(async () => setImportNote({ text: await applyGroups(id, groups), errors: [] }), relist);
         }}
       />
     </div>
