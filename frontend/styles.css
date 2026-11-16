@@ -224,6 +224,32 @@ a {
   padding-top: 4px;
 }
 
+/* The button that folds the library bears an A while the library folds by itself, which it always does where it has no room beside a pane. */
+.panel button.icon.fold-button {
+  position: relative;
+}
+
+.panel button.icon.fold-button::after {
+  content: var(--auto-mark, none);
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.panel button.icon.fold-button.auto {
+  --auto-mark: 'A';
+}
+
+@media (max-width: 1199px) {
+  .panel button.icon.fold-button {
+    --auto-mark: 'A';
+  }
+}
+
 .panel h2 {
   margin: 12px 0 8px;
   font-size: 1rem;

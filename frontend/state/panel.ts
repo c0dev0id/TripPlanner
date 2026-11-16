@@ -9,6 +9,17 @@ const PREFERENCE = 'panelFolded';
 const [panelFolded, setPanelFolded] = createSignal(readPreference(PREFERENCE) === '1');
 export { panelFolded };
 
+const AUTO_PREFERENCE = 'autoFold';
+
+/**
+ * Whether the library folds away by itself for the pane beside it, so that one pane at
+ * most stands beside the map, and comes back when the pane closes; on unless this
+ * browser was told otherwise. Where the two have no room side by side, it does so
+ * either way (see `sideBySide`).
+ */
+const [autoFold, setAuto] = createSignal(readPreference(AUTO_PREFERENCE) !== '0');
+export { autoFold };
+
 /** Whether the library was folded away for the pane beside it, and comes back when the pane closes. */
 let foldedForPane = false;
 
@@ -23,11 +34,24 @@ export function foldPanel(folded: boolean): void {
   setFolded(folded);
 }
 
-/** Folds the library away for the pane beside it, where it is not folded already. */
+/** Folds the library away for the pane beside it, where it is not folded already and does not stay beside the pane as the user asked. */
 function foldForPane(): void {
-  if (panelFolded()) return;
+  if (panelFolded() || (sideBySide() && !autoFold())) return;
   setFolded(true);
   foldedForPane = true;
+}
+
+/** Brings the library back as the pane beside it closes by its own button; not where it does not fold by itself, and so stays as the user left it. */
+export function unfoldAfterPane(): void {
+  if (!sideBySide() || autoFold()) foldPanel(false);
+}
+
+/** Turns the folding by itself on or off, at once: on, the library gives way to a pane that is open; off, it comes back where it was folded for one. */
+export function setAutoFold(on: boolean): void {
+  setAuto(on);
+  writePreference(AUTO_PREFERENCE, on ? undefined : '0');
+  if (on && selectedDayId() !== undefined) foldForPane();
+  else if (!on && foldedForPane) foldPanel(false);
 }
 
 /** Whether the screen is a phone's, where the library lies over the map and the day's pane is a sheet under it; the width is the one the styles turn at. */
@@ -35,6 +59,9 @@ export const onPhone = (): boolean => matchMedia('(max-width: 720px)').matches;
 
 /** Whether the screen has room for one pane beside the map, a tablet's: the unfolded library and the pane take turns there. The widths are the ones the styles turn at. */
 const onTablet = (): boolean => matchMedia('(min-width: 721px) and (max-width: 1199px)').matches;
+
+/** Whether the screen has room for the library and a pane side by side: only there is it the user's to say whether the library folds by itself. */
+export const sideBySide = (): boolean => !onPhone() && !onTablet();
 
 /** How much of a phone's screen the day's sheet takes: its heading alone, about half, or nearly all. */
 export type Sheet = 'peek' | 'half' | 'full';

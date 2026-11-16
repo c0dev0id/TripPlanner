@@ -943,6 +943,16 @@ entries at the end of their section.
   the map alone. The earlier rule, bring it back only where the pane had folded it,
   made the same button do two things by a past the user does not see. The duplicates' report does not fold it on a wide screen, since it shows
   in the library where a duplicate lies.
+- **Whether the library folds by itself is the user's to say.** The pane folding the
+  library was a rule with a memory: unfolded by hand beside a day, the library folded
+  again at the next day picked after a trip was opened, and nothing on the screen said
+  why. The rule now has a name and a switch, "Fold automatically" in the menu of the
+  button that folds the library, on by default and marked on the button by an A:
+  one pane at most beside the map, the library gives way to a pane as it opens and
+  comes back as it closes. Off, nothing folds or unfolds it but the user, and the
+  pane's own button leaves it as it is. Where the library and a pane have no room
+  side by side, below 1200 px, it folds either way, and the switch is greyed out. It
+  is a preference of the browser, as the folded state is: it goes with the screen.
 - **Small and touch screens by stylesheet rules, with two exceptions.** Between 721 and
   1199 px, a tablet either way up, the panel takes at most 42 % of the width, and the
   library unfolded and the day's pane take turns beside the folded strip: three panes

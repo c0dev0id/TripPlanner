@@ -220,8 +220,13 @@
   many places it has. The strip has
   them only while the trip or list is the one shown: with another tab's things on the
   map it holds the button alone. The day's pane folds the library away to its
-  strip as it opens. Closed by its own button, the pane always brings the library
-  back, also where the user had folded it away before; closed by a click on the day's
+  strip as it opens, so that one pane at most stands beside the map, and the library
+  comes back when the pane closes. That is "Fold automatically" in the menu of the
+  button with three lines (right-click or a long press), on unless it is turned off
+  there, kept per browser; while it is on, the button bears a small A. Turned off,
+  the library stays as the user leaves it, beside the pane or folded, and turning it
+  on or off takes effect at once. Closed by its own button, the pane brings the library
+  back where it folds by itself, also where the user had folded it away before; closed by a click on the day's
   ringed button in the strip, it leaves the library folded away. On a screen without
   room for three panes, narrower than 1200 px, the strip stands beside the day's pane,
   and the library brought back by its button takes the pane's place until it is folded

@@ -671,6 +671,7 @@
   "Delete {what}?": "{what} löschen?",
   "{n} recordings added.": "{n} Aufzeichnungen hinzugefügt.",
   "Show library": "Bibliothek anzeigen",
+  "Fold automatically": "Automatisch einklappen",
   "Hide library": "Bibliothek ausblenden",
   "Close {what}": "{what} schließen",
   "No routes in this section yet.": "Noch keine Routen in diesem Abschnitt.",
