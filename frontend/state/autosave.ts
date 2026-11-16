@@ -1,5 +1,6 @@
 import { createEffect, createRoot, createSignal, on } from 'solid-js';
 import { ApiError, saveTrip } from '../api';
+import { relistTrips } from './library';
 import { changeCount, markSaved, openTrip, savedTrip } from './trip';
 
 /**
@@ -28,10 +29,13 @@ async function save(keepalive = false): Promise<void> {
   const trip = openTrip();
   if (!trip || saveState() === 'saving' || saveState() === 'conflict') return;
   const count = changeCount();
+  const renamed = trip.name !== savedTrip()?.name;
   setSaveState('saving');
   try {
     markSaved(trip, await saveTrip(trip, savedTrip(), keepalive));
     setSavedSinceLoad(true);
+    // The library lists its trips by name: a trip renamed takes its new place there.
+    if (renamed) relistTrips();
     if (changeCount() === count) setSaveState('saved');
     else {
       setSaveState('dirty');

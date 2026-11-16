@@ -948,7 +948,9 @@ entries at the end of their section.
   from one trip to another sent both to the top of a long folder, out of sight of
   where the pointer was. Folders and files of the Stash were by name already; the
   trips now are too, on the server, with the same collation. The time a trip was
-  changed is still sent, for what needs to know that it was.
+  changed is still sent, for what needs to know that it was. The row of the open
+  trip shows the name the trip has now, and the trips are listed afresh once a save
+  renamed one: the list had only learned of it when it was next read.
 - **A trip of one day has no level of days.** Most trips are of one day, and each
   showed a row for it that had to be clicked to get to the day. The trip's row now
   stands for the day: a click opens the day's pane, with the library folding as it

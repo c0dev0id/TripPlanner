@@ -105,6 +105,8 @@ export function TripCard(props: {
   const loading = () => (isOpening(props.trip.id) ? opening()?.progress : undefined);
   /** How many places a list holds. */
   const held = createMemo(() => counted((outlineOf(props.trip.id) ?? []).reduce((sum, day) => sum + day.stops, 0), 'place'));
+  /** The trip's name: of the open one as it stands, which the library learns once it is saved. */
+  const name = () => (props.trip.id === openTripId() ? (openTrip()?.name ?? props.trip.name) : props.trip.name);
   /** How many days the trip has: of the open one as it stands, which the library learns with the next listing. */
   const days = () => (props.trip.id === openTripId() ? (openTrip()?.days.length ?? props.trip.dayCount) : props.trip.dayCount);
   /** The trip's one day as its row tells it, where it has no other: its date and its length. */
@@ -143,7 +145,7 @@ export function TripCard(props: {
             </Show>
           </Show>
           <span class="lines">
-            <span class="name">{props.trip.name}</span>
+            <span class="name">{name()}</span>
             <span class="muted detail">
               <Show when={loading()} fallback={meta()}>
                 {openingText(loading()!)}
