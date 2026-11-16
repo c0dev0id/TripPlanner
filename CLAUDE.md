@@ -96,8 +96,7 @@ Every list selects through `ui/selection.ts`: there is one selection for the pag
 by one list at a time. `rowSelect` gives a row its click, its pad and its highlight
 (`.selected`), `menuRows` says what a row's menu acts on, and each list reads the keys
 itself through `ui/fileVerb.ts`. A selectable row has a pad (`ui/Pad.tsx`) or a grip
-whose tap selects; a pad that also drags is drawn as a grip, one that only selects as a
-ring.
+whose tap selects; every pad is drawn as a grip, whether it also drags or not.
 
 A drop is a cut and a paste in one move, within the tab (`ui/carry.ts`). What a drag
 holds has a kind, and a place to drop is an element made one for a kind with

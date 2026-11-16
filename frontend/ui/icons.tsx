@@ -191,13 +191,6 @@ export const GripIcon = () => (
   </Icon>
 );
 
-/** The mark of a pad that selects its row and drags nothing. */
-export const RingIcon = () => (
-  <Icon>
-    <path d="M12 12m-5.5 0a5.5 5.5 0 1 0 11 0a5.5 5.5 0 1 0 -11 0" />
-  </Icon>
-);
-
 export const NotebookIcon = () => (
   <Icon>
     <path d="M6 4h11a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-11a1 1 0 0 1 -1 -1v-14a1 1 0 0 1 1 -1m3 0v16" />

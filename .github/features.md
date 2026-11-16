@@ -95,7 +95,7 @@
   line under the tabs has a menu too, with New and Add
   for the top of the tree shown, Paste, and Export for what the tree holds, every trip there is in the trips' case. Several are selected
   together, folders and trips alike: a tap or click on a card's pad (drawn as a drag
-  grip where the row can be dragged, and as a ring, filled while its row is selected, where it is only selected), Cmd or Ctrl with a click, Shift with a click for a run: the cards from the one
+  grip, also on the rows that are only selected by it), Cmd or Ctrl with a click, Shift with a click for a run: the cards from the one
   clicked last to the one clicked now, and no others. A plain click or tap
   still opens, lets go of what was selected and is where the next run starts. The menu then acts on all of them, and a press on a pad drags them all
   onto a folder. Cut folders and trips move to where they are pasted, copied trips get a
