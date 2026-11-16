@@ -238,6 +238,7 @@
   "Meeting point": "Treffpunkt",
   "Merge {what} into one? It replaces the original files.": "{what} zu einer zusammenführen? Sie ersetzt die ursprünglichen Dateien.",
   "Merge": "Zusammenführen",
+  "Merge categories": "Kategorien zusammenführen",
   "Merge into “{name}”": "In „{name}“ zusammenführen",
   "Merge {what} into “{name}”? {where}, and the merged one is deleted.|Merge {what} into “{name}”? {where}, and the merged ones are deleted.": "{what} in „{name}“ zusammenführen? {where}, und die zusammengeführte wird gelöscht.|{what} in „{name}“ zusammenführen? {where}, und die zusammengeführten werden gelöscht.",
   "Merging requires at least two recordings.": "Zum Zusammenführen braucht es mindestens zwei Aufzeichnungen.",

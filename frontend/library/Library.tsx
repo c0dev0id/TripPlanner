@@ -36,7 +36,7 @@ import { StashFileCard, StashItemRow } from './StashFileCard';
 import { addPartsTo, applyGroups, filesMenu, partsMenu, removeItems, takeOut, type StashMenuHost } from './stashMenu';
 import { stashCopies, stashPlaces } from './stashOut';
 import { StandardPlaces } from '../map/PlaceKinds';
-import { keepPlaces, keptText } from './dropImport';
+import { keepPlaces, keptText, type KindedPlace } from './dropImport';
 import { firstFound, foundCount, foundKeys, routeKey, searchLibrary, type FoundRoute, type RouteDays } from './search';
 
 /** The top of the trips, as a place to paste into. */
@@ -373,8 +373,8 @@ export function Library(props: {
     const places = moveTargets(folders(), from, rootOf(treeOf(from)), movedFolders, takerOf(moved)).map(({ label, into }) => ({ label, run: () => moveInto(moved, into) }));
     return places.length > 0 ? [{ label: t('Move…'), items: places }] : [];
   };
-  /** What the clipboard holds of the library, by number: 2 folders and 3 trips. */
-  const clipText = (copied: LibraryClip): string => countsText(copied.folderIds.length, copied.tripIds.length);
+  /** What the clipboard holds of the library, by number and as the tree shown calls it: 2 folders and 3 trips, 1 list. */
+  const clipText = (copied: LibraryClip): string => countsText(copied.folderIds.length, copied.tripIds.length, heldNoun(shownFolderId()));
   /** The folders and trips on the clipboard, those still there. */
   const clipItems = (copied: LibraryClip): Item[] => [...folders().filter((f) => copied.folderIds.includes(f.id)).map((folder) => ({ folder })), ...trips().filter((trip) => copied.tripIds.includes(trip.id)).map((trip) => ({ trip }))];
   /** Pastes the folders and trips on the clipboard into a folder, which empties it: cut, they move there; copied, each trip gets a copy there. */
@@ -445,16 +445,18 @@ export function Library(props: {
   const pasteInto = (tripId: number, routes: CopiedRoute[]) => changeTrip(tripId, (trip) => pasteIntoTrip(trip, routes, newId));
   /** The item that imports what was copied of the Stash into a folder, null for the top of the trips: among the trips files and folders, as trips; among the places files, as lists. None for a folder of the Stash, where they are. */
   const pasteFilesItem = (into: number | null): MenuItem[] => {
-    if (treeOf(into) === 'stash') return [];
-    return libraryPasteItem(treeOf(into) === 'trips' ? { folders: (files, copied) => imports.pasteAsTrips(into, files, copied) } : { files: (files) => imports.pasteFiles(into, files) });
+    const tree = treeOf(into);
+    if (tree === 'trips') return libraryPasteItem('tripsFolder', { files: (files, copied) => imports.pasteAsTrips(into, files, copied) });
+    return tree === 'places' ? libraryPasteItem('placesFolder', { files: (files) => imports.pasteFiles(into, files) }) : [];
   };
-  /** What is pasted into the one folder or trip: folders and trips into a folder, and files of the Stash, which are imported there; routes, days and files of the Stash into a trip, stops into a list of places as places of their kinds. Nothing is pasted into the Stash. */
+  /** Whether the folder, null for the top, takes the trips, lists and folders on the clipboard. */
+  const takesClip = (into: number | null): boolean => {
+    const copied = libraryClip();
+    return copied !== undefined && takerOf(clipItems(copied))(into);
+  };
+  /** What is pasted into the one folder or trip: into a folder the folders, trips and lists of its tree, and files of the Stash, which are imported there; into a trip and a list of places what `model/paste.ts` says each takes. Nothing is pasted into the Stash but what is moved within it. */
   const pasteItems = (item: Item): MenuItem[] => {
-    if ('folder' in item) {
-      const f = item.folder;
-      const copied = libraryClip();
-      return copied && takerOf(clipItems(copied))(f.id) ? [{ label: t('Paste'), run: () => pasteLibrary(f.id) }] : pasteFilesItem(f.id);
-    }
+    if ('folder' in item) return takesClip(item.folder.id) ? [{ label: t('Paste'), run: () => pasteLibrary(item.folder.id) }] : pasteFilesItem(item.folder.id);
     if ('file' in item) return [];
     const id = item.trip.id;
     /** The open trip is left, saved, before it is changed on the server. */
@@ -462,31 +464,33 @@ export function Library(props: {
       if (holdsOpen([item])) await props.onLeave();
       await runLibrary(paste, relistTrips);
     };
-    return libraryPasteItem({
-      files: (files) => imports.pasteFilesIntoTrip(item.trip, files),
-      // Of parts of files of the Stash a list of places takes the waypoints, as places of their kinds, and a trip the routes and tracks, where an import would put them. Media are for a day or a file.
-      parts: {
-        takes: [isPlaceList(id) ? 'waypoints' : 'items'],
-        paste: (parts) =>
-          left(async () => {
-            if (!isPlaceList(id)) return pasteInto(id, await stashCopies(parts));
-            const { kept, known } = await keepPlaces(id, await stashPlaces(parts));
-            setImportNote({ text: keptText(kept, known, 'place', t('No places found.')), errors: [] });
-          }),
+    if (!isPlaceList(id)) {
+      return libraryPasteItem(
+        'trip',
+        {
+          routes: (routes) => left(() => pasteInto(id, routes)),
+          days: (days) => left(() => changeTrip(id, (trip) => pasteDays(trip, days, undefined, newId))),
+          files: (files) => imports.pasteFilesIntoTrip(item.trip, files),
+          parts: (parts) => left(async () => pasteInto(id, await stashCopies(parts))),
+        },
+        id,
+      );
+    }
+    /** Keeps places in the list, each under its kind, and says how many it took and how many it had. */
+    const keep = (places: () => Promise<KindedPlace[]> | KindedPlace[]) =>
+      left(async () => {
+        const { kept, known } = await keepPlaces(id, await places());
+        setImportNote({ text: keptText(kept, known, 'place', t('No places found.')), errors: [] });
+      });
+    return libraryPasteItem(
+      'list',
+      {
+        places: (stops, kinds) => keep(() => stops.map((stop, i) => ({ kind: kinds[i] ?? t('Places'), stop: { ...stop, id: newId(), pointId: null } }))),
+        files: (files) => imports.pasteFilesIntoTrip(item.trip, files),
+        parts: (parts) => keep(() => stashPlaces(parts)),
       },
-      routes: (routes) => left(() => pasteInto(id, routes)),
-      days: (days) => left(() => changeTrip(id, (trip) => pasteDays(trip, days, undefined, newId))),
-      ...(isPlaceList(id)
-        ? {
-            stops: (stops, kinds) =>
-              left(async () => {
-                const places = stops.map((stop, i) => ({ kind: kinds[i] ?? t('Places'), stop: { ...stop, id: newId(), pointId: null } }));
-                const { kept, known } = await keepPlaces(id, places);
-                setImportNote({ text: keptText(kept, known, 'place', t('No places found.')), errors: [] });
-              }),
-          }
-        : {}),
-    });
+      id,
+    );
   };
   /** Puts folders and trips on the clipboard: cut, to be moved where they are pasted; copied, which only trips are. */
   const clip = (chosen: readonly Item[], move: boolean) => copyLibraryItems({ tripIds: tripsOf(chosen).map((trip) => trip.id), folderIds: foldersOf(chosen).map((f) => f.id), move });
@@ -531,7 +535,7 @@ export function Library(props: {
       return copyStash(chosen);
     }
     const clips = verb === 'cut' || verb === 'copy';
-    if (!shownTree() || (verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0) || (clips && files.length > 0)) return;
+    if (!shownTree() || (verb === 'paste' ? !takesClip(shownFolderId()) : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0) || (clips && files.length > 0)) return;
     e.preventDefault();
     if (verb === 'paste') pasteLibrary(shownFolderId());
     else if (verb === 'delete') void remove(chosen);
@@ -548,7 +552,7 @@ export function Library(props: {
     setDialog({ kind: 'rename', title, placeholder, name, save, saved });
   /** What the Stash's menus ask of the library around them. */
   /** The item that adds the copied routes, tracks, waypoints and media of other files to a file of the Stash. */
-  const pasteIntoFile = (file: StashFile): MenuItem[] => libraryPasteItem({ parts: { takes: ['items', 'waypoints', 'media'], paste: (parts) => runLibrary(() => addPartsTo(file, parts), relistStash) } });
+  const pasteIntoFile = (file: StashFile): MenuItem[] => libraryPasteItem('stashFile', { parts: (parts) => runLibrary(() => addPartsTo(file, parts), relistStash) });
   const stashHost: StashMenuHost = { rename, copy: copyStash, moveItem, pasteInto: pasteIntoFile, remove: (chosen) => void remove(chosen), relist };
   /** The menu of a route or a track of a file, or of a file's waypoints or media, by the row's key: for the selected rows, or for it alone where it is not selected. */
   const stashPartMenu = (key: string): MenuItem[] => {
@@ -651,12 +655,11 @@ export function Library(props: {
   ];
   /** The menu of the top of the library: what is new there and added to it, what is pasted, and the export of every trip. */
   const topMenu = (): MenuItem[] => {
-    const copied = libraryClip();
     const files = pasteFilesItem(null);
     return [
       newItem(null),
       addItem(null),
-      ...(files.length > 0 ? files : [{ label: t('Paste'), disabled: !copied || !takerOf(clipItems(copied))(null), run: () => pasteLibrary(null) }]),
+      ...(files.length > 0 ? files : [{ label: t('Paste'), disabled: !takesClip(null), run: () => pasteLibrary(null) }]),
       exportItem(trips()),
     ];
   };
@@ -811,7 +814,7 @@ export function Library(props: {
             keyed
             fallback={
               <>
-                <Show when={libraryClip()}>
+                <Show when={takesClip(shownFolderId()) && libraryClip()}>
                   {(copied) => (
                     <button class="paste-here" onClick={() => pasteLibrary(shownFolderId())}>
                       {t(copied().move ? 'Move {what} to “{where}”' : 'Paste a copy of {what} into “{where}”', { what: clipText(copied()), where: pathOf(shownFolderId()) || ALL_TRIPS })}

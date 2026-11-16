@@ -443,6 +443,15 @@ export function moveStopsIntoRoute(ids: readonly string[], routeId: string): voi
   edit((trip) => ids.reduce((next, id) => dayEdit.moveStopIntoRoute(next, id, routeId, newId()), trip), t('Move stop'));
 }
 
+/** Moves the stops of days into another day and removes the days, as one step to undo: categories of a list of places joined into one. */
+export function mergeDaysInto(ids: readonly string[], dayId: string): void {
+  edit((trip) => {
+    const stops = trip.days.filter((day) => ids.includes(day.id)).flatMap((day) => day.stops);
+    return dayEdit.removeParts(stops.reduce((next, stop) => dayEdit.moveStopToDay(next, stop.id, dayId), trip), 'day', ids);
+  }, t('Merge categories'));
+  leaveWhatIsGone();
+}
+
 /** Moves days to right after another. */
 export function moveDaysAfter(ids: readonly string[], afterId: string): void {
   edit((trip) => dayEdit.moveDaysAfter(trip, ids, afterId), t('Move day'));

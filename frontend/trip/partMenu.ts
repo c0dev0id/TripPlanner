@@ -16,11 +16,11 @@ import { pinItems } from '../ui/Pin';
 import { dayTitleOf } from './labels';
 import { removeDayAsked, removeRouteAsked } from './remove';
 
-/** What a part is called where its number is told, in a trip and in a collection. */
+/** What a part is called where its number is told, in a trip and in a list of places. */
 export const NOUNS: Record<PartKind, { trip: string; collection: string }> = {
-  day: { trip: 'day', collection: 'section' },
+  day: { trip: 'day', collection: 'category' },
   route: { trip: 'route', collection: 'route' },
-  stop: { trip: 'stop', collection: 'waypoint' },
+  stop: { trip: 'stop', collection: 'place' },
 };
 
 /** Removes the parts: one after the question its kind asks, several after one question for all. */
