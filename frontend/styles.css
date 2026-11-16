@@ -51,20 +51,11 @@ body {
   border-bottom: 0;
 }
 
-/* The open trip's name and whether it is saved, beside the button of the library folded away; of the strip beside the map only the latter. */
+/* The open trip's name beside the button of the library folded away, on a phone, where no strip stands beside the map. */
 .open-trip {
   display: none;
   align-items: center;
-  gap: 4px;
   min-width: 0;
-}
-
-.panel.folded > .panel-header > .open-trip {
-  display: flex;
-}
-
-.panel.folded .open-trip > .name {
-  display: none;
 }
 
 /* The open trip's days in the strip, a numbered button each; the day shown is ringed. A long trip's scroll. */
@@ -1822,7 +1813,8 @@ fieldset.symbols {
   }
 
   .panel.folded > .panel-header > .open-trip {
-    padding: 0 6px 0 12px;
+    display: flex;
+    padding: 0 12px;
   }
 
   .panel.folded .open-trip > .name {

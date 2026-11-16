@@ -27,7 +27,7 @@ import { ExportDialog } from './trip/ExportDialog';
 import { JournalDialog } from './trip/JournalDialog';
 import { partKeys } from './trip/partKeys';
 import { RouteDialog } from './trip/RouteDialog';
-import { SaveProblem, SaveState } from './trip/SaveStatus';
+import { SaveProblem } from './trip/SaveStatus';
 import { ShareDialog } from './trip/ShareDialog';
 import { StopDialog } from './trip/StopDialog';
 import { TrackDialog } from './trip/TrackDialog';
@@ -146,7 +146,6 @@ export function App() {
             {(trip) => (
               <span class="open-trip">
                 <span class="name">{trip().name}</span>
-                <SaveState />
               </span>
             )}
           </Show>
