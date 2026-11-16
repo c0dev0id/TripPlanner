@@ -42,7 +42,7 @@ export type Sheet = 'peek' | 'half' | 'full';
 export const [sheet, setSheet] = createSignal<Sheet>('half');
 
 createRoot(() => {
-  // The day's pane folds the library away as it opens, and brings it back as it closes. Where the two cannot stand side by side, a phone's or a tablet's, any day picked folds it away.
+  // The day's pane folds the library away as it opens, and brings it back as it closes otherwise than by its own button or the strip, which say themselves what becomes of the library. Where the two cannot stand side by side, a phone's or a tablet's, any day picked folds it away.
   createEffect(
     on(selectedDayId, (id, before) => {
       if (id === undefined) {

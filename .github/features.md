@@ -190,8 +190,9 @@
   categories instead, each by its icon, or its dot where it has none. The strip has
   them only while the trip or list is the one shown: with another tab's things on the
   map it holds the button alone. The day's pane folds the library away to its
-  strip as it opens, and closing the pane brings the library back, unless the user had
-  folded it away before. On a screen without
+  strip as it opens. Closed by its own button, the pane always brings the library
+  back, also where the user had folded it away before; closed by a click on the day's
+  ringed button in the strip, it leaves the library folded away. On a screen without
   room for three panes, narrower than 1200 px, the strip stands beside the day's pane,
   and the library brought back by its button takes the pane's place until it is folded
   again or another day is picked in it, which folds it away; the day stays picked

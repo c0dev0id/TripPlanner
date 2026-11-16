@@ -3,6 +3,7 @@ import { t } from '../i18n/t';
 import { routesDistance } from '../routing/legs';
 import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
 import { mediaOf } from '../state/media';
+import { foldPanel } from '../state/panel';
 import { recordingsOf } from '../state/recordings';
 import { isPlaceList, shownDay } from '../state/library';
 import { openTrip, openTripId, selectDay } from '../state/trip';
@@ -35,7 +36,11 @@ export function DayPane() {
         return (
           <SidePane
             label={label()}
-            onClose={() => selectDay(undefined)}
+            // Closed by its own button, the pane always gives the library its room back; to keep the library folded, the day is closed from its chip in the strip.
+            onClose={() => {
+              selectDay(undefined);
+              foldPanel(false);
+            }}
             heading={
               <>
                 <span class="day-title">

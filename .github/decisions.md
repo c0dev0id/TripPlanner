@@ -826,9 +826,13 @@ entries at the end of their section.
   spread out.
 - **The day's pane folds the library away.** A day open beside the library left the map
   the room of neither, and the library is not needed while a day is worked on: the
-  strip keeps the days in reach. So the pane folds the library away as it opens and
-  brings it back as it closes, where it folded it; a library the user folded away
-  stays so. The duplicates' report does not fold it on a wide screen, since it shows
+  strip keeps the days in reach. So the pane folds the library away as it opens. How
+  it is closed says what becomes of the library: the pane's own button always brings
+  it back, since whoever closes the day there is done with it and wants the list
+  again, whether the pane had folded the library or the user had; a click on the
+  day's ringed button in the strip closes the day and leaves the library folded, for
+  the map alone. The earlier rule, bring it back only where the pane had folded it,
+  made the same button do two things by a past the user does not see. The duplicates' report does not fold it on a wide screen, since it shows
   in the library where a duplicate lies.
 - **Small and touch screens by stylesheet rules, with two exceptions.** Between 721 and
   1199 px, a tablet either way up, the panel takes at most 42 % of the width, and the
