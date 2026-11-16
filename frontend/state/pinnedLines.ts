@@ -1,4 +1,4 @@
-import { routePositions } from '../routing/legs';
+import { routeLine as lineOf } from '../routing/legs';
 import { keepPinnedLines, isRecordingPinned, pinnedLinesAside, type PinnedLine } from './pins';
 import { loadedTrack, recordingColor, recordingsOf, shownRecordings } from './recordings';
 import { openRouteColors } from './routeColors';
@@ -10,10 +10,11 @@ import { openTrip, routeById } from './trip';
  * not shown. The open trip's pinned routes are drawn with its routes.
  */
 
-/** A route of the open trip as a pinned line. */
+/** A route of the open trip as a pinned line; none of a route that has no line yet. */
 function routeLine(id: string): PinnedLine | undefined {
   const route = routeById(id);
-  return route && { points: routePositions(route), color: openRouteColors().get(id) ?? '#495057' };
+  const points = route ? lineOf(route) : [];
+  return points.length > 1 ? { points, color: openRouteColors().get(id) ?? '#495057' } : undefined;
 }
 
 /** The open trip's pinned recordings whose tracks are read, each once, as pinned lines by their id. */
