@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import { changeTrip, createTrip, errorMessage, keepRide, keepStashFile, listTrips } from '../api';
+import { addStashMedia, changeTrip, createTrip, errorMessage, keepRide, keepStashFile, listTrips } from '../api';
 import { readRouteFile, ROUTE_FILE, waypointStops } from '../gpx/import';
 import { isGpxText, type GpxContent } from '../gpx/gpx';
 import { gpxText } from '../gpx/write';
@@ -9,7 +9,7 @@ import { addParts } from '../routing/dayEdit';
 import { recordingName } from '../recording/track';
 import { counted } from '../ui/format';
 import type { Dropped } from './fileDrop';
-import { addDaysAndMedia, foldersUnder, importFolder, isGpxPath, isMediaPath, isRoutePath, planFolderImport, readPlannedDays, withImportedDay, type ImportSource } from './folderImport';
+import { addDaysAndMedia, foldersUnder, importFolder, isGpxPath, isMediaPath, isRoutePath, mediaBeside, planFolderImport, readPlannedDays, withImportedDay, type ImportSource } from './folderImport';
 import { archiveFolders, inFolders } from './tripArchive';
 
 /** The collection of the name in the folder: the one among the trips listed, or a new one. */
@@ -100,16 +100,20 @@ function withPlaces(list: Trip, places: readonly KindedPlace[]): Trip {
  * for it: a GPX file as it is, a KML or KMZ file as the GPX it is turned into, each
  * named after its file. The files of a dropped folder go into folders as their paths
  * say, made where the Stash has none of the name. A file kept already, wherever in the
- * Stash, is left out, and so is any other kind of file. The answer says how many were
- * kept and how many were there already, and what could not be read or kept; `onKept`
- * is handed each file as the server answers with it.
+ * Stash, is left out. The media that lie beside a file as its own (see mediaBeside) are
+ * kept with it; any other kind of file is left out. The answer says how many were kept
+ * and how many were there already, and what could not be read or kept; `onKept` is
+ * handed each file as the server answers with it.
  */
 async function importIntoStash(dropped: Dropped, folderId: number, onProgress: (text: string) => void, onKept: (file: StashFile) => void): Promise<{ text: string; errors: string[] }> {
   const errors: string[] = [];
   let kept = 0;
   let known = 0;
+  let media = 0;
   const folderIn = await foldersUnder(folderId);
-  await eachFile([...dropped.files, ...dropped.inFolders].filter((source) => isRoutePath(source.path)), onProgress, errors, async (source) => {
+  const sources = [...dropped.files, ...dropped.inFolders];
+  const beside = mediaBeside(sources.map((source) => source.path));
+  await eachFile(sources.filter((source) => isRoutePath(source.path)), onProgress, errors, async (source) => {
     const file = await source.open();
     // A file named as GPX is kept as it is where it is one; one that holds KML under that name is turned into GPX as a KML file is.
     const text = isGpxPath(source.path) ? await file.text() : '';
@@ -117,12 +121,25 @@ async function importIntoStash(dropped: Dropped, folderId: number, onProgress: (
     // A file dropped loose has no folders in its path and goes into the folder itself.
     const folder = await folderIn(source.path.split('/').slice(0, -1).map(asName));
     const answer = await keepStashFile(folder, asName(file.name.replace(ROUTE_FILE, '')) || t('File'), gpx);
+    // Its media are kept with it, also with a file the Stash had already; those it has are not kept again.
+    const had = new Set(answer.file.media.map((one) => one.id));
+    const added: StashFile['media'] = [];
+    for (const i of beside.of.get(sources.indexOf(source)) ?? []) {
+      try {
+        const one = await addStashMedia(answer.file.id, await sources[i]!.open());
+        if (!had.has(one.id)) added.push(one);
+      } catch (error) {
+        errors.push(`${sources[i]!.path}: ${errorMessage(error)}`);
+      }
+    }
+    media += added.length;
     if (answer.added) {
       kept++;
-      onKept(answer.file);
+      onKept({ ...answer.file, media: [...answer.file.media, ...added] });
     } else known++;
   });
-  return { text: keptText(kept, known, 'file', t('No GPX or KML files found.')), errors };
+  const text = keptText(kept, known, 'file', t('No GPX or KML files found.'));
+  return { text: media > 0 ? `${text} ${t('{what} kept with them.', { what: counted(media, 'attachment') })}` : text, errors };
 }
 
 /** Keeps places in the list `tripId`, each in the section of its kind; a place the list holds already is left out. Answers how many were kept and how many were there already. */
@@ -184,10 +201,13 @@ export async function importIntoTrip(trip: TripSummary, files: readonly ImportSo
   onProgress(t('Importing {i} of {n}: {name}', { i: 1, n: 1, name: trip.name }));
   const planned = planFolderImport(files.map((file) => file.path), 'trips');
   const days = await readPlannedDays(files, planned.flatMap((trip) => trip.days), errors);
-  const media = files.filter((file) => isMediaPath(file.path));
+  // The media that lie beside a file as its own go with its day; the other files with the trip's first day.
+  const { taken } = mediaBeside(files.map((file) => file.path));
+  const media = files.filter((file, i) => isMediaPath(file.path) && !taken.has(i));
+  const kept = media.length + days.reduce((n, { day }) => n + day.media.length, 0);
   if (days.length + media.length === 0) return { text: t('No GPX or KML files or exported trips found.'), errors };
-  if (!(await addDaysAndMedia(trip.id, days, media, errors))) errors.push(t('The trip has no day to attach files to.'));
-  return { text: importedText([days.length > 0 && counted(days.length, 'day'), media.length > 0 && counted(media.length, 'attachment')]), errors };
+  if (!(await addDaysAndMedia(trip.id, days, files, media, errors))) errors.push(t('The trip has no day to attach files to.'));
+  return { text: importedText([days.length > 0 && counted(days.length, 'day'), kept > 0 && counted(kept, 'attachment')]), errors };
 }
 
 /**

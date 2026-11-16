@@ -1,11 +1,11 @@
 import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
-import { addStashParts, changeTrip, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
+import { changeTrip, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import { TAB_NAMES, TREE_TABS, TREES, type TreeTab } from '../model/library';
 import type { StashFile, StashItem, StashPart } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
-import { clearClip, copyLibraryItems, copyStashFiles, copyStashParts, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip } from '../state/clipboard';
+import { clearClip, copyLibraryItems, copyStashFiles, copyStashParts, holdsStashRoutes, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip } from '../state/clipboard';
 import { heldOf, importNote, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
@@ -30,10 +30,10 @@ import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
 import { FolderCard, RouteCard, TripCard, TripDays, type CardSelect } from './cards';
 import { dragToFolder } from './dragToFolder';
-import { countText, fileItemsOf, filesOf, folderOf, foldersOf, itemKey, itemsOf, keyOf, nameOf, partsOf, waypointsKey, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
+import { countText, fileItemsOf, filesOf, folderOf, foldersOf, itemKey, itemsOf, keyOf, mediaKey, nameOf, partsOf, waypointsKey, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow } from './StashFileCard';
-import { filesMenu, partsMenu, removeItems, type StashMenuHost } from './stashMenu';
+import { addPartsTo, filesMenu, partsMenu, removeItems, type StashMenuHost } from './stashMenu';
 import { stashCopies, stashPlaces } from './stashOut';
 import { StandardPlaces } from '../map/PlaceKinds';
 import { keepPlaces, keptText } from './dropImport';
@@ -257,7 +257,7 @@ export function Library(props: {
   /** The rows the search lists that can be selected, top to bottom, by key. */
   const listedKeys = () => foundKeys(listed());
   const itemsIn = (keys: Selection<string>): FileItem[] => fileItemsOf(files(), keys);
-  /** What the rows selected take of files: their routes and tracks, and their waypoints. */
+  /** What the rows selected take of files: their routes and tracks, their waypoints and their media. */
   const partsIn = (keys: Selection<string>): StashPart[] => partsOf(files(), keys);
   /** The routes among the rows selected, as the search found them. */
   const routesIn = (keys: Selection<string>): FoundRoute[] => found().routes.filter((route) => keys.has(routeKey(route)));
@@ -265,7 +265,7 @@ export function Library(props: {
   const shownKeys = (parent: number | null): string[] => [
     ...childFolders(parent).flatMap((f) => [keyOf({ folder: f }), ...(isUnfolded({ folder: f }) ? shownKeys(f.id) : [])]),
     ...childTrips(parent).map((trip) => keyOf({ trip })),
-    ...childFiles(parent).flatMap((file) => [keyOf({ file }), ...(isUnfolded({ file }) ? [...file.items.map((item) => itemKey({ file, item })), ...(file.waypoints > 0 ? [waypointsKey(file)] : [])] : [])]),
+    ...childFiles(parent).flatMap((file) => [keyOf({ file }), ...(isUnfolded({ file }) ? [...file.items.map((item) => itemKey({ file, item })), ...(file.waypoints > 0 ? [waypointsKey(file)] : []), ...(file.media.length > 0 ? [mediaKey(file)] : [])] : [])]),
   ];
   /** What a card's menu, or a press on its pad, acts on: the selection where it holds the card, else the card alone. */
   const chosenWith = (item: Item, selection: Selection<string> = selected()): Item[] => (selection.has(keyOf(item)) ? itemsOf(all(), selection) : [item]);
@@ -461,13 +461,15 @@ export function Library(props: {
     };
     return libraryPasteItem({
       files: (files) => imports.pasteFilesIntoTrip(item.trip, files),
-      // Parts of files of the Stash: into a list of places the waypoints, as places of their kinds; into a trip the routes and tracks, where an import would put them.
-      parts: (parts) =>
-        left(async () => {
-          if (!isPlaceList(id)) return pasteInto(id, await stashCopies(parts));
-          const { kept, known } = await keepPlaces(id, await stashPlaces(parts));
-          setImportNote({ text: keptText(kept, known, 'place', t('No places found.')), errors: [] });
-        }),
+      // Parts of files of the Stash: into a list of places the waypoints, as places of their kinds; into a trip the routes and tracks, where an import would put them. Media alone are for a day or a file.
+      ...(holdsStashRoutes() && {
+        parts: (parts: StashPart[]) =>
+          left(async () => {
+            if (!isPlaceList(id)) return pasteInto(id, await stashCopies(parts));
+            const { kept, known } = await keepPlaces(id, await stashPlaces(parts));
+            setImportNote({ text: keptText(kept, known, 'place', t('No places found.')), errors: [] });
+          }),
+      }),
       routes: (routes) => left(() => pasteInto(id, routes)),
       days: (days) => left(() => changeTrip(id, (trip) => pasteDays(trip, days, undefined, newId))),
       ...(isPlaceList(id)
@@ -499,13 +501,13 @@ export function Library(props: {
     const parts = itemsIn(selected());
     const taken = partsIn(selected());
     if (routes.length + taken.length > 0) {
-      // Routes, tracks and waypoints of files are copied where nothing else is selected with them; the waypoints of a file are not deleted.
+      // Routes, tracks, waypoints and media of files are copied where nothing else is selected with them; the key deletes neither the waypoints nor the media of a file.
       const alone = chosen.length + routes.length === 0;
       if (verb === 'copy' && alone) {
         e.preventDefault();
         return copyStashParts(taken);
       }
-      if (verb !== 'delete' || chosen.length > 0 || taken.some((part) => part.waypoints)) return;
+      if (verb !== 'delete' || chosen.length > 0 || taken.some((part) => part.waypoints || part.media)) return;
       e.preventDefault();
       return void (routes.length > 0 ? removeRoutes(routes) : removeItems(parts, relist));
     }
@@ -537,10 +539,10 @@ export function Library(props: {
   const rename = (title: string, placeholder: string, name: string, save: (name: string) => Promise<unknown>, saved: () => void) =>
     setDialog({ kind: 'rename', title, placeholder, name, save, saved });
   /** What the Stash's menus ask of the library around them. */
-  /** The item that adds the copied routes, tracks and waypoints of other files to a file of the Stash. */
-  const pasteIntoFile = (file: StashFile): MenuItem[] => libraryPasteItem({ parts: (parts) => runLibrary(() => addStashParts(file.id, parts), relistStash) });
+  /** The item that adds the copied routes, tracks, waypoints and media of other files to a file of the Stash. */
+  const pasteIntoFile = (file: StashFile): MenuItem[] => libraryPasteItem({ parts: (parts) => runLibrary(() => addPartsTo(file, parts), relistStash) });
   const stashHost: StashMenuHost = { rename, moveItem, pasteInto: pasteIntoFile, remove: (chosen) => void remove(chosen), relist };
-  /** The menu of a route or a track of a file, or of a file's waypoints, by the row's key: for the selected rows, or for it alone where it is not selected. */
+  /** The menu of a route or a track of a file, or of a file's waypoints or media, by the row's key: for the selected rows, or for it alone where it is not selected. */
   const stashPartMenu = (key: string): MenuItem[] => {
     const selection = menuRowsOf(key);
     return partsMenu(partsIn(selection), selection.size, stashHost);
@@ -690,6 +692,7 @@ export function Library(props: {
             select={select(branch.tree, { file: file() })}
             unfolded={isUnfolded({ file: file() })}
             waypoints={{ onShow: () => showWaypoints(file()), items: () => stashPartMenu(waypointsKey(file())), select: selectRow(branch.tree, waypointsKey(file())) }}
+            media={{ items: () => stashPartMenu(mediaKey(file())), select: selectRow(branch.tree, mediaKey(file())) }}
           >
             <For each={file().items}>
               {(item) => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { StashFile, StashItem } from '../model/stash';
 import type { Folder, TripSummary } from '../model/trip';
-import { countText, fileItemsOf, itemKey, itemOf, itemsOf, keyOf, partsOf, takerOf, tripsWithin, waypointsKey, type Listed } from './items';
+import { countText, fileItemsOf, itemKey, itemOf, itemsOf, keyOf, mediaKey, partsOf, takerOf, tripsWithin, waypointsKey, type Listed } from './items';
 
 const folder = (id: number, parentId: number | null, kind: Folder['kind'] = 'folder'): Folder => ({ id, name: `f${id}`, parentId, kind });
 const trip = (id: number, folderId: number | null, kind: TripSummary['kind'] = 'trip') => ({ id, name: `t${id}`, folderId, kind }) as TripSummary;
@@ -40,13 +40,14 @@ describe('fileItemsOf', () => {
 });
 
 describe('partsOf', () => {
-  it('takes of each file the routes and tracks selected and whether its waypoints are', () => {
+  it('takes of each file the routes and tracks selected and whether its waypoints and its media are', () => {
     const [first, second] = listed.files;
     const track = first!.items[1]!;
     expect(partsOf(listed.files, new Set([itemKey({ file: first!, item: track }), waypointsKey(second!), 'file:2']))).toEqual([
-      { file: first, items: [track], waypoints: false },
-      { file: second, items: [], waypoints: true },
+      { file: first, items: [track], waypoints: false, media: false },
+      { file: second, items: [], waypoints: true, media: false },
     ]);
+    expect(partsOf(listed.files, new Set([mediaKey(first!)]))).toEqual([{ file: first, items: [], waypoints: false, media: true }]);
     expect(partsOf(listed.files, new Set(['file:1', 'folder:10']))).toEqual([]);
   });
 });

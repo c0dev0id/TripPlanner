@@ -4,7 +4,7 @@ import { daysToSend } from './model/delta';
 import type { Entry, EntryTarget } from './model/journal';
 import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Route, Trip, TripKind, TripSummary } from './model/trip';
-import type { StashPart, StashFile, StashItem } from './model/stash';
+import type { StashPart, StashFile, StashItem, StashMedia } from './model/stash';
 import type { OwnPlace } from './poi/ownPlaces';
 import type { Joint, Ride, Suggestion } from './recording/rides';
 import { stopsInRidingOrder } from './routing/sequence';
@@ -307,6 +307,25 @@ export const renameStashItem = (id: number, item: Pick<StashItem, 'kind' | 'posi
 /** Removes routes and tracks from a file of the Stash, which rewrites the file. */
 export const removeStashItems = (id: number, items: readonly Pick<StashItem, 'kind' | 'position'>[]): Promise<void> =>
   request('DELETE', `/api/stash/files/${id}/items?items=${items.map((item) => `${item.kind}:${item.position}`).join(',')}`);
+
+/** Keeps a media file with a file of the Stash; one the file has already is not kept again. */
+export function addStashMedia(id: number, file: File): Promise<StashMedia> {
+  const form = new FormData();
+  form.set('file', file);
+  return request('POST', `/api/stash/files/${id}/media`, form);
+}
+
+/** Removes one media file of a file of the Stash, or with none named all of them. */
+export const deleteStashMedia = (id: number, mediaId?: number): Promise<void> => request('DELETE', `/api/stash/files/${id}/media${mediaId === undefined ? '' : `/${mediaId}`}`);
+
+/** Where a media file of a file of the Stash is, as it was kept. */
+export const stashMediaUrl = (id: number, mediaId: number): string => `/api/stash/files/${id}/media/${mediaId}/file`;
+
+export const stashMediaPreviewUrl = (id: number, mediaId: number): string => `/api/stash/files/${id}/media/${mediaId}/preview`;
+
+/** The media of a file of the Stash as files, to be kept elsewhere: with a day, or with another file of the Stash. */
+export const fetchStashMedia = (file: StashFile): Promise<File[]> =>
+  Promise.all(file.media.map(async (media) => new File([await (await send('GET', stashMediaUrl(file.id, media.id))).blob()], media.name, { type: media.mediaType })));
 
 /** Where a file of the Stash is downloaded from, as it is kept. */
 export const stashFileUrl = (id: number): string => `/api/stash/files/${id}/gpx`;

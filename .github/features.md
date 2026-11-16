@@ -259,9 +259,12 @@
   on one day; other files are a day each, dated on from a date in the trip folder's
   name, or undated. A folder that also holds folders of GPX files is a folder of
   trips: each of its own files becomes a trip of one day, named and dated by the file.
+  The media that lie beside a file as its own are kept with the day the file makes:
+  the files of a folder beside it that is named as the file is, with or without
+  " (media)" after the name, and files beside it whose names begin with the file's.
   The other files of a folder that becomes one trip are kept with the trip's first day
   as its media; hidden files, and other files beside trips made a file each, are left
-  out.
+  out. Dropped on the Stash, a file's media are kept with the file there.
 - Opening a trip says how far it has come on the trip's row: a ring turns where its
   icon stands, and under its name stands how much of its document has arrived of how
   much ("Loading 2.3 of 4.1 MB"), then "Opening…" until the map has drawn its routes.
@@ -287,7 +290,12 @@
   file's waypoints, shows that alone, another click the file again. What is shown
   holds the Stash's mark: its row is tinted, one at a time, and the strip down the
   left runs from the top through its folders and its file to it; a folder clicked
-  after takes the mark, and the strip alone still leads to what the map shows. Files are selected as folders are, dragged or moved
+  after takes the mark, and the strip alone still leads to what the map shows. A
+  file's media, the photos and documents that belong to it, are one more row under
+  its waypoints, Additional Media, which says how many files they are; a click lists
+  them under it, each opening as a day's media do, an image or a PDF over the page
+  and any other file as a download. They are selected, copied and deleted together,
+  by the row's menu, which also adds more; the file's menu adds media too. Files are selected as folders are, dragged or moved
   into the Stash's folders, renamed and deleted from their menu; a folder deleted
   takes its files with it or gives them to the folder around it. Nothing is started
   in the Stash, and no trip or day is pasted into it: a folder is all that is made
@@ -315,7 +323,11 @@
   between them, a track with its line, each with the waypoints on its points, to be
   pasted into a day of any trip. A file's waypoints are one row under its routes and
   tracks, selected and copied all together: pasted into a day they are free stops,
-  into a list of places or a category of it places. Add to recordings, in the menu of a track, keeps it among the rides with
+  into a list of places or a category of it places. A file's media go where the file
+  goes: with a file pasted as a trip or as a day they are that day's additional media,
+  and their row, copied, is pasted into a day of the open trip, where they are kept
+  with the day, or into another file of the Stash; a trip's row takes no media by
+  themselves. Add to recordings, in the menu of a track, keeps it among the rides with
   everything the file tells of it, its times, heights and sensor values: a track that
   is all its file holds of routes and tracks as the file itself, so that it is known as
   the ride the same file was kept as before, any other alone, without the file's

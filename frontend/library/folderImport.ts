@@ -27,6 +27,8 @@ export interface PlannedDay {
   name: string;
   /** The day's files, as indexes into the paths planned from. */
   files: number[];
+  /** The media that lie beside the day's files as theirs (see mediaBeside), kept with the day, as indexes into the paths planned from. */
+  media: number[];
 }
 
 /**
@@ -101,21 +103,71 @@ export const isRoutePath = (path: string): boolean => /^[^.][^/]*$/.test(path.sl
 export const isMediaPath = (path: string): boolean => /^[^.][^/]*$/.test(path.slice(path.lastIndexOf('/') + 1)) && !ROUTE_FILE.test(path);
 
 /**
+ * The media that belong to files of routes by where they lie, as indexes into the paths:
+ * `of` gives each such file's own, `taken` every file that is spoken for. A file's media
+ * lie in a folder beside it that is named as the file is, with or without " (media)"
+ * after the name, or beside it under a name that begins with the file's; where two
+ * files' names fit, the longer one has it. The list an app writes into such a folder,
+ * `media.json`, is spoken for and no media.
+ */
+export function mediaBeside(paths: readonly string[]): { of: Map<number, number[]>; taken: Set<number> } {
+  const split = (path: string) => {
+    const cut = path.lastIndexOf('/');
+    return { folder: path.slice(0, Math.max(0, cut)), file: path.slice(cut + 1) };
+  };
+  /** A name in a folder, as one text; the folder at the top has no name. */
+  const within = (folder: string, name: string) => (folder === '' ? name : `${folder}/${name}`);
+  /** The files of routes by their folder and their name without its extension. */
+  const routes = new Map<string, number>();
+  paths.forEach((path, i) => {
+    if (!isRoutePath(path)) return;
+    const { folder, file } = split(path);
+    const key = within(folder, file.replace(ROUTE_FILE, ''));
+    if (!routes.has(key)) routes.set(key, i);
+  });
+  const of = new Map<number, number[]>();
+  const taken = new Set<number>();
+  const give = (route: number, i: number, kept: boolean) => {
+    taken.add(i);
+    if (kept) of.set(route, [...(of.get(route) ?? []), i]);
+  };
+  paths.forEach((path, i) => {
+    if (!isMediaPath(path)) return;
+    const { folder, file } = split(path);
+    // In a folder named as a file of routes beside it is.
+    const inFolder = folder === '' ? undefined : (routes.get(folder.replace(/ \(media\)$/, '')) ?? routes.get(folder));
+    if (inFolder !== undefined) return give(inFolder, i, file !== 'media.json');
+    // Beside a file of routes whose name its own begins with, and goes on from with something that is no letter or digit.
+    const stem = file.replace(/\.[^.]*$/, '');
+    let beside: { route: number; length: number } | undefined;
+    for (const [key, route] of routes) {
+      const name = key.slice(within(folder, '').length);
+      const fits = key === within(folder, name) && !name.includes('/') && stem.startsWith(name) && !/^[\p{L}\p{N}]/u.test(stem.slice(name.length));
+      if (fits && name.length > (beside?.length ?? 0)) beside = { route, length: name.length };
+    }
+    if (beside) give(beside.route, i, true);
+  });
+  return { of, taken };
+}
+
+/**
  * The trips a picked folder tree makes, from the files' paths relative to
  * it, organized as `mode` says: the GPX files in name order, hidden files left out. The
- * other files of a folder that makes one trip are its media; beside trips
- * made a file each they are left out. The names are fitted to what the library holds.
+ * media that lie beside a file as its own (see mediaBeside) are its day's. The other
+ * files of a folder that makes one trip are the trip's media; beside trips made a file
+ * each they are left out. The names are fitted to what the library holds.
  */
 export function planFolderImport(paths: readonly string[], mode: ImportMode): PlannedTrip[] {
   const byFolder = new Map<string, number[]>();
   const mediaIn = new Map<string, number[]>();
+  const beside = mediaBeside(paths);
   /** The file names without their extension, by path. */
   const stems: string[] = [];
   paths.forEach((path, i) => {
     const cut = path.lastIndexOf('/');
     const file = path.slice(cut + 1);
     const folder = path.slice(0, Math.max(0, cut));
-    if (isMediaPath(path)) mediaIn.set(folder, [...(mediaIn.get(folder) ?? []), i]);
+    if (isMediaPath(path) && !beside.taken.has(i)) mediaIn.set(folder, [...(mediaIn.get(folder) ?? []), i]);
     if (!isRoutePath(path)) return;
     stems[i] = file.replace(ROUTE_FILE, '');
     if (byFolder.has(folder)) byFolder.get(folder)!.push(i);
@@ -132,7 +184,8 @@ export function planFolderImport(paths: readonly string[], mode: ImportMode): Pl
     if (mode === 'trip-per-file' || holdsFolders(folder)) return files.map((i) => tripOfFile(segments.filter(Boolean), stem(i), i));
     return [{ ...tripOfFolder(segments, files, stem), media }];
   });
-  return planned.map((t) => ({ ...t, folders: t.folders.map(asName), name: asName(t.name), days: t.days.map((d) => ({ ...d, name: asName(d.name) })) }));
+  const mediaOf = (files: readonly number[]) => files.flatMap((i) => beside.of.get(i) ?? []);
+  return planned.map((t) => ({ ...t, folders: t.folders.map(asName), name: asName(t.name), days: t.days.map((d) => ({ ...d, name: asName(d.name), media: mediaOf(d.files) })) }));
 }
 
 /**
@@ -151,7 +204,7 @@ function tripOfFolder(segments: string[], files: number[], stem: (i: number) => 
     else if (dated.has(date)) dated.get(date)!.push(i);
     else dated.set(date, [i]);
   }
-  const dayOf = (date: string | null, of: number[]): PlannedDay => ({ date, name: of.length === 1 ? withoutDate(stem(of[0]!)) : '', files: of });
+  const dayOf = (date: string | null, of: number[]): PlannedDay => ({ date, name: of.length === 1 ? withoutDate(stem(of[0]!)) : '', files: of, media: [] });
   const days = [...dated.keys()].sort().map((date) => dayOf(date, dated.get(date)!));
   const start = dateIn(folderName);
   const lastDated = days.at(-1)?.date;
@@ -165,7 +218,7 @@ function tripOfFolder(segments: string[], files: number[], stem: (i: number) => 
 
 /** A GPX file as a trip of one day, named after the file without its date, dated by it; in the folders it is in. */
 function tripOfFile(folders: string[], stem: string, file: number): PlannedTrip {
-  return { folders, name: withoutDate(stem) || stem, days: [{ date: dateIn(stem) ?? null, name: '', files: [file] }], media: [] };
+  return { folders, name: withoutDate(stem) || stem, days: [{ date: dateIn(stem) ?? null, name: '', files: [file], media: [] }], media: [] };
 }
 
 /** The trip with a day added at its end, named and dated, holding what the GPX files gave. */
@@ -175,25 +228,32 @@ export function withImportedDay(trip: Trip, day: { name: string; date: string | 
 }
 
 /**
- * Adds the days read from files to the trip and keeps the other files with its first
- * day; a file the server does not take is reported, and the rest goes on. Whether a day
- * was there to keep them with.
+ * Adds the days read from files to the trip, keeps with each the media `sources` has for
+ * it, and the other files with the trip's first day; a file the server does not take is
+ * reported, and the rest goes on. Whether a day was there to keep the other files with.
  */
-export async function addDaysAndMedia(tripId: number, days: readonly { day: PlannedDay; parts: DayParts[] }[], media: readonly ImportSource[], errors: string[]): Promise<boolean> {
-  let mediaDay: string | undefined;
+export async function addDaysAndMedia(tripId: number, days: readonly { day: PlannedDay; parts: DayParts[] }[], sources: readonly ImportSource[], media: readonly ImportSource[], errors: string[]): Promise<boolean> {
+  let made: string[] = [];
+  let first: string | undefined;
   await changeTrip(tripId, (trip) => {
     const filled = days.reduce((to, { day, parts }) => withImportedDay(to, day, parts), trip);
-    mediaDay = filled.days[0]?.id;
+    // The days stand at the trip's end, in the order they were added.
+    made = filled.days.slice(filled.days.length - days.length).map((day) => day.id);
+    first = filled.days[0]?.id;
     return filled;
   });
-  if (!mediaDay) return media.length === 0;
-  for (const source of media) {
+  const keep = async (dayId: string, source: ImportSource) => {
     try {
-      await addMedia(tripId, mediaDay, await source.open());
+      await addMedia(tripId, dayId, await source.open());
     } catch (error) {
       errors.push(`${source.path}: ${errorMessage(error)}`);
     }
+  };
+  for (const [n, { day }] of days.entries()) {
+    for (const i of day.media) await keep(made[n]!, sources[i]!);
   }
+  if (!first) return media.length === 0;
+  for (const source of media) await keep(first, source);
   return true;
 }
 
@@ -264,7 +324,7 @@ export async function importFolder(
     if (days.length === 0) continue;
     try {
       const tripId = (await createTrip(planned.name, await folderIn(planned.folders))).id;
-      await addDaysAndMedia(tripId, days, planned.media.map((i) => sources[i]!), result.errors);
+      await addDaysAndMedia(tripId, days, sources, planned.media.map((i) => sources[i]!), result.errors);
       result.trips++;
     } catch (error) {
       result.errors.push(`${[...planned.folders, planned.name].join(' / ')}: ${errorMessage(error)}`);

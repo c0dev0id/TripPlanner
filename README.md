@@ -43,7 +43,8 @@ share work; sharing between users is on the way.
   to its folder to the top, and never moves.
 - **Duplicates found** — a report lists the routes kept more than once across the
   library, copies and the same ride from two apps; select some to copy or delete them.
-- **A Stash that loses nothing** — GPX files and folders dumped there are kept whole.
+- **A Stash that loses nothing** — GPX files and folders dumped there are kept whole,
+  with the photos and documents that lie beside them.
   Browse them on the map, clean them up, copy routes into your days or keep a track as
   a ride with all its data. A folder proposes which of its files belong to one tour.
 - **GPX in as well as out** — a file from the device or BaseCamp drops into a day: its

@@ -371,6 +371,28 @@ entries at the end of their section.
   - A file's waypoints are counted, copied together and go with their file; they
     are not listed, renamed or deleted one by one yet. A file of places can hold
     thousands, and the Places are where single places are worked on.
+  - A file's media belong to the file as a whole, as its waypoints do: a pile of
+    files has photos and a roadbook beside a route, not on a point of it, and what
+    they are for is decided in a trip. So they are one row of the file, go with it
+    wherever it is pasted, and become a day's additional media there; they can be
+    looked at in the Stash, added and deleted all together, and nothing finer.
+  - The media are kept in the database beside their file (`stash_media`), not on
+    disk as a trip's are. A file of the Stash is kept there too, so one deletion
+    takes file, index and media, whether the file, its folder or the user goes, and
+    nothing on disk has to follow the rows. The Stash is where things wait, and a
+    route has a handful of photos; a journal, which grows by hundreds, stays on disk.
+    A preview is made once, when an image is kept.
+  - Media leave the Stash through the browser: they are read from the Stash and
+    kept with the day or the other file as files picked there would be. That is two
+    transfers where the server could copy, and no second way to keep a file with a
+    day, of which the import already has one that names, checks and reports.
+  - Which files are a file's media is told from where they lie, since nothing in a
+    GPX file names them: a folder beside the file named as the file is, also with
+    " (media)" after the name, as one app exports them, or files beside it whose
+    names begin with its name. The list that app writes into the folder
+    (`media.json`) says nothing the folder does not and is left out. The same rule
+    serves the import into trips, where such media go with the day their file makes
+    and no longer with the trip's first.
   - The list of files is the one signal that a file changed. The file the map shows
     is read again when the list says something else of its routes and tracks, and
     leaves the map when the list no longer has it; nothing has to be told that a

@@ -705,5 +705,9 @@
   "There and back": "Hin und zurück",
   "Exported together": "Zusammen exportiert",
   "{files} moved into {folders}.": "{files} in {folders} verschoben.",
-  "Found no files that belong together.": "Keine zusammengehörigen Dateien gefunden."
+  "Found no files that belong together.": "Keine zusammengehörigen Dateien gefunden.",
+  "Add media…": "Medien hinzufügen…",
+  "Delete the media of “{name}”?": "Die Medien von „{name}“ löschen?",
+  "Delete the media of {files}?": "Die Medien von {files} löschen?",
+  "{what} kept with them.": "{what} dazu gespeichert."
 }

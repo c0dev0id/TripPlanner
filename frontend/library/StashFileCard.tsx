@@ -1,10 +1,13 @@
-import { For, Show, type JSX } from 'solid-js';
+import { createSignal, For, Show, type JSX } from 'solid-js';
+import { stashMediaPreviewUrl, stashMediaUrl } from '../api';
 import { t } from '../i18n/t';
-import type { StashFeature, StashFile, StashItem } from '../model/stash';
+import { sizeText } from '../model/journal';
+import type { StashFeature, StashFile, StashItem, StashMedia } from '../model/stash';
 import { isShownItem, isShownWaypoints, isShownWhole, stashColor } from '../state/stash';
 import { cardMenu } from '../ui/cardMenu';
 import { counted, distanceText, momentText } from '../ui/format';
-import { FileIcon } from '../ui/icons';
+import { FileIcon, PhotoIcon } from '../ui/icons';
+import { openDocument, openImage } from '../ui/Lightbox';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { Pad } from '../ui/Pad';
@@ -27,7 +30,7 @@ const FEATURES: Record<StashFeature, { label: string; title: string }> = {
 /** What a route or a track of a file is called: its name, or what it is where it has none. */
 export const stashItemName = (item: StashItem): string => item.name || (item.kind === 'track' ? t('Unnamed track') : t('Unnamed route'));
 
-/** What a file holds, as its card says it: its routes, tracks and waypoints, and how far the routes and tracks go together. */
+/** What a file holds, as its card says it: its routes, tracks, waypoints and media, and how far the routes and tracks go together. */
 function heldIn(file: StashFile): string {
   const count = (kind: StashItem['kind']) => file.items.filter((item) => item.kind === kind).length;
   const distanceM = file.items.reduce((sum, item) => sum + item.distanceM, 0);
@@ -35,6 +38,7 @@ function heldIn(file: StashFile): string {
     count('route') > 0 && counted(count('route'), 'route'),
     count('track') > 0 && counted(count('track'), 'track'),
     file.waypoints > 0 && counted(file.waypoints, 'waypoint'),
+    file.media.length > 0 && counted(file.media.length, 'attachment'),
     distanceM > 0 && distanceText(distanceM),
   ]
     .filter(Boolean)
@@ -95,11 +99,58 @@ function StashWaypointsRow(props: { file: StashFile; onShow: () => void; items: 
   );
 }
 
+/** A media file of a file as a line under the media's row: what it is, its name over its size. A click opens an image or a PDF over the page and downloads any other file, as a day's media do. */
+function StashMediaItem(props: { file: StashFile; media: StashMedia }) {
+  const href = () => stashMediaUrl(props.file.id, props.media.id);
+  const pdf = () => props.media.mediaType === 'application/pdf';
+  const click = (e: MouseEvent) => {
+    if (props.media.image) openImage(e, { src: href(), preview: stashMediaPreviewUrl(props.file.id, props.media.id), name: props.media.name });
+    else if (pdf()) openDocument(e, { src: href(), name: props.media.name });
+  };
+  return (
+    <li class="media-item">
+      <a class="text grow" href={href()} target="_blank" rel="noopener noreferrer" download={props.media.image || pdf() ? undefined : props.media.name} onClick={click}>
+        <span class="media-kind">{props.media.image ? <PhotoIcon /> : <FileIcon />}</span>
+        <span class="lines grow">
+          <span class="name">{props.media.name}</span>
+          <span class="muted detail">{sizeText(props.media.size)}</span>
+        </span>
+      </a>
+    </li>
+  );
+}
+
+/** A file's media as one row under its waypoints: how many files they are; a click lists them under it, to look at. They are selected, copied and deleted together, by the row's menu, and go with their file wherever it is pasted. */
+function StashMediaRow(props: { file: StashFile; items: () => MenuItem[]; select: RowSelect }) {
+  const [listed, setListed] = createSignal(false);
+  return (
+    <li class="card" classList={{ selected: props.select.selected() }}>
+      <div class="row" ref={(el) => cardMenu(el, props.items)}>
+        <Pad label={t('Select {name}', { name: t('Additional Media') })} selected={props.select.selected()} onToggle={props.select.onToggle} />
+        <button class="text grow" aria-expanded={listed()} onClick={(e) => props.select.onClick(e) || setListed(!listed())}>
+          <span class="swatch" style={{ background: 'none' }} />
+          <span class="lines">
+            <span class="name">{t('Additional Media')}</span>
+            <span class="muted detail">{counted(props.file.media.length, 'file')}</span>
+          </span>
+        </button>
+        <MenuButton of={t('Additional Media')} items={props.items} />
+      </div>
+      <Show when={listed()}>
+        <ul class="media">
+          <For each={props.file.media}>{(media) => <StashMediaItem file={props.file} media={media} />}</For>
+        </ul>
+      </Show>
+    </li>
+  );
+}
+
 /**
  * A file of the Stash as a card: its name over what it holds, with its shape, small. It
  * is marked while the map shows it whole. With `children`, the rows of its routes and
- * tracks, it is unfolded: they stand under it, over the row of its waypoints, which
- * `waypoints` gives its menu and its part in the selection.
+ * tracks, it is unfolded: they stand under it, over the row of its waypoints and the
+ * row of its media, which `waypoints` and `media` give their menus and their part in
+ * the selection.
  */
 export function StashFileCard(props: {
   file: StashFile;
@@ -109,6 +160,7 @@ export function StashFileCard(props: {
   select: CardSelect;
   unfolded?: boolean;
   waypoints?: { onShow: () => void; items: () => MenuItem[]; select: RowSelect };
+  media?: { items: () => MenuItem[]; select: RowSelect };
   children?: JSX.Element;
 }) {
   return (
@@ -131,6 +183,7 @@ export function StashFileCard(props: {
         <ul class="tree-children">
           {props.children}
           <Show when={props.file.waypoints > 0 && props.waypoints}>{(row) => <StashWaypointsRow file={props.file} onShow={row().onShow} items={row().items} select={row().select} />}</Show>
+          <Show when={props.file.media.length > 0 && props.media}>{(row) => <StashMediaRow file={props.file} items={row().items} select={row().select} />}</Show>
         </ul>
       </Show>
     </li>

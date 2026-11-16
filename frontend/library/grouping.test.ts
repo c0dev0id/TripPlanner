@@ -13,7 +13,7 @@ let ids = 0;
 /** A file of one route from a place to another, written by BaseCamp at the minute given of one evening, or of another day. */
 function file(name: string, from: LngLat, to: LngLat, minute = 0, day = '2024-06-18'): StashFile {
   const item = { kind: 'route' as const, position: 0, name, line: encodePolyline([from, to]), distanceM: 100_000, points: 2, startedAt: null, features: [] };
-  return { id: ++ids, folderId: 1, name, createdAt: '', waypoints: 0, creator: 'Garmin Desktop App', exportedAt: `${day}T18:${String(minute).padStart(2, '0')}:00Z`, items: [item] };
+  return { id: ++ids, folderId: 1, name, createdAt: '', waypoints: 0, creator: 'Garmin Desktop App', exportedAt: `${day}T18:${String(minute).padStart(2, '0')}:00Z`, items: [item], media: [] };
 }
 
 /** The groups as their names and the names of their files. */

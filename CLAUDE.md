@@ -98,10 +98,12 @@ itself through `ui/fileVerb.ts`. A selectable row has a pad (`ui/Pad.tsx`) or a 
 whose tap selects.
 
 The Stash is folders of GPX files kept whole (`stash_files`, `src/Stash/`), with an
-index of each file's routes and tracks beside it (`stash_items`); it is not made of trip
+index of each file's routes and tracks beside it (`stash_items`) and the media that
+belong to a file (`stash_media`, in the database too); it is not made of trip
 documents. It works on whole routes, tracks and files: rename, delete, export the file,
 and the ways out: by the clipboard, a file imported where it is pasted (a trip in a folder,
-a day in a trip, routes and stops in a day, places in a list), or a track among the rides.
+a day in a trip, routes and stops in a day, places in a list), its media with it as the
+day's, or a track among the rides.
 Cleaning up rewrites the stored file.
 Nothing goes into the Stash from the app. The Trips are where things are edited and
 tied together. A collection (`trips.kind`) is a list of places and lives among the

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dateIn, pickedPath, planFolderImport, type ImportMode } from './folderImport';
+import { dateIn, mediaBeside, pickedPath, planFolderImport, type ImportMode } from './folderImport';
 
 /** The plan with each day as its date, name and file names, and the names of its media where it has any; trips planned per folder unless the mode says otherwise. */
 const plan = (paths: string[], mode: ImportMode = 'trips') => {
@@ -135,5 +135,39 @@ describe('files of routes', () => {
     const [trip] = plan(paths);
     expect(trip!.days.map((day) => day[1])).toEqual(['day 1', 'day 2', 'day 3']);
     expect(trip!.media).toEqual(['ferry.pdf']);
+  });
+});
+
+describe('the media that lie beside a file of routes', () => {
+  /** Each file of routes with the media that are its own, by name, and the names of every file spoken for. */
+  const beside = (paths: string[]) => {
+    const { of, taken } = mediaBeside(paths);
+    return { of: Object.fromEntries([...of].map(([route, media]) => [paths[route]!, media.map((i) => paths[i]!)])), taken: [...taken].map((i) => paths[i]!) };
+  };
+
+  it('are the files of a folder named as the file is, with or without " (media)", but not the list an app wrote there', () => {
+    const paths = ['2016/Lake.gpx', '2016/Lake (media)/Photo 1.jpg', '2016/Lake (media)/media.json', '2016/Cave.gpx', '2016/Cave/roadbook.pdf', '2016/Other/x.jpg'];
+    expect(beside(paths)).toEqual({
+      of: { '2016/Lake.gpx': ['2016/Lake (media)/Photo 1.jpg'], '2016/Cave.gpx': ['2016/Cave/roadbook.pdf'] },
+      taken: ['2016/Lake (media)/Photo 1.jpg', '2016/Lake (media)/media.json', '2016/Cave/roadbook.pdf'],
+    });
+  });
+
+  it('are the files beside it whose names begin with its name, the longer name taking what fits two', () => {
+    const paths = ['Harz.gpx', 'Harz round.gpx', 'Harz.png', 'Harz round 1.jpg', 'Harz-2.jpg', 'Harzer.jpg', 'ticket.pdf', 'sub/Harz 3.jpg'];
+    expect(beside(paths).of).toEqual({ 'Harz.gpx': ['Harz.png', 'Harz-2.jpg'], 'Harz round.gpx': ['Harz round 1.jpg'] });
+  });
+
+  it('are found at the top as in folders, and never among files of routes or hidden files', () => {
+    expect(beside(['Lake.gpx', 'Lake (media)/a.jpg', 'Lake (media)/.DS_Store', 'Lake (media)/b.kml']).of).toEqual({ 'Lake.gpx': ['Lake (media)/a.jpg'] });
+  });
+
+  it('are kept with the day their file makes, and not with the trip of the folder', () => {
+    const paths = ['Alps/1 Arrival.gpx', 'Alps/1 Arrival (media)/hotel.jpg', 'Alps/2 Passes.gpx', 'Alps/ferry.pdf'];
+    const [trip] = planFolderImport(paths, 'trips');
+    expect(trip!.days.map((day) => day.media.map((i) => paths[i]))).toEqual([['Alps/1 Arrival (media)/hotel.jpg'], []]);
+    expect(trip!.media.map((i) => paths[i])).toEqual(['Alps/ferry.pdf']);
+    const perFile = planFolderImport(['Lake.gpx', 'Lake (media)/a.jpg'], 'trip-per-file');
+    expect(perFile.map((t) => [t.name, t.days[0]!.media])).toEqual([['Lake', [1]]]);
   });
 });

@@ -28,6 +28,9 @@ export const itemKey = ({ file, item }: FileItem): string => `item:${file.id}:${
 /** The key of the row of a file's waypoints, which are one row together. */
 export const waypointsKey = (file: StashFile): string => `waypoints:${file.id}`;
 
+/** The key of the row of a file's media, which are one row together. */
+export const mediaKey = (file: StashFile): string => `media:${file.id}`;
+
 export const nameOf = (item: Item): string => ('folder' in item ? item.folder : 'trip' in item ? item.trip : item.file).name;
 
 /** The folder an item is in, null at the top. */
@@ -62,12 +65,12 @@ export const itemsOf = (listed: Listed, keys: Iterable<string>): Item[] => [...k
 export const fileItemsOf = (files: readonly StashFile[], keys: ReadonlySet<string>): FileItem[] =>
   [...keys].some((key) => key.startsWith('item:')) ? files.flatMap((file) => file.items.map((item) => ({ file, item })).filter((at) => keys.has(itemKey(at)))) : [];
 
-/** What the rows of the keys take of the files: of each file its routes and tracks selected and whether its waypoints are; the files with neither left out. */
+/** What the rows of the keys take of the files: of each file its routes and tracks selected and whether its waypoints and its media are; the files with none of them left out. */
 export const partsOf = (files: readonly StashFile[], keys: ReadonlySet<string>): StashPart[] =>
-  [...keys].some((key) => key.startsWith('item:') || key.startsWith('waypoints:'))
+  [...keys].some((key) => /^(item|waypoints|media):/.test(key))
     ? files
-        .map((file) => ({ file, items: file.items.filter((item) => keys.has(itemKey({ file, item }))), waypoints: keys.has(waypointsKey(file)) }))
-        .filter((part) => part.items.length > 0 || part.waypoints)
+        .map((file) => ({ file, items: file.items.filter((item) => keys.has(itemKey({ file, item }))), waypoints: keys.has(waypointsKey(file)), media: keys.has(mediaKey(file)) }))
+        .filter((part) => part.items.length > 0 || part.waypoints || part.media)
     : [];
 
 /** The trips among the items and those in their folders, at any depth. */

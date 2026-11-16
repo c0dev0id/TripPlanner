@@ -617,6 +617,11 @@ button.icon.pin[aria-pressed='true'] {
   padding-left: 14px;
 }
 
+/* The media of a file of the Stash, listed under their row: in line with the row's name. */
+.tree .card > .media {
+  padding-left: 48px;
+}
+
 .tree .card {
   margin: 0;
   border: 0;

@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { createSignal } from 'solid-js';
-import { changeTrip, errorMessage, fetchRideGpx, fetchStashGpx, type KeptRide, type Recording } from '../api';
+import { changeTrip, errorMessage, fetchRideGpx, fetchStashGpx, fetchStashMedia, type KeptRide, type Recording } from '../api';
 import { parseGpx } from '../gpx/gpx';
 import { gpxToDayParts } from '../gpx/import';
 import type { StashFile, StashItem, StashPart } from '../model/stash';
@@ -11,7 +11,7 @@ import { askConfirmation } from '../ui/confirm';
 import type { MenuItem } from '../ui/menu';
 import { flushSave } from './autosave';
 import { isPlaceList } from './library';
-import { bringMedia, mediaAction } from './media';
+import { addFiles, bringMedia, mediaAction } from './media';
 import { addedText, putOnDay, recordingAction, takeOffDay } from './recordings';
 import { addParts, moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, openTripId, pasteDays, pasteRoutes, pasteStops, pasteStopsIntoRoute, selectDay } from './trip';
 
@@ -64,6 +64,12 @@ export function copyStashFiles(files: StashFile[]): void {
 /** Copies routes, tracks and waypoints of files of the Stash, to be pasted into another file there, into a day, a trip or a list of places. */
 export function copyStashParts(parts: StashPart[]): void {
   setClip({ parts });
+}
+
+/** Whether the clipboard holds parts of files of the Stash with routes, tracks or waypoints among them: media alone go with a day or a file, and a trip takes none by itself. */
+export function holdsStashRoutes(): boolean {
+  const copied = clip();
+  return copied !== undefined && 'parts' in copied && copied.parts.some((part) => part.items.length > 0 || part.waypoints);
 }
 
 /** The files of the Stash on the clipboard, if that is what it holds. */
@@ -150,8 +156,9 @@ function pasteLabel(copied: Clip): string {
   if ('parts' in copied) {
     const items = copied.parts.reduce((sum, part) => sum + part.items.length, 0);
     const waypoints = copied.parts.reduce((sum, part) => sum + (part.waypoints ? part.file.waypoints : 0), 0);
-    const [a, b] = [items > 0 && counted(items, 'route'), waypoints > 0 && counted(waypoints, 'waypoint')];
-    return t('Paste {what}', { what: a && b ? t('{a} and {b}', { a, b }) : a || b || '' });
+    const media = copied.parts.reduce((sum, part) => sum + (part.media ? part.file.media.length : 0), 0);
+    const what = [items > 0 && counted(items, 'route'), waypoints > 0 && counted(waypoints, 'waypoint'), media > 0 && counted(media, 'attachment')].filter((part) => part !== false);
+    return t('Paste {what}', { what: what.length > 1 ? t('{a} and {b}', { a: what.slice(0, -1).join(', '), b: what.at(-1)! }) : (what[0] ?? '') });
   }
   if ('recordings' in copied) return of(copied.recordings.length, 'recording');
   if ('media' in copied) return of(copied.media.names.length, 'attachment');
@@ -160,14 +167,14 @@ function pasteLabel(copied: Clip): string {
   return of(copied.routes.length, 'route');
 }
 
-/** A file of the Stash as all of it: its routes, tracks and waypoints. */
-const wholeFile = (file: StashFile): StashPart => ({ file, items: file.items, waypoints: true });
+/** A file of the Stash as all of it: its routes, tracks, waypoints and media. */
+const wholeFile = (file: StashFile): StashPart => ({ file, items: file.items, waypoints: true, media: true });
 
 /**
  * Imports parts of files of the Stash into a day of the open trip, as a file picked for
  * the day is read: the routes and tracks taken, with the waypoints on their points, and
  * with a file's waypoints the others as free stops; into a kind of a list of places, the
- * waypoints alone.
+ * waypoints alone. A file's media, where they are taken, are kept with the day.
  */
 async function pastePartsIntoDay(dayId: string, parts: readonly StashPart[]): Promise<void> {
   const tripId = openTripId();
@@ -187,6 +194,10 @@ async function pastePartsIntoDay(dayId: string, parts: readonly StashPart[]): Pr
     if (openTripId() !== tripId) return;
     selectDay(dayId);
     addParts(added);
+    // The media taken are kept with the day, as files added to it are.
+    for (const part of parts) {
+      if (part.media && part.file.media.length > 0) await addFiles(dayId, await fetchStashMedia(part.file));
+    }
   } catch (error) {
     await askConfirmation(errorMessage(error), t('OK'));
   }

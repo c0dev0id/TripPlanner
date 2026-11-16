@@ -1,4 +1,4 @@
-import { keepStashRides, removeStashItems, renameStashFile, renameStashItem, stashFileUrl, type StashRide } from '../api';
+import { addStashMedia, addStashParts, deleteStashMedia, fetchStashMedia, keepStashRides, removeStashItems, renameStashFile, renameStashItem, stashFileUrl, type StashRide } from '../api';
 import { t } from '../i18n/t';
 import { copyStashFiles, copyStashParts } from '../state/clipboard';
 import { runLibrary, setImportNote } from '../state/library';
@@ -8,6 +8,7 @@ import { askConfirmation } from '../ui/confirm';
 import { localDate } from '../recording/rides';
 import { counted, dateText } from '../ui/format';
 import { menuNote, type MenuItem } from '../ui/menu';
+import { pickFiles } from '../ui/pickFile';
 import { keptText } from './dropImport';
 import { countText, filesOf, type FileItem, type Item } from './items';
 import { stashItemName } from './StashFileCard';
@@ -56,6 +57,38 @@ function keptRidesText(rides: readonly StashRide[]): string {
     .join(' ');
 }
 
+/** Keeps the files with a file of the Stash as its media, and says how many it took and how many it had. */
+async function keepMedia(file: StashFile, media: readonly File[]): Promise<string> {
+  const had = new Set(file.media.map((one) => one.id));
+  let kept = 0;
+  for (const one of media) kept += had.has((await addStashMedia(file.id, one)).id) ? 0 : 1;
+  return keptText(kept, media.length - kept, 'file', '');
+}
+
+/** Asks for files and keeps them with a file of the Stash as its media. */
+async function addMedia(file: StashFile): Promise<void> {
+  const picked = await pickFiles({});
+  if (picked.length > 0) await runLibrary(async () => setImportNote({ text: await keepMedia(file, picked), errors: [] }), relistStash);
+}
+
+/** Deletes all the media of files of the Stash, once that is confirmed. */
+async function removeMedia(files: readonly StashFile[]): Promise<void> {
+  const question = files.length === 1 ? t('Delete the media of “{name}”?', { name: files[0]!.name }) : t('Delete the media of {files}?', { files: counted(files.length, 'file') });
+  if (await askConfirmation(question, t('Delete'))) await runLibrary(() => Promise.all(files.map((file) => deleteStashMedia(file.id))), relistStash);
+}
+
+/**
+ * Adds what was copied of other files to a file of the Stash: the routes, tracks and
+ * waypoints on the server, which rewrites the file, and the media taken, file by file.
+ */
+export async function addPartsTo(file: StashFile, parts: readonly StashPart[]): Promise<void> {
+  const written = parts.filter((part) => part.items.length > 0 || part.waypoints);
+  if (written.length > 0) await addStashParts(file.id, written);
+  for (const part of parts) {
+    if (part.media && part.file.id !== file.id) await keepMedia(file, await fetchStashMedia(part.file));
+  }
+}
+
 /** The paste entries, or Paste greyed out where the clipboard holds nothing for the place. */
 const pasteOr = (paste: MenuItem[]): MenuItem[] => (paste.length > 0 ? paste : [menuNote(t('Paste'))]);
 
@@ -75,6 +108,7 @@ export function filesMenu(chosen: readonly Item[], host: StashMenuHost): MenuIte
     ...(onlyFiles ? [{ label: t('Copy'), run: () => copyStashFiles(chosenFiles) }] : []),
     ...(several ? [] : pasteOr(host.pasteInto(chosenFiles[0]!))),
     ...(several ? [] : [{ label: t('Rename…'), run: () => host.rename(t('Rename file'), t('File name'), chosenFiles[0]!.name, (name) => renameStashFile(chosenFiles[0]!.id, name), relistStash) }]),
+    ...(several ? [] : [{ label: t('Add media…'), run: () => void addMedia(chosenFiles[0]!) }]),
     ...host.moveItem(chosen),
     ...(several ? [] : [{ label: t('Export'), run: () => window.location.assign(stashFileUrl(chosenFiles[0]!.id)) }]),
     { label: t('Delete'), run: () => host.remove(chosen) },
@@ -101,22 +135,24 @@ export async function removeItems(doomed: readonly FileItem[], removed: () => vo
 }
 
 /**
- * The menu of what the `selected` rows take of files: their routes and tracks and their
- * waypoints, which are one row of a file. They are copied, to be pasted into another
- * file, a day, a trip or a list of places; routes and tracks alone are kept as rides,
- * one renamed, and deleted from their files. With anything else selected besides, it
+ * The menu of what the `selected` rows take of files: their routes and tracks, their
+ * waypoints and their media, each of the two one row of a file. They are copied, to be
+ * pasted into another file, a day, a trip or a list of places; routes and tracks alone
+ * are kept as rides, one renamed, and deleted from their files; media alone take more
+ * files and are deleted, a file's all together. With anything else selected besides, it
  * says that they are not acted on together.
  */
 export function partsMenu(taken: readonly StashPart[], selected: number, host: StashMenuHost): MenuItem[] {
   const parts: FileItem[] = taken.flatMap(({ file, items }) => items.map((item) => ({ file, item })));
   const waypoints = taken.filter((part) => part.waypoints).length;
-  if (parts.length + waypoints < selected) return [menuNote(t('Routes and tracks inside files cannot be changed together with files and folders'))];
-  const one = parts.length === 1 && waypoints === 0 ? parts[0]! : undefined;
+  const media = taken.filter((part) => part.media).map((part) => part.file);
+  if (parts.length + waypoints + media.length < selected) return [menuNote(t('Routes and tracks inside files cannot be changed together with files and folders'))];
+  const one = parts.length === 1 && waypoints + media.length === 0 ? parts[0]! : undefined;
   const tracks = parts.filter((at) => at.item.kind === 'track');
   return [
     ...(parts.length > 1 ? [menuNote(t('{what} selected', { what: t('{n} routes and tracks', { n: parts.length }) }))] : []),
     { label: t('Copy'), run: () => copyStashParts([...taken]) },
-    ...(waypoints > 0
+    ...(waypoints + media.length > 0
       ? []
       : [
           // Tracks are added to the recordings, routes are not; one route or track is renamed.
@@ -124,5 +160,9 @@ export function partsMenu(taken: readonly StashPart[], selected: number, host: S
           ...(one ? [{ label: t('Rename…'), run: () => host.rename(one.item.kind === 'track' ? t('Rename track') : t('Rename route'), t('Name'), one.item.name, (name) => renameStashItem(one.file.id, one.item, name), relistStash) }] : []),
           { label: t('Delete'), run: () => void removeItems(parts, host.relist) },
         ]),
+    // The media of files, alone, take more of one file and are deleted, all of a file's together.
+    ...(media.length > 0 && parts.length + waypoints === 0
+      ? [...(media.length === 1 ? [{ label: t('Add media…'), run: () => void addMedia(media[0]!) }] : []), { label: t('Delete'), run: () => void removeMedia(media) }]
+      : []),
   ];
 }
