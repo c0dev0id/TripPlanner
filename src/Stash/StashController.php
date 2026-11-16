@@ -120,12 +120,12 @@ final class StashController
         return $added ? $response->withStatus(204) : Json::error($response, 404, 'Route or track not found in the file.');
     }
 
-    /** Keeps the file's tracks as rides: all of them, or with `{tracks}` those at these places among its tracks. Answers how many were `kept` and how many the user kept already, `known`. */
+    /** Keeps the file's tracks as rides: all of them, or with `{tracks}` those at these places among its tracks. Answers the `rides`, each with its `name`, when it `startedAt` and whether it was `added` or the user kept it already. */
     public function keepRides(Request $request, Response $response, array $args): Response
     {
         $tracks = Json::field($request, 'tracks');
         $kept = $this->rides->keep($this->currentUser->get()->id, (int) $args['file'], is_array($tracks) ? array_map('intval', $tracks) : null, new DateTimeImmutable());
-        return $kept === null ? Json::error($response, 404, 'File not found.') : Json::of($response, $kept);
+        return $kept === null ? Json::error($response, 404, 'File not found.') : Json::of($response, ['rides' => $kept]);
     }
 
     /** The file as it is kept, compressed, which the browser unpacks itself, and saves under the file's name where it is asked to save. */

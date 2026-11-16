@@ -1,11 +1,12 @@
-import { keepStashRides, removeStashItems, renameStashFile, renameStashItem, stashFileUrl } from '../api';
+import { keepStashRides, removeStashItems, renameStashFile, renameStashItem, stashFileUrl, type StashRide } from '../api';
 import { t } from '../i18n/t';
 import { copyStashFiles, copyStashParts } from '../state/clipboard';
 import { runLibrary, setImportNote } from '../state/library';
 import { ridesChanged } from '../state/rides';
 import { relistStash, showInStash, shownInStash } from '../state/stash';
 import { askConfirmation } from '../ui/confirm';
-import { counted } from '../ui/format';
+import { localDate } from '../recording/rides';
+import { counted, dateText } from '../ui/format';
 import { menuNote, type MenuItem } from '../ui/menu';
 import { keptText } from './dropImport';
 import { countText, filesOf, type FileItem, type Item } from './items';
@@ -34,15 +35,26 @@ const takeOut = (work: () => Promise<string>): void => void runLibrary(async () 
 /** Keeps tracks of the Stash as rides, which the rides then list. */
 const keepRides = (picked: readonly Picked[]) =>
   takeOut(async () => {
-    let [kept, known] = [0, 0];
-    for (const { file, items } of picked) {
-      const count = await keepStashRides(file.id, items?.map((item) => item.position));
-      kept += count.kept;
-      known += count.known;
-    }
+    const rides: StashRide[] = [];
+    for (const { file, items } of picked) rides.push(...(await keepStashRides(file.id, items?.map((item) => item.position))).rides);
     ridesChanged();
-    return keptText(kept, known, 'ride', t('No tracks found.'));
+    return keptRidesText(rides);
   });
+
+/** How many rides are each said by name before the note counts them. */
+const NAMED_RIDES = 3;
+
+/** What came of adding tracks to the recordings: of a few, each by its name and the date it is listed under, added or there already; of more, how many of either. */
+function keptRidesText(rides: readonly StashRide[]): string {
+  if (rides.length > NAMED_RIDES) return keptText(rides.filter((ride) => ride.added).length, rides.filter((ride) => !ride.added).length, 'recording', '');
+  return rides
+    .map(({ name, startedAt, added }) => {
+      const on = startedAt === null ? undefined : { name, date: dateText(localDate(startedAt)) };
+      if (added) return on ? t('Recording “{name}” added to {date}.', on) : t('Recording “{name}” added.', { name });
+      return on ? t('Already available as “{name}” on {date}.', on) : t('Already available as “{name}”.', { name });
+    })
+    .join(' ');
+}
 
 /** The paste entries, or Paste greyed out where the clipboard holds nothing for the place. */
 const pasteOr = (paste: MenuItem[]): MenuItem[] => (paste.length > 0 ? paste : [menuNote(t('Paste'))]);
@@ -107,8 +119,8 @@ export function partsMenu(taken: readonly StashPart[], selected: number, host: S
     ...(waypoints > 0
       ? []
       : [
-          // Tracks are kept as rides, routes are not; one route or track is renamed.
-          ...(tracks.length > 0 ? [{ label: t(one ? 'Save as ride' : 'Save tracks as rides'), run: () => keepRides(pickedOf(tracks)) }] : []),
+          // Tracks are added to the recordings, routes are not; one route or track is renamed.
+          ...(tracks.length > 0 ? [{ label: t('Add to recordings'), run: () => keepRides(pickedOf(tracks)) }] : []),
           ...(one ? [{ label: t('Rename…'), run: () => host.rename(one.item.kind === 'track' ? t('Rename track') : t('Rename route'), t('Name'), one.item.name, (name) => renameStashItem(one.file.id, one.item, name), relistStash) }] : []),
           { label: t('Delete'), run: () => void removeItems(parts, host.relist) },
         ]),

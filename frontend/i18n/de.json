@@ -206,10 +206,8 @@
   "Journal of {of}": "Tagebuch von {of}",
   "Journal…": "Tagebuch…",
   "Keep a point where the track deviates by": "Punkt behalten, wo der Track abweicht um",
-  "Save as ride": "Als Fahrt speichern",
   "Keep the line within": "Linie halten innerhalb von",
   "Lock map view": "Kartenausschnitt sperren",
-  "Save tracks as rides": "Tracks als Fahrten speichern",
   "Place category…": "Ortskategorie…",
   "category|categories": "Kategorie|Kategorien",
   "Language (this browser)": "Sprache (dieser Browser)",
@@ -307,7 +305,6 @@
   "Trip or item not found.": "Tour oder Element nicht gefunden.",
   "Trip not found.": "Tour nicht gefunden.",
   "no times": "ohne Zeiten",
-  "No tracks found.": "Keine Tracks gefunden.",
   "No trips yet. Create one from the menu above, or drop GPX files here.": "Noch keine Touren. Lege eine über das Menü oben an oder zieh GPX-Dateien hierher.",
   "The waiting list is empty.": "Die Warteliste ist leer.",
   "Reject suggestion": "Vorschlag ablehnen",
@@ -680,5 +677,10 @@
   "Paste a copy of {what} into “{where}”": "Kopie von {what} in „{where}“ einfügen",
   "Paste {what}": "{what} einfügen",
   "Paste as route": "Als Route einfügen",
-  "Import {what} into “{where}”": "{what} in „{where}“ importieren"
+  "Import {what} into “{where}”": "{what} in „{where}“ importieren",
+  "Add to recordings": "Zu Aufzeichnungen hinzufügen",
+  "Recording “{name}” added to {date}.": "Aufzeichnung „{name}“ zum {date} hinzugefügt.",
+  "Recording “{name}” added.": "Aufzeichnung „{name}“ hinzugefügt.",
+  "Already available as “{name}” on {date}.": "Bereits vorhanden als „{name}“ am {date}.",
+  "Already available as “{name}”.": "Bereits vorhanden als „{name}“."
 }

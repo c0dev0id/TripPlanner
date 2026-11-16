@@ -23,7 +23,7 @@ final class StashRides
      * such file.
      *
      * @param ?list<int> $positions
-     * @return ?array{kept: int, known: int} how many rides were kept, and how many the user kept already
+     * @return ?list<array{name: string, startedAt: ?string, added: bool}> the ride of each track, the one kept already where the user had it, and whether it was added
      */
     public function keep(int $userId, int $fileId, ?array $positions, DateTimeImmutable $now): ?array
     {
@@ -34,12 +34,12 @@ final class StashRides
         $gzip = (string) $this->files->gzip($userId, $fileId);
         $tracks = array_filter($file['items'], fn (array $item) => $item['kind'] === 'track' && ($positions === null || in_array($item['position'], $positions, true)));
         $alone = $tracks === [] || count($file['items']) === 1 ? [] : GpxEdit::tracksAlone((string) gzdecode($gzip), array_column($tracks, 'position'));
-        $count = ['kept' => 0, 'known' => 0];
+        $rides = [];
         foreach ($tracks as $track) {
             $piece = isset($alone[$track['position']]) ? (string) gzencode($alone[$track['position']]) : $gzip;
             $kept = $this->recordings->keep($userId, $track['name'] !== '' ? mb_substr($track['name'], 0, 200) : $file['name'], $piece, $now);
-            $count[$kept['added'] ? 'kept' : 'known']++;
+            $rides[] = ['name' => $kept['recording']->name, 'startedAt' => $kept['recording']->startedAt, 'added' => $kept['added']];
         }
-        return $count;
+        return $rides;
     }
 }

@@ -292,7 +292,14 @@ export const deleteStashFile = (id: number): Promise<void> => request('DELETE', 
 export const addStashParts = (id: number, parts: readonly StashPart[]): Promise<void> =>
   request('POST', `/api/stash/files/${id}/parts`, { parts: parts.map((part) => ({ fileId: part.file.id, items: part.items.map(({ kind, position }) => ({ kind, position })), waypoints: part.waypoints })) });
 
-export const keepStashRides = (id: number, tracks?: readonly number[]): Promise<{ kept: number; known: number }> => request('POST', `/api/stash/files/${id}/rides`, tracks ? { tracks } : {});
+/** A ride a track of the Stash was kept as: its name, when it began, and whether it was added or the user kept it already. */
+export interface StashRide {
+  name: string;
+  startedAt: string | null;
+  added: boolean;
+}
+
+export const keepStashRides = (id: number, tracks?: readonly number[]): Promise<{ rides: StashRide[] }> => request('POST', `/api/stash/files/${id}/rides`, tracks ? { tracks } : {});
 
 /** Renames a route or a track of a file of the Stash, which rewrites the file. */
 export const renameStashItem = (id: number, item: Pick<StashItem, 'kind' | 'position'>, name: string): Promise<void> => request('PATCH', `/api/stash/files/${id}/items/${item.kind}/${item.position}`, { name });

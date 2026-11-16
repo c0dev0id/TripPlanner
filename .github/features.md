@@ -300,11 +300,14 @@
   between them, a track with its line, each with the waypoints on its points, to be
   pasted into a day of any trip. A file's waypoints are one row under its routes and
   tracks, selected and copied all together: pasted into a day they are free stops,
-  into a list of places or a category of it places. Save as ride, in the menu of a route or a track, keeps a track among the rides with
+  into a list of places or a category of it places. Add to recordings, in the menu of a track, keeps it among the rides with
   everything the file tells of it, its times, heights and sensor values: a track that
   is all its file holds of routes and tracks as the file itself, so that it is known as
   the ride the same file was kept as before, any other alone, without the file's
-  other tracks, routes and waypoints. The file stays in the Stash either way. Export
+  other tracks, routes and waypoints. A line over the list then says what came of it,
+  by the ride's name and the date it is listed under: that it was added, or that it
+  is there already and as what; of more than three tracks, how many of either. The
+  file stays in the Stash either way. Export
   in a file's menu saves the file as it is kept.
 - A file of the Stash is cleaned up by whole routes and tracks: one is renamed, and one
   or the selected ones, of any files, are deleted from their files, from the menu or
