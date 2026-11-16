@@ -1784,7 +1784,7 @@ fieldset.symbols {
   }
 }
 
-/* While the map's credits are spread out, which they are until the map is first dragged, the tools stand above them. */
+/* While the map's credits are spread out, which they are for the map's first seconds or until it is dragged, the tools stand above them. */
 .map-wrap:has(.maplibregl-ctrl-attrib.maplibregl-compact-show) .toolbar {
   bottom: calc(96px + var(--chart-room, 0px));
 }

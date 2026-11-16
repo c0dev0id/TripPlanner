@@ -852,6 +852,11 @@ entries at the end of their section.
   They are several lines on a phone and lay under the route tools; rather than fold
   them through the control's inner workings, the tools stand above them while they are
   spread out.
+  The guidelines also let credits fold by themselves after five seconds, as long as
+  they are found again by whoever looks for them, so five seconds after the map has
+  loaded they are folded by a click on the control's own button (`baseMap.ts`), which
+  is what a user does and leaves the control in a state it knows; the button stays
+  and unfolds them.
 - **The day's pane folds the library away.** A day open beside the library left the map
   the room of neither, and the library is not needed while a day is worked on: the
   strip keeps the days in reach. So the pane folds the library away as it opens. How

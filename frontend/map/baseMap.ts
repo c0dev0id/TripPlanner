@@ -60,6 +60,17 @@ export function newBaseMap(container: HTMLElement, options: Partial<MapOptions>,
   provideImages(map, new Map([...POI_IMAGES, ...OVERLAYS.flatMap((overlay) => [...overlay.images])]));
   // The style follows the base map chosen, the overlays switched on, the width of the routes and how opaque the rides are.
   createEffect(on([chosenBaseMap, shown, routeWidth, ridesOpacity], () => map.setStyle(chosenBaseMap().style), { defer: true }));
-  map.once('load', () => ready(map));
+  map.once('load', () => {
+    ready(map);
+    setTimeout(() => foldCredits(container), CREDITS_SHOWN_MS);
+  });
   return map;
+}
+
+/** How long the map's credits stay spread out by themselves. */
+const CREDITS_SHOWN_MS = 5000;
+
+/** Folds the map's credits where they are spread out, by the control's own button, as a click on it does. */
+function foldCredits(container: HTMLElement): void {
+  container.querySelector<HTMLElement>('.maplibregl-ctrl-attrib.maplibregl-compact-show > .maplibregl-ctrl-attrib-button')?.click();
 }
