@@ -463,6 +463,15 @@ entries at the end of their section.
   px, and the panel's default leaves 290 beside the fold button and the gear. The
   letters grow with the panel by a container query, to a size, so that a wider panel
   does not leave them small.
+- **In the Stash the mark is on what the map shows.** The strip and the tint followed
+  the folder clicked last, as they follow the marked folder among the trips, but a
+  file or a route of it shown on the map did not take the mark as an opened trip
+  does: the strip stayed at a folder elsewhere while a row deep in another branch
+  was tinted. A file or a part of it shown now holds the mark (`markInFile`) until a
+  folder is clicked, with the strip down its folders and its file, and its folder is
+  the one shown, which takes what is pasted. The row of a file's waypoints shows them
+  alone at a click, as a route's row shows the route: it toggled its selection
+  before, which left it tinted beside the row shown and read as two things selected.
 - **A menu holds what can be done; greyed out means not now.** Menus were shared by
   kinds of things and showed every entry to each, greyed out where it did not apply:
   Duplicate on every folder, Export on the Stash's, Rename for several. An entry that

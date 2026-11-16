@@ -684,10 +684,11 @@ button.icon.pin[aria-pressed='true'] {
 
 /*
  * The strip down the left of a row. In the tree it runs down what is open: the marked
- * row, the folders around it and its trip, and the trip on the map or the day in
- * the pane while the mark is elsewhere. In a trip it marks the route being edited.
+ * row, the folders around it and its trip, the trip on the map or the day in the
+ * pane while the mark is elsewhere, and what the map shows of the Stash with its file
+ * and the folders around it. In a trip it marks the route being edited.
  */
-:is(.tree .card.current, .tree .card:has(.card.current), .tree .card.open, .route.editing) > .row {
+:is(.tree .card.current, .tree .card:has(.card.current), .tree .card.open, .tree .card.opened, .tree .card:has(.card.opened), .route.editing) > .row {
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
@@ -729,9 +730,9 @@ li.row.cut {
   opacity: 0.5;
 }
 
-/* The opened ride or recording and what the map shows of the Stash are tinted as the tree's mark is. */
+/* The opened ride or recording and what the map shows of the Stash are tinted as the tree's mark is: in the Stash's tree while the mark is on it, and not while it is on a folder picked since, when the strip alone leads to it, as to the open trip. */
 .duplicates li.opened > .row,
-.tree .card.opened > .row,
+.tree.mark-in-file .card.opened > .row,
 .results .card.opened > .row,
 .recording.opened > .row {
   background: var(--active);

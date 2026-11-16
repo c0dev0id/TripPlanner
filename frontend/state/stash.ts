@@ -6,10 +6,11 @@ import type { StashFile, StashItem } from '../model/stash';
 import type { LngLat } from '../model/trip';
 import { showWhole } from './drawing';
 
-/** What of the Stash the map shows: a file whole, or one route or track of it. */
+/** What of the Stash the map shows: a file whole, one route or track of it, or its waypoints alone. */
 export interface ShownStash {
   fileId: number;
   item?: Pick<StashItem, 'kind' | 'position'>;
+  waypoints?: true;
 }
 
 const [shown, setShown] = createSignal<ShownStash>();
@@ -17,11 +18,14 @@ const [shown, setShown] = createSignal<ShownStash>();
 /** What of the Stash the map shows; nothing until a file or one of its routes or tracks is picked. */
 export const shownInStash = shown;
 
-/** Shows a file of the Stash on the map, or one route or track of it, or takes off what is shown. */
+/** Shows a file of the Stash on the map, or one route or track of it, or its waypoints alone, or takes off what is shown. */
 export const showInStash = (to: ShownStash | undefined): void => void setShown(to);
 
 /** Whether the map shows the file whole. */
-export const isShownWhole = (fileId: number): boolean => shown()?.fileId === fileId && !shown()!.item;
+export const isShownWhole = (fileId: number): boolean => shown()?.fileId === fileId && !shown()!.item && !shown()!.waypoints;
+
+/** Whether the file's waypoints are shown alone. */
+export const isShownWaypoints = (fileId: number): boolean => shown()?.fileId === fileId && shown()!.waypoints === true;
 
 /** Whether the item is the one route or track shown alone. */
 export const isShownItem = (fileId: number, item: Pick<StashItem, 'kind' | 'position'>): boolean =>
@@ -54,14 +58,15 @@ const stash = createRoot(() => {
     const tracks = file.content.tracks.map((track, position) => ({ kind: 'track' as const, position, points: track.segments.flat() }));
     return { lines: [...routes, ...tracks], waypoints: file.content.waypoints.map((waypoint) => waypoint.lngLat) };
   });
-  /** The lines drawn: every route and track of the file, or the one shown alone, each in the colour its row has. */
+  /** The lines drawn: every route and track of the file, or the one shown alone, each in the colour its row has; none with the waypoints alone. */
   const lines = createMemo(() => {
     const only = shown()?.item;
+    if (shown()?.waypoints) return [];
     return (all()?.lines ?? [])
       .map((line, i) => ({ ...line, id: i, color: paletteColor(i) }))
       .filter((line) => line.points.length > 1 && (!only || (line.kind === only.kind && line.position === only.position)));
   });
-  /** The file's waypoints, drawn with the file whole. */
+  /** The file's waypoints, drawn with the file whole and alone. */
   const waypoints = createMemo((): LngLat[] => (shown()?.item ? [] : (all()?.waypoints ?? [])));
   // What is shown is brought into view.
   createEffect(() => {

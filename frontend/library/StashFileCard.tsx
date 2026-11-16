@@ -1,7 +1,7 @@
 import { Show, type JSX } from 'solid-js';
 import { t } from '../i18n/t';
 import type { StashFile, StashItem } from '../model/stash';
-import { isShownItem, isShownWhole, stashColor } from '../state/stash';
+import { isShownItem, isShownWaypoints, isShownWhole, stashColor } from '../state/stash';
 import { cardMenu } from '../ui/cardMenu';
 import { counted, distanceText, momentText } from '../ui/format';
 import { FileIcon } from '../ui/icons';
@@ -52,14 +52,14 @@ export function StashItemRow(props: { file: StashFile; item: StashItem; where?: 
   );
 }
 
-/** A file's waypoints as one row under its routes and tracks: how many there are; selected and copied together, by the row's menu. */
-function StashWaypointsRow(props: { file: StashFile; items: () => MenuItem[]; select: RowSelect }) {
+/** A file's waypoints as one row under its routes and tracks: how many there are; a click shows them alone on the map, as a route's or a track's row shows that; selected and copied together, by the row's menu. */
+function StashWaypointsRow(props: { file: StashFile; onShow: () => void; items: () => MenuItem[]; select: RowSelect }) {
   const label = () => counted(props.file.waypoints, 'waypoint');
   return (
-    <li class="card" classList={{ selected: props.select.selected() }}>
+    <li class="card" classList={{ selected: props.select.selected(), opened: isShownWaypoints(props.file.id) }}>
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Pad label={t('Select {name}', { name: label() })} selected={props.select.selected()} onToggle={props.select.onToggle} />
-        <button class="text grow" onClick={(e) => props.select.onClick(e) || props.select.onToggle()}>
+        <button class="text grow" onClick={(e) => props.select.onClick(e) || props.onShow()}>
           {/* No line of its own on the map: the room of a swatch keeps its name in line with the routes' and tracks'. */}
           <span class="swatch" style={{ background: 'none' }} />
           <span class="lines">
@@ -85,7 +85,7 @@ export function StashFileCard(props: {
   items: () => MenuItem[];
   select: CardSelect;
   unfolded?: boolean;
-  waypoints?: { items: () => MenuItem[]; select: RowSelect };
+  waypoints?: { onShow: () => void; items: () => MenuItem[]; select: RowSelect };
   children?: JSX.Element;
 }) {
   return (
@@ -107,7 +107,7 @@ export function StashFileCard(props: {
       <Show when={props.unfolded}>
         <ul class="tree-children">
           {props.children}
-          <Show when={props.file.waypoints > 0 && props.waypoints}>{(row) => <StashWaypointsRow file={props.file} items={row().items} select={row().select} />}</Show>
+          <Show when={props.file.waypoints > 0 && props.waypoints}>{(row) => <StashWaypointsRow file={props.file} onShow={row().onShow} items={row().items} select={row().select} />}</Show>
         </ul>
       </Show>
     </li>

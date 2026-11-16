@@ -10,7 +10,7 @@ import { heldOf, importNote, isPlaceList, libraryFolders, libraryTab, libraryTri
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
 import { flushSave } from '../state/autosave';
-import { isShownItem, isShownWhole, relistStash, showInStash, stashFiles, stashProblem } from '../state/stash';
+import { isShownItem, isShownWaypoints, isShownWhole, relistStash, showInStash, shownInStash, stashFiles, stashProblem, type ShownStash } from '../state/stash';
 import { setEditTarget, setExportScope, setShareOpen } from '../state/drawing';
 import { openJournal } from '../state/journal';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
@@ -125,12 +125,22 @@ export function Library(props: {
     return by;
   });
   const childFiles = (parent: number | null) => filesIn().get(parent) ?? [];
-  /** Whether the folder, null for the top of the trips, holds its tree's one mark: it is the folder marked there, and the mark is not on the open trip or its day. */
-  const isMarkedFolder = (id: number | null): boolean => markedFolderOf(treeOf(id)) === id && !(isMarkInTrip() && openTree() === treeOf(id));
+  /** Whether the Stash's mark is on what the map shows of it, a file or a part of one, and not on a folder: from when that is picked until a folder is. */
+  const [markInFile, setMarkInFile] = createSignal(false);
+  /** Whether the folder, null for the top of the trips, holds its tree's one mark: it is the folder marked there, and the mark is not on the open trip or its day, nor on what is shown of the Stash. */
+  const isMarkedFolder = (id: number | null): boolean =>
+    markedFolderOf(treeOf(id)) === id && !(isMarkInTrip() && openTree() === treeOf(id)) && !(treeOf(id) === 'stash' && markInFile() && shownInStash() !== undefined);
   /** Gives its tree's mark to a folder, null for the top of the trips, which makes it the one shown; the mark on the open trip in another tree stays. */
   const markFolderShown = (id: number | null) => {
     showFolder(id);
+    if (treeOf(id) === 'stash') setMarkInFile(false);
     if (openTree() === treeOf(id)) markFolder();
+  };
+  /** Shows a file of the Stash, or a part of it, on the map and gives it the Stash's mark; its folder is then the one shown, which takes what is pasted. */
+  const showOfFile = (file: StashFile, to: ShownStash) => {
+    showFolder(file.folderId);
+    setMarkInFile(true);
+    showInStash(to);
   };
   /** The keys of all a folder holds, at any depth; null is the top of the trips. */
   const keysWithin = (id: number | null): string[] => [
@@ -175,15 +185,17 @@ export function Library(props: {
     const key = keyOf({ file });
     const folds = isShownWhole(file.id) && unfolded().has(key);
     fold([key], !folds);
-    showInStash(folds ? undefined : { fileId: file.id });
+    if (folds) showInStash(undefined);
+    else showOfFile(file, { fileId: file.id });
   };
   /** A click on a route or a track of a file shows it alone on the map; shown alone already, it gives way to its file whole. */
-  const showItem = (file: StashFile, item: StashItem) => showInStash(isShownItem(file.id, item) ? { fileId: file.id } : { fileId: file.id, item });
+  const showItem = (file: StashFile, item: StashItem) => showOfFile(file, isShownItem(file.id, item) ? { fileId: file.id } : { fileId: file.id, item });
+  /** A click on a file's waypoints shows them alone on the map; shown alone already, they give way to the file whole. */
+  const showWaypoints = (file: StashFile) => showOfFile(file, isShownWaypoints(file.id) ? { fileId: file.id } : { fileId: file.id, waypoints: true });
   /** Shows a file the search found where it is in the tree, unfolded, and on the map: whole, or the one route or track of it. */
   const revealFile = (file: StashFile, item?: StashItem) => {
     fold([keyOf({ file }), ...keysAround(file.folderId)], true);
-    showFolder(file.folderId);
-    showInStash({ fileId: file.id, item });
+    showOfFile(file, { fileId: file.id, item });
   };
   /** Whether what is acted on holds the open trip, which the library must not change behind its back. */
   const holdsOpen = (items: readonly Item[]): boolean => tripsWithin(items).some((trip) => trip.id === openTripId());
@@ -664,7 +676,7 @@ export function Library(props: {
             items={() => itemMenu({ file: file() })}
             select={select(branch.tree, { file: file() })}
             unfolded={isUnfolded({ file: file() })}
-            waypoints={{ items: () => stashPartMenu(waypointsKey(file())), select: selectRow(branch.tree, waypointsKey(file())) }}
+            waypoints={{ onShow: () => showWaypoints(file()), items: () => stashPartMenu(waypointsKey(file())), select: selectRow(branch.tree, waypointsKey(file())) }}
           >
             <For each={file().items}>
               {(item) => {
@@ -705,7 +717,7 @@ export function Library(props: {
           <MenuButton of={pathOf(root()) || ALL_TRIPS} items={menu} />
         </div>
         <Show when={tree.tab === 'stash' && stashProblem()}>{(problem) => <p class="error">{errorMessage(problem())}</p>}</Show>
-        <ul class="tree">
+        <ul class="tree" classList={{ 'mark-in-file': tree.tab === 'stash' && markInFile() }}>
           <Branch tree={tree.tab} parent={root()} />
         </ul>
         <Show when={held().folders + held().trips === 0}>

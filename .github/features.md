@@ -277,8 +277,11 @@
   its routes, tracks and waypoints and how far they go, and shows its shape; a click
   unfolds it to its routes and tracks, each with its length and, a track with times,
   when it began, and shows the file whole on the map, each line in the colour its row
-  has and the waypoints as dots; a click on a route or a track shows that one alone,
-  another click the file again. Files are selected as folders are, dragged or moved
+  has and the waypoints as dots; a click on a route or a track, or on the row of the
+  file's waypoints, shows that alone, another click the file again. What is shown
+  holds the Stash's mark: its row is tinted, one at a time, and the strip down the
+  left runs from the top through its folders and its file to it; a folder clicked
+  after takes the mark, and the strip alone still leads to what the map shows. Files are selected as folders are, dragged or moved
   into the Stash's folders, renamed and deleted from their menu; a folder deleted
   takes its files with it or gives them to the folder around it. Nothing is started
   in the Stash, and no trip or day is pasted into it: a folder is all that is made
