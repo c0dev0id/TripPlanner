@@ -17,14 +17,15 @@ use XMLReader;
  * many points it has and, of a track, when its first point was recorded. A route's line
  * follows the way Garmin's extension gives between its points, where the file has it.
  * Each also says what it carries that its row would not show otherwise: values on its
- * points, however the file writes them, and Garmin's extensions of a route.
+ * points, however the file writes them, Garmin's extensions of a route, and what DMD
+ * and Rumo wrote into it.
  */
 final readonly class GpxIndex
 {
     private const KINDS = ['rte' => 'route', 'trk' => 'track'];
 
     /** What a route or a track may carry, in the order it is listed. */
-    public const FEATURES = ['time', 'elevation', 'lean', 'acceleration', 'routeExtension', 'routePointExtension'];
+    public const FEATURES = ['time', 'elevation', 'lean', 'acceleration', 'routeExtension', 'routePointExtension', 'dmd', 'rumo'];
 
     /**
      * The values a point may carry, by the names files give them: a point's own elements
@@ -40,8 +41,16 @@ final readonly class GpxIndex
         'acc_z' => 'acceleration',
     ];
 
-    /** Garmin's extensions of a route and of its points, by their element. */
-    private const ROUTE_EXTENSIONS = ['RouteExtension' => 'routeExtension', 'RoutePointExtension' => 'routePointExtension'];
+    /**
+     * What an extension says a route or a track carries, by its namespace and its element,
+     * any element of it under `*`: Garmin's extensions of a route and of its points, and
+     * whatever DMD and Rumo write.
+     */
+    private const EXTENSIONS = [
+        'http://www.garmin.com/xmlschemas/GpxExtensions/v3' => ['RouteExtension' => 'routeExtension', 'RoutePointExtension' => 'routePointExtension'],
+        'https://dmdnavigation.com/ns/gpx/1' => ['*' => 'dmd'],
+        'https://www.rumoadventures.com/xmlschemas/GpxExtensions/v1' => ['*' => 'rumo'],
+    ];
 
     /** How many of a track's points are read whole for what they carry; the others are passed over once the track's start is known. */
     private const SAMPLED_POINTS = 10;
@@ -100,7 +109,8 @@ final readonly class GpxIndex
             // An element no deeper than the point read last stands beside it or above it.
             $inPoint = $inPoint !== null && $reader->depth > $inPoint ? $inPoint : null;
             $feature = $inPoint !== null ? (self::POINT_VALUES[$element] ?? null) : null;
-            $feature ??= $open['kind'] === 'route' ? (self::ROUTE_EXTENSIONS[$element] ?? null) : null;
+            $extension = self::EXTENSIONS[$reader->namespaceURI] ?? [];
+            $feature ??= $extension[$element] ?? $extension['*'] ?? null;
             if ($feature !== null) {
                 $open['features'][$feature] = true;
             }

@@ -59,9 +59,18 @@ final class GpxIndexTest extends TestCase
         $ridelink = '<gpx xmlns:rl="r"><trk><extensions><rl:summary><rl:lean_angle>3</rl:lean_angle></rl:summary></extensions><trkseg>'
             . '<trkpt lat="49.4" lon="8.7"><extensions><rl:ele>120</rl:ele></extensions></trkpt>'
             . '<trkpt lat="49.5" lon="8.7"><extensions><rl:speed>7</rl:speed><rl:acc_x>0.2</rl:acc_x></extensions></trkpt></trkseg></trk>'
-            . '<rte><extensions><gpxx:RouteExtension xmlns:gpxx="g"><gpxx:IsAutoNamed>false</gpxx:IsAutoNamed></gpxx:RouteExtension></extensions>'
+            . '<rte><extensions><gpxx:RouteExtension xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3"><gpxx:IsAutoNamed>false</gpxx:IsAutoNamed></gpxx:RouteExtension></extensions>'
             . '<rtept lat="49.4" lon="8.7"><ele>100</ele></rtept><rtept lat="49.5" lon="8.7"/></rte></gpx>';
         self::assertSame([['elevation', 'acceleration'], ['elevation', 'routeExtension']], array_column(GpxIndex::of($ridelink)->items, 'features'));
+    }
+
+    public function testNamesWhoseExtensionARouteOrTrackCarriesByItsNamespace(): void
+    {
+        $gpx = '<gpx xmlns:d="https://dmdnavigation.com/ns/gpx/1" xmlns:r="https://www.rumoadventures.com/xmlschemas/GpxExtensions/v1">'
+            . '<rte><extensions><d:PreRendered><d:CalculatedRoute>49.4,8.7,97.0</d:CalculatedRoute></d:PreRendered></extensions><rtept lat="49.4" lon="8.7"/></rte>'
+            . '<rte><extensions><r:RouteExtension><r:RoutingProfile>fast</r:RoutingProfile></r:RouteExtension></extensions><rtept lat="49.4" lon="8.7"/></rte>'
+            . '<trk><extensions><d:Stats/></extensions><trkseg><trkpt lat="49.4" lon="8.7"/></trkseg></trk></gpx>';
+        self::assertSame([['dmd'], ['rumo'], ['dmd']], array_column(GpxIndex::of($gpx)->items, 'features'));
     }
 
     public function testAFileThatIsNoXmlHoldsNothing(): void

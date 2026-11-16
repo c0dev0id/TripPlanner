@@ -692,5 +692,7 @@
   "Its points have lean angles": "Die Punkte haben Schräglagen",
   "Its points have accelerations": "Die Punkte haben Beschleunigungswerte",
   "The route has Garmin’s route extension": "Die Route hat Garmins Routen-Erweiterung",
-  "Its points have Garmin’s route point extension: the way calculated between them": "Die Punkte haben Garmins Routenpunkt-Erweiterung: den berechneten Weg dazwischen"
+  "Its points have Garmin’s route point extension: the way calculated between them": "Die Punkte haben Garmins Routenpunkt-Erweiterung: den berechneten Weg dazwischen",
+  "Has data DMD wrote into it": "Enthält Daten, die DMD hineingeschrieben hat",
+  "Has data Rumo wrote into it": "Enthält Daten, die Rumo hineingeschrieben hat"
 }

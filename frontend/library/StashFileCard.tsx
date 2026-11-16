@@ -20,6 +20,8 @@ const FEATURES: Record<StashFeature, { label: string; title: string }> = {
   acceleration: { label: t('G-force'), title: t('Its points have accelerations') },
   routeExtension: { label: t('GPXX route'), title: t('The route has Garmin’s route extension') },
   routePointExtension: { label: t('GPXX route points'), title: t('Its points have Garmin’s route point extension: the way calculated between them') },
+  dmd: { label: 'DMD', title: t('Has data DMD wrote into it') },
+  rumo: { label: 'Rumo', title: t('Has data Rumo wrote into it') },
 };
 
 /** What a route or a track of a file is called: its name, or what it is where it has none. */

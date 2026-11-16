@@ -382,8 +382,13 @@ entries at the end of their section.
     before, so a large recording is indexed as fast as it was. A value that only
     later points carry is not seen. Garmin's two extensions of a route are named as
     what they are, since what they hold (the calculated way, the route's settings)
-    is not a value on a point and is still to be made use of. What was found is kept
-    with the row (`stash_items.features`), as its line is.
+    is not a value on a point and is still to be made use of. DMD and Rumo are named
+    likewise, by whose data it is, since what they write (a route calculated ahead,
+    speed limits, surfaces, a routing profile) is theirs to read. An extension is
+    known by its namespace, never by its prefix or its element alone: files rewritten
+    by a tool carry `ns2:` where Garmin wrote `gpxx:`, and Rumo has a `RouteExtension`
+    of its own. What was found is kept with the row (`stash_items.features`), as its
+    line is.
   - KML and KMZ are turned into GPX in the browser before they are kept. The user's
     devices write GPX, and what such files hold beyond what GPX can say is little.
 - **A ride is kept once, for itself, and is on days by a link.** The library is a tree
