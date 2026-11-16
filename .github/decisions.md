@@ -438,6 +438,22 @@ entries at the end of their section.
     tour, the legs of one day or versions of one route often cannot be told from
     them, and the Stash has no days; that is decided where a folder is made a trip.
     The order in a group is by name, not the order ridden: the Stash lists by name.
+  - A folder becomes a trip by being copied and pasted among the trips, as a file
+    does, and its days are a guess by rules that can be said in a sentence each
+    (`library/stashTrips.ts`), since the trip is corrected in a minute and a rule
+    nobody can follow is not. A date settles a day: the one in a file's name, else
+    when Garmin's trip planning has its route leave, which the index reads as when
+    the route starts (`stash_items.started_at`), as a track's first point is. The
+    time on a route's points is no date: it is when the point was made. Without a
+    date, a number in the name settles it ("Tag 2"), and without that the legs of a
+    ride are told from the days of a tour by length: legs go on from each other and
+    stay within 400 km together, which held for all but a handful of some seventy
+    undated groups of a club's files, where legs ran 50 to 190 km and days 220 to 390.
+    The order ridden is the line the files form, each going on where the last ended,
+    since a site's upload numbers sort a ride's last leg first; a hotel that several
+    days leave from breaks the line, and then names decide, which number such days.
+    A ride there and back is a closed line and starts at home: where most of the
+    Stash's files leave from.
   - What wrote a file and when (`stash_files.creator`, `exported_at`) is read from the
     file's head with the rest of the index. The time on a route's points is not used:
     a planning program writes there when a point was made, months before the ride.

@@ -20,7 +20,7 @@ export interface FileGroup {
 }
 
 /** How far the start of a file may lie from the end of the one it goes on from: the other side of a town. */
-const ONWARD_M = 8000;
+export const ONWARD_M = 8000;
 /** How near its start a file ends that is a round by itself. */
 const LOOP_M = 3000;
 /** How far from where the way there began the way back may end: riders go home to different places. */
@@ -78,15 +78,20 @@ interface Candidate {
   written?: number;
 }
 
-/** Where the file's longest route starts, or its longest track where it has no route. */
-function ends(file: StashFile): { start?: LngLat; end?: LngLat } {
+/** The route or track a file is read by: its longest route, or its longest track where it has no route. */
+export const mainItem = (file: StashFile): StashItem | undefined => {
   const routes = file.items.filter((item) => item.kind === 'route');
-  const longest = (routes.length > 0 ? routes : file.items).reduce<StashItem | undefined>((a, b) => (a && a.distanceM >= b.distanceM ? a : b), undefined);
-  const line = longest ? decodePolyline(longest.line) : [];
+  return (routes.length > 0 ? routes : file.items).reduce<StashItem | undefined>((a, b) => (a && a.distanceM >= b.distanceM ? a : b), undefined);
+};
+
+/** Where a file starts and ends, by its main route or track. */
+export function ends(file: StashFile): { start?: LngLat; end?: LngLat } {
+  const main = mainItem(file);
+  const line = main ? decodePolyline(main.line) : [];
   return { start: line[0], end: line.at(-1) };
 }
 
-const near = (a: LngLat | undefined, b: LngLat | undefined, metres: number): boolean => !!a && !!b && distanceBetween(a, b) < metres;
+export const near = (a: LngLat | undefined, b: LngLat | undefined, metres: number): boolean => !!a && !!b && distanceBetween(a, b) < metres;
 
 function candidate(file: StashFile): Candidate {
   const { start, end } = ends(file);

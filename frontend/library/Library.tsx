@@ -2,7 +2,7 @@ import { plural, t } from '../i18n/t';
 import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, Show, Switch, type JSX } from 'solid-js';
 import { changeTrip, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import { TAB_NAMES, TREE_TABS, TREES, type TreeTab } from '../model/library';
-import type { StashFile, StashItem, StashPart } from '../model/stash';
+import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/stash';
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { clearClip, copyLibraryItems, copyStashFiles, copyStashParts, libraryClip, libraryPasteItem, stashFilesClip, type LibraryClip } from '../state/clipboard';
@@ -19,7 +19,7 @@ import { addDay, addSection, isMarkInTrip, isTripMarked, markFolder, markTrip, o
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
-import { counted } from '../ui/format';
+import { counted, listText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { FoldIcon } from '../ui/icons';
 import { menuNote, type MenuItem } from '../ui/menu';
@@ -443,8 +443,11 @@ export function Library(props: {
   });
   /** Pastes copied routes into the trip where an import would put them, and saves it. */
   const pasteInto = (tripId: number, routes: CopiedRoute[]) => changeTrip(tripId, (trip) => pasteIntoTrip(trip, routes, newId));
-  /** The item that imports the copied files of the Stash into a folder, null for the top of the trips; none for a folder of the Stash, where they are. */
-  const pasteFilesItem = (into: number | null): MenuItem[] => (treeOf(into) === 'stash' ? [] : libraryPasteItem({ files: (files) => imports.pasteFiles(into, files) }));
+  /** The item that imports what was copied of the Stash into a folder, null for the top of the trips: among the trips files and folders, as trips; among the places files, as lists. None for a folder of the Stash, where they are. */
+  const pasteFilesItem = (into: number | null): MenuItem[] => {
+    if (treeOf(into) === 'stash') return [];
+    return libraryPasteItem(treeOf(into) === 'trips' ? { folders: (files, copied) => imports.pasteAsTrips(into, files, copied) } : { files: (files) => imports.pasteFiles(into, files) });
+  };
   /** What is pasted into the one folder or trip: folders and trips into a folder, and files of the Stash, which are imported there; routes, days and files of the Stash into a trip, stops into a list of places as places of their kinds. Nothing is pasted into the Stash. */
   const pasteItems = (item: Item): MenuItem[] => {
     if ('folder' in item) {
@@ -487,6 +490,10 @@ export function Library(props: {
   };
   /** Puts folders and trips on the clipboard: cut, to be moved where they are pasted; copied, which only trips are. */
   const clip = (chosen: readonly Item[], move: boolean) => copyLibraryItems({ tripIds: tripsOf(chosen).map((trip) => trip.id), folderIds: foldersOf(chosen).map((f) => f.id), move });
+  /** A folder of the Stash as it is copied: with the files it holds and the folders in it, as they are now. */
+  const copiedFolder = (folder: Folder): CopiedFolder => ({ name: folder.name, files: childFiles(folder.id), folders: childFolders(folder.id).map(copiedFolder) });
+  /** Copies files and folders of the Stash, to be made trips of where they are pasted. */
+  const copyStash = (chosen: readonly Item[]) => copyStashFiles(filesOf(chosen), foldersOf(chosen).map(copiedFolder));
   /**
    * The keys that cut, copy and delete the selected folders and trips, and paste those on
    * the clipboard into the folder shown, as the menu does; none while the rides are
@@ -512,16 +519,16 @@ export function Library(props: {
       e.preventDefault();
       return void (routes.length > 0 ? removeRoutes(routes) : removeItems(parts, relist));
     }
-    // Files of the Stash are copied, to be imported where they are pasted, by themselves alone, and never cut.
+    // Files and folders of the Stash are copied, to be imported where they are pasted; files are never cut.
     const files = filesOf(chosen);
     const pasteFiles = verb === 'paste' && shownTree() ? pasteFilesItem(shownFolderId())[0] : undefined;
     if (pasteFiles && 'run' in pasteFiles) {
       e.preventDefault();
       return pasteFiles.run();
     }
-    if (verb === 'copy' && files.length > 0 && files.length === chosen.length) {
+    if (verb === 'copy' && shownTree() === 'stash' && chosen.length > 0) {
       e.preventDefault();
-      return copyStashFiles(files);
+      return copyStash(chosen);
     }
     const clips = verb === 'cut' || verb === 'copy';
     if (!shownTree() || (verb === 'paste' ? !libraryClip() : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0) || (clips && files.length > 0)) return;
@@ -542,7 +549,7 @@ export function Library(props: {
   /** What the Stash's menus ask of the library around them. */
   /** The item that adds the copied routes, tracks, waypoints and media of other files to a file of the Stash. */
   const pasteIntoFile = (file: StashFile): MenuItem[] => libraryPasteItem({ parts: { takes: ['items', 'waypoints', 'media'], paste: (parts) => runLibrary(() => addPartsTo(file, parts), relistStash) } });
-  const stashHost: StashMenuHost = { rename, moveItem, pasteInto: pasteIntoFile, remove: (chosen) => void remove(chosen), relist };
+  const stashHost: StashMenuHost = { rename, copy: copyStash, moveItem, pasteInto: pasteIntoFile, remove: (chosen) => void remove(chosen), relist };
   /** The menu of a route or a track of a file, or of a file's waypoints or media, by the row's key: for the selected rows, or for it alone where it is not selected. */
   const stashPartMenu = (key: string): MenuItem[] => {
     const selection = menuRowsOf(key);
@@ -610,6 +617,8 @@ export function Library(props: {
       ...(onlyTrips ? [{ label: t('Duplicate'), run: () => void flushSave().then(() => runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist)) }] : []),
       { label: t('Cut'), run: () => clip(chosen, true) },
       ...(onlyTrips ? [{ label: t('Copy'), run: () => clip(chosen, false) }] : []),
+      // Folders of the Stash are copied with what they hold, to be made trips of among the trips.
+      ...('folder' in item && treeOf(item.folder.id) === 'stash' ? [{ label: t('Copy'), run: () => copyStash(chosen) }] : []),
       ...pasteEntries,
       ...moveItem(chosen),
       ...(onlyTrips && several
@@ -809,10 +818,13 @@ export function Library(props: {
                     </button>
                   )}
                 </Show>
-                <Show when={shownTree() !== 'stash' && stashFilesClip()}>
-                  {(files) => (
-                    <button class="paste-here" onClick={() => void imports.pasteFiles(shownFolderId(), files()).then(clearClip)}>
-                      {t('Import {what} into “{where}”', { what: counted(files().length, 'file'), where: pathOf(shownFolderId()) || ALL_TRIPS })}
+                <Show when={stashFilesClip() && pasteFilesItem(shownFolderId())[0]}>
+                  {(paste) => (
+                    <button class="paste-here" onClick={() => 'run' in paste() && (paste() as { run: () => void }).run()}>
+                      {t('Import {what} into “{where}”', {
+                        what: listText([stashFilesClip()!.folders.length > 0 && counted(stashFilesClip()!.folders.length, 'folder'), stashFilesClip()!.files.length > 0 && counted(stashFilesClip()!.files.length, 'file')]),
+                        where: pathOf(shownFolderId()) || ALL_TRIPS,
+                      })}
                     </button>
                   )}
                 </Show>

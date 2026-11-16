@@ -3,7 +3,7 @@ import { createSignal } from 'solid-js';
 import { changeTrip, errorMessage, fetchRideGpx, fetchStashGpx, fetchStashMedia, type KeptRide, type Recording } from '../api';
 import { parseGpx } from '../gpx/gpx';
 import { gpxToDayParts } from '../gpx/import';
-import type { StashFile, StashItem, StashPart } from '../model/stash';
+import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/stash';
 import { newId, type Day, type Route, type Stop } from '../model/trip';
 import { copiedRoute, defaultProfile, removeParts, stopsBoundTo, type CopiedRoute, type PartKind } from '../routing/dayEdit';
 import { counted, listText } from '../ui/format';
@@ -23,7 +23,7 @@ import { addParts, moveDaysAfter, movePartsToDay, moveStopsIntoRoute, openTrip, 
  * clipboard, or until something else is copied or cut. What was cut is taken from where
  * it was once it is pasted.
  */
-type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[]; kinds?: readonly string[] } | { recordings: KeptRide[]; cutFrom?: string } | { media: CopiedMedia } | { library: LibraryClip } | { files: StashFile[] } | { parts: StashPart[] }) & {
+type Clip = ({ days: Day[] } | { routes: CopiedRoute[] } | { stops: Stop[]; kinds?: readonly string[] } | { recordings: KeptRide[]; cutFrom?: string } | { media: CopiedMedia } | { library: LibraryClip } | { files: StashFile[]; folders: CopiedFolder[] } | { parts: StashPart[] }) & {
   /** Where the parts were cut from. */
   cut?: { tripId: number; kind: PartKind; ids: string[] };
 };
@@ -56,9 +56,14 @@ export function libraryClip(): LibraryClip | undefined {
   return copied && 'library' in copied ? copied.library : undefined;
 }
 
-/** Copies files of the Stash, to be imported where they are pasted: as trips into a folder, as days into a trip, their routes and waypoints into a day, their waypoints into a list of places. */
-export function copyStashFiles(files: StashFile[]): void {
-  setClip({ files });
+/**
+ * Copies files of the Stash, and folders of it with what they hold, to be imported where
+ * they are pasted: among the trips a file as a trip and a folder as a trip of its files,
+ * or with folders in it as a folder of trips. Files alone also go as days into a trip,
+ * as routes and waypoints into a day, as places into a list.
+ */
+export function copyStashFiles(files: StashFile[], folders: CopiedFolder[] = []): void {
+  setClip({ files, folders });
 }
 
 /** Copies routes, tracks and waypoints of files of the Stash, to be pasted into another file there, into a day, a trip or a list of places. */
@@ -66,10 +71,10 @@ export function copyStashParts(parts: StashPart[]): void {
   setClip({ parts });
 }
 
-/** The files of the Stash on the clipboard, if that is what it holds. */
-export function stashFilesClip(): StashFile[] | undefined {
+/** The files and folders of the Stash on the clipboard, if that is what it holds. */
+export function stashFilesClip(): { files: StashFile[]; folders: CopiedFolder[] } | undefined {
   const copied = clip();
-  return copied && 'files' in copied ? copied.files : undefined;
+  return copied && 'files' in copied ? copied : undefined;
 }
 
 /** Empties the clipboard: what is on it is pasted once. */
@@ -146,7 +151,7 @@ function recordingAsRoute(dayId: string, name: string, gpx: string): CopiedRoute
 function pasteLabel(copied: Clip): string {
   const of = (n: number, noun: string) => t('Paste {what}', { what: counted(n, noun) });
   if ('library' in copied) return t('Paste');
-  if ('files' in copied) return of(copied.files.length, 'file');
+  if ('files' in copied) return t('Paste {what}', { what: listText([copied.folders.length > 0 && counted(copied.folders.length, 'folder'), copied.files.length > 0 && counted(copied.files.length, 'file')]) });
   if ('parts' in copied) {
     const items = copied.parts.reduce((sum, part) => sum + part.items.length, 0);
     const waypoints = copied.parts.reduce((sum, part) => sum + (part.waypoints ? part.file.waypoints : 0), 0);
@@ -241,6 +246,8 @@ export function pasteItems(kind: PartKind, id: string): MenuItem[] {
     paste();
     selectDay(id);
   };
+  // A day takes files of the Stash and parts of them; folders of it are for the trips' folders.
+  if ('files' in copied && copied.folders.length > 0) return [];
   if ('files' in copied || 'parts' in copied) {
     const parts = 'files' in copied ? copied.files.map(wholeFile) : copied.parts;
     return [{ label, run: () => {
@@ -286,7 +293,8 @@ const takenBy = ({ takes }: PartsTaker, parts: readonly StashPart[]): StashPart[
 /**
  * The menu item that hands the copied routes to `routes`, the copied days to `days`,
  * the copied stops, with the kind of each, to `stops`, the copied files of the Stash
- * to `files`, or of the copied parts of such files what `parts` takes to it, which put
+ * to `files`, or with the copied folders of it to `folders`, where the place takes
+ * folders, or of the copied parts of such files what `parts` takes to it, which put
  * them into a trip, a folder of the library or a file of the Stash; once that is done,
  * what was cut is taken from its trip. None where the clipboard holds none of them, or
  * what it holds has nowhere to go; the item says what will be pasted there.
@@ -296,6 +304,7 @@ export function libraryPasteItem(into: {
   days?: (days: Day[]) => Promise<unknown>;
   stops?: (stops: Stop[], kinds: readonly string[]) => Promise<unknown>;
   files?: (files: StashFile[]) => Promise<unknown>;
+  folders?: (files: StashFile[], folders: CopiedFolder[]) => Promise<unknown>;
   parts?: PartsTaker;
 }): MenuItem[] {
   const copied = clip();
@@ -308,8 +317,10 @@ export function libraryPasteItem(into: {
         ? () => into.days!(copied.days)
         : 'stops' in copied && into.stops
           ? () => into.stops!(copied.stops, copied.kinds ?? [])
-          : 'files' in copied && into.files
-            ? () => into.files!(copied.files)
+          : 'files' in copied && into.folders
+            ? () => into.folders!(copied.files, copied.folders)
+            : 'files' in copied && into.files && copied.folders.length === 0
+              ? () => into.files!(copied.files)
             : parts.length > 0
               ? () => into.parts!.paste(parts)
               : undefined;

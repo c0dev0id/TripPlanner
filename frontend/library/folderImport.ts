@@ -49,7 +49,7 @@ function findDate(name: string): { date: string; text: string } | undefined {
 export const dateIn = (name: string): string | undefined => findDate(name)?.date;
 
 /** The name without its date and the separators around it; empty where nothing else is left. */
-function withoutDate(name: string): string {
+export function withoutDate(name: string): string {
   const found = findDate(name);
   const rest = found ? name.replace(found.text, ' ') : name;
   return rest.replace(/^[\s_.,–-]+|[\s_.,–-]+$/g, '').replace(/\s{2,}/g, ' ');

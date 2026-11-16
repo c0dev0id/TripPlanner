@@ -1,6 +1,6 @@
 import { addStashMedia, addStashParts, deleteStashMedia, fetchStashMedia, keepStashRides, moveStashFile, removeStashItems, renameStashFile, renameStashItem, stashFileUrl, type StashRide } from '../api';
 import { t } from '../i18n/t';
-import { copyStashFiles, copyStashParts } from '../state/clipboard';
+import { copyStashParts } from '../state/clipboard';
 import { runLibrary, setImportNote } from '../state/library';
 import { ridesChanged } from '../state/rides';
 import { relistStash, showInStash, shownInStash } from '../state/stash';
@@ -23,9 +23,10 @@ import type { Picked } from './stashOut';
  * a track also among the rides, renamed, moved and deleted.
  */
 
-/** What the menus ask of the library around them: its rename dialog, where the chosen can be moved, what is pasted into a file, deleting them, and listing afresh. */
+/** What the menus ask of the library around them: its rename dialog, copying the chosen with what the folders among them hold, where they can be moved, what is pasted into a file, deleting them, and listing afresh. */
 export interface StashMenuHost {
   rename: (title: string, placeholder: string, name: string, save: (name: string) => Promise<unknown>, saved: () => void) => void;
+  copy: (chosen: readonly Item[]) => void;
   moveItem: (chosen: readonly Item[]) => MenuItem[];
   pasteInto: (file: StashFile) => MenuItem[];
   remove: (chosen: readonly Item[]) => void;
@@ -107,19 +108,18 @@ export async function applyGroups(folderId: number, groups: readonly FileGroup[]
 const pasteOr = (paste: MenuItem[]): MenuItem[] => (paste.length > 0 ? paste : [menuNote(t('Paste'))]);
 
 /**
- * The menu of what is selected once files of the Stash are among it. Files alone are
- * copied, to be imported where they are pasted. One file is renamed, takes the routes,
+ * The menu of what is selected once files of the Stash are among it. They are copied,
+ * and the folders selected with them, to be imported where they are pasted. One file is renamed, takes the routes,
  * tracks and waypoints copied from other files, or is exported as it is kept, and
  * files, with the folders selected beside them, are moved and deleted.
  */
 export function filesMenu(chosen: readonly Item[], host: StashMenuHost): MenuItem[] {
   const several = chosen.length > 1;
   const chosenFiles = filesOf(chosen);
-  const onlyFiles = chosenFiles.length === chosen.length;
   return [
     ...(several ? [menuNote(t('{what} selected', { what: countText(chosen) }))] : []),
-    // Files alone are copied; one file takes what is copied of others, greyed out while the clipboard holds none of it, and is renamed and exported.
-    ...(onlyFiles ? [{ label: t('Copy'), run: () => copyStashFiles(chosenFiles) }] : []),
+    // Files are copied, and folders with them; one file takes what is copied of others, greyed out while the clipboard holds none of it, and is renamed and exported.
+    { label: t('Copy'), run: () => host.copy(chosen) },
     ...(several ? [] : pasteOr(host.pasteInto(chosenFiles[0]!))),
     ...(several ? [] : [{ label: t('Rename…'), run: () => host.rename(t('Rename file'), t('File name'), chosenFiles[0]!.name, (name) => renameStashFile(chosenFiles[0]!.id, name), relistStash) }]),
     ...(several ? [] : [{ label: t('Add media…'), run: () => void addMedia(chosenFiles[0]!) }]),

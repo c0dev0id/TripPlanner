@@ -1,13 +1,17 @@
+import { t } from '../i18n/t';
 import { fetchStashGpx, fetchStashMedia } from '../api';
 import type { TripSummary } from '../model/trip';
 import { libraryFolders, relistFolders, relistTrips, runLibrary, setImportNote, showTab } from '../state/library';
-import type { StashFile } from '../model/stash';
-import { listKeptFiles, relistStash } from '../state/stash';
+import type { CopiedFolder, StashFile } from '../model/stash';
+import { listKeptFiles, relistStash, stashFiles } from '../state/stash';
 import { runRidesJob } from '../state/rides';
+import { counted } from '../ui/format';
 import { pickFiles } from '../ui/pickFile';
 import { importDropped, importIntoTrip, importRides } from './dropImport';
 import { droppedSources, onFileDrop, type Dropped } from './fileDrop';
-import { sourceOf, type ImportSource } from './folderImport';
+import { importFolder, sourceOf, type ImportSource } from './folderImport';
+import { ends } from './grouping';
+import { planStashTrips } from './stashTrips';
 import { kindAround } from '../model/folders';
 import { ROUTE_FILE_TYPES } from '../gpx/import';
 import { zipEntries } from '../gpx/zip';
@@ -96,6 +100,13 @@ export function libraryImports(onLeave: () => Promise<void>) {
   return {
     /** Imports files of the Stash into the folder, as files picked for it are: each a trip, or among the places a list of its waypoints. */
     pasteFiles: (folderId: number | null, files: readonly StashFile[]) => intoFolder(folderId, { files: files.map(stashSource), inFolders: [] }),
+    /** Makes trips of files and folders of the Stash in the folder, null for the top: a file a trip of one day, a folder a trip of its files or a folder of trips (see planStashTrips). */
+    pasteAsTrips: (folderId: number | null, files: readonly StashFile[], folders: readonly CopiedFolder[]) =>
+      run(async (onProgress) => {
+        const planned = planStashTrips(folders, files, (stashFiles() ?? []).flatMap((file) => { const { start } = ends(file); return start ? [start] : []; }));
+        const made = await importFolder(planned.files.map(stashSource), planned.plan, [], folderId, onProgress);
+        return { text: made.trips > 0 ? t('{trips} imported.', { trips: counted(made.trips, 'trip') }) : t('No GPX or KML files or exported trips found.'), errors: made.errors };
+      }),
     /** Imports files of the Stash into the trip, as files picked for it are. */
     pasteFilesIntoTrip: (trip: TripSummary, files: readonly StashFile[]) => intoTrip(trip, files.map(stashSource)),
     /** Asks for files of routes and zips, of exported trips or of such files, and imports them into the folder. */

@@ -88,8 +88,9 @@ mark and selection while another tab is shown.
 `library/Library.tsx` holds the trees, their menus and keys; beside it are its cards
 (`cards.tsx`, `StashFileCard.tsx`), the Stash's verbs and menus (`stashMenu.ts`) and what
 is pure and tested: the rows' keys and what a folder takes (`items.ts`), the search
-(`search.ts`), and which files of a Stash folder belong together (`grouping.ts`, proposed
-in `GroupDialog.tsx`).
+(`search.ts`), which files of a Stash folder belong together (`grouping.ts`, proposed
+in `GroupDialog.tsx`), and the trips and days copied Stash folders make
+(`stashTrips.ts`).
 
 Every list selects through `ui/selection.ts`: there is one selection for the page, held
 by one list at a time. `rowSelect` gives a row its click, its pad and its highlight
@@ -103,7 +104,7 @@ belong to a file (`stash_media`, in the database too); it is not made of trip
 documents. It works on whole routes, tracks and files: rename, delete, export the file,
 and the ways out: by the clipboard, a file imported where it is pasted (a trip in a folder,
 a day in a trip, routes and stops in a day, places in a list), its media with it as the
-day's, or a track among the rides.
+day's, a folder pasted among the trips as a trip of its files, or a track among the rides.
 Cleaning up rewrites the stored file.
 Nothing goes into the Stash from the app. The Trips are where things are edited and
 tied together. A collection (`trips.kind`) is a list of places and lives among the

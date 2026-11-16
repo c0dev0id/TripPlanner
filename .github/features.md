@@ -281,8 +281,9 @@
 - The Stash is folders of files: every file is kept whole, as it was imported, so that
   nothing it holds is lost before it is worked on. A file's card says what it holds,
   its routes, tracks and waypoints and how far they go, and shows its shape; a click
-  unfolds it to its routes and tracks, each with its length and, a track with times,
-  when it began, and under that what it carries that is not seen otherwise, as chips:
+  unfolds it to its routes and tracks, each with its length and when it starts, a
+  track with times when it began and a route planned with Garmin's trip planning when
+  it is to leave, and under that what it carries that is not seen otherwise, as chips:
   times, elevation, lean angles and G-forces on its points, however the file writes
   them, Garmin's extension of a route and of its points, and whether DMD or Rumo
   wrote data of their own into it. It shows the file whole on the map, each line in the colour its row
@@ -311,10 +312,22 @@
   folders makes a folder in the folder for each group ticked, takes the one of that
   name where there is one, and moves the files into it. Files that belong to no group
   stay where they are, and the folder is asked again whenever more should be sorted.
-- Things leave the Stash by Copy, in the menu of a file, of several selected, or of
-  one route or track, and with Ctrl or Cmd with C. A copied file is imported where it
+- Things leave the Stash by Copy, in the menu of a file, of a folder, of several
+  selected, or of one route or track, and with Ctrl or Cmd with C. A copied folder is
+  pasted into a folder of the trips, or their top, and nowhere else: a folder of files
+  becomes a trip named after it, a folder that also holds folders a folder of trips,
+  each of its own files a trip of one day. A trip's days are made of the folder's
+  files: the files of one date are one day, the date being the one in a file's name
+  or else the day it is planned to leave or was recorded, the dated days by date and
+  the files of a day by the time they leave. Of the undated files, the parts a name
+  numbers as one day ("Tag 2") are one day and those it numbers apart are apart; the
+  others are one day while each goes on where the last ended and the day stays within
+  400 km, so that the legs of a ride between its stops are one day and the days of a
+  tour each their own, two rounds from one place always apart. They stand in the
+  order ridden: along the line they form, a closed one from where the Stash's files
+  usually leave, or by name where the lines do not say. A copied file is imported where it
   is pasted, as the same file picked there would be: into a folder of the trips, or
-  their top, as a trip; into a trip as a day at its end; into a day of the open trip
+  their top, as a trip of one day, dated as a day of a folder is; into a trip as a day at its end; into a day of the open trip
   as its routes and tracks with the waypoints on them and the other waypoints as free
   stops; into a folder of the places as a list of its waypoints, and into a list or a
   category of it as places, each under the kind its waypoint is of (`<type>`), else
