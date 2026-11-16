@@ -16,12 +16,40 @@ use XMLReader;
  * routes or tracks, with its name, its line thinned as an outline's is, its length, how
  * many points it has and, of a track, when its first point was recorded. A route's line
  * follows the way Garmin's extension gives between its points, where the file has it.
+ * Each also says what it carries that its row would not show otherwise: values on its
+ * points, however the file writes them, and Garmin's extensions of a route.
  */
 final readonly class GpxIndex
 {
     private const KINDS = ['rte' => 'route', 'trk' => 'track'];
 
-    /** @param list<array{kind: string, position: int, name: string, line: string, distanceM: int, points: int, startedAt: ?string}> $items */
+    /** What a route or a track may carry, in the order it is listed. */
+    public const FEATURES = ['time', 'elevation', 'lean', 'acceleration', 'routeExtension', 'routePointExtension'];
+
+    /**
+     * The values a point may carry, by the names files give them, in lower case: a
+     * point's own elements and those of its extensions alike, whichever app wrote them
+     * (Ridelink writes lean_angle and acc_x, acc_y, acc_z).
+     */
+    private const POINT_VALUES = [
+        'time' => 'time',
+        'ele' => 'elevation',
+        'elevation' => 'elevation',
+        'altitude' => 'elevation',
+        'lean_angle' => 'lean',
+        'lean' => 'lean',
+        'acc_x' => 'acceleration',
+        'acc_y' => 'acceleration',
+        'acc_z' => 'acceleration',
+    ];
+
+    /** Garmin's extensions of a route and of its points, by their element. */
+    private const ROUTE_EXTENSIONS = ['RouteExtension' => 'routeExtension', 'RoutePointExtension' => 'routePointExtension'];
+
+    /** How many of a track's points are read whole for what they carry; the others are passed over once the track's start is known. */
+    private const SAMPLED_POINTS = 10;
+
+    /** @param list<array{kind: string, position: int, name: string, line: string, distanceM: int, points: int, startedAt: ?string, features: list<string>}> $items */
     private function __construct(public int $waypoints, public array $items)
     {
     }
@@ -31,18 +59,21 @@ final readonly class GpxIndex
         $waypoints = 0;
         $items = [];
         $counts = ['route' => 0, 'track' => 0];
-        // The route or track being read, its line as positions, and how deep its track points stand.
+        // The route or track being read, its line as positions, how deep its track points stand, how deep the point being read stands, and how many track points were read whole.
         $open = null;
         $line = [];
         $pointDepth = null;
+        $inPoint = null;
+        $sampled = 0;
         $close = function () use (&$open, &$line, &$items): void {
-            $items[] = ['line' => Polyline::encode(Outline::thinned($line)), 'distanceM' => (int) round($open['distanceM'])] + $open;
+            $features = array_values(array_filter(self::FEATURES, fn (string $feature) => isset($open['features'][$feature])));
+            $items[] = ['line' => Polyline::encode(Outline::thinned($line)), 'distanceM' => (int) round($open['distanceM']), 'features' => $features] + $open;
             $open = null;
         };
         $errors = libxml_use_internal_errors(true);
         $reader = new XMLReader();
         $reader->XML($gpx, null, LIBXML_NONET);
-        // What a track point holds is passed over once the track's start is known: nothing else is read from it.
+        // What a track point holds is passed over once the track's start is known and enough points were read whole: nothing else is read from it.
         $passOver = false;
         while ($passOver ? $reader->next() : $reader->read()) {
             $passOver = false;
@@ -53,13 +84,24 @@ final readonly class GpxIndex
                 continue;
             }
             $element = $reader->localName;
+            if ($open !== null && $reader->depth > 1) {
+                // An element no deeper than the point read last stands beside it or above it.
+                $inPoint = $inPoint !== null && $reader->depth > $inPoint ? $inPoint : null;
+                $feature = $inPoint !== null ? (self::POINT_VALUES[strtolower($element)] ?? null) : null;
+                $feature ??= $open['kind'] === 'route' ? (self::ROUTE_EXTENSIONS[$element] ?? null) : null;
+                if ($feature !== null) {
+                    $open['features'][$feature] = true;
+                }
+            }
             if ($reader->depth === 1) {
                 $waypoints += $element === 'wpt' ? 1 : 0;
                 if (isset(self::KINDS[$element])) {
                     $kind = self::KINDS[$element];
-                    $open = ['kind' => $kind, 'position' => $counts[$kind]++, 'name' => '', 'distanceM' => 0.0, 'points' => 0, 'startedAt' => null];
+                    $open = ['kind' => $kind, 'position' => $counts[$kind]++, 'name' => '', 'distanceM' => 0.0, 'points' => 0, 'startedAt' => null, 'features' => []];
                     $line = [];
                     $pointDepth = null;
+                    $inPoint = null;
+                    $sampled = 0;
                     if ($reader->isEmptyElement) {
                         $close();
                     }
@@ -77,7 +119,9 @@ final readonly class GpxIndex
                     $open['points'] += $element === 'rpt' ? 0 : 1;
                 }
                 $pointDepth = $element === 'trkpt' ? $reader->depth : $pointDepth;
-                $passOver = $element === 'trkpt' && $open['startedAt'] !== null;
+                $inPoint = $element === 'rpt' ? $inPoint : $reader->depth;
+                $passOver = $element === 'trkpt' && $open['startedAt'] !== null && $sampled >= self::SAMPLED_POINTS;
+                $sampled += $element === 'trkpt' && !$passOver ? 1 : 0;
             } elseif ($element === 'time' && $open['startedAt'] === null && $pointDepth !== null && $reader->depth === $pointDepth + 1) {
                 $open['startedAt'] = TrackSummary::time($reader->readString());
             }

@@ -1,0 +1,31 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Planner\Kernel;
+use Planner\Stash\GpxIndex;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Run once after the Stash's index learned what routes and tracks carry, then delete
+// this file. It adds the column the index keeps that in, where it is missing, and reads
+// every file of the Stash again for it. Running it twice does no harm.
+$db = Kernel::container(dirname(__DIR__))->get(PDO::class);
+
+$columns = array_column($db->query('PRAGMA table_info(stash_items)')->fetchAll(), 'name');
+if (!in_array('features', $columns, true)) {
+    $db->exec("ALTER TABLE stash_items ADD COLUMN features TEXT NOT NULL DEFAULT ''");
+}
+
+$update = $db->prepare('UPDATE stash_items SET features = ? WHERE file_id = ? AND kind = ? AND position = ?');
+$files = 0;
+$db->beginTransaction();
+foreach ($db->query('SELECT id, gpx FROM stash_files') as $file) {
+    foreach (GpxIndex::of((string) gzdecode($file['gpx']))->items as $item) {
+        $update->execute([implode(',', $item['features']), $file['id'], $item['kind'], $item['position']]);
+    }
+    $files++;
+}
+$db->commit();
+echo "Read $files files of the Stash again for what their routes and tracks carry.\n";

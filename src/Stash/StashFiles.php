@@ -30,7 +30,7 @@ final class StashFiles
     public function listFor(int $userId): array
     {
         $statement = $this->db->prepare(
-            'SELECT i.file_id, i.kind, i.position, i.name, i.line, i.distance_m, i.points, i.started_at FROM stash_items i JOIN stash_files f ON f.id = i.file_id
+            'SELECT i.file_id, i.kind, i.position, i.name, i.line, i.distance_m, i.points, i.started_at, i.features FROM stash_items i JOIN stash_files f ON f.id = i.file_id
              WHERE f.user_id = ? ORDER BY i.file_id, i.kind, i.position',
         );
         $statement->execute([$userId]);
@@ -179,16 +179,16 @@ final class StashFiles
 
     private function index(int $id, GpxIndex $index): void
     {
-        $insert = $this->db->prepare('INSERT INTO stash_items (file_id, kind, position, name, line, distance_m, points, started_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        $insert = $this->db->prepare('INSERT INTO stash_items (file_id, kind, position, name, line, distance_m, points, started_at, features) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
         foreach ($index->items as $item) {
-            $insert->execute([$id, $item['kind'], $item['position'], $item['name'], $item['line'], $item['distanceM'], $item['points'], $item['startedAt']]);
+            $insert->execute([$id, $item['kind'], $item['position'], $item['name'], $item['line'], $item['distanceM'], $item['points'], $item['startedAt'], implode(',', $item['features'])]);
         }
     }
 
     /** @return list<array<string, mixed>> the routes and tracks of one file, as they are listed */
     private function items(int $id): array
     {
-        $statement = $this->db->prepare('SELECT kind, position, name, line, distance_m, points, started_at FROM stash_items WHERE file_id = ? ORDER BY kind, position');
+        $statement = $this->db->prepare('SELECT kind, position, name, line, distance_m, points, started_at, features FROM stash_items WHERE file_id = ? ORDER BY kind, position');
         $statement->execute([$id]);
         return array_map(self::item(...), $statement->fetchAll());
     }
@@ -203,6 +203,7 @@ final class StashFiles
             'distanceM' => (int) $row['distance_m'],
             'points' => (int) $row['points'],
             'startedAt' => $row['started_at'],
+            'features' => $row['features'] === '' ? [] : explode(',', $row['features']),
         ];
     }
 

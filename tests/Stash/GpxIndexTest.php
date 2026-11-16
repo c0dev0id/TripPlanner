@@ -48,6 +48,22 @@ final class GpxIndexTest extends TestCase
         self::assertEqualsWithDelta(22_240, $index->items[0]['distanceM'], 60);
     }
 
+    public function testSaysWhatRoutesAndTracksCarryOnTheirPointsAndOfGarminsExtensions(): void
+    {
+        $features = array_column(GpxIndex::of(StashFixture::gpx())->items, 'features');
+        self::assertSame([['routePointExtension'], ['time', 'elevation'], []], $features);
+    }
+
+    public function testValuesCountOnPointsHoweverTheFileWritesThemAndNotBesideThem(): void
+    {
+        $ridelink = '<gpx xmlns:rl="r"><trk><extensions><rl:summary><rl:lean_angle>3</rl:lean_angle></rl:summary></extensions><trkseg>'
+            . '<trkpt lat="49.4" lon="8.7"><extensions><rl:altitude>120</rl:altitude></extensions></trkpt>'
+            . '<trkpt lat="49.5" lon="8.7"><extensions><rl:speed>7</rl:speed><rl:acc_x>0.2</rl:acc_x></extensions></trkpt></trkseg></trk>'
+            . '<rte><extensions><gpxx:RouteExtension xmlns:gpxx="g"><gpxx:IsAutoNamed>false</gpxx:IsAutoNamed></gpxx:RouteExtension></extensions>'
+            . '<rtept lat="49.4" lon="8.7"><ele>100</ele></rtept><rtept lat="49.5" lon="8.7"/></rte></gpx>';
+        self::assertSame([['elevation', 'acceleration'], ['elevation', 'routeExtension']], array_column(GpxIndex::of($ridelink)->items, 'features'));
+    }
+
     public function testAFileThatIsNoXmlHoldsNothing(): void
     {
         $index = GpxIndex::of('not a file');

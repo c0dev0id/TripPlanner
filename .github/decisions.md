@@ -375,6 +375,15 @@ entries at the end of their section.
     is read again when the list says something else of its routes and tracks, and
     leaves the map when the list no longer has it; nothing has to be told that a
     file was rewritten or deleted.
+  - A row's chips say what is there, not which extension wrote it: elevation is
+    elevation whether it stands in `ele` or in an app's extension. The index
+    (`GpxIndex`) therefore knows values by the names files give them on a point, and
+    reads the first ten points of a track whole for them; the rest are passed over as
+    before, so a large recording is indexed as fast as it was. A value that only
+    later points carry is not seen. Garmin's two extensions of a route are named as
+    what they are, since what they hold (the calculated way, the route's settings)
+    is not a value on a point and is still to be made use of. What was found is kept
+    with the row (`stash_items.features`), as its line is.
   - KML and KMZ are turned into GPX in the browser before they are kept. The user's
     devices write GPX, and what such files hold beyond what GPX can say is little.
 - **A ride is kept once, for itself, and is on days by a link.** The library is a tree
