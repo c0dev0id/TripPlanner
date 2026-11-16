@@ -750,8 +750,11 @@ button.icon.pin[aria-pressed='true'] {
 
 /* Where a day's grip would stand, in a trip that is not open: its days line up with those of the open one. */
 .grip-space {
+  display: inline-grid;
   flex: none;
+  place-items: center;
   width: 18px;
+  color: var(--muted);
 }
 
 /* A trip without days says so where they would stand. */

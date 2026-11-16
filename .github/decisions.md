@@ -1379,7 +1379,9 @@ entries at the end of their section.
   rows of the search and the duplicates report) were a ring, so that six dots meant a
   row that is dragged. Two marks in one list read as two kinds of row, and a list
   whose marks change from row to row is restless to look at. The six dots are back on
-  every pad: that some of them drag nothing is the smaller fault.
+  every pad: that some of them drag nothing is the smaller fault. For the same reason the
+  days of a trip that is not open show the dots as well: they had none, so opening
+  another trip moved the dots from one trip's days to the other's.
 - **A folder is cut, not copied.** Copying or duplicating a folder is a copy of every
   trip in it, at any depth: megabytes started by one click. Trips are copied one by
   one, where the size is in view.

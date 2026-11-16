@@ -9,7 +9,7 @@ import { dayDetail, dayHeading, routeOrTrack } from '../trip/labels';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { counted, dateText, openingText } from '../ui/format';
-import { CollectionIcon, FolderIcon, TripIcon } from '../ui/icons';
+import { CollectionIcon, FolderIcon, GripIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { Pad } from '../ui/Pad';
@@ -47,8 +47,8 @@ export function loneDay(trip: TripSummary): Day | OutlineDay | undefined {
 
 /**
  * The days of a trip that is not open, as the library knows them, drawn as the open trip
- * draws its own: a click opens the trip at the day. What needs the trip's document (the
- * grip that reorders, the journal, the recordings) comes with opening it.
+ * draws its own, grip and all: a click opens the trip at the day. What needs the trip's
+ * document (reordering by the grip, the journal, the recordings) comes with opening it.
  */
 export function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void }) {
   const collection = () => props.trip.kind === 'collection';
@@ -59,7 +59,10 @@ export function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => 
         {(day, index) => (
           <li class="day card">
             <div class="row">
-              <span class="grip-space" />
+              {/* The grip the day has once its trip is open, drawn here as well, so that the rows do not change as another trip is opened. */}
+              <span class="grip-space" aria-hidden="true">
+                <GripIcon />
+              </span>
               <button class="text grow" onClick={() => props.onOpen(day().id)}>
                 <Show when={collection()}>
                   <PlaceKindMark id={day().id} />
