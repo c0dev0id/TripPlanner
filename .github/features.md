@@ -78,7 +78,9 @@
   file; a trip's card also shows its shape, small, each line in the colour its route
   has on the map; right-click or a long press on a card opens its menu.
 - Folders and trips answer to one menu: New, Add, Rename, Duplicate, Cut, Copy, Paste,
-  Move…, Merge, Export, Delete; what does not apply is greyed out. New makes what the
+  Move…, Merge, Export, Delete; what does not apply is greyed out, and Duplicate and
+  Copy, which only trips have, are left out where no trip is selected: on a folder, and
+  everywhere in the Stash, whose folders have no Export either. New makes what the
   row can hold, named in a dialog: in a folder a folder or a trip, which starts with
   Day 1 and opens at it, among the Places a list, in the Stash a folder alone; in a trip a day at its end, whether the trip is
   open or not, in the open one as an edit that can be undone and that shows the day.

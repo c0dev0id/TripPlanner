@@ -555,7 +555,8 @@ export function Library(props: {
     const paste = several ? [] : pasteItems(item);
     const within = tripsWithin(chosen);
     const pasteEntries = paste.length > 0 ? paste : [menuNote(t('Paste'))];
-    const exportEntry = exportItem(within);
+    // The export is of trips, which the Stash has none of: its folders have no such entry.
+    const exportEntries = 'folder' in item && treeOf(item.folder.id) === 'stash' ? [] : [exportItem(within)];
     const fresh: MenuItem[] = several
       ? []
       : 'folder' in item
@@ -566,7 +567,7 @@ export function Library(props: {
             { label: t('Add'), items: [{ label: t('Files…'), run: () => void imports.addToTrip(item.trip) }] },
           ];
     // A special folder stays as it is: it takes what is new, added and pasted, and exports what it holds.
-    if ('folder' in item && item.folder.kind !== 'folder') return [...fresh, ...pasteEntries, exportEntry];
+    if ('folder' in item && item.folder.kind !== 'folder') return [...fresh, ...pasteEntries, ...exportEntries];
     return [
       ...(several ? [menuNote(t('{what} selected', { what: countText(chosen) }))] : []),
       ...fresh,
@@ -581,15 +582,16 @@ export function Library(props: {
               ? setEditTarget({ kind: 'trip' })
               : rename(t('Rename trip'), t('Trip name'), item.trip.name, (name) => renameTrip(item.trip.id, name), relistTrips),
       },
-      { label: t('Duplicate'), disabled: !onlyTrips, run: () => void flushSave().then(() => runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist)) },
+      // Only trips are duplicated and copied: with folders among the trips selected the two are greyed out, and with no trip at all, as on a folder and anywhere in the Stash, they are left out.
+      ...(chosenTrips.length > 0 ? [{ label: t('Duplicate'), disabled: !onlyTrips, run: () => void flushSave().then(() => runLibrary(() => Promise.all(chosenTrips.map((trip) => duplicateTrip(trip.id))), relist)) }] : []),
       { label: t('Cut'), run: () => clip(chosen, true) },
-      { label: t('Copy'), disabled: !onlyTrips, run: () => clip(chosen, false) },
+      ...(chosenTrips.length > 0 ? [{ label: t('Copy'), disabled: !onlyTrips, run: () => clip(chosen, false) }] : []),
       ...pasteEntries,
       ...moveItem(chosen),
       ...(onlyTrips && several
         ? [{ label: t('Merge into “{name}”', { name: first!.name }), run: () => void merge(first!, others) }]
         : []),
-      exportEntry,
+      ...exportEntries,
       ...(!several && 'trip' in item && item.trip.id === openTripId() ? openTripItems(item.trip) : []),
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
