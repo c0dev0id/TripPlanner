@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { CopiedFolder, StashFile } from '../model/stash';
 import type { LngLat } from '../model/trip';
 import { encodePolyline } from '../routing/polyline';
-import { daysOf, planStashTrips } from './stashTrips';
+import { daysOf, planStashDays, planStashTrips } from './stashTrips';
 
 const HOME: LngLat = [8.5, 49.5];
 const LAKE: LngLat = [9.5, 48.5];
@@ -89,5 +89,18 @@ describe('the trips copied folders and files of the Stash make', () => {
 
   it('are a trip of one day of each copied file, dated by its name or by when it is planned to leave', () => {
     expect(planned([], [file('Evening lap', HOME, HOME, 80, '2024-07-14T16:00:00Z')])).toEqual([[[], 'Evening lap', [['2024-07-14', '', ['Evening lap']]]]]);
+  });
+});
+
+describe('planStashDays', () => {
+  it('plans the days of a trip that is there already, each naming its files by their place among those given', () => {
+    const out = file('Out', HOME, LAKE, 120, '2026-07-02T07:00:00Z');
+    const back = file('Back', LAKE, HOME, 120, '2026-07-03T07:00:00Z');
+    const loose = file('Loose', CAVE, PASS, 90);
+    expect(planStashDays([loose, back, out], FROM_HOME)).toEqual([
+      { date: '2026-07-02', name: 'Out', files: [2], media: [] },
+      { date: '2026-07-03', name: 'Back', files: [1], media: [] },
+      { date: null, name: 'Loose', files: [0], media: [] },
+    ]);
   });
 });

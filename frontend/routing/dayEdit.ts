@@ -311,6 +311,12 @@ export function pasteRoute(trip: Trip, dayId: string, copied: CopiedRoute, newId
   return updateDay(trip, dayId, (day) => ({ ...day, routes: [...day.routes, route], stops: [...day.stops, ...stops] }));
 }
 
+/** The trip with a new, empty day under `id` where its date puts it: before the first day of a later date, and at the end where it has no date or none is later. */
+export function withDayByDate(trip: Trip, id: string, name: string, date: string | null): Trip {
+  const later = date === null ? -1 : trip.days.findIndex((d) => d.date !== null && d.date > date);
+  return { ...trip, days: trip.days.toSpliced(later < 0 ? trip.days.length : later, 0, emptyDay(id, name, date)) };
+}
+
 /**
  * Pastes copied routes into the trip where an import of their files would put them: in a
  * collection each into a new section named after it; in a trip each onto the day of its
@@ -321,13 +327,12 @@ export function pasteIntoTrip(trip: Trip, copied: readonly CopiedRoute[], newId:
   let next = trip;
   for (const c of copied) {
     const date = trip.kind === 'collection' ? null : c.from.date;
-    let day = date === null ? undefined : next.days.find((d) => d.date === date);
-    if (!day) {
-      day = emptyDay(newId(), trip.kind === 'collection' ? c.route.name || c.from.name : c.from.name, date);
-      const later = date === null ? -1 : next.days.findIndex((d) => d.date !== null && d.date > date);
-      next = { ...next, days: next.days.toSpliced(later < 0 ? next.days.length : later, 0, day) };
+    let dayId = date === null ? undefined : next.days.find((d) => d.date === date)?.id;
+    if (!dayId) {
+      dayId = newId();
+      next = withDayByDate(next, dayId, trip.kind === 'collection' ? c.route.name || c.from.name : c.from.name, date);
     }
-    next = pasteRoute(next, day.id, c, newId);
+    next = pasteRoute(next, dayId, c, newId);
   }
   return next;
 }

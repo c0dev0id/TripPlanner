@@ -3,9 +3,11 @@ import { t } from '../i18n/t';
 import { declineRideDay, deleteRide, errorMessage, mergeRides, renameRide, rideJoints, suggestRideDays } from '../api';
 import { lineLength } from '../geo/measure';
 import { GPX_FILE_TYPES } from '../gpx/import';
+import { sharesOf, wholeFile } from '../model/paste';
+import type { StashPart } from '../model/stash';
 import type { Ride, Suggestion } from '../recording/rides';
 import { FAR_APART_M, isOddJoint, likelierFirst, ridingYears, totalDistance } from '../recording/rides';
-import { copyRecordings } from '../state/clipboard';
+import { copyRecordings, libraryPasteItem } from '../state/clipboard';
 import { fetchingTrip, libraryTab, libraryTrips, outlineOf, searchedFor } from '../state/library';
 import { activeRecordingId, putOnDay, recordingColor, shownRecordings } from '../state/recordings';
 import { isRidePinned, pinRides } from '../state/pins';
@@ -30,6 +32,7 @@ import { menuRows, NOTHING_SELECTED, rowSelect, selectIn, selectionOf, type RowS
 import { autoname } from './autoname';
 import { sourceOf } from './folderImport';
 import { addRides } from './importActions';
+import { keepTracks } from './stashMenu';
 
 /** The days suggested for rides on no day that are yet to be gone through; none until they are asked for, or once they are put away. */
 const [suggestions, setSuggestions] = createSignal<Suggestion[]>([]);
@@ -120,13 +123,19 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       return { text: t('{what} merged.', { what: counted(rides.length, 'recording') }), errors };
     });
   const ridesAmong = (ids: ReadonlySet<string>): Ride[] => allRides().filter((kept) => ids.has(String(kept.id)));
-  /** The keys that copy and delete the selected rides, as the menu does, while the rides are shown. */
+  /** Keeps tracks of files of the Stash as rides and says under the heading which. */
+  const keep = (parts: readonly StashPart[]) => runRidesJob(async () => ({ text: await keepTracks(parts), errors: [] }));
+  /** The item that keeps the tracks copied in the Stash, alone or with their files, as rides; none while the clipboard holds none. */
+  const pasteTracks = (): MenuItem | undefined => libraryPasteItem('recordings', { files: (files) => keep(sharesOf('recordings', files.map(wholeFile))), parts: keep })[0];
+  /** The keys, while the rides are shown: paste keeps the tracks copied in the Stash, copy and delete act on the selected rides, as the menu does. */
   const onKey = (e: KeyboardEvent) => {
-    const chosen = libraryTab() === 'recordings' ? ridesAmong(selectionOf(RIDES)) : [];
-    const verb = chosen.length > 0 ? fileVerb(e) : undefined;
-    if (verb !== 'copy' && verb !== 'delete') return;
+    const verb = libraryTab() === 'recordings' ? fileVerb(e) : undefined;
+    const paste = verb === 'paste' ? pasteTracks() : undefined;
+    const chosen = ridesAmong(selectionOf(RIDES));
+    if (!(paste && 'run' in paste) && (chosen.length === 0 || (verb !== 'copy' && verb !== 'delete'))) return;
     e.preventDefault();
-    if (verb === 'copy') copyRecordings(chosen);
+    if (paste && 'run' in paste) paste.run();
+    else if (verb === 'copy') copyRecordings(chosen);
     else void deleteAsked(chosen);
   };
   document.addEventListener('keydown', onKey);
@@ -206,6 +215,13 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
         </IconButton>
       </div>
       <SectionLine />
+      <Show when={pasteTracks()}>
+        {(paste) => (
+          <button class="paste-here" onClick={() => 'run' in paste() && (paste() as { run: () => void }).run()}>
+            {paste().label}
+          </button>
+        )}
+      </Show>
       <Show when={ridesError()}>{(error) => <p class="error">{errorMessage(error())}</p>}</Show>
       <Show when={ridesNote()}>
         {(said) => (

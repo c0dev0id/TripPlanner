@@ -9,7 +9,7 @@ import { addParts } from '../routing/dayEdit';
 import { recordingName } from '../recording/track';
 import { counted, listText } from '../ui/format';
 import type { Dropped } from './fileDrop';
-import { addDaysAndMedia, foldersUnder, importFolder, isGpxPath, isMediaPath, isRoutePath, mediaBeside, planFolderImport, readPlannedDays, withImportedDay, type ImportSource } from './folderImport';
+import { addDaysAndMedia, foldersUnder, importFolder, isGpxPath, isMediaPath, isRoutePath, mediaBeside, planFolderImport, readPlannedDays, withImportedDay, type ImportSource, type PlannedDay } from './folderImport';
 import { archiveFolders, inFolders } from './tripArchive';
 
 /** The collection of the name in the folder: the one among the trips listed, or a new one. */
@@ -185,17 +185,23 @@ function importTree(loose: readonly ImportSource[], inDropped: readonly ImportSo
 }
 
 /**
- * Adds files to a trip: the days a folder of the files would make, at its end, and any
- * other file as media with its first day; to a list of places, as the `kind` of the top
- * folder around it says, the files' waypoints as places. The answer says what was added
- * and what could not be read.
+ * Adds files to a trip: the days a folder of the files would make, or those `planned`
+ * by who knows the files better than their paths do, each where its date puts it, and
+ * any other file as media with its first day; to a list of places, as the `kind` of the
+ * top folder around it says, the files' waypoints as places. The answer says what was
+ * added and what could not be read.
  */
-export async function importIntoTrip(trip: TripSummary, files: readonly ImportSource[], kind: FolderKind, onProgress: (text: string) => void): Promise<{ text: string; errors: string[] }> {
+export async function importIntoTrip(
+  trip: TripSummary,
+  files: readonly ImportSource[],
+  kind: FolderKind,
+  onProgress: (text: string) => void,
+  planned: readonly PlannedDay[] = planFolderImport(files.map((file) => file.path), 'trips').flatMap((of) => of.days),
+): Promise<{ text: string; errors: string[] }> {
   if (kind === 'places') return importPlaces(files, { tripId: trip.id }, onProgress);
   const errors: string[] = [];
   onProgress(t('Importing {i} of {n}: {name}', { i: 1, n: 1, name: trip.name }));
-  const planned = planFolderImport(files.map((file) => file.path), 'trips');
-  const days = await readPlannedDays(files, planned.flatMap((trip) => trip.days), errors);
+  const days = await readPlannedDays(files, planned, errors);
   // The media that lie beside a file as its own go with its day; the other files with the trip's first day.
   const { taken } = mediaBeside(files.map((file) => file.path));
   const media = files.filter((file, i) => isMediaPath(file.path) && !taken.has(i));

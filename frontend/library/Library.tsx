@@ -282,7 +282,7 @@ export function Library(props: {
   });
   const isCut = (item: Item): boolean => {
     const cut = libraryClip();
-    return cut !== undefined && cut.move && ('folder' in item ? cut.folderIds.includes(item.folder.id) : 'trip' in item && cut.tripIds.includes(item.trip.id));
+    return cut !== undefined && cut.move && ('folder' in item ? cut.folderIds.includes(item.folder.id) : 'trip' in item ? cut.tripIds.includes(item.trip.id) : cut.fileIds.includes(item.file.id));
   };
   /** Lists the library afresh, nothing selected: after folders or trips were moved, merged, pasted or deleted. */
   const relist = () => {
@@ -374,9 +374,9 @@ export function Library(props: {
     return places.length > 0 ? [{ label: t('Move…'), items: places }] : [];
   };
   /** What the clipboard holds of the library, by number and as the tree shown calls it: 2 folders and 3 trips, 1 list. */
-  const clipText = (copied: LibraryClip): string => countsText(copied.folderIds.length, copied.tripIds.length, heldNoun(shownFolderId()));
-  /** The folders and trips on the clipboard, those still there. */
-  const clipItems = (copied: LibraryClip): Item[] => [...folders().filter((f) => copied.folderIds.includes(f.id)).map((folder) => ({ folder })), ...trips().filter((trip) => copied.tripIds.includes(trip.id)).map((trip) => ({ trip }))];
+  const clipText = (copied: LibraryClip): string => countsText(copied.folderIds.length, copied.tripIds.length + copied.fileIds.length, heldNoun(shownFolderId()));
+  /** The folders, trips and files on the clipboard, those still there. */
+  const clipItems = (copied: LibraryClip): Item[] => itemsOf(all(), [...copied.folderIds.map((id) => `folder:${id}`), ...copied.tripIds.map((id) => `trip:${id}`), ...copied.fileIds.map((id) => `file:${id}`)]);
   /** Pastes the folders and trips on the clipboard into a folder, which empties it: cut, they move there; copied, each trip gets a copy there. */
   const pasteLibrary = (into: number | null) => {
     const copied = libraryClip();
@@ -479,7 +479,7 @@ export function Library(props: {
               });
               await bringWithDays(from.tripId, days, made, from.cut);
             }),
-          files: (files) => imports.pasteFilesIntoTrip(item.trip, files),
+          files: (files, copied) => imports.pasteAsDays(item.trip, files, copied),
           parts: (parts) => left(async () => pasteInto(id, await stashCopies(parts))),
         },
         id,
@@ -495,14 +495,15 @@ export function Library(props: {
       'list',
       {
         places: (stops, kinds) => keep(() => stops.map((stop, i) => ({ kind: kinds[i] ?? t('Places'), stop: { ...stop, id: newId(), pointId: null } }))),
-        files: (files) => imports.pasteFilesIntoTrip(item.trip, files),
+        files: (files) => imports.pasteFilesIntoList(item.trip, files),
         parts: (parts) => keep(() => stashPlaces(parts)),
       },
       id,
     );
   };
-  /** Puts folders and trips on the clipboard: cut, to be moved where they are pasted; copied, which only trips are. */
-  const clip = (chosen: readonly Item[], move: boolean) => copyLibraryItems({ tripIds: tripsOf(chosen).map((trip) => trip.id), folderIds: foldersOf(chosen).map((f) => f.id), move });
+  /** Puts folders, trips and files of the Stash on the clipboard: cut, to be moved where they are pasted; copied, which only trips are. */
+  const clip = (chosen: readonly Item[], move: boolean) =>
+    copyLibraryItems({ tripIds: tripsOf(chosen).map((trip) => trip.id), folderIds: foldersOf(chosen).map((f) => f.id), fileIds: filesOf(chosen).map((file) => file.id), move });
   /** A folder of the Stash as it is copied: with the files it holds and the folders in it, as they are now. */
   const copiedFolder = (folder: Folder): CopiedFolder => ({ name: folder.name, files: childFiles(folder.id), folders: childFolders(folder.id).map(copiedFolder) });
   /** Copies files and folders of the Stash, to be made trips of where they are pasted. */
@@ -532,8 +533,7 @@ export function Library(props: {
       e.preventDefault();
       return void (routes.length > 0 ? removeRoutes(routes) : removeItems(parts, relist));
     }
-    // Files and folders of the Stash are copied, to be imported where they are pasted; files are never cut.
-    const files = filesOf(chosen);
+    // Files and folders of the Stash are copied, to be imported where they are pasted; cut, they move within the Stash.
     const pasteFiles = verb === 'paste' && shownTree() ? pasteFilesItem(shownFolderId())[0] : undefined;
     if (pasteFiles && 'run' in pasteFiles) {
       e.preventDefault();
@@ -543,8 +543,7 @@ export function Library(props: {
       e.preventDefault();
       return copyStash(chosen);
     }
-    const clips = verb === 'cut' || verb === 'copy';
-    if (!shownTree() || (verb === 'paste' ? !takesClip(shownFolderId()) : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0) || (clips && files.length > 0)) return;
+    if (!shownTree() || (verb === 'paste' ? !takesClip(shownFolderId()) : chosen.length === 0) || (verb === 'copy' && foldersOf(chosen).length > 0)) return;
     e.preventDefault();
     if (verb === 'paste') pasteLibrary(shownFolderId());
     else if (verb === 'delete') void remove(chosen);
@@ -562,7 +561,7 @@ export function Library(props: {
   /** What the Stash's menus ask of the library around them. */
   /** The item that adds the copied routes, tracks, waypoints and media of other files to a file of the Stash. */
   const pasteIntoFile = (file: StashFile): MenuItem[] => libraryPasteItem('stashFile', { parts: (parts) => runLibrary(() => addPartsTo(file, parts), relistStash) });
-  const stashHost: StashMenuHost = { rename, copy: copyStash, moveItem, pasteInto: pasteIntoFile, remove: (chosen) => void remove(chosen), relist };
+  const stashHost: StashMenuHost = { rename, cut: (chosen) => clip(chosen, true), copy: copyStash, moveItem, pasteInto: pasteIntoFile, remove: (chosen) => void remove(chosen), relist };
   /** The menu of a route or a track of a file, or of a file's waypoints or media, by the row's key: for the selected rows, or for it alone where it is not selected. */
   const stashPartMenu = (key: string): MenuItem[] => {
     const selection = menuRowsOf(key);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { dateIn, mediaBeside, pickedPath, planFolderImport, type ImportMode } from './folderImport';
+import type { Trip } from '../model/trip';
+import { dateIn, mediaBeside, pickedPath, planFolderImport, withImportedDay, type ImportMode } from './folderImport';
 
 /** The plan with each day as its date, name and file names, and the names of its media where it has any; trips planned per folder unless the mode says otherwise. */
 const plan = (paths: string[], mode: ImportMode = 'trips') => {
@@ -169,5 +170,24 @@ describe('the media that lie beside a file of routes', () => {
     expect(trip!.media.map((i) => paths[i])).toEqual(['Alps/ferry.pdf']);
     const perFile = planFolderImport(['Lake.gpx', 'Lake (media)/a.jpg'], 'trip-per-file');
     expect(perFile.map((t) => [t.name, t.days[0]!.media])).toEqual([['Lake', [1]]]);
+  });
+});
+
+describe('withImportedDay', () => {
+  const day = (id: string, date: string | null) => ({ id, name: '', date, notes: '', routes: [], stops: [] });
+  const trip: Trip = { id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [day('a', '2027-06-12'), day('b', '2027-06-14'), day('c', null)] };
+
+  it('puts a dated day where its date puts it among the days, and an undated one at the end', () => {
+    const order = (date: string | null) => withImportedDay(trip, { name: 'New', date }, [], 'n').days.map((d) => d.id);
+    expect(order('2027-06-13')).toEqual(['a', 'n', 'b', 'c']);
+    expect(order('2027-06-12')).toEqual(['a', 'n', 'b', 'c']);
+    expect(order('2027-06-01')).toEqual(['n', 'a', 'b', 'c']);
+    expect(order('2027-07-01')).toEqual(['a', 'b', 'c', 'n']);
+    expect(order(null)).toEqual(['a', 'b', 'c', 'n']);
+  });
+
+  it('names and dates the day and fills it with what the files gave', () => {
+    const stop = { id: 's', name: 'Inn', lngLat: [8, 49] } as Trip['days'][number]['stops'][number];
+    expect(withImportedDay(trip, { name: 'New', date: null }, [{ routes: [], stops: [stop] }], 'n').days.at(-1)).toMatchObject({ id: 'n', name: 'New', date: null, stops: [stop] });
   });
 });

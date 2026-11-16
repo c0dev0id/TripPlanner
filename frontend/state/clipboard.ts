@@ -47,16 +47,17 @@ export interface CopiedMedia {
   move: boolean;
 }
 
-/** Trips and folders of the library, by id: copied, or cut to be moved where they are pasted. */
+/** Trips, folders and files of the Stash, by id: trips copied, or any of them cut to be moved where they are pasted. */
 export interface LibraryClip {
   tripIds: number[];
   folderIds: number[];
+  fileIds: number[];
   move: boolean;
 }
 
 const [clip, setClip] = createSignal<Clip>();
 
-/** Copies trips, or cuts trips and folders, of the library. */
+/** Copies trips, or cuts trips, folders and files of the Stash, of the library. */
 export function copyLibraryItems(items: LibraryClip): void {
   setClip({ library: items });
 }

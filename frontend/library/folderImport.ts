@@ -2,7 +2,7 @@ import { t } from '../i18n/t';
 import { addMedia, changeTrip, createFolder, createTrip, errorMessage, listFolders } from '../api';
 import { readDayParts, ROUTE_FILE, type DayParts } from '../gpx/import';
 import { asName, byName, newId, type Trip } from '../model/trip';
-import { addDay, addParts, dayAfter, updateDay } from '../routing/dayEdit';
+import { addParts, dayAfter, withDayByDate } from '../routing/dayEdit';
 import { importArchive } from './tripArchive';
 
 /**
@@ -209,10 +209,9 @@ function tripOfFile(folders: string[], stem: string, file: number): PlannedTrip 
   return { folders, name: withoutDate(stem) || stem, days: [{ date: dateIn(stem) ?? null, name: '', files: [file], media: [] }], media: [] };
 }
 
-/** The trip with a day added at its end, named and dated, holding what the GPX files gave. */
-export function withImportedDay(trip: Trip, day: { name: string; date: string | null }, parts: readonly DayParts[]): Trip {
-  const id = newId();
-  return parts.reduce((to, p) => addParts(to, id, p), updateDay(addDay(trip, id), id, (d) => ({ ...d, name: day.name, date: day.date })));
+/** The trip with a day added under `id`, named and dated, holding what the GPX files gave: where its date puts it among the trip's days, at the end without one. */
+export function withImportedDay(trip: Trip, day: { name: string; date: string | null }, parts: readonly DayParts[], id = newId()): Trip {
+  return parts.reduce((to, p) => addParts(to, id, p), withDayByDate(trip, id, day.name, day.date));
 }
 
 /** A day as an import read it: as planned, with what its GPX files hold and the media that are its own. */
@@ -223,17 +222,15 @@ export interface ReadDay {
 }
 
 /**
- * Adds the days read from files to the trip, keeps each day's own media with it and
+ * Adds the days read from files to the trip, each where its date puts it, keeps each day's own media with it and
  * `media`, the other files, with the trip's first day; a file the server does not take
  * is reported, and the rest goes on. Whether a day was there to keep the other files with.
  */
 export async function addDaysAndMedia(tripId: number, days: readonly ReadDay[], media: readonly ImportSource[], errors: string[]): Promise<boolean> {
-  let made: string[] = [];
+  const made = days.map(() => newId());
   let first: string | undefined;
   await changeTrip(tripId, (trip) => {
-    const filled = days.reduce((to, { day, parts }) => withImportedDay(to, day, parts), trip);
-    // The days stand at the trip's end, in the order they were added.
-    made = filled.days.slice(trip.days.length).map((day) => day.id);
+    const filled = days.reduce((to, { day, parts }, n) => withImportedDay(to, day, parts, made[n]), trip);
     first = filled.days[0]?.id;
     return filled;
   });
