@@ -1,0 +1,27 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Planner\Kernel;
+use Planner\Stash\GpxIndex;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Run once after the Stash's index learned when a route is planned to leave, then delete
+// this file. It reads every file of the Stash again for when its routes and tracks
+// start. Running it twice does no harm.
+$db = Kernel::container(dirname(__DIR__))->get(PDO::class);
+
+$starts = $db->prepare('UPDATE stash_items SET started_at = ? WHERE file_id = ? AND kind = ? AND position = ?');
+$ids = $db->query('SELECT id FROM stash_files')->fetchAll(PDO::FETCH_COLUMN);
+$file = $db->prepare('SELECT gpx FROM stash_files WHERE id = ?');
+$db->beginTransaction();
+foreach ($ids as $id) {
+    $file->execute([$id]);
+    foreach (GpxIndex::of((string) gzdecode($file->fetchColumn()))->items as $item) {
+        $starts->execute([$item['startedAt'], $id, $item['kind'], $item['position']]);
+    }
+}
+$db->commit();
+echo 'Read ' . count($ids) . " files of the Stash again for when their routes and tracks start.\n";

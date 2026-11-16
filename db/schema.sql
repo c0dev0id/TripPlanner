@@ -241,7 +241,8 @@ CREATE INDEX IF NOT EXISTS stash_files_folder ON stash_files(folder_id);
 
 -- The routes and tracks of a file of the Stash, read from it to list, find and draw them
 -- without the file: each by its place among the file's routes or tracks, with its line
--- thinned, as polyline6, its length, its points and, of a track, when it began; features
+-- thinned, as polyline6, its length, its points and when it starts, a track as it was
+-- recorded and a route as it is planned, where its file says so; features
 -- names what it carries besides, comma-separated (Stash\GpxIndex::FEATURES).
 CREATE TABLE IF NOT EXISTS stash_items (
     file_id INTEGER NOT NULL REFERENCES stash_files(id) ON DELETE CASCADE,

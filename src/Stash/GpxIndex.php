@@ -14,7 +14,8 @@ use XMLReader;
  * What is read from a GPX file of the Stash to list, find and draw what it holds without
  * the file: how many waypoints, and each route and track by its place among the file's
  * routes or tracks, with its name, its line thinned as an outline's is, its length, how
- * many points it has and, of a track, when its first point was recorded. A route's line
+ * many points it has and when it starts: a track when its first point was recorded, a
+ * route when its first point is planned to be left, where Garmin's trip planning says. A route's line
  * follows the way Garmin's extension gives between its points, where the file has it.
  * Each also says what it carries that its row would not show otherwise: values on its
  * points, however the file writes them, Garmin's extensions of a route, and what DMD
@@ -52,6 +53,9 @@ final readonly class GpxIndex
         'https://dmdnavigation.com/ns/gpx/1' => ['*' => 'dmd'],
         'https://www.rumoadventures.com/xmlschemas/GpxExtensions/v1' => ['*' => 'rumo'],
     ];
+
+    /** The namespace of Garmin's trip planning, which says when a route's points are left. */
+    private const TRIP_EXTENSIONS = 'http://www.garmin.com/xmlschemas/TripExtensions/v1';
 
     /** How many of a track's points are read whole for what they carry; the others are passed over once the track's start is known. */
     private const SAMPLED_POINTS = 10;
@@ -126,6 +130,10 @@ final readonly class GpxIndex
             $feature ??= $extension[$element] ?? $extension['*'] ?? null;
             if ($feature !== null) {
                 $open['features'][$feature] = true;
+            }
+            // A route starts when Garmin's trip planning has its first point leave.
+            if ($element === 'DepartureTime' && $open['kind'] === 'route' && $open['startedAt'] === null && $reader->namespaceURI === self::TRIP_EXTENSIONS) {
+                $open['startedAt'] = TrackSummary::time($reader->readString());
             }
             if ($element === 'name' && $reader->depth === 2) {
                 $open['name'] = trim($reader->readString());

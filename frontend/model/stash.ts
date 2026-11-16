@@ -6,7 +6,7 @@ import type { EntryFile } from './journal';
  */
 export type StashFeature = 'time' | 'elevation' | 'lean' | 'acceleration' | 'routeExtension' | 'routePointExtension' | 'dmd' | 'rumo';
 
-/** A route or a track of a file of the Stash, as it was read from the file: its place among the file's routes or tracks, its line thinned, as polyline6, its length, its points, of a track with times, when it began, and what it carries besides. */
+/** A route or a track of a file of the Stash, as it was read from the file: its place among the file's routes or tracks, its line thinned, as polyline6, its length, its points, when it starts where the file says (a track's first point, a route's planned departure), and what it carries besides. */
 export interface StashItem {
   kind: 'route' | 'track';
   position: number;
@@ -42,4 +42,11 @@ export interface StashPart {
   items: StashItem[];
   waypoints: boolean;
   media: boolean;
+}
+
+/** A folder of the Stash as it was copied: its name, the files it holds itself and the folders in it. */
+export interface CopiedFolder {
+  name: string;
+  files: StashFile[];
+  folders: CopiedFolder[];
 }

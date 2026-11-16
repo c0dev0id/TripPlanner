@@ -85,6 +85,16 @@ final class GpxIndexTest extends TestCase
         self::assertSame([null, null], [$bare->creator, $bare->exportedAt]);
     }
 
+    public function testARouteStartsWhenItsFirstPointIsPlannedToBeLeft(): void
+    {
+        $trip = 'xmlns:trp="http://www.garmin.com/xmlschemas/TripExtensions/v1"';
+        $point = fn (string $made, string $leaves) => "<rtept lat=\"49.4\" lon=\"8.7\"><time>$made</time><extensions><trp:ViaPoint><trp:DepartureTime>$leaves</trp:DepartureTime></trp:ViaPoint>"
+            . '<gpxx:RoutePointExtension xmlns:gpxx="http://www.garmin.com/xmlschemas/GpxExtensions/v3"><gpxx:rpt lat="49.45" lon="8.75"/></gpxx:RoutePointExtension></extensions></rtept>';
+        $gpx = "<gpx $trip><rte>" . $point('2024-06-19T20:02:06Z', '2024-07-14T10:00:00Z') . $point('2024-06-19T20:05:00Z', '2024-07-14T12:30:00Z') . '</rte>'
+            . '<rte><rtept lat="49.4" lon="8.7"><time>2024-06-19T20:02:06Z</time><extensions><x:DepartureTime xmlns:x="other">2024-07-14T10:00:00Z</x:DepartureTime></extensions></rtept></rte></gpx>';
+        self::assertSame(['2024-07-14T10:00:00Z', null], array_column(GpxIndex::of($gpx)->items, 'startedAt'));
+    }
+
     public function testAFileThatIsNoXmlHoldsNothing(): void
     {
         $index = GpxIndex::of('not a file');
