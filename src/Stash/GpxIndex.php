@@ -27,17 +27,14 @@ final readonly class GpxIndex
     public const FEATURES = ['time', 'elevation', 'lean', 'acceleration', 'routeExtension', 'routePointExtension'];
 
     /**
-     * The values a point may carry, by the names files give them, in lower case: a
-     * point's own elements and those of its extensions alike, whichever app wrote them
-     * (Ridelink writes lean_angle and acc_x, acc_y, acc_z).
+     * The values a point may carry, by the names files give them: a point's own elements
+     * and those of its extensions alike, in whatever namespace (Ridelink writes
+     * lean_angle and acc_x, acc_y, acc_z).
      */
     private const POINT_VALUES = [
         'time' => 'time',
         'ele' => 'elevation',
-        'elevation' => 'elevation',
-        'altitude' => 'elevation',
         'lean_angle' => 'lean',
-        'lean' => 'lean',
         'acc_x' => 'acceleration',
         'acc_y' => 'acceleration',
         'acc_z' => 'acceleration',
@@ -59,12 +56,11 @@ final readonly class GpxIndex
         $waypoints = 0;
         $items = [];
         $counts = ['route' => 0, 'track' => 0];
-        // The route or track being read, its line as positions, how deep its track points stand, how deep the point being read stands, and how many track points were read whole.
+        // The route or track being read, its line as positions, how deep its track points stand, and how deep the point being read stands.
         $open = null;
         $line = [];
         $pointDepth = null;
         $inPoint = null;
-        $sampled = 0;
         $close = function () use (&$open, &$line, &$items): void {
             $features = array_values(array_filter(self::FEATURES, fn (string $feature) => isset($open['features'][$feature])));
             $items[] = ['line' => Polyline::encode(Outline::thinned($line)), 'distanceM' => (int) round($open['distanceM']), 'features' => $features] + $open;
@@ -84,15 +80,6 @@ final readonly class GpxIndex
                 continue;
             }
             $element = $reader->localName;
-            if ($open !== null && $reader->depth > 1) {
-                // An element no deeper than the point read last stands beside it or above it.
-                $inPoint = $inPoint !== null && $reader->depth > $inPoint ? $inPoint : null;
-                $feature = $inPoint !== null ? (self::POINT_VALUES[strtolower($element)] ?? null) : null;
-                $feature ??= $open['kind'] === 'route' ? (self::ROUTE_EXTENSIONS[$element] ?? null) : null;
-                if ($feature !== null) {
-                    $open['features'][$feature] = true;
-                }
-            }
             if ($reader->depth === 1) {
                 $waypoints += $element === 'wpt' ? 1 : 0;
                 if (isset(self::KINDS[$element])) {
@@ -101,14 +88,23 @@ final readonly class GpxIndex
                     $line = [];
                     $pointDepth = null;
                     $inPoint = null;
-                    $sampled = 0;
                     if ($reader->isEmptyElement) {
                         $close();
                     }
                 }
-            } elseif ($open === null) {
                 continue;
-            } elseif ($element === 'name' && $reader->depth === 2) {
+            }
+            if ($open === null) {
+                continue;
+            }
+            // An element no deeper than the point read last stands beside it or above it.
+            $inPoint = $inPoint !== null && $reader->depth > $inPoint ? $inPoint : null;
+            $feature = $inPoint !== null ? (self::POINT_VALUES[$element] ?? null) : null;
+            $feature ??= $open['kind'] === 'route' ? (self::ROUTE_EXTENSIONS[$element] ?? null) : null;
+            if ($feature !== null) {
+                $open['features'][$feature] = true;
+            }
+            if ($element === 'name' && $reader->depth === 2) {
                 $open['name'] = trim($reader->readString());
             } elseif ($element === 'rtept' || $element === 'trkpt' || $element === 'rpt') {
                 [$lat, $lng] = [$reader->getAttribute('lat'), $reader->getAttribute('lon')];
@@ -120,8 +116,7 @@ final readonly class GpxIndex
                 }
                 $pointDepth = $element === 'trkpt' ? $reader->depth : $pointDepth;
                 $inPoint = $element === 'rpt' ? $inPoint : $reader->depth;
-                $passOver = $element === 'trkpt' && $open['startedAt'] !== null && $sampled >= self::SAMPLED_POINTS;
-                $sampled += $element === 'trkpt' && !$passOver ? 1 : 0;
+                $passOver = $element === 'trkpt' && $open['startedAt'] !== null && $open['points'] > self::SAMPLED_POINTS;
             } elseif ($element === 'time' && $open['startedAt'] === null && $pointDepth !== null && $reader->depth === $pointDepth + 1) {
                 $open['startedAt'] = TrackSummary::time($reader->readString());
             }

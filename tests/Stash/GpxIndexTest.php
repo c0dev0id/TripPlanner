@@ -57,7 +57,7 @@ final class GpxIndexTest extends TestCase
     public function testValuesCountOnPointsHoweverTheFileWritesThemAndNotBesideThem(): void
     {
         $ridelink = '<gpx xmlns:rl="r"><trk><extensions><rl:summary><rl:lean_angle>3</rl:lean_angle></rl:summary></extensions><trkseg>'
-            . '<trkpt lat="49.4" lon="8.7"><extensions><rl:altitude>120</rl:altitude></extensions></trkpt>'
+            . '<trkpt lat="49.4" lon="8.7"><extensions><rl:ele>120</rl:ele></extensions></trkpt>'
             . '<trkpt lat="49.5" lon="8.7"><extensions><rl:speed>7</rl:speed><rl:acc_x>0.2</rl:acc_x></extensions></trkpt></trkseg></trk>'
             . '<rte><extensions><gpxx:RouteExtension xmlns:gpxx="g"><gpxx:IsAutoNamed>false</gpxx:IsAutoNamed></gpxx:RouteExtension></extensions>'
             . '<rtept lat="49.4" lon="8.7"><ele>100</ele></rtept><rtept lat="49.5" lon="8.7"/></rte></gpx>';
