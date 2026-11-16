@@ -1,5 +1,5 @@
 import { plural, t } from '../i18n/t';
-import { createEffect, createMemo, createSignal, on, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, For, on, Show } from 'solid-js';
 import { errorMessage } from '../api';
 import { readDayParts, ROUTE_FILE_TYPES } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR, ROUTE_PALETTE } from '../model/routeLook';
@@ -47,6 +47,7 @@ import { RoutePin } from './RoutePin';
 import { DayMedia } from './Media';
 import { addRecordingPicked, DayRecordings } from './Recordings';
 import { carriedWith, carryPart, partMenu } from './partMenu';
+import { routeNamesNote } from './routeNames';
 
 /** The journal of a part as an icon, with the number of its entries where it has any. */
 export function JournalButton(props: { target: EntryTarget; of: string }) {
@@ -170,6 +171,16 @@ export function DayDetails(props: { day: Day }) {
         <ForById each={props.day.routes}>{(route, index) => <RouteItem route={route()} index={index()} day={props.day} sequence={byRoute()[index()] ?? []} />}</ForById>
       </ul>
       <Show when={importNote()}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
+      <Show when={routeNamesNote(props.day.id)}>
+        {(said) => (
+          <>
+            <Show when={said().text}>
+              <p class="muted hint">{said().text}</p>
+            </Show>
+            <For each={said().errors}>{(error) => <p class="error">{error}</p>}</For>
+          </>
+        )}
+      </Show>
       <Show when={unplaced().length > 0}>
         <div class="row">
           <h4 class="grow">{t('Free stops')}</h4>

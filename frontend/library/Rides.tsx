@@ -7,6 +7,7 @@ import { sharesOf, wholeFile } from '../model/paste';
 import type { StashPart } from '../model/stash';
 import type { Ride, Suggestion } from '../recording/rides';
 import { FAR_APART_M, isOddJoint, likelierFirst, ridingYears, totalDistance } from '../recording/rides';
+import { decodePolyline } from '../routing/polyline';
 import { copyRecordings, libraryPasteItem } from '../state/clipboard';
 import { fetchingTrip, libraryTab, libraryTrips, outlineOf, searchedFor } from '../state/library';
 import { activeRecordingId, putOnDay, recordingColor, shownRecordings } from '../state/recordings';
@@ -29,7 +30,7 @@ import { NameDialog } from '../ui/NameDialog';
 import { Pad } from '../ui/Pad';
 import { pickFiles } from '../ui/pickFile';
 import { menuRows, NOTHING_SELECTED, rowSelect, selectIn, selectionOf, type RowSelect } from '../ui/selection';
-import { autoname } from './autoname';
+import { autoname } from '../map/autoname';
 import { sourceOf } from './folderImport';
 import { addRides } from './importActions';
 import { keepTracks } from './stashMenu';
@@ -119,9 +120,12 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       if (!(await askConfirmation(question, t('Merge')))) return { text: '', errors: [] };
       const merged = await mergeRides(ids);
       selectIn(RIDES, new Set([String(merged.id)]));
-      const { errors } = await autoname([merged], onProgress);
+      const { errors } = await named([merged], onProgress);
       return { text: t('{what} merged.', { what: counted(rides.length, 'recording') }), errors };
     });
+  /** Names rides after where they begin and end. */
+  const named = (rides: readonly Ride[], onProgress: (text: string) => void) =>
+    autoname(rides.map((ride) => ({ name: ride.name, line: () => decodePolyline(ride.line), rename: (name) => renameRide(ride.id, name) })), 'ride', onProgress);
   const ridesAmong = (ids: ReadonlySet<string>): Ride[] => allRides().filter((kept) => ids.has(String(kept.id)));
   /** Keeps tracks of files of the Stash as rides and says under the heading which. */
   const keep = (parts: readonly StashPart[]) => runRidesJob(async () => ({ text: await keepTracks(parts), errors: [] }));
@@ -146,7 +150,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
     const [only, ...more] = ride.days;
     return [
       ...(several ? [] : [{ label: t('Rename…'), run: () => setRenamed(ride) }]),
-      { label: t('Autoname'), run: () => void runRidesJob((onProgress) => autoname(chosen, onProgress)) },
+      { label: t('Autoname'), run: () => void runRidesJob((onProgress) => named(chosen, onProgress)) },
       { label: t('Copy'), run: () => copyRecordings(chosen) },
       // Several are pinned together and merged, which is greyed out where they do not follow one another.
       ...(several ? [...pinItems((pinned) => pinRides(chosen.map((kept) => kept.id), pinned)), { label: t('Merge'), disabled: !followOneAnother(chosen), run: () => void mergeAsked(chosen) }] : []),

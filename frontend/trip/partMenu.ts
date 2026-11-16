@@ -16,6 +16,7 @@ import { menuNote, type MenuItem } from '../ui/menu';
 import { pinItems } from '../ui/Pin';
 import { dayTitleOf } from './labels';
 import { removeDayAsked, removeRouteAsked } from './remove';
+import { autonameRoutes } from './routeNames';
 
 /** What a part is called where its number is told, in a trip and in a list of places. */
 export const NOUNS: Record<PartKind, { trip: string; collection: string }> = {
@@ -104,7 +105,7 @@ function convertItem(kind: PartKind, ids: readonly string[]): MenuItem[] {
 
 /**
  * The menu of a day, a route or a stop of the open trip, the same for each kind and in a
- * trip as in a collection: edit, a stop's icon, duplicate, cut, copy, paste into it, move,
+ * trip as in a collection: edit, a stop's icon, a route's name after its ends, duplicate, cut, copy, paste into it, move,
  * export as GPX (days and routes), what only its kind has (`more`), what it converts to, for sections of planning material the trip made of them, for several routes their pins, remove. Opened on a part of a selection it acts on all of
  * them; what takes one part alone is then left out. `edit` stands in where a part is
  * edited otherwise than in its dialog.
@@ -117,6 +118,8 @@ export function partMenu(kind: PartKind, id: string, own: { edit?: () => void; m
     ...(several ? [menuNote(t('{what} selected', { what: counted(ids.length, NOUNS[kind][openTrip()!.kind]) }))] : []),
     ...(several ? [] : [{ label: t('Edit…'), run: own.edit ?? (() => setEditTarget({ kind, id })) }]),
     ...(kind === 'stop' ? [iconItem(ids)] : []),
+    // Routes and tracks are named after where they begin and end, as rides are.
+    ...(kind === 'route' ? [{ label: t('Autoname'), run: () => void autonameRoutes(ids) }] : []),
     { label: t('Duplicate'), run: () => duplicateParts(kind, ids) },
     { label: t('Cut'), run: () => copyParts(kind, ids, true) },
     { label: t('Copy'), run: () => copyParts(kind, ids) },

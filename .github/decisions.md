@@ -1340,6 +1340,13 @@ entries at the end of their section.
   never cut. Six dots now mean that the row is dragged; the others show a ring, filled
   while the row is selected. An earlier checkbox in the pad had looked dated; the ring
   is the mark of the same size that does not promise a drag.
+- **Routes are named by the function that names rides.** Autoname was the rides'
+  alone, written against a ride and its API. A route or a track of a day, imported
+  under a file's name or none, wants the same name after its ends, so the naming now
+  takes what it names as a name, the positions it runs along and how it is renamed
+  (`map/autoname.ts`), and says the same things as it goes. A route is renamed as an
+  edit of the open trip, one for each, so that each is undone by itself; a route that
+  is gone by its turn, or with its trip, is passed over.
 - **A folder is cut, not copied.** Copying or duplicating a folder is a copy of every
   trip in it, at any depth: megabytes started by one click. Trips are copied one by
   one, where the size is in view.

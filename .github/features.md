@@ -120,6 +120,10 @@
   undated); a route is dragged into another place within its day, duplicated, or
   moved to another day with the stops bound to it, from its row's menu (right-click or
   long press), where Move… opens the other days.
+- Autoname, in the menu of a route or a track of a day: the selected ones are named
+  after the places they begin and end in, as "Hockenheim - Walldorf", as rides are in
+  theirs. It is said under the day's routes how far it is and which could not be named.
+  Each name is an edit of the trip, undone like any other.
 - A drop is a cut and a paste in one move, within the tab and without the clipboard: a
   row is dragged by its grip or pad onto every place where a cut of it would be pasted,
   and the place lights up under it. A day goes onto another trip's row, with its media
