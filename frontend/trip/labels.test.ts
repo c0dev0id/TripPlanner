@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dayDetail, dayHeading, offTime } from './labels';
+import { dayDetail, dayHeading, dayHolds, offTime } from './labels';
 
 describe('offTime', () => {
   it('says by how much the ride is late or early for a fixed time, and when it gets there', () => {
@@ -29,5 +29,11 @@ describe('a day in a list', () => {
     expect(dayDetail('collection', { date: null, routes: 1, stops: 0, recordings: 1, media: 0, distanceM: 0 })).toBe('1 route · 1 recording');
     expect(dayDetail('collection', { date: null, routes: 0, stops: 0, recordings: 0, media: 3, distanceM: 0 })).toBe('3 attachments');
     expect(dayDetail('collection', { date: null, routes: 1, stops: 0, recordings: 0, media: 1, distanceM: 0 })).toBe('1 route · 1 attachment');
+  });
+
+  it('counts what it holds, its stops by what they are there', () => {
+    expect(dayHolds({ routes: 2, stops: 4, recordings: 1, media: 0 }, 'stop')).toBe('2 routes · 4 stops · 1 recording');
+    expect(dayHolds({ routes: 0, stops: 0, recordings: 0, media: 0 }, 'stop')).toBe('0 routes');
+    expect(dayHolds({ routes: 0, stops: 0, recordings: 0, media: 0 }, 'place')).toBe('0 places');
   });
 });
