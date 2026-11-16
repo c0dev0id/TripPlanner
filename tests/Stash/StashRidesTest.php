@@ -11,6 +11,7 @@ use Planner\Account\Users;
 use Planner\Recording\Recordings;
 use Planner\Stash\GpxIndex;
 use Planner\Stash\StashFiles;
+use Planner\Stash\StashMedia;
 use Planner\Stash\StashRides;
 use Planner\Tests\TestDatabase;
 use Planner\Trip\Folders;
@@ -30,7 +31,7 @@ final class StashRidesTest extends TestCase
         $this->db = TestDatabase::create();
         $this->now = new DateTimeImmutable('2026-11-14T10:00:00Z');
         $this->userId = (new Users($this->db))->create('rider@example.com', 'correct horse battery', $this->now)->id;
-        $this->files = new StashFiles($this->db, new Folders($this->db));
+        $this->files = new StashFiles($this->db, new Folders($this->db), new StashMedia($this->db));
         $this->recordings = new Recordings($this->db);
         $this->rides = new StashRides($this->files, $this->recordings);
         $this->stash = (int) $this->db->query("SELECT id FROM folders WHERE kind = 'collections' AND user_id = $this->userId")->fetchColumn();

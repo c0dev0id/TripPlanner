@@ -256,6 +256,23 @@ CREATE TABLE IF NOT EXISTS stash_items (
     PRIMARY KEY (file_id, kind, position)
 ) WITHOUT ROWID;
 
+-- The media kept with a file of the Stash, which belong to it as a whole and go with
+-- it: each a file under its name, known by the SHA-256 of what it holds, so that a file
+-- of the Stash has none twice. An image has a small JPEG as its preview. What the media
+-- file holds stands last, as a file's does.
+CREATE TABLE IF NOT EXISTS stash_media (
+    id INTEGER PRIMARY KEY,
+    file_id INTEGER NOT NULL REFERENCES stash_files(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    media_type TEXT NOT NULL,
+    size INTEGER NOT NULL,
+    digest TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    preview BLOB,
+    content BLOB NOT NULL,
+    UNIQUE (file_id, digest)
+);
+
 -- The places the map shows of the kinds the planner knows (frontend/poi/places.json),
 -- fetched from OpenStreetMap area by area by `make places` and asked for by the planner
 -- tile by tile: the tiles of the web's maps at zoom 10. id is the OpenStreetMap object,

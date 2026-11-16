@@ -9,6 +9,7 @@ use PDO;
 use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
 use Planner\Stash\StashFiles;
+use Planner\Stash\StashMedia;
 use Planner\Tests\TestDatabase;
 use Planner\Trip\Folders;
 
@@ -27,7 +28,7 @@ final class StashFilesTest extends TestCase
         $this->now = new DateTimeImmutable('2026-11-14T10:00:00Z');
         $this->userId = (new Users($this->db))->create('rider@example.com', 'correct horse battery', $this->now)->id;
         $this->folders = new Folders($this->db);
-        $this->files = new StashFiles($this->db, $this->folders);
+        $this->files = new StashFiles($this->db, $this->folders, new StashMedia($this->db));
         $this->stash = (int) $this->db->query("SELECT id FROM folders WHERE kind = 'collections' AND user_id = $this->userId")->fetchColumn();
     }
 

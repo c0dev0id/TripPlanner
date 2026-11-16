@@ -152,7 +152,17 @@ final class FileStore
         if (is_file($preview)) {
             return $preview;
         }
-        $path = $this->path($tripId, $entryId);
+        $jpeg = self::previewOf($this->path($tripId, $entryId), $mediaType);
+        if ($jpeg === null) {
+            return null;
+        }
+        file_put_contents($preview, $jpeg);
+        return $preview;
+    }
+
+    /** A small JPEG of the image at the path, turned the way it is to be seen; null where the image cannot be read. */
+    public static function previewOf(string $path, string $mediaType): ?string
+    {
         $image = match ($mediaType) {
             'image/jpeg' => @imagecreatefromjpeg($path),
             'image/png' => @imagecreatefrompng($path),
@@ -169,8 +179,9 @@ final class FileStore
         if ($small === false) {
             return null;
         }
-        imagejpeg(self::turned($small, $mediaType === 'image/jpeg' ? self::orientation($path) : 1), $preview, 80);
-        return $preview;
+        ob_start();
+        imagejpeg(self::turned($small, $mediaType === 'image/jpeg' ? self::orientation($path) : 1), null, 80);
+        return (string) ob_get_clean();
     }
 
     private function previewPath(int $tripId, int $entryId): string

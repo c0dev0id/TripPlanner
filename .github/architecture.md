@@ -139,7 +139,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `DELETE /export-presets/{id}` | Deletes the preset. |
 | `GET /duplicates` | The routes the user's library keeps more than once, in groups of exact copies or of the same ride, each route with its trip, day, name, kind (`routeKind`: `routed` or `track`) and length; a day's planned route with the tracks recorded of it is no group. |
 | `GET /duplicates/lines` | The lines of the user's routes named by `routes=` (comma-separated ids), as polyline6 by the route's id, for the report to draw the routes selected in it. |
-| `GET /stash` | The files of the user's Stash by name: `id`, `folderId`, `name`, `createdAt`, how many `waypoints` the file holds, its `creator` and `exportedAt` as its head has them, and its routes and tracks as `items`, each with its `kind`, its `position` among the file's routes or tracks, `name`, `line` (thinned, polyline6), `distanceM`, `points`, of a track `startedAt`, and `features`, what it carries besides: `time`, `elevation`, `lean` and `acceleration` on its points, `routeExtension` and `routePointExtension` of Garmin on a route, `dmd` and `rumo` for an extension of theirs. |
+| `GET /stash` | The files of the user's Stash by name: `id`, `folderId`, `name`, `createdAt`, how many `waypoints` the file holds, its `creator` and `exportedAt` as its head has them, the `media` kept with it (each its `id`, `name`, `mediaType`, `size` and whether it is an `image` with a preview), and its routes and tracks as `items`, each with its `kind`, its `position` among the file's routes or tracks, `name`, `line` (thinned, polyline6), `distanceM`, `points`, of a track `startedAt`, and `features`, what it carries besides: `time`, `elevation`, `lean` and `acceleration` on its points, `routeExtension` and `routePointExtension` of Garmin on a route, `dmd` and `rumo` for an extension of theirs. |
 | `POST /stash/files` | Keeps a file from a multipart form: `name`, `folderId`, a folder of the Stash, and `file`, a GPX file compressed with gzip. Answers 201 with the file as it is listed, or 200 with the one kept already where the user keeps the same file anywhere in the Stash. |
 | `PATCH /stash/files/{id}` | Renames the file with `{name}`, or moves it into another folder of the Stash with `{folderId}`. |
 | `DELETE /stash/files/{id}` | Deletes the file. |
@@ -148,6 +148,9 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `DELETE /stash/files/{id}/items?items=` | Removes routes and tracks from the file, named comma-separated as kind and place (`track:0,route:2`), which rewrites the file. |
 | `POST /stash/files/{id}/parts` | Adds parts of the user's other files to the file, which rewrites it and leaves the others as they are: `{parts}`, each with its `fileId`, its `items` as `{kind, position}` among that file's routes or tracks, and whether all its `waypoints` come along. Answers 204, or 404 where a file or one of the items is missing. |
 | `POST /stash/files/{id}/rides` | Keeps the file's tracks as rides, all of them or with `{tracks}` those at these places among its tracks, each named after itself or else its file. Answers `{rides}`, the ride of each track with its `name`, when it `startedAt` (null without times) and whether it was `added`; where the user kept it already, the name and time are those of the ride kept. |
+| `POST /stash/files/{id}/media` | Keeps a media file with the file, from a multipart form with the `file`. Answers the media file as it is listed, with 201, or with 200 the one the file has already. |
+| `DELETE /stash/files/{id}/media`, `DELETE /stash/files/{id}/media/{media}` | Removes all the media of the file, or the one named. |
+| `GET /stash/files/{id}/media/{media}/file`, `…/preview` | The media file as it was kept, shown in the browser where it can be and offered for download otherwise; of an image a small JPEG. |
 | `GET /folders` | The user's folders, each with the folder it is in (`parentId`, null at the top) and its `kind`: the two special ones first (`collections`, `places`), the others (`folder`) by name. |
 | `POST /folders` | Creates a folder from `{name, parentId}`; the parent may be null. |
 | `PATCH /folders/{id}` | Renames the folder from `{name}`, or moves it into the folder `{parentId}` (null for the top); a folder never goes into itself or a folder inside it, and one that holds collections never leaves the special folders, one that holds trips never enters them. A special folder is not found. |
@@ -188,6 +191,7 @@ erDiagram
   USER ||--o{ STASH_FILE : "keeps in the Stash"
   FOLDER ||--o{ STASH_FILE : holds
   STASH_FILE ||--o{ STASH_ITEM : "routes and tracks"
+  STASH_FILE ||--o{ STASH_MEDIA : "media kept with it"
   RECORDING }o--o{ DAY : "declined for (recording_declines)"
   USER ||--o| USER_PREFERENCES : sets
   PLACE_FETCH ||--o{ PLACE : "fetched with"
@@ -303,6 +307,17 @@ erDiagram
     datetime exported_at "read from the file: the time in its head, or null"
     string digest "the SHA-256 of the file as imported, once per user"
     blob gpx "the GPX file, compressed with gzip"
+  }
+  STASH_MEDIA {
+    int id PK
+    int file_id FK
+    string name
+    string media_type
+    int size
+    string digest "the SHA-256 of what it holds, once per file"
+    datetime created_at
+    blob preview "of an image: a small JPEG, or null"
+    blob content "the media file"
   }
   STASH_ITEM {
     int file_id PK

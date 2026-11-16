@@ -15,7 +15,7 @@ final class EntryFiles
     private const INLINE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
 
     /** A file never changes under its entry's id, so the browser may keep it a day. */
-    private const CACHE = 'private, max-age=86400';
+    public const CACHE = 'private, max-age=86400';
 
     public function __construct(private readonly FileStore $files)
     {
@@ -31,11 +31,16 @@ final class EntryFiles
         if (!is_file($path)) {
             return Json::error($response, 404, 'The file no longer exists.');
         }
-        $disposition = in_array($entry->file['mediaType'], self::INLINE_TYPES, true) ? 'inline' : 'attachment';
+        return self::describing($response->withBody((new StreamFactory())->createStreamFromFile($path)), $entry->file['name'], $entry->file['mediaType']);
+    }
+
+    /** The response as a kept file is answered: under its name and type, shown in the browser where it can be, offered for download otherwise, and kept by the browser a day. */
+    public static function describing(Response $response, string $name, string $mediaType): Response
+    {
+        $disposition = in_array($mediaType, self::INLINE_TYPES, true) ? 'inline' : 'attachment';
         return $response
-            ->withBody((new StreamFactory())->createStreamFromFile($path))
-            ->withHeader('Content-Type', $entry->file['mediaType'])
-            ->withHeader('Content-Disposition', "$disposition; filename*=UTF-8''" . rawurlencode($entry->file['name']))
+            ->withHeader('Content-Type', $mediaType)
+            ->withHeader('Content-Disposition', "$disposition; filename*=UTF-8''" . rawurlencode($name))
             ->withHeader('X-Content-Type-Options', 'nosniff')
             ->withHeader('Cache-Control', self::CACHE);
     }

@@ -9,6 +9,7 @@ use PDO;
 use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
 use Planner\Stash\StashFiles;
+use Planner\Stash\StashMedia;
 use Planner\Tests\TestDatabase;
 use Planner\Trip\FolderInsideItself;
 use Planner\Trip\Folders;
@@ -204,7 +205,7 @@ final class FoldersTest extends TestCase
         $clubs = $this->folders->create($this->userId, 'Clubs', $places->id, $this->now);
         $trip = $this->trips->create($this->userId, 'Weekend', $this->now, $alps->id);
         $list = $this->trips->create($this->userId, 'Inns', $this->now, $clubs->id, 'collection');
-        (new StashFiles($this->db, $this->folders))->keep($this->userId, $dump->id, 'A day out', (string) gzencode('<gpx/>'), $this->now);
+        (new StashFiles($this->db, $this->folders, new StashMedia($this->db)))->keep($this->userId, $dump->id, 'A day out', (string) gzencode('<gpx/>'), $this->now);
         $refused = [
             fn () => $this->trips->create($this->userId, 'Inns', $this->now, null, 'collection'),
             fn () => $this->trips->create($this->userId, 'Inns', $this->now, $alps->id, 'collection'),

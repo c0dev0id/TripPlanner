@@ -17,13 +17,14 @@ final class StashFiles
 {
     private const FILE = 'SELECT id, folder_id, name, created_at, waypoints, creator, exported_at FROM stash_files';
 
-    public function __construct(private readonly PDO $db, private readonly Folders $folders)
+    public function __construct(private readonly PDO $db, private readonly Folders $folders, private readonly StashMedia $media)
     {
     }
 
     /**
      * The user's files by name, each with its folder, how many waypoints it holds, what
-     * wrote it and when, and its routes and tracks in the file's order.
+     * wrote it and when, its routes and tracks in the file's order, and the media kept
+     * with it.
      *
      * @return list<array{id: int, folderId: int, name: string, createdAt: string, waypoints: int, creator: ?string, exportedAt: ?string, items: list<array<string, mixed>>}>
      */
@@ -40,7 +41,8 @@ final class StashFiles
         }
         $statement = $this->db->prepare(self::FILE . ' WHERE user_id = ? ORDER BY name COLLATE NOCASE, id');
         $statement->execute([$userId]);
-        return array_map(fn (array $row) => self::file($row, $items[(int) $row['id']] ?? []), $statement->fetchAll());
+        $media = $this->media->listFor($userId);
+        return array_map(fn (array $row) => self::file($row, $items[(int) $row['id']] ?? [], $media[(int) $row['id']] ?? []), $statement->fetchAll());
     }
 
     /**
@@ -78,7 +80,7 @@ final class StashFiles
         $statement = $this->db->prepare(self::FILE . ' WHERE id = ? AND user_id = ?');
         $statement->execute([$id, $userId]);
         $row = $statement->fetch();
-        return $row === false ? null : self::file($row, $this->items($id));
+        return $row === false ? null : self::file($row, $this->items($id), $this->media->of($id));
     }
 
     /** The file as it is kept, compressed with gzip; null when the user has no such file. */
@@ -207,7 +209,7 @@ final class StashFiles
         ];
     }
 
-    private static function file(array $row, array $items): array
+    private static function file(array $row, array $items, array $media): array
     {
         return [
             'id' => (int) $row['id'],
@@ -218,6 +220,7 @@ final class StashFiles
             'creator' => $row['creator'],
             'exportedAt' => $row['exported_at'],
             'items' => $items,
+            'media' => $media,
         ];
     }
 }
