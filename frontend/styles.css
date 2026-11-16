@@ -642,6 +642,11 @@ button.icon.pin[aria-pressed='true'] {
   white-space: nowrap;
 }
 
+/* The German names are longer: their letters start smaller, so that they fit the panel at its default width. */
+:lang(de) .panel .library-tabs button {
+  font-size: clamp(0.6rem, 3.5cqw, 0.78rem);
+}
+
 .panel .library-tabs button:hover {
   background: none;
   color: var(--fg);
