@@ -1809,6 +1809,21 @@ entries at the end of their section.
   a window of its own, which is the preview where there is no room for it beside the
   journal. What the page shows to whom (the link, the journal, the GPX file, the cover)
   is set above the two; the dialog that shared a trip is gone.
+- **The open trip's own actions are in the head of its pane.** They were in the menu of
+  the trip's row in the library and in the menu of the pane's free space. Below 1200 px
+  one pane is shown, the trip's own, so the row is not there; and a screen that is
+  touched has no right-click for the free space. On a tablet the trip's journal, its
+  export and its dialog could not be reached at all. The pane's head has the notebook
+  for the journal, on every screen, since that is where one looks for it after the
+  notebook of a day; and where there is no right-click, the button for a menu with the
+  rest.
+- **The journal is made for fingers where it is touched.** A row carried to another
+  chapter lets the pointer through to what lies under it, as the rows of the days do,
+  or the chapter under the finger is never found. The switches and buttons are forty
+  pixels high where the screen says it has no hover. On a narrow screen the settings of
+  the page scroll away with the journal under a head that stays, since they would take
+  a fifth of a phone. The window of a new entry stands at the top of a touched screen:
+  centred, its buttons lie under the keyboard.
 - **An entry's text is saved while it is written.** A row's text is a field, not a text
   with an edit button: it is saved a moment after the last key and when it is left, and
   what the server holds is taken into the field only while it is not being written in.

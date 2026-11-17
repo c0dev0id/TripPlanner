@@ -2,7 +2,7 @@ import { createMemo, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import type { Day } from '../model/trip';
 import { routesDistance } from '../routing/legs';
-import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
+import { setEditTarget, setExportScope, setShowNeighbours, showNeighbours } from '../state/drawing';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
 import { pasteDaysAtEnd } from '../state/clipboard';
@@ -12,6 +12,7 @@ import { counted, distanceText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { ChevronIcon, NeighboursIcon, NotebookIcon, PencilIcon, PlusIcon } from '../ui/icons';
 import { menuNote, type MenuItem } from '../ui/menu';
+import { MenuButton } from '../ui/MenuButton';
 import { Pane } from '../ui/Pane';
 import { dayJournalShown, setDayJournalShown, setWorkspaceOpen } from '../state/journal';
 import { SectionDetails } from './CollectionPanel';
@@ -43,6 +44,17 @@ export function DayPane(props: { onLeave: () => void }) {
   );
 }
 
+/**
+ * What is done with the open trip as a whole, behind the button in the head of its pane.
+ * Its row in the library has the same, but where one pane alone is shown that row is not
+ * there, and a screen without a right-click has no menu of the pane's free space.
+ */
+const tripMenu = (): MenuItem[] => [
+  { label: t('Edit…'), run: () => setEditTarget({ kind: 'trip' }) },
+  { label: t('Export GPX…'), run: () => setExportScope({ kind: 'trip' }) },
+  { label: t('Journal and sharing…'), run: () => setWorkspaceOpen(true) },
+];
+
 /** What the free space of the open trip's pane offers: a day more, the days on the clipboard after its last, and its journal. */
 function tripAddMenu(): MenuItem[] {
   const paste = pasteDaysAtEnd();
@@ -52,7 +64,7 @@ function tripAddMenu(): MenuItem[] {
 /** The same for a trip of one day, in the pane of that day's contents: what adds to the day, whose paste takes days after it as well, then the day more and the journal. */
 const onlyDayMenu = (day: Day): MenuItem[] => [...dayAddMenu(day), { label: t('Add day'), run: addDay }, { label: t('Journal and sharing…'), run: () => setWorkspaceOpen(true) }];
 
-/** The pane of the open trip: its name over how many days it has and how far they go, and its days. Closing it closes the trip. */
+/** The pane of the open trip: its name over how many days it has and how far they go, the way to its journal and the page it is shared on, and its days. Closing it closes the trip. */
 function DaysPane(props: { onLeave: () => void }) {
   const trip = () => openTrip()!;
   const distance = createMemo(() => routesDistance(trip().days.flatMap((day) => day.routes)));
@@ -77,9 +89,13 @@ function DaysPane(props: { onLeave: () => void }) {
           <IconButton label={neighboursLabel()} pressed={showNeighbours()} onClick={() => setShowNeighbours(!showNeighbours())}>
             <NeighboursIcon />
           </IconButton>
+          <IconButton label={t('Journal and sharing…')} onClick={() => setWorkspaceOpen(true)}>
+            <NotebookIcon />
+          </IconButton>
           <IconButton label={t('Add day')} onClick={addDay}>
             <PlusIcon />
           </IconButton>
+          <MenuButton of={trip().name} items={tripMenu} />
         </>
       }
     >
@@ -126,6 +142,7 @@ function DetailPane(props: { onLeave: () => void }) {
                   <IconButton label={t('Add day')} onClick={addDay}>
                     <PlusIcon />
                   </IconButton>
+                  <MenuButton of={label()} items={tripMenu} />
                 </Show>
               </>
             }

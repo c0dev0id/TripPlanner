@@ -69,7 +69,9 @@
   pane beside the library, and closes it again; its arrow points to the pane while
   the trip is closed and back while it is open. The open trip's menu has what only the
   open trip has: Edit… in place of Rename…, Export GPX…, Journal and sharing… and
-  Close, which leaves it saved; a list of places has Close alone.
+  Close, which leaves it saved. On a screen without a right-click the head of the open
+  trip's pane has a menu button with Edit…, Export GPX… and Journal and sharing…, since
+  the trip's row is not shown beside its pane where one pane alone fits; a list of places has Close alone.
 - A library of the user's trips in folders, which may hold folders: create, open, rename,
   duplicate and delete trips, create, rename and delete folders (for a folder that holds
   anything the confirmation asks whether that moves up into its parent or is deleted with it), move a trip between folders from Move… in its menu, create a trip or a folder
@@ -721,8 +723,8 @@
     photos put in the order they were taken by one button. A row's menu links it to
     the day, one of its routes or one of its stops, moves it to another chapter, and
     deletes it. A new entry is written under the rows.
-  - The journal of the whole trip opens over the page from Journal and sharing… on the
-    trip: every chapter under the other, where a row is also dragged into another
+  - The journal of the whole trip opens over the page from the notebook in the head of
+    the trip's pane, or from Journal and sharing… on the trip: every chapter under the other, where a row is also dragged into another
     chapter. Beside it stands the trip's page as a visitor gets it, which follows what
     is written, the journal on it also before it is published; without room for both,
     the page opens in a window of its own and follows from there. Above both is what
