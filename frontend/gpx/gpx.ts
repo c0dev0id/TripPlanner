@@ -1,5 +1,6 @@
 import { t } from '../i18n/t';
 import type { LngLat } from '../model/trip';
+import { waysAlong } from './ways';
 import { children, parseXml, text } from './xml';
 
 /** What a GPX 1.0 or 1.1 file holds: waypoints, routes (`rte`) and tracks (`trk`) with their segments. */
@@ -13,8 +14,10 @@ export interface GpxContent {
    */
   waypoints: { lngLat: LngLat; name?: string; description?: string; symbol?: string; address?: string; phone?: string; type?: string; links: string[] }[];
   /**
-   * `ways` holds for each point the points of the way a Garmin device or BaseCamp
-   * calculated from it on to the next, where the file has them; none otherwise. `vias`
+   * `ways` holds for each point the points of the way a planner calculated from it on
+   * to the next, where the file has them: a Garmin device or BaseCamp writes them point
+   * by point, DMD's planner for the route as a whole, which is cut at the points. None
+   * otherwise. `vias`
    * holds for each point its name and symbol where Garmin's trip planning marks it a
    * via point, a stop that is announced, and nothing for a point that only shapes the
    * route or is not marked at all.
@@ -71,9 +74,20 @@ function garminVia(rtept: Element): GpxVia | undefined {
   return via ? { name: text(rtept, 'name'), symbol: text(rtept, 'sym') } : undefined;
 }
 
+/** The way DMD's planner calculated for a route as a whole (`dmd:PreRendered`, `dmd:CalculatedRoute`): its points as `lat,lon,ele`, one after the other with a semicolon between. */
+function dmdWay(rte: Element): LngLat[] {
+  const [calculated] = children(rte, 'extensions').flatMap((e) => children(e, 'PreRendered')).flatMap((e) => children(e, 'CalculatedRoute'));
+  return (calculated?.textContent ?? '').split(';').flatMap((point) => {
+    const [lat, lng] = point.split(',').map(Number);
+    return point.includes(',') && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat!) <= 90 ? [[lng!, lat!] as LngLat] : [];
+  });
+}
+
 function route(rte: Element): GpxContent['routes'][number] {
   const rtepts = children(rte, 'rtept').filter((p) => position(p) !== undefined);
-  return { name: text(rte, 'name'), points: positions(rtepts), ways: rtepts.map((p) => positions(garminWay(p))), vias: rtepts.map(garminVia) };
+  const points = positions(rtepts);
+  const garmin = rtepts.map((p) => positions(garminWay(p)));
+  return { name: text(rte, 'name'), points, ways: garmin.some((way) => way.length > 0) ? garmin : waysAlong(points, dmdWay(rte)), vias: rtepts.map(garminVia) };
 }
 
 /** Whether a text is a GPX file's, by how it begins, as the server tells one. */

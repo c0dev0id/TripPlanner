@@ -51,9 +51,12 @@ final readonly class GpxIndex
     private const EXTENSIONS = [
         'http://www.garmin.com/xmlschemas/GpxExtensions/v3' => ['RouteExtension' => 'routeExtension', 'RoutePointExtension' => 'routePointExtension'],
         self::TRIP_EXTENSIONS => ['*' => 'tripExtension'],
-        'https://dmdnavigation.com/ns/gpx/1' => ['*' => 'dmd'],
+        self::DMD => ['*' => 'dmd'],
         'https://www.rumoadventures.com/xmlschemas/GpxExtensions/v1' => ['*' => 'rumo'],
     ];
+
+    /** The namespace of what DMD's planner writes into a route: among it the way it calculated for the route as a whole. */
+    private const DMD = 'https://dmdnavigation.com/ns/gpx/1';
 
     /** The namespace of Garmin's trip planning, which says which of a route's points are stops and when they are left. */
     private const TRIP_EXTENSIONS = 'http://www.garmin.com/xmlschemas/TripExtensions/v1';
@@ -79,8 +82,18 @@ final readonly class GpxIndex
         $line = [];
         $pointDepth = null;
         $inPoint = null;
-        $close = function () use (&$open, &$line, &$items): void {
+        // The way DMD calculated for the route being read, and whether Garmin's way was read between its points, which then is the route's line.
+        $calculated = [];
+        $between = false;
+        $close = function () use (&$open, &$line, &$items, &$calculated, &$between): void {
             $features = array_values(array_filter(self::FEATURES, fn (string $feature) => isset($open['features'][$feature])));
+            if (!$between && count($calculated) > 1) {
+                $line = $calculated;
+                $open['distanceM'] = 0.0;
+                for ($i = 1; $i < count($line); $i++) {
+                    $open['distanceM'] += Proximity::between($line[$i - 1], $line[$i]);
+                }
+            }
             $items[] = ['line' => Polyline::encode(Outline::thinned($line)), 'distanceM' => (int) round($open['distanceM']), 'features' => $features] + $open;
             $open = null;
         };
@@ -113,6 +126,8 @@ final readonly class GpxIndex
                     $kind = self::KINDS[$element];
                     $open = ['kind' => $kind, 'position' => $counts[$kind]++, 'name' => '', 'distanceM' => 0.0, 'points' => 0, 'startedAt' => null, 'features' => []];
                     $line = [];
+                    $calculated = [];
+                    $between = false;
                     $pointDepth = null;
                     $inPoint = null;
                     if ($reader->isEmptyElement) {
@@ -136,6 +151,10 @@ final readonly class GpxIndex
             if ($element === 'DepartureTime' && $open['kind'] === 'route' && $open['startedAt'] === null && $reader->namespaceURI === self::TRIP_EXTENSIONS) {
                 $open['startedAt'] = TrackSummary::time($reader->readString());
             }
+            if ($element === 'CalculatedRoute' && $open['kind'] === 'route' && $reader->namespaceURI === self::DMD) {
+                $calculated = self::positions($reader->readString());
+            }
+            $between = $between || $element === 'rpt';
             if ($element === 'name' && $reader->depth === 2) {
                 $open['name'] = trim($reader->readString());
             } elseif ($element === 'rtept' || $element === 'trkpt' || $element === 'rpt') {
@@ -157,5 +176,22 @@ final readonly class GpxIndex
         libxml_clear_errors();
         libxml_use_internal_errors($errors);
         return new self($waypoints, $items, $creator, $exportedAt);
+    }
+
+    /**
+     * The positions of a way as DMD writes it: `lat,lon,ele` for each point, with a semicolon between.
+     *
+     * @return list<array{0: float, 1: float}>
+     */
+    private static function positions(string $way): array
+    {
+        $positions = [];
+        foreach (explode(';', $way) as $point) {
+            $parts = explode(',', trim($point));
+            if (count($parts) >= 2 && is_numeric($parts[0]) && is_numeric($parts[1])) {
+                $positions[] = [(float) $parts[1], (float) $parts[0]];
+            }
+        }
+        return $positions;
     }
 }

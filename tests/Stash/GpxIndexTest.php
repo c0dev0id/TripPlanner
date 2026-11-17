@@ -54,6 +54,18 @@ final class GpxIndexTest extends TestCase
         self::assertSame([['routePointExtension'], ['time', 'elevation'], []], $features);
     }
 
+    public function testARoutesLineFollowsTheWayDmdCalculatedWhereGarminGaveNone(): void
+    {
+        $dmd = '<extensions><d:PreRendered xmlns:d="https://dmdnavigation.com/ns/gpx/1"><d:CalculatedRoute>49.4,8.7,100.0;49.45,8.75,110.5;49.4,8.8,120.0</d:CalculatedRoute></d:PreRendered></extensions>';
+        $points = fn (string $way) => "<rtept lat=\"49.4\" lon=\"8.7\">$way</rtept><rtept lat=\"49.4\" lon=\"8.8\"/>";
+        $garmin = '<extensions><g:RoutePointExtension xmlns:g="http://www.garmin.com/xmlschemas/GpxExtensions/v3"><g:rpt lat="49.3" lon="8.75"/></g:RoutePointExtension></extensions>';
+        [$alone, $both] = GpxIndex::of('<gpx><rte>' . $dmd . $points('') . '</rte><rte>' . $dmd . $points($garmin) . '</rte></gpx>')->items;
+        self::assertSame([[8.7, 49.4], [8.75, 49.45], [8.8, 49.4]], Polyline::decode($alone['line']));
+        self::assertSame(2, $alone['points']);
+        self::assertEqualsWithDelta(13_240, $alone['distanceM'], 60);
+        self::assertSame([[8.7, 49.4], [8.75, 49.3], [8.8, 49.4]], Polyline::decode($both['line']));
+    }
+
     public function testSaysThatARouteCarriesGarminsTripPlanning(): void
     {
         $trp = 'xmlns:trp="http://www.garmin.com/xmlschemas/TripExtensions/v1"';

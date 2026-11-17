@@ -1253,6 +1253,21 @@ entries at the end of their section.
   kept in the page and no longer: they say what is looked at now, not what the trip
   is. A recording added to a day or put on it by the lookup is not pinned: a pin is the
   user's own choice, and the comparison reads it (see below).
+- **DMD's calculated way is a route's way where Garmin gave none.** DMD's planner
+  writes into a route the way it calculated for it as a whole
+  (`dmd:PreRendered`, `dmd:CalculatedRoute`), with a hash, turn instructions, surfaces
+  and timings, of which the way alone is read. A leg belongs to its two ends, so the
+  way is cut at the route's points (`gpx/ways.ts`): each point lies where the way
+  first comes by it after the point before, within 50 m, since a planner snaps a
+  point to the road and a round passes a place twice. Over 974 routes of a club's
+  files no point lay farther than 30 m from its route's way. A point more than 100 m
+  from it means the points were changed after the way was calculated, and the way is
+  not used: the hash would say so, but what it is of is not documented. Garmin's way
+  comes first where a file has both, which 846 of those 930 files do: they are
+  BaseCamp routes that DMD's planner calculated again, and its way can be far from
+  the author's (one round of 145 km between two points is 22 km in DMD's). A leg does
+  not keep which planner its way is from, so a trip's row says "Original way" for
+  either. The index of the Stash follows the same order for a route's line and length.
 - **A via point of Garmin's trip planning is a stop on its route point.** BaseCamp and
   the devices mark each point of a route as a via point, which is announced and counts
   as a destination, or as a shaping point, which only bends the route

@@ -282,11 +282,11 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
               </Show>
               {props.route.optional ? ' · optional' : ''}
             </span>
-            {/* What the route still carries of its file, named as the Stash names it there. */}
+            {/* What the route still carries of its file: the way a planner calculated, Garmin's or DMD's, which a leg does not say. */}
             <Show when={fileLegs().kept > 0}>
               <span class="chips">
                 <span class="chip" title={t('{n} of {m} legs run along the way the file calculated. A leg that is routed again loses it.', { n: fileLegs().kept, m: fileLegs().of })}>
-                  {t('GPXX route points')}
+                  {t('Original way')}
                   {fileLegs().kept < fileLegs().of ? ` ${fileLegs().kept}/${fileLegs().of}` : ''}
                 </span>
               </span>

@@ -131,6 +131,24 @@ describe('gpxToDayParts', () => {
     expect(Object.keys(route!.legs)).toEqual(['bicycle:allow/11,48;11.2,48.3']);
   });
 
+  it('keeps the way DMD calculated for a route as its legs, cut at the route\'s points', () => {
+    const gpx = `<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:dmd="https://dmdnavigation.com/ns/gpx/1"><rte>
+      <extensions><dmd:PreRendered version="1" hash="sha256:0" profile="road-fast">
+        <dmd:CalculatedRoute>48.000000,11.000000,500.0;48.050000,11.050000,510.5;48.100000,11.000000,520.0;48.150000,11.050000,530.0;48.200000,11.000000,540.0</dmd:CalculatedRoute>
+        <dmd:Instructions><dmd:I lat="48.05" lon="11.05" type="LEFT" dist="9"/></dmd:Instructions>
+      </dmd:PreRendered></extensions>
+      <rtept lat="48" lon="11"/><rtept lat="48.1" lon="11.0001"/><rtept lat="48.2" lon="11"/>
+    </rte></gpx>`;
+    const parsed = parseGpx(gpx);
+    // The second point lies beside the way's third, on the stretch that leaves it.
+    expect(parsed.routes[0]!.ways).toEqual([[[11.05, 48.05], [11, 48.1]], [[11.05, 48.15]], []]);
+    const route = routedOf(gpxToDayParts(parsed, options).routes[0]!);
+    expect(Object.values(route.legs).map((leg) => [decodePolyline(leg.geometry).length, leg.durationS])).toEqual([
+      [4, null],
+      [3, null],
+    ]);
+  });
+
   it('makes a stop of each via point of Garmin\'s trip planning, on its point, and none of a point that shapes the route', () => {
     const point = (lat: number, name: string, kind: string) => `<rtept lat="${lat}" lon="11"><name>${name}</name><sym>Flag, Blue</sym><extensions><trp:${kind}/></extensions></rtept>`;
     const gpx = `<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:trp="http://www.garmin.com/xmlschemas/TripExtensions/v1">

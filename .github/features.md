@@ -272,8 +272,10 @@
   sends only the days and routes changed since the last save; a save over a newer
   version is refused and the trip offered for reloading.
 - GPX import into a day: a file's routes become routes with every point, their legs
-  routed, except those the file carries the way a Garmin calculated for, which keep that
-  way; its tracks keep their line with every point;
+  routed, except those the file carries the way a planner calculated for, which keep that
+  way: Garmin's, given from each point to the next, or, where the file has none of
+  that, the way DMD's planner calculated for the route as a whole, cut at the route's
+  points; its tracks keep their line with every point;
   its waypoints become stops, bound to a point of a GPX route they stand on, free otherwise, with
   their Garmin symbol as the file names it, and with the
   address and phone numbers Garmin's waypoint extension gives as their address and
@@ -462,9 +464,8 @@
   made of a route and a route made of that track again has points all along its
   line: that is how a route that came with two points and the way a planner had
   calculated between them gets one beside it that can be edited. A route whose legs still run along the way its file calculated says so
-  on its row by the chip the Stash has for it, "GPXX route points", with how many of
-  its legs do where not all do; the chip goes as those legs are routed again or the
-  route is made a track. Nothing else a file's route or track carries (times,
+  on its row by a chip, "Original way", with how many of its legs do where not all
+  do; the chip goes as those legs are routed again. Nothing else a file's route or track carries (times,
   elevation, lean angles, accelerations, what DMD or Rumo wrote) is kept in a trip, so
   a trip's rows have no chips for it. The free stops of
   a day or section, or those selected, become a route ("Waypoints to route", in a trip
