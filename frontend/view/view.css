@@ -331,8 +331,7 @@ figcaption {
 .prose a,
 .captions a,
 .file-block a,
-.route a,
-.shape a {
+.stops a {
   color: var(--mark);
 }
 
@@ -432,18 +431,38 @@ figcaption {
   border-top: 1px solid var(--rule);
 }
 
+.day-list > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  align-items: baseline;
+  border-bottom: 1px solid var(--rule);
+}
+
 .day-list button {
   display: flex;
+  flex: 1 1 16em;
   gap: 16px;
   align-items: baseline;
   min-height: 52px;
   padding: 10px 0;
   border: 0;
-  border-bottom: 1px solid var(--rule);
   background: none;
   color: var(--ink);
   text-align: left;
   cursor: pointer;
+}
+
+.gpx {
+  font: 14px var(--label);
+  color: var(--mark);
+}
+
+.route .files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
 }
 
 .day-list .overline {
@@ -646,8 +665,7 @@ figcaption {
   .map-card,
   .day-list,
   .route summary,
-  .route > a,
-  .shape a,
+  .gpx,
   .maplibregl-ctrl {
     display: none !important;
   }

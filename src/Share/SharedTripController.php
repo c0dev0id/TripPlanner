@@ -31,22 +31,24 @@ final class SharedTripController
         return $document === null ? Json::error($response, 404, 'This trip is not shared.') : Json::of($response, $document);
     }
 
-    /** The trip as one GPX file, or with `days=<id>` that day alone, written as an export without options is, where its page offers it. */
+    /**
+     * One route or track of the trip (`routes=<id>`) as a GPX file of its own, written as
+     * an export without options is, where its page offers GPX files. A file never holds
+     * more than one line: that is what most devices take a file to be.
+     */
     public function gpx(Request $request, Response $response, array $args): Response
     {
         $document = $this->publicDocument($args['token']);
         if ($document === null || !$document['public']['gpx']) {
             return Json::error($response, 404, 'This trip is not shared.');
         }
-        $dayId = $request->getQueryParams()['days'] ?? null;
-        if ($dayId === null) {
-            return GpxExportController::download($response, TripGpx::fileName($document['name']) . '.gpx', 'application/gpx+xml', TripGpx::trip($document, new DateTimeImmutable()));
+        $routeId = $request->getQueryParams()['routes'] ?? null;
+        foreach ($document['days'] as $index => $day) {
+            if (in_array($routeId, array_column($day['routes'], 'id'), true)) {
+                return GpxExportController::download($response, TripGpx::routeFileName($document, $index, $routeId) . '.gpx', 'application/gpx+xml', TripGpx::day($document, $index, new DateTimeImmutable(), routeIds: [$routeId]));
+            }
         }
-        $index = array_search($dayId, array_column($document['days'], 'id'), true);
-        if ($index === false) {
-            return Json::error($response, 404, 'Day not found.');
-        }
-        return GpxExportController::download($response, TripGpx::dayFileName($document, $index) . '.gpx', 'application/gpx+xml', TripGpx::day($document, $index, new DateTimeImmutable()));
+        return Json::error($response, 404, 'Day or route not found.');
     }
 
     /** The journal, empty until it is published. */

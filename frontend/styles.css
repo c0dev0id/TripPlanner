@@ -2031,6 +2031,20 @@ fieldset.symbols {
   border-radius: 3px;
 }
 
+.journal-workspace .page-routes {
+  position: relative;
+}
+
+.journal-workspace .page-routes summary {
+  cursor: pointer;
+}
+
+/* The routes to pick from, over what lies under the settings. */
+.journal-workspace .page-routes[open] > label {
+  display: flex;
+  padding: 2px 0;
+}
+
 .journal-workspace .columns {
   display: flex;
   flex: 1;

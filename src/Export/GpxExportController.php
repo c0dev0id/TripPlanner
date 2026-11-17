@@ -49,7 +49,9 @@ final class GpxExportController
         }
         $now = new DateTimeImmutable();
         if (count($indices) === 1 && $partial) {
-            return self::download($response, TripGpx::dayFileName($document, $indices[0]) . '.gpx', 'application/gpx+xml', TripGpx::day($document, $indices[0], $now, $options, $routeIds));
+            // One route alone is named after itself where its day has others.
+            $name = $routeIds !== null && count($routeIds) === 1 ? TripGpx::routeFileName($document, $indices[0], $routeIds[0]) : TripGpx::dayFileName($document, $indices[0]);
+            return self::download($response, "$name.gpx", 'application/gpx+xml', TripGpx::day($document, $indices[0], $now, $options, $routeIds));
         }
         if ($options->per === 'day') {
             return self::zip($response, $document, $indices, $now, $options, $routeIds);

@@ -1,12 +1,12 @@
 import { t } from '../i18n/t';
 import { For, Show } from 'solid-js';
-import { tripGpxUrl } from '../api';
 import type { Trip } from '../model/trip';
 import { dateText } from '../ui/format';
+import { DayFiles } from './DayFiles';
 import { DayLine } from './DayLine';
 import { DayStops, daySummary } from './DayStops';
 
-/** The plan, day by day: each day's number, date, name, length and times, what was noted about it, its stops, the shape of its route and its GPX file. */
+/** The plan, day by day: each day's number, date, name, length and times, what was noted about it, its stops, the shape of its route and its GPX files. */
 export function PlanDays(props: { trip: Trip; api: string; gpx: boolean }) {
   return (
     <section id="days" class="days">
@@ -26,8 +26,8 @@ export function PlanDays(props: { trip: Trip; api: string; gpx: boolean }) {
             <DayStops day={day} />
             <div class="shape">
               <DayLine day={day} width={72} height={96} />
-              <Show when={props.gpx && day.routes.length > 0}>
-                <a href={tripGpxUrl(props.api, day.id)}>{t('GPX of the day')}</a>
+              <Show when={props.gpx}>
+                <DayFiles day={day} api={props.api} />
               </Show>
             </div>
           </article>

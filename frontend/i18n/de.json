@@ -710,9 +710,7 @@
   "The order names a day and the ids of entries.": "Die Reihenfolge nennt einen Tag und die Kennungen von Einträgen.",
   "Trip, day or entry not found.": "Tour, Tag oder Eintrag nicht gefunden.",
   "Show the journal on the page": "Das Tagebuch auf der Seite zeigen",
-  "Offer the trip as a GPX file": "Die Tour als GPX-Datei anbieten",
   "Download GPX": "GPX herunterladen",
-  "The publication names the journal, the GPX file and a cover.": "Die Veröffentlichung nennt das Tagebuch, die GPX-Datei und ein Titelbild.",
   "The cover is a photo of the journal.": "Das Titelbild ist ein Foto des Tagebuchs.",
   "New journal entry": "Neuer Tagebucheintrag",
   "New journal entry for {of}": "Neuer Tagebucheintrag für {of}",
@@ -752,5 +750,10 @@
   "On the map": "Auf der Karte",
   "Previous": "Vorheriges",
   "Next": "Nächstes",
-  "Planned with Trip Planner": "Geplant mit Trip Planner"
+  "Planned with Trip Planner": "Geplant mit Trip Planner",
+  "Offer the routes as GPX files": "Die Routen als GPX-Dateien anbieten",
+  "Routes and tracks on the page: {shown} of {all}": "Routen und Tracks auf der Seite: {shown} von {all}",
+  "GPX files": "GPX-Dateien",
+  "GPX: {name}": "GPX: {name}",
+  "The publication names the journal, the GPX files, a cover and the routes left out.": "Die Veröffentlichung nennt das Tagebuch, die GPX-Dateien, ein Titelbild und die ausgelassenen Routen."
 }

@@ -727,7 +727,8 @@
     is written, the journal on it also before it is published; without room for both,
     the page opens in a window of its own and follows from there. Above both is what
     the page shows to whom: whether it is shared under a link, with the link to copy,
-    whether the journal is on it, whether it offers the GPX file, its cover, which a
+    whether the journal is on it, whether it offers GPX files, which of the trip's
+    routes and tracks it has, its cover, which a
     photo is made from its row's menu, and the owner's own page for printing.
   - Photos and files are sent in the background, one after the other, while the page
     is used; the page says how many are on their way and lists what failed, to be
@@ -769,10 +770,16 @@
   - It is set in a serif for reading, follows the visitor's light or dark scheme, and
     prints top to bottom: the map with the whole trip, then the text with everything
     unfolded.
-  - It offers the trip as a GPX file, and each day as one. The owner's own page has
-    everything, a stop's contact and booking reference included. The shared page never
-    has those two; the journal and its photos are on it once the owner switches them
-    on, and the GPX files unless the owner switches them off. A link to the shared page
+  - It offers each route and track as a GPX file of its own, with the stops on it, so
+    that a file is one line, which is what most navigation devices take a file to be.
+    A day of one route has the one file of the day; a trip of one route has it in the
+    page's head. There is no file of the whole trip.
+  - The owner's own page has everything, a stop's contact and booking reference
+    included. The shared page never has those two, and has only the routes and tracks
+    the owner leaves on it: one that is left out is neither on its map, nor in its
+    distances, nor among its files, and the stops bound to it go with it. The journal
+    and its photos are on the shared page once the owner switches them on, and the GPX
+    files unless the owner switches them off. A link to the shared page
     previews with the trip's name, description and cover. The photos on the shared page
     are pictures made of the uploads: they carry no position and nothing else of what
     the camera wrote into the file.

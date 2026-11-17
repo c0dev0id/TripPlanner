@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import { createSignal, onMount, Show } from 'solid-js';
+import { createSignal, For, onMount, Show } from 'solid-js';
 import { publicPreviewUrl, sharedPageUrl, tripApi, entryImageUrl } from '../api';
 import { allEntries, setWorkspaceOpen, workspaceOpen } from '../state/journal';
 import { openPublication, publish, setShared } from '../state/publication';
@@ -9,13 +9,19 @@ import { isTextField } from '../ui/form';
 import { CloseIcon } from '../ui/icons';
 import { createRequest } from '../ui/request';
 import { ChapterEditor } from './JournalEditor';
-import { dayLabelOf } from './labels';
+import { dayLabelOf, routeLabel } from './labels';
 
-/** What the trip's page shows to whom: the link it is shared under, the journal and the GPX file on it, and its cover. */
+/** What the trip's page shows to whom: the link it is shared under, the journal and the GPX files on it, its cover, and which of the trip's routes and tracks it has at all. */
 function PageSettings(props: { tripId: number }) {
   const { error, run } = createRequest();
   const [copied, setCopied] = createSignal(false);
   const cover = () => allEntries().find((e) => e.id === openPublication()?.coverEntryId);
+  const routeCount = () => openTrip()!.days.reduce((count, day) => count + day.routes.length, 0);
+  /** Puts a route on the page, or leaves it out. */
+  const show = (routeId: string, on: boolean) => {
+    const others = openPublication()!.hiddenRouteIds.filter((id) => id !== routeId);
+    return run(() => publish({ hiddenRouteIds: on ? others : [...others, routeId] }));
+  };
   const copy = (url: string) =>
     run(async () => {
       await navigator.clipboard.writeText(url);
@@ -42,8 +48,22 @@ function PageSettings(props: { tripId: number }) {
             <input type="checkbox" checked={publication().journal} onChange={(e) => void run(() => publish({ journal: e.currentTarget.checked }))} /> {t('Show the journal on the page')}
           </label>
           <label class="toggle">
-            <input type="checkbox" checked={publication().gpx} onChange={(e) => void run(() => publish({ gpx: e.currentTarget.checked }))} /> {t('Offer the trip as a GPX file')}
+            <input type="checkbox" checked={publication().gpx} onChange={(e) => void run(() => publish({ gpx: e.currentTarget.checked }))} /> {t('Offer the routes as GPX files')}
           </label>
+          <details class="page-routes">
+            <summary>{t('Routes and tracks on the page: {shown} of {all}', { shown: routeCount() - publication().hiddenRouteIds.length, all: routeCount() })}</summary>
+            <For each={openTrip()!.days}>
+              {(day, index) => (
+                <For each={day.routes}>
+                  {(route) => (
+                    <label class="toggle">
+                      <input type="checkbox" checked={!publication().hiddenRouteIds.includes(route.id)} onChange={(e) => void show(route.id, e.currentTarget.checked)} /> {t('Day {n}', { n: index() + 1 })} · {routeLabel(route, day)}
+                    </label>
+                  )}
+                </For>
+              )}
+            </For>
+          </details>
           <Show when={cover()} fallback={<span class="muted">{t('No cover: a photo is made the cover from its menu.')}</span>}>
             {(entry) => (
               <span class="cover">

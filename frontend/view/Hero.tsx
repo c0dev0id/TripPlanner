@@ -1,13 +1,18 @@
 import { t } from '../i18n/t';
 import { createMemo, Show } from 'solid-js';
-import { coverImageUrl, tripGpxUrl } from '../api';
-import type { Publication } from '../model/publication';
+import { coverImageUrl, routeGpxUrl } from '../api';
+import type { Shown } from '../model/publication';
 import type { Trip } from '../model/trip';
 import { routesDistance } from '../routing/legs';
 import { counted, dateText, distanceText } from '../ui/format';
 
-/** The head of the trip's page: its cover, how long and how far it goes and when, its name and description, and what is done with the page: the GPX file, the days, printing. */
-export function Hero(props: { trip: Trip; shown: Publication; api: string }) {
+/**
+ * The head of the trip's page: its cover, how long and how far it goes and when, its name
+ * and description, and what is done with the page: its GPX files, its days, printing. A
+ * trip of one route has that route's file at hand; one of more has them with its days.
+ */
+export function Hero(props: { trip: Trip; shown: Shown; api: string }) {
+  const routes = () => props.trip.days.flatMap((d) => d.routes);
   const dates = createMemo(() => props.trip.days.flatMap((d) => (d.date ? [d.date] : [])).sort());
   const distance = () => routesDistance(props.trip.days.flatMap((d) => d.routes));
   const span = () => {
@@ -27,14 +32,14 @@ export function Hero(props: { trip: Trip; shown: Publication; api: string }) {
           <p class="lede">{props.trip.description}</p>
         </Show>
         <p class="actions">
-          <Show when={props.shown.gpx}>
-            <a class="button primary" href={tripGpxUrl(props.api)}>
+          <Show when={props.shown.gpx && routes().length > 0}>
+            <a class="button primary" href={routes().length === 1 ? routeGpxUrl(props.api, routes()[0]!.id) : '#days'}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 4v11" />
                 <path d="M7 11l5 5 5-5" />
                 <path d="M5 20h14" />
               </svg>
-              {t('Download GPX')}
+              {t(routes().length === 1 ? 'Download GPX' : 'GPX files')}
             </a>
           </Show>
           <a class="button" href="#days">

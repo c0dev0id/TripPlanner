@@ -52,24 +52,24 @@ final class PublicTripTest extends TestCase
         $note = $this->entries->add($this->userId, $this->tripId, [], 'Packed the bags.', null, $this->now);
         $photo = $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], '', self::PHOTO, $this->now);
         $ticket = $this->entries->addMedia($this->userId, $this->tripId, 'day1', '', ['name' => 'ferry.pdf', 'mediaType' => 'application/pdf', 'size' => 99], null, $this->now);
-        self::assertSame(['token' => null, 'journal' => false, 'gpx' => true, 'coverEntryId' => null], $this->publications->of($this->userId, $this->tripId));
+        self::assertSame(['token' => null, 'journal' => false, 'gpx' => true, 'coverEntryId' => null, 'hiddenRouteIds' => []], $this->publications->of($this->userId, $this->tripId));
         self::assertNull($this->publications->of($this->userId + 1, $this->tripId));
         self::assertNull($this->publications->shared(str_repeat('0', 32)));
         self::assertSame([], $this->entries->listShared(str_repeat('0', 32)));
 
         $token = $this->trips->share($this->userId, $this->tripId);
-        self::assertSame(['name' => 'Alps', 'description' => 'A weekend.', 'journal' => false, 'gpx' => true, 'coverEntryId' => null], $this->publications->shared($token));
+        self::assertSame(['name' => 'Alps', 'description' => 'A weekend.', 'journal' => false, 'gpx' => true, 'coverEntryId' => null, 'hiddenRouteIds' => []], $this->publications->shared($token));
         self::assertSame([], $this->entries->listShared($token));
         self::assertNull($this->entries->findShared($token, $photo->id));
 
-        self::assertFalse($this->publications->set($this->userId + 1, $this->tripId, true, true, null));
-        self::assertTrue($this->publications->set($this->userId, $this->tripId, false, false, $photo->id));
-        self::assertSame(['token' => $token, 'journal' => false, 'gpx' => false, 'coverEntryId' => $photo->id], $this->publications->of($this->userId, $this->tripId));
+        self::assertFalse($this->publications->set($this->userId + 1, $this->tripId, true, true, null, []));
+        self::assertTrue($this->publications->set($this->userId, $this->tripId, false, false, $photo->id, []));
+        self::assertSame(['token' => $token, 'journal' => false, 'gpx' => false, 'coverEntryId' => $photo->id, 'hiddenRouteIds' => []], $this->publications->of($this->userId, $this->tripId));
         self::assertSame($photo->id, $this->entries->findShared($token, $photo->id)->id);
         self::assertNull($this->entries->findShared($token, $note->id));
         self::assertSame([], $this->entries->listShared($token));
 
-        self::assertTrue($this->publications->set($this->userId, $this->tripId, true, true, $photo->id));
+        self::assertTrue($this->publications->set($this->userId, $this->tripId, true, true, $photo->id, []));
         self::assertSame([$note->id, $photo->id], array_map(fn ($e) => $e->id, $this->entries->listShared($token)));
         self::assertSame($note->id, $this->entries->findShared($token, $note->id)->id);
         self::assertNull($this->entries->findShared($token, $ticket->id));
@@ -89,6 +89,7 @@ final class PublicTripTest extends TestCase
         $hotel = $public['days'][0]['stops'][1];
         self::assertSame(['Hotel Post', 'Dorfplatz 1', 'Garage for the bikes', '', ''], [$hotel['name'], $hotel['address'], $hotel['notes'], $hotel['contact'], $hotel['bookingReference']]);
         self::assertSame(['journal' => false, 'gpx' => true, 'coverEntryId' => null], $public['public']);
+        self::assertSame(['r1'], array_column($public['days'][0]['routes'], 'id'));
         foreach ([json_encode($public), TripGpx::trip($public, $this->now)] as $given) {
             self::assertStringNotContainsString('Maria', $given);
             self::assertStringNotContainsString('XK-4471', $given);
@@ -100,5 +101,38 @@ final class PublicTripTest extends TestCase
         $entry = PublicTrip::entry($this->entries->find($this->userId, $this->tripId, $photo->id));
         self::assertSame([[10.5, 47.5], null, 'IMG_1.jpg'], [$entry['lngLat'], $entry['takenLngLat'], $entry['file']['name']]);
         self::assertStringNotContainsString('11.45', json_encode($entry));
+    }
+
+    public function testLeavesOutTheRoutesThePageDoesNotHaveWithTheStopsBoundToThem(): void
+    {
+        $document = TripFixture::document();
+        $document['days'][0]['routes'][] = ['name' => 'In the rain'] + TripFixture::route('r2', [[11.5, 48.1], [11.6, 47.9]]);
+        $document['days'][0]['stops'][] = TripFixture::stop('s4', 'Shelter', [11.6, 47.9], 'r2-1');
+        $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated($document), 2, $this->now);
+        $token = $this->trips->share($this->userId, $this->tripId);
+        $public = fn () => PublicTrip::document($this->documents->loadShared($token), $this->publications->shared($token));
+        self::assertSame([['r1', 'r2'], ['s1', 's2', 's3', 's4']], [array_column($public()['days'][0]['routes'], 'id'), array_column($public()['days'][0]['stops'], 'id')]);
+
+        self::assertTrue($this->publications->set($this->userId, $this->tripId, false, true, null, ['r2', 'of another trip']));
+        self::assertSame(['r2'], $this->publications->of($this->userId, $this->tripId)['hiddenRouteIds']);
+        self::assertSame([['r1'], ['s1', 's2', 's3']], [array_column($public()['days'][0]['routes'], 'id'), array_column($public()['days'][0]['stops'], 'id')]);
+        self::assertArrayNotHasKey('hiddenRouteIds', $public()['public']);
+        self::assertStringNotContainsString('Shelter', TripGpx::day($public(), 0, $this->now, routeIds: ['r1']));
+        self::assertSame(['r1', 'r2'], array_column($this->documents->load($this->userId, $this->tripId)['days'][0]['routes'], 'id'));
+
+        // A save of the trip leaves what the page has as it is.
+        $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated(['name' => 'Alps again'] + $document), 3, $this->now);
+        self::assertSame(['r2'], $this->publications->of($this->userId, $this->tripId)['hiddenRouteIds']);
+        self::assertTrue($this->publications->set($this->userId, $this->tripId, false, true, null, []));
+        self::assertSame(['r1', 'r2'], array_column($public()['days'][0]['routes'], 'id'));
+    }
+
+    public function testNamesTheFileOfARouteAfterItsDayAndWhereTheDayHasOthersAfterItself(): void
+    {
+        $document = TripFixture::document();
+        self::assertSame(TripGpx::dayFileName($document, 0), TripGpx::routeFileName($document, 0, 'r1'));
+        $document['days'][0]['routes'][] = ['name' => 'In the rain'] + TripFixture::route('r2', [[11.5, 48.1], [11.6, 47.9]]);
+        self::assertSame(TripGpx::dayFileName($document, 0) . '-Route-1', TripGpx::routeFileName($document, 0, 'r1'));
+        self::assertSame(TripGpx::dayFileName($document, 0) . '-In-the-rain', TripGpx::routeFileName($document, 0, 'r2'));
     }
 }

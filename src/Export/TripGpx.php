@@ -39,6 +39,15 @@ final class TripGpx
         return self::fileName(self::dayName($document, $index));
     }
 
+    /** The name of the file of one route of a day, without the extension: the day's, and where the day has other routes the route's as well. */
+    public static function routeFileName(array $document, int $index, string $routeId): string
+    {
+        $routes = $document['days'][$index]['routes'];
+        $position = array_search($routeId, array_column($routes, 'id'), true);
+        $name = $routes[$position]['name'] === '' ? t('Route {n}', ['n' => $position + 1]) : $routes[$position]['name'];
+        return self::fileName(self::dayName($document, $index) . (count($routes) > 1 ? ' – ' . $name : ''));
+    }
+
     /** A name as part of a file name. */
     public static function fileName(string $name): string
     {

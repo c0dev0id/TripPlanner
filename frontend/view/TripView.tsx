@@ -2,7 +2,7 @@ import { t } from '../i18n/t';
 import { createEffect, createMemo, createResource, Match, onCleanup, Show, Switch } from 'solid-js';
 import { CHANGES_CHANNEL, errorMessage, fetchPublication, fetchTripAt, listEntriesAt } from '../api';
 import { chaptersOf } from '../model/journalDocument';
-import type { Publication } from '../model/publication';
+import type { Shown } from '../model/publication';
 import { ContextMenu } from '../ui/ContextMenu';
 import { Lightbox } from '../ui/Lightbox';
 import { createFollowing, TRIP_MARK } from './follow';
@@ -24,7 +24,7 @@ export function TripView(props: { api: string; document: string }) {
   const [page, { refetch }] = createResource(async () => {
     const [trip, entries] = await Promise.all([fetchTripAt(props.document), listEntriesAt(props.api)]);
     // The owner's own page shows everything; what it lacks is which photo is the cover.
-    const shown: Publication = trip.public ?? { journal: true, gpx: true, coverEntryId: (await fetchPublication(trip.id)).coverEntryId };
+    const shown: Shown = trip.public ?? { journal: true, gpx: true, coverEntryId: (await fetchPublication(trip.id)).coverEntryId };
     return { trip, entries, shown };
   });
   const changes = new BroadcastChannel(CHANGES_CHANNEL);

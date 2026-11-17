@@ -161,6 +161,9 @@ CREATE TABLE IF NOT EXISTS routes (
     points TEXT,
     legs TEXT,
     line TEXT,
+    -- Whether the trip's public page has it: drawn on its map and offered as a GPX file.
+    -- Not part of the trip's document; set with what the page shows.
+    public INTEGER NOT NULL DEFAULT 1,
     CHECK ((kind = 'routed') = (highways IS NOT NULL AND points IS NOT NULL AND legs IS NOT NULL AND line IS NULL)),
     CHECK ((kind = 'track') = (highways IS NULL AND points IS NULL AND legs IS NULL AND line IS NOT NULL))
 );

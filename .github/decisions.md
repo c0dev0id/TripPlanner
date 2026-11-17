@@ -1981,6 +1981,27 @@ entries at the end of their section.
   that a field added to a stop is private until it is let through there. An entry
   goes out without where its photo was taken, which the owner may have moved it away
   from on purpose. The owner's own page keeps everything: it is the roadbook.
+- **A GPX file of the page holds one line.** A file with several routes or tracks is
+  what the planner's own export writes for a day or a trip, and what most navigation
+  devices and apps make a mess of: they take a file to be one line and one ride, and
+  show the first, or all of them joined. So the page offers each route and track as a
+  file of its own, named after its day, and after the route too where the day has
+  others; there is no file of the day and none of the trip. The file is written by the
+  export when it is asked for, from the trip's public form and with the export's
+  defaults (the full line as a track, the stops bound to it or within reach), so it is
+  never older than the trip. Writing the files when the page is published was the
+  alternative: stored copies to renew with every change of a route.
+- **Which routes the page has is picked route by route, and is not the trip's.** A day
+  in the planner holds more than the ride: the way round for bad weather, a track
+  taken from someone's file to plan against. Each route and track has a switch in what
+  the page shows; one left out is not in the trip's public form at all, so it is on
+  neither the map nor the files, counts in no distance, and takes the stops bound to
+  its points with it, which would otherwise stand on the page without their route. A
+  free stop stays. The switch is a column on the route that the trip's document does
+  not carry: a save writes the columns it names and leaves this one, a new route is on
+  the page, and undo in the planner does not reach what the page shows. The route's
+  own `optional` was not used for it: that says what is decided on the day of riding,
+  and an optional detour may well be one to show.
 - **The shared page is headed on the server.** A link pasted into a messenger is
   fetched by a program that runs no script, so the page's title, description and
   cover picture are written into the template from the trip, and an unknown token is

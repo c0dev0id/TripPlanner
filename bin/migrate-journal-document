@@ -13,7 +13,7 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 
 // Run once after the journal became a document with an order of its own and a
 // publication apart from the share link, then delete this file. It adds the columns of
-// both, keeps the entries in the order they were added, publishes the journal of every
+// both and of which routes the public page has, keeps the entries in the order they were added, publishes the journal of every
 // trip that is shared, reads every image again for its size and for where it was taken,
 // and gives the previews the name of the smallest of the sizes an image is now kept at.
 // Running it twice does no harm.
@@ -36,6 +36,9 @@ if (!$has('trips', 'journal_published')) {
     $db->exec('ALTER TABLE trips ADD COLUMN gpx_public INTEGER NOT NULL DEFAULT 1');
     $db->exec('ALTER TABLE trips ADD COLUMN cover_entry_id INTEGER REFERENCES entries(id) ON DELETE SET NULL');
     $db->exec('UPDATE trips SET journal_published = 1 WHERE share_token IS NOT NULL');
+}
+if (!$has('routes', 'public')) {
+    $db->exec('ALTER TABLE routes ADD COLUMN public INTEGER NOT NULL DEFAULT 1');
 }
 $images = $db->prepare('SELECT id, trip_id, media_type FROM entries WHERE width IS NULL AND media_type IN (' . Database::placeholders(FileStore::PREVIEWABLE) . ')');
 $images->execute(FileStore::PREVIEWABLE);

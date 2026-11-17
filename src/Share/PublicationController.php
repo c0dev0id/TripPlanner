@@ -11,7 +11,7 @@ use Planner\Trip\TripDocuments;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-/** What the owner sets of a trip's public page: the journal on it, the GPX file, the photo at its top. And the trip as a visitor gets it, for the owner to look at. */
+/** What the owner sets of a trip's public page: the journal on it, the GPX files, the photo at its top, the routes and tracks it leaves out. And the trip as a visitor gets it, for the owner to look at. */
 final class PublicationController
 {
     public function __construct(
@@ -36,17 +36,17 @@ final class PublicationController
         return $document === null ? Json::error($response, 404, 'Trip not found.') : Json::of($response, PublicTrip::document($document, $this->publications->of($userId, $tripId)));
     }
 
-    /** Sets all three from `{journal, gpx, coverEntryId}`; the cover is an image of the trip's journal, or null. */
+    /** Sets all of it from `{journal, gpx, coverEntryId, hiddenRouteIds}`; the cover is an image of the trip's journal, or null. */
     public function replace(Request $request, Response $response, array $args): Response
     {
-        [$journal, $gpx, $coverEntryId] = [Json::field($request, 'journal'), Json::field($request, 'gpx'), Json::field($request, 'coverEntryId')];
-        if (!is_bool($journal) || !is_bool($gpx) || ($coverEntryId !== null && !is_int($coverEntryId))) {
-            return Json::error($response, 422, 'The publication names the journal, the GPX file and a cover.');
+        [$journal, $gpx, $coverEntryId, $hidden] = [Json::field($request, 'journal'), Json::field($request, 'gpx'), Json::field($request, 'coverEntryId'), Json::field($request, 'hiddenRouteIds')];
+        if (!is_bool($journal) || !is_bool($gpx) || ($coverEntryId !== null && !is_int($coverEntryId)) || !is_array($hidden) || !array_is_list($hidden) || array_filter($hidden, is_string(...)) !== $hidden) {
+            return Json::error($response, 422, 'The publication names the journal, the GPX files, a cover and the routes left out.');
         }
         [$userId, $tripId] = [$this->currentUser->get()->id, (int) $args['id']];
         if ($coverEntryId !== null && !($this->entries->find($userId, $tripId, $coverEntryId)?->file['image'] ?? false)) {
             return Json::error($response, 422, 'The cover is a photo of the journal.');
         }
-        return $this->publications->set($userId, $tripId, $journal, $gpx, $coverEntryId) ? $response->withStatus(204) : Json::error($response, 404, 'Trip not found.');
+        return $this->publications->set($userId, $tripId, $journal, $gpx, $coverEntryId, $hidden) ? $response->withStatus(204) : Json::error($response, 404, 'Trip not found.');
     }
 }
