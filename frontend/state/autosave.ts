@@ -23,9 +23,16 @@ const DEBOUNCE_MS = 1500;
 const RETRY_MS = 10_000;
 
 let timer: ReturnType<typeof setTimeout> | undefined;
+/** The save under way, or the last one. */
+let saving: Promise<void> | undefined;
+
+function save(keepalive = false): Promise<void> {
+  saving = send(keepalive);
+  return saving;
+}
 
 /** With `keepalive`, the request outlives the page: for a page being hidden or left. */
-async function save(keepalive = false): Promise<void> {
+async function send(keepalive: boolean): Promise<void> {
   const trip = openTrip();
   if (!trip || saveState() === 'saving' || saveState() === 'conflict') return;
   const count = changeCount();
@@ -55,8 +62,13 @@ function schedule(ms: number): void {
   timer = setTimeout(() => void save(), ms);
 }
 
-/** Saves now if anything is unsaved: for leaving the trip or, with `keepalive`, the page. */
+/**
+ * Saves now if anything is unsaved: for leaving the trip or, with `keepalive`, the page,
+ * and before something is sent that names the trip's parts. A save under way is waited
+ * for first: what was changed since goes with the next.
+ */
 export async function flushSave(keepalive = false): Promise<void> {
+  await saving;
   clearTimeout(timer);
   if (saveState() === 'dirty' || saveState() === 'failed') await save(keepalive);
 }

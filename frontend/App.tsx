@@ -24,7 +24,9 @@ import { SectionDialog } from './trip/CollectionPanel';
 import { DayDialog } from './trip/DayDialog';
 import { DayPane } from './trip/DayPane';
 import { ExportDialog } from './trip/ExportDialog';
-import { JournalDialog } from './trip/JournalDialog';
+import { JournalWorkspace } from './trip/JournalWorkspace';
+import { QuickEntry } from './trip/QuickEntry';
+import { UploadStatus } from './trip/UploadStatus';
 import { partKeys } from './trip/partKeys';
 import { RouteDialog } from './trip/RouteDialog';
 import { SaveProblem } from './trip/SaveStatus';
@@ -214,7 +216,9 @@ export function App() {
       <TrackDialog />
       <StopDialog />
       <ExportDialog />
-      <JournalDialog />
+      <QuickEntry />
+      <JournalWorkspace />
+      <UploadStatus />
       <PlaceKindDialog />
       <ShareDialog />
     </>

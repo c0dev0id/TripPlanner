@@ -178,7 +178,11 @@ export function addEntry(tripId: number, target: EntryTarget, text: string, file
   return request('POST', `${tripApi(tripId)}/entries`, form);
 }
 
-export const updateEntry = (tripId: number, entryId: number, text: string): Promise<void> => request('PATCH', `${tripApi(tripId)}/entries/${entryId}`, { text });
+/** Changes what is named of an entry: its text, the part it is on, where it stands on the map (null for nowhere). */
+export const updateEntry = (tripId: number, entryId: number, change: { text?: string; link?: EntryTarget; lngLat?: LngLat | null }): Promise<void> => request('PATCH', `${tripApi(tripId)}/entries/${entryId}`, change);
+
+/** Puts entries in that order in the chapter of a day, or with null of the trip itself; one of another chapter joins it. */
+export const orderEntries = (tripId: number, dayId: string | null, ids: number[]): Promise<void> => request('PUT', `${tripApi(tripId)}/entries/order`, { dayId, ids });
 
 export const deleteEntry = (tripId: number, entryId: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/entries/${entryId}`);
 

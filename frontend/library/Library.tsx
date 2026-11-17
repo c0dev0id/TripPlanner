@@ -14,7 +14,7 @@ import { isShownItem, isShownWaypoints, isShownWhole, relistStash, showInStash, 
 import { GroupDialog, type Grouping } from './GroupDialog';
 import { groupFiles } from './grouping';
 import { setEditTarget, setExportScope, setShareOpen } from '../state/drawing';
-import { openJournal } from '../state/journal';
+import { setWorkspaceOpen } from '../state/journal';
 import { unpinTrips } from '../state/pins';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markedLookId, markFolder, markInOpenTrip, markTrip, openTrip, openTripId, selectDay, selectedDayId, type OpenAt } from '../state/trip';
 import { reveal } from '../state/panel';
@@ -713,7 +713,7 @@ export function Library(props: {
     ...(trip.kind === 'trip'
       ? [
           { label: t('Export GPX…'), run: () => setExportScope({ kind: 'trip' }) },
-          { label: t('Journal…'), run: () => openJournal({}) },
+          { label: t('Journal…'), run: () => setWorkspaceOpen(true) },
           { label: t('Print, share…'), run: () => setShareOpen(true) },
         ]
       : []),

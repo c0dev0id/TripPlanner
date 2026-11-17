@@ -13,7 +13,7 @@ import { isDetailed, toggleDetail } from '../state/panel';
 import { menuNote, type MenuItem } from '../ui/menu';
 import { pickFiles } from '../ui/pickFile';
 import type { EntryTarget } from '../model/journal';
-import { entriesOn, openJournal } from '../state/journal';
+import { chapters, entriesOn, openJournal, showDayJournal } from '../state/journal';
 import { recordingsOf } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
 import { dropsOnPart, isCut, pasteItems } from '../state/clipboard';
@@ -52,18 +52,22 @@ import { addRecordingPicked, DayRecordings } from './Recordings';
 import { carriedWith, partMenu } from './partMenu';
 import { routeNamesNote } from './routeNames';
 
-/** The journal of a part as an icon, with the number of its entries where it has any. */
-export function JournalButton(props: { target: EntryTarget; of: string }) {
-  const count = createMemo(() => entriesOn(props.target).length);
-  const label = () => `${t('Journal of {of}', { of: props.of })}${count() === 0 ? '' : `: ${counted(count(), 'entry')}`}`;
+/** The journal as an icon on a row, with the number of entries the row has: a day's opens its journal, a route's or a stop's the window for a new entry on it. */
+function JournalButton(props: { label: string; count: number; onOpen: () => void }) {
+  const label = () => `${props.label}${props.count === 0 ? '' : `: ${counted(props.count, 'entry')}`}`;
   return (
-    <button class="icon journal" title={label()} aria-label={label()} onClick={() => openJournal(props.target)}>
+    <button class="icon journal" title={label()} aria-label={label()} onClick={props.onOpen}>
       <NotebookIcon />
-      <Show when={count() > 0}>
-        <span class="badge">{count()}</span>
+      <Show when={props.count > 0}>
+        <span class="badge">{props.count}</span>
       </Show>
     </button>
   );
+}
+
+/** The journal button of a route or a stop. */
+function PartJournalButton(props: { target: EntryTarget; of: string }) {
+  return <JournalButton label={t('New journal entry for {of}', { of: props.of })} count={entriesOn(props.target).length} onOpen={() => openJournal(props.target)} />;
 }
 
 /** The open trip's days under each other, in the pane beside the library. */
@@ -145,7 +149,7 @@ function DayItem(props: { day: Day; index: number }) {
             <span class="muted detail">{meta()}</span>
           </span>
         </button>
-        <JournalButton target={{ dayId: props.day.id }} of={label()} />
+        <JournalButton label={t('Journal of {of}', { of: label() })} count={chapters().find((c) => c.day?.id === props.day.id)?.entries.length ?? 0} onOpen={() => showDayJournal(props.day.id)} />
         <MenuButton of={label()} items={more} />
         <IconButton label={t(detailed() ? 'Hide the contents of {name}' : 'Show the contents of {name}', { name: label() })} pressed={detailed()} onClick={() => toggleDetail(props.day.id)}>
           {detailed() ? <ChevronLeftIcon /> : <ChevronIcon />}
@@ -305,7 +309,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
             </Show>
           </span>
         </button>
-        <JournalButton target={{ routeId: props.route.id }} of={label()} />
+        <PartJournalButton target={{ routeId: props.route.id }} of={label()} />
         <RoutePin id={props.route.id} of={label()} />
         <MenuButton of={label()} items={items} />
       </div>
@@ -378,7 +382,7 @@ function SequenceItem(props: { entry: SequenceEntry; routeId: string; time: Entr
             </span>
           </span>
         </button>
-        <Show when={stop()}>{(s) => <JournalButton target={{ stopId: s().id }} of={s().name} />}</Show>
+        <Show when={stop()}>{(s) => <PartJournalButton target={{ stopId: s().id }} of={s().name} />}</Show>
         <Show when={hasMenu()}>
           <MenuButton of={stop()?.name ?? ROUTE_POINT} items={menu} />
         </Show>
@@ -402,7 +406,7 @@ function AloneStopItem(props: { stop: Stop }) {
           </Show>
         </span>
       </button>
-      <JournalButton target={{ stopId: props.stop.id }} of={props.stop.name} />
+      <PartJournalButton target={{ stopId: props.stop.id }} of={props.stop.name} />
       <MenuButton of={props.stop.name} items={() => partMenu('stop', props.stop.id)} />
     </li>
   );

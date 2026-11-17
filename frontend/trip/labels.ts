@@ -1,4 +1,5 @@
 import { t } from '../i18n/t';
+import type { EntryTarget } from '../model/journal';
 import { PROFILES, takesMotorwayDial, type Day, type Route, type Trip, type TripKind } from '../model/trip';
 import { dayOfRoute } from '../routing/dayEdit';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
@@ -22,6 +23,20 @@ export function dayLabel(day: Pick<Day, 'date' | 'name'>, index: number): string
 
 /** A day's label within its trip. */
 export const dayLabelOf = (trip: Trip, day: Day): string => dayLabel(day, trip.days.findIndex((d) => d.id === day.id));
+
+/** What a journal entry's part is called: the day, the route or the stop; the trip's name for the trip itself, and nothing for a part the trip no longer holds. */
+export function targetLabel(trip: Trip, target: EntryTarget): string | undefined {
+  if ('dayId' in target) {
+    const day = trip.days.find((d) => d.id === target.dayId);
+    return day && dayLabelOf(trip, day);
+  }
+  if ('stopId' in target) return trip.days.flatMap((d) => d.stops).find((s) => s.id === target.stopId)?.name;
+  if ('routeId' in target) {
+    const route = trip.days.flatMap((d) => d.routes).find((r) => r.id === target.routeId);
+    return route && routeLabelOf(trip, route);
+  }
+  return trip.name;
+}
 
 /** What heads a day in a list: its number and its name, without its date ("Day 2 · Furka"); a collection's section its name alone. */
 export const dayHeading = (kind: TripKind, index: number, name: string): string => (kind === 'collection' ? name : [t('Day {n}', { n: index + 1 }), name].filter(Boolean).join(' · '));

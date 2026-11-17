@@ -150,6 +150,15 @@ Nothing goes into the Stash from the app. The Trips are where things are edited 
 tied together. A collection (`trips.kind`) is a list of places, lives among the
 Places alone and takes places alone.
 
+The journal is the open trip's, read as chapters (`model/journalDocument.ts`, `chapters`
+in `state/journal.ts`): the trip's own entries, then a day's with those on its routes
+and stops, each by `position`. It is written in three places that share
+`trip/JournalEditor.tsx` for a chapter: a new entry in the window `trip/QuickEntry.tsx`,
+a day's journal in the pane of the day's contents, the whole trip's over the page
+(`trip/JournalWorkspace.tsx`). Its changes go to the server at once and are not undone;
+a write that names a part saves the trip first (`flushSave`), and files are sent from
+a queue (`state/uploads.ts`).
+
 What is pasted where is one table, `model/paste.ts`: for each kind of place (a folder of
 the trips or the places, a trip's row, a list's row, a day, a category, a route, a file
 of the Stash, the recordings) the kinds of clipboard it takes, and what it has a use for

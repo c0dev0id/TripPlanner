@@ -706,23 +706,38 @@
   with its first day, from where they are moved to the day they belong to. Files
   added to a trip from its menu go the same way. The Stash keeps files of routes
   alone and leaves the others out.
-- A journal on the trip, on a day, on a stop and on a route, opened from the icon on
-  their rows, which counts their entries: entries of a note, a file (a photo, a receipt, a document) or both, edited and
-  deleted in place; rows say how many entries a part has. The trip's own journal reads
-  the whole trip top down: a heading per day, under it the day's entries, then those of
-  its routes and its stops in riding order, with smaller photos; an entry that stands
-  somewhere has a button that shows it on the map, with its day. The journal is a window
-  over the map, dragged aside by its title; the map stays usable beside it. A photo's time and position
-  are read from its EXIF data: it is shown with the time it was taken, stands on the
-  map where it was taken, and a photo added to the trip goes to the day of its date.
-  A photo is made into a JPEG of at most 2560 px in the browser before it is uploaded,
-  HEIC included, with its EXIF kept, so that a phone sends little and every browser shows
-  it. A photo opens large over the page from its preview in the journal or its marker on
-  the map, in the planner and on the read-only page alike; other files open or download
-  under their name. An entry is also made at a spot on the map, from the map's menu, on
-  the selected day: it stands there, as a journal icon that opens the day's journal, or
-  as its photo's preview; a photo that knows where it was taken stands there instead.
-  An entry stays with the trip when its part is removed.
+- A journal of the trip, read as a document: the trip's own entries as its
+  introduction, then a chapter for each day with the entries on the day, its routes
+  and its stops. An entry is a text, written as Markdown, or a file (a photo, a
+  receipt, a document) with a text, which is a photo's caption. It is linked to the
+  trip, a day, a route or track, or a stop, and may stand at a place on the map.
+  - A new entry is written in a small window over the map: from the notebook on a
+    route's, a track's or a stop's row, which counts their entries, or from the map's
+    menu at a spot, on the route being edited or else on the day shown. It takes a
+    text, any number of files, or both.
+  - A day's journal takes the place of the day's contents in their pane, from the
+    notebook on the day's row or in the pane's head. Its entries are rows: dragged
+    into order by their grip, their text written in place and saved as it is written,
+    photos put in the order they were taken by one button. A row's menu links it to
+    the day, one of its routes or one of its stops, moves it to another chapter, and
+    deletes it. A new entry is written under the rows.
+  - The journal of the whole trip opens over the page from Journal… on the trip: every
+    chapter under the other, where a row is also dragged into another chapter.
+  - Photos and files are sent in the background, one after the other, while the page
+    is used; the page says how many are on their way and lists what failed, to be
+    tried again or dropped.
+  - A photo's time and position are read from its EXIF data: it is shown with the time
+    it was taken and stands on the map where it was taken. Photos added to the trip
+    itself go to the days of their dates. An entry's place is changed by dragging its
+    marker; from its menu an entry is put on the map, put back where its photo was
+    taken, or taken off the map.
+  - A photo is made into a JPEG of at most 2560 px in the browser before it is
+    uploaded, HEIC included, with its EXIF kept, so that a phone sends little and
+    every browser shows it. A photo opens large over the page from its row or its
+    marker on the map, in the planner and on the read-only page alike; other files
+    open or download under their name.
+  - An entry on a route or a stop that is removed stays in its day's chapter; one whose
+    day is removed stays with the trip.
 - A trip is planned or done; the library marks done trips.
 - A read-only page of the trip for reading and printing: the map with every day, on the
   base map chosen but without the planner's overlays, the

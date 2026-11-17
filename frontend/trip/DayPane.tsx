@@ -10,13 +10,14 @@ import { detailShown, isPlaceList, paneShown } from '../state/library';
 import { addDay, closeDetail, detailDay, endLook, onlyDay, openDetail, openTrip, openTripId, pickDay } from '../state/trip';
 import { counted, distanceText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
-import { ChevronIcon, NeighboursIcon, PencilIcon, PlusIcon } from '../ui/icons';
+import { ChevronIcon, NeighboursIcon, NotebookIcon, PencilIcon, PlusIcon } from '../ui/icons';
 import { menuNote, type MenuItem } from '../ui/menu';
 import { Pane } from '../ui/Pane';
-import { openJournal } from '../state/journal';
+import { dayJournalShown, setDayJournalShown, setWorkspaceOpen } from '../state/journal';
 import { SectionDetails } from './CollectionPanel';
 import { DayStrip } from './DayStrip';
 import { dayDetail, dayHeading, dayTitleOf } from './labels';
+import { ChapterEditor } from './JournalEditor';
 import { dayAddMenu, DayDetails, TripPanel } from './TripPanel';
 
 /** A day as its labels count it: its date, what it holds and how far its routes go. */
@@ -45,11 +46,11 @@ export function DayPane(props: { onLeave: () => void }) {
 /** What the free space of the open trip's pane offers: a day more, the days on the clipboard after its last, and its journal. */
 function tripAddMenu(): MenuItem[] {
   const paste = pasteDaysAtEnd();
-  return [{ label: t('Add day'), run: addDay }, ...(paste.length > 0 ? paste : [menuNote(t('Paste'))]), { label: t('Journal…'), run: () => openJournal({}) }];
+  return [{ label: t('Add day'), run: addDay }, ...(paste.length > 0 ? paste : [menuNote(t('Paste'))]), { label: t('Journal…'), run: () => setWorkspaceOpen(true) }];
 }
 
 /** The same for a trip of one day, in the pane of that day's contents: what adds to the day, whose paste takes days after it as well, then the day more and the journal. */
-const onlyDayMenu = (day: Day): MenuItem[] => [...dayAddMenu(day), { label: t('Add day'), run: addDay }, { label: t('Journal…'), run: () => openJournal({}) }];
+const onlyDayMenu = (day: Day): MenuItem[] => [...dayAddMenu(day), { label: t('Add day'), run: addDay }, { label: t('Journal…'), run: () => setWorkspaceOpen(true) }];
 
 /** The pane of the open trip: its name over how many days it has and how far they go, and its days. Closing it closes the trip. */
 function DaysPane(props: { onLeave: () => void }) {
@@ -115,6 +116,9 @@ function DetailPane(props: { onLeave: () => void }) {
                   </span>
                   <span class="muted detail">{[only() && day().name, dayDetail('trip', dayCounts(day()))].filter(Boolean).join(' · ')}</span>
                 </span>
+                <IconButton label={t(dayJournalShown() ? 'Show the contents of {name}' : 'Show the journal of {name}', { name: dayTitleOf(openTrip()!, day()) })} pressed={dayJournalShown()} onClick={() => setDayJournalShown(!dayJournalShown())}>
+                  <NotebookIcon />
+                </IconButton>
                 <IconButton label={t('Edit {what}', { what: dayTitleOf(openTrip()!, day()) })} onClick={() => setEditTarget({ kind: 'day', id: day().id })}>
                   <PencilIcon />
                 </IconButton>
@@ -126,7 +130,9 @@ function DetailPane(props: { onLeave: () => void }) {
               </>
             }
           >
-            <DayDetails day={day()} />
+            <Show when={dayJournalShown()} fallback={<DayDetails day={day()} />}>
+              <ChapterEditor day={day()} />
+            </Show>
           </Pane>
         );
       }}

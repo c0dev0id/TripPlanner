@@ -1,5 +1,6 @@
 import { t } from '../i18n/t';
 import { batch, createMemo, createRoot, createSelector, createSignal } from 'solid-js';
+import { losesParts } from '../model/journalDocument';
 import { newId, withChanges, type Day, type LngLat, type Route, type RoutedLeg, type RoutedRoute, type Stop, type Trip } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { fileLegCount, roundLngLat } from '../routing/legs';
@@ -285,10 +286,15 @@ export function closeTrip(): void {
   });
 }
 
+/** Counts the saves that took a day, a route or a stop off the trip: the server then linked the journal entries on it anew. */
+const [partsLost, setPartsLost] = createSignal(0);
+export { partsLost };
+
 /** Records that a save stored `sent` as the version given; a save is no change. */
 export function markSaved(sent: Trip, version: number): void {
   const current = openTrip();
   if (!current) return;
+  if (saved && losesParts(saved, sent)) setPartsLost((n) => n + 1);
   saved = sent;
   setOpenTrip({ ...current, version });
 }

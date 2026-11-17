@@ -1784,16 +1784,43 @@ entries at the end of their section.
   receipts and documents as attachments and notes as comments. In use they are one
   thing: a note, a file, or a file with a note under it, in order of adding. One table,
   one dialog, one list; a file's media type says what it is.
-- **The journal is a window, not a modal.** The journal is read against the map: its
-  entries' places, the day they belong to. As a modal it dimmed and locked the map, so
-  showing an entry's place had to close it. It is a dialog shown without modality,
-  dragged by its title and kept whole on the page, closed by Esc or its button; the
-  dialogs that edit something stay modal.
-- **The trip's journal is the overview.** Opened on the trip, the journal lists every entry
-  of the trip in the trip's order (the trip's own, then each day with its routes and its
-  stops in riding order) rather than only the entries on the trip itself, which are few.
-  That is the journal read after the ride; the parts' own journals are where entries are
-  made during it. A second dialog for the overview would have doubled the entry list.
+- **The journal is written in three places, each as large as what is done there.** One
+  window listed a part's entries and took new ones; read as a document, the journal
+  needs more room than a window and less ceremony than a document editor for a line
+  written at a fuel stop. A new entry is a slim window over the map, opened on a route,
+  a track or a stop from its row or at a spot from the map's menu: a text, files, Add.
+  It is shown without modality, dragged by its title and kept whole on the page, since
+  it is written against the map. A day's journal takes the place of the day's contents
+  in their pane, switched by the notebook in the pane's head and opened by the one on
+  the day's row: every entry of the chapter as a row, put in order by its grip, written
+  in place, linked and placed from its menu. The whole trip's journal lies over the
+  page with every chapter under the other, where a row is also dragged from one
+  chapter into another. The three share one component for a chapter
+  (`trip/JournalEditor.tsx`); the window is the only one that adds without showing.
+- **An entry's text is saved while it is written.** A row's text is a field, not a text
+  with an edit button: it is saved a moment after the last key and when it is left, and
+  what the server holds is taken into the field only while it is not being written in.
+  The change is made here before the server answers, so that the field never jumps
+  back; what the server refuses is read again. An explicit save per row was a click for
+  every caption of forty photos.
+- **Files go into the journal one after the other, in the background.** A photo is made
+  into a JPEG in the browser before it is sent, which takes a second or two each, and
+  twenty photos picked at once blocked the window they were picked in. They are queued
+  (`state/uploads.ts`), each an entry of its own, made in the order given; the page
+  says how many are on their way and keeps what failed to be tried again, and asks
+  before it is left while some wait. A text and one file are one entry, the text the
+  photo's caption; a text and several files are the text and then the files, which
+  read as a gallery.
+- **The trip is saved before the journal is written to.** An entry names a day, a route
+  or a stop by its id, and the server answers 404 for one it has not been sent yet: a
+  stop added and written about within the second and a half before the autosave. Every
+  write that names a part waits for a save under way and sends what is unsaved first.
+  The other way round, a save that takes a part off the trip makes the server link the
+  entries on it anew, so the journal is read again after one.
+- **A marker is the handle of an entry's place.** An entry stands where its marker is
+  dragged to; one without a place is put in the middle of the map from its menu and
+  dragged from there. A mode in which the next click on the map sets the place was the
+  alternative, and one more state the map's tools would have had to know about.
 - **An entry outlives its part.** A photo on a stop stays in the journal when the stop
   is removed: the journal is the record of the trip, and a removed stop is still where
   the photo was taken. The first draft cascaded the deletion; a stop moved in a
