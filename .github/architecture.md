@@ -241,6 +241,9 @@ erDiagram
     string description
     string state "planned, done"
     string share_token "while the read-only page is public"
+    bool journal_published "whether that page shows the journal"
+    bool gpx_public "whether that page offers the GPX file"
+    int cover_entry_id FK "the photo at the top of that page"
     int version
     datetime updated_at
   }
@@ -360,6 +363,9 @@ erDiagram
     float taken_lat
     float lng "where it stands on the map; null for one that is not on it"
     float lat
+    int width "an image's size in pixels, as it is seen"
+    int height
+    int position "its place among the entries of its chapter"
     datetime created_at
     string kind "journal, or media: a file or a link kept with a day, named by text"
     string url "a link's address; null for anything else"

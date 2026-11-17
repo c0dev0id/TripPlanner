@@ -121,7 +121,12 @@ CREATE TABLE IF NOT EXISTS trips (
     -- Set while the trip's read-only page is public under /t/{token}.
     share_token TEXT UNIQUE,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    -- What the public page shows besides the plan: the journal once it is published,
+    -- the GPX download unless it is switched off, and the photo that stands at its top.
+    journal_published INTEGER NOT NULL DEFAULT 0,
+    gpx_public INTEGER NOT NULL DEFAULT 1,
+    cover_entry_id INTEGER REFERENCES entries(id) ON DELETE SET NULL
 );
 
 CREATE INDEX IF NOT EXISTS trips_folder ON trips(folder_id);
