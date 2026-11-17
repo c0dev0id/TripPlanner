@@ -161,6 +161,15 @@ page itself (`/trips/{id}?as=public`); `state/changes.ts` tells it when to read 
 a write that names a part saves the trip first (`flushSave`), and files are sent from
 a queue (`state/uploads.ts`).
 
+The trip's page (`view/`) is a plan until it has a journal and then a story:
+`TripView.tsx` chooses, `Hero.tsx` heads both, `PlanDays.tsx` is the plan's days,
+`Story.tsx` the chapters, `Blocks.tsx` what a chapter's entries read as (`blocksOf` in
+`model/journalDocument.ts`: texts as Markdown through `ui/markdown.ts`, photos that
+follow each other as one gallery). `follow.ts` says what is being read, by the elements
+that name themselves with `data-mark`, and `StoryMap.tsx` goes there. The page's styles
+are `view/view.css` alone, with their own colours and the bundled serif; it shares no
+stylesheet of the planner's but the map's and the lightbox's.
+
 What is pasted where is one table, `model/paste.ts`: for each kind of place (a folder of
 the trips or the places, a trip's row, a list's row, a day, a category, a route, a file
 of the Stash, the recordings) the kinds of clipboard it takes, and what it has a use for

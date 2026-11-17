@@ -143,8 +143,11 @@ export async function fetchTrip(id: number, onProgress?: (progress: Progress) =>
  */
 export const fetchTripAt = (base: string): Promise<ViewedTrip> => request('GET', base);
 
-/** The trip as one GPX file, from whichever API the page names. */
-export const tripGpxUrl = (base: string): string => `${base}/gpx`;
+/** The trip as one GPX file, or one of its days, from whichever API the page names. */
+export const tripGpxUrl = (base: string, dayId?: string): string => (dayId === undefined ? `${base}/gpx` : `${base}/gpx?days=${encodeURIComponent(dayId)}`);
+
+/** The picture of the entry that is a page's cover, which the page may know by its id alone. */
+export const coverImageUrl = (base: string, entryId: number, px: ImageSize): string => `${base}/entries/${entryId}/image/${px}`;
 
 export const listEntriesAt = (base: string): Promise<Entry[]> => request('GET', `${base}/entries`);
 

@@ -5,7 +5,8 @@ import './ui/menu.css';
 import './ui/lightbox.css';
 import './map/baseMaps.css';
 import './map/markers.css';
-import './trip/journal.css';
+import '@fontsource-variable/newsreader';
+import '@fontsource-variable/newsreader/wght-italic.css';
 import './view/view.css';
 import { TripView } from './view/TripView';
 

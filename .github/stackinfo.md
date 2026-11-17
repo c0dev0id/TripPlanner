@@ -40,6 +40,10 @@
 - Maki 8 and Temaki 5 (CC0), development dependencies: six of Maki's icons are bundled
   for the places' badges and its traffic cone for the roadworks' sign, Temaki's
   motorcycle for the closures' sign.
+- micromark 4 (MIT): renders the journal's Markdown, with HTML escaped and images off.
+- Newsreader (SIL Open Font License) through `@fontsource-variable/newsreader` 5: the
+  typeface of the trip's page, bundled with it as variable WOFF2 files, upright and
+  italic, some 60 kB each for Latin.
 - libheif-js 1.23 (libheif compiled to WebAssembly, LGPL): decodes a HEIC in browsers that
   cannot, loaded on demand as a chunk of its own, about 2 MB.
 - Route tool, GPX reading, line simplification and polyline handling ported from Layer Slayer.

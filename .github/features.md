@@ -745,18 +745,37 @@
   - An entry on a route or a stop that is removed stays in its day's chapter; one whose
     day is removed stays with the trip.
 - A trip is planned or done; the library marks done trips.
-- A read-only page of the trip for reading and printing: the map with every day, on the
-  base map chosen but without the planner's overlays, the
-  journal, each day with its routes and its stops in riding order with their times,
-  addresses, bookings and notes, and the trip as a GPX file to download. The page is the
-  owner's, or shared under a link that needs no sign-in and can be withdrawn. The shared
-  page shows the plan: the days, the routes and the stops with their names, addresses,
-  websites and notes, never a stop's contact or booking reference. The journal and its
-  photos are on it once the owner switches them on, and the GPX file unless the owner
-  switches it off, both where the trip is shared. A link to the shared page previews
-  with the trip's name and description. The photos on the shared page are pictures
-  made of the uploads: they carry no position and nothing else of what the camera
-  wrote into the file.
+- A page of the trip for reading and printing, the owner's or shared under a link that
+  needs no sign-in and can be withdrawn. It has two forms:
+  - The plan, while the page has no journal: the trip's cover, its length in days and
+    kilometres and its dates, its name and description, the map with every day and its
+    stops, and the days one under the other, each with its number, date, name, length
+    and times, what was noted about it, its stops in riding order with their times and
+    notes, the shape of its route and its GPX file.
+  - The story, once it has a journal: the journal as a document, with the map beside it.
+    The head and the trip's own entries come first, then the days to jump to, then a
+    chapter for each day: its number and date, its name, its length, the shape of its
+    route, the plan of the day folded under "Route and stops", and what was written and
+    photographed. Texts are Markdown. Photos that follow each other are one gallery:
+    one as wide as the text, two side by side, more in rows of three, their captions
+    under them; a click opens a photo large, with the others of the gallery a step away
+    by the arrows.
+  - The map follows what is read. The day being read stands out and fills the map with
+    its stops and the photos and notes that stand somewhere on it; an entry with a place
+    is gone to when it is read. A button on such an entry shows it on the map, a marker
+    on the map goes to where it is told of, and the map's card names what is shown and
+    has every day to go to, each as wide as the day is long, and the whole trip. On a
+    narrow screen the map is a band above the text.
+  - It is set in a serif for reading, follows the visitor's light or dark scheme, and
+    prints top to bottom: the map with the whole trip, then the text with everything
+    unfolded.
+  - It offers the trip as a GPX file, and each day as one. The owner's own page has
+    everything, a stop's contact and booking reference included. The shared page never
+    has those two; the journal and its photos are on it once the owner switches them
+    on, and the GPX files unless the owner switches them off. A link to the shared page
+    previews with the trip's name, description and cover. The photos on the shared page
+    are pictures made of the uploads: they carry no position and nothing else of what
+    the camera wrote into the file.
 
 - A place and address search over the map, by Nominatim on Enter: the first place found
   gets a pin and the map flies there, the others are listed to pick from. The pin stays

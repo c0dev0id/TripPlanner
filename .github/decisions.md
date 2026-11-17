@@ -1926,6 +1926,43 @@ entries at the end of their section.
   API of a shared trip at `/t/{token}`, which needs no sign-in. Sharing is a random
   token on the trip, made and withdrawn by the owner; anyone with the link reads the
   trip. The page prints: the map keeps its drawing buffer, the controls are hidden.
+- **The page is a plan until it has a journal, then a story.** Which of the two it is
+  follows from whether there are entries to read: a visitor gets none until the
+  journal is published, so the same rule serves the shared page, the owner's own and
+  the preview. The plan is the head, the map and the days as cards. The story is the
+  journal as a document in a column of a readable measure, with the map beside it,
+  which stays while the text is read; without room for both, the map is a band above
+  the text. The design was settled on a mock first (prose and headings in Newsreader,
+  labels and figures in the system's sans, the planner's accent, the visitor's light or
+  dark scheme). The typeface is bundled, not fetched from a font service: a visitor's
+  browser talks to nobody but this server and the map's.
+- **The map follows the reading, not the scrolling.** The elements that can be read (the
+  head, a chapter, an entry that stands somewhere) name themselves; an
+  IntersectionObserver with a band across the upper half of the window says which are
+  in it, and the lowest of them is the one read, so a photo inside a chapter wins over
+  its chapter while it is there. The map moves once the reading has stayed a fifth of
+  a second, stopping a move under way, to an area reckoned once per day; with reduced
+  motion it jumps. A scroll handler that maps the scroll position to the map was the
+  alternative: it runs on every frame and has to know the layout. Only the stops and
+  entries of the day read have markers, so a trip of four hundred photos puts a dozen
+  on the map at a time. A place is shown above the map's card by an offset, not by a
+  padding: MapLibre keeps a padding given to a move and adds it to the next one.
+- **Photos that follow each other are a gallery.** The journal has no gallery to make:
+  an entry is one photo, and what stands between two photos is a text. One photo is
+  set as wide as the text at its own shape, two side by side, more in rows of three
+  cropped to one shape; their sizes are known from the entry, so the page does not
+  jump while they load, and the browser picks one of the three kept sizes by the width
+  it is shown at. The lightbox steps through the gallery it was opened in.
+- **Markdown is rendered by micromark, with nothing that runs.** An entry's text is set
+  into the page as HTML, so what makes it has to be trusted with a stranger's input,
+  the preview being the owner's but the page everyone's. micromark escapes HTML unless
+  told otherwise and follows no link that would run something; images are switched off,
+  since the journal's pictures are its entries and a picture from elsewhere would tell
+  that elsewhere who reads the page; an indented line is a line, not code. A text
+  written before the journal took Markdown keeps its line ends.
+- **The page prints what is folded and the trip whole.** Before the browser prints, the
+  folded plans of the days are opened and the map goes to the whole trip at once and is
+  drawn again, since what is printed of the map is what was drawn last.
 - **A shared trip is its plan; the journal is published apart.** The share link showed
   the journal the moment it existed, so a trip shared before the ride to plan it with
   others published every photo taken on it. The page has two uses, the plan before

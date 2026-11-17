@@ -1,154 +1,688 @@
-/* The read-only trip page: one column for reading, the same for printing. */
+/*
+ * The page of a trip: the plan, or the story with the map beside it. Prose and headings
+ * are set in a serif, labels and figures in the system's sans. The colours follow the
+ * visitor's light or dark scheme.
+ */
 
 :root {
-  --bg: light-dark(#ffffff, #15171a);
-}
-
-* {
-  box-sizing: border-box;
+  --paper: light-dark(#fdfdfb, #15171a);
+  --ink: light-dark(#1b1d1f, #e9e7e2);
+  --soft: light-dark(#5d6166, #a3a8ae);
+  --rule: light-dark(#dcdfd8, #2d3136);
+  --mark: light-dark(#b4440f, #ef8354);
+  --on-mark: light-dark(#ffffff, #15171a);
+  --prose: 'Newsreader Variable', Georgia, serif;
+  --label: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 body {
   margin: 0;
-  font: 15px/1.45 system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--fg);
-}
-
-a {
-  color: var(--accent);
-}
-
-.trip-view {
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 16px 20px 40px;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 .notice {
-  margin: 40px;
-  text-align: center;
-  color: var(--muted);
+  margin: 48px 24px;
+  font-family: var(--label);
+  color: var(--soft);
 }
 
-.row {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
+.trip-page {
+  font-family: var(--prose);
+  font-size: 20px;
+  line-height: 1.6;
 }
 
-h1 {
-  flex: 1 1 auto;
-  margin: 8px 0 4px;
-  font-size: 1.6rem;
-}
-
-h2 {
-  margin: 24px 0 4px;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
-  font-size: 1.15rem;
-}
-
-p {
-  margin: 4px 0;
-}
-
-.muted {
-  color: var(--muted);
-}
-
-.text {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.print {
-  text-decoration: none;
-  padding: 4px 12px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: none;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.map {
-  height: 420px;
-  margin: 12px 0;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-}
-
-.routes,
-.stops {
-  margin: 6px 0;
-  padding: 0;
-  list-style: none;
-}
-
-.routes li {
-  padding: 2px 0;
-}
-
-.stop-item {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  padding: 6px 0;
-  border-top: 1px solid var(--line);
-}
-
-.stop-item svg {
-  flex: none;
-  margin-top: 2px;
-}
-
-.lines {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 1px;
+.trip-page main {
   min-width: 0;
 }
 
-.lines .name {
+/* The story: the text and beside it the map, which stays while the text is read; without room for both, the map is a band above the text. */
+.trip-page.story {
+  display: flex;
+  flex-flow: row-reverse wrap;
+  align-items: flex-start;
+}
+
+.trip-page.story main {
+  flex: 6 1 560px;
+}
+
+.story-map {
+  position: relative;
+  background: var(--rule);
+}
+
+.story-map.beside {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  flex: 1 1 36%;
+  height: 100dvh;
+  border-left: 1px solid var(--rule);
+}
+
+.story-map:not(.beside) {
+  height: min(70vh, 720px);
+  margin-top: 56px;
+  border-block: 1px solid var(--rule);
+}
+
+.story-map .map {
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 899px) {
+  .story-map.beside {
+    flex-basis: 100%;
+    height: 300px;
+    border-bottom: 1px solid var(--rule);
+    border-left: 0;
+  }
+}
+
+/* What the map shows, and the days to go to, each as wide as it is long. */
+.story-map .whole,
+.story-map .map-card {
+  position: absolute;
+  left: 12px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--label);
+}
+
+.story-map .whole {
+  top: 12px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.story-map .map-card {
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.story-map .map-card p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: baseline;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.story-map .map-card .name {
+  font-size: 15px;
   font-weight: 600;
 }
 
-.entry .file img {
-  width: 160px;
-  max-height: 160px;
+.story-map .rail {
+  display: flex;
+  gap: 4px;
 }
 
+.story-map .rail button {
+  min-width: 32px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: var(--rule);
+  color: var(--ink);
+  font: 600 13px var(--label);
+  cursor: pointer;
+  transition: background 300ms;
+}
+
+.story-map .rail button.active {
+  background: var(--mark);
+  color: var(--on-mark);
+}
+
+/* The map's own credits and scale stand above the card. */
+.story-map.beside .maplibregl-ctrl-bottom-left,
+.story-map.beside .maplibregl-ctrl-bottom-right {
+  bottom: 118px;
+}
+
+@media (max-width: 899px) {
+  .story-map .map-card {
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .story-map .map-card .meta,
+  .story-map.beside .maplibregl-ctrl-bottom-left,
+  .story-map.beside .maplibregl-ctrl-top-right {
+    display: none;
+  }
+
+  .story-map .rail button {
+    min-height: 32px;
+  }
+
+  .story-map.beside .maplibregl-ctrl-bottom-right {
+    bottom: 88px;
+  }
+}
+
+/* Labels and figures. */
+.overline,
+.meta,
+.chip,
+.button,
+.stops,
+.route,
+.day-list,
+.trip-page footer,
+figcaption {
+  font-family: var(--label);
+}
+
+.overline {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  color: var(--mark);
+}
+
+.meta {
+  margin: 0;
+  font-size: 14px;
+  color: var(--soft);
+}
+
+.muted {
+  color: var(--soft);
+}
+
+.column,
+.chapter,
+.days,
+.trip-page footer {
+  box-sizing: content-box;
+  max-width: 760px;
+  margin: 0 auto;
+  padding-inline: clamp(20px, 4vw, 64px);
+}
+
+/* The head: the cover, then the name large. */
+.hero .cover {
+  display: block;
+  width: 100%;
+  height: clamp(240px, 30vw, 420px);
+  object-fit: cover;
+}
+
+.hero .column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 56px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(52px, 7.4vw, 108px);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.hero .lede {
+  max-width: 26em;
+  margin: 0;
+  font-size: 25px;
+  line-height: 1.4;
+  text-wrap: pretty;
+  white-space: pre-line;
+}
+
+.hero .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0 0;
+}
+
+.button {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: none;
+  color: var(--ink);
+  font-size: 15px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button.primary {
+  border-color: var(--mark);
+  background: var(--mark);
+  color: var(--on-mark);
+  font-weight: 600;
+}
+
+/* What is written: a measure that reads, paragraphs apart. */
+.blocks {
+  padding-top: 28px;
+}
+
+.prose > div > *,
+.captions p,
+.file-block p {
+  max-width: 29em;
+  margin: 0 0 1.1em;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+/* A line's end in a text written before the journal took Markdown is kept. */
+.prose p {
+  white-space: pre-line;
+}
+
+.prose :is(h1, h2, h3, h4) {
+  margin: 1.6em 0 0.5em;
+  font-size: 1.25em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.prose blockquote {
+  max-width: 20em;
+  margin: 44px 0;
+  padding: 0;
+  font-size: 1.5em;
+  font-style: italic;
+  line-height: 1.28;
+  text-wrap: balance;
+}
+
+.prose blockquote p {
+  max-width: none;
+  margin: 0;
+}
+
+.prose :is(ul, ol) {
+  padding-left: 1.2em;
+}
+
+.prose a,
+.captions a,
+.file-block a,
+.route a,
+.shape a {
+  color: var(--mark);
+}
+
+.prose .chip {
+  margin: -0.4em 0 1.1em;
+}
+
+.chip {
+  display: inline-flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.chip svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Photos: one as wide as the text, two beside each other, more in rows of three. */
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 36px 0;
+}
+
+.gallery .photos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.gallery.pair .photos {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gallery.single .photos {
+  display: block;
+}
+
+.gallery img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  border-radius: 3px;
+  background: var(--rule);
+  object-fit: cover;
+}
+
+.gallery.single img {
+  aspect-ratio: auto;
+  max-height: 86vh;
+  object-fit: contain;
+  background: none;
+}
+
+.gallery figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.captions {
+  flex: 1 1 16em;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--soft);
+}
+
+.captions p {
+  max-width: 34em;
+  margin: 0 0 0.3em;
+}
+
+.file-block {
+  margin: 0 0 1.1em;
+  font-size: 0.9em;
+}
+
+/* The days to go to, under the introduction. */
+.day-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 28px;
+  border-top: 1px solid var(--rule);
+}
+
+.day-list button {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  min-height: 52px;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.day-list .overline {
+  flex: none;
+  width: 4.4em;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.day-list .name {
+  flex: 1;
+  font: 19px var(--prose);
+}
+
+/* A day's chapter. */
+.chapter {
+  padding-top: 72px;
+}
+
+.chapter > header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding-top: 28px;
+  border-top: 2px solid var(--ink);
+}
+
+.chapter > header > div {
+  display: flex;
+  flex: 1 1 16em;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.chapter h2,
+.days > h2 {
+  margin: 0;
+  font-size: clamp(34px, 4.2vw, 54px);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.day-line path {
+  stroke: var(--mark);
+  stroke-width: 2.5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.route {
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.route summary {
+  padding: 12px 0;
+  color: var(--soft);
+  cursor: pointer;
+}
+
+.notes {
+  max-width: 30em;
+  margin: 6px 0 12px;
+  font-family: var(--prose);
+  font-size: 18px;
+  line-height: 1.5;
+  text-wrap: pretty;
+  white-space: pre-line;
+}
+
+.stops {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 4px 0 12px;
+  padding-left: 1.4em;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.stops .name {
+  font-weight: 600;
+}
+
+.stops .line {
+  display: block;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+/* The plan, day by day. */
+.days {
+  max-width: 1180px;
+  padding-top: 88px;
+}
+
+.days > h2 {
+  margin-bottom: 28px;
+}
+
+.day-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 40px;
+  align-items: flex-start;
+  padding: 32px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.day-card .number {
+  flex: none;
+  width: 76px;
+  font-size: 72px;
+  font-weight: 500;
+  line-height: 0.85;
+  color: var(--mark);
+}
+
+.day-card .about {
+  display: flex;
+  flex: 1 1 320px;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.day-card .about .overline {
+  color: var(--soft);
+}
+
+.day-card h3 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.day-card .stops {
+  flex: 1 1 280px;
+  min-width: 0;
+  margin: 0;
+}
+
+.day-card .shape {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+  font: 14px var(--label);
+}
+
+.trip-page footer {
+  padding-block: 40px 72px;
+  font-size: 13px;
+  color: var(--soft);
+}
+
+.trip-page.story footer {
+  padding-top: 96px;
+}
+
+.trip-page:not(.story) footer {
+  max-width: 1180px;
+}
+
+/* On paper: the map first, then the whole text under it, what is folded unfolded. */
 @media print {
   :root {
     color-scheme: light;
   }
 
-  .trip-view {
-    max-width: none;
-    padding: 0;
+  .trip-page {
+    font-size: 11.5pt;
   }
 
-  .print,
+  .trip-page.story {
+    display: block;
+  }
+
+  .story-map,
+  .story-map.beside {
+    position: static;
+    height: 120mm;
+    margin: 0 0 8mm;
+    border: 0;
+    break-inside: avoid;
+  }
+
+  .button,
+  .chip,
+  .whole,
+  .map-card,
+  .day-list,
+  .route summary,
+  .route > a,
+  .shape a,
   .maplibregl-ctrl {
     display: none !important;
   }
 
-  .map {
-    height: 130mm;
+  .hero .cover {
+    height: 70mm;
+  }
+
+  .hero .column {
+    padding-top: 8mm;
+  }
+
+  .hero h1 {
+    font-size: 40pt;
+  }
+
+  .column,
+  .chapter,
+  .days,
+  .trip-page footer {
+    max-width: none;
+    padding-inline: 0;
+  }
+
+  .chapter {
+    padding-top: 10mm;
+  }
+
+  .chapter > header,
+  .gallery,
+  .day-card {
     break-inside: avoid;
   }
 
-  .stop-item,
-  .entry {
-    break-inside: avoid;
-  }
-
-  a {
-    color: inherit;
-    text-decoration: none;
+  .gallery.single img {
+    max-height: 110mm;
   }
 }

@@ -1,201 +1,72 @@
 import { t } from '../i18n/t';
-import { createEffect, createMemo, createResource, For, Match, onCleanup, Show, Switch } from 'solid-js';
-import { CHANGES_CHANNEL, errorMessage, fetchTripAt, listEntriesAt, tripGpxUrl } from '../api';
-import { entriesOn, type Entry, type EntryTarget } from '../model/journal';
-import type { ViewedTrip } from '../model/publication';
-import type { Day, Route, Stop } from '../model/trip';
-import { webAddress } from '../poi/details';
-import { routeDistance, routesDistance } from '../routing/legs';
-import { daySequence, standingAlone } from '../routing/sequence';
-import { dayTimeline, type EntryTime } from '../routing/timeline';
-import { symbolLabel } from '../symbols/symbols';
-import { EntryFile } from '../trip/EntryFile';
+import { createEffect, createMemo, createResource, Match, onCleanup, Show, Switch } from 'solid-js';
+import { CHANGES_CHANNEL, errorMessage, fetchPublication, fetchTripAt, listEntriesAt } from '../api';
+import { chaptersOf } from '../model/journalDocument';
+import type { Publication } from '../model/publication';
 import { ContextMenu } from '../ui/ContextMenu';
 import { Lightbox } from '../ui/Lightbox';
-import { dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from '../trip/labels';
-import { counted, dateText, distanceText, takenAtText, timeText } from '../ui/format';
-import { StopShape } from '../ui/StopShape';
-import { ViewMap } from './ViewMap';
+import { createFollowing, TRIP_MARK } from './follow';
+import { Hero } from './Hero';
+import { PlanDays } from './PlanDays';
+import { Story } from './Story';
+import { StoryMap } from './StoryMap';
 
 /**
- * A trip laid out for reading and printing: the map, the journal, and every day with its
- * routes and its stops in riding order with their times. Read from the API the page names:
- * the owner's, or the shared one; the trip's document from where the page says, which for
- * the owner may be the trip as a visitor gets it. The page reads both again when the
- * planner says that something changed, so that it follows the journal as it is written.
+ * The page of a trip, for reading and printing. Without a journal it is the plan: the
+ * head, the map, the days with their stops. With one it is the story: the journal as a
+ * document, with the map beside it following what is read. Read from the API the page
+ * names, the owner's or the shared one; the trip's document from where the page says,
+ * which for the owner may be the trip as a visitor gets it. The page reads both again
+ * when the planner says that something changed, so that it follows the journal as it is
+ * written.
  */
 export function TripView(props: { api: string; document: string }) {
   const [page, { refetch }] = createResource(async () => {
     const [trip, entries] = await Promise.all([fetchTripAt(props.document), listEntriesAt(props.api)]);
-    return { trip, entries };
+    // The owner's own page shows everything; what it lacks is which photo is the cover.
+    const shown: Publication = trip.public ?? { journal: true, gpx: true, coverEntryId: (await fetchPublication(trip.id)).coverEntryId };
+    return { trip, entries, shown };
   });
   const changes = new BroadcastChannel(CHANGES_CHANNEL);
   changes.onmessage = () => void refetch();
   onCleanup(() => changes.close());
   createEffect(() => {
-    if (page.state === 'ready') document.title = `${page().trip.name} · Trip Planner`;
+    if (page.state === 'ready' || page.state === 'refreshing') document.title = `${page.latest!.trip.name} · Trip Planner`;
   });
+  // What is folded is printed too.
+  const unfold = () => document.querySelectorAll('details').forEach((details) => (details.open = true));
+  window.addEventListener('beforeprint', unfold);
+  onCleanup(() => window.removeEventListener('beforeprint', unfold));
+  const reading = createFollowing(TRIP_MARK);
   // Reading a resource that failed throws; its error is shown instead.
   return (
     <Switch fallback={<p class="notice">{t('Loading…')}</p>}>
       <Match when={page.error}>{(error) => <p class="notice">{errorMessage(error())}</p>}</Match>
-      <Match when={page()}>
+      <Match when={page.latest}>
         {(p) => {
-          const on = (target: EntryTarget) => entriesOn(p().entries, target);
+          const chapters = createMemo(() => chaptersOf(p().trip, p().entries));
           return (
-            <article class="trip-view">
-              <Header trip={p().trip} api={props.api} />
-              <ViewMap trip={p().trip} entries={p().entries} api={props.api} />
-              <EntryList entries={on({})} api={props.api} />
-              <For each={p().trip.days}>{(day, index) => <DaySection day={day} index={index()} entriesOn={on} api={props.api} />}</For>
+            <div class="trip-page" classList={{ story: p().entries.length > 0 }}>
+              <Show
+                when={p().entries.length > 0}
+                fallback={
+                  <main>
+                    <Hero trip={p().trip} shown={p().shown} api={props.api} />
+                    <StoryMap trip={p().trip} entries={[]} api={props.api} at={TRIP_MARK} go={reading.go} rail={false} />
+                    <PlanDays trip={p().trip} api={props.api} gpx={p().shown.gpx} />
+                    <footer>{t('Planned with Trip Planner')}</footer>
+                  </main>
+                }
+              >
+                <StoryMap trip={p().trip} entries={p().entries} api={props.api} at={reading.at()} go={reading.go} rail />
+                <Story trip={p().trip} chapters={chapters()} shown={p().shown} api={props.api} reading={reading} />
+              </Show>
               <ContextMenu />
               <Lightbox />
-            </article>
+            </div>
           );
         }}
       </Match>
     </Switch>
-  );
-}
-
-/** The trip's name and state, its length in days, kilometres and dates, its description, the print button and, where the page offers it, the GPX file. */
-function Header(props: { trip: ViewedTrip; api: string }) {
-  const dates = createMemo(() => props.trip.days.flatMap((d) => (d.date ? [d.date] : [])).sort());
-  const distance = () => routesDistance(props.trip.days.flatMap((d) => d.routes));
-  const days = () => counted(props.trip.days.length, 'day');
-  const span = () => {
-    const [first, last] = [dates()[0], dates().at(-1)];
-    return !first ? '' : first === last ? dateText(first) : `${dateText(first)} – ${dateText(last!)}`;
-  };
-  return (
-    <header>
-      <div class="row">
-        <h1>{props.trip.name}</h1>
-        <Show when={props.trip.public?.gpx ?? true}>
-          <a class="print" href={tripGpxUrl(props.api)}>
-            {t('Download GPX')}
-          </a>
-        </Show>
-        <button class="print" onClick={() => window.print()}>
-          {t('Print')}
-        </button>
-      </div>
-      <p class="muted">{[days(), distance() > 0 && distanceText(distance()), span(), props.trip.state === 'done' && t('completed')].filter(Boolean).join(' · ')}</p>
-      <Show when={props.trip.description}>
-        <p class="text">{props.trip.description}</p>
-      </Show>
-    </header>
-  );
-}
-
-function DaySection(props: { day: Day; index: number; entriesOn: (target: EntryTarget) => Entry[]; api: string }) {
-  const sequence = createMemo(() => daySequence(props.day));
-  const timeline = createMemo(() => dayTimeline(sequence()));
-  /** The stops in riding order with their distance from the day's start, then those that stand alone, with none. */
-  const stops = () => [
-    ...sequence().flatMap((e) => (e.stop ? [{ stop: e.stop, distanceM: e.distanceM as number | undefined }] : [])),
-    ...standingAlone(props.day, sequence()).map((stop) => ({ stop, distanceM: undefined })),
-  ];
-  const distance = () => routesDistance(props.day.routes);
-  const summary = () => {
-    const line = timeline();
-    return [distance() > 0 && distanceText(distance()), line && timelineText(line)].filter(Boolean).join(' · ');
-  };
-  return (
-    <section class="day">
-      <h2>{dayLabel(props.day, props.index)}</h2>
-      <Show when={summary()}>
-        <p class="muted">{summary()}</p>
-      </Show>
-      <Show when={props.day.notes}>
-        <p class="text">{props.day.notes}</p>
-      </Show>
-      <EntryList entries={props.entriesOn({ dayId: props.day.id })} api={props.api} />
-      <Show when={props.day.routes.length > 0}>
-        <ul class="routes">
-          <For each={props.day.routes}>{(route) => <RouteItem route={route} day={props.day} entries={props.entriesOn({ routeId: route.id })} api={props.api} />}</For>
-        </ul>
-      </Show>
-      <Show when={stops().length > 0}>
-        <ol class="stops">
-          <For each={stops()}>{(s) => <StopItem stop={s.stop} distanceM={s.distanceM} time={timeline()?.times.get(s.stop.id)} entries={props.entriesOn({ stopId: s.stop.id })} api={props.api} />}</For>
-        </ol>
-      </Show>
-    </section>
-  );
-}
-
-function RouteItem(props: { route: Route; day: Day; entries: Entry[]; api: string }) {
-  const distance = createMemo(() => routeDistance(props.route));
-  return (
-    <li>
-      <span>{routeLabel(props.route, props.day)}</span>
-      <span class="muted"> · {[routeKindLabel(props.route), distance() > 0 && distanceText(distance()), props.route.optional && t('optional')].filter(Boolean).join(' · ')}</span>
-      <EntryList entries={props.entries} api={props.api} />
-    </li>
-  );
-}
-
-/** A stop with its times and its distance where it has a place on the ride, what the planner noted about it, and its journal. */
-function StopItem(props: { stop: Stop; distanceM: number | undefined; time: EntryTime | undefined; entries: Entry[]; api: string }) {
-  const stop = () => props.stop;
-  const times = () => {
-    const time = props.time;
-    if (!time) return '';
-    const off = offTime(time);
-    return off ? `${timesText(time)} (${t('{off}, arrives {time}', { off: off.text, time: timeText(off.rideMin) })})` : timesText(time);
-  };
-  const detail = () => [times(), props.distanceM !== undefined && distanceText(props.distanceM), symbolLabel(stop().symbol), stop().optional && t('optional')].filter(Boolean).join(' · ');
-  return (
-    <li class="stop-item">
-      <StopShape symbol={stop().symbol} color={stop().pointId === null ? '#1971c2' : '#d9480f'} height={24} />
-      <div class="lines">
-        <span class="name">{stop().name}</span>
-        <span class="muted">{detail()}</span>
-        <Show when={stop().address}>
-          <span class="text">{stop().address}</span>
-        </Show>
-        <Show when={stop().contact}>
-          <span>{stop().contact}</span>
-        </Show>
-        <Show when={stop().bookingReference}>
-          <span>{t('Booking {ref}', { ref: stop().bookingReference })}</span>
-        </Show>
-        <Show when={webAddress(stop().website)}>
-          {(address) => (
-            <a href={address()} target="_blank" rel="noopener noreferrer">
-              {t('Website')}
-            </a>
-          )}
-        </Show>
-        <Show when={stop().notes}>
-          <span class="text">{stop().notes}</span>
-        </Show>
-        <EntryList entries={props.entries} api={props.api} />
-      </div>
-    </li>
-  );
-}
-
-/** Journal entries: a photo as its preview, another file as a link, and the note. */
-function EntryList(props: { entries: Entry[]; api: string }) {
-  return (
-    <Show when={props.entries.length > 0}>
-      <ul class="entries">
-        <For each={props.entries}>
-          {(entry) => (
-            <li class="entry">
-              <EntryFile entry={entry} base={props.api} />
-              <div class="lines">
-                <Show when={entry.takenAt}>{(taken) => <span class="muted">{takenAtText(taken())}</span>}</Show>
-                <Show when={entry.text}>
-                  <p class="text">{entry.text}</p>
-                </Show>
-              </div>
-            </li>
-          )}
-        </For>
-      </ul>
-    </Show>
   );
 }

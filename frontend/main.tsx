@@ -5,7 +5,6 @@ import './ui/menu.css';
 import './ui/lightbox.css';
 import './map/baseMaps.css';
 import './map/markers.css';
-import './trip/journal.css';
 import './styles.css';
 import { App } from './App';
 
