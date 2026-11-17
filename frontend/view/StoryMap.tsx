@@ -18,8 +18,8 @@ const SETTLE_MS = 200;
 const MOVE_MS = 900;
 /** How close the map goes to a single place. */
 const SPOT_ZOOM = 12;
-/** How much of the map's foot the card that says what is shown takes, in pixels. */
-const CARD_PX = 110;
+/** The window in which the story's map is a band above the text, as the stylesheet has it. */
+const BAND_QUERY = '(max-width: 899px)';
 
 /** The area a day's routes and stops lie in; reckoned once for each day, since a route's line is long. */
 const areas = new WeakMap<Day, LngLatBounds>();
@@ -61,11 +61,21 @@ function photoMarker(entry: Entry, api: string, go: () => void): HTMLDivElement 
  */
 export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at: string; go: (mark: string) => void; rail: boolean }) {
   let container!: HTMLDivElement;
+  let card: HTMLDivElement | undefined;
   const [map, setMap] = createSignal<MapLibreMap>();
   // The drawing buffer is kept so that the map prints.
   onMount(() => {
     const made = newBaseMap(container, { canvasContextAttributes: { preserveDrawingBuffer: true } }, setMap);
-    onCleanup(() => made.remove());
+    // Where the page scrolls over the map (the plan's, and the story's while it is a band above the text), one finger
+    // or the wheel scrolls the page, and the map takes two fingers or the wheel with Ctrl.
+    const band = matchMedia(BAND_QUERY);
+    const gestures = () => (props.rail && !band.matches ? made.cooperativeGestures.disable() : made.cooperativeGestures.enable());
+    gestures();
+    band.addEventListener('change', gestures);
+    onCleanup(() => {
+      band.removeEventListener('change', gestures);
+      made.remove();
+    });
   });
   const [printing, setPrinting] = createSignal(false);
   const print = () => setPrinting(true);
@@ -110,12 +120,13 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
         const duration = moved && !now && !matchMedia('(prefers-reduced-motion: reduce)').matches ? MOVE_MS : 0;
         moved = true;
         on.stop();
-        // The card at the foot of the map covers some of it: what is shown stands above it.
-        const card = props.rail && !now ? CARD_PX : 0;
+        // The card at the foot of the map covers some of it: what is shown stands above it, and off the edges by less on a small map.
+        const foot = card && !now ? card.offsetHeight + 12 : 0;
+        const edge = Math.min(60, Math.round(container.clientHeight / 8));
         // A place is moved up by an offset, not by a padding, which the map would keep and add to the next one.
-        if (at) return on.easeTo({ center: at, zoom: Math.max(on.getZoom(), SPOT_ZOOM), offset: [0, -card / 2], duration });
+        if (at) return on.easeTo({ center: at, zoom: Math.max(on.getZoom(), SPOT_ZOOM), offset: [0, -foot / 2], duration });
         const area = (of ? [of] : trip.days).reduce((all, d) => all.extend(areaOf(d)), new LngLatBounds());
-        if (!area.isEmpty()) on.fitBounds(area, { padding: { top: 60, left: 60, right: 60, bottom: 60 + card }, maxZoom: 13, duration });
+        if (!area.isEmpty()) on.fitBounds(area, { padding: { top: edge, left: edge, right: edge, bottom: edge + foot }, maxZoom: 13, duration });
       };
       if (moved && !now) timer = setTimeout(move, SETTLE_MS);
       else move();
@@ -134,7 +145,7 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
         <button type="button" class="whole" onClick={() => props.go(TRIP_MARK)}>
           {t('Whole trip')}
         </button>
-        <div class="map-card">
+        <div class="map-card" ref={card}>
           <p>
             <span class="overline">{day() ? t('Day {n}', { n: number() }) : t('The trip')}</span>
             <span class="name">{day() ? day()!.name : props.trip.name}</span>

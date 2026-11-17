@@ -63,3 +63,15 @@
   color: inherit;
   cursor: pointer;
 }
+
+/* On a screen that is touched, a button is large enough to hit. */
+@media (hover: none) {
+  .lightbox button {
+    padding: 9px;
+  }
+
+  .lightbox figcaption {
+    gap: 4px;
+    padding: 2px 6px 2px 12px;
+  }
+}

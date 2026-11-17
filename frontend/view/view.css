@@ -132,7 +132,7 @@ body {
 }
 
 .story-map .rail button {
-  min-width: 32px;
+  min-width: 36px;
   min-height: 40px;
   padding: 0;
   border: 0;
@@ -165,10 +165,6 @@ body {
   .story-map.beside .maplibregl-ctrl-bottom-left,
   .story-map.beside .maplibregl-ctrl-top-right {
     display: none;
-  }
-
-  .story-map .rail button {
-    min-height: 32px;
   }
 
   .story-map.beside .maplibregl-ctrl-bottom-right {
@@ -454,6 +450,9 @@ figcaption {
 }
 
 .gpx {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
   font: 14px var(--label);
   color: var(--mark);
 }

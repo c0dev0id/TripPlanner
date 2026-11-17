@@ -1962,6 +1962,15 @@ entries at the end of their section.
   entries of the day read have markers, so a trip of four hundred photos puts a dozen
   on the map at a time. A place is shown above the map's card by an offset, not by a
   padding: MapLibre keeps a padding given to a move and adds it to the next one.
+- **Where the page scrolls over the map, one finger scrolls the page.** A map takes a
+  drag for itself. On a phone the story's map is a band at the top of the window, and
+  a thumb that lands on it moved the map and the page stood still; the plan's map lies
+  in the page's flow on every screen, and the wheel over it zoomed the map. MapLibre's
+  cooperative gestures are switched on for both: one finger and the wheel scroll the
+  page, two fingers or the wheel with Ctrl move the map, and the map says so. Beside
+  the text the map is a pane of its own and keeps the drag. What fits the map leaves
+  room for the card at its foot as tall as the card is, and an eighth of the map at
+  the edges, so that a band of three hundred pixels does not shrink a trip to a dot.
 - **Photos that follow each other are a gallery.** The journal has no gallery to make:
   an entry is one photo, and what stands between two photos is a text. One photo is
   set as wide as the text at its own shape, two side by side, more in rows of three
