@@ -68,13 +68,16 @@ share work; sharing between users is on the way.
   Compare it with the plan or another ride.
 - **Documents with the day** — keep PDFs, pictures, any other file and links with a
   day; a folder's documents come along when it is imported.
-- **A journal on everything** — notes, photos, receipts and documents on the trip, a
-  day, a stop, a route, or a spot on the map. Photos shrink to a web size before they
-  leave the phone, stand on the map where they were taken, land on the day they were
-  taken and open large in place.
+- **A journal that reads as a story** — texts in Markdown, photos, receipts and
+  documents on the trip, a day, a stop, a route, or a spot on the map, in chapters by
+  day and in the order you give them. Photos shrink to a web size before they leave
+  the phone, stand on the map where they were taken, land on the day they were taken
+  and open large in place.
 - **Planned, then ridden** — mark a trip done; the library shows it.
-- **Print it, share it** — a read-only page with the map, every day's stops and times
-  and the journal, for printing, or shared under a link that needs no account.
+- **A page to share** — before the ride it is the plan: the map, the days, the stops,
+  and a GPX file for each route. After it, publish the journal and it is the story,
+  with the map following what is read. Shared under a link that needs no account,
+  without your booking details, and it prints.
 - **Roadworks and closures** — a button each on the map shows the roadworks of
   Rhineland-Palatinate and Baden-Württemberg and the roads closed to motorcycles; tap one
   for what and until when.
