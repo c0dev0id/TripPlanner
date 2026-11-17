@@ -24,6 +24,7 @@ const FEATURES: Record<StashFeature, { label: string; title: string }> = {
   acceleration: { label: t('G-force'), title: t('Its points have accelerations') },
   routeExtension: { label: t('GPXX route'), title: t('The route has Garmin’s route extension') },
   routePointExtension: { label: t('GPXX route points'), title: t('Its points have Garmin’s route point extension: the way calculated between them') },
+  tripExtension: { label: t('Garmin trip'), title: t('Its points have Garmin’s trip planning: which of them are stops and which only shape the route') },
   dmd: { label: 'DMD', title: t('Has data DMD wrote into it') },
   rumo: { label: 'Rumo', title: t('Has data Rumo wrote into it') },
 };

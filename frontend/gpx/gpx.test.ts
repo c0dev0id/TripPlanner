@@ -42,7 +42,7 @@ describe('parseGpx', () => {
       { lngLat: [11.5, 48.1], name: 'Café', description: 'Good cake', symbol: 'Navaid, Black', type: 'user', links: [] },
       { lngLat: [11.6, 48.2], name: undefined, description: 'No name', type: 'castle', links: [] },
     ]);
-    expect(gpx.routes).toEqual([{ name: 'Planned', points: [[11.5, 48.1], [11.7, 48.3]], ways: [[], []] }]);
+    expect(gpx.routes).toEqual([{ name: 'Planned', points: [[11.5, 48.1], [11.7, 48.3]], ways: [[], []], vias: [undefined, undefined] }]);
     expect(gpx.tracks).toEqual([{ name: undefined, segments: [[[12, 47], [12.1, 47.1]], [[12.2, 47.2]]] }]);
   });
 
@@ -122,13 +122,30 @@ describe('gpxToDayParts', () => {
   });
 
   it('joins the way of a Garmin route point that repeats the one before to the leg it lies on', () => {
-    const gpx: GpxContent = { waypoints: [], tracks: [], routes: [{ points: [[11, 48], [11, 48], [11.2, 48.3]], ways: [[], [[11.1, 48.1]], []] }] };
+    const gpx: GpxContent = { waypoints: [], tracks: [], routes: [{ points: [[11, 48], [11, 48], [11.2, 48.3]], ways: [[], [[11.1, 48.1]], []], vias: [] }] };
     const [route] = gpxToDayParts(gpx, options).routes.map(routedOf);
     expect(route!.points.map((p) => p.lngLat)).toEqual([
       [11, 48],
       [11.2, 48.3],
     ]);
     expect(Object.keys(route!.legs)).toEqual(['bicycle:allow/11,48;11.2,48.3']);
+  });
+
+  it('makes a stop of each via point of Garmin\'s trip planning, on its point, and none of a point that shapes the route', () => {
+    const point = (lat: number, name: string, kind: string) => `<rtept lat="${lat}" lon="11"><name>${name}</name><sym>Flag, Blue</sym><extensions><trp:${kind}/></extensions></rtept>`;
+    const gpx = `<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:trp="http://www.garmin.com/xmlschemas/TripExtensions/v1">
+      <wpt lat="48.3" lon="11"><name>Hotel</name></wpt>
+      <rte>${point(48, 'Start', 'ViaPoint')}${point(48, 'Start again', 'ViaPoint')}${point(48.1, 'Bend', 'ShapingPoint')}${point(48.2, 'Lunch', 'ViaPoint')}${point(48.3, 'End', 'ViaPoint')}</rte>
+    </gpx>`;
+    const { routes, stops } = gpxToDayParts(parseGpx(gpx), options);
+    const points = routedOf(routes[0]!).points;
+    expect(points).toHaveLength(4);
+    // The waypoint holds the last point, so the via point there makes no second stop; a point listed twice makes one.
+    expect(stops.map((stop) => [stop.name, stop.symbol, points.findIndex((p) => p.id === stop.pointId)])).toEqual([
+      ['Hotel', null, 3],
+      ['Start', 'Flag, Blue', 0],
+      ['Lunch', 'Flag, Blue', 2],
+    ]);
   });
 
   it('composes names and notes, closes up their blank runs and cuts them to what a trip holds', () => {

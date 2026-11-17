@@ -2,9 +2,9 @@ import type { EntryFile } from './journal';
 /**
  * What a route or a track of the Stash carries that its row would not show otherwise:
  * times, elevation, lean angles or accelerations on its points, however its file writes
- * them, Garmin's extension of a route and of its points, and what DMD or Rumo wrote into it.
+ * them, Garmin's extension of a route and of its points, its trip planning, and what DMD or Rumo wrote into it.
  */
-export type StashFeature = 'time' | 'elevation' | 'lean' | 'acceleration' | 'routeExtension' | 'routePointExtension' | 'dmd' | 'rumo';
+export type StashFeature = 'time' | 'elevation' | 'lean' | 'acceleration' | 'routeExtension' | 'routePointExtension' | 'tripExtension' | 'dmd' | 'rumo';
 
 /** A route or a track of a file of the Stash, as it was read from the file: its place among the file's routes or tracks, its line thinned, as polyline6, its length, its points, when it starts where the file says (a track's first point, a route's planned departure), and what it carries besides. */
 export interface StashItem {

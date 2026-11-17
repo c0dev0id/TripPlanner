@@ -14,11 +14,20 @@ export interface GpxContent {
   waypoints: { lngLat: LngLat; name?: string; description?: string; symbol?: string; address?: string; phone?: string; type?: string; links: string[] }[];
   /**
    * `ways` holds for each point the points of the way a Garmin device or BaseCamp
-   * calculated from it on to the next, where the file has them; none otherwise.
+   * calculated from it on to the next, where the file has them; none otherwise. `vias`
+   * holds for each point its name and symbol where Garmin's trip planning marks it a
+   * via point, a stop that is announced, and nothing for a point that only shapes the
+   * route or is not marked at all.
    */
-  routes: { name?: string; points: LngLat[]; ways: LngLat[][] }[];
+  routes: { name?: string; points: LngLat[]; ways: LngLat[][]; vias: (GpxVia | undefined)[] }[];
   /** `time` is when the track's first point was recorded, as the file writes it. */
   tracks: { name?: string; segments: LngLat[][]; time?: string }[];
+}
+
+/** A route point that is a stop of its route: what it is called and the icon a Garmin device shows for it. */
+export interface GpxVia {
+  name?: string;
+  symbol?: string;
 }
 
 /** A point's position from its `lat` and `lon`; undefined where they are missing or off the world. */
@@ -56,9 +65,15 @@ function garminContact(wpt: Element): { address?: string; phone?: string } {
   return { address: lines.filter(Boolean).join(', ') || undefined, phone: phones.filter(Boolean).join(', ') || undefined };
 }
 
+/** The route point as a via point, where Garmin's trip planning marks it one (`trp:ViaPoint`) rather than a point that shapes the route (`trp:ShapingPoint`). */
+function garminVia(rtept: Element): GpxVia | undefined {
+  const via = children(rtept, 'extensions').some((e) => children(e, 'ViaPoint').length > 0);
+  return via ? { name: text(rtept, 'name'), symbol: text(rtept, 'sym') } : undefined;
+}
+
 function route(rte: Element): GpxContent['routes'][number] {
   const rtepts = children(rte, 'rtept').filter((p) => position(p) !== undefined);
-  return { name: text(rte, 'name'), points: positions(rtepts), ways: rtepts.map((p) => positions(garminWay(p))) };
+  return { name: text(rte, 'name'), points: positions(rtepts), ways: rtepts.map((p) => positions(garminWay(p))), vias: rtepts.map(garminVia) };
 }
 
 /** Whether a text is a GPX file's, by how it begins, as the server tells one. */

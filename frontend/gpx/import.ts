@@ -1,10 +1,10 @@
 import { t } from '../i18n/t';
 import { lineLength } from '../geo/measure';
-import { asName, asNotes, asSymbol, asWebsite, newId, type LngLat, type Profile, type Route, type RoutedLeg, type Stop } from '../model/trip';
+import { asName, asNotes, asSymbol, asWebsite, newId, type LngLat, type Profile, type Route, type RoutedLeg, type RoutePoint, type Stop } from '../model/trip';
 import { newStop, routePoints } from '../routing/dayEdit';
 import { legKey, roundLngLat } from '../routing/legs';
 import { encodePolyline } from '../routing/polyline';
-import { parseGpx, type GpxContent } from './gpx';
+import { parseGpx, type GpxContent, type GpxVia } from './gpx';
 import { parseKml } from './kml';
 import { zipEntries } from './zip';
 
@@ -53,12 +53,14 @@ function calculatedLegs(points: readonly LngLat[], ways: readonly LngLat[][], pr
  * keeps its line with every point; condensing it or making a route of it is the user's
  * choice. Unnamed routes are named after the file. A waypoint becomes a stop, bound to a
  * point of a GPX route it stands on, free otherwise, with its Garmin symbol as the file
- * names it and its address and phone numbers where Garmin gave them.
+ * names it and its address and phone numbers where Garmin gave them. A point Garmin's
+ * trip planning marks a via point becomes a stop on that point as well, unless a
+ * waypoint stands there already.
  * Names and notes are fitted to what a trip holds: composed, blank runs closed up, overlong text cut.
  */
 export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string }): DayParts {
   const lines = [
-    ...gpx.routes.map((r) => ({ name: r.name, kind: 'routed' as const, points: r.points, ways: r.ways })),
+    ...gpx.routes.map((r) => ({ name: r.name, kind: 'routed' as const, points: r.points, ways: r.ways, vias: r.vias })),
     ...gpx.tracks.map((t) => ({ name: t.name, kind: 'track' as const, points: t.segments.flat() })),
   ].filter((l) => l.points.length > 0);
   const routes = lines.map((line, i): Route => {
@@ -68,7 +70,31 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
     return { ...base, kind: 'routed', highways: 'allow', points, legs: calculatedLegs(line.points, line.ways, options.profile) };
   });
   const pointAt = new Map(routes.flatMap((r) => routePoints(r).map((p) => [p.lngLat.join(','), p.id] as const)));
-  return { routes, stops: waypointStops(gpx, options.newId, (lngLat) => pointAt.get(lngLat.join(',')) ?? null) };
+  const stops = waypointStops(gpx, options.newId, (lngLat) => pointAt.get(lngLat.join(',')) ?? null);
+  for (const [i, line] of lines.entries()) if (line.kind === 'routed') stops.push(...viaStops(routePoints(routes[i]!), line.points, line.vias, stops, options.newId));
+  return { routes, stops };
+}
+
+/**
+ * The via points of a route as stops, each on its point: `listed` are the route's points
+ * as the file lists them and `vias` what makes each a via point, `points` the points
+ * kept of them, which are without those that repeat the one before (see cleanPoints).
+ * None for a point that holds one of `taken`, or a via point before it, already.
+ */
+function viaStops(points: readonly RoutePoint[], listed: readonly LngLat[], vias: readonly (GpxVia | undefined)[], taken: readonly Stop[], newId: () => string): Stop[] {
+  const held = new Set(taken.map((stop) => stop.pointId));
+  const rounded = listed.map(roundLngLat);
+  const stops: Stop[] = [];
+  let kept = -1;
+  for (const [i, lngLat] of rounded.entries()) {
+    const before = rounded[i - 1];
+    if (!before || before[0] !== lngLat[0] || before[1] !== lngLat[1]) kept++;
+    const [via, point] = [vias[i], points[kept]];
+    if (!via || !point || held.has(point.id)) continue;
+    held.add(point.id);
+    stops.push({ ...newStop(newId(), asName(via.name ?? t('Waypoint {n}', { n: stops.length + 1 })), point.lngLat, point.id), symbol: asSymbol(via.symbol) });
+  }
+  return stops;
 }
 
 /** The host a web address leads to; none for what is no web address. */

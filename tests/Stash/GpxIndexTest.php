@@ -54,6 +54,16 @@ final class GpxIndexTest extends TestCase
         self::assertSame([['routePointExtension'], ['time', 'elevation'], []], $features);
     }
 
+    public function testSaysThatARouteCarriesGarminsTripPlanning(): void
+    {
+        $trp = 'xmlns:trp="http://www.garmin.com/xmlschemas/TripExtensions/v1"';
+        $gpx = "<gpx $trp><rte><rtept lat=\"49.4\" lon=\"8.7\"><extensions><trp:ViaPoint><trp:DepartureTime>2025-07-08T08:00:00Z</trp:DepartureTime></trp:ViaPoint></extensions></rtept>"
+            . '<rtept lat="49.5" lon="8.7"><extensions><trp:ShapingPoint/></extensions></rtept></rte><rte><rtept lat="49.4" lon="8.7"/></rte></gpx>';
+        $items = GpxIndex::of($gpx)->items;
+        self::assertSame([['tripExtension'], []], array_column($items, 'features'));
+        self::assertSame('2025-07-08T08:00:00Z', $items[0]['startedAt']);
+    }
+
     public function testValuesCountOnPointsHoweverTheFileWritesThemAndNotBesideThem(): void
     {
         $ridelink = '<gpx xmlns:rl="r"><trk><extensions><rl:summary><rl:lean_angle>3</rl:lean_angle></rl:summary></extensions><trkseg>'

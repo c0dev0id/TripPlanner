@@ -1,0 +1,26 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Planner\Kernel;
+use Planner\Stash\GpxIndex;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Run once after the Stash's index learned to tell Garmin's trip planning, then delete
+// this file. It reads every file of the Stash again for what its routes and tracks
+// carry. Running it twice does no harm.
+$db = Kernel::container(dirname(__DIR__))->get(PDO::class);
+
+$update = $db->prepare('UPDATE stash_items SET features = ? WHERE file_id = ? AND kind = ? AND position = ?');
+$files = 0;
+$db->beginTransaction();
+foreach ($db->query('SELECT id, gpx FROM stash_files') as $file) {
+    foreach (GpxIndex::of((string) gzdecode($file['gpx']))->items as $item) {
+        $update->execute([implode(',', $item['features']), $file['id'], $item['kind'], $item['position']]);
+    }
+    $files++;
+}
+$db->commit();
+echo "Read $files files of the Stash again for what their routes and tracks carry.\n";

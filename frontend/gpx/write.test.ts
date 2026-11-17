@@ -10,10 +10,10 @@ describe('gpxText', () => {
         { lngLat: [8.7, 49.4], name: 'Café <Mitte>', description: 'Open "late"', symbol: 'Flag, Blue', type: 'Cafés', links: ['https://example.org/?a=1&b=2'] },
         { lngLat: [8.8, 49.5], links: [] },
       ],
-      routes: [{ name: 'Loop', points: [[8.7, 49.4], [8.8, 49.5]], ways: [[], []] }],
+      routes: [{ name: 'Loop', points: [[8.7, 49.4], [8.8, 49.5]], ways: [[], []], vias: [undefined, undefined] }],
       tracks: [{ name: 'Ride', segments: [[[8.7, 49.4], [8.75, 49.45]], [[8.8, 49.5]]] }],
     };
-    expect(JSON.parse(JSON.stringify(parseGpx(gpxText(content))))).toEqual(content);
+    expect(JSON.parse(JSON.stringify(parseGpx(gpxText(content))))).toEqual(JSON.parse(JSON.stringify(content)));
   });
 
   it('writes a file that holds nothing as an empty GPX file', () => {

@@ -1253,6 +1253,18 @@ entries at the end of their section.
   kept in the page and no longer: they say what is looked at now, not what the trip
   is. A recording added to a day or put on it by the lookup is not pinned: a pin is the
   user's own choice, and the comparison reads it (see below).
+- **A via point of Garmin's trip planning is a stop on its route point.** BaseCamp and
+  the devices mark each point of a route as a via point, which is announced and counts
+  as a destination, or as a shaping point, which only bends the route
+  (`trp:ViaPoint`, `trp:ShapingPoint`). The planner has the same two things: a stop
+  bound to a route point, and a route point alone. Until now a stop was bound only
+  where the file also held a waypoint at the point's position, which such files often
+  do and not always. The mark is now read itself. A waypoint at the position still
+  wins, since it carries more (address, contact, links), and the via point there makes
+  no second stop. The times a via point may carry are not read into the stop: they are
+  the dates of the planning session far more often than a plan. The index of the Stash
+  names the extension by a chip of its own ("Garmin trip"); it is not part of GPXX,
+  which the two other Garmin chips are named after.
 - **A route is made a track, not given points along its way.** A route imported with
   the way a planner had calculated keeps that way as its legs, and loses it with the
   first edit of a point, since a leg belongs to its two ends: a round of 262 km

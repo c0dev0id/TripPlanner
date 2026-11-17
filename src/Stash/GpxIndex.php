@@ -27,7 +27,7 @@ final readonly class GpxIndex
     private const KINDS = ['rte' => 'route', 'trk' => 'track'];
 
     /** What a route or a track may carry, in the order it is listed. */
-    public const FEATURES = ['time', 'elevation', 'lean', 'acceleration', 'routeExtension', 'routePointExtension', 'dmd', 'rumo'];
+    public const FEATURES = ['time', 'elevation', 'lean', 'acceleration', 'routeExtension', 'routePointExtension', 'tripExtension', 'dmd', 'rumo'];
 
     /**
      * The values a point may carry, by the names files give them: a point's own elements
@@ -45,16 +45,17 @@ final readonly class GpxIndex
 
     /**
      * What an extension says a route or a track carries, by its namespace and its element,
-     * any element of it under `*`: Garmin's extensions of a route and of its points, and
-     * whatever DMD and Rumo write.
+     * any element of it under `*`: Garmin's extensions of a route and of its points, its
+     * trip planning, and whatever DMD and Rumo write.
      */
     private const EXTENSIONS = [
         'http://www.garmin.com/xmlschemas/GpxExtensions/v3' => ['RouteExtension' => 'routeExtension', 'RoutePointExtension' => 'routePointExtension'],
+        self::TRIP_EXTENSIONS => ['*' => 'tripExtension'],
         'https://dmdnavigation.com/ns/gpx/1' => ['*' => 'dmd'],
         'https://www.rumoadventures.com/xmlschemas/GpxExtensions/v1' => ['*' => 'rumo'],
     ];
 
-    /** The namespace of Garmin's trip planning, which says when a route's points are left. */
+    /** The namespace of Garmin's trip planning, which says which of a route's points are stops and when they are left. */
     private const TRIP_EXTENSIONS = 'http://www.garmin.com/xmlschemas/TripExtensions/v1';
 
     /** How many of a track's points are read whole for what they carry; the others are passed over once the track's start is known. */

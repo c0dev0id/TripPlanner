@@ -277,7 +277,9 @@
   its waypoints become stops, bound to a point of a GPX route they stand on, free otherwise, with
   their Garmin symbol as the file names it, and with the
   address and phone numbers Garmin's waypoint extension gives as their address and
-  contact. A track's row counts its points and
+  contact. Where Garmin's trip planning marks a route's points, a via point becomes a
+  stop on its point as well, under its name and symbol, unless a waypoint stands there
+  already, and a shaping point is a point of the route and nothing more. A track's row counts its points and
   lists only its stops, which are free along its line, and the map shows no marker for
   each of its points. Its menu condenses it (Douglas–Peucker at a distance chosen from a
   few, each with the count of points it leaves), and Convert in it makes a route of it:
@@ -324,7 +326,8 @@
   track with times when it began and a route planned with Garmin's trip planning when
   it is to leave, and under that what it carries that is not seen otherwise, as chips:
   times, elevation, lean angles and G-forces on its points, however the file writes
-  them, Garmin's extension of a route and of its points, and whether DMD or Rumo
+  them, Garmin's extension of a route and of its points, its trip planning ("Garmin
+  trip": which points are stops and which only shape the route), and whether DMD or Rumo
   wrote data of their own into it. It shows the file whole on the map, each line in the colour its row
   has and the waypoints as dots; a click on a route or a track, or on the row of the
   file's waypoints, shows that alone, another click the file again. What is shown
