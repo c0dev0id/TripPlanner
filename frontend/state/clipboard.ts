@@ -190,9 +190,9 @@ async function pasteRecordings(dayId: string, recordings: readonly KeptRide[], c
 }
 
 /** A recording's track as a route of the day under the recording's name, with every point; its waypoints are left aside. */
-function recordingAsRoute(dayId: string, name: string, gpx: string): CopiedRoute[] {
+async function recordingAsRoute(dayId: string, name: string, gpx: string): Promise<CopiedRoute[]> {
   const day = openTrip()?.days.find((d) => d.id === dayId);
-  const { routes } = gpxToDayParts(parseGpx(gpx), { fileName: name, profile: day ? defaultProfile(day) : 'motorcycle', newId });
+  const { routes } = gpxToDayParts(await parseGpx(gpx), { fileName: name, profile: day ? defaultProfile(day) : 'motorcycle', newId });
   return routes.map((route) => ({ route: { ...route, name }, stops: [], from: { date: null, name: '' } }));
 }
 
@@ -253,7 +253,7 @@ async function pastePartsIntoDay(dayId: string, parts: readonly StashPart[]): Pr
   try {
     const added = { routes: [] as Route[], stops: [] as Stop[] };
     for (const { file, items, waypoints } of parts) {
-      const gpx = parseGpx(await fetchStashGpx(file.id));
+      const gpx = await parseGpx(await fetchStashGpx(file.id));
       const taken = (kind: StashItem['kind']) => (_: unknown, position: number) => items.some((item) => item.kind === kind && item.position === position);
       const read = gpxToDayParts({ ...gpx, routes: gpx.routes.filter(taken('route')), tracks: gpx.tracks.filter(taken('track')) }, { fileName: file.name, profile: defaultProfile(day), newId });
       added.routes.push(...read.routes);
@@ -411,7 +411,7 @@ function partPaste(copied: Clip, kind: PartKind, id: string): PasteItem[] {
         }) },
       ...(only && more.length === 0 && cutFrom === undefined ? [{ label: t('Paste as route'), run: shown(() => {
               spent(copied);
-              void recordingAction(id, async () => pasteRoutes(id, recordingAsRoute(id, only.name, await fetchRideGpx(only.id))));
+              void recordingAction(id, async () => pasteRoutes(id, await recordingAsRoute(id, only.name, await fetchRideGpx(only.id))));
             }) }] : []),
     ];
   }

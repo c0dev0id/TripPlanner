@@ -21,9 +21,8 @@ describe('waysAlong', () => {
     expect(ways.flat()).toEqual(way.slice(1, -1));
   });
 
-  it('gives no ways where a point is not beside the way, or there is none', () => {
+  it('gives no ways where there is no way, or one point alone', () => {
     const way = along(8, 8.1);
-    expect(waysAlong([[8, 49], [8.05, 49.01], [8.1, 49]], way)).toEqual([[], [], []]);
     expect(waysAlong([[8, 49], [8.1, 49]], [])).toEqual([[], []]);
     expect(waysAlong([[8, 49]], way)).toEqual([[]]);
   });

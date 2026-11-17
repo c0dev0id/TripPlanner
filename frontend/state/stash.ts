@@ -49,7 +49,7 @@ const stash = createRoot(() => {
     undefined,
     { equals: (a, b) => a?.fileId === b?.fileId && a?.holds === b?.holds },
   );
-  const [read] = createResource(listed, async ({ fileId }) => ({ fileId, content: parseGpx(await fetchStashGpx(fileId)) }));
+  const [read] = createResource(listed, async ({ fileId }) => ({ fileId, content: await parseGpx(await fetchStashGpx(fileId)) }));
   /** The routes, by their points and the ways between them, and the tracks of the file shown, in the order the file is listed in; none until it is read. */
   const all = createMemo(() => {
     const file = read.error ? undefined : read.latest;

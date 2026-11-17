@@ -2,13 +2,6 @@ import { planeAt } from '../geo/measure';
 import { fractionOnSegment } from '../geo/nearest';
 import type { LngLat } from '../model/trip';
 
-/**
- * How far a route's point may lie from the way calculated for the route as a whole for
- * the way to count as the route's: farther, the points were changed after it was
- * calculated. Planners snap a point to the road, so a point lies some metres beside it.
- */
-const BESIDE_M = 100;
-
 /** Within this of the way, a point lies where the way first comes by it, not where it passes again on a round. */
 const AT_M = 50;
 
@@ -16,7 +9,7 @@ const AT_M = 50;
  * The way calculated for a route as a whole, cut at the route's points: for each point
  * the way's points from it on to the next, none for the last, as a file gives them that
  * has the way point by point. Each point lies on the way after the one before it. No
- * ways at all where a point is not beside the way, or there is no way.
+ * ways where there is no way.
  */
 export function waysAlong(points: readonly LngLat[], way: readonly LngLat[]): LngLat[][] {
   const none = points.map((): LngLat[] => []);
@@ -34,7 +27,6 @@ export function waysAlong(points: readonly LngLat[], way: readonly LngLat[]): Ln
       if (distance < nearest) [at, nearest] = [i, distance];
       else if (nearest <= AT_M && distance > AT_M) break;
     }
-    if (nearest > BESIDE_M) return none;
     cuts.push(at);
     from = at;
   }

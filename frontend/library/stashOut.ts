@@ -21,7 +21,7 @@ export interface Picked {
 export async function stashCopies(picked: readonly Picked[]): Promise<CopiedRoute[]> {
   const copies: CopiedRoute[] = [];
   for (const { file, items } of picked) {
-    const gpx = parseGpx(await fetchStashGpx(file.id));
+    const gpx = await parseGpx(await fetchStashGpx(file.id));
     const taken = (kind: StashItem['kind']) => (_: unknown, position: number) => !items || items.some((item) => item.kind === kind && item.position === position);
     const parts = gpxToDayParts({ ...gpx, routes: gpx.routes.filter(taken('route')), tracks: gpx.tracks.filter(taken('track')) }, { fileName: file.name, profile: 'motorcycle', newId });
     copies.push(...parts.routes.map((route) => ({ route, stops: stopsBoundTo(route, parts.stops), from: { date: null, name: file.name } })));
@@ -32,6 +32,6 @@ export async function stashCopies(picked: readonly Picked[]): Promise<CopiedRout
 /** The waypoints of the files whose waypoints are taken, as places for a list of places: each standing free, with the kind its file sorts it under. */
 export async function stashPlaces(parts: readonly StashPart[]): Promise<KindedPlace[]> {
   const places: KindedPlace[] = [];
-  for (const { file } of parts.filter((part) => part.waypoints)) places.push(...kindedWaypoints(parseGpx(await fetchStashGpx(file.id))));
+  for (const { file } of parts.filter((part) => part.waypoints)) places.push(...kindedWaypoints(await parseGpx(await fetchStashGpx(file.id))));
   return places;
 }

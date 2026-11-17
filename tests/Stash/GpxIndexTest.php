@@ -54,16 +54,22 @@ final class GpxIndexTest extends TestCase
         self::assertSame([['routePointExtension'], ['time', 'elevation'], []], $features);
     }
 
-    public function testARoutesLineFollowsTheWayDmdCalculatedWhereGarminGaveNone(): void
+    public function testARoutesLineFollowsTheWayDmdCalculatedForItsPointsWhereGarminGaveNone(): void
     {
-        $dmd = '<extensions><d:PreRendered xmlns:d="https://dmdnavigation.com/ns/gpx/1"><d:CalculatedRoute>49.4,8.7,100.0;49.45,8.75,110.5;49.4,8.8,120.0</d:CalculatedRoute></d:PreRendered></extensions>';
-        $points = fn (string $way) => "<rtept lat=\"49.4\" lon=\"8.7\">$way</rtept><rtept lat=\"49.4\" lon=\"8.8\"/>";
-        $garmin = '<extensions><g:RoutePointExtension xmlns:g="http://www.garmin.com/xmlschemas/GpxExtensions/v3"><g:rpt lat="49.3" lon="8.75"/></g:RoutePointExtension></extensions>';
-        [$alone, $both] = GpxIndex::of('<gpx><rte>' . $dmd . $points('') . '</rte><rte>' . $dmd . $points($garmin) . '</rte></gpx>')->items;
-        self::assertSame([[8.7, 49.4], [8.75, 49.45], [8.8, 49.4]], Polyline::decode($alone['line']));
+        // The hash of the points 48.123456,16.456789 and 48.2,16.5 with the profile road-fast-all.
+        $dmd = fn (string $version = '1') => '<extensions><d:PreRendered xmlns:d="https://dmdnavigation.com/ns/gpx/1" version="' . $version . '" hash="sha256:88cac865a9b95844" profile="road-fast-all">'
+            . '<d:CalculatedRoute>48.123456,16.456789,100.0;48.15,16.55,110.5;48.2,16.5,120.0</d:CalculatedRoute></d:PreRendered></extensions>';
+        $points = fn (string $way = '', string $last = '48.2') => "<rtept lat=\"48.1234564\" lon=\"16.4567891\">$way</rtept><rtept lat=\"$last\" lon=\"16.5\"/>";
+        $garmin = '<extensions><g:RoutePointExtension xmlns:g="http://www.garmin.com/xmlschemas/GpxExtensions/v3"><g:rpt lat="48.1" lon="16.48"/></g:RoutePointExtension></extensions>';
+        $routes = [$dmd() . $points(), $dmd() . $points($garmin), $dmd() . $points('', '48.21'), $dmd('2') . $points()];
+        [$alone, $both, $moved, $later] = GpxIndex::of('<gpx><rte>' . implode('</rte><rte>', $routes) . '</rte></gpx>')->items;
+        self::assertSame([[16.456789, 48.123456], [16.55, 48.15], [16.5, 48.2]], Polyline::decode($alone['line']));
         self::assertSame(2, $alone['points']);
-        self::assertEqualsWithDelta(13_240, $alone['distanceM'], 60);
-        self::assertSame([[8.7, 49.4], [8.75, 49.3], [8.8, 49.4]], Polyline::decode($both['line']));
+        self::assertEqualsWithDelta(14_100, $alone['distanceM'], 150);
+        self::assertSame([[16.456789, 48.123456], [16.48, 48.1], [16.5, 48.2]], Polyline::decode($both['line']));
+        // A point moved since, or a later version of what is written: the route's own points are its line.
+        self::assertCount(2, Polyline::decode($moved['line']));
+        self::assertCount(2, Polyline::decode($later['line']));
     }
 
     public function testSaysThatARouteCarriesGarminsTripPlanning(): void

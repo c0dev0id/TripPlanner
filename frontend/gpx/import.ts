@@ -155,10 +155,10 @@ export async function readRouteFile(file: File): Promise<GpxContent> {
   const text = await file.text();
   const [named, other] = /\.kml$/i.test(file.name) ? [parseKml, parseGpx] : [parseGpx, parseKml];
   try {
-    return named(text);
+    return await named(text);
   } catch (notAsNamed) {
     try {
-      return other(text);
+      return await other(text);
     } catch {
       throw notAsNamed;
     }

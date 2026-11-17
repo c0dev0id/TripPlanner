@@ -1,5 +1,6 @@
 import { t } from '../i18n/t';
 import type { LngLat } from '../model/trip';
+import { dmdWay } from './dmd';
 import { waysAlong } from './ways';
 import { children, parseXml, text } from './xml';
 
@@ -74,27 +75,18 @@ function garminVia(rtept: Element): GpxVia | undefined {
   return via ? { name: text(rtept, 'name'), symbol: text(rtept, 'sym') } : undefined;
 }
 
-/** The way DMD's planner calculated for a route as a whole (`dmd:PreRendered`, `dmd:CalculatedRoute`): its points as `lat,lon,ele`, one after the other with a semicolon between. */
-function dmdWay(rte: Element): LngLat[] {
-  const [calculated] = children(rte, 'extensions').flatMap((e) => children(e, 'PreRendered')).flatMap((e) => children(e, 'CalculatedRoute'));
-  return (calculated?.textContent ?? '').split(';').flatMap((point) => {
-    const [lat, lng] = point.split(',').map(Number);
-    return point.includes(',') && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat!) <= 90 ? [[lng!, lat!] as LngLat] : [];
-  });
-}
-
-function route(rte: Element): GpxContent['routes'][number] {
+async function route(rte: Element): Promise<GpxContent['routes'][number]> {
   const rtepts = children(rte, 'rtept').filter((p) => position(p) !== undefined);
   const points = positions(rtepts);
   const garmin = rtepts.map((p) => positions(garminWay(p)));
-  return { name: text(rte, 'name'), points, ways: garmin.some((way) => way.length > 0) ? garmin : waysAlong(points, dmdWay(rte)), vias: rtepts.map(garminVia) };
+  return { name: text(rte, 'name'), points, ways: garmin.some((way) => way.length > 0) ? garmin : waysAlong(points, await dmdWay(rte, points)), vias: rtepts.map(garminVia) };
 }
 
 /** Whether a text is a GPX file's, by how it begins, as the server tells one. */
 export const isGpxText = (text: string): boolean => /<gpx[\s>]/.test(text.slice(0, 4096));
 
 /** Reads a GPX document; throws for anything else. */
-export function parseGpx(xml: string): GpxContent {
+export async function parseGpx(xml: string): Promise<GpxContent> {
   const root = parseXml(xml);
   if (root?.localName !== 'gpx') throw new Error(t('This is not a GPX file.'));
   const metadata = children(root, 'metadata')[0];
@@ -105,7 +97,7 @@ export function parseGpx(xml: string): GpxContent {
       const links = children(w, 'link').flatMap((link) => link.getAttribute('href')?.trim() || []);
       return lngLat ? [{ lngLat, name: text(w, 'name'), description: text(w, 'desc') ?? text(w, 'cmt'), symbol: text(w, 'sym'), type: text(w, 'type'), links, ...garminContact(w) }] : [];
     }),
-    routes: children(root, 'rte').map(route),
+    routes: await Promise.all(children(root, 'rte').map(route)),
     tracks: children(root, 'trk').map((t) => {
       const segments = children(t, 'trkseg').map((segment) => children(segment, 'trkpt'));
       const first = segments.find((points) => points.length > 0)?.[0];

@@ -1267,19 +1267,26 @@ entries at the end of their section.
   trip: asked again after a reload is the lesser evil than a column for it.
 - **DMD's calculated way is a route's way where Garmin gave none.** DMD's planner
   writes into a route the way it calculated for it as a whole
-  (`dmd:PreRendered`, `dmd:CalculatedRoute`), with a hash, turn instructions, surfaces
-  and timings, of which the way alone is read. A leg belongs to its two ends, so the
-  way is cut at the route's points (`gpx/ways.ts`): each point lies where the way
-  first comes by it after the point before, within 50 m, since a planner snaps a
-  point to the road and a round passes a place twice. Over 974 routes of a club's
-  files no point lay farther than 30 m from its route's way. A point more than 100 m
-  from it means the points were changed after the way was calculated, and the way is
-  not used: the hash would say so, but what it is of is not documented. Garmin's way
-  comes first where a file has both, which 846 of those 930 files do: they are
-  BaseCamp routes that DMD's planner calculated again, and its way can be far from
-  the author's (one round of 145 km between two points is 22 km in DMD's). A leg does
-  not keep which planner its way is from, so a trip's row says "Original way" for
-  either. The index of the Stash follows the same order for a route's line and length.
+  (`dmd:PreRendered`, `dmd:CalculatedRoute`; documented at
+  docs.dmdnavigation.com/dev/gpx-extension), with turn instructions, surfaces, timings
+  and warnings, of which the way alone is read. What is written carries a hash of the
+  route's points and the profile, and is used only while that hash is the one of the
+  points the route has now: a point moved, added or removed elsewhere makes it stale,
+  and the legs are then left to the routing, as for a later version of the format
+  (`gpx/dmd.ts`, and `Stash/GpxIndex` for the index). The documentation says the
+  coordinates are cut off after six decimals for the hash; the planner's files hash
+  them rounded to six, which is what is done: all 978 routes of a club's files verify
+  that way, 223 the other. Checking the hash is why reading a GPX file is
+  asynchronous: the browser's digest is. A leg belongs to its two ends, so the way is
+  cut at the route's points (`gpx/ways.ts`): each point lies where the way first
+  comes by it after the point before, within 50 m, since a planner snaps a point to
+  the road and a round passes a place twice; in those files no point lay farther than
+  30 m from its route's way. Garmin's way comes first where a file has both, which
+  846 of those 930 files do: they are BaseCamp routes that DMD's planner calculated
+  again, and its way can be far from the author's (one round of 145 km between two
+  points is 22 km in DMD's). A leg does not keep which planner its way is from, so a
+  trip's row says "Original way" for either. The index of the Stash follows the same
+  order for a route's line and length.
 - **A via point of Garmin's trip planning is a stop on its route point.** BaseCamp and
   the devices mark each point of a route as a via point, which is announced and counts
   as a destination, or as a shaping point, which only bends the route

@@ -275,7 +275,8 @@
   routed, except those the file carries the way a planner calculated for, which keep that
   way: Garmin's, given from each point to the next, or, where the file has none of
   that, the way DMD's planner calculated for the route as a whole, cut at the route's
-  points; its tracks keep their line with every point;
+  points, as long as the route still has the points it was calculated for, which its
+  hash says; its tracks keep their line with every point;
   its waypoints become stops, bound to a point of a GPX route they stand on, free otherwise, with
   their Garmin symbol as the file names it, and with the
   address and phone numbers Garmin's waypoint extension gives as their address and

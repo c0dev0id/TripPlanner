@@ -58,6 +58,9 @@ final readonly class GpxIndex
     /** The namespace of what DMD's planner writes into a route: among it the way it calculated for the route as a whole. */
     private const DMD = 'https://dmdnavigation.com/ns/gpx/1';
 
+    /** The version of what DMD's planner writes that is read here. */
+    private const DMD_VERSION = '1';
+
     /** The namespace of Garmin's trip planning, which says which of a route's points are stops and when they are left. */
     private const TRIP_EXTENSIONS = 'http://www.garmin.com/xmlschemas/TripExtensions/v1';
 
@@ -82,12 +85,14 @@ final readonly class GpxIndex
         $line = [];
         $pointDepth = null;
         $inPoint = null;
-        // The way DMD calculated for the route being read, and whether Garmin's way was read between its points, which then is the route's line.
+        // The way DMD calculated for the route being read with the hash of the points it calculated for, the route's own points, and whether Garmin's way was read between them, which then is the route's line.
         $calculated = [];
+        $hash = null;
+        $points = [];
         $between = false;
-        $close = function () use (&$open, &$line, &$items, &$calculated, &$between): void {
+        $close = function () use (&$open, &$line, &$items, &$calculated, &$hash, &$points, &$between): void {
             $features = array_values(array_filter(self::FEATURES, fn (string $feature) => isset($open['features'][$feature])));
-            if (!$between && count($calculated) > 1) {
+            if (!$between && count($calculated) > 1 && $hash !== null && $hash['of'] === self::dmdHash($points, $hash['profile'])) {
                 $line = $calculated;
                 $open['distanceM'] = 0.0;
                 for ($i = 1; $i < count($line); $i++) {
@@ -127,6 +132,8 @@ final readonly class GpxIndex
                     $open = ['kind' => $kind, 'position' => $counts[$kind]++, 'name' => '', 'distanceM' => 0.0, 'points' => 0, 'startedAt' => null, 'features' => []];
                     $line = [];
                     $calculated = [];
+                    $hash = null;
+                    $points = [];
                     $between = false;
                     $pointDepth = null;
                     $inPoint = null;
@@ -151,8 +158,12 @@ final readonly class GpxIndex
             if ($element === 'DepartureTime' && $open['kind'] === 'route' && $open['startedAt'] === null && $reader->namespaceURI === self::TRIP_EXTENSIONS) {
                 $open['startedAt'] = TrackSummary::time($reader->readString());
             }
-            if ($element === 'CalculatedRoute' && $open['kind'] === 'route' && $reader->namespaceURI === self::DMD) {
-                $calculated = self::positions($reader->readString());
+            if ($open['kind'] === 'route' && $reader->namespaceURI === self::DMD) {
+                if ($element === 'PreRendered' && $reader->getAttribute('version') === self::DMD_VERSION) {
+                    $hash = ['of' => (string) $reader->getAttribute('hash'), 'profile' => (string) $reader->getAttribute('profile')];
+                } elseif ($element === 'CalculatedRoute') {
+                    $calculated = self::positions($reader->readString());
+                }
             }
             $between = $between || $element === 'rpt';
             if ($element === 'name' && $reader->depth === 2) {
@@ -164,6 +175,9 @@ final readonly class GpxIndex
                     $open['distanceM'] += $line === [] ? 0.0 : Proximity::between($line[count($line) - 1], $point);
                     $line[] = $point;
                     $open['points'] += $element === 'rpt' ? 0 : 1;
+                    if ($element === 'rtept') {
+                        $points[] = $point;
+                    }
                 }
                 $pointDepth = $element === 'trkpt' ? $reader->depth : $pointDepth;
                 $inPoint = $element === 'rpt' ? $inPoint : $reader->depth;
@@ -176,6 +190,18 @@ final readonly class GpxIndex
         libxml_clear_errors();
         libxml_use_internal_errors($errors);
         return new self($waypoints, $items, $creator, $exportedAt);
+    }
+
+    /**
+     * The hash DMD's planner gives what it calculated: of the route's points and the
+     * profile, so that it tells whether they are still the ones it calculated for.
+     *
+     * @param list<array{0: float, 1: float}> $points
+     */
+    private static function dmdHash(array $points, string $profile): string
+    {
+        $written = array_map(fn (array $point) => number_format($point[1], 6, '.', '') . ',' . number_format($point[0], 6, '.', ''), $points);
+        return 'sha256:' . substr(hash('sha256', implode(';', $written) . ';profile=' . $profile), 0, 16);
     }
 
     /**
