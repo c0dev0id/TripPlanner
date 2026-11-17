@@ -6,7 +6,7 @@ import { byTimeTaken } from '../model/journalDocument';
 import type { Day } from '../model/trip';
 import { roundLngLat } from '../routing/legs';
 import { panTo } from '../state/drawing';
-import { addEntry, chapters, editEntry, linkEntry, orderChapter, placeEntry, removeEntry, shownEntryId } from '../state/journal';
+import { addEntry, chapters, editEntry, journalError, linkEntry, orderChapter, placeEntry, removeEntry, shownEntryId } from '../state/journal';
 import { mapView } from '../state/places';
 import { openPublication, publish } from '../state/publication';
 import { openTrip, openTripId, selectDay } from '../state/trip';
@@ -183,7 +183,7 @@ export function ChapterEditor(props: { day: Day | undefined }) {
       <ul class="journal-rows" ref={(el) => dropTarget<Entry>(el, 'entry', (carried) => (entries().some((e) => e.id === carried.id) ? null : () => order([...entries(), carried])))}>
         <ForById each={entries()}>{(entry, index) => <EntryRow entry={entry()} index={index()} day={props.day} onMove={(to) => move(index(), to)} run={run} />}</ForById>
       </ul>
-      <Show when={error()}>{(message) => <p class="error">{message()}</p>}</Show>
+      <Show when={journalError() ?? error()}>{(message) => <p class="error">{message()}</p>}</Show>
       <form class="journal-add" onSubmit={add} on:keydown={(e) => e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.currentTarget.requestSubmit()}>
         <textarea ref={text} rows={2} maxlength={20000} placeholder={t('Write what happened. Markdown works.')} />
         <div class="row end">

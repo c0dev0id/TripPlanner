@@ -1,5 +1,5 @@
 import { batch, createEffect, createMemo, createResource, createRoot, createSignal, on } from 'solid-js';
-import { addEntry as postEntry, deleteEntry, listEntriesAt, orderEntries, tripApi, updateEntry } from '../api';
+import { addEntry as postEntry, deleteEntry, errorMessage, listEntriesAt, orderEntries, tripApi, updateEntry } from '../api';
 import { dayOfEntry, entriesOn as entriesOf, type Entry, type EntryTarget } from '../model/journal';
 import { chaptersOf, type Chapter } from '../model/journalDocument';
 import type { LngLat } from '../model/trip';
@@ -11,14 +11,20 @@ import { openDetail, openTrip, openTripId, partsLost } from './trip';
 
 const [entries, { mutate, refetch }] = createRoot(() => createResource(openTripId, (id) => listEntriesAt(tripApi(id))));
 
-// A save that took a part off the trip linked the entries on it anew: to its day, or to the trip.
-createRoot(() => createEffect(on(partsLost, () => void refetch(), { defer: true })));
+/** Reads the journal again. A reading that fails is the resource's to show, not an error of whoever asked for it. */
+const reread = (): void => void Promise.resolve(refetch()).catch(() => undefined);
 
-/** The entries of the open trip; none until they are loaded. */
+// A save that took a part off the trip linked the entries on it anew: to its day, or to the trip.
+createRoot(() => createEffect(on(partsLost, reread, { defer: true })));
+
+/** The entries of the open trip; none until they are loaded, and none where they could not be. */
 export function allEntries(): Entry[] {
   const tripId = openTripId();
-  return (entries() ?? []).filter((e) => e.tripId === tripId);
+  return entries.error ? [] : (entries() ?? []).filter((e) => e.tripId === tripId);
 }
+
+/** Why the journal could not be read; nothing where it was. */
+export const journalError = (): string | undefined => (entries.error ? errorMessage(entries.error) : undefined);
 
 export const entriesOn = (target: EntryTarget): Entry[] => entriesOf(allEntries(), target);
 
@@ -104,7 +110,7 @@ async function change(entry: Entry, sent: Parameters<typeof updateEntry>[2], her
     await updateEntry(entry.tripId, entry.id, sent);
     announceChange();
   } catch (error) {
-    void refetch();
+    reread();
     throw error;
   }
 }
@@ -142,7 +148,7 @@ export async function orderChapter(dayId: string | null, ordered: readonly Entry
     await orderEntries(tripId, dayId, [...places.keys()]);
     announceChange();
   } catch (error) {
-    void refetch();
+    reread();
     throw error;
   }
 }
