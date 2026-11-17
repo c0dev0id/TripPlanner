@@ -171,7 +171,9 @@ A trip shared under a token is readable without sign-in, and without a session, 
 - a day's media are neither listed nor fetched there.
 
 The read-only page is served at `/trips/{id}` for the owner and at `/t/{token}` for
-everyone; the page names the API it reads from.
+everyone; the page names the API it reads from. The shared page is answered 404 for a
+token no trip is shared under, and carries the trip's name, description and cover in
+its head for a link's preview.
 
 ## Database
 

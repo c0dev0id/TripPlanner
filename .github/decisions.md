@@ -1883,6 +1883,11 @@ entries at the end of their section.
   that a field added to a stop is private until it is let through there. An entry
   goes out without where its photo was taken, which the owner may have moved it away
   from on purpose. The owner's own page keeps everything: it is the roadbook.
+- **The shared page is headed on the server.** A link pasted into a messenger is
+  fetched by a program that runs no script, so the page's title, description and
+  cover picture are written into the template from the trip, and an unknown token is
+  answered 404 instead of a page that then fails to load. The page asks not to be
+  indexed: a share link is for whom it is sent to.
 - **The asset tags walk the manifest's imports.** With two entries, Vite puts the styles
   both import (MapLibre's and the markers') into the chunk they share, listed under that
   chunk in the manifest, not under the entries. The tags of a page are the stylesheets
