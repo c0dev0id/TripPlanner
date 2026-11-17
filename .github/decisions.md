@@ -665,8 +665,8 @@ entries at the end of their section.
   instead, an ordinary section with no route; a file that belongs to one route can be
   moved to that route's section. Making a trip, such a section makes no day and its
   media go with the first: files carry no date to place them by.
-- **A day takes its media along.** A journal entry outlives its part and stays with the
-  trip, as the diary should. Media without their day would be files nobody can find,
+- **A day takes its media along.** A journal entry outlives its part and stays in the
+  journal, as the diary should. Media without their day would be files nobody can find,
   so the entries a save leaves without a day are removed with their files, right after
   the save that removed the day.
 - **Media are not shared.** The journal is on a shared trip's page with its files.
@@ -1793,17 +1793,41 @@ entries at the end of their section.
   stops in riding order) rather than only the entries on the trip itself, which are few.
   That is the journal read after the ride; the parts' own journals are where entries are
   made during it. A second dialog for the overview would have doubled the entry list.
-- **An entry outlives its part.** A photo on a stop stays with the trip when the stop
-  is removed, with its day, stop or route reference set to null: the journal is the
-  record of the trip, and a removed stop is still where the photo was taken. The first
-  draft cascaded the deletion; a stop moved in a reorganisation would have taken its
-  photos with it.
+- **An entry outlives its part.** A photo on a stop stays in the journal when the stop
+  is removed: the journal is the record of the trip, and a removed stop is still where
+  the photo was taken. The first draft cascaded the deletion; a stop moved in a
+  reorganisation would have taken its photos with it. An entry whose route or stop goes
+  is linked to their day, so that it stays in its chapter; before the journal had
+  chapters it fell back to the trip, which would now move it to the introduction. One
+  whose day goes has no chapter left and stays with the trip.
+- **The journal is ordered within its chapters.** The journal reads as the trip's own
+  entries and then a chapter for each day, in the days' order, with the entries on the
+  day, its routes and its stops. The chapter follows from what an entry is linked to and
+  is not stored, so a route moved to another day takes its entries along. `position`
+  orders the entries within a chapter and is read with the id as a tie-break. A new
+  entry gets a position after every entry of the trip, which is after every entry of
+  whichever chapter it lands in, and one query. A reorder numbers the ids it is given
+  from zero and leaves the other chapters alone; positions are only compared within a
+  chapter, so their being unique across the trip is not needed. An entry dragged into
+  another chapter is linked to that day, or to the trip, and loses its route or stop,
+  since those belong to the chapter it left. A merge adds each trip's entries after
+  those the trip has by then.
+- **Where a photo was taken and where it stands are two things.** `taken_lng` and
+  `taken_lat` are the camera's position and never change; `lng` and `lat` are where the
+  entry is on the map. They start equal. The user may put a photo elsewhere (one without
+  a position, or one taken at home that belongs to a place on the route) or take it off
+  the map, which is `lng` and `lat` null. Reading the stored file again to put a photo
+  back was the alternative and needed no columns, but then the client could not tell
+  whether a photo has a place of its own, and would have to offer "where it was taken"
+  for photos where it can never work.
 - **Photos are placed by their EXIF data on the server.** The server reads the time the
   camera wrote (local, without a zone) and the GPS position from the upload before the
   entry is written, since it has the file anyway and the browser would need a parser of
   its own; the entry is one insert, placed as it is stored. A photo added
-  to the trip itself goes to the day of its date; one added to a day, a stop or a route
-  stays where the user put it. The position places it on the map; nothing is matched
+  to the trip itself goes to the day of its date where the client asks for that
+  (`byDate`), which the journal does and the import of an archive does not: there the
+  entry was on the trip when it was exported, perhaps put there by hand. One added to a
+  day, a stop or a route stays where the user put it. The position places it on the map; nothing is matched
   against the route. Without the exif extension a photo is kept and shown, not placed.
   An entry made at a spot on the map is sent with that spot and stands there, unless
   its photo has a position of its own, which wins: the camera knows where it was, the

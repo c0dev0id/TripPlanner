@@ -327,6 +327,10 @@ final class TripDocumentsTest extends TestCase
         ];
         $this->save($document, 1, $other);
         $entries = new Entries($this->db);
+        $before = $entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], 'Sun', null, $this->now);
+        $entries->add($this->userId, $this->tripId, [], 'Gone', null, $this->now);
+        $after = $entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], 'Clouds', null, $this->now);
+        $entries->delete($this->userId, $this->tripId, $after->id - 1);
         $onDay = $entries->add($this->userId, $other, ['dayId' => 'b1'], 'Rain', null, $this->now);
         $onStop = $entries->add($this->userId, $other, ['stopId' => 'bs'], 'View', null, $this->now);
         $onTrip = $entries->add($this->userId, $other, [], 'Packed', null, $this->now);
@@ -340,7 +344,10 @@ final class TripDocumentsTest extends TestCase
         self::assertSame('Second file', $merged['days'][0]['notes']);
         self::assertNull($this->documents->load($this->userId, $other));
         $moved = array_map(fn ($e) => [$e->id, $e->tripId, $e->dayId, $e->stopId], $entries->listFor($this->userId, $this->tripId));
-        self::assertEqualsCanonicalizing([[$onDay->id, $this->tripId, 'day1', null], [$onStop->id, $this->tripId, null, 'bs'], [$onTrip->id, $this->tripId, null, null]], $moved);
+        self::assertSame([
+            [$before->id, $this->tripId, 'day1', null], [$after->id, $this->tripId, 'day1', null],
+            [$onDay->id, $this->tripId, 'day1', null], [$onStop->id, $this->tripId, null, 'bs'], [$onTrip->id, $this->tripId, null, null],
+        ], $moved);
     }
 
     public function testMergesOnlyTripsOfOneKind(): void

@@ -254,7 +254,13 @@ final class TripDocuments
                 $this->db->prepare('UPDATE days SET trip_id = ? WHERE id IN (' . Database::placeholders($moved) . ')')->execute([$intoId, ...$moved]);
             }
             $this->saveDays($intoId, $days);
-            $this->db->prepare("UPDATE entries SET trip_id = ? WHERE trip_id IN ($in)")->execute([$intoId, ...$fromIds]);
+            // Each trip's entries follow those the trip has by then, in their own order.
+            $after = $this->db->prepare('SELECT COALESCE(MAX(position), -1) + 1 FROM entries WHERE trip_id = ?');
+            $moveEntries = $this->db->prepare('UPDATE entries SET trip_id = ?, position = position + ? WHERE trip_id = ?');
+            foreach ($fromIds as $fromId) {
+                $after->execute([$intoId]);
+                $moveEntries->execute([$intoId, $after->fetchColumn(), $fromId]);
+            }
             $joinEntries = $this->db->prepare('UPDATE entries SET day_id = ? WHERE day_id = ?');
             // The day that goes takes with it what it has of a ride both days have.
             $joinRecordings = $this->db->prepare('UPDATE OR IGNORE recording_days SET day_id = ? WHERE day_id = ?');
@@ -374,8 +380,8 @@ final class TripDocuments
         [$routeIds, $stopIds] = self::childIds($days);
         $unchangedDays = array_column(array_filter($days, TripDocumentValidator::isUnchanged(...)), 'id');
         $sentWhole = 'day_id IN (SELECT id FROM days WHERE trip_id = ?' . ($unchangedDays === [] ? '' : ' AND id NOT IN (' . Database::placeholders($unchangedDays) . ')') . ')';
-        $this->deleteMissing('routes', $sentWhole, [$tripId, ...$unchangedDays], $routeIds);
-        $this->deleteMissing('stops', $sentWhole, [$tripId, ...$unchangedDays], $stopIds);
+        $this->deleteMissing('routes', $sentWhole, [$tripId, ...$unchangedDays], $routeIds, 'route_id');
+        $this->deleteMissing('stops', $sentWhole, [$tripId, ...$unchangedDays], $stopIds, 'stop_id');
         $this->deleteMissing('days', 'trip_id = ?', [$tripId], array_column($days, 'id'));
         foreach ($days as $position => $day) {
             if (TripDocumentValidator::isUnchanged($day)) {
@@ -406,14 +412,21 @@ final class TripDocuments
         }
     }
 
-    /** Deletes the rows of the table within `scope` whose id is not among `keep`. */
-    private function deleteMissing(string $table, string $scope, array $scopeParams, array $keep): void
+    /**
+     * Deletes the rows of the table within `scope` whose id is not among `keep`. The
+     * journal entries on them, linked by `entryLink` where given, stay with their days.
+     */
+    private function deleteMissing(string $table, string $scope, array $scopeParams, array $keep, ?string $entryLink = null): void
     {
-        $sql = "DELETE FROM $table WHERE $scope";
-        if ($keep !== []) {
-            $sql .= ' AND id NOT IN (' . Database::placeholders($keep) . ')';
+        $missing = $keep === [] ? $scope : "$scope AND id NOT IN (" . Database::placeholders($keep) . ')';
+        $params = [...$scopeParams, ...$keep];
+        if ($entryLink !== null) {
+            $this->db->prepare(
+                "UPDATE entries SET day_id = (SELECT day_id FROM $table WHERE id = entries.$entryLink), $entryLink = NULL
+                 WHERE $entryLink IN (SELECT id FROM $table WHERE $missing)",
+            )->execute($params);
         }
-        $this->db->prepare($sql)->execute([...$scopeParams, ...$keep]);
+        $this->db->prepare("DELETE FROM $table WHERE $missing")->execute($params);
     }
 
     private function rows(string $sql, int $id): array

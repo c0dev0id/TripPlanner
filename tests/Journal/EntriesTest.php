@@ -151,14 +151,23 @@ final class EntriesTest extends TestCase
         self::assertNull($this->entries->find($this->userId, $this->tripId, $note->id));
     }
 
-    public function testStaysWithTheTripWhenItsPartGoes(): void
+    public function testStaysWithTheDayWhenItsRouteOrStopGoesAndWithTheTripWhenItsDayDoes(): void
     {
         $onStop = $this->entries->add($this->userId, $this->tripId, ['stopId' => 's3'], 'Great cake', null, $this->now);
+        $onRoute = $this->entries->add($this->userId, $this->tripId, ['routeId' => 'r1'], 'Hairpins', null, $this->now);
+        $kept = $this->entries->add($this->userId, $this->tripId, ['stopId' => 's1'], 'Off we go', null, $this->now);
+        $linked = fn ($entry) => (fn ($e) => [$e->dayId, $e->routeId, $e->stopId, $e->text])($this->entries->find($this->userId, $this->tripId, $entry->id));
         $document = TripFixture::document();
         array_pop($document['days'][0]['stops']);
         $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated($document), 2, $this->now);
-        self::assertNull($this->entries->find($this->userId, $this->tripId, $onStop->id)->stopId);
-        self::assertSame('Great cake', $this->entries->find($this->userId, $this->tripId, $onStop->id)->text);
+        self::assertSame(['day1', null, null, 'Great cake'], $linked($onStop));
+        self::assertSame([null, 'r1', null, 'Hairpins'], $linked($onRoute));
+        self::assertSame([null, null, 's1', 'Off we go'], $linked($kept));
+        $document['days'] = [TripFixture::day('day2')];
+        $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated($document), 3, $this->now);
+        self::assertSame([null, null, null, 'Great cake'], $linked($onStop));
+        self::assertSame([null, null, null, 'Hairpins'], $linked($onRoute));
+        self::assertSame([null, null, null, 'Off we go'], $linked($kept));
     }
 
     public function testKeepsADaysMediaApartFromTheJournalAndFromASharedTrip(): void
