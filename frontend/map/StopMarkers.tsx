@@ -34,7 +34,11 @@ function StopMarker(props: { map: MapLibreMap; stop: Stop }) {
     handle.setInteractive(editing());
     handle.setDraggable(editing() && dragsMarkers());
   });
-  handle.marker.on('dragend', () => moveStop(id, toLngLat(handle.marker.getLngLat())));
+  handle.marker.on('dragend', () => {
+    moveStop(id, toLngLat(handle.marker.getLngLat()));
+    // Where the move is asked about first, or refused, the marker goes back to where its stop is.
+    handle.setPosition(stop().lngLat);
+  });
   handle.root.addEventListener('click', () => {
     if (tapAction() === 'delete') removeStop(id);
     else if (tapAction() !== undefined) setEditTarget({ kind: 'stop', id });

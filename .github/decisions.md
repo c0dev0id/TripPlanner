@@ -1253,6 +1253,18 @@ entries at the end of their section.
   kept in the page and no longer: they say what is looked at now, not what the trip
   is. A recording added to a day or put on it by the lookup is not pinned: a pin is the
   user's own choice, and the comparison reads it (see below).
+- **The first edit that loses a route's original way is asked about.** A way a planner
+  calculated is what the route's author meant, and it goes without a sign when a leg
+  is routed again: the line moves a little, or a round of 145 km becomes one of 22.
+  Refusing such edits would make the route a track; keeping the way silently beside
+  every edited route would fill days with tracks nobody asked for. So the edit is
+  held and the user asked once for each route (`state/trip.ts`, `edit`): keep the
+  original as a track beside the route, which a conversion makes anyway, change
+  without it, or leave it. The check is on the edit's result, fewer legs along a
+  file's way than before, so every way of editing is covered and an edit that loses
+  nothing (a point added at the end, a name) is not asked about. Undo and redo are
+  not edits and are not asked about. The answer is kept for the page, not with the
+  trip: asked again after a reload is the lesser evil than a column for it.
 - **DMD's calculated way is a route's way where Garmin gave none.** DMD's planner
   writes into a route the way it calculated for it as a whole
   (`dmd:PreRendered`, `dmd:CalculatedRoute`), with a hash, turn instructions, surfaces

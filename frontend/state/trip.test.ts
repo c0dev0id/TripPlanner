@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { Trip } from '../model/trip';
+import type { RoutedRoute, Trip } from '../model/trip';
+import { routedLegs } from '../routing/legs';
+import { decodePolyline, encodePolyline } from '../routing/polyline';
+import { answerQuestion, question } from '../ui/confirm';
 import { routedOf } from '../routing/testing';
-import { activeRouteId, addDay, convertRouteToTrack, convertTrackToRoute, closeDaysPane, daysPaneOpen, openDaysPane, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
+import { activeRouteId, addDay, movePoint, convertRouteToTrack, convertTrackToRoute, closeDaysPane, daysPaneOpen, openDaysPane, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -200,6 +203,38 @@ describe('the open trip', () => {
     undo();
     undo();
     expect(openTrip()!.days[0]!.routes).toEqual([route]);
+  });
+
+  it('asks before the first edit that loses a route\'s original way, and keeps it as a track where that is asked for', async () => {
+    const route: RoutedRoute = { id: 'r', name: 'Loop', kind: 'routed', profile: 'motorcycle', highways: 'allow', optional: false, color: null, points: [{ id: 'a', lngLat: [8, 49] }, { id: 'b', lngLat: [8.1, 49] }, { id: 'c', lngLat: [8.2, 49] }], legs: {} };
+    const fromFile = { geometry: encodePolyline([[8, 49], [8.05, 49.05], [8.1, 49]]), distanceM: 1, durationS: null };
+    const loop: RoutedRoute = { ...route, legs: Object.fromEntries(routedLegs(route).map((leg) => [leg.key, fromFile])) };
+    closeTrip();
+    loadTrip({ ...empty(), days: [{ id: 'd', name: '', date: null, notes: '', routes: [loop], stops: [] }] });
+    const routes = () => openTrip()!.days[0]!.routes;
+    // Refused, the edit is not made; asked again, it is made without the original, and no more is asked of that route.
+    movePoint('r', 'b', [8.1, 49.01]);
+    expect([routes(), question()?.actions]).toEqual([[loop], ['Change without', 'Keep the original']]);
+    answerQuestion();
+    await Promise.resolve();
+    expect(routes()).toEqual([loop]);
+    // An edit that loses nothing of it is not asked about.
+    appendPoint('r', [8.3, 49]);
+    expect([routes()[0] === loop, question()]).toEqual([false, undefined]);
+    undo();
+    movePoint('r', 'b', [8.1, 49.01]);
+    answerQuestion('Keep the original');
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(routes().map((r) => [r.kind, r.name])).toEqual([
+      ['routed', 'Loop'],
+      ['track', 'Loop'],
+    ]);
+    expect(routedOf(routes()[0]!).points[1]!.lngLat).toEqual([8.1, 49.01]);
+    const track = routes()[1]!;
+    expect(track.kind === 'track' && decodePolyline(track.line)).toHaveLength(5);
+    movePoint('r', 'c', [8.2, 49.01]);
+    expect([question(), routedOf(routes()[0]!).points[2]!.lngLat]).toEqual([undefined, [8.2, 49.01]]);
   });
 
   it('takes up a route of a collection without editing it', () => {

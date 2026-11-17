@@ -34,7 +34,11 @@ function PointMarker(props: { map: MapLibreMap; routeId: string; point: RoutePoi
   const handle = new MarkerHandle(map, content, 'point-marker');
   createEffect(() => handle.setPosition(point().lngLat));
   createEffect(() => handle.setDraggable(dragsMarkers()));
-  handle.marker.on('dragend', () => movePoint(routeId, pointId, toLngLat(handle.marker.getLngLat())));
+  handle.marker.on('dragend', () => {
+    movePoint(routeId, pointId, toLngLat(handle.marker.getLngLat()));
+    // Where the move is asked about first, or refused, the marker goes back to where its point is.
+    handle.setPosition(point().lngLat);
+  });
   handle.root.addEventListener('click', () => {
     if (tapAction() === 'delete') removePoint(routeId, pointId);
     else if (tapAction() === 'stop') convertPoint(pointId);

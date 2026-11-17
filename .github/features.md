@@ -465,7 +465,10 @@
   line: that is how a route that came with two points and the way a planner had
   calculated between them gets one beside it that can be edited. A route whose legs still run along the way its file calculated says so
   on its row by a chip, "Original way", with how many of its legs do where not all
-  do; the chip goes as those legs are routed again. Nothing else a file's route or track carries (times,
+  do; the chip goes as those legs are routed again. The first edit that would route
+  such a way again (a point moved, added on it or removed, another profile, Reroute)
+  is asked about before it is made: the original is kept as a track beside the route
+  and the edit made, or the edit made without, or left. A route is asked about once. Nothing else a file's route or track carries (times,
   elevation, lean angles, accelerations, what DMD or Rumo wrote) is kept in a trip, so
   a trip's rows have no chips for it. The free stops of
   a day or section, or those selected, become a route ("Waypoints to route", in a trip

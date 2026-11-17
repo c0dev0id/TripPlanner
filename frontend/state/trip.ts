@@ -2,10 +2,11 @@ import { t } from '../i18n/t';
 import { batch, createMemo, createRoot, createSelector, createSignal } from 'solid-js';
 import { newId, withChanges, type Day, type LngLat, type Route, type RoutedLeg, type RoutedRoute, type Stop, type Trip } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
-import { roundLngLat } from '../routing/legs';
+import { fileLegCount, roundLngLat } from '../routing/legs';
 import * as routeEdit from '../routing/routeEdit';
 import { daySequence, type SequenceEntry } from '../routing/sequence';
 import { dayTimeline, type DayTimeline } from '../routing/timeline';
+import { askChoice } from '../ui/confirm';
 import { History } from './history';
 import { setShowingDuplicates } from './pane';
 
@@ -246,12 +247,47 @@ export function markSaved(sent: Trip, version: number): void {
   setOpenTrip({ ...current, version });
 }
 
-/** Applies a pure edit to the open trip; with a label it is an undo step. */
+/** The routes whose original way the user was asked about: none is asked about twice. */
+const askedAbout = new Set<string>();
+
+/** The routes of `current` that the change to `next` leaves with fewer legs along the way their file calculated. */
+function losingOriginalWay(current: Trip, next: Trip): Route[] {
+  const changed = new Map(next.days.flatMap((day) => day.routes.map((route) => [route.id, route] as const)));
+  return current.days
+    .flatMap((day) => day.routes)
+    .filter((route) => {
+      const after = changed.get(route.id);
+      return after !== undefined && after !== route && fileLegCount(after) < fileLegCount(route);
+    });
+}
+
+/**
+ * Asks before the first edit that routes a route's original way again, which is then
+ * lost: the way is kept as a track beside the route first, or the edit goes ahead
+ * without, or it is left. The edit is made of the trip as it stands once the answer is
+ * there.
+ */
+async function askAboutOriginalWay(routes: readonly Route[], change: (trip: Trip) => Trip, label: string): Promise<void> {
+  const [without, keep] = [t('Change without'), t('Keep the original')];
+  const question =
+    routes.length === 1
+      ? t('“{name}” still runs along the way its file calculated. This change routes that way again, and it is lost. Keep it as a track beside the route first?', { name: routes[0]!.name || t('Unnamed route') })
+      : t('{n} routes still run along the ways their files calculated. This change routes those ways again, and they are lost. Keep them as tracks beside the routes first?', { n: routes.length });
+  const answer = await askChoice(question, [without, keep]);
+  if (answer === undefined) return;
+  for (const route of routes) askedAbout.add(route.id);
+  if (answer === keep) for (const route of routes) convertRouteToTrack(route.id);
+  edit(change, label);
+}
+
+/** Applies a pure edit to the open trip; with a label it is an undo step, and asked about first where it loses a route's original way (see askAboutOriginalWay). */
 function edit(change: (trip: Trip) => Trip, label?: string): void {
   const current = openTrip();
   if (!current) return;
   const next = change(current);
   if (next === current) return;
+  const losing = label ? losingOriginalWay(current, next).filter((route) => !askedAbout.has(route.id)) : [];
+  if (losing.length > 0) return void askAboutOriginalWay(losing, change, label!);
   batch(() => {
     if (label) {
       history.record(current, label);
