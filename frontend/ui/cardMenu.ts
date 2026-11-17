@@ -48,3 +48,31 @@ export function cardMenu(card: HTMLElement, items: () => MenuItem[]): void {
     card.removeEventListener('click', click, true);
   });
 }
+
+/**
+ * Gives the free space of an element a menu: a right-click that hits no row, with a menu
+ * of its own or without, nor a text field, a link or text that is selected, which keep
+ * the browser's. A touch screen has no such menu: its rows have their buttons. Called from
+ * the element's ref, inside the component that renders it.
+ */
+export function spaceMenu(space: HTMLElement, items: () => MenuItem[]): void {
+  let pointerType = 'mouse';
+  const down = (e: PointerEvent) => {
+    pointerType = e.pointerType;
+  };
+  const contextMenu = (e: MouseEvent) => {
+    // The menu key gives no position, and a row's own menu has answered already.
+    if (e.defaultPrevented || pointerType !== 'mouse' || (e.clientX === 0 && e.clientY === 0)) return;
+    if ((e.target as Element).closest('.has-menu, .row, input, textarea, a') || getSelection()?.isCollapsed === false) return;
+    const list = items();
+    if (list.length === 0) return;
+    e.preventDefault();
+    setMenu({ x: e.clientX, y: e.clientY, touch: false, items: list });
+  };
+  space.addEventListener('pointerdown', down);
+  space.addEventListener('contextmenu', contextMenu);
+  onCleanup(() => {
+    space.removeEventListener('pointerdown', down);
+    space.removeEventListener('contextmenu', contextMenu);
+  });
+}

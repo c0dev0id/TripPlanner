@@ -129,6 +129,7 @@ share work; sharing between users is on the way.
 | Right-click or long press on a stop or point on the map | Convert to stop, connect, disconnect, straight leg, remove |
 | Right-click or long press on the map | Add a point or a free stop here, a journal entry, or open the spot in Google Maps, OpenStreetMap or Street View |
 | Right-click, long press or the three dots on a folder, trip, day, route or stop in the panel | Its menu: new, add, rename or edit, move, copy or paste, duplicate, delete |
+| Right-click the free space of a pane | The menu of what the pane shows: the library's top, the open trip, the day |
 | Tap or click the pad or grip of a row; Cmd/Ctrl-click, Shift-click | Select several, in the library, the rides, a day and the duplicates report; their menu and the keys act on all of them |
 | Drag a trip's or a folder's pad onto a folder or the card one level up | Move it, or the selected trips, there |
 | Drop GPX files or folders from the computer on a folder | Import them into it |

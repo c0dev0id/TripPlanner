@@ -115,8 +115,20 @@ body {
 }
 
 /* The library's rows fill its pane, so that what is dropped under the last of them is dropped on the library. */
+/* The library fills its pane down to the bottom, so that the free space under a tree is the tree's. */
+.library-panel,
+.explorer {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+
 .library-panel {
   min-height: 100%;
+}
+
+.library {
+  flex: 1;
 }
 
 .pane-strip {

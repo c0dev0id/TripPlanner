@@ -6,7 +6,7 @@ import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/sta
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, dropsOnRow, libraryClip, libraryPasteItem, pasteItems as pasteIntoPart, stashFilesClip, type LibraryClip, type PasteInto, type PasteItem } from '../state/clipboard';
-import { heldOf, importNote, isPlaceList, paneShown, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
+import { heldOf, importNote, isPlaceList, paneShown, provideOpenTripMenu, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
 import { flushSave } from '../state/autosave';
@@ -19,7 +19,7 @@ import { unpinTrips } from '../state/pins';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markedLookId, markFolder, markInOpenTrip, markTrip, openTrip, openTripId, selectDay, selectedDayId, type OpenAt } from '../state/trip';
 import { reveal } from '../state/panel';
 import { readPreference, writePreference } from '../ui/preferences';
-import { cardMenu } from '../ui/cardMenu';
+import { cardMenu, spaceMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
 import { counted } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
@@ -727,6 +727,16 @@ export function Library(props: {
     ];
   };
 
+  /** The menu of a tree's top: of the Stash and the Places their folder's, of the trips the library's. */
+  const treeMenu = (tab: TreeTab): MenuItem[] => {
+    const top = folders().find((f) => f.id === rootOf(tab));
+    return top ? itemMenu({ folder: top }) : topMenu();
+  };
+  provideOpenTripMenu(() => () => {
+    const open = trips().find((trip) => trip.id === openTripId());
+    return open ? itemMenu({ trip: open }) : [];
+  });
+
   /** The folders and trips of a folder, each unfolding to what it holds: folders to theirs, a trip to its days. */
   const Branch = (branch: { tree: TreeTab; parent: number | null }): JSX.Element => (
     <>
@@ -797,10 +807,7 @@ export function Library(props: {
   const Tree = (tree: { tab: TreeTab }): JSX.Element => {
     const root = () => rootOf(tree.tab);
     const held = () => heldOf(root());
-    const menu = (): MenuItem[] => {
-      const top = folders().find((f) => f.id === root());
-      return top ? itemMenu({ folder: top }) : topMenu();
-    };
+    const menu = () => treeMenu(tree.tab);
     return (
       <div hidden={libraryTab() !== tree.tab}>
         <Show when={tree.tab === 'places'}>
@@ -875,7 +882,15 @@ export function Library(props: {
   };
 
   return (
-    <div class="library" ref={root} hidden={!shownTree()}>
+    <div
+      class="library"
+      ref={(el) => {
+        root = el;
+        // The free space under the tree shown answers as the line over it does.
+        spaceMenu(el, () => treeMenu(shownTree()!));
+      }}
+      hidden={!shownTree()}
+    >
       <Show when={importNote()}>{(note) => <Said note={note()} />}</Show>
       {/* Reading a resource that failed throws; its error is shown instead. */}
       <Switch fallback={<p class="muted">{t('Loading…')}</p>}>

@@ -5,16 +5,16 @@ import { routesDistance } from '../routing/legs';
 import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
-import { detailShown, isPlaceList, paneShown } from '../state/library';
+import { detailShown, isPlaceList, openTripMenu, paneShown } from '../state/library';
 import { addDay, closeDetail, detailDay, endLook, onlyDay, openDetail, openTrip, openTripId, pickDay } from '../state/trip';
 import { counted, distanceText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { ChevronIcon, NeighboursIcon, PencilIcon, PlusIcon } from '../ui/icons';
 import { Pane } from '../ui/Pane';
-import { SectionDetails } from './CollectionPanel';
+import { SectionDetails, sectionMenu } from './CollectionPanel';
 import { DayStrip } from './DayStrip';
 import { dayDetail, dayHeading, dayTitleOf } from './labels';
-import { DayDetails, TripPanel } from './TripPanel';
+import { dayMenu, DayDetails, TripPanel } from './TripPanel';
 
 /** A day as its labels count it: its date, what it holds and how far its routes go. */
 export const dayCounts = (day: Day) => ({ date: day.date, routes: day.routes.length, stops: day.stops.length, recordings: recordingsOf(day.id).length, media: mediaOf(day.id).length, distanceM: routesDistance(day.routes) });
@@ -51,6 +51,7 @@ function DaysPane(props: { onLeave: () => void }) {
       label={trip().name}
       onClose={props.onLeave}
       onUse={endLook}
+      menu={() => openTripMenu()()}
       strip={<DayStrip />}
       heading={
         <>
@@ -93,6 +94,7 @@ function DetailPane(props: { onLeave: () => void }) {
             label={label()}
             onClose={only() ? props.onLeave : closeDetail}
             onUse={() => pickDay(day().id)}
+            menu={() => dayMenu(day().id)}
             heading={
               <>
                 <span class="lines grow">
@@ -136,6 +138,7 @@ function SectionPane() {
             label={label()}
             onClose={closeDetail}
             onUse={() => pickDay(shown().id)}
+            menu={() => sectionMenu(shown())}
             strip={<DayStrip />}
             heading={
               <span class="day-title">

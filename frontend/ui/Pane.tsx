@@ -1,8 +1,10 @@
 import { Show, type JSX } from 'solid-js';
 import { t } from '../i18n/t';
 import { entered, fold, folded, onePane, setSheet, sheet, sheetMode, shownLevel, type PaneLevel } from '../state/panel';
+import { spaceMenu } from './cardMenu';
 import { followPointer } from './followPointer';
 import { ArrowDownIcon, ArrowUpIcon, BackIcon, ChevronIcon, ChevronLeftIcon, CloseIcon } from './icons';
+import type { MenuItem } from './menu';
 import { PanelResizer } from './PanelResizer';
 
 /**
@@ -46,9 +48,20 @@ function SheetHandle(props: { level: PaneLevel }) {
  * with what it is and the pads that fold it to a strip and close it, over what it holds.
  * `strip` is what the strip holds under its pads. Where one pane alone is shown, the pad
  * that closes leads back to the pane before. `onUse` hears of a click or a menu asked
- * for in what the pane holds, before the row clicked does.
+ * for in what the pane holds, before the row clicked does. `menu` is what a right-click
+ * on the free space among its rows opens.
  */
-export function Pane(props: { level: PaneLevel; label: string; heading: JSX.Element; onClose?: () => void; strip?: JSX.Element; onUse?: () => void; children: JSX.Element }) {
+export function Pane(props: {
+  level: PaneLevel;
+  label: string;
+  heading: JSX.Element;
+  onClose?: () => void;
+  strip?: JSX.Element;
+  onUse?: () => void;
+  /** The menu of the free space among what the pane holds. */
+  menu?: () => MenuItem[];
+  children: JSX.Element;
+}) {
   const isFolded = () => folded(props.level);
   const foldLabel = () => t(isFolded() ? 'Unfold {what}' : 'Fold {what}', { what: props.label });
   const closeLabel = () => (onePane() ? t('Back') : t('Close {what}', { what: props.label }));
@@ -91,6 +104,7 @@ export function Pane(props: { level: PaneLevel; label: string; heading: JSX.Elem
           // Heard before the row clicked hears of it, and before a card's menu opens.
           el.addEventListener('click', used, true);
           el.addEventListener('contextmenu', used, true);
+          if (props.menu) spaceMenu(el, () => props.menu!());
         }}
       >
         {props.children}

@@ -79,6 +79,9 @@ export function TripPanel() {
   );
 }
 
+/** A day's menu, on its row and on the free space of the pane of its contents. */
+export const dayMenu = (dayId: string): MenuItem[] => partMenu('day', dayId, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(dayId) }] });
+
 /** A day as a card: its number and name over its date and length; its menu edits, duplicates, pastes into and removes it. A click shows the day on the map, or the whole trip again where the day is shown; the pad at its end opens the pane of what the day holds. */
 function DayItem(props: { day: Day; index: number }) {
   const selected = () => selectedDayId() === props.day.id;
@@ -87,7 +90,7 @@ function DayItem(props: { day: Day; index: number }) {
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
   const meta = () => dayDetail('trip', { date: props.day.date, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, media: 0, distanceM: distance() });
-  const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
+  const more = () => dayMenu(props.day.id);
   const select = partSelect('day', props.day.id, () => openTrip()!.days.map((d) => d.id));
   const detailed = () => isDetailed(props.day.id);
   let row!: HTMLLIElement;
