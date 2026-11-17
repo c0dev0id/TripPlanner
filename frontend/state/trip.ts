@@ -304,16 +304,24 @@ function editDay(change: (trip: Trip, dayId: string) => Trip, label: string): vo
   if (dayId) edit((trip) => change(trip, dayId), label);
 }
 
-/** Adds a route to the selected day and takes it up. */
-export function addRoute(): void {
-  const id = newId();
-  editDay((trip, dayId) => dayEdit.addRoute(trip, dayId, id), t('Add route'));
-  if (routeById(id)) setActiveRouteId(id);
+/** Applies a pure edit to the day a stop is on. */
+function editStopsDay(stopId: string, change: (trip: Trip, dayId: string) => Trip, label: string): void {
+  edit((trip) => {
+    const day = dayEdit.dayOfStop(trip, stopId);
+    return day ? change(trip, day.id) : trip;
+  }, label);
 }
 
-/** Adds routes and stops read from a file to the selected day, as one step. */
-export function addParts(parts: { routes: Route[]; stops: Stop[] }): void {
-  editDay((trip, dayId) => dayEdit.addParts(trip, dayId, parts), t('Import file'));
+/** Adds a route to a day, and takes it up where that is the selected day. */
+export function addRoute(dayId: string): void {
+  const id = newId();
+  edit((trip) => dayEdit.addRoute(trip, dayId, id), t('Add route'));
+  if (selectedDayId() === dayId && routeById(id)) setActiveRouteId(id);
+}
+
+/** Adds routes and stops read from a file to a day, as one step. */
+export function addParts(dayId: string, parts: { routes: Route[]; stops: Stop[] }): void {
+  edit((trip) => dayEdit.addParts(trip, dayId, parts), t('Import file'));
 }
 
 /** Makes a route of stops of a day, which become its points, as one step to undo. */
@@ -389,9 +397,12 @@ export function clearLegs(routeId: string): void {
   edit((trip) => dayEdit.clearLegs(trip, routeId), 'Reroute');
 }
 
-/** Makes a stop of a route point of the selected day. */
-export function convertPoint(pointId: string): void {
-  editDay((trip, dayId) => dayEdit.convertPoint(trip, dayId, pointId, newId()), t('Add stop'));
+/** Makes a stop of a point of a route. */
+export function convertPoint(routeId: string, pointId: string): void {
+  edit((trip) => {
+    const day = dayEdit.dayOfRoute(trip, routeId);
+    return day ? dayEdit.convertPoint(trip, day.id, pointId, newId()) : trip;
+  }, t('Add stop'));
 }
 
 /** Inserts a point of a route before the one at `index` and makes a stop of it, as one step. */
@@ -428,17 +439,24 @@ export function moveStop(stopId: string, lngLat: LngLat): void {
 }
 
 export function removeStop(stopId: string): void {
-  editDay((trip, dayId) => dayEdit.removeStop(trip, dayId, stopId), t('Remove stop'));
+  editStopsDay(stopId, (trip, dayId) => dayEdit.removeStop(trip, dayId, stopId), t('Remove stop'));
 }
 
-/** Changes what a stop of the selected day says about itself. */
+/** Changes what a stop says about itself. */
 export function updateStop(stopId: string, change: Partial<Omit<Stop, 'id' | 'pointId'>>, label = t('Edit stop')): void {
-  editDay((trip, dayId) => dayEdit.updateStop(trip, dayId, stopId, change), label);
+  editStopsDay(stopId, (trip, dayId) => dayEdit.updateStop(trip, dayId, stopId, change), label);
 }
 
-/** Gives stops of the selected day a symbol, as one step to undo. */
+/** Gives stops a symbol, as one step to undo. */
 export function setStopSymbols(stopIds: readonly string[], symbol: string): void {
-  editDay((trip, dayId) => stopIds.reduce((to, id) => dayEdit.updateStop(to, dayId, id, { symbol }), trip), t('Edit stop'));
+  edit(
+    (trip) =>
+      stopIds.reduce((to, id) => {
+        const day = dayEdit.dayOfStop(to, id);
+        return day ? dayEdit.updateStop(to, day.id, id, { symbol }) : to;
+      }, trip),
+    t('Edit stop'),
+  );
 }
 
 export function addDay(): void {

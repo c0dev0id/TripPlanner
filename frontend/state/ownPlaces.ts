@@ -53,8 +53,8 @@ export const ownPlacesOnMap = () => (placesHidden() ? [] : own.shown());
 export const ownPlaceById = (id: string): OwnPlace | undefined => own.all().find((place) => place.id === id);
 
 
-/** Adds a copy of the place to the selected day as a free stop: what the place says goes with it, and stays as it is when the place changes. */
-export function addOwnPlaceAsStop(place: OwnPlace): void {
+/** Adds a copy of the place to a day as a free stop: what the place says goes with it, and stays as it is when the place changes. */
+export function addOwnPlaceAsStop(place: OwnPlace, dayId: string): void {
   const { name, symbol, lngLat, address, contact, website, notes } = place;
-  addParts({ routes: [], stops: [{ ...newStop(newId(), name, lngLat, null), symbol, address, contact, website, notes }] });
+  addParts(dayId, { routes: [], stops: [{ ...newStop(newId(), name, lngLat, null), symbol, address, contact, website, notes }] });
 }

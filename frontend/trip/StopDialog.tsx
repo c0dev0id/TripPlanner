@@ -3,16 +3,16 @@ import { createMemo, Show } from 'solid-js';
 import { MAX_WEBSITE, type Stop } from '../model/trip';
 import { webAddress } from '../poi/details';
 import { editTarget, setEditTarget } from '../state/drawing';
-import { openTrip, removeStop, selectedDay, updateStop } from '../state/trip';
+import { openTrip, removeStop, updateStop } from '../state/trip';
 import { EditDialog } from '../ui/EditDialog';
 import { field } from '../ui/form';
 import { SymbolField } from './SymbolField';
 
-/** A stop of the selected day: name, symbol, address, contact, website, notes and, in a trip, arrival time and pause, booking and whether it is optional; and its removal. */
+/** A stop of the open trip: name, symbol, address, contact, website, notes and, in a trip, arrival time and pause, booking and whether it is optional; and its removal. */
 export function StopDialog() {
   const stop = createMemo((): Stop | undefined => {
     const target = editTarget();
-    return target?.kind === 'stop' ? selectedDay()?.stops.find((s) => s.id === target.id) : undefined;
+    return target?.kind === 'stop' ? openTrip()?.days.flatMap((day) => day.stops).find((s) => s.id === target.id) : undefined;
   });
   const close = () => setEditTarget(undefined);
   /** What belongs to a ride is asked of a trip's stop only: when to arrive, how long to stay, the booking, whether it is optional. */

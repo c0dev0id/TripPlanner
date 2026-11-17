@@ -261,7 +261,7 @@ async function pastePartsIntoDay(dayId: string, parts: readonly StashPart[]): Pr
     }
     if (openTripId() !== tripId) return;
     selectDay(dayId);
-    addParts(added);
+    addParts(dayId, added);
     // The media taken are kept with the day, as files added to it are, one after the other.
     for (const part of parts.filter((taken) => taken.media)) {
       for (const one of part.file.media) await addFiles(dayId, [await fetchStashMedia(part.file.id, one)]);

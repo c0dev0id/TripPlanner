@@ -41,7 +41,7 @@ function PointMarker(props: { map: MapLibreMap; routeId: string; point: RoutePoi
   });
   handle.root.addEventListener('click', () => {
     if (tapAction() === 'delete') removePoint(routeId, pointId);
-    else if (tapAction() === 'stop') convertPoint(pointId);
+    else if (tapAction() === 'stop') convertPoint(routeId, pointId);
   });
   const stopMenu = onMarkerMenu(handle, () => pointItems(routeId, point()));
   onCleanup(() => {

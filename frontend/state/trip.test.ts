@@ -4,7 +4,7 @@ import { routedLegs } from '../routing/legs';
 import { decodePolyline, encodePolyline } from '../routing/polyline';
 import { answerQuestion, question } from '../ui/confirm';
 import { routedOf } from '../routing/testing';
-import { activeRouteId, addDay, movePoint, convertRouteToTrack, convertTrackToRoute, closeDaysPane, daysPaneOpen, openDaysPane, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
+import { activeRouteId, addDay, setStopSymbols, removeStop, movePoint, convertRouteToTrack, convertTrackToRoute, closeDaysPane, daysPaneOpen, openDaysPane, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -14,7 +14,7 @@ const sent = (): Trip => JSON.parse(JSON.stringify(openTrip()));
 /** A day with a route of two points, edited. */
 function dayWithRoute(): string {
   addDay();
-  addRoute();
+  addRoute(selectedDay()!.id);
   const routeId = editingRouteId()!;
   appendPoint(routeId, [1.00000049, 1]);
   appendPoint(routeId, [2, 2]);
@@ -49,7 +49,7 @@ describe('the open trip', () => {
 
   it('makes stops of points and beside the route', () => {
     dayWithRoute();
-    convertPoint(routedOf(sent().days[0]!.routes[0]!).points[1]!.id);
+    convertPoint(sent().days[0]!.routes[0]!.id, routedOf(sent().days[0]!.routes[0]!).points[1]!.id);
     addFreeStop([1.5, 1.6]);
     const stops = sent().days[0]!.stops;
     expect(stops.map((s) => [s.name, s.pointId !== null])).toEqual([
@@ -81,9 +81,26 @@ describe('the open trip', () => {
     expect(sent().days.map((day) => day.stops.length)).toEqual([1, 1]);
   });
 
+  it('edits the stops and routes of a day that is not the selected one', () => {
+    dayWithRoute();
+    const [first] = openTrip()!.days;
+    convertPoint(first!.routes[0]!.id, routedOf(first!.routes[0]!).points[1]!.id);
+    const stopId = openTrip()!.days[0]!.stops[0]!.id;
+    addDay();
+    expect(selectedDay()!.id).not.toBe(first!.id);
+    updateStop(stopId, { name: 'Lunch' });
+    setStopSymbols([stopId], 'Restaurant');
+    addRoute(first!.id);
+    expect(openTrip()!.days[0]).toMatchObject({ stops: [{ name: 'Lunch', symbol: 'Restaurant' }], routes: [{}, {}] });
+    // A route added to another day than the selected one is not taken up.
+    expect(editingRouteId()).toBeUndefined();
+    removeStop(stopId);
+    expect(openTrip()!.days[0]!.stops).toEqual([]);
+  });
+
   it('undoes and redoes edits without losing the rest of the trip', () => {
     dayWithRoute();
-    convertPoint(routedOf(sent().days[0]!.routes[0]!).points[0]!.id);
+    convertPoint(sent().days[0]!.routes[0]!.id, routedOf(sent().days[0]!.routes[0]!).points[0]!.id);
     const stopId = sent().days[0]!.stops[0]!.id;
     updateStop(stopId, { name: 'Home' });
     expect(undoLabel()).toBe('Edit stop');
@@ -180,7 +197,7 @@ describe('the open trip', () => {
   it('keeps the saved version through an undo', () => {
     addDay();
     markSaved(openTrip()!, 2);
-    addRoute();
+    addRoute(selectedDay()!.id);
     markSaved(openTrip()!, 3);
     undo();
     expect(sent().version).toBe(3);
@@ -189,7 +206,7 @@ describe('the open trip', () => {
 
   it('converts a route to a track and a track to a route beside it, leaving what it was made of', () => {
     addDay();
-    addRoute();
+    addRoute(selectedDay()!.id);
     const routeId = openTrip()!.days[0]!.routes[0]!.id;
     appendPoint(routeId, [8, 49]);
     appendPoint(routeId, [8.1, 49.1]);

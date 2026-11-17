@@ -145,7 +145,7 @@ function DayDetails(props: { day: Day }) {
     if (!file) return;
     try {
       const parts = await readDayParts(file, defaultProfile(props.day));
-      addParts(parts);
+      addParts(props.day.id, parts);
       setImportNote({ text: t('{file}: {routes}, {stops} added.', { file: file.name, routes: counted(parts.routes.length, 'route'), stops: counted(parts.stops.length, 'stop') }), error: false });
     } catch (fault) {
       setImportNote({ text: `${file.name}: ${errorMessage(fault)}`, error: true });
@@ -166,7 +166,7 @@ function DayDetails(props: { day: Day }) {
         <IconButton label={t('Import GPX or KML…')} onClick={() => fileInput.click()}>
           <FileImportIcon />
         </IconButton>
-        <IconButton label={t('Add route')} onClick={addRoute}>
+        <IconButton label={t('Add route')} onClick={() => addRoute(props.day.id)}>
           <PlusIcon />
         </IconButton>
         <input ref={fileInput} type="file" accept={ROUTE_FILE_TYPES} hidden onChange={(e) => void importFile(e.currentTarget.files?.[0])} />

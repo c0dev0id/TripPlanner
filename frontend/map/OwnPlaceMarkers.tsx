@@ -22,7 +22,7 @@ export function OwnPlaceMarkers(props: { map: MapLibreMap }) {
       const place = ownPlaceById(id as string);
       if (!place) return undefined;
       const add = () => {
-        addOwnPlaceAsStop(place);
+        addOwnPlaceAsStop(place, shownDay()!.id);
         popup.remove();
       };
       return (
