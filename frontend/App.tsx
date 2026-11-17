@@ -15,12 +15,12 @@ import { MapView, routesDrawn } from './map/MapView';
 import { LOOK_SOURCE } from './map/routeOverlay';
 import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
-import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
+import { flushSave, resetSaveState, savedSinceLoad, saveState } from './state/autosave';
 import { folderOfTrip, libraryFolders, libraryTab, libraryTrips, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab } from './state/library';
 import { setShowingDuplicates, showingDuplicates } from './state/pane';
-import { fold, showDaysPane } from './state/panel';
+import { fold } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
-import { closeTrip, endLook, lookAt, looked, openDetail, daysPaneOpen, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
+import { closeTrip, detailDayId, editingRouteId, endLook, loadTrip, lookAt, looked, openTrip, openTripId, refreshLook, selectedDay, selectedDayId, type OpenAt } from './state/trip';
 import { DayDialog } from './trip/DayDialog';
 import { DayPane } from './trip/DayPane';
 import { ExportDialog } from './trip/ExportDialog';
@@ -39,8 +39,8 @@ export function App() {
 
   /** Counts the trips asked for and the leavings, so that a trip that arrives after the user went elsewhere is not opened. */
   let latest = 0;
-  /** Opens a trip, at the day `dayId` where one is given, with that day's route `routeId` taken up, and with `pane` the pane of its days; a trip open before is saved first. */
-  const open = async (id: number, dayId?: string, routeId?: string, pane?: boolean) => {
+  /** Opens a trip at the days and with the route `at` names, and with `unfold` its pane unfolded; a trip open before is saved first, and stays open where that fails. */
+  const open = async (id: number, at?: OpenAt, unfold?: boolean) => {
     const ask = ++latest;
     /** Says on the trip's row how far the opening has come, while it is still the trip asked for. */
     const say = (progress: Progress | 'arrived') => void (ask === latest && setOpening({ tripId: id, progress }));
@@ -48,6 +48,7 @@ export function App() {
     setError(undefined);
     try {
       await flushSave();
+      if (saveState() === 'failed') return void (ask === latest && setOpening(undefined));
       // The trip left for this one is listed as it was saved, as when it is left for none.
       if (savedSinceLoad()) relistTrips();
       const trip = await fetchTrip(id, say);
@@ -56,11 +57,8 @@ export function App() {
       if (!document.hidden) await new Promise((painted) => requestAnimationFrame(() => setTimeout(painted)));
       if (ask !== latest) return;
       keepPinsOfOpenTrip();
-      loadTrip(trip, dayId);
-      if (pane && trip.kind === 'trip') showDaysPane();
-      else if (pane && dayId !== undefined) openDetail(dayId);
-      if (pane) fold('second', false);
-      if (selectedDay()?.routes.some((route) => route.id === routeId)) takeUpRoute(routeId);
+      loadTrip(trip, at);
+      if (unfold) fold('second', false);
       resetSaveState();
       // The trip is open; its row keeps saying that it opens until the map has drawn the routes.
       void routesDrawn().then(() => ask === latest && setOpening(undefined));
@@ -100,34 +98,45 @@ export function App() {
       const [id, changedAt] = now;
       if (changedAt === null) return endLook();
       if (before?.[0] !== id || before[1] === changedAt) return;
-      void fetchTrip(id).then((trip) => looked()?.trip.id === id && lookAt(trip, looked()!.dayId));
+      void fetchTrip(id).then(refreshLook);
     }),
   );
   /** Loads the open trip again from the server, after it was changed elsewhere. */
   const reload = () => open(openTrip()!.id);
-  /** Leaves the open trip, saved, and lists the trips afresh where a save changed one; nothing without one. */
-  const leave = async () => {
+  /**
+   * Leaves the open trip, saved, and lists the trips afresh where a save changed one;
+   * with `look`, a trip that is on the map stays there as it is, looked at. Answers
+   * whether none is open any more: not where the save failed, which keeps the trip open.
+   */
+  const leave = async (look = false): Promise<boolean> => {
     latest++;
     setOpening(undefined);
-    if (!openTrip()) return;
+    if (!openTrip()) return true;
     await flushSave();
+    if (saveState() === 'failed') return false;
     const changed = savedSinceLoad();
+    const [left, dayId] = [openTrip()!, selectedDay()?.id];
     keepPinsOfOpenTrip();
     closeTrip();
+    if (look && left.kind === 'trip' && !looked()) {
+      keepViewOf(left.id);
+      lookAt(left, dayId);
+    }
     resetSaveState();
     if (changed) relistTrips();
+    return true;
   };
 
-  /** Opens a trip picked in the library; a day picked with it, or the pane of its days asked for, takes the pane beside the library. */
-  const openPicked = (id: number, dayId?: string, routeId?: string, pane?: boolean) => {
-    if (dayId !== undefined || pane) setShowingDuplicates(false);
-    void open(id, dayId, routeId, pane);
+  /** Opens a trip picked in the library; one opened by a pad takes the pane beside the library from a report. */
+  const openPicked = (id: number, at?: OpenAt, unfold?: boolean) => {
+    if (unfold) setShowingDuplicates(false);
+    void open(id, at, unfold);
   };
 
   /** Opens a trip at a day from a report in the pane, which stays there; as a trip opened in the tree, it makes its folder the one shown. */
   const openLocation = (id: number, dayId: string) => {
     showFolder(folderOfTrip(id));
-    void open(id, dayId);
+    void open(id, { dayId });
   };
 
   document.addEventListener('keydown', partKeys);
@@ -147,9 +156,15 @@ export function App() {
     });
   });
   onMount(async () => {
+    // Back at the view the address names, the map stays there for the open trip and for the one looked at.
+    const hasView = /(^#|&)map=/.test(location.hash);
     if (place.tripId !== undefined) {
-      if (/(^#|&)map=/.test(location.hash)) keepViewOf(place.tripId);
-      await open(place.tripId, place.dayId, place.routeId, place.pane);
+      if (hasView) keepViewOf(place.tripId);
+      await open(place.tripId, place);
+    }
+    if (place.lookId !== undefined) {
+      if (hasView) keepViewOf(place.lookId);
+      await look(place.lookId, place.lookDayId);
     }
     setReturned(true);
   });
@@ -157,7 +172,7 @@ export function App() {
     // The folder shown is only known once the folders are listed.
     if (!returned() || libraryFolders.loading) return;
     const tab = libraryTab();
-    const now = { folderId: shownFolderId(), ...(isTreeTab(tab) ? {} : { view: tab }), tripId: openTripId(), pane: openTrip()?.kind === 'trip' && daysPaneOpen(), dayId: selectedDayId(), routeId: editingRouteId() };
+    const now = { folderId: shownFolderId(), ...(isTreeTab(tab) ? {} : { view: tab }), tripId: openTripId(), dayId: selectedDayId(), routeId: editingRouteId(), detailDayId: detailDayId(), lookId: looked()?.trip.id, lookDayId: looked()?.dayId };
     history.replaceState(history.state, '', location.pathname + location.search + withPlace(location.hash, now));
   });
 
@@ -174,7 +189,7 @@ export function App() {
           <Explorer onOpen={openPicked} onLook={(id, dayId) => void look(id, dayId)} onLeave={leave} error={error()} />
         </div>
       </Pane>
-      <Show when={showingDuplicates()} fallback={<DayPane />}>
+      <Show when={showingDuplicates()} fallback={<DayPane onLeave={() => void leave(true)} />}>
         <DuplicatesReport onOpen={openLocation} />
       </Show>
       <div class="map-wrap">

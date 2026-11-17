@@ -27,7 +27,7 @@ export interface CardSelect extends RowSelect {
   place: (el: HTMLElement) => void;
 }
 
-/** The button on a trip's row that opens the pane of its days: whether the pane shows them, and what a press does. */
+/** The pad on a trip's row that opens the trip, and its pane with it, and closes it: whether it is open, and what a press does. */
 export interface CardPane {
   open: () => boolean;
   onToggle: () => void;
@@ -96,7 +96,8 @@ export function TripDays(props: { trip: TripSummary; onOpen: (dayId: string, pan
  * A trip as a card: its name over its days, its start and whether it was ridden, or for a
  * collection its sections, after the folder it is in where `where` names it, or, while it
  * is being opened, over how far its document has come, beside a spinner; its menu
- * renames, moves, copies and deletes it. A click opens it. Where it can be selected, a tap
+ * renames, moves, copies and deletes it. A click is `onOpen`'s: a trip is shown on the
+ * map, a list of places opened. Where it can be selected, a tap
  * on its pad selects it, a press drags it, and a click with Cmd, Ctrl or Shift held
  * selects instead of opening, which `select.onClick` says.
  */
@@ -167,7 +168,7 @@ export function TripCard(props: {
         <MenuButton of={props.trip.name} items={props.items} />
         <Show when={props.pane}>
           {(pane) => (
-            <IconButton label={t(pane().open() ? 'Hide the days of {name}' : 'Show the days of {name}', { name: props.trip.name })} pressed={pane().open()} onClick={pane().onToggle}>
+            <IconButton label={t(pane().open() ? 'Close {what}' : 'Open {what}', { what: props.trip.name })} pressed={pane().open()} onClick={pane().onToggle}>
               {pane().open() ? <ChevronLeftIcon /> : <ChevronIcon />}
             </IconButton>
           )}

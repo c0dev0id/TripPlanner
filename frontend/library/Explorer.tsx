@@ -5,7 +5,7 @@ import { LIBRARY_TABS, TAB_NAMES, TREES, type LibraryTab } from '../model/librar
 import { libraryProblem, libraryTab, libraryTrips, query, setQuery, showFolder } from '../state/library';
 import { setShowingDuplicates, showingDuplicates } from '../state/pane';
 import { folded } from '../state/panel';
-import { lookAt, openTrip, openTripId, takeUpRouteOf } from '../state/trip';
+import { lookAt, openTrip, openTripId, takeUpRouteOf, type OpenAt } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
 import { IconButton } from '../ui/IconButton';
 import { ActivityIcon, ArchiveIcon, CopyIcon, GearIcon, PinIcon, TripIcon } from '../ui/icons';
@@ -54,31 +54,35 @@ export function LibraryTabs(props: { onTab: (tab: LibraryTab) => void }) {
  * scrolled.
  */
 export function Explorer(props: {
-  /** Opens a trip, at a day and with a route of it taken up where they are given, and with `pane` the pane of its days. */
-  onOpen: (id: number, dayId?: string, routeId?: string, pane?: boolean) => void;
+  /** Opens a trip, at the days and with the route `at` names, and with `unfold` its pane unfolded. */
+  onOpen: (id: number, at?: OpenAt, unfold?: boolean) => void;
   /** Looks at a trip, or at a day of it, without opening it. */
   onLook: (id: number, dayId?: string) => void;
-  onLeave: () => Promise<void>;
+  /** Leaves the open trip, saved, with `look` kept on the map; false where its save failed. */
+  onLeave: (look?: boolean) => Promise<boolean>;
   error: string | undefined;
 }) {
   /** Opens a trip and makes its folder the one shown: a trip of the tree or the search, or one just made. */
-  const openIn = (trip: TripSummary, dayId?: string, pane?: boolean) => {
+  const openIn = (trip: TripSummary, at?: OpenAt, unfold?: boolean) => {
     showFolder(trip.folderId);
-    props.onOpen(trip.id, dayId, undefined, pane);
+    props.onOpen(trip.id, at, unfold);
+  };
+  /** Looks at a trip of the tree or the search, whose folder becomes the one shown. */
+  const lookIn = (trip: TripSummary) => {
+    showFolder(trip.folderId);
+    props.onLook(trip.id);
   };
   /** Shows a route the search found: taken up where its trip is the open one, its day of a trip looked at otherwise; a list of places opens, as its row does. */
   const openRoute = (found: FoundRoute) => {
     showFolder(found.within.folderId);
     if (found.within.id === openTripId()) takeUpRouteOf(found.dayId, found.route.id);
     else if (found.within.kind === 'trip') props.onLook(found.within.id, found.dayId);
-    else props.onOpen(found.within.id, found.dayId, found.route.id);
+    else props.onOpen(found.within.id, { dayId: found.dayId, routeId: found.route.id });
   };
-  /** Shows a folder the search found, leaving an open trip for it. */
-  const openFolder = (id: number) => void props.onLeave().then(() => showFolder(id));
   /** Opens the day a ride is on, in the tree its trip is in. */
   const openDay = (tripId: number, dayId: string) => {
     const trip = libraryTrips()?.find((kept) => kept.id === tripId);
-    if (trip) openIn(trip, dayId);
+    if (trip) openIn(trip, { dayId });
   };
   /** Shows a day on the map beside the rides, without leaving their tab or opening its trip: a look at it, of the open trip as it stands. */
   const showDay = (tripId: number, dayId: string) => (tripId === openTripId() ? lookAt(openTrip()!, dayId) : props.onLook(tripId, dayId));
@@ -116,7 +120,7 @@ export function Explorer(props: {
         )}
       </Show>
       <Show when={libraryProblem() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
-      <Library onOpen={openIn} onOpenRoute={openRoute} onOpenFolder={openFolder} onLeave={props.onLeave}>
+      <Library onOpen={openIn} onLook={lookIn} onOpenRoute={openRoute} onLeave={props.onLeave}>
         <CollectionPanel />
       </Library>
       <div hidden={libraryTab() !== 'recordings'}>

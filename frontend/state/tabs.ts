@@ -7,20 +7,19 @@ import { fold } from './panel';
 import { revealRide, RIDES } from './rides';
 import { openRecording, toggleRecording } from './recordingView';
 import { activeRecordingId } from './recordings';
-import { activeRouteId, endLook, openTripId, selectedDayId, takeUpRoute } from './trip';
+import { activeRouteId, detailDayId, endLook, openTripId, selectedDayId, takeUpRoute, type OpenAt } from './trip';
 
 /**
  * The library's tabs as views of their own: what a tab with a tree had open when the user
- * left it by its button (the trip or list, its day, the route taken up, the recording
- * opened), opened again when the user comes back to it. Only one trip is open at a time,
+ * left it by its button (the trip or list, its day, the route taken up, the day whose
+ * contents have their pane, the recording opened), opened again when the user comes back
+ * to it. Only one trip is open at a time,
  * so coming back to a tab whose trip is not the open one opens it again, saved, as
  * picking it would.
  */
 
-interface LeftOpen {
+interface LeftOpen extends OpenAt {
   tripId: number;
-  dayId?: string;
-  routeId?: string;
   recordingId?: number;
 }
 
@@ -30,7 +29,7 @@ const leftOpen: Partial<Record<TreeTab, LeftOpen>> = {};
 function leaveFor(to: Exclude<LibraryTab, 'settings'>): void {
   const from = mapTab();
   const tripId = openTripId();
-  if (isTreeTab(from)) leftOpen[from] = tripId !== undefined && openTree() === from ? { tripId, dayId: selectedDayId(), routeId: activeRouteId(), recordingId: activeRecordingId() } : undefined;
+  if (isTreeTab(from)) leftOpen[from] = tripId !== undefined && openTree() === from ? { tripId, dayId: selectedDayId(), routeId: activeRouteId(), detailDayId: detailDayId(), recordingId: activeRecordingId() } : undefined;
   takeUpRoute(undefined);
   openRecording(undefined);
   endLook();
@@ -51,10 +50,10 @@ export function showInRides(ride: KeptRide): void {
 
 /**
  * Shows the tab the user picked: what the tab left had open is kept for it and let go
- * of on the map, and what the tab picked had open comes back; `open` opens a trip at a
- * day with a route taken up, as the library does.
+ * of on the map, and what the tab picked had open comes back; `open` opens a trip where
+ * it was left, as the library does.
  */
-export function switchTab(to: LibraryTab, open: (id: number, dayId?: string, routeId?: string) => Promise<void>): void {
+export function switchTab(to: LibraryTab, open: (id: number, at?: OpenAt) => Promise<void>): void {
   if (to === 'settings' || to === mapTab()) return showTab(to);
   leaveFor(to);
   const tripId = openTripId();
@@ -68,5 +67,5 @@ export function switchTab(to: LibraryTab, open: (id: number, dayId?: string, rou
     return;
   }
   if (!libraryTrips()?.some((trip) => trip.id === back.tripId)) return;
-  void open(back.tripId, back.dayId, back.routeId).then(() => openTripId() === back.tripId && openRecording(back.recordingId));
+  void open(back.tripId, back).then(() => openTripId() === back.tripId && openRecording(back.recordingId));
 }

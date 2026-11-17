@@ -9,7 +9,7 @@ import { fileLegCount, pointCount, routedLegs, routeDistance, routesDistance } f
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { panTo, pointItems, setTrackAction } from '../state/drawing';
-import { fold } from '../state/panel';
+import { showDetail } from '../state/panel';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
@@ -33,7 +33,6 @@ import {
   detailDayId,
   detailSequence,
   detailTimeline,
-  openDetail,
   closeDetail,
 } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
@@ -96,8 +95,7 @@ function DayItem(props: { day: Day; index: number }) {
   const detailed = () => detailDayId() === props.day.id;
   const toggleDetail = () => {
     if (detailed()) return closeDetail();
-    openDetail(props.day.id);
-    fold('detail', false);
+    showDetail(props.day.id);
   };
   let row!: HTMLLIElement;
   // The day shown is brought into view: one opened from elsewhere may lie far down its trip.
@@ -119,7 +117,7 @@ function DayItem(props: { day: Day; index: number }) {
           onToggle={select.onToggle}
           carries={() => carriedWith('day', props.day.id, label())}
         />
-        <button class="text grow" onClick={(e) => select.onClick(e) || (selected() ? selectDay(undefined) : pickDay(props.day.id))} aria-expanded={selected()}>
+        <button class="text grow" onClick={(e) => select.onClick(e) || (isDayMarked(props.day.id) ? selectDay(undefined) : pickDay(props.day.id))} aria-expanded={selected()}>
           <span class="lines">
             <span class="name">{dayHeading('trip', props.index, props.day.name)}</span>
             <span class="muted detail">{meta()}</span>

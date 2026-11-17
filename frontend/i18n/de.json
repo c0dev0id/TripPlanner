@@ -181,7 +181,6 @@
   "Hand": "Hand",
   "Hide all places": "Alle Orte ausblenden",
   "Hide adjacent days": "Nachbartage ausblenden",
-  "Hide the days of {name}": "Tage von {name} ausblenden",
   "History": "Verlauf",
   "Homepage": "Homepage",
   "Hotel": "Hotel",
@@ -711,7 +710,6 @@
   "Delete the media of “{name}”?": "Die Medien von „{name}“ löschen?",
   "Delete the media of {files}?": "Die Medien von {files} löschen?",
   "{what} kept with them.": "{what} dazu gespeichert.",
-  "Show the days of {name}": "Tage von {name} anzeigen",
   "Change without": "Ohne ändern",
   "Keep the original": "Original behalten",
   "“{name}” still runs along the way its file calculated. This change routes that way again, and it is lost. Keep it as a track beside the route first?": "„{name}“ folgt noch dem Weg, den die Datei berechnet hat. Diese Änderung berechnet ihn neu, und er geht verloren. Zuerst als Track neben der Route behalten?",
@@ -722,5 +720,6 @@
   "Show the contents of {name}": "Inhalt von {name} anzeigen",
   "Hide the contents of {name}": "Inhalt von {name} ausblenden",
   "Show the places of {name}": "Orte von {name} anzeigen",
-  "Hide the places of {name}": "Orte von {name} ausblenden"
+  "Hide the places of {name}": "Orte von {name} ausblenden",
+  "Open {what}": "{what} öffnen"
 }

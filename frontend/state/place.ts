@@ -1,8 +1,9 @@
 /**
  * Where the user is in the planner, kept in the address's fragment so that loading the page
  * again comes back to it: the folder shown, whether the rides or the settings are shown in
- * the library's place, the open trip, whether the pane of its days is open, its selected day and the
- * route being edited. The map keeps its own view there, as `map=`.
+ * the library's place, the open trip with its selected day, the route being edited and the
+ * day whose contents have their pane, and the trip looked at. The map keeps its own view
+ * there, as `map=`.
  */
 export interface Place {
   /** The folder the explorer shows, null for the top. */
@@ -10,21 +11,30 @@ export interface Place {
   /** What the library shows instead of a tree: the rides or the settings. */
   view?: 'recordings' | 'settings';
   tripId?: number;
-  /** Whether the pane of the trip's days is open. */
-  pane?: boolean;
   dayId?: string;
   routeId?: string;
+  /** The day of the open trip, or the category of the open list, whose pane is open. */
+  detailDayId?: string;
+  /** The trip looked at, and its day where one alone is. */
+  lookId?: number;
+  lookDayId?: string;
 }
 
-const KEYS = ['folder', 'view', 'trip', 'pane', 'day', 'route'];
+const KEYS = ['folder', 'view', 'trip', 'day', 'route', 'detail', 'look', 'lookday'];
 
 /** The place a fragment names; what it does not name, or names badly, is left out. */
 export function readPlace(fragment: string): Place {
   const params = new URLSearchParams(fragment.replace(/^#/, ''));
   const id = (key: string) => (/^\d+$/.test(params.get(key) ?? '') ? Number(params.get(key)) : undefined);
-  const [tripId, dayId, routeId] = [id('trip'), params.get('day') || undefined, params.get('route') || undefined];
+  const text = (key: string) => params.get(key) || undefined;
+  const [tripId, dayId, lookId, lookDayId] = [id('trip'), text('day'), id('look'), text('lookday')];
   const view = params.get('view');
-  return { folderId: id('folder') ?? null, ...((view === 'recordings' || view === 'settings') && { view }), ...(tripId !== undefined && { tripId, ...(params.get('pane') === '1' && { pane: true }), ...(dayId && { dayId, ...(routeId && { routeId }) }) }) };
+  return {
+    folderId: id('folder') ?? null,
+    ...((view === 'recordings' || view === 'settings') && { view }),
+    ...(tripId !== undefined && { tripId, ...(dayId && { dayId, ...(text('route') && { routeId: text('route') }) }), ...(text('detail') && { detailDayId: text('detail') }) }),
+    ...(lookId !== undefined && { lookId, ...(lookDayId && { lookDayId }) }),
+  };
 }
 
 /** The fragment with the place written into it, empty for the top with nothing else; whatever else it holds, such as the map's view, stays as it is. */
@@ -37,9 +47,11 @@ export function withPlace(fragment: string, place: Place): string {
     ['folder', place.folderId],
     ['view', place.view],
     ['trip', place.tripId],
-    ['pane', place.pane ? 1 : undefined],
     ['day', place.dayId],
     ['route', place.routeId],
+    ['detail', place.detailDayId],
+    ['look', place.lookId],
+    ['lookday', place.lookDayId],
   ].flatMap(([key, value]) => (value === null || value === undefined ? [] : [`${key}=${encodeURIComponent(value)}`]));
   const parts = [...own, ...others];
   return parts.length > 0 ? `#${parts.join('&')}` : '';

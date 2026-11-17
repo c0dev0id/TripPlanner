@@ -6,7 +6,7 @@ import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawi
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
 import { isPlaceList, paneShown } from '../state/library';
-import { addDay, closeDaysPane, closeDetail, detailDay, endLook, openDetail, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
+import { addDay, closeDetail, detailDay, endLook, onlyDay, openDetail, openTrip, openTripId, pickDay } from '../state/trip';
 import { counted, distanceText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { ChevronIcon, NeighboursIcon, PencilIcon, PlusIcon } from '../ui/icons';
@@ -20,24 +20,27 @@ import { DayDetails, TripPanel } from './TripPanel';
 export const dayCounts = (day: Day) => ({ date: day.date, routes: day.routes.length, stops: day.stops.length, recordings: recordingsOf(day.id).length, media: mediaOf(day.id).length, distanceM: routesDistance(day.routes) });
 
 /**
- * The panes beside the library: of a trip its days under each other and, beside them,
- * what a day holds; of a list of places the category whose pad was pressed in the tree.
- * Not there while a trip's pane is closed, or no category's is open.
+ * The panes beside the library. An open trip has its days under each other and, beside
+ * them, what a day holds once its pad was pressed; a trip of one day has that day's
+ * contents alone, in the place of a list of one. A list of places has the category
+ * whose pad was pressed in the tree. `onLeave` closes the trip, as the pad that closes
+ * its pane asks.
  */
-export function DayPane() {
+export function DayPane(props: { onLeave: () => void }) {
   return (
     <Show when={paneShown()}>
       <Show when={openTrip()!.kind === 'trip'} fallback={<SectionPane />}>
-        <DaysPane />
-        <DetailPane />
+        <Show when={!onlyDay()}>
+          <DaysPane onLeave={props.onLeave} />
+        </Show>
+        <DetailPane onLeave={props.onLeave} />
       </Show>
     </Show>
   );
 }
 
-
-/** The pane of the open trip: its name over how many days it has and how far they go, and its days, of which one at a time is shown with what it holds. */
-function DaysPane() {
+/** The pane of the open trip: its name over how many days it has and how far they go, and its days. Closing it closes the trip. */
+function DaysPane(props: { onLeave: () => void }) {
   const trip = () => openTrip()!;
   const distance = createMemo(() => routesDistance(trip().days.flatMap((day) => day.routes)));
   const detail = () => [counted(trip().days.length, 'day'), distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
@@ -46,7 +49,7 @@ function DaysPane() {
     <Pane
       level="second"
       label={trip().name}
-      onClose={closeDaysPane}
+      onClose={props.onLeave}
       onUse={endLook}
       strip={<DayStrip />}
       heading={
@@ -74,34 +77,38 @@ function DaysPane() {
 /**
  * The pane of what a day holds, opened by the pad on the day's row: its name over its
  * date and length, and its notes, routes, stops, recordings and media. The day need not
- * be the one on the map; a click in the pane makes it that.
+ * be the one on the map; a click in the pane makes it that. A trip's only day stands
+ * in the trip's pane under the trip's name: closing it closes the trip, and a day
+ * added there brings the list of the days.
  */
-function DetailPane() {
+function DetailPane(props: { onLeave: () => void }) {
   return (
     <Show when={detailDay()}>
       {(day) => {
-        const label = createMemo(() => dayTitleOf(openTrip()!, day()));
-        const backToDay = () => {
-          endLook();
-          if (selectedDayId() !== day().id) selectDay(day().id);
-        };
+        const only = () => onlyDay() !== undefined;
+        const label = createMemo(() => (only() ? openTrip()!.name : dayTitleOf(openTrip()!, day())));
         return (
           <Pane
-            level="detail"
+            level={only() ? 'second' : 'detail'}
             label={label()}
-            onClose={closeDetail}
-            onUse={backToDay}
+            onClose={only() ? props.onLeave : closeDetail}
+            onUse={() => pickDay(day().id)}
             heading={
               <>
                 <span class="lines grow">
                   <span class="name" title={label()}>
-                    {dayHeading('trip', openTrip()!.days.indexOf(day()), day().name)}
+                    {only() ? label() : dayHeading('trip', openTrip()!.days.indexOf(day()), day().name)}
                   </span>
-                  <span class="muted detail">{dayDetail('trip', dayCounts(day()))}</span>
+                  <span class="muted detail">{[only() && day().name, dayDetail('trip', dayCounts(day()))].filter(Boolean).join(' · ')}</span>
                 </span>
-                <IconButton label={t('Edit {what}', { what: label() })} onClick={() => setEditTarget({ kind: 'day', id: day().id })}>
+                <IconButton label={t('Edit {what}', { what: dayTitleOf(openTrip()!, day()) })} onClick={() => setEditTarget({ kind: 'day', id: day().id })}>
                   <PencilIcon />
                 </IconButton>
+                <Show when={only()}>
+                  <IconButton label={t('Add day')} onClick={addDay}>
+                    <PlusIcon />
+                  </IconButton>
+                </Show>
               </>
             }
           >
@@ -123,16 +130,12 @@ function SectionPane() {
         /** The section `by` sections on from the one shown, where there is one. */
         const step = (by: number) => openTrip()!.days[openTrip()!.days.indexOf(shown()) + by];
         const detail = () => dayDetail(openTrip()!.kind, dayCounts(shown()), isPlaceList(openTripId()));
-        const backToSection = () => {
-          endLook();
-          if (selectedDayId() !== shown().id) selectDay(shown().id);
-        };
         return (
           <Pane
             level="second"
             label={label()}
             onClose={closeDetail}
-            onUse={backToSection}
+            onUse={() => pickDay(shown().id)}
             strip={<DayStrip />}
             heading={
               <span class="day-title">

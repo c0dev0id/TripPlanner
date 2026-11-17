@@ -11,11 +11,19 @@ describe('readPlace', () => {
     expect(readPlace('')).toEqual({ folderId: null });
   });
 
-  it('reads and writes whether the pane of the trip\'s days is open', () => {
-    expect(readPlace('#trip=12&pane=1')).toEqual({ folderId: null, tripId: 12, pane: true });
-    expect(readPlace('#pane=1')).toEqual({ folderId: null });
-    expect(withPlace('#pane=1&map=1/2/3', { folderId: null, tripId: 12, pane: true, dayId: 'd' })).toBe('#trip=12&pane=1&day=d&map=1/2/3');
-    expect(withPlace('#trip=12&pane=1', { folderId: null, tripId: 12, pane: false })).toBe('#trip=12');
+  it('reads and writes the day whose contents have their pane, of the open trip alone', () => {
+    expect(readPlace('#trip=12&detail=d-2')).toEqual({ folderId: null, tripId: 12, detailDayId: 'd-2' });
+    expect(readPlace('#detail=d-2')).toEqual({ folderId: null });
+    expect(withPlace('#detail=old&map=1/2/3', { folderId: null, tripId: 12, dayId: 'd', detailDayId: 'e' })).toBe('#trip=12&day=d&detail=e&map=1/2/3');
+    expect(withPlace('#trip=12&detail=e', { folderId: null, tripId: 12 })).toBe('#trip=12');
+  });
+
+  it('reads and writes the trip looked at and its day, with or without an open trip', () => {
+    expect(readPlace('#look=7&lookday=d-1')).toEqual({ folderId: null, lookId: 7, lookDayId: 'd-1' });
+    expect(readPlace('#trip=12&look=7')).toEqual({ folderId: null, tripId: 12, lookId: 7 });
+    expect(readPlace('#lookday=d-1')).toEqual({ folderId: null });
+    expect(withPlace('#look=3&lookday=x', { folderId: null, tripId: 12, lookId: 7 })).toBe('#trip=12&look=7');
+    expect(withPlace('#look=3', { folderId: null })).toBe('');
   });
 
   it('leaves out what is no id, and a day or a route without what it is of', () => {
@@ -35,7 +43,7 @@ describe('withPlace', () => {
   });
 
   it('gives back what it was given', () => {
-    const place = { folderId: 7, tripId: 12, dayId: 'day/1', routeId: 'r&1' };
+    const place = { folderId: 7, tripId: 12, dayId: 'day/1', routeId: 'r&1', detailDayId: 'day/2', lookId: 3, lookDayId: 'd 4' };
     expect(readPlace(withPlace('#map=5/1/2', place))).toEqual(place);
   });
 });

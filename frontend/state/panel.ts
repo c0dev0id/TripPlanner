@@ -1,8 +1,8 @@
-import { createEffect, createRoot, createSignal, on } from 'solid-js';
+import { createEffect, createMemo, createRoot, createSignal, on } from 'solid-js';
 import { readPreference, writePreference } from '../ui/preferences';
 import { detailShown, paneShown } from './library';
-import { showingDuplicates } from './pane';
-import { openDaysPane } from './trip';
+import { setShowingDuplicates, showingDuplicates } from './pane';
+import { openDetail, openTrip } from './trip';
 
 /**
  * The panes beside the map: the library, the pane of what is open in it, and the pane of
@@ -28,10 +28,11 @@ export function fold(level: PaneLevel, to: boolean): void {
   writePreference(PREFERENCE, [...next].join(',') || undefined);
 }
 
-/** Opens the pane of the open trip's days as the pad on its row asks, unfolded. */
-export function showDaysPane(): void {
-  openDaysPane();
-  fold('second', false);
+/** Opens the pane of a day's contents, or of a category's places, as the pad on its row asks: unfolded, and in the place of a report. */
+export function showDetail(dayId: string): void {
+  setShowingDuplicates(false);
+  openDetail(dayId);
+  fold(openTrip()?.kind === 'trip' ? 'detail' : 'second', false);
 }
 
 /** Whether the window matches a media query, as it is resized and turned. */
@@ -49,7 +50,7 @@ export const onePane = matching('(max-width: 1199px)');
 export const sheetMode = matching('(max-width: 720px) and (orientation: portrait)');
 
 /** The deepest pane that is open: the one shown where one alone is. */
-export const shownLevel = (): PaneLevel => (showingDuplicates() ? 'second' : detailShown() ? 'detail' : paneShown() ? 'second' : 'library');
+export const shownLevel: () => PaneLevel = createRoot(() => createMemo(() => (showingDuplicates() ? 'second' : detailShown() ? 'detail' : paneShown() ? 'second' : 'library')));
 
 /** Which way the pane shown was come to, from the one shown before: forward to a deeper one, or back; none before the first change. */
 const [entered, setEntered] = createSignal<'enter-forward' | 'enter-back'>();

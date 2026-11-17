@@ -9,8 +9,9 @@ import { partSelect } from '../state/partSelection';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
 import { isPlaceList } from '../state/library';
-import { fold } from '../state/panel';
-import { closeDetail, detailDayId, isDayMarked, isRouteActive, moveDay, openDetail, openTrip, openTripId, pickDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
+import { showingDuplicates } from '../state/pane';
+import { showDetail } from '../state/panel';
+import { closeDetail, detailDayId, isDayMarked, isRouteActive, moveDay, openTrip, openTripId, pickDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
 import { symbolLabel } from '../symbols/symbols';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
@@ -69,11 +70,10 @@ function SectionItem(props: { day: Day; index: number; places: boolean; onRename
   const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
   const select = partSelect('day', props.day.id, () => openTrip()!.days.map((d) => d.id));
   /** Whether the pane beside the library shows this section; the pad on the row opens it there, unfolded, and closes it. */
-  const detailed = () => detailDayId() === props.day.id;
+  const detailed = () => detailDayId() === props.day.id && !showingDuplicates();
   const toggleDetail = () => {
     if (detailed()) return closeDetail();
-    openDetail(props.day.id);
-    fold('second', false);
+    showDetail(props.day.id);
   };
   let row!: HTMLLIElement;
   // The day shown is brought into view: one opened from elsewhere may lie far down its trip.

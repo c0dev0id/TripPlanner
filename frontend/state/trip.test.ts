@@ -6,7 +6,7 @@ import { answerQuestion, question } from '../ui/confirm';
 import { selectIn, selectionOf } from '../ui/selection';
 import './partSelection';
 import { routedOf } from '../routing/testing';
-import { activeRouteId, addDay, lookAt, looked, closeDetail, detailDay, openDetail, removeDay, setStopSymbols, removeStop, movePoint, convertRouteToTrack, convertTrackToRoute, closeDaysPane, daysPaneOpen, openDaysPane, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
+import { activeRouteId, addDay, lookAt, looked, closeDetail, detailDay, openDetail, removeDay, setStopSymbols, removeStop, movePoint, convertRouteToTrack, convertTrackToRoute, endLook, markedLookId, onlyDay, pickDay, refreshLook, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -175,6 +175,7 @@ describe('the open trip', () => {
   it('keeps the day whose contents are shown apart from the day on the map', () => {
     addDay();
     addDay();
+    addDay();
     const [first, second] = openTrip()!.days.map((day) => day.id);
     // Opening a day's contents shows the day on the map; another day selected leaves the contents where they are.
     openDetail(first!);
@@ -225,28 +226,52 @@ describe('the open trip', () => {
     expect([...selectionOf('stop')]).toEqual(['s']);
   });
 
-  it('opens the pane of the days for a day shown, and keeps it as it is for another trip', () => {
-    expect(daysPaneOpen()).toBe(false);
+  it('has the contents of a trip\'s only day as its pane, and a day picked once it has more', () => {
+    expect(detailDay()).toBeUndefined();
     addDay();
-    const dayId = openTrip()!.days[0]!.id;
-    expect(daysPaneOpen()).toBe(true);
-    closeDaysPane();
-    expect([daysPaneOpen(), selectedDay()]).toEqual([false, undefined]);
-    // Opened on a trip of one day, the pane shows that day; a trip of several shows none.
-    openDaysPane();
-    expect(selectedDay()?.id).toBe(dayId);
-    const two = { ...empty(), id: 2, days: [openTrip()!.days[0]!, { ...openTrip()!.days[0]!, id: 'second' }] };
+    const first = openTrip()!.days[0]!.id;
+    expect([detailDay()?.id, onlyDay()?.id]).toEqual([first, first]);
+    addDay();
+    expect([detailDay(), onlyDay()]).toEqual([undefined, undefined]);
+    undo();
+    expect(detailDay()?.id).toBe(first);
+    // A list of places has no pane before a category's pad is pressed, however few it has.
+    loadTrip({ ...empty(), id: 2, kind: 'collection', days: [{ id: 'c', name: 'Huts', date: null, notes: '', routes: [], stops: [] }] });
+    expect(detailDay()).toBeUndefined();
+  });
+
+  it('opens a trip at the days named, and takes up the route of the day shown alone', () => {
+    const route = { id: 'r', name: '', kind: 'track' as const, profile: 'motorcycle' as const, optional: false, color: null, line: '' };
+    const day = (id: string) => ({ id, name: '', date: null, notes: '', routes: id === 'a' ? [route] : [], stops: [] });
+    const two = { ...empty(), id: 2, days: [day('a'), day('b')] };
+    loadTrip(two, { dayId: 'a', routeId: 'r', detailDayId: 'b' });
+    expect([selectedDay()?.id, activeRouteId(), detailDay()?.id]).toEqual(['a', 'r', 'b']);
+    loadTrip(two, { dayId: 'b', routeId: 'r' });
+    expect([selectedDay()?.id, activeRouteId(), detailDay()]).toEqual(['b', undefined, undefined]);
     loadTrip(two);
-    expect([daysPaneOpen(), selectedDay()]).toEqual([true, undefined]);
-    loadTrip({ ...two, id: 3, days: [two.days[1]!] });
-    expect(selectedDay()?.id).toBe('second');
-    closeDaysPane();
-    loadTrip(two);
-    expect(daysPaneOpen()).toBe(false);
-    loadTrip(two, 'second');
-    expect(daysPaneOpen()).toBe(true);
-    closeTrip();
-    expect(daysPaneOpen()).toBe(false);
+    expect([selectedDay(), detailDay()]).toEqual([undefined, undefined]);
+  });
+
+  it('gives the mark to a trip looked at, and back to the day picked again', () => {
+    addDay();
+    addDay();
+    const dayId = selectedDay()!.id;
+    expect(isDayMarked(dayId)).toBe(true);
+    lookAt({ ...empty(), id: 9 });
+    expect([isDayMarked(dayId), markedLookId(), selectedDay()?.id]).toEqual([false, 9, dayId]);
+    // A click in the open trip's pane ends the look; its day stays shown and takes the mark when it is picked.
+    endLook();
+    expect([isDayMarked(dayId), markedLookId()]).toEqual([false, undefined]);
+    pickDay(dayId);
+    expect([isDayMarked(dayId), selectedDay()?.id]).toEqual([true, dayId]);
+    // Read again, the trip looked at keeps its day, and no other trip takes its place.
+    lookAt({ ...empty(), id: 9 }, 'x');
+    markFolder();
+    refreshLook({ ...empty(), id: 9, name: 'Again' });
+    refreshLook({ ...empty(), id: 8 });
+    expect([looked()?.trip.name, looked()?.dayId, markedLookId()]).toEqual(['Again', 'x', undefined]);
+    markTrip();
+    expect([looked(), isTripMarked(), selectedDay()]).toEqual([undefined, true, undefined]);
   });
 
   it('keeps the saved version through an undo', () => {

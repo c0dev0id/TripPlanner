@@ -6,7 +6,7 @@ import { routeColoring } from '../state/preferences';
 import { PlaceKindMark } from '../map/PlaceKinds';
 import { dropsOnPart } from '../state/clipboard';
 import { isPlaceList } from '../state/library';
-import { openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
+import { isDayMarked, openTrip, openTripId, pickDay, selectDay, selectedDayId } from '../state/trip';
 import { ForById } from '../ui/ForById';
 import { dayCounts } from './DayPane';
 import { dayDetail, dayHeading, dayHolds, dayTitleOf } from './labels';
@@ -48,9 +48,9 @@ export function DayStrip() {
                   onPointerEnter={hover(day().id)}
                   onPointerLeave={() => setHovered(undefined)}
                   onClick={() => {
-                    // The pane that opens says the same, where the card would lie on it.
                     setHovered(undefined);
-                    selectDay(shown() ? undefined : day().id);
+                    if (isDayMarked(day().id)) selectDay(undefined);
+                    else pickDay(day().id);
                   }}
                 >
                   <Show when={places()} fallback={index() + 1}>

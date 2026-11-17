@@ -67,12 +67,12 @@ export function addRides(dropped: Dropped | Promise<Dropped>): Promise<void> {
  * and could not read. The open trip is left first and the library listed afresh after;
  * while one import runs, another is not started.
  */
-export function libraryImports(onLeave: () => Promise<void>) {
+export function libraryImports(onLeave: () => Promise<boolean>) {
   let running = false;
   const run = async (work: (onProgress: (text: string) => void, onKept: (file: StashFile) => void) => Promise<Outcome>) => {
     if (running) return;
     running = true;
-    await onLeave();
+    if (!(await onLeave())) return void (running = false);
     // A long import shows what it has kept so far: now and then while it runs, the folders are listed afresh and the files the Stash kept meanwhile are listed after the others.
     const kept: StashFile[] = [];
     let listedAt = Date.now();

@@ -8,7 +8,6 @@ import { daySequence, type SequenceEntry } from '../routing/sequence';
 import { dayTimeline, type DayTimeline } from '../routing/timeline';
 import { askChoice } from '../ui/confirm';
 import { History } from './history';
-import { setShowingDuplicates } from './pane';
 
 /**
  * The open trip, as an immutable value: each edit replaces it with the result of a pure
@@ -38,84 +37,56 @@ export const isRouteActive: (id: string) => boolean = createRoot(() => createSel
 export const editingRouteId: () => string | undefined = createRoot(() => createMemo(() => (openTrip()?.kind === 'trip' ? activeRouteId() : undefined)));
 
 /**
- * Whether the mark of the library's tree is in the open trip: on its day that is shown,
- * or on the trip itself where none is. A folder holds it otherwise.
+ * Where the mark of the library's tree is: in the open trip, on its day that is shown or
+ * on the trip itself where none is; on the trip looked at; or on a folder, which also
+ * has it once the look has ended.
  */
-const [markInTrip, setMarkInTrip] = createSignal(true);
+const [mark, setMark] = createSignal<'trip' | 'look' | 'folder'>('trip');
 
 /** Whether the day is shown and holds the mark. */
-export const isDayMarked = (dayId: string): boolean => markInTrip() && selectedDayId() === dayId;
+export const isDayMarked = (dayId: string): boolean => mark() === 'trip' && selectedDayId() === dayId;
 
-/** Whether the open trip holds the mark, rather than its day that is shown or a folder. */
-export const isTripMarked = (): boolean => markInTrip() && selectedDayId() === undefined;
+/** Whether the open trip holds the mark, rather than its day that is shown, a trip looked at or a folder. */
+export const isTripMarked = (): boolean => mark() === 'trip' && selectedDayId() === undefined;
 
-/** Whether the mark is on the open trip or on its day: not on a folder. */
-export const isMarkInTrip = (): boolean => openTrip() !== undefined && markInTrip();
+/** Whether the mark is on the open trip or on its day. */
+export const isMarkInTrip = (): boolean => openTrip() !== undefined && mark() === 'trip';
 
-/** Gives the mark to the open trip, which closes its day that is shown. */
+/** The trip looked at, while it holds the mark. */
+export const markedLookId = (): number | undefined => (mark() === 'look' ? looked()?.trip.id : undefined);
+
+/** Gives the mark to the open trip, which closes its day that is shown and ends a look. */
 export function markTrip(): void {
   batch(() => {
     selectDay(undefined);
-    setMarkInTrip(true);
+    markInOpenTrip();
   });
 }
 
-/** Gives the mark back to the open trip: to its day that is shown, or to itself. */
-export const markInOpenTrip = (): void => void setMarkInTrip(true);
-
-/** Takes the mark from the open trip and its day, for a folder; both stay open. */
-export const markFolder = (): void => void setMarkInTrip(false);
-
-/**
- * Whether the pane of the open trip's days stands beside the library. The user opens it
- * on the trip's row and closes it by its own button; a day shown opens it, and it stays
- * as it is when another trip is opened. A list of places has no such pane: its pane is
- * that of its category shown.
- */
-const [daysPaneOpen, setDaysPaneOpen] = createSignal(false);
-export { daysPaneOpen };
-
-/** The one day of a trip that has no other, which its pane shows without being asked. */
-const onlyDayOf = (trip: Trip | undefined): string | undefined => (trip?.kind === 'trip' && trip.days.length === 1 ? trip.days[0]!.id : undefined);
-
-/** Opens the pane of the open trip's days, in the place of a report shown there; a trip of one day shows that day. */
-export function openDaysPane(): void {
+/** Gives the mark back to the open trip, to its day that is shown or to itself, and the map with it. */
+export function markInOpenTrip(): void {
   batch(() => {
-    setDaysPaneOpen(true);
-    setShowingDuplicates(false);
-    const only = onlyDayOf(openTrip());
-    if (only && selectedDayId() === undefined) selectDay(only);
+    setLooked(undefined);
+    setMark('trip');
   });
 }
 
-/** Closes the pane of the open trip's days, and with it the day shown and the pane of a day's contents. */
-export function closeDaysPane(): void {
-  batch(() => {
-    selectDay(undefined);
-    setDetailDayId(undefined);
-    setDaysPaneOpen(false);
-  });
-}
+/** Takes the mark from the open trip and its day, or from the trip looked at, for a folder; what is on the map stays. */
+export const markFolder = (): void => void setMark('folder');
 
-/** Shows a day, which takes the mark and opens the pane beside the library, or none; the route taken up is let go. */
+/** Shows a day on the map, which takes the mark and ends a look, or none; the route taken up is let go. No pane opens for it. */
 export function selectDay(id: string | undefined): void {
   batch(() => {
     setSelectedDayId(id);
-    if (id !== undefined) {
-      setLooked(undefined);
-      setMarkInTrip(true);
-      setDaysPaneOpen(true);
-      setShowingDuplicates(false);
-    }
+    if (id !== undefined) markInOpenTrip();
     setActiveRouteId(undefined);
   });
 }
 
-/** Picks a day in its list: it is shown, or where it is shown already, takes the mark back from a folder and the pane back from a report. */
+/** Picks a day in its list: it is shown, or where it is shown already, takes the mark back from a folder or a trip looked at. */
 export function pickDay(id: string): void {
-  if (selectedDayId() !== id) return selectDay(id);
-  markInOpenTrip();
-  setShowingDuplicates(false);
+  if (selectedDayId() !== id) selectDay(id);
+  else markInOpenTrip();
 }
 
 /** The selected day; it changes only when that day does. */
@@ -152,12 +123,19 @@ export interface Looked {
 const [looked, setLooked] = createSignal<Looked>();
 export { looked };
 
-/** Looks at a trip, or at a day of it; the route taken up in the open trip is let go. */
+/** Looks at a trip, or at a day of it, which takes the mark; the route taken up in the open trip is let go. */
 export function lookAt(trip: Trip, dayId?: string): void {
   batch(() => {
     setActiveRouteId(undefined);
     setLooked({ trip, dayId });
+    setMark('look');
   });
+}
+
+/** Puts the trip looked at as it was read again in the place of what was read before; nothing where another is looked at by now. */
+export function refreshLook(trip: Trip): void {
+  const look = looked();
+  if (look?.trip.id === trip.id) setLooked({ ...look, trip });
 }
 
 export const endLook = (): void => void setLooked(undefined);
@@ -170,8 +148,14 @@ export const endLook = (): void => void setLooked(undefined);
 const [detailDayId, setDetailDayId] = createSignal<string>();
 export { detailDayId };
 
-/** The day in the pane of a day's contents, while the trip holds it. */
-export const detailDay: () => Day | undefined = createRoot(() => createMemo(() => openTrip()?.days.find((d) => d.id === detailDayId())));
+/** The one day of a trip that has no other: its contents are the trip's pane, in the place of a list of one day. */
+export const onlyDay = (): Day | undefined => {
+  const trip = openTrip();
+  return trip?.kind === 'trip' && trip.days.length === 1 ? trip.days[0] : undefined;
+};
+
+/** The day in the pane of a day's contents, while the trip holds it: the one whose pad was pressed, or a trip's only day. */
+export const detailDay: () => Day | undefined = createRoot(() => createMemo(() => onlyDay() ?? openTrip()?.days.find((d) => d.id === detailDayId())));
 
 /** That day's stops and route points in riding order: the selected day's where it is that. */
 export const detailSequence: () => SequenceEntry[] = createRoot(() =>
@@ -187,8 +171,7 @@ export const detailTimeline: () => DayTimeline | undefined = createRoot(() => cr
 /** Opens the pane of a day's contents, and shows the day on the map. */
 export function openDetail(dayId: string): void {
   batch(() => {
-    if (selectedDayId() !== dayId) selectDay(dayId);
-    setLooked(undefined);
+    pickDay(dayId);
     setDetailDayId(dayId);
   });
 }
@@ -266,27 +249,28 @@ function restore(earlier: Trip | undefined, current: Trip): void {
 let saved: Trip | undefined;
 export const savedTrip = (): Trip | undefined => saved;
 
-/**
- * Opens a trip as loaded from the server, at the day `dayId` or with none shown; nothing
- * before it can be undone. A day asked for opens the pane of the days; open already, the
- * pane shows this trip's, with its one day shown where it has no other.
- */
-export function loadTrip(loaded: Trip, dayId?: string): void {
+/** Where a trip is opened at: its day shown on the map, that day's route taken up, and the day whose contents have their pane. */
+export interface OpenAt {
+  dayId?: string;
+  routeId?: string;
+  detailDayId?: string;
+}
+
+/** Opens a trip as loaded from the server, at the days `at` names or with none shown; nothing before it can be undone. */
+export function loadTrip(loaded: Trip, at: OpenAt = {}): void {
   history.clear();
   saved = loaded;
   batch(() => {
     setOpenTrip(loaded);
     setHistoryVersion((v) => v + 1);
-    setSelectedDayId(dayId ?? (daysPaneOpen() ? onlyDayOf(loaded) : undefined));
-    setDetailDayId(undefined);
-    setLooked(undefined);
-    if (dayId !== undefined) setDaysPaneOpen(true);
-    setMarkInTrip(true);
-    setActiveRouteId(undefined);
+    setSelectedDayId(at.dayId);
+    setDetailDayId(at.detailDayId);
+    markInOpenTrip();
+    setActiveRouteId(loaded.days.find((day) => day.id === at.dayId)?.routes.some((route) => route.id === at.routeId) ? at.routeId : undefined);
   });
 }
 
-/** Lets go of the open trip, and closes the pane of its days. */
+/** Lets go of the open trip, and its panes with it. */
 export function closeTrip(): void {
   history.clear();
   saved = undefined;
@@ -294,7 +278,6 @@ export function closeTrip(): void {
     setOpenTrip(undefined);
     setSelectedDayId(undefined);
     setDetailDayId(undefined);
-    setDaysPaneOpen(false);
     setActiveRouteId(undefined);
     setHistoryVersion((v) => v + 1);
   });

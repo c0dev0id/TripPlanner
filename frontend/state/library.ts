@@ -6,7 +6,7 @@ import type { FolderKind } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { createRequest } from '../ui/request';
 import { stashFiles } from './stash';
-import { daysPaneOpen, detailDay, looked, openTrip, openTripId, removeParts, selectedDay } from './trip';
+import { detailDay, looked, onlyDay, openTrip, openTripId, removeParts, selectedDay } from './trip';
 
 /** The library as the server lists it, and where the user is in it. */
 
@@ -35,11 +35,11 @@ export const tripShown = (): boolean => tripInView() && looked() === undefined;
 /** The day shown in the pane and on the map: the selected one, while the open trip is shown. */
 export const shownDay = () => (tripShown() ? selectedDay() : undefined);
 
-/** Whether the pane of what a day of the open trip holds is there. */
-export const detailShown = (): boolean => paneShown() && openTrip()?.kind === 'trip' && detailDay() !== undefined;
+/** Whether the pane beside the library is there: an open trip's, which is open for as long as it has it, or the one of a list's category whose pad was pressed; neither while the map follows another tab. */
+export const paneShown = (): boolean => tripInView() && (openTrip()?.kind === 'trip' || detailDay() !== undefined);
 
-/** Whether the pane beside the library is there: a trip's days while their pane is open, a list's category while its pane is open; neither while the map follows another tab. */
-export const paneShown = (): boolean => tripInView() && (openTrip()?.kind === 'trip' ? daysPaneOpen() : detailDay() !== undefined);
+/** Whether a third pane is there, of what a day of the open trip holds, beside the one of its days; a trip's only day is in the trip's pane instead. */
+export const detailShown = (): boolean => paneShown() && openTrip()?.kind === 'trip' && !onlyDay() && detailDay() !== undefined;
 
 /** The folder asked for in each tree, none for its top: the one the tree marks, and that takes what is pasted with the keys or from the line that offers it. */
 const [markedFolders, setMarkedFolders] = createSignal<Partial<Record<TreeTab, number>>>({});

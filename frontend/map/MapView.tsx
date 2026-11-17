@@ -247,7 +247,7 @@ function clearOfCards(map: MapLibreMap) {
   return padding;
 }
 
-/** Keeps the lines of the trip looked at on the map, its stops as dots, and shows it whole when it changes. */
+/** Keeps the lines of the trip looked at on the map, its stops as dots, and shows it whole when another trip or day is looked at. */
 function LookLines(props: { map: MapLibreMap }) {
   const days = createMemo(() => {
     const look = looked();
@@ -256,11 +256,12 @@ function LookLines(props: { map: MapLibreMap }) {
   const stops = () => (looked()?.trip.kind === 'trip' ? days().flatMap((day) => day.stops.map((stop) => stop.lngLat)) : []);
   const features = createMemo(() => routeFeatures(days().map((day) => ({ day, role: 'selected' as const })), lookColors(), undefined, new Set(), [], stops()));
   createEffect(() => props.map.getSource<GeoJSONSource>(LOOK_SOURCE)?.setData(features()));
+  // Read again, the trip looked at stays where it is on the map, as does one that was open until now.
   createEffect(
-    on(days, (shown) => {
-      if (viewLocked()) return;
+    on([() => looked()?.trip.id, () => looked()?.dayId], ([tripId]) => {
+      if (keepsView(tripId) || viewLocked()) return;
       const bounds = new LngLatBounds();
-      for (const day of shown) {
+      for (const day of days()) {
         for (const route of day.routes) for (const position of routePositions(route)) bounds.extend(position);
         for (const stop of day.stops) bounds.extend(stop.lngLat);
       }
@@ -282,8 +283,8 @@ function RouteLines(props: { map: MapLibreMap }) {
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
     on([selectedDayId, openTripId, () => looked() === undefined], () => {
-      // Back at the view the address names, the map stays there, as it does while its view is locked.
-      if (keepsView(openTripId()) || viewLocked()) return;
+      // Back at the view the address names, the map stays there, as it does while its view is locked; a trip looked at shows itself.
+      if (looked() || keepsView(openTripId()) || viewLocked()) return;
       const bounds = new LngLatBounds();
       for (const { day } of shownDays().filter((d) => d.role === 'selected')) {
         for (const route of day.routes.filter((r) => routeDrawn(r, 'selected'))) for (const position of routePositions(route)) bounds.extend(position);
