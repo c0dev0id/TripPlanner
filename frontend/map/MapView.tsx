@@ -1,4 +1,4 @@
-import { GeoJSONSource, LngLatBounds, type Map as MapLibreMap } from 'maplibre-gl';
+import { LngLatBounds, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import type { Day, LngLat, Route } from '../model/trip';
@@ -37,6 +37,7 @@ import { SearchBox } from './SearchBox';
 import { StopMarkers } from './StopMarkers';
 import { ToggleControl } from './ToggleControl';
 
+import { drawFeatures } from './drawnLines';
 /** The page's map, once it is loaded and while it stands. */
 const [shownMap, setShownMap] = createSignal<MapLibreMap>();
 
@@ -205,8 +206,8 @@ function RecordingLines(props: { map: MapLibreMap }) {
     const id = o.recording.id;
     return recordingFeatures([...dimmedBeyond(id, whole, o.track), ...(colors ? colorPieces(id, o.track.points, colors) : [{ id, points: o.track.points, color: recordingColor(o.recording) }])]);
   });
-  createEffect(() => props.map.getSource<GeoJSONSource>(RECORDINGS_SOURCE)?.setData(others()));
-  createEffect(() => props.map.getSource<GeoJSONSource>(OPENED_RECORDING_SOURCE)?.setData(openedLine()));
+  createEffect(() => drawFeatures(props.map, RECORDINGS_SOURCE, others()));
+  createEffect(() => drawFeatures(props.map, OPENED_RECORDING_SOURCE, openedLine()));
   return null;
 }
 
@@ -224,7 +225,7 @@ function ComparedLines(props: { map: MapLibreMap }) {
     const drawn = new Set(shownRecordings().map((recording) => recording.id));
     const rides = mapTab() === 'recordings' ? ridesOnMap().filter((ride) => !drawn.has(ride.id)) : [];
     const lines = recordingFeatures([...comparedLines(), ...previewedLines(), ...rides, ...(stash ? stashLines() : []), ...pinned]);
-    props.map.getSource<GeoJSONSource>(COMPARED_SOURCE)?.setData({ type: 'FeatureCollection', features: [...lines.features, ...dotFeatures([...(stash ? stashWaypoints() : []), ...sectionEnds()])] });
+    drawFeatures(props.map, COMPARED_SOURCE, { type: 'FeatureCollection', features: [...lines.features, ...dotFeatures([...(stash ? stashWaypoints() : []), ...sectionEnds()])] });
   });
   return null;
 }
@@ -255,7 +256,7 @@ function LookLines(props: { map: MapLibreMap }) {
   });
   const stops = () => (looked()?.trip.kind === 'trip' ? days().flatMap((day) => day.stops.map((stop) => stop.lngLat)) : []);
   const features = createMemo(() => routeFeatures(days().map((day) => ({ day, role: 'selected' as const })), lookColors(), undefined, new Set(), [], stops()));
-  createEffect(() => props.map.getSource<GeoJSONSource>(LOOK_SOURCE)?.setData(features()));
+  createEffect(() => drawFeatures(props.map, LOOK_SOURCE, features()));
   // Read again, the trip looked at stays where it is on the map, as does one that was open until now.
   const dayId = createMemo(() => looked()?.dayId);
   createEffect(
@@ -281,7 +282,7 @@ function RouteLines(props: { map: MapLibreMap }) {
   // A pin set on a route that is drawn anyway changes no line.
   const drawn = createMemo(() => new Set(days().flatMap(({ day, role }) => day.routes.flatMap((route) => (routeDrawn(route, role) ? route.id : [])))), new Set<string>(), { equals: sameIds });
   const features = createMemo(() => routeFeatures(days(), openRouteColors(), activeRouteId(), failedLegs(), marks(), dims(), (route) => drawn().has(route.id)));
-  createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
+  createEffect(() => drawFeatures(props.map, ROUTES_SOURCE, features()));
   createEffect(
     on([selectedDayId, openTripId, () => looked() === undefined], () => {
       // Back at the view the address names, the map stays there, as it does while its view is locked; a trip looked at shows itself.
