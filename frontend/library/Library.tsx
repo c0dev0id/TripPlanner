@@ -6,7 +6,7 @@ import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/sta
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, dropsOnRow, libraryClip, libraryPasteItem, pasteItems as pasteIntoPart, stashFilesClip, type LibraryClip, type PasteInto, type PasteItem } from '../state/clipboard';
-import { heldOf, importNote, isPlaceList, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
+import { heldOf, importNote, isPlaceList, paneShown, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
 import { flushSave } from '../state/autosave';
@@ -17,8 +17,7 @@ import { setEditTarget, setExportScope, setShareOpen } from '../state/drawing';
 import { openJournal } from '../state/journal';
 import { unpinTrips } from '../state/pins';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markedLookId, markFolder, markInOpenTrip, markTrip, openTrip, openTripId, selectDay, selectedDayId, type OpenAt } from '../state/trip';
-import { setShowingDuplicates, showingDuplicates } from '../state/pane';
-import { fold as foldPane } from '../state/panel';
+import { reveal } from '../state/panel';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
@@ -79,8 +78,8 @@ const ITEMS = 'items';
  * copied, pasted into, moved, merged, renamed, exported and deleted.
  */
 export function Library(props: {
-  /** Opens a trip or a list, at the days or categories `at` names, and with `unfold` its pane beside the library unfolded, as a pad asks. */
-  onOpen: (trip: TripSummary, at?: OpenAt, unfold?: boolean) => void;
+  /** Opens a trip or a list, at the days or categories `at` names. */
+  onOpen: (trip: TripSummary, at?: OpenAt) => void;
   /** Looks at a trip: shows it on the map without opening it. */
   onLook: (trip: TripSummary) => void;
   /** Opens a route the search found, in its trip and day. */
@@ -203,15 +202,14 @@ export function Library(props: {
   };
   /** The pad on a trip's row: it opens the trip, whose pane then stands beside the library, unfolded and in the place of a report, and closes the trip that is open. */
   const paneOf = (trip: TripSummary): CardPane => {
-    const open = () => trip.id === openTripId() && !showingDuplicates();
+    const open = () => trip.id === openTripId() && paneShown();
     return {
       open,
       onToggle: () => {
         if (open()) return void props.onLeave(true);
-        setShowingDuplicates(false);
-        if (trip.id !== openTripId()) return props.onOpen(trip, undefined, true);
-        markInOpenTrip();
-        foldPane('second', false);
+        reveal('second');
+        if (trip.id === openTripId()) markInOpenTrip();
+        else props.onOpen(trip);
       },
     };
   };
@@ -460,7 +458,8 @@ export function Library(props: {
     const trip = await createTrip(name, into, 'trip');
     const dayId = newId();
     await changeTrip(trip.id, (made) => withDayAdded(made, dayId));
-    props.onOpen(trip, { dayId }, true);
+    reveal('second');
+    props.onOpen(trip, { dayId });
   };
   /** A new section of the name in the collection: in the open one as an edit, in another on the server. */
   const addSectionTo = (tripId: number, name: string) =>
@@ -755,7 +754,13 @@ export function Library(props: {
             fold={{ unfolded: () => trip().kind === 'collection' && isUnfolded({ trip: trip() }), current: () => isMarkedTrip(trip()), open: () => openTripId() === trip().id }}
             pane={trip().kind === 'trip' ? paneOf(trip()) : undefined}
           >
-            <Show when={openTripId() === trip().id} fallback={<TripDays trip={trip()} onOpen={(dayId, pane) => props.onOpen(trip(), pane ? { dayId, detailDayId: dayId } : { dayId }, pane)} />}>
+            <Show when={openTripId() === trip().id} fallback={<TripDays
+                  trip={trip()}
+                  onOpen={(dayId, pane) => {
+                    if (pane) reveal('second');
+                    props.onOpen(trip(), pane ? { dayId, detailDayId: dayId } : { dayId });
+                  }}
+                />}>
               {props.children}
             </Show>
           </TripCard>

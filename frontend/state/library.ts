@@ -5,6 +5,7 @@ import { isTreeTab, TREES, treeOfKind, type LibraryTab, type TreeTab } from '../
 import type { FolderKind } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { createRequest } from '../ui/request';
+import { showingDuplicates } from './pane';
 import { stashFiles } from './stash';
 import { detailDay, looked, onlyDay, openTrip, openTripId, removeParts, selectedDay } from './trip';
 
@@ -27,16 +28,16 @@ export function showTab(to: LibraryTab): void {
 }
 
 /** Whether the open trip's panes are there: while the map follows its tab; one not listed yet counts as in it. */
-export const tripInView = (): boolean => (openTree() ?? mapTab()) === mapTab();
+const tripInView = (): boolean => (openTree() ?? mapTab()) === mapTab();
 
 /** Whether the open trip is on the map and takes the keys: while its panes are there and no other trip is looked at. */
 export const tripShown = (): boolean => tripInView() && looked() === undefined;
 
-/** The day shown in the pane and on the map: the selected one, while the open trip is shown. */
+/** The day shown on the map: the selected one, while the open trip is shown. */
 export const shownDay = () => (tripShown() ? selectedDay() : undefined);
 
-/** Whether the pane beside the library is there: an open trip's, which is open for as long as it has it, or the one of a list's category whose pad was pressed; neither while the map follows another tab. */
-export const paneShown = (): boolean => tripInView() && (openTrip()?.kind === 'trip' || detailDay() !== undefined);
+/** Whether the pane beside the library is there: an open trip's, which is open for as long as it has it, or the one of a list's category whose pad was pressed; neither while the map follows another tab, or a report stands in its place. */
+export const paneShown = (): boolean => tripInView() && !showingDuplicates() && (openTrip()?.kind === 'trip' || detailDay() !== undefined);
 
 /** Whether a third pane is there, of what a day of the open trip holds, beside the one of its days; a trip's only day is in the trip's pane instead. */
 export const detailShown = (): boolean => paneShown() && openTrip()?.kind === 'trip' && !onlyDay() && detailDay() !== undefined;

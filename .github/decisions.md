@@ -1249,9 +1249,9 @@ entries at the end of their section.
   alike meant showing it again ten times. The trip now opens at the day with the
   report still in the pane: the map shows the day, which says where the route is,
   and the trip's own pane is one press of its pad away.
-  Who has the pane is one rule (`state/pane.ts`): a pad that opens a trip, a day's
-  contents or a category's places takes it; a day that is merely shown on the map
-  does not. The report's selection is not kept while it is away: with the
+  Who has the pane is one rule (`reveal` in `state/panel.ts`): a pad that opens a trip, a day's
+  contents or a category's places takes it and unfolds it, at the press; a day that
+  is merely shown on the map does not. The report's selection is not kept while it is away: with the
   location opened beside the report there is little to come back to, and the one
   selection there is belongs to what is in view.
 - **A route and a track are never duplicates of each other.** The report compared

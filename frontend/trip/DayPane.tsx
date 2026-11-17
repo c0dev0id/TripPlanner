@@ -5,7 +5,7 @@ import { routesDistance } from '../routing/legs';
 import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
-import { isPlaceList, paneShown } from '../state/library';
+import { detailShown, isPlaceList, paneShown } from '../state/library';
 import { addDay, closeDetail, detailDay, endLook, onlyDay, openDetail, openTrip, openTripId, pickDay } from '../state/trip';
 import { counted, distanceText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
@@ -89,7 +89,7 @@ function DetailPane(props: { onLeave: () => void }) {
         const label = createMemo(() => (only() ? openTrip()!.name : dayTitleOf(openTrip()!, day())));
         return (
           <Pane
-            level={only() ? 'second' : 'detail'}
+            level={detailShown() ? 'detail' : 'second'}
             label={label()}
             onClose={only() ? props.onLeave : closeDetail}
             onUse={() => pickDay(day().id)}

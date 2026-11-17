@@ -2,7 +2,7 @@ import { createEffect, createMemo, createRoot, createSignal, on } from 'solid-js
 import { readPreference, writePreference } from '../ui/preferences';
 import { detailShown, paneShown } from './library';
 import { setShowingDuplicates, showingDuplicates } from './pane';
-import { openDetail, openTrip } from './trip';
+import { closeDetail, detailDayId, openDetail } from './trip';
 
 /**
  * The panes beside the map: the library, the pane of what is open in it, and the pane of
@@ -10,7 +10,7 @@ import { openDetail, openTrip } from './trip';
  * keeps; none folds by itself. Where they do not fit side by side one is shown, the
  * deepest that is open.
  */
-export const PANES = ['library', 'second', 'detail'] as const;
+const PANES = ['library', 'second', 'detail'] as const;
 export type PaneLevel = (typeof PANES)[number];
 
 const PREFERENCE = 'foldedPanes';
@@ -28,11 +28,20 @@ export function fold(level: PaneLevel, to: boolean): void {
   writePreference(PREFERENCE, [...next].join(',') || undefined);
 }
 
-/** Opens the pane of a day's contents, or of a category's places, as the pad on its row asks: unfolded, and in the place of a report. */
-export function showDetail(dayId: string): void {
+/** Gives a pane the room a pad on a row asks for: it is unfolded, and the open trip's stands in the place of a report. */
+export function reveal(level: PaneLevel): void {
   setShowingDuplicates(false);
+  fold(level, false);
+}
+
+/** Whether the pane of a day's contents, or of a category's places, shows this one's. */
+export const isDetailed = (dayId: string): boolean => detailDayId() === dayId && paneShown();
+
+/** What the pad on a day's or a category's row does: it opens the pane of what that holds, and closes it. */
+export function toggleDetail(dayId: string): void {
+  if (isDetailed(dayId)) return closeDetail();
   openDetail(dayId);
-  fold(openTrip()?.kind === 'trip' ? 'detail' : 'second', false);
+  reveal(detailShown() ? 'detail' : 'second');
 }
 
 /** Whether the window matches a media query, as it is resized and turned. */
@@ -61,6 +70,6 @@ createRoot(() => {
 });
 
 /** How much of a phone's screen the sheet takes while it is not folded: about half, or nearly all. */
-export type Sheet = 'half' | 'full';
+type Sheet = 'half' | 'full';
 
 export const [sheet, setSheet] = createSignal<Sheet>('half');

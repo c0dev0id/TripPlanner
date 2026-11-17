@@ -46,16 +46,15 @@ export function LibraryTabs(props: { onTab: (tab: LibraryTab) => void }) {
 }
 
 /**
- * The library's pane: its switches and search, a tab for each of its views (the
- * collections, the trips, the lists of places, the rides and, as a gear, the settings), the open trip's name
- * with the trip's own actions while its tab is the one shown and nothing in its place otherwise, and what the tab shown holds: a tree of folders and
- * trips, the open list's categories among them, or the rides. A tab only shows its view:
+ * What the library's pane holds under its tabs (`LibraryTabs`, in the pane's head): the
+ * search of the tab shown and what that tab holds, a tree of folders and trips, the open
+ * list's categories among them, the rides or the settings. A tab only shows its view:
  * what is unfolded, marked and selected in the others stays, and how far each was
  * scrolled.
  */
 export function Explorer(props: {
-  /** Opens a trip, at the days and with the route `at` names, and with `unfold` its pane unfolded. */
-  onOpen: (id: number, at?: OpenAt, unfold?: boolean) => void;
+  /** Opens a trip, at the days and with the route `at` names. */
+  onOpen: (id: number, at?: OpenAt) => void;
   /** Looks at a trip, or at a day of it, without opening it. */
   onLook: (id: number, dayId?: string) => void;
   /** Leaves the open trip, saved, with `look` kept on the map; false where its save failed. */
@@ -63,9 +62,9 @@ export function Explorer(props: {
   error: string | undefined;
 }) {
   /** Opens a trip and makes its folder the one shown: a trip of the tree or the search, or one just made. */
-  const openIn = (trip: TripSummary, at?: OpenAt, unfold?: boolean) => {
+  const openIn = (trip: TripSummary, at?: OpenAt) => {
     showFolder(trip.folderId);
-    props.onOpen(trip.id, at, unfold);
+    props.onOpen(trip.id, at);
   };
   /** Looks at a trip of the tree or the search, whose folder becomes the one shown. */
   const lookIn = (trip: TripSummary) => {

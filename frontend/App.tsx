@@ -17,8 +17,7 @@ import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad, saveState } from './state/autosave';
 import { folderOfTrip, libraryFolders, libraryTab, libraryTrips, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab } from './state/library';
-import { setShowingDuplicates, showingDuplicates } from './state/pane';
-import { fold } from './state/panel';
+import { showingDuplicates } from './state/pane';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, detailDayId, editingRouteId, endLook, loadTrip, lookAt, looked, lookedTripId, openTrip, openTripId, refreshLook, selectedDay, selectedDayId, type OpenAt } from './state/trip';
 import { DayDialog } from './trip/DayDialog';
@@ -39,8 +38,8 @@ export function App() {
 
   /** Counts the trips asked for and the leavings, so that a trip that arrives after the user went elsewhere is not opened. */
   let latest = 0;
-  /** Opens a trip at the days and with the route `at` names, and with `unfold` its pane unfolded; a trip open before is saved first, and stays open where that fails. */
-  const open = async (id: number, at?: OpenAt, unfold?: boolean) => {
+  /** Opens a trip at the days and with the route `at` names; a trip open before is saved first, and stays open where that fails. */
+  const open = async (id: number, at?: OpenAt) => {
     const ask = ++latest;
     /** Says on the trip's row how far the opening has come, while it is still the trip asked for. */
     const say = (progress: Progress | 'arrived') => void (ask === latest && setOpening({ tripId: id, progress }));
@@ -58,7 +57,6 @@ export function App() {
       if (ask !== latest) return;
       keepPinsOfOpenTrip();
       loadTrip(trip, at);
-      if (unfold) fold('second', false);
       resetSaveState();
       // The trip is open; its row keeps saying that it opens until the map has drawn the routes.
       void routesDrawn().then(() => ask === latest && setOpening(undefined));
@@ -136,12 +134,6 @@ export function App() {
     return true;
   };
 
-  /** Opens a trip picked in the library; one opened by a pad takes the pane beside the library from a report. */
-  const openPicked = (id: number, at?: OpenAt, unfold?: boolean) => {
-    if (unfold) setShowingDuplicates(false);
-    void open(id, at, unfold);
-  };
-
   /** Opens a trip at a day from a report in the pane, which stays there; as a trip opened in the tree, it makes its folder the one shown. */
   const openLocation = (id: number, dayId: string) => {
     showFolder(folderOfTrip(id));
@@ -195,12 +187,13 @@ export function App() {
     <>
       <Pane level="library" label={t('Library')} heading={<LibraryTabs onTab={(tab) => switchTab(tab, open)} />}>
         <div class="library-panel" data-drop-folder={dropFolder()} data-drop-rides={libraryTab() === 'recordings' ? '' : undefined}>
-          <Explorer onOpen={openPicked} onLook={(id, dayId) => void look(id, dayId)} onLeave={leave} error={error()} />
+          <Explorer onOpen={(id, at) => void open(id, at)} onLook={(id, dayId) => void look(id, dayId)} onLeave={leave} error={error()} />
         </div>
       </Pane>
-      <Show when={showingDuplicates()} fallback={<DayPane onLeave={() => void leave(true)} />}>
+      <Show when={showingDuplicates()}>
         <DuplicatesReport onOpen={openLocation} />
       </Show>
+      <DayPane onLeave={() => void leave(true)} />
       <div class="map-wrap">
         <MapView />
         <Show when={openTrip()}>

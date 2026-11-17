@@ -9,7 +9,7 @@ import { fileLegCount, pointCount, routedLegs, routeDistance, routesDistance } f
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { panTo, pointItems, setTrackAction } from '../state/drawing';
-import { showDetail } from '../state/panel';
+import { isDetailed, toggleDetail } from '../state/panel';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
@@ -30,10 +30,8 @@ import {
   selectDay,
   selectedDayId,
   updateRoute,
-  detailDayId,
   detailSequence,
   detailTimeline,
-  closeDetail,
 } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
@@ -91,12 +89,7 @@ function DayItem(props: { day: Day; index: number }) {
   const meta = () => dayDetail('trip', { date: props.day.date, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, media: 0, distanceM: distance() });
   const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
   const select = partSelect('day', props.day.id, () => openTrip()!.days.map((d) => d.id));
-  /** Whether the pane of a day's contents shows this day's; the pad on the row opens it there, unfolded, and closes it. */
-  const detailed = () => detailDayId() === props.day.id;
-  const toggleDetail = () => {
-    if (detailed()) return closeDetail();
-    showDetail(props.day.id);
-  };
+  const detailed = () => isDetailed(props.day.id);
   let row!: HTMLLIElement;
   // The day shown is brought into view: one opened from elsewhere may lie far down its trip.
   createEffect(on(selected, (is) => is && requestAnimationFrame(() => row.scrollIntoView({ block: 'nearest' }))));
@@ -125,7 +118,7 @@ function DayItem(props: { day: Day; index: number }) {
         </button>
         <JournalButton target={{ dayId: props.day.id }} of={label()} />
         <MenuButton of={label()} items={more} />
-        <IconButton label={t(detailed() ? 'Hide the contents of {name}' : 'Show the contents of {name}', { name: label() })} pressed={detailed()} onClick={toggleDetail}>
+        <IconButton label={t(detailed() ? 'Hide the contents of {name}' : 'Show the contents of {name}', { name: label() })} pressed={detailed()} onClick={() => toggleDetail(props.day.id)}>
           {detailed() ? <ChevronLeftIcon /> : <ChevronIcon />}
         </IconButton>
       </div>
@@ -400,5 +393,5 @@ function AloneStopItem(props: { stop: Stop }) {
   );
 }
 
-/** How a stop of the selected day is selected, among that day's stops in riding order. */
+/** How a stop of the day whose contents are shown is selected, among that day's stops in riding order. */
 const stopSelect = (id: string): RowSelect => partSelect('stop', id, () => detailSequence().flatMap((entry) => (entry.stop ? [entry.stop.id] : [])));

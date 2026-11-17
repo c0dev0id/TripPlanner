@@ -9,9 +9,8 @@ import { partSelect } from '../state/partSelection';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
 import { isPlaceList } from '../state/library';
-import { showingDuplicates } from '../state/pane';
-import { showDetail } from '../state/panel';
-import { closeDetail, detailDayId, isDayMarked, isRouteActive, moveDay, openTrip, openTripId, pickDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
+import { isDetailed, toggleDetail } from '../state/panel';
+import { isDayMarked, isRouteActive, moveDay, openTrip, openTripId, pickDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
 import { symbolLabel } from '../symbols/symbols';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
@@ -69,12 +68,7 @@ function SectionItem(props: { day: Day; index: number; places: boolean; onRename
   const meta = () => dayDetail('collection', { date: null, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, media: mediaOf(props.day.id).length, distanceM: distance() }, props.places);
   const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
   const select = partSelect('day', props.day.id, () => openTrip()!.days.map((d) => d.id));
-  /** Whether the pane beside the library shows this section; the pad on the row opens it there, unfolded, and closes it. */
-  const detailed = () => detailDayId() === props.day.id && !showingDuplicates();
-  const toggleDetail = () => {
-    if (detailed()) return closeDetail();
-    showDetail(props.day.id);
-  };
+  const detailed = () => isDetailed(props.day.id);
   let row!: HTMLLIElement;
   // The day shown is brought into view: one opened from elsewhere may lie far down its trip.
   createEffect(on(selected, (is) => is && requestAnimationFrame(() => row.scrollIntoView({ block: 'nearest' }))));
@@ -108,7 +102,7 @@ function SectionItem(props: { day: Day; index: number; places: boolean; onRename
           <PlaceKindControls id={props.day.id} name={props.day.name} />
         </Show>
         <MenuButton of={props.day.name} items={items} />
-        <IconButton label={t(detailed() ? 'Hide the places of {name}' : 'Show the places of {name}', { name: props.day.name })} pressed={detailed()} onClick={toggleDetail}>
+        <IconButton label={t(detailed() ? 'Hide the places of {name}' : 'Show the places of {name}', { name: props.day.name })} pressed={detailed()} onClick={() => toggleDetail(props.day.id)}>
           {detailed() ? <ChevronLeftIcon /> : <ChevronIcon />}
         </IconButton>
       </div>
