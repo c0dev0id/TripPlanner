@@ -1803,9 +1803,11 @@ entries at the end of their section.
   it is published or not, since the journal is looked at before it is. A second
   rendering of the journal inside the planner would have been a second thing to keep
   like the page, and the first to differ from it. The planner tells the read-only
-  pages of the browser that something changed, on a BroadcastChannel, after each write
-  of the journal, each save of the trip and each change of what the page shows; a page
-  that hears it reads the trip and the journal again. The same word reaches a page in
+  pages of the browser which trip changed, on a BroadcastChannel. The word is sent
+  where the write is made, in `api.ts`, for every write to a trip, its journal and
+  what its page shows, so that a new kind of write cannot forget it; a page that hears
+  its own trip named reads the trip and the journal again, once for what is written in
+  quick succession. The same word reaches a page in
   a window of its own, which is the preview where there is no room for it beside the
   journal. What the page shows to whom (the link, the journal, the GPX file, the cover)
   is set above the two; the dialog that shared a trip is gone.
@@ -1907,8 +1909,9 @@ entries at the end of their section.
   JPEGs of 400, 1280 and 2048 px on the longer side, never larger than the image, made
   with GD. They are made when the file is uploaded, from one decoding of it, so that
   the first reader of a page of photos does not wait for forty of them; one that is
-  missing, as for photos uploaded before, is made on first request, written beside and
-  renamed, since two requests may ask for it at once. An image of more than twenty
+  missing, as for photos uploaded before, is made on first request with every other
+  size the photo lacks, from the one decoding, and written beside and renamed, since
+  two requests may ask for it at once. An image of more than twenty
   million pixels is not decoded, GD holding four bytes for each, and is offered as a
   file instead.
   A photo's file carries what the camera wrote into it: the position, the device, an
@@ -2002,7 +2005,8 @@ entries at the end of their section.
   owner's document, so a stop's contact (a host's name and number) and its booking
   reference went to anyone with the link. `Share/PublicTrip` makes the public form of
   the document and of an entry, and the shared GPX file is written from that form, so
-  that a field added to a stop is private until it is let through there. An entry
+  that a field added to a stop is private until it is let through there: of a stop and
+  of an entry it passes on the fields it lists and nothing else. An entry
   goes out without where its photo was taken, which the owner may have moved it away
   from on purpose. The owner's own page keeps everything: it is the roadbook.
 - **A GPX file of the page holds one line.** A file with several routes or tracks is
@@ -2026,6 +2030,13 @@ entries at the end of their section.
   the page, and undo in the planner does not reach what the page shows. The route's
   own `optional` was not used for it: that says what is decided on the day of riding,
   and an optional detour may well be one to show.
+- **The routes a page leaves out have an index of their own.** Which routes are left
+  out is asked with every look at a shared trip, and the column lies behind each
+  route's line, so the question read through all of them. A partial index on the
+  routes that are left out answers it; it is empty for most trips. The save that
+  takes routes or stops off a trip reads which they are first and touches the journal
+  only then, since the entries have no index by their route or stop and most saves
+  remove nothing.
 - **The shared page is headed on the server.** A link pasted into a messenger is
   fetched by a program that runs no script, so the page's title, description and
   cover picture are written into the template from the trip, and an unknown token is

@@ -1,11 +1,10 @@
 import { t } from '../i18n/t';
 import { GeoJSONSource, LngLatBounds, Marker, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show } from 'solid-js';
-import { entryImageUrl } from '../api';
 import { newBaseMap } from '../map/baseMap';
 import { entryMarkerElement, markerElement, stopContent } from '../map/markerContent';
 import { ROUTES_SOURCE, routeFeatures } from '../map/routeOverlay';
-import { dayOfEntry, entryTitle, type Entry } from '../model/journal';
+import { dayOfEntry, placeOfEntry, type Entry } from '../model/journal';
 import { DEFAULT_ROUTE_COLORING, routeColors } from '../model/routeLook';
 import type { Day, Trip } from '../model/trip';
 import { routePositions, routesDistance } from '../routing/legs';
@@ -32,24 +31,6 @@ function areaOf(day: Day): LngLatBounds {
     areas.set(day, area);
   }
   return area;
-}
-
-/** A photo's marker: the photo small, which goes to where it is told of in the text. */
-function photoMarker(entry: Entry, api: string, go: () => void): HTMLDivElement {
-  const photo = (
-    <a
-      class="photo"
-      href={entryImageUrl(api, entry, 2048)}
-      title={entryTitle(entry)}
-      on:click={(e) => {
-        e.preventDefault();
-        go();
-      }}
-    >
-      <img src={entryImageUrl(api, entry, 400)} alt={entryTitle(entry)} />
-    </a>
-  ) as HTMLElement;
-  return markerElement('photo-marker', photo);
 }
 
 /**
@@ -87,9 +68,9 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
     window.removeEventListener('afterprint', printed);
   });
   const at = () => (printing() ? TRIP_MARK : props.at);
-  const entry = createMemo(() => (at().startsWith('e:') ? props.entries.find((e) => e.id === Number(at().slice(2))) : undefined));
+  const entry = createMemo(() => props.entries.find((e) => entryMark(e.id) === at()));
   const day = createMemo(() => (entry() ? dayOfEntry(props.trip.days, entry()!) : props.trip.days.find((d) => dayMark(d.id) === at())));
-  const spot = () => entry()?.lngLat ?? day()?.stops.find((s) => s.id === entry()?.stopId)?.lngLat;
+  const spot = () => entry() && placeOfEntry(props.trip.days, entry()!);
 
   createEffect(() => {
     const days = props.trip.days.map((d) => ({ day: d, role: day() === undefined || d === day() ? ('selected' as const) : ('neighbour' as const) }));
@@ -103,7 +84,10 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
     const chapter = props.entries.filter((e) => e.lngLat && dayOfEntry(props.trip.days, e) === day());
     const markers = [
       ...(day() ? [day()!] : props.trip.days).flatMap((d) => d.stops).map((stop) => new Marker({ element: markerElement('stop-marker', stopContent(() => stop)), anchor: 'bottom' }).setLngLat(stop.lngLat)),
-      ...chapter.map((e) => new Marker({ element: e.file?.image ? photoMarker(e, props.api, () => props.go(entryMark(e.id))) : entryMarkerElement(e, props.api, () => props.go(entryMark(e.id))) }).setLngLat(e.lngLat!)),
+      ...chapter.map((e) => {
+        const told = () => props.go(entryMark(e.id));
+        return new Marker({ element: entryMarkerElement(e, props.api, { photo: told, note: told }) }).setLngLat(e.lngLat!);
+      }),
     ];
     for (const marker of markers) marker.addTo(on);
     onCleanup(() => markers.forEach((marker) => marker.remove()));
@@ -121,7 +105,7 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
         moved = true;
         on.stop();
         // The card at the foot of the map covers some of it: what is shown stands above it, and off the edges by less on a small map.
-        const foot = card && !now ? card.offsetHeight + 12 : 0;
+        const foot = card && !now ? container.clientHeight - card.offsetTop : 0;
         const edge = Math.min(60, Math.round(container.clientHeight / 8));
         // A place is moved up by an offset, not by a padding, which the map would keep and add to the next one.
         if (at) return on.easeTo({ center: at, zoom: Math.max(on.getZoom(), SPOT_ZOOM), offset: [0, -foot / 2], duration });

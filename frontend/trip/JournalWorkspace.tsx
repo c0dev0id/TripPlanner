@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { createSignal, For, onMount, Show } from 'solid-js';
-import { publicPreviewUrl, sharedPageUrl, tripApi, entryImageUrl } from '../api';
+import { entryImageUrl, publicPreviewUrl, sharedPageUrl, tripApi, tripPageUrl } from '../api';
 import { allEntries, setWorkspaceOpen, workspaceOpen } from '../state/journal';
 import { openPublication, publish, setShared } from '../state/publication';
 import { openTrip } from '../state/trip';
@@ -74,7 +74,7 @@ function PageSettings(props: { tripId: number }) {
               </span>
             )}
           </Show>
-          <a href={`/trips/${props.tripId}`} target="_blank" rel="noopener">
+          <a href={tripPageUrl(props.tripId)} target="_blank" rel="noopener">
             {t('Open the page for printing')}
           </a>
           <Show when={error()}>{(message) => <span class="error">{message()}</span>}</Show>

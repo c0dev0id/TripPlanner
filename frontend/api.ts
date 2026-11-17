@@ -114,6 +114,23 @@ export const deleteFolder = (id: number, contents: 'move' | 'delete'): Promise<v
 
 export const tripApi = (id: number): string => `/api/trips/${id}`;
 
+let changes: BroadcastChannel | undefined;
+const changesChannel = (): BroadcastChannel => (changes ??= new BroadcastChannel('planner-changes'));
+
+/** Passes on what a write to a trip answered, and tells the read-only pages of this browser that show the trip that it changed. */
+async function told<T>(tripId: number, written: Promise<T>): Promise<T> {
+  const answer = await written;
+  changesChannel().postMessage(tripApi(tripId));
+  return answer;
+}
+
+/** Calls `heard` when the trip a read-only page reads from `api` was written to in this browser: a preview beside the planner, or one in a window of its own. The answer stops the listening. */
+export function onTripChanged(api: string, heard: () => void): () => void {
+  const channel = new BroadcastChannel('planner-changes');
+  channel.onmessage = (message) => message.data === api && heard();
+  return () => channel.close();
+}
+
 /** How far a download has come: the bytes read so far, and of the whole where the server says how long it is. */
 export interface Progress {
   received: number;
@@ -149,6 +166,9 @@ export const routeGpxUrl = (base: string, routeId: string): string => `${base}/g
 /** The picture of the entry that is a page's cover, which the page may know by its id alone. */
 export const coverImageUrl = (base: string, entryId: number, px: ImageSize): string => `${base}/entries/${entryId}/image/${px}`;
 
+/** The owner's page of a trip, for reading and printing. */
+export const tripPageUrl = (tripId: number): string => `/trips/${tripId}`;
+
 export const listEntriesAt = (base: string): Promise<Entry[]> => request('GET', `${base}/entries`);
 
 /** What tells an entry's file from another's: the browser keeps a file a day, and an entry's id is used again once it is deleted. */
@@ -161,7 +181,7 @@ export const entryFileUrl = (base: string, entry: Entry): string => `${base}/ent
 export type ImageSize = 400 | 1280 | 2048;
 
 /** An image entry's picture at one of those sizes, never larger than the image is. */
-export const entryImageUrl = (base: string, entry: Entry, px: ImageSize): string => `${base}/entries/${entry.id}/image/${px}?v=${fileVersion(entry)}`;
+export const entryImageUrl = (base: string, entry: Entry, px: ImageSize): string => `${coverImageUrl(base, entry.id, px)}?v=${fileVersion(entry)}`;
 
 /**
  * Adds a journal entry on the trip or on the part the target names, with a file where given, at a spot on the map where given;
@@ -178,16 +198,16 @@ export function addEntry(tripId: number, target: EntryTarget, text: string, file
   }
   if (as.createdAt) form.set('createdAt', as.createdAt);
   if (as.byDate) form.set('byDate', '1');
-  return request('POST', `${tripApi(tripId)}/entries`, form);
+  return told(tripId, request('POST', `${tripApi(tripId)}/entries`, form));
 }
 
 /** Changes what is named of an entry: its text, the part it is on, where it stands on the map (null for nowhere). */
-export const updateEntry = (tripId: number, entryId: number, change: { text?: string; link?: EntryTarget; lngLat?: LngLat | null }): Promise<void> => request('PATCH', `${tripApi(tripId)}/entries/${entryId}`, change);
+export const updateEntry = (tripId: number, entryId: number, change: { text?: string; link?: EntryTarget; lngLat?: LngLat | null }): Promise<void> => told(tripId, request('PATCH', `${tripApi(tripId)}/entries/${entryId}`, change));
 
 /** Puts entries in that order in the chapter of a day, or with null of the trip itself; one of another chapter joins it. */
-export const orderEntries = (tripId: number, dayId: string | null, ids: number[]): Promise<void> => request('PUT', `${tripApi(tripId)}/entries/order`, { dayId, ids });
+export const orderEntries = (tripId: number, dayId: string | null, ids: number[]): Promise<void> => told(tripId, request('PUT', `${tripApi(tripId)}/entries/order`, { dayId, ids }));
 
-export const deleteEntry = (tripId: number, entryId: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/entries/${entryId}`);
+export const deleteEntry = (tripId: number, entryId: number): Promise<void> => told(tripId, request('DELETE', `${tripApi(tripId)}/entries/${entryId}`));
 
 /** The additional media of the trip's days: files and links, each an entry of the kind `media` on its day. */
 export const listMedia = (tripId: number): Promise<Entry[]> => request('GET', `${tripApi(tripId)}/media`);
@@ -410,15 +430,12 @@ export const takeRideOffDay = (id: number, dayId: string): Promise<void> => requ
 export const fetchRideGpx = async (id: number): Promise<string> => (await send('GET', `/api/rides/${id}/gpx`)).text();
 
 /** The owner's read-only page of a trip showing it as a visitor gets it. */
-export const publicPreviewUrl = (tripId: number): string => `/trips/${tripId}?as=public`;
-
-/** The channel on which the planner tells the read-only pages of this browser that a trip or its journal changed. */
-export const CHANGES_CHANNEL = 'planner-changes';
+export const publicPreviewUrl = (tripId: number): string => `${tripPageUrl(tripId)}?as=public`;
 
 /** What the trip's public page shows, with the token it is public under, or null. */
 export const fetchPublication = (tripId: number): Promise<Publication & { token: string | null }> => request('GET', `${tripApi(tripId)}/publication`);
 
-export const savePublication = (tripId: number, publication: Publication): Promise<void> => request('PUT', `${tripApi(tripId)}/publication`, publication);
+export const savePublication = (tripId: number, publication: Publication): Promise<void> => told(tripId, request('PUT', `${tripApi(tripId)}/publication`, publication));
 
 export const shareTrip = (tripId: number): Promise<{ token: string }> => request('POST', `${tripApi(tripId)}/share`);
 
@@ -434,7 +451,7 @@ export const sharedPageUrl = (token: string): string => `${location.origin}/t/${
  */
 export async function saveTrip(trip: Trip, saved?: Trip, keepalive = false): Promise<number> {
   const days = daysToSend(trip.days, saved, stopsInRidingOrder);
-  const { version } = await request<{ version: number }>('PUT', `/api/trips/${trip.id}`, { ...trip, days }, keepalive);
+  const { version } = await told(trip.id, request<{ version: number }>('PUT', tripApi(trip.id), { ...trip, days }, keepalive));
   return version;
 }
 

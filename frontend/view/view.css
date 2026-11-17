@@ -285,7 +285,6 @@ figcaption {
 }
 
 .prose > div > *,
-.captions p,
 .file-block p {
   max-width: 29em;
   margin: 0 0 1.1em;
@@ -412,6 +411,8 @@ figcaption {
 .captions p {
   max-width: 34em;
   margin: 0 0 0.3em;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
 }
 
 .file-block {
@@ -618,7 +619,6 @@ figcaption {
   flex-direction: column;
   gap: 10px;
   align-items: flex-end;
-  font: 14px var(--label);
 }
 
 .trip-page footer {

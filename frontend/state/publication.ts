@@ -2,7 +2,6 @@ import { createResource, createRoot } from 'solid-js';
 import { fetchPublication, savePublication, shareTrip, unshareTrip } from '../api';
 import type { Publication } from '../model/publication';
 import { flushSave } from './autosave';
-import { announceChange } from './changes';
 import { openTripId } from './trip';
 
 /** What the open trip's public page shows, and the token it is public under; read with the trip. */
@@ -25,5 +24,4 @@ export async function publish(change: Partial<Publication>): Promise<void> {
   const { journal, gpx, coverEntryId, hiddenRouteIds } = { ...openPublication()!, ...change };
   await savePublication(openTripId()!, { journal, gpx, coverEntryId, hiddenRouteIds });
   mutate((p) => p && { ...p, ...change });
-  announceChange();
 }

@@ -19,7 +19,6 @@ export interface Upload {
   /** What is written to it: a photo's caption. */
   text?: string;
   spot?: LngLat;
-  byDate?: boolean;
   /** Why it failed; none while it waits or is sent. */
   error?: string;
 }
@@ -34,7 +33,7 @@ let nextId = 1;
 let running = false;
 
 /** Queues the files as entries on a part of a trip, the trip for an empty target. */
-export function queueEntries(tripId: number, target: EntryTarget, files: readonly File[], at: { text?: string; spot?: LngLat; byDate?: boolean } = {}): void {
+export function queueEntries(tripId: number, target: EntryTarget, files: readonly File[], at: { text?: string; spot?: LngLat } = {}): void {
   setUploads((list) => [...list, ...files.map((file) => ({ id: nextId++, tripId, target, file, ...at }))]);
   void run();
 }
@@ -53,9 +52,9 @@ async function run(): Promise<void> {
   if (running) return;
   running = true;
   for (let next = pendingUploads()[0]; next; next = pendingUploads()[0]) {
-    const { id, tripId, target, file, text, spot, byDate } = next;
+    const { id, tripId, target, file, text, spot } = next;
     try {
-      await addEntry(tripId, target, { text: text ?? '', file: await prepareUpload(file), spot, byDate });
+      await addEntry(tripId, target, { text: text ?? '', file: await prepareUpload(file), spot });
       dropUpload(id);
     } catch (error) {
       setUploads((list) => list.map((u) => (u.id === id ? { ...u, error: errorMessage(error) } : u)));

@@ -34,15 +34,21 @@ export function stopContent(stop: () => Stop, mark?: () => JSX.Element): HTMLEle
 }
 
 /**
- * A journal entry's marker element: a photo small, which opens it large over the page,
- * under the API base the page reads from; anything else as a journal icon that says what
- * the entry is and runs `open` on a click, where given.
+ * A journal entry's marker element, under the API base the page reads from: a photo
+ * small, anything else as a journal icon that says what the entry is. A click runs what
+ * `on` has for it; without that a photo opens large over the page and a note does nothing.
  */
-export function entryMarkerElement(entry: Entry, base: string, open?: () => void): HTMLDivElement {
+export function entryMarkerElement(entry: Entry, base: string, on: { photo?: () => void; note?: () => void } = {}): HTMLDivElement {
+  const open = on.note;
   if (entry.file?.image) {
     const image = { src: entryImageUrl(base, entry, 2048), preview: entryImageUrl(base, entry, 400), name: entry.file.name };
+    const click = (e: MouseEvent) => {
+      if (!on.photo) return openImage(e, image);
+      e.preventDefault();
+      on.photo();
+    };
     const photo = (
-      <a class="photo" href={image.src} target="_blank" rel="noopener" title={image.name} on:click={(e) => openImage(e, image)}>
+      <a class="photo" href={image.src} target="_blank" rel="noopener" title={image.name} on:click={click}>
         <img src={image.preview} alt={image.name} />
       </a>
     ) as HTMLElement;

@@ -13,8 +13,11 @@ export function dayLinePath(day: Day, width: number, height: number): string {
   const lines = day.routes.map((route) => routePositions(route)).filter((line) => line.length > 1);
   const all = lines.flat();
   if (all.length === 0) return '';
-  const [west, east] = [Math.min(...all.map((p) => p[0])), Math.max(...all.map((p) => p[0]))];
-  const [south, north] = [Math.min(...all.map((p) => p[1])), Math.max(...all.map((p) => p[1]))];
+  // Not by spreading the positions into Math.min: a long track has more of them than a call takes arguments.
+  let [west, south, east, north] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const [lng, lat] of all) {
+    [west, south, east, north] = [Math.min(west, lng), Math.min(south, lat), Math.max(east, lng), Math.max(north, lat)];
+  }
   const narrow = Math.cos(((south + north) / 2) * (Math.PI / 180));
   const scale = Math.min(width / Math.max((east - west) * narrow, 1e-9), height / Math.max(north - south, 1e-9));
   const [left, top] = [(width - (east - west) * narrow * scale) / 2, (height - (north - south) * scale) / 2];

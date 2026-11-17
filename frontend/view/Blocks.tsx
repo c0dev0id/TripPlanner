@@ -1,10 +1,10 @@
 import { t } from '../i18n/t';
 import { createMemo, For, Match, Show, Switch } from 'solid-js';
 import { entryFileUrl, entryImageUrl } from '../api';
-import { sizeText, targetOf, type Entry } from '../model/journal';
+import { sizeText, type Entry } from '../model/journal';
 import { blocksOf } from '../model/journalDocument';
 import type { Trip } from '../model/trip';
-import { targetLabel } from '../trip/labels';
+import { partLabel } from '../trip/labels';
 import { ForById } from '../ui/ForById';
 import { PinIcon } from '../ui/icons';
 import { openImage, type LightboxImage } from '../ui/Lightbox';
@@ -22,7 +22,7 @@ const isSomewhere = (entry: Entry): boolean => entry.lngLat !== null || (entry.r
 
 /** The button that shows on the map where an entry belongs, called by its route or stop where it is on one. */
 function Chip(props: { entry: Entry; trip: Trip; go: (mark: string) => void }) {
-  const label = () => ((props.entry.routeId ?? props.entry.stopId) !== null && targetLabel(props.trip, targetOf(props.entry))) || t('On the map');
+  const label = () => partLabel(props.trip, props.entry) ?? t('On the map');
   return (
     <button type="button" class="chip" onClick={() => props.go(entryMark(props.entry.id))}>
       <PinIcon />
@@ -74,36 +74,44 @@ export function Blocks(props: { entries: Entry[]; trip: Trip; api: string; readi
   return (
     <div class="blocks">
       <ForById each={blocks()}>
-        {(block) => (
-          <Switch>
-            <Match when={block().kind === 'gallery' && block()} keyed>
-              {(gallery) => <Gallery entries={(gallery as { entries: Entry[] }).entries} trip={props.trip} api={props.api} reading={props.reading} />}
-            </Match>
-            <Match when={block().kind === 'text' && (block() as { entry: Entry }).entry} keyed>
-              {(entry) => (
-                <div class="prose" data-mark={isSomewhere(entry) ? entryMark(entry.id) : undefined} ref={(el) => isSomewhere(entry) && props.reading.watch(el)}>
-                  <div innerHTML={markdownHtml(entry.text)} />
-                  <Show when={isSomewhere(entry)}>
-                    <Chip entry={entry} trip={props.trip} go={props.reading.go} />
-                  </Show>
-                </div>
-              )}
-            </Match>
-            <Match when={block().kind === 'file' && (block() as { entry: Entry }).entry} keyed>
-              {(entry) => (
-                <div class="file-block">
-                  <a href={entryFileUrl(props.api, entry)} target="_blank" rel="noopener">
-                    {entry.file!.name}
-                  </a>
-                  <span class="muted"> {sizeText(entry.file!.size)}</span>
-                  <Show when={entry.text}>
-                    <div innerHTML={markdownHtml(entry.text)} />
-                  </Show>
-                </div>
-              )}
-            </Match>
-          </Switch>
-        )}
+        {(block) => {
+          const photos = () => {
+            const b = block();
+            return b.kind === 'gallery' && b.entries;
+          };
+          const entry = (kind: 'text' | 'file') => {
+            const b = block();
+            return b.kind === kind && b.entry;
+          };
+          return (
+            <Switch>
+              <Match when={photos()}>{(entries) => <Gallery entries={entries()} trip={props.trip} api={props.api} reading={props.reading} />}</Match>
+              <Match when={entry('text')}>
+                {(text) => (
+                  <div class="prose" data-mark={isSomewhere(text()) ? entryMark(text().id) : undefined} ref={(el) => isSomewhere(text()) && props.reading.watch(el)}>
+                    <div innerHTML={markdownHtml(text().text)} />
+                    <Show when={isSomewhere(text())}>
+                      <Chip entry={text()} trip={props.trip} go={props.reading.go} />
+                    </Show>
+                  </div>
+                )}
+              </Match>
+              <Match when={entry('file')}>
+                {(file) => (
+                  <div class="file-block">
+                    <a href={entryFileUrl(props.api, file())} target="_blank" rel="noopener">
+                      {file().file!.name}
+                    </a>
+                    <span class="muted"> {sizeText(file().file!.size)}</span>
+                    <Show when={file().text}>
+                      <div innerHTML={markdownHtml(file().text)} />
+                    </Show>
+                  </div>
+                )}
+              </Match>
+            </Switch>
+          );
+        }}
       </ForById>
     </div>
   );

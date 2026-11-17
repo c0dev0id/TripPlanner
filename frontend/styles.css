@@ -462,12 +462,14 @@ a {
 
 /* The row being dragged rises above the others, which make room for it. */
 .days > li,
-.routes > li {
+.routes > li,
+.journal-row {
   transition: transform 0.15s;
 }
 
 .days > li.dragged,
-.routes > li.dragged {
+.routes > li.dragged,
+.journal-row.dragged {
   position: relative;
   z-index: 2;
   background: var(--panel);
@@ -1878,14 +1880,6 @@ fieldset.symbols {
   background: var(--active);
 }
 
-.journal-row.dragged {
-  position: relative;
-  z-index: 1;
-  box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
-  /* What lies under the row is what the pointer is over: a chapter that may take it. */
-  pointer-events: none;
-}
-
 /* The chapter a row from another would be dropped into. */
 .journal-rows.drop-target {
   outline: 2px solid var(--accent);
@@ -1902,11 +1896,9 @@ fieldset.symbols {
   .journal-workspace .page-settings label.toggle,
   .journal-row .entry-link {
     min-height: 40px;
-    align-items: center;
   }
 
   .journal-workspace .page-settings label.toggle {
-    display: flex;
     gap: 8px;
   }
 }
@@ -2066,17 +2058,11 @@ fieldset.symbols {
   border-radius: 3px;
 }
 
-.journal-workspace .page-routes {
-  position: relative;
-}
-
 .journal-workspace .page-routes summary {
   cursor: pointer;
 }
 
-/* The routes to pick from, over what lies under the settings. */
 .journal-workspace .page-routes[open] > label {
-  display: flex;
   padding: 2px 0;
 }
 

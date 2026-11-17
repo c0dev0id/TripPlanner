@@ -13,8 +13,8 @@ import { counted, dateText, distanceText } from '../ui/format';
  */
 export function Hero(props: { trip: Trip; shown: Shown; api: string }) {
   const routes = () => props.trip.days.flatMap((d) => d.routes);
+  const distance = createMemo(() => routesDistance(routes()));
   const dates = createMemo(() => props.trip.days.flatMap((d) => (d.date ? [d.date] : [])).sort());
-  const distance = () => routesDistance(props.trip.days.flatMap((d) => d.routes));
   const span = () => {
     const [first, last] = [dates()[0], dates().at(-1)];
     return !first ? '' : first === last ? dateText(first) : `${dateText(first)} – ${dateText(last!)}`;

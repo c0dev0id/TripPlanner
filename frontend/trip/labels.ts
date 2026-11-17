@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import type { EntryTarget } from '../model/journal';
+import { targetOf, type Entry, type EntryTarget } from '../model/journal';
 import { PROFILES, takesMotorwayDial, type Day, type Route, type Trip, type TripKind } from '../model/trip';
 import { dayOfRoute } from '../routing/dayEdit';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
@@ -23,6 +23,9 @@ export function dayLabel(day: Pick<Day, 'date' | 'name'>, index: number): string
 
 /** A day's label within its trip. */
 export const dayLabelOf = (trip: Trip, day: Day): string => dayLabel(day, trip.days.findIndex((d) => d.id === day.id));
+
+/** What the route or the stop a journal entry is on is called; nothing for an entry on a day or on the trip, which are where it is read anyway. */
+export const partLabel = (trip: Trip, entry: Entry): string | undefined => ((entry.routeId ?? entry.stopId) !== null ? targetLabel(trip, targetOf(entry)) : undefined);
 
 /** What a journal entry's part is called: the day, the route or the stop; the trip's name for the trip itself, and nothing for a part the trip no longer holds. */
 export function targetLabel(trip: Trip, target: EntryTarget): string | undefined {

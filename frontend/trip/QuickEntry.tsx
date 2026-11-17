@@ -37,11 +37,10 @@ export function QuickEntry() {
     const chosen = files();
     if (!written && chosen.length === 0) return;
     const [tripId, target, spot] = [openTripId()!, journalTarget()!, journalSpot()];
-    const onTrip = Object.keys(target).length === 0;
     void run(async () => {
       const caption = chosen.length === 1 && written !== '';
       if (written && !caption) await addEntry(tripId, target, { text: written, spot });
-      queueEntries(tripId, target, chosen, { text: caption ? written : undefined, spot, byDate: onTrip });
+      queueEntries(tripId, target, chosen, { text: caption ? written : undefined, spot });
       text.value = '';
       close();
     });

@@ -2,7 +2,7 @@ import { createMemo, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import type { Day } from '../model/trip';
 import { routesDistance } from '../routing/legs';
-import { setEditTarget, setExportScope, setShowNeighbours, showNeighbours } from '../state/drawing';
+import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
 import { pasteDaysAtEnd } from '../state/clipboard';
@@ -19,6 +19,7 @@ import { SectionDetails } from './CollectionPanel';
 import { DayStrip } from './DayStrip';
 import { dayDetail, dayHeading, dayTitleOf } from './labels';
 import { ChapterEditor } from './JournalEditor';
+import { journalItem, openTripItems } from './tripMenu';
 import { dayAddMenu, DayDetails, TripPanel } from './TripPanel';
 
 /** A day as its labels count it: its date, what it holds and how far its routes go. */
@@ -49,20 +50,16 @@ export function DayPane(props: { onLeave: () => void }) {
  * Its row in the library has the same, but where one pane alone is shown that row is not
  * there, and a screen without a right-click has no menu of the pane's free space.
  */
-const tripMenu = (): MenuItem[] => [
-  { label: t('Edit…'), run: () => setEditTarget({ kind: 'trip' }) },
-  { label: t('Export GPX…'), run: () => setExportScope({ kind: 'trip' }) },
-  { label: t('Journal and sharing…'), run: () => setWorkspaceOpen(true) },
-];
+const tripMenu = (): MenuItem[] => [{ label: t('Edit…'), run: () => setEditTarget({ kind: 'trip' }) }, ...openTripItems()];
 
 /** What the free space of the open trip's pane offers: a day more, the days on the clipboard after its last, and its journal. */
 function tripAddMenu(): MenuItem[] {
   const paste = pasteDaysAtEnd();
-  return [{ label: t('Add day'), run: addDay }, ...(paste.length > 0 ? paste : [menuNote(t('Paste'))]), { label: t('Journal and sharing…'), run: () => setWorkspaceOpen(true) }];
+  return [{ label: t('Add day'), run: addDay }, ...(paste.length > 0 ? paste : [menuNote(t('Paste'))]), journalItem()];
 }
 
 /** The same for a trip of one day, in the pane of that day's contents: what adds to the day, whose paste takes days after it as well, then the day more and the journal. */
-const onlyDayMenu = (day: Day): MenuItem[] => [...dayAddMenu(day), { label: t('Add day'), run: addDay }, { label: t('Journal and sharing…'), run: () => setWorkspaceOpen(true) }];
+const onlyDayMenu = (day: Day): MenuItem[] => [...dayAddMenu(day), { label: t('Add day'), run: addDay }, journalItem()];
 
 /** The pane of the open trip: its name over how many days it has and how far they go, the way to its journal and the page it is shared on, and its days. Closing it closes the trip. */
 function DaysPane(props: { onLeave: () => void }) {

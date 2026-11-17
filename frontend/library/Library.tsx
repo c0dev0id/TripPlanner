@@ -13,8 +13,8 @@ import { flushSave } from '../state/autosave';
 import { isShownItem, isShownWaypoints, isShownWhole, relistStash, showInStash, shownInStash, stashFiles, stashProblem, type ShownStash } from '../state/stash';
 import { GroupDialog, type Grouping } from './GroupDialog';
 import { groupFiles } from './grouping';
-import { setEditTarget, setExportScope } from '../state/drawing';
-import { setWorkspaceOpen } from '../state/journal';
+import { openTripItems } from '../trip/tripMenu';
+import { setEditTarget } from '../state/drawing';
 import { unpinTrips } from '../state/pins';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markedLookId, markFolder, markInOpenTrip, markTrip, openTrip, openTripId, selectDay, selectedDayId, type OpenAt } from '../state/trip';
 import { reveal } from '../state/panel';
@@ -696,7 +696,7 @@ export function Library(props: {
         : []),
       ...groupEntries,
       ...exportEntries,
-      ...(!several && 'trip' in item && item.trip.id === openTripId() ? openTripItems(item.trip) : []),
+      ...(!several && 'trip' in item && item.trip.id === openTripId() ? openTripRowItems(item.trip) : []),
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
   };
@@ -709,13 +709,8 @@ export function Library(props: {
   };
 
   /** What the open trip's menu has besides: its GPX export, its journal with the page it is shared on, and closing it, saved. */
-  const openTripItems = (trip: TripSummary): MenuItem[] => [
-    ...(trip.kind === 'trip'
-      ? [
-          { label: t('Export GPX…'), run: () => setExportScope({ kind: 'trip' }) },
-          { label: t('Journal and sharing…'), run: () => setWorkspaceOpen(true) },
-        ]
-      : []),
+  const openTripRowItems = (trip: TripSummary): MenuItem[] => [
+    ...(trip.kind === 'trip' ? openTripItems() : []),
     { label: t('Close'), run: () => void props.onLeave(true) },
   ];
   /** The menu of the top of the library: what is new there and added to it, what is pasted, and the export of every trip. */

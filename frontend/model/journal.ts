@@ -62,6 +62,10 @@ const belongsTo = (entry: Entry, day: Day): boolean =>
 /** The day an entry belongs to; none for an entry on the trip itself. */
 export const dayOfEntry = (days: readonly Day[], entry: Entry): Day | undefined => days.find((d) => belongsTo(entry, d));
 
+/** Where an entry is on the map: where it stands, else at the stop it is on; nowhere otherwise. */
+export const placeOfEntry = (days: readonly Day[], entry: Entry): LngLat | undefined =>
+  entry.lngLat ?? days.flatMap((d) => d.stops).find((s) => s.id === entry.stopId)?.lngLat;
+
 /** The entries that belong to the day: its own and those on its stops and routes. */
 export const entriesOfDay = (entries: readonly Entry[], day: Day): Entry[] => entries.filter((e) => belongsTo(e, day));
 

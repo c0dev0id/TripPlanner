@@ -1,7 +1,7 @@
 import { t } from '../i18n/t';
 import { createEffect, Show } from 'solid-js';
 import { tripApi } from '../api';
-import { dayOfEntry, entryTitle, targetOf, type Entry, type EntryTarget } from '../model/journal';
+import { dayOfEntry, entryTitle, placeOfEntry, type Entry, type EntryTarget } from '../model/journal';
 import { byTimeTaken } from '../model/journalDocument';
 import type { Day } from '../model/trip';
 import { roundLngLat } from '../routing/legs';
@@ -23,7 +23,7 @@ import { MenuButton } from '../ui/MenuButton';
 import { pickFiles } from '../ui/pickFile';
 import { createRequest } from '../ui/request';
 import { EntryFile } from './EntryFile';
-import { dayLabelOf, routeLabel, targetLabel } from './labels';
+import { dayLabelOf, partLabel, routeLabel } from './labels';
 
 type Runner = (work: () => Promise<void>) => Promise<void>;
 
@@ -32,9 +32,10 @@ const SAVE_AFTER_MS = 800;
 
 /** Shows where an entry belongs: its day on the map, and the map at the place it stands on, or at its stop. */
 function showOnMap(entry: Entry): void {
-  const day = dayOfEntry(openTrip()!.days, entry);
+  const days = openTrip()!.days;
+  const day = dayOfEntry(days, entry);
   if (day) selectDay(day.id);
-  const at = entry.lngLat ?? day?.stops.find((s) => s.id === entry.stopId)?.lngLat;
+  const at = placeOfEntry(days, entry);
   if (at) panTo(at);
 }
 
@@ -113,7 +114,7 @@ function EntryRow(props: { entry: Entry; index: number; day: Day | undefined; on
   let row!: HTMLLIElement;
   const items = () => entryMenu(props.entry, props.day, props.run);
   /** What the entry is on where that is a route or a stop: the day is the chapter itself. */
-  const part = () => (props.entry.routeId ?? props.entry.stopId) !== null && targetLabel(openTrip()!, targetOf(props.entry));
+  const part = () => partLabel(openTrip()!, props.entry);
   createEffect(() => {
     if (shownEntryId() === props.entry.id) row.scrollIntoView({ block: 'nearest' });
   });
@@ -172,7 +173,7 @@ export function ChapterEditor(props: { day: Day | undefined }) {
       text.value = '';
     });
   };
-  const addFiles = async () => queueEntries(openTripId()!, target(), await pickFiles({}), { byDate: !props.day });
+  const addFiles = async () => queueEntries(openTripId()!, target(), await pickFiles({}));
   return (
     <div class="journal-chapter">
       <Show when={entries().filter((e) => e.takenAt !== null).length > 1}>

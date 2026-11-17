@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import { createEffect, createMemo, createResource, Match, onCleanup, Show, Switch } from 'solid-js';
-import { CHANGES_CHANNEL, errorMessage, fetchPublication, fetchTripAt, listEntriesAt } from '../api';
+import { errorMessage, fetchPublication, fetchTripAt, listEntriesAt, onTripChanged } from '../api';
 import { chaptersOf } from '../model/journalDocument';
 import type { Shown } from '../model/publication';
 import { ContextMenu } from '../ui/ContextMenu';
@@ -10,6 +10,9 @@ import { Hero } from './Hero';
 import { PlanDays } from './PlanDays';
 import { Story } from './Story';
 import { StoryMap } from './StoryMap';
+
+/** How long after the planner said the trip changed the page reads it again, in milliseconds. */
+const REREAD_AFTER_MS = 400;
 
 /**
  * The page of a trip, for reading and printing. Without a journal it is the plan: the
@@ -23,13 +26,19 @@ import { StoryMap } from './StoryMap';
 export function TripView(props: { api: string; document: string }) {
   const [page, { refetch }] = createResource(async () => {
     const [trip, entries] = await Promise.all([fetchTripAt(props.document), listEntriesAt(props.api)]);
-    // The owner's own page shows everything; what it lacks is which photo is the cover.
+    // The owner's own page shows everything; what its document lacks is which photo is the cover.
     const shown: Shown = trip.public ?? { journal: true, gpx: true, coverEntryId: (await fetchPublication(trip.id)).coverEntryId };
     return { trip, entries, shown };
   });
-  const changes = new BroadcastChannel(CHANGES_CHANNEL);
-  changes.onmessage = () => void refetch();
-  onCleanup(() => changes.close());
+  // What is written in quick succession, a text as it is typed, is read once.
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  onCleanup(
+    onTripChanged(props.api, () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => void refetch(), REREAD_AFTER_MS);
+    }),
+  );
+  onCleanup(() => clearTimeout(timer));
   createEffect(() => {
     if (page.state === 'ready' || page.state === 'refreshing') document.title = `${page.latest!.trip.name} · Trip Planner`;
   });
