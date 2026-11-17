@@ -457,7 +457,9 @@
   collection keeps in the file's order: "By order" takes them all, top down; "By
   number" takes those numbered in a series, named alike but for the number at the end
   ("Position 1", "Position 2", …), in the order of their numbers, and leaves a
-  waypoint among them that is a place as it is. Each says how many it takes. The stops
+  waypoint among them that is a place as it is. Each says how many it takes, and is
+  there only where it takes two or more: stops that stand on the points of a route are
+  that route's already, and a selection of those alone has no Convert. The stops
   become the points of a new route, its legs routed, and are stops no more. One step
   to undo. A list of places has no Convert.
 - Lists of the user's own places, in the Places folder: a list is a collection, opened
