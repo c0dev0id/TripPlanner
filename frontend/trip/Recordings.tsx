@@ -31,7 +31,7 @@ import {
   renameRecording,
   trackOf,
 } from '../state/recordings';
-import { openTrip } from '../state/trip';
+import { openTrip, selectedDayId } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
 import { counted, dateText, distanceText, momentText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
@@ -203,7 +203,7 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
     const { startedAt, distanceM } = props.recording;
     return `${startedAt ? momentText(startedAt) : t('no times')} · ${distanceText(distanceM)}`;
   };
-  const isOpened = () => activeRecordingId() === props.recording.id;
+  const isOpened = () => activeRecordingId() === props.recording.id && selectedDayId() === props.recording.dayId;
   const select = partSelect('recording', String(props.recording.id), () => recordingsOf(props.recording.dayId).map((r) => String(r.id)));
   return (
     <li

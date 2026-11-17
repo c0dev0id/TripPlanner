@@ -718,5 +718,7 @@
   "{n} routes still run along the ways their files calculated. This change routes those ways again, and they are lost. Keep them as tracks beside the routes first?": "{n} Routen folgen noch den Wegen, die ihre Dateien berechnet haben. Diese Änderung berechnet sie neu, und sie gehen verloren. Zuerst als Tracks neben den Routen behalten?",
   "Fold {what}": "{what} einklappen",
   "Unfold {what}": "{what} ausklappen",
-  "Back": "Zurück"
+  "Back": "Zurück",
+  "Show the contents of {name}": "Inhalt von {name} anzeigen",
+  "Hide the contents of {name}": "Inhalt von {name} ausblenden"
 }

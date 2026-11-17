@@ -3,8 +3,10 @@ import type { RoutedRoute, Trip } from '../model/trip';
 import { routedLegs } from '../routing/legs';
 import { decodePolyline, encodePolyline } from '../routing/polyline';
 import { answerQuestion, question } from '../ui/confirm';
+import { selectIn, selectionOf } from '../ui/selection';
+import './partSelection';
 import { routedOf } from '../routing/testing';
-import { activeRouteId, addDay, setStopSymbols, removeStop, movePoint, convertRouteToTrack, convertTrackToRoute, closeDaysPane, daysPaneOpen, openDaysPane, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
+import { activeRouteId, addDay, closeDetail, detailDay, openDetail, removeDay, setStopSymbols, removeStop, movePoint, convertRouteToTrack, convertTrackToRoute, closeDaysPane, daysPaneOpen, openDaysPane, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -168,6 +170,39 @@ describe('the open trip', () => {
     markFolder();
     markTrip();
     expect([isTripMarked(), isMarkInTrip(), selectedDay()]).toEqual([true, true, undefined]);
+  });
+
+  it('keeps the day whose contents are shown apart from the day on the map', () => {
+    addDay();
+    addDay();
+    const [first, second] = openTrip()!.days.map((day) => day.id);
+    // Opening a day's contents shows the day on the map; another day selected leaves the contents where they are.
+    openDetail(first!);
+    expect([selectedDay()?.id, detailDay()?.id]).toEqual([first, first]);
+    selectDay(second);
+    expect([selectedDay()?.id, detailDay()?.id]).toEqual([second, first]);
+    selectDay(undefined);
+    expect(detailDay()?.id).toBe(first);
+    // A day removed takes its contents' pane with it, and an undo brings both back.
+    removeDay(first!);
+    expect(detailDay()).toBeUndefined();
+    undo();
+    expect(detailDay()?.id).toBe(first);
+    closeDetail();
+    expect(detailDay()).toBeUndefined();
+  });
+
+  it('keeps a selection made by the click that brings the day of the contents back to the map', () => {
+    addDay();
+    addDay();
+    const [first, second] = openTrip()!.days.map((day) => day.id);
+    openDetail(first!);
+    selectDay(second);
+    selectIn('stop', new Set(['other']));
+    // What the pane does at a click in it, before the row clicked selects.
+    selectDay(first);
+    selectIn('stop', new Set(['s']));
+    expect([...selectionOf('stop')]).toEqual(['s']);
   });
 
   it('opens the pane of the days for a day shown, and keeps it as it is for another trip', () => {

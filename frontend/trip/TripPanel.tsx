@@ -8,7 +8,8 @@ import { defaultProfile } from '../routing/dayEdit';
 import { fileLegCount, pointCount, routedLegs, routeDistance, routesDistance } from '../routing/legs';
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
-import { panTo, pointItems, setEditTarget, setTrackAction } from '../state/drawing';
+import { panTo, pointItems, setTrackAction } from '../state/drawing';
+import { fold } from '../state/panel';
 import type { MenuItem } from '../ui/menu';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
@@ -29,13 +30,16 @@ import {
   selectDay,
   selectedDayId,
   updateRoute,
-  selectedSequence,
-  selectedTimeline,
+  detailDayId,
+  detailSequence,
+  detailTimeline,
+  openDetail,
+  closeDetail,
 } from '../state/trip';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { counted, distanceText, timeText } from '../ui/format';
-import { ClockIcon, FileImportIcon, NotebookIcon, PencilIcon, PlusIcon } from '../ui/icons';
+import { ChevronIcon, ChevronLeftIcon, ClockIcon, FileImportIcon, NotebookIcon, PlusIcon } from '../ui/icons';
 import { Grip } from '../ui/Grip';
 import { Said } from '../ui/Said';
 import { IconButton } from '../ui/IconButton';
@@ -64,7 +68,7 @@ export function JournalButton(props: { target: EntryTarget; of: string }) {
   );
 }
 
-/** The open trip's days under each other, in the pane beside the library: the one shown with what it holds under its row. */
+/** The open trip's days under each other, in the pane beside the library. */
 export function TripPanel() {
   return (
     <section class="trip">
@@ -78,7 +82,7 @@ export function TripPanel() {
   );
 }
 
-/** A day as a card: its number and name over its date and length; its menu edits, duplicates, pastes into and removes it. A click shows the day, with what it holds under its row, or closes it where it is shown, which shows the whole trip. */
+/** A day as a card: its number and name over its date and length; its menu edits, duplicates, pastes into and removes it. A click shows the day on the map, or the whole trip again where the day is shown; the pad at its end opens the pane of what the day holds. */
 function DayItem(props: { day: Day; index: number }) {
   const selected = () => selectedDayId() === props.day.id;
   const label = createMemo(() => dayLabel(props.day, props.index));
@@ -88,6 +92,13 @@ function DayItem(props: { day: Day; index: number }) {
   const meta = () => dayDetail('trip', { date: props.day.date, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, media: 0, distanceM: distance() });
   const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
   const select = partSelect('day', props.day.id, () => openTrip()!.days.map((d) => d.id));
+  /** Whether the pane of a day's contents shows this day's; the pad on the row opens it there, unfolded, and closes it. */
+  const detailed = () => detailDayId() === props.day.id;
+  const toggleDetail = () => {
+    if (detailed()) return closeDetail();
+    openDetail(props.day.id);
+    fold('detail', false);
+  };
   let row!: HTMLLIElement;
   // The day shown is brought into view: one opened from elsewhere may lie far down its trip.
   createEffect(on(selected, (is) => is && requestAnimationFrame(() => row.scrollIntoView({ block: 'nearest' }))));
@@ -114,28 +125,23 @@ function DayItem(props: { day: Day; index: number }) {
             <span class="muted detail">{meta()}</span>
           </span>
         </button>
-        <Show when={selected()}>
-          <IconButton label={t('Edit {what}', { what: label() })} onClick={() => setEditTarget({ kind: 'day', id: props.day.id })}>
-            <PencilIcon />
-          </IconButton>
-        </Show>
         <JournalButton target={{ dayId: props.day.id }} of={label()} />
         <MenuButton of={label()} items={more} />
+        <IconButton label={t(detailed() ? 'Hide the contents of {name}' : 'Show the contents of {name}', { name: label() })} pressed={detailed()} onClick={toggleDetail}>
+          {detailed() ? <ChevronLeftIcon /> : <ChevronIcon />}
+        </IconButton>
       </div>
-      <Show when={selected()}>
-        <DayDetails day={props.day} />
-      </Show>
     </li>
   );
 }
 
-/** The selected day's notes and times, its routes with their stops, and the stops that stand beside no route. */
-function DayDetails(props: { day: Day }) {
-  const unplaced = createMemo(() => standingAlone(props.day, selectedSequence()));
+/** A day's notes and times, its routes with their stops, and the stops that stand beside no route: what the pane of the day's contents holds. */
+export function DayDetails(props: { day: Day }) {
+  const unplaced = createMemo(() => standingAlone(props.day, detailSequence()));
   /** The sequence by route, in order: each route's points and the stops placed along it. */
   const byRoute = createMemo(() => {
     const groups = props.day.routes.map((): SequenceEntry[] => []);
-    for (const entry of selectedSequence()) groups[entry.routeIndex]?.push(entry);
+    for (const entry of detailSequence()) groups[entry.routeIndex]?.push(entry);
     return groups;
   });
   const [importNote, setImportNote] = createSignal<{ text: string; error: boolean }>();
@@ -156,8 +162,8 @@ function DayDetails(props: { day: Day }) {
       <Show when={props.day.notes}>
         <p class="muted notes">{props.day.notes}</p>
       </Show>
-      <Show when={selectedSequence().some((e) => e.stop)}>
-        <Show when={selectedTimeline()} fallback={<p class="day-summary muted">{t("Set a time on the first stop to calculate the day's times.")}</p>}>
+      <Show when={detailSequence().some((e) => e.stop)}>
+        <Show when={detailTimeline()} fallback={<p class="day-summary muted">{t("Set a time on the first stop to calculate the day's times.")}</p>}>
           {(timeline) => <DaySummary timeline={timeline()} />}
         </Show>
       </Show>
@@ -218,7 +224,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
   /** The route's points and bound stops, and the free stops that stand beside it; not where a track ends, which is no point of its own. */
   const entries = createMemo(() => props.sequence.filter((e) => e.stop || e.point));
   const stopCount = createMemo(() => entries().filter((e) => e.stop).length);
-  const lateCount = createMemo(() => entries().filter((e) => (selectedTimeline()?.times.get(e.id)?.slackMin ?? 0) < 0).length);
+  const lateCount = createMemo(() => entries().filter((e) => (detailTimeline()?.times.get(e.id)?.slackMin ?? 0) < 0).length);
   const items = (): MenuItem[] =>
     partMenu('route', props.route.id, {
       more: [
@@ -308,7 +314,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
 
 /** Rows of sequence entries; an edit makes new entries, and their rows are kept by id. */
 function SequenceItems(props: { entries: SequenceEntry[]; routeId: string }) {
-  return <ForById each={props.entries}>{(entry) => <SequenceItem entry={entry()} routeId={props.routeId} time={selectedTimeline()?.times.get(entry().id)} />}</ForById>;
+  return <ForById each={props.entries}>{(entry) => <SequenceItem entry={entry()} routeId={props.routeId} time={detailTimeline()?.times.get(entry().id)} />}</ForById>;
 }
 
 /** The name of a sequence row that is a route point, not a stop. */
@@ -397,4 +403,4 @@ function AloneStopItem(props: { stop: Stop }) {
 }
 
 /** How a stop of the selected day is selected, among that day's stops in riding order. */
-const stopSelect = (id: string): RowSelect => partSelect('stop', id, () => selectedSequence().flatMap((entry) => (entry.stop ? [entry.stop.id] : [])));
+const stopSelect = (id: string): RowSelect => partSelect('stop', id, () => detailSequence().flatMap((entry) => (entry.stop ? [entry.stop.id] : [])));

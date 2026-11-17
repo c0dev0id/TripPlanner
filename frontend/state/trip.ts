@@ -88,10 +88,11 @@ export function openDaysPane(): void {
   });
 }
 
-/** Closes the pane of the open trip's days, and with it the day shown. */
+/** Closes the pane of the open trip's days, and with it the day shown and the pane of a day's contents. */
 export function closeDaysPane(): void {
   batch(() => {
     selectDay(undefined);
+    setDetailDayId(undefined);
     setDaysPaneOpen(false);
   });
 }
@@ -136,6 +137,38 @@ export const selectedSequence: () => SequenceEntry[] = createRoot(() =>
 
 /** The selected day's times, from its first stop with a time on. */
 export const selectedTimeline: () => DayTimeline | undefined = createRoot(() => createMemo(() => dayTimeline(selectedSequence())));
+
+/**
+ * The day whose contents have a pane of their own: opened by the pad on the day's row,
+ * and not the selected day by necessity, which is the one on the map. A click in the
+ * pane makes it the selected one.
+ */
+const [detailDayId, setDetailDayId] = createSignal<string>();
+export { detailDayId };
+
+/** The day in the pane of a day's contents, while the trip holds it. */
+export const detailDay: () => Day | undefined = createRoot(() => createMemo(() => openTrip()?.days.find((d) => d.id === detailDayId())));
+
+/** That day's stops and route points in riding order: the selected day's where it is that. */
+export const detailSequence: () => SequenceEntry[] = createRoot(() =>
+  createMemo(() => {
+    const day = detailDay();
+    return day === selectedDay() ? selectedSequence() : day ? daySequence(day) : [];
+  }),
+);
+
+/** That day's times. */
+export const detailTimeline: () => DayTimeline | undefined = createRoot(() => createMemo(() => dayTimeline(detailSequence())));
+
+/** Opens the pane of a day's contents, and shows the day on the map. */
+export function openDetail(dayId: string): void {
+  batch(() => {
+    if (selectedDayId() !== dayId) selectDay(dayId);
+    setDetailDayId(dayId);
+  });
+}
+
+export const closeDetail = (): void => void setDetailDayId(undefined);
 
 /** Takes up a route of the selected day, which in a trip starts editing it, or lets go of the one taken up for undefined. */
 export function takeUpRoute(id: string | undefined): void {
@@ -220,6 +253,7 @@ export function loadTrip(loaded: Trip, dayId?: string): void {
     setOpenTrip(loaded);
     setHistoryVersion((v) => v + 1);
     setSelectedDayId(dayId ?? (daysPaneOpen() ? onlyDayOf(loaded) : undefined));
+    setDetailDayId(undefined);
     if (dayId !== undefined) setDaysPaneOpen(true);
     setMarkInTrip(true);
     setActiveRouteId(undefined);
@@ -233,6 +267,7 @@ export function closeTrip(): void {
   batch(() => {
     setOpenTrip(undefined);
     setSelectedDayId(undefined);
+    setDetailDayId(undefined);
     setDaysPaneOpen(false);
     setActiveRouteId(undefined);
     setHistoryVersion((v) => v + 1);

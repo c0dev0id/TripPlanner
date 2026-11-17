@@ -2,33 +2,34 @@ import { createMemo, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import type { Day } from '../model/trip';
 import { routesDistance } from '../routing/legs';
-import { setShowNeighbours, showNeighbours } from '../state/drawing';
+import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
 import { isPlaceList, paneShown, shownDay } from '../state/library';
-import { addDay, closeDaysPane, openTrip, openTripId, selectDay } from '../state/trip';
+import { addDay, closeDaysPane, closeDetail, detailDay, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
 import { counted, distanceText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
-import { ChevronIcon, NeighboursIcon, PlusIcon } from '../ui/icons';
+import { ChevronIcon, NeighboursIcon, PencilIcon, PlusIcon } from '../ui/icons';
 import { Pane } from '../ui/Pane';
 import { SectionDetails } from './CollectionPanel';
 import { DayStrip } from './DayStrip';
 import { dayDetail, dayHeading, dayTitleOf } from './labels';
-import { TripPanel } from './TripPanel';
+import { DayDetails, TripPanel } from './TripPanel';
 
 /** A day as its labels count it: its date, what it holds and how far its routes go. */
 export const dayCounts = (day: Day) => ({ date: day.date, routes: day.routes.length, stops: day.stops.length, recordings: recordingsOf(day.id).length, media: mediaOf(day.id).length, distanceM: routesDistance(day.routes) });
 
 /**
- * The pane beside the library: of a trip its days under each other, of a list of places
- * the category picked in the tree. Not there while a trip's pane is closed, or no
- * category is picked.
+ * The panes beside the library: of a trip its days under each other and, beside them,
+ * what a day holds; of a list of places the category picked in the tree. Not there
+ * while a trip's pane is closed, or no category is picked.
  */
 export function DayPane() {
   return (
     <Show when={paneShown()}>
       <Show when={openTrip()!.kind === 'trip'} fallback={<SectionPane />}>
         <DaysPane />
+        <DetailPane />
       </Show>
     </Show>
   );
@@ -66,6 +67,47 @@ function DaysPane() {
     >
       <TripPanel />
     </Pane>
+  );
+}
+
+/**
+ * The pane of what a day holds, opened by the pad on the day's row: its name over its
+ * date and length, and its notes, routes, stops, recordings and media. The day need not
+ * be the one on the map; a click in the pane makes it that.
+ */
+function DetailPane() {
+  return (
+    <Show when={detailDay()}>
+      {(day) => {
+        const label = createMemo(() => dayTitleOf(openTrip()!, day()));
+        const backToDay = () => {
+          if (selectedDayId() !== day().id) selectDay(day().id);
+        };
+        return (
+          <Pane
+            level="detail"
+            label={label()}
+            onClose={closeDetail}
+            onUse={backToDay}
+            heading={
+              <>
+                <span class="lines grow">
+                  <span class="name" title={label()}>
+                    {dayHeading('trip', openTrip()!.days.indexOf(day()), day().name)}
+                  </span>
+                  <span class="muted detail">{dayDetail('trip', dayCounts(day()))}</span>
+                </span>
+                <IconButton label={t('Edit {what}', { what: label() })} onClick={() => setEditTarget({ kind: 'day', id: day().id })}>
+                  <PencilIcon />
+                </IconButton>
+              </>
+            }
+          >
+            <DayDetails day={day()} />
+          </Pane>
+        );
+      }}
+    </Show>
   );
 }
 

@@ -10,7 +10,7 @@ import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { counted, dateText, openingText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
-import { ChevronIcon, CollectionIcon, FolderIcon, GripIcon, TripIcon } from '../ui/icons';
+import { ChevronIcon, ChevronLeftIcon, CollectionIcon, FolderIcon, GripIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { Pad } from '../ui/Pad';
@@ -165,7 +165,7 @@ export function TripCard(props: {
         <Show when={props.pane}>
           {(pane) => (
             <IconButton label={t(pane().open() ? 'Hide the days of {name}' : 'Show the days of {name}', { name: props.trip.name })} pressed={pane().open()} onClick={pane().onToggle}>
-              <ChevronIcon />
+              {pane().open() ? <ChevronLeftIcon /> : <ChevronIcon />}
             </IconButton>
           )}
         </Show>

@@ -1,6 +1,6 @@
 import { createEffect, createRoot, createSignal, on } from 'solid-js';
 import { readPreference, writePreference } from '../ui/preferences';
-import { paneShown } from './library';
+import { detailShown, paneShown } from './library';
 import { showingDuplicates } from './pane';
 import { openDaysPane } from './trip';
 
@@ -49,7 +49,7 @@ export const onePane = matching('(max-width: 1199px)');
 export const sheetMode = matching('(max-width: 720px) and (orientation: portrait)');
 
 /** The deepest pane that is open: the one shown where one alone is. */
-export const shownLevel = (): PaneLevel => (showingDuplicates() || paneShown() ? 'second' : 'library');
+export const shownLevel = (): PaneLevel => (showingDuplicates() ? 'second' : detailShown() ? 'detail' : paneShown() ? 'second' : 'library');
 
 /** Which way the pane shown was come to, from the one shown before: forward to a deeper one, or back; none before the first change. */
 const [entered, setEntered] = createSignal<'enter-forward' | 'enter-back'>();

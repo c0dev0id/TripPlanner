@@ -6,7 +6,7 @@ import type { FolderKind } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { createRequest } from '../ui/request';
 import { stashFiles } from './stash';
-import { daysPaneOpen, openTrip, openTripId, removeParts, selectedDay } from './trip';
+import { daysPaneOpen, detailDay, openTrip, openTripId, removeParts, selectedDay } from './trip';
 
 /** The library as the server lists it, and where the user is in it. */
 
@@ -31,6 +31,9 @@ export const tripShown = (): boolean => (openTree() ?? mapTab()) === mapTab();
 
 /** The day shown in the pane and on the map: the selected one, while the open trip is shown. */
 export const shownDay = () => (tripShown() ? selectedDay() : undefined);
+
+/** Whether the pane of what a day of the open trip holds is there. */
+export const detailShown = (): boolean => paneShown() && openTrip()?.kind === 'trip' && detailDay() !== undefined;
 
 /** Whether the pane beside the library is there: a trip's days while their pane is open, a list's category while one is shown; neither while the map follows another tab. */
 export const paneShown = (): boolean => tripShown() && (openTrip()?.kind === 'trip' ? daysPaneOpen() : selectedDay() !== undefined);
