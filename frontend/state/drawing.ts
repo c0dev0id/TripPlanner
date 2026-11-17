@@ -46,9 +46,6 @@ export const [trackAction, setTrackAction] = createSignal<{ routeId: string; act
 export type ExportScope = { kind: 'trip' } | { kind: 'day' | 'route'; ids: string[] };
 export const [exportScope, setExportScope] = createSignal<ExportScope>();
 
-/** Whether the print-and-share dialog is open. */
-export const [shareOpen, setShareOpen] = createSignal(false);
-
 /** Whether the map shows how far it is to the nearest route or track it draws. */
 export const [reachShown, setReachShown] = createSignal(false);
 

@@ -8,6 +8,7 @@ import { roundLngLat } from '../routing/legs';
 import { panTo } from '../state/drawing';
 import { addEntry, chapters, editEntry, linkEntry, orderChapter, placeEntry, removeEntry, shownEntryId } from '../state/journal';
 import { mapView } from '../state/places';
+import { openPublication, publish } from '../state/publication';
 import { openTrip, openTripId, selectDay } from '../state/trip';
 import { queueEntries } from '../state/uploads';
 import { cardMenu } from '../ui/cardMenu';
@@ -37,7 +38,7 @@ function showOnMap(entry: Entry): void {
   if (at) panTo(at);
 }
 
-/** What is done to an entry besides writing it: what it is linked to, the chapter it is in, where it stands on the map, and its deletion. */
+/** What is done to an entry besides writing it: what it is linked to, the chapter it is in, where it stands on the map, whether its photo is the cover of the trip's page, and its deletion. */
 function entryMenu(entry: Entry, day: Day | undefined, run: Runner): MenuItem[] {
   const trip = openTrip()!;
   const link = (target: EntryTarget) => () => void run(() => linkEntry(entry, target));
@@ -59,6 +60,11 @@ function entryMenu(entry: Entry, day: Day | undefined, run: Runner): MenuItem[] 
   if (!entry.lngLat && day && view) items.push({ label: t('Put on the map'), run: place(roundLngLat([(view.bounds[0] + view.bounds[2]) / 2, (view.bounds[1] + view.bounds[3]) / 2])) });
   if (entry.takenLngLat && String(entry.takenLngLat) !== String(entry.lngLat)) items.push({ label: t('Put where it was taken'), run: place(entry.takenLngLat) });
   if (entry.lngLat) items.push({ label: t('Take off the map'), run: place(null) });
+  const publication = openPublication();
+  if (entry.file?.image && publication) {
+    const isCover = publication.coverEntryId === entry.id;
+    items.push({ label: t(isCover ? 'No longer the cover of the page' : 'Use as the cover of the page'), run: () => void run(() => publish({ coverEntryId: isCover ? null : entry.id })) });
+  }
   items.push({
     label: t('Delete'),
     run: async () => {

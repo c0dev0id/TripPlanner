@@ -406,6 +406,12 @@ export const takeRideOffDay = (id: number, dayId: string): Promise<void> => requ
 /** A ride's GPX file; the browser undoes the compression it is sent with. */
 export const fetchRideGpx = async (id: number): Promise<string> => (await send('GET', `/api/rides/${id}/gpx`)).text();
 
+/** The owner's read-only page of a trip showing it as a visitor gets it. */
+export const publicPreviewUrl = (tripId: number): string => `/trips/${tripId}?as=public`;
+
+/** The channel on which the planner tells the read-only pages of this browser that a trip or its journal changed. */
+export const CHANGES_CHANNEL = 'planner-changes';
+
 /** What the trip's public page shows, with the token it is public under, or null. */
 export const fetchPublication = (tripId: number): Promise<Publication & { token: string | null }> => request('GET', `${tripApi(tripId)}/publication`);
 

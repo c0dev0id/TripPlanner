@@ -4,6 +4,7 @@ import { dayOfEntry, entriesOn as entriesOf, type Entry, type EntryTarget } from
 import { chaptersOf, type Chapter } from '../model/journalDocument';
 import type { LngLat } from '../model/trip';
 import { flushSave } from './autosave';
+import { announceChange } from './changes';
 import { openDetail, openTrip, openTripId, partsLost } from './trip';
 
 /** The open trip's journal, loaded with the trip; changes go to the server at once, there is no undo. */
@@ -92,6 +93,7 @@ export async function addEntry(tripId: number, target: EntryTarget, entry: NewEn
   await flushSave();
   const added = await postEntry(tripId, target, entry.text, entry.file, entry.spot, { byDate: entry.byDate });
   if (openTripId() === tripId) mutate((list = []) => [...list, added]);
+  announceChange();
   return added;
 }
 
@@ -100,6 +102,7 @@ async function change(entry: Entry, sent: Parameters<typeof updateEntry>[2], her
   mutate((list) => list?.map((e) => (e.id === entry.id ? { ...e, ...here } : e)));
   try {
     await updateEntry(entry.tripId, entry.id, sent);
+    announceChange();
   } catch (error) {
     void refetch();
     throw error;
@@ -116,6 +119,7 @@ export async function linkEntry(entry: Entry, target: EntryTarget): Promise<void
   await flushSave();
   await updateEntry(entry.tripId, entry.id, { link: target });
   await refetch();
+  announceChange();
 }
 
 /**
@@ -136,6 +140,7 @@ export async function orderChapter(dayId: string | null, ordered: readonly Entry
   try {
     await flushSave();
     await orderEntries(tripId, dayId, [...places.keys()]);
+    announceChange();
   } catch (error) {
     void refetch();
     throw error;
@@ -145,4 +150,5 @@ export async function orderChapter(dayId: string | null, ordered: readonly Entry
 export async function removeEntry(entry: Entry): Promise<void> {
   await deleteEntry(entry.tripId, entry.id);
   mutate((list) => list?.filter((e) => e.id !== entry.id));
+  announceChange();
 }

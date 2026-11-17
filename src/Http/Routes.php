@@ -83,6 +83,7 @@ final class Routes
             $api->delete('/trips/{id:[0-9]+}/share', [TripController::class, 'unshare']);
             $api->get('/trips/{id:[0-9]+}/publication', [PublicationController::class, 'show']);
             $api->put('/trips/{id:[0-9]+}/publication', [PublicationController::class, 'replace']);
+            $api->get('/trips/{id:[0-9]+}/public', [PublicationController::class, 'preview']);
             $api->get('/trips/{id:[0-9]+}/entries', [JournalController::class, 'index']);
             $api->post('/trips/{id:[0-9]+}/entries', [JournalController::class, 'add']);
             $api->put('/trips/{id:[0-9]+}/entries/order', [JournalController::class, 'order']);

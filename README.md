@@ -110,9 +110,9 @@ share work; sharing between users is on the way.
 5. *Export GPX…* in the open trip's menu exports it: pick the scope and the form,
    download.
 6. After the ride, the journal icon on a day, a stop or a route takes the notes and
-   photos, *Add journal entry…* in the map's menu puts one at a spot, and *Journal…* in
-   the open trip's menu reads it all top down; *Print, share…* opens the trip's page or
-   shares it under a link.
+   photos, *Add journal entry…* in the map's menu puts one at a spot, and *Journal and
+   sharing…* in the open trip's menu has the whole journal beside the trip's page, which
+   is shared under a link from there.
 
 | Key or gesture | Does |
 |---|---|

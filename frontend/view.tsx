@@ -10,4 +10,4 @@ import './view/view.css';
 import { TripView } from './view/TripView';
 
 const root = document.getElementById('root')!;
-render(() => <TripView api={root.dataset.api!} />, root);
+render(() => <TripView api={root.dataset.api!} document={root.dataset.document!} />, root);

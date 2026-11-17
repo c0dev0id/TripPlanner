@@ -1797,6 +1797,18 @@ entries at the end of their section.
   page with every chapter under the other, where a row is also dragged from one
   chapter into another. The three share one component for a chapter
   (`trip/JournalEditor.tsx`); the window is the only one that adds without showing.
+- **The preview is the page.** Beside the whole trip's journal stands the trip's page as
+  a visitor gets it, in a frame: the same template and bundle as the shared page, fed
+  with the trip's public form from an API of the owner's and with the journal whether
+  it is published or not, since the journal is looked at before it is. A second
+  rendering of the journal inside the planner would have been a second thing to keep
+  like the page, and the first to differ from it. The planner tells the read-only
+  pages of the browser that something changed, on a BroadcastChannel, after each write
+  of the journal, each save of the trip and each change of what the page shows; a page
+  that hears it reads the trip and the journal again. The same word reaches a page in
+  a window of its own, which is the preview where there is no room for it beside the
+  journal. What the page shows to whom (the link, the journal, the GPX file, the cover)
+  is set above the two; the dialog that shared a trip is gone.
 - **An entry's text is saved while it is written.** A row's text is a field, not a text
   with an edit button: it is saved a moment after the last key and when it is left, and
   what the server holds is taken into the field only while it is not being written in.

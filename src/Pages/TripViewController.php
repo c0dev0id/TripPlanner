@@ -25,9 +25,12 @@ final class TripViewController
     ) {
     }
 
+    /** The owner's page; with `?as=public` it shows the trip as a visitor gets it, with the journal whether it is published or not. */
     public function own(Request $request, Response $response, array $args): Response
     {
-        return $this->view->render($response, 'trip-view', ['api' => '/api/trips/' . $args['id'], 'assets' => $this->assets->tags(ViteAssets::VIEW)]);
+        $api = '/api/trips/' . $args['id'];
+        $asPublic = ($request->getQueryParams()['as'] ?? null) === 'public';
+        return $this->view->render($response, 'trip-view', ['api' => $api, 'document' => $asPublic ? "$api/public" : $api, 'assets' => $this->assets->tags(ViteAssets::VIEW)]);
     }
 
     /** The shared page, headed with the trip's name, description and cover for whoever is sent its link. */
@@ -41,6 +44,7 @@ final class TripViewController
         $description = trim((string) preg_replace('/\s+/', ' ', $trip['description']));
         return $this->view->render($response, 'trip-view', [
             'api' => $api,
+            'document' => $api,
             'assets' => $this->assets->tags(ViteAssets::VIEW),
             'shared' => [
                 'title' => $trip['name'],

@@ -22,7 +22,7 @@
 <?php $this->insert('theme') ?>
 </head>
 <body>
-<div id="root" data-api="<?= $this->e($api) ?>"></div>
+<div id="root" data-api="<?= $this->e($api) ?>" data-document="<?= $this->e($document) ?>"></div>
 <?= $assets ?>
 </body>
 </html>

@@ -68,7 +68,7 @@
   report's switch as an icon. A trip's row ends in a pad that opens the trip, with its
   pane beside the library, and closes it again; its arrow points to the pane while
   the trip is closed and back while it is open. The open trip's menu has what only the
-  open trip has: Edit… in place of Rename…, Export GPX…, Journal…, Print, share… and
+  open trip has: Edit… in place of Rename…, Export GPX…, Journal and sharing… and
   Close, which leaves it saved; a list of places has Close alone.
 - A library of the user's trips in folders, which may hold folders: create, open, rename,
   duplicate and delete trips, create, rename and delete folders (for a folder that holds
@@ -84,7 +84,7 @@
   what is added to what the pane lists: in the library the menu of the tree's top,
   as the line under the tabs has it (New, Add, Paste, Export); in a trip's pane Add
   day, Paste, which puts the days on the clipboard after the trip's last, and
-  Journal…; in the pane of a day's contents Add route, Import GPX or KML…, Add
+  Journal and sharing…; in the pane of a day's contents Add route, Import GPX or KML…, Add
   recording…, Add files… for its media, and Paste into the day. A trip of one day
   has both in its one pane. The rides, the settings and the pane of a category
   have none, and a text field, a link and selected text keep the browser's menu.
@@ -721,8 +721,14 @@
     photos put in the order they were taken by one button. A row's menu links it to
     the day, one of its routes or one of its stops, moves it to another chapter, and
     deletes it. A new entry is written under the rows.
-  - The journal of the whole trip opens over the page from Journal… on the trip: every
-    chapter under the other, where a row is also dragged into another chapter.
+  - The journal of the whole trip opens over the page from Journal and sharing… on the
+    trip: every chapter under the other, where a row is also dragged into another
+    chapter. Beside it stands the trip's page as a visitor gets it, which follows what
+    is written, the journal on it also before it is published; without room for both,
+    the page opens in a window of its own and follows from there. Above both is what
+    the page shows to whom: whether it is shared under a link, with the link to copy,
+    whether the journal is on it, whether it offers the GPX file, its cover, which a
+    photo is made from its row's menu, and the owner's own page for printing.
   - Photos and files are sent in the background, one after the other, while the page
     is used; the page says how many are on their way and lists what failed, to be
     tried again or dropped.

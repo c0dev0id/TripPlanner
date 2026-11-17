@@ -46,11 +46,11 @@ export function DayPane(props: { onLeave: () => void }) {
 /** What the free space of the open trip's pane offers: a day more, the days on the clipboard after its last, and its journal. */
 function tripAddMenu(): MenuItem[] {
   const paste = pasteDaysAtEnd();
-  return [{ label: t('Add day'), run: addDay }, ...(paste.length > 0 ? paste : [menuNote(t('Paste'))]), { label: t('Journal…'), run: () => setWorkspaceOpen(true) }];
+  return [{ label: t('Add day'), run: addDay }, ...(paste.length > 0 ? paste : [menuNote(t('Paste'))]), { label: t('Journal and sharing…'), run: () => setWorkspaceOpen(true) }];
 }
 
 /** The same for a trip of one day, in the pane of that day's contents: what adds to the day, whose paste takes days after it as well, then the day more and the journal. */
-const onlyDayMenu = (day: Day): MenuItem[] => [...dayAddMenu(day), { label: t('Add day'), run: addDay }, { label: t('Journal…'), run: () => setWorkspaceOpen(true) }];
+const onlyDayMenu = (day: Day): MenuItem[] => [...dayAddMenu(day), { label: t('Add day'), run: addDay }, { label: t('Journal and sharing…'), run: () => setWorkspaceOpen(true) }];
 
 /** The pane of the open trip: its name over how many days it has and how far they go, and its days. Closing it closes the trip. */
 function DaysPane(props: { onLeave: () => void }) {

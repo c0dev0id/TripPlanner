@@ -1968,11 +1968,11 @@ fieldset.symbols {
   resize: vertical;
 }
 
-/* The journal of the whole trip, over the page. */
+/* The journal of the whole trip, over the page and under the menus. */
 .journal-workspace {
   position: fixed;
   inset: 0;
-  z-index: 15;
+  z-index: 9;
   display: flex;
   flex-direction: column;
   border: 0;
@@ -1997,11 +1997,74 @@ fieldset.symbols {
   font-size: 1rem;
 }
 
-.journal-workspace .chapters {
+.journal-workspace .page-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  align-items: center;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 0.9rem;
+}
+
+.journal-workspace .page-settings .share-link {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.journal-workspace .page-settings .url {
+  width: 22em;
+  max-width: 60vw;
+}
+
+.journal-workspace .page-settings .cover {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.journal-workspace .page-settings .cover img {
+  width: 40px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 3px;
+}
+
+.journal-workspace .columns {
+  display: flex;
   flex: 1;
   min-height: 0;
+}
+
+.journal-workspace .chapters {
+  flex: 1 1 480px;
+  min-width: 0;
   padding: 0 16px 48px;
   overflow: auto;
+}
+
+.journal-workspace .preview {
+  flex: 1 1 50%;
+  min-width: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+}
+
+/* Without room for both, the page is looked at in a window of its own, which follows the journal the same way. */
+.journal-workspace .preview-link {
+  display: none;
+}
+
+@media (max-width: 1099px) {
+  .journal-workspace .preview {
+    display: none;
+  }
+
+  .journal-workspace .preview-link {
+    display: inline;
+  }
 }
 
 .journal-workspace .chapters section {
@@ -2034,10 +2097,6 @@ fieldset.symbols {
 
 .upload-status p {
   margin: 2px 0;
-}
-
-.share-dialog p {
-  margin: 0;
 }
 
 /*

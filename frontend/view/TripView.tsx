@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
-import { createEffect, createMemo, createResource, For, Match, Show, Switch } from 'solid-js';
-import { errorMessage, fetchTripAt, listEntriesAt, tripGpxUrl } from '../api';
+import { createEffect, createMemo, createResource, For, Match, onCleanup, Show, Switch } from 'solid-js';
+import { CHANGES_CHANNEL, errorMessage, fetchTripAt, listEntriesAt, tripGpxUrl } from '../api';
 import { entriesOn, type Entry, type EntryTarget } from '../model/journal';
 import type { ViewedTrip } from '../model/publication';
 import type { Day, Route, Stop } from '../model/trip';
@@ -20,13 +20,18 @@ import { ViewMap } from './ViewMap';
 /**
  * A trip laid out for reading and printing: the map, the journal, and every day with its
  * routes and its stops in riding order with their times. Read from the API the page names:
- * the owner's, or the shared one.
+ * the owner's, or the shared one; the trip's document from where the page says, which for
+ * the owner may be the trip as a visitor gets it. The page reads both again when the
+ * planner says that something changed, so that it follows the journal as it is written.
  */
-export function TripView(props: { api: string }) {
-  const [page] = createResource(async () => {
-    const [trip, entries] = await Promise.all([fetchTripAt(props.api), listEntriesAt(props.api)]);
+export function TripView(props: { api: string; document: string }) {
+  const [page, { refetch }] = createResource(async () => {
+    const [trip, entries] = await Promise.all([fetchTripAt(props.document), listEntriesAt(props.api)]);
     return { trip, entries };
   });
+  const changes = new BroadcastChannel(CHANGES_CHANNEL);
+  changes.onmessage = () => void refetch();
+  onCleanup(() => changes.close());
   createEffect(() => {
     if (page.state === 'ready') document.title = `${page().trip.name} · Trip Planner`;
   });

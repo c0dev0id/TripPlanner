@@ -13,7 +13,7 @@ import { flushSave } from '../state/autosave';
 import { isShownItem, isShownWaypoints, isShownWhole, relistStash, showInStash, shownInStash, stashFiles, stashProblem, type ShownStash } from '../state/stash';
 import { GroupDialog, type Grouping } from './GroupDialog';
 import { groupFiles } from './grouping';
-import { setEditTarget, setExportScope, setShareOpen } from '../state/drawing';
+import { setEditTarget, setExportScope } from '../state/drawing';
 import { setWorkspaceOpen } from '../state/journal';
 import { unpinTrips } from '../state/pins';
 import { addDay, addSection, isMarkInTrip, isTripMarked, markedLookId, markFolder, markInOpenTrip, markTrip, openTrip, openTripId, selectDay, selectedDayId, type OpenAt } from '../state/trip';
@@ -708,13 +708,12 @@ export function Library(props: {
     else setImportNote({ text: t('Found no files that belong together.'), errors: [] });
   };
 
-  /** What the open trip's menu has besides: its GPX export, its journal, printing and sharing a trip, and closing it, saved. */
+  /** What the open trip's menu has besides: its GPX export, its journal with the page it is shared on, and closing it, saved. */
   const openTripItems = (trip: TripSummary): MenuItem[] => [
     ...(trip.kind === 'trip'
       ? [
           { label: t('Export GPX…'), run: () => setExportScope({ kind: 'trip' }) },
-          { label: t('Journal…'), run: () => setWorkspaceOpen(true) },
-          { label: t('Print, share…'), run: () => setShareOpen(true) },
+          { label: t('Journal and sharing…'), run: () => setWorkspaceOpen(true) },
         ]
       : []),
     { label: t('Close'), run: () => void props.onLeave(true) },

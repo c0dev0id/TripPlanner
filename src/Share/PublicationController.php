@@ -7,14 +7,16 @@ namespace Planner\Share;
 use Planner\Account\CurrentUser;
 use Planner\Http\Json;
 use Planner\Journal\Entries;
+use Planner\Trip\TripDocuments;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-/** What the owner sets of a trip's public page: the journal on it, the GPX file, the photo at its top. */
+/** What the owner sets of a trip's public page: the journal on it, the GPX file, the photo at its top. And the trip as a visitor gets it, for the owner to look at. */
 final class PublicationController
 {
     public function __construct(
         private readonly Publications $publications,
+        private readonly TripDocuments $documents,
         private readonly Entries $entries,
         private readonly CurrentUser $currentUser,
     ) {
@@ -24,6 +26,14 @@ final class PublicationController
     {
         $publication = $this->publications->of($this->currentUser->get()->id, (int) $args['id']);
         return $publication === null ? Json::error($response, 404, 'Trip not found.') : Json::of($response, $publication);
+    }
+
+    /** The trip's document as the shared API gives it, whether the trip is shared or not. */
+    public function preview(Request $request, Response $response, array $args): Response
+    {
+        [$userId, $tripId] = [$this->currentUser->get()->id, (int) $args['id']];
+        $document = $this->documents->load($userId, $tripId);
+        return $document === null ? Json::error($response, 404, 'Trip not found.') : Json::of($response, PublicTrip::document($document, $this->publications->of($userId, $tripId)));
     }
 
     /** Sets all three from `{journal, gpx, coverEntryId}`; the cover is an image of the trip's journal, or null. */
