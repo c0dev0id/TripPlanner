@@ -5,8 +5,8 @@ import { routesDistance } from '../routing/legs';
 import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
-import { isPlaceList, paneShown, shownDay } from '../state/library';
-import { addDay, closeDaysPane, closeDetail, detailDay, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
+import { isPlaceList, paneShown } from '../state/library';
+import { addDay, closeDaysPane, closeDetail, detailDay, openDetail, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
 import { counted, distanceText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { ChevronIcon, NeighboursIcon, PencilIcon, PlusIcon } from '../ui/icons';
@@ -21,8 +21,8 @@ export const dayCounts = (day: Day) => ({ date: day.date, routes: day.routes.len
 
 /**
  * The panes beside the library: of a trip its days under each other and, beside them,
- * what a day holds; of a list of places the category picked in the tree. Not there
- * while a trip's pane is closed, or no category is picked.
+ * what a day holds; of a list of places the category whose pad was pressed in the tree.
+ * Not there while a trip's pane is closed, or no category's is open.
  */
 export function DayPane() {
   return (
@@ -111,26 +111,30 @@ function DetailPane() {
   );
 }
 
-/** The pane of the category picked in a list: its name between the steps to the ones before and after, over what it holds. */
+/** The pane of a category of a list, opened by the pad on its row: its name between the steps to the ones before and after, over what it holds. A click in it shows the category on the map. */
 function SectionPane() {
   return (
-    <Show when={shownDay()}>
+    <Show when={detailDay()}>
       {(shown) => {
         const label = createMemo(() => dayTitleOf(openTrip()!, shown()));
         const heading = () => dayHeading(openTrip()!.kind, openTrip()!.days.indexOf(shown()), shown().name);
         /** The section `by` sections on from the one shown, where there is one. */
         const step = (by: number) => openTrip()!.days[openTrip()!.days.indexOf(shown()) + by];
         const detail = () => dayDetail(openTrip()!.kind, dayCounts(shown()), isPlaceList(openTripId()));
+        const backToSection = () => {
+          if (selectedDayId() !== shown().id) selectDay(shown().id);
+        };
         return (
           <Pane
             level="second"
             label={label()}
-            onClose={closeDaysPane}
+            onClose={closeDetail}
+            onUse={backToSection}
             strip={<DayStrip />}
             heading={
               <span class="day-title">
                 <span class="day-step">
-                  <IconButton label={t('Previous section')} disabled={!step(-1)} onClick={() => selectDay(step(-1)!.id)}>
+                  <IconButton label={t('Previous section')} disabled={!step(-1)} onClick={() => openDetail(step(-1)!.id)}>
                     <ChevronIcon />
                   </IconButton>
                 </span>
@@ -141,7 +145,7 @@ function SectionPane() {
                   <span class="muted detail">{detail()}</span>
                 </span>
                 <span class="day-step">
-                  <IconButton label={t('Next section')} disabled={!step(1)} onClick={() => selectDay(step(1)!.id)}>
+                  <IconButton label={t('Next section')} disabled={!step(1)} onClick={() => openDetail(step(1)!.id)}>
                     <ChevronIcon />
                   </IconButton>
                 </span>

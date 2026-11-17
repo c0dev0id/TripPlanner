@@ -720,5 +720,7 @@
   "Unfold {what}": "{what} ausklappen",
   "Back": "Zurück",
   "Show the contents of {name}": "Inhalt von {name} anzeigen",
-  "Hide the contents of {name}": "Inhalt von {name} ausblenden"
+  "Hide the contents of {name}": "Inhalt von {name} ausblenden",
+  "Show the places of {name}": "Orte von {name} anzeigen",
+  "Hide the places of {name}": "Orte von {name} ausblenden"
 }

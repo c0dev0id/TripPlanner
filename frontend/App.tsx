@@ -17,9 +17,9 @@ import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
 import { folderOfTrip, libraryFolders, libraryTab, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab } from './state/library';
 import { setShowingDuplicates, showingDuplicates } from './state/pane';
-import { showDaysPane } from './state/panel';
+import { fold, showDaysPane } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
-import { closeTrip, daysPaneOpen, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
+import { closeTrip, openDetail, daysPaneOpen, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
 import { DayDialog } from './trip/DayDialog';
 import { DayPane } from './trip/DayPane';
 import { ExportDialog } from './trip/ExportDialog';
@@ -56,7 +56,9 @@ export function App() {
       if (ask !== latest) return;
       keepPinsOfOpenTrip();
       loadTrip(trip, dayId);
-      if (pane) showDaysPane();
+      if (pane && trip.kind === 'trip') showDaysPane();
+      else if (pane && dayId !== undefined) openDetail(dayId);
+      if (pane) fold('second', false);
       if (selectedDay()?.routes.some((route) => route.id === routeId)) takeUpRoute(routeId);
       resetSaveState();
       // The trip is open; its row keeps saying that it opens until the map has drawn the routes.

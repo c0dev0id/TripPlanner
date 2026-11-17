@@ -35,8 +35,8 @@ export const shownDay = () => (tripShown() ? selectedDay() : undefined);
 /** Whether the pane of what a day of the open trip holds is there. */
 export const detailShown = (): boolean => paneShown() && openTrip()?.kind === 'trip' && detailDay() !== undefined;
 
-/** Whether the pane beside the library is there: a trip's days while their pane is open, a list's category while one is shown; neither while the map follows another tab. */
-export const paneShown = (): boolean => tripShown() && (openTrip()?.kind === 'trip' ? daysPaneOpen() : selectedDay() !== undefined);
+/** Whether the pane beside the library is there: a trip's days while their pane is open, a list's category while its pane is open; neither while the map follows another tab. */
+export const paneShown = (): boolean => tripShown() && (openTrip()?.kind === 'trip' ? daysPaneOpen() : detailDay() !== undefined);
 
 /** The folder asked for in each tree, none for its top: the one the tree marks, and that takes what is pasted with the keys or from the line that offers it. */
 const [markedFolders, setMarkedFolders] = createSignal<Partial<Record<TreeTab, number>>>({});

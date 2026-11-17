@@ -9,13 +9,16 @@ import { partSelect } from '../state/partSelection';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
 import { isPlaceList } from '../state/library';
-import { isDayMarked, isRouteActive, moveDay, openTrip, openTripId, pickDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
+import { fold } from '../state/panel';
+import { closeDetail, detailDayId, isDayMarked, isRouteActive, moveDay, openDetail, openTrip, openTripId, pickDay, selectedDayId, takeUpRoute, updateDay } from '../state/trip';
 import { symbolLabel } from '../symbols/symbols';
 import { cardMenu } from '../ui/cardMenu';
 import { ForById } from '../ui/ForById';
 import { Grip } from '../ui/Grip';
 import { distanceText } from '../ui/format';
 import type { MenuItem } from '../ui/menu';
+import { IconButton } from '../ui/IconButton';
+import { ChevronIcon, ChevronLeftIcon } from '../ui/icons';
 import { MenuButton } from '../ui/MenuButton';
 import { NameDialog } from '../ui/NameDialog';
 import { Pad } from '../ui/Pad';
@@ -56,7 +59,7 @@ export function CollectionPanel() {
   );
 }
 
-/** A section as a card: its name over what it holds, which in a list of places (`places`) are places; opened, its routes and waypoints. Its menu renames and removes it. */
+/** A section as a card: its name over what it holds, which in a list of places (`places`) are places. A click shows it on the map; the pad at its end opens the pane of what it holds. Its menu renames and removes it. */
 function SectionItem(props: { day: Day; index: number; places: boolean; onRename: (day: Day) => void }) {
   const selected = () => selectedDayId() === props.day.id;
   // The section's routes change less often than the section.
@@ -65,6 +68,13 @@ function SectionItem(props: { day: Day; index: number; places: boolean; onRename
   const meta = () => dayDetail('collection', { date: null, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, media: mediaOf(props.day.id).length, distanceM: distance() }, props.places);
   const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
   const select = partSelect('day', props.day.id, () => openTrip()!.days.map((d) => d.id));
+  /** Whether the pane beside the library shows this section; the pad on the row opens it there, unfolded, and closes it. */
+  const detailed = () => detailDayId() === props.day.id;
+  const toggleDetail = () => {
+    if (detailed()) return closeDetail();
+    openDetail(props.day.id);
+    fold('second', false);
+  };
   let row!: HTMLLIElement;
   // The day shown is brought into view: one opened from elsewhere may lie far down its trip.
   createEffect(on(selected, (is) => is && requestAnimationFrame(() => row.scrollIntoView({ block: 'nearest' }))));
@@ -98,6 +108,9 @@ function SectionItem(props: { day: Day; index: number; places: boolean; onRename
           <PlaceKindControls id={props.day.id} name={props.day.name} />
         </Show>
         <MenuButton of={props.day.name} items={items} />
+        <IconButton label={t(detailed() ? 'Hide the places of {name}' : 'Show the places of {name}', { name: props.day.name })} pressed={detailed()} onClick={toggleDetail}>
+          {detailed() ? <ChevronLeftIcon /> : <ChevronIcon />}
+        </IconButton>
       </div>
     </li>
   );

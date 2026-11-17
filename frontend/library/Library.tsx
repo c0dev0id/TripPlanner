@@ -79,7 +79,7 @@ const ITEMS = 'items';
  * copied, pasted into, moved, merged, renamed, exported and deleted.
  */
 export function Library(props: {
-  /** Opens a trip, at a day where one is given, and with `pane` the pane of its days. */
+  /** Opens a trip or a list, at a day or category where one is given, and with `pane` the pane beside the library: of a trip's days, or of the list's category. */
   onOpen: (trip: TripSummary, dayId?: string, pane?: boolean) => void;
   /** Opens a route the search found, in its trip and day. */
   onOpenRoute: (found: FoundRoute) => void;
@@ -752,7 +752,7 @@ export function Library(props: {
             fold={{ unfolded: () => trip().kind === 'collection' && isUnfolded({ trip: trip() }), current: () => isMarkedTrip(trip()), open: () => openTripId() === trip().id }}
             pane={trip().kind === 'trip' ? paneOf(trip()) : undefined}
           >
-            <Show when={openTripId() === trip().id} fallback={<TripDays trip={trip()} onOpen={(dayId) => props.onOpen(trip(), dayId)} />}>
+            <Show when={openTripId() === trip().id} fallback={<TripDays trip={trip()} onOpen={(dayId, pane) => props.onOpen(trip(), dayId, pane)} />}>
               {props.children}
             </Show>
           </TripCard>

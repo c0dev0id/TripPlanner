@@ -54,11 +54,11 @@ export function loneDay(trip: TripSummary): Day | OutlineDay | undefined {
 
 /**
  * The categories of a list of places that is not open, as the library knows them, drawn
- * as the open list draws its own, grip and all: a click opens the list at the category.
- * What needs the list's document (reordering by the grip, the menu) comes with opening
- * it.
+ * as the open list draws its own, grip and all: a click opens the list at the category,
+ * the pad at its end with the pane of its places. What needs the list's document
+ * (reordering by the grip, the menu) comes with opening it.
  */
-export function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => void }) {
+export function TripDays(props: { trip: TripSummary; onOpen: (dayId: string, pane?: boolean) => void }) {
   const days = () => outlineOf(props.trip.id) ?? [];
   return (
     <ol class="days">
@@ -78,6 +78,9 @@ export function TripDays(props: { trip: TripSummary; onOpen: (dayId: string) => 
                 </span>
               </button>
               <PlaceKindControls id={day().id} name={day().name} />
+              <IconButton label={t('Show the places of {name}', { name: day().name })} onClick={() => props.onOpen(day().id, true)}>
+                <ChevronIcon />
+              </IconButton>
             </div>
           </li>
         )}
