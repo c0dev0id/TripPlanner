@@ -31,14 +31,22 @@ final class SharedTripController
         return $document === null ? Json::error($response, 404, 'This trip is not shared.') : Json::of($response, $document);
     }
 
-    /** The trip as one GPX file, written as an export without options is, where its page offers it. */
+    /** The trip as one GPX file, or with `days=<id>` that day alone, written as an export without options is, where its page offers it. */
     public function gpx(Request $request, Response $response, array $args): Response
     {
         $document = $this->publicDocument($args['token']);
         if ($document === null || !$document['public']['gpx']) {
             return Json::error($response, 404, 'This trip is not shared.');
         }
-        return GpxExportController::download($response, TripGpx::fileName($document['name']) . '.gpx', 'application/gpx+xml', TripGpx::trip($document, new DateTimeImmutable()));
+        $dayId = $request->getQueryParams()['days'] ?? null;
+        if ($dayId === null) {
+            return GpxExportController::download($response, TripGpx::fileName($document['name']) . '.gpx', 'application/gpx+xml', TripGpx::trip($document, new DateTimeImmutable()));
+        }
+        $index = array_search($dayId, array_column($document['days'], 'id'), true);
+        if ($index === false) {
+            return Json::error($response, 404, 'Day not found.');
+        }
+        return GpxExportController::download($response, TripGpx::dayFileName($document, $index) . '.gpx', 'application/gpx+xml', TripGpx::day($document, $index, new DateTimeImmutable()));
     }
 
     /** The journal, empty until it is published. */
