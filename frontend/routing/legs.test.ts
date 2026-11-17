@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LngLat, RoutedLeg, RoutedRoute, Track } from '../model/trip';
 import { encodePolyline } from './polyline';
-import { legCoordinates, legKey, legState, nextMissingLeg, pointCount, pruneLegs, roundLngLat, routeDistance, routeLegs, routeLine, routePositions } from './legs';
+import { fileLegCount, legCoordinates, legKey, legState, nextMissingLeg, pointCount, pruneLegs, roundLngLat, routeDistance, routeLegs, routeLine, routePositions } from './legs';
 
 const routed = (geometry: string, distanceM = 1000): RoutedLeg => ({ geometry, distanceM, durationS: 60 });
 
@@ -216,6 +216,19 @@ describe('legState', () => {
     r.points[3]!.straight = true;
     expect(routeLegs(r).map((leg) => legState(r, leg, new Set(['bicycle:allow/2,2;3,3'])))).toEqual(['routed', 'failed', 'straight']);
     expect(legState(r, routeLegs(r)[1]!, new Set())).toBe('pending');
+  });
+});
+
+describe('fileLegCount', () => {
+  it('counts the legs that run along a way read from a file, which has no riding time', () => {
+    const points: [number, number][] = [[1, 1], [2, 2], [3, 3]];
+    const [first, second] = routeLegs(route('r', points)).map((leg) => (leg.kind === 'road' ? leg.key : ''));
+    const fromFile: RoutedLeg = { ...routed('ab'), durationS: null };
+    expect(fileLegCount(route('r', points, { [first!]: fromFile, [second!]: fromFile }))).toBe(2);
+    expect(fileLegCount(route('r', points, { [first!]: fromFile, [second!]: routed('bc') }))).toBe(1);
+    // A leg the route no longer has, and a leg not routed yet, are not counted.
+    expect(fileLegCount(route('r', points, { 'bicycle:allow/9,9;8,8': fromFile }))).toBe(0);
+    expect(fileLegCount({ id: 't', name: '', kind: 'track', profile: 'bicycle', optional: false, color: null, line: '' })).toBe(0);
   });
 });
 

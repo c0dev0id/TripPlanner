@@ -457,7 +457,12 @@
   failed it, and a route of fewer than two points has none. Made a track and then a
   route again, a route gets points all along its line: that is how a route that came
   with two points and the way a planner had calculated between them is made one that
-  can be edited. The free stops of
+  can be edited. A route whose legs still run along the way its file calculated says so
+  on its row by the chip the Stash has for it, "GPXX route points", with how many of
+  its legs do where not all do; the chip goes as those legs are routed again or the
+  route is made a track. Nothing else a file's route or track carries (times,
+  elevation, lean angles, accelerations, what DMD or Rumo wrote) is kept in a trip, so
+  a trip's rows have no chips for it. The free stops of
   a day or section, or those selected, become a route ("Waypoints to route", in a trip
   "Stops to route"), for a file that kept a route as a string of waypoints, which a
   collection keeps in the file's order: "By order" takes them all, top down; "By

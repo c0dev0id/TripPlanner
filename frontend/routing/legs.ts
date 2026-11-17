@@ -101,6 +101,11 @@ export function routeLine(route: Route): LngLat[] {
   return routeLegs(route).flatMap((leg, i) => (i === 0 ? legCoordinates(route, leg) : legCoordinates(route, leg).slice(1)));
 }
 
+/** How many of a route's legs run along a way read from a file, as the planner that wrote it calculated it, rather than one the routing answered: such a leg has no riding time. */
+export function fileLegCount(route: Route): number {
+  return route.kind === 'routed' ? routedLegs(route).filter((leg) => route.legs[leg.key]?.durationS === null).length : 0;
+}
+
 /** The pace assumed for a leg the routing has not timed: a track, a straight one, one not routed yet, or one imported with its way. */
 const ASSUMED_SPEED_MPS = 50 / 3.6;
 

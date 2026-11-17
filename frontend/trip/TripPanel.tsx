@@ -5,7 +5,7 @@ import { readDayParts, ROUTE_FILE_TYPES } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR, ROUTE_PALETTE } from '../model/routeLook';
 import type { Day, Route, Stop } from '../model/trip';
 import { defaultProfile } from '../routing/dayEdit';
-import { pointCount, routeDistance, routesDistance } from '../routing/legs';
+import { fileLegCount, pointCount, routedLegs, routeDistance, routesDistance } from '../routing/legs';
 import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { panTo, pointItems, setEditTarget, setTrackAction } from '../state/drawing';
@@ -232,6 +232,8 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
         ...(props.route.kind === 'track' ? [{ label: t('Reduce points…'), run: () => setTrackAction({ routeId: props.route.id, action: 'condense' }) }] : []),
       ],
     });
+  /** How many of the route's legs still run along the way its file calculated, of how many. */
+  const fileLegs = createMemo(() => ({ kept: fileLegCount(props.route), of: props.route.kind === 'routed' ? routedLegs(props.route).length : 0 }));
   const [unfolded, setUnfolded] = createSignal(false);
   let row!: HTMLDivElement;
   // A route taken up on the map is unfolded and brought into view as one clicked here is.
@@ -280,6 +282,15 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
               </Show>
               {props.route.optional ? ' · optional' : ''}
             </span>
+            {/* What the route still carries of its file, named as the Stash names it there. */}
+            <Show when={fileLegs().kept > 0}>
+              <span class="chips">
+                <span class="chip" title={t('{n} of {m} legs run along the way the file calculated. A leg that is routed again loses it.', { n: fileLegs().kept, m: fileLegs().of })}>
+                  {t('GPXX route points')}
+                  {fileLegs().kept < fileLegs().of ? ` ${fileLegs().kept}/${fileLegs().of}` : ''}
+                </span>
+              </span>
+            </Show>
           </span>
         </button>
         <JournalButton target={{ routeId: props.route.id }} of={label()} />

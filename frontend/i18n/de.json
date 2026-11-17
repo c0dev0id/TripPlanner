@@ -693,6 +693,7 @@
   "Its points have accelerations": "Die Punkte haben Beschleunigungswerte",
   "The route has Garmin’s route extension": "Die Route hat Garmins Routen-Erweiterung",
   "Its points have Garmin’s route point extension: the way calculated between them": "Die Punkte haben Garmins Routenpunkt-Erweiterung: den berechneten Weg dazwischen",
+  "{n} of {m} legs run along the way the file calculated. A leg that is routed again loses it.": "{n} von {m} Abschnitten folgen dem Weg, den die Datei berechnet hat. Ein neu berechneter Abschnitt verliert ihn.",
   "Has data DMD wrote into it": "Enthält Daten, die DMD hineingeschrieben hat",
   "Has data Rumo wrote into it": "Enthält Daten, die Rumo hineingeschrieben hat",
   "Group files…": "Dateien gruppieren…",
