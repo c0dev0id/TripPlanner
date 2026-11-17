@@ -48,6 +48,9 @@ function tripAddMenu(): MenuItem[] {
   return [{ label: t('Add day'), run: addDay }, ...(paste.length > 0 ? paste : [menuNote(t('Paste'))]), { label: t('Journal…'), run: () => openJournal({}) }];
 }
 
+/** The same for a trip of one day, in the pane of that day's contents: what adds to the day, whose paste takes days after it as well, then the day more and the journal. */
+const onlyDayMenu = (day: Day): MenuItem[] => [...dayAddMenu(day), { label: t('Add day'), run: addDay }, { label: t('Journal…'), run: () => openJournal({}) }];
+
 /** The pane of the open trip: its name over how many days it has and how far they go, and its days. Closing it closes the trip. */
 function DaysPane(props: { onLeave: () => void }) {
   const trip = () => openTrip()!;
@@ -103,7 +106,7 @@ function DetailPane(props: { onLeave: () => void }) {
             label={label()}
             onClose={only() ? props.onLeave : closeDetail}
             onUse={() => pickDay(day().id)}
-            menu={() => [...dayAddMenu(day()), ...(only() ? tripAddMenu() : [])]}
+            menu={() => (only() ? onlyDayMenu(day()) : dayAddMenu(day()))}
             heading={
               <>
                 <span class="lines grow">
