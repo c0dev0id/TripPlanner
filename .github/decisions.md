@@ -974,7 +974,9 @@ entries at the end of their section.
   is closed while it is on the map stays there as a look, at the view the map has, so
   that closing changes the panes and nothing else. The look is read again when the
   library lists its trip as changed, and ends when it is listed no more. It costs a
-  request for each row clicked, as opening did.
+  request for the first click on a trip's row, as opening did; the trip looked at
+  already is shown from what was read, and a trip just closed is not read again for
+  the listing of its own saves.
 - **The mark is in the open trip, on the trip looked at, or on a folder.** The tree has
   one mark. A look takes it. A click in the open trip's pane ends the look and gives
   the map back, but not the mark, which a day takes when it is picked: a day's row

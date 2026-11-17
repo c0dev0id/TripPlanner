@@ -20,7 +20,7 @@ import { comparedCover, opened, openedLineColors, somethingTakenUp } from '../st
 import { loadedTrack, previewedLines, recordingColor, shownRecordings } from '../state/recordings';
 import { lookColors, openRouteColors } from '../state/routeColors';
 import { failedLegs } from '../state/routing';
-import { activeRouteId, looked, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
+import { activeRouteId, looked, lookedTripId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
 import { LockIcon, LockOpenIcon, PinIcon, PinOffIcon } from '../ui/icons';
 import { newBaseMap } from './baseMap';
 import { OverlayInfo } from './OverlayInfo';
@@ -257,8 +257,9 @@ function LookLines(props: { map: MapLibreMap }) {
   const features = createMemo(() => routeFeatures(days().map((day) => ({ day, role: 'selected' as const })), lookColors(), undefined, new Set(), [], stops()));
   createEffect(() => props.map.getSource<GeoJSONSource>(LOOK_SOURCE)?.setData(features()));
   // Read again, the trip looked at stays where it is on the map, as does one that was open until now.
+  const dayId = createMemo(() => looked()?.dayId);
   createEffect(
-    on([() => looked()?.trip.id, () => looked()?.dayId], ([tripId]) => {
+    on([lookedTripId, dayId], ([tripId]) => {
       if (keepsView(tripId) || viewLocked()) return;
       const bounds = new LngLatBounds();
       for (const day of days()) {

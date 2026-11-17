@@ -57,10 +57,10 @@ export function withPlace(fragment: string, place: Place): string {
   return parts.length > 0 ? `#${parts.join('&')}` : '';
 }
 
-/** The trip the address named together with a view of the map, until the map has shown it. */
+/** The trip the map is to show without moving, until it has shown it. */
 let tripWithView: number | undefined;
 
-/** Has the map stay at the view its address names when it first shows the trip, where it would show a day whole. */
+/** Has the map stay at the view it has when it first shows the trip, open or looked at, where it would show it whole: the view the address names, or the one a trip is closed at. */
 export function keepViewOf(tripId: number): void {
   tripWithView = tripId;
 }

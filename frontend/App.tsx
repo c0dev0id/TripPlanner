@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show, untrack } from 'solid-js';
+import { createEffect, createSignal, on, onCleanup, onMount, Show, untrack } from 'solid-js';
 import { errorMessage, fetchTrip, type Progress } from './api';
 import { DuplicatesReport } from './library/DuplicatesReport';
 import { switchTab } from './state/tabs';
@@ -20,7 +20,7 @@ import { folderOfTrip, libraryFolders, libraryTab, libraryTrips, relistTrips, ro
 import { setShowingDuplicates, showingDuplicates } from './state/pane';
 import { fold } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
-import { closeTrip, detailDayId, editingRouteId, endLook, loadTrip, lookAt, looked, openTrip, openTripId, refreshLook, selectedDay, selectedDayId, type OpenAt } from './state/trip';
+import { closeTrip, detailDayId, editingRouteId, endLook, loadTrip, lookAt, looked, lookedTripId, openTrip, openTripId, refreshLook, selectedDay, selectedDayId, type OpenAt } from './state/trip';
 import { DayDialog } from './trip/DayDialog';
 import { DayPane } from './trip/DayPane';
 import { ExportDialog } from './trip/ExportDialog';
@@ -68,7 +68,14 @@ export function App() {
       setOpening(undefined);
     }
   };
-  /** Looks at a trip, or at a day of it: read from the server and drawn on the map, while the open trip stays open. */
+  /** The trip left with saves the library has not listed yet: looked at, it is newer than its listing. */
+  let leftUnlisted: number | undefined;
+  /** Looks at a trip, or at a day of it: read from the server, or looked at already, and drawn on the map, while the open trip stays open. */
+    leftUnlisted = undefined;
+    if (lookedTripId() === id) {
+      setOpening(undefined);
+      return lookAt(looked()!.trip, dayId);
+    }
   const look = async (id: number, dayId?: string) => {
     const ask = ++latest;
     const say = (progress: Progress | 'arrived') => void (ask === latest && setOpening({ tripId: id, progress }));
@@ -86,11 +93,11 @@ export function App() {
     }
   };
   /** The trip looked at as the library lists it: when it was last changed, null where it is listed no more, nothing while none is looked at or the trips are not listed. */
-  const lookListed = createMemo(() => {
-    const id = looked()?.trip.id;
+  const lookListed = () => {
+    const id = lookedTripId();
     const trips = libraryTrips.error ? undefined : libraryTrips();
     return id === undefined || !trips ? undefined : ([id, trips.find((trip) => trip.id === id)?.updatedAt ?? null] as const);
-  });
+  };
   // A trip looked at is read again once the library lists it as changed, and let go of once it lists it no more.
   createEffect(
     on(lookListed, (now, before) => {
@@ -98,7 +105,8 @@ export function App() {
       const [id, changedAt] = now;
       if (changedAt === null) return endLook();
       if (before?.[0] !== id || before[1] === changedAt) return;
-      void fetchTrip(id).then(refreshLook);
+      if (leftUnlisted === id) leftUnlisted = undefined;
+      else void fetchTrip(id).then(refreshLook);
     }),
   );
   /** Loads the open trip again from the server, after it was changed elsewhere. */
@@ -119,6 +127,7 @@ export function App() {
     keepPinsOfOpenTrip();
     closeTrip();
     if (look && left.kind === 'trip' && !looked()) {
+      if (changed) leftUnlisted = left.id;
       keepViewOf(left.id);
       lookAt(left, dayId);
     }
@@ -172,7 +181,7 @@ export function App() {
     // The folder shown is only known once the folders are listed.
     if (!returned() || libraryFolders.loading) return;
     const tab = libraryTab();
-    const now = { folderId: shownFolderId(), ...(isTreeTab(tab) ? {} : { view: tab }), tripId: openTripId(), dayId: selectedDayId(), routeId: editingRouteId(), detailDayId: detailDayId(), lookId: looked()?.trip.id, lookDayId: looked()?.dayId };
+    const now = { folderId: shownFolderId(), ...(isTreeTab(tab) ? {} : { view: tab }), tripId: openTripId(), dayId: selectedDayId(), routeId: editingRouteId(), detailDayId: detailDayId(), lookId: lookedTripId(), lookDayId: looked()?.dayId };
     history.replaceState(history.state, '', location.pathname + location.search + withPlace(location.hash, now));
   });
 

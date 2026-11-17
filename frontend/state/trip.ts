@@ -53,7 +53,7 @@ export const isTripMarked = (): boolean => mark() === 'trip' && selectedDayId() 
 export const isMarkInTrip = (): boolean => openTrip() !== undefined && mark() === 'trip';
 
 /** The trip looked at, while it holds the mark. */
-export const markedLookId = (): number | undefined => (mark() === 'look' ? looked()?.trip.id : undefined);
+export const markedLookId = (): number | undefined => (mark() === 'look' ? lookedTripId() : undefined);
 
 /** Gives the mark to the open trip, which closes its day that is shown and ends a look. */
 export function markTrip(): void {
@@ -115,7 +115,7 @@ export const selectedTimeline: () => DayTimeline | undefined = createRoot(() => 
  * without being open or edited; with `dayId`, that day of it alone. The open trip stays
  * open beside it, and whatever shows a day of the open trip ends the look.
  */
-export interface Looked {
+interface Looked {
   trip: Trip;
   dayId?: string;
 }
@@ -137,6 +137,9 @@ export function refreshLook(trip: Trip): void {
   const look = looked();
   if (look?.trip.id === trip.id) setLooked({ ...look, trip });
 }
+/** The id of the trip looked at; it changes only when another is looked at, not when the same is read again. */
+export const lookedTripId: () => number | undefined = createRoot(() => createMemo(() => looked()?.trip.id));
+
 
 export const endLook = (): void => void setLooked(undefined);
 
