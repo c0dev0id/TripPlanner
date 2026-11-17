@@ -58,8 +58,8 @@ const [unfolded, setUnfolded] = createSignal<ReadonlySet<string>>();
  * onto a day, puts it on a day of the open trip, merges it with the selected rides it
  * follows or that follow it, opens a day it is on, and deletes it. The magnifier above
  * them asks for the days of trips the rides on no day may be of, which are then listed
- * over the rides to be gone through: a click shows the rides on the map, in red, and
- * the day in its pane, and marks the suggestion while they are shown; the tick puts
+ * over the rides to be gone through: a click shows the rides on the map, in red, with
+ * the day looked at, and marks the suggestion while they are shown; the tick puts
  * them on the day, the cross says they are not of it.
  */
 export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; onShow: (tripId: number, dayId: string) => void }) {
@@ -181,7 +181,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       .filter(Boolean)
       .join(' · ');
   };
-  /** Shows what is suggested: the rides on the map, in red, and the day in its pane with its routes in other colours. */
+  /** Shows what is suggested: the rides on the map, in red, and the day looked at with its routes in other colours. */
   const showSuggestion = (suggestion: Suggestion) => {
     setShownSuggestion(suggestion);
     compareWithDay(suggestion.rideIds);

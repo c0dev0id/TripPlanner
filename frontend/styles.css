@@ -228,7 +228,7 @@ body {
   font-weight: 600;
 }
 
-/* The days before and after, by buttons in the heading on a phone, where neither the list of days nor the strip of them is beside it. */
+/* The categories before and after, by buttons in the heading of a category's pane on a phone, where no strip of them is beside it. */
 .day-step {
   display: none;
 }
@@ -237,7 +237,7 @@ body {
   transform: rotate(180deg);
 }
 
-/* A day's name between its steps: a line of its own on a phone, part of the heading's row elsewhere. */
+/* A category's name between its steps on a phone; elsewhere it is part of the heading's row. */
 .day-title {
   display: contents;
 }
@@ -694,7 +694,7 @@ button.icon.pin[aria-pressed='true'] {
   background: var(--active);
 }
 
-/* A trip's days in its pane: rows as the tree's, the day shown marked as the tree marks what is open, with what it holds under its row. */
+/* A trip's days in its pane: rows as the tree's, the day shown marked as the tree marks what is open. */
 .side-pane .days > .card > .row {
   border-radius: 7px;
 }
@@ -1816,7 +1816,7 @@ fieldset.symbols {
   color: var(--error);
 }
 
-/* A day's notes under its row, as written. */
+/* A day's notes over what it holds, as written. */
 .day-details .notes {
   margin: 0 0 6px;
   font-size: 13px;

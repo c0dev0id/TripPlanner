@@ -69,13 +69,13 @@ export function App() {
   /** The trip left with saves the library has not listed yet: looked at, it is newer than its listing. */
   let leftUnlisted: number | undefined;
   /** Looks at a trip, or at a day of it: read from the server, or looked at already, and drawn on the map, while the open trip stays open. */
+  const look = async (id: number, dayId?: string) => {
+    const ask = ++latest;
     leftUnlisted = undefined;
     if (lookedTripId() === id) {
       setOpening(undefined);
       return lookAt(looked()!.trip, dayId);
     }
-  const look = async (id: number, dayId?: string) => {
-    const ask = ++latest;
     const say = (progress: Progress | 'arrived') => void (ask === latest && setOpening({ tripId: id, progress }));
     say({ received: 0 });
     setError(undefined);
@@ -125,9 +125,9 @@ export function App() {
     keepPinsOfOpenTrip();
     closeTrip();
     if (look && left.kind === 'trip' && !looked()) {
-      if (changed) leftUnlisted = left.id;
       keepViewOf(left.id);
       lookAt(left, dayId);
+      if (changed) leftUnlisted = left.id;
     }
     resetSaveState();
     if (changed) relistTrips();

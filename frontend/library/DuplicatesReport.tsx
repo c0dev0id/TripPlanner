@@ -50,9 +50,9 @@ let scrolled = 0;
  * when, and the button there makes it afresh. A click or a tap selects
  * a route, with Cmd or Ctrl one more, with Shift a run of them; its pad adds or takes it
  * away. The map draws what is selected, each route in a colour its row shows too, to
- * compare them. The menu opens the place of one: its trip at its day, marked and in view
- * in the library, with the report still in the pane, which a click on that day or on
- * another gives to the day; shown again, the report is scrolled as it was left. The
+ * compare them. The menu opens the place of one: its trip at its day, with the report
+ * still in the pane, which the pad on the trip's row gives to the trip; shown again,
+ * the report is scrolled as it was left. The
  * menu also copies or deletes the selected ones, as
  * Ctrl+C and Delete do.
  */

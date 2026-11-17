@@ -145,15 +145,6 @@ export const CollectionIcon = () => (
   </Icon>
 );
 
-/** The three lines that fold a pane away and bring it back. */
-export const MenuIcon = () => (
-  <Icon>
-    <path d="M4 6l16 0" />
-    <path d="M4 12l16 0" />
-    <path d="M4 18l16 0" />
-  </Icon>
-);
-
 /** The arrowhead of a row that unfolds: pointing right, turned down by its button while it is unfolded. */
 export const FoldIcon = () => (
   <Icon>

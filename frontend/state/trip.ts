@@ -107,9 +107,6 @@ export const selectedSequence: () => SequenceEntry[] = createRoot(() =>
   }),
 );
 
-/** The selected day's times, from its first stop with a time on. */
-export const selectedTimeline: () => DayTimeline | undefined = createRoot(() => createMemo(() => dayTimeline(selectedSequence())));
-
 /**
  * A trip that is looked at: drawn on the map as it was read, in the open trip's place,
  * without being open or edited; with `dayId`, that day of it alone. The open trip stays
@@ -137,11 +134,11 @@ export function refreshLook(trip: Trip): void {
   const look = looked();
   if (look?.trip.id === trip.id) setLooked({ ...look, trip });
 }
-/** The id of the trip looked at; it changes only when another is looked at, not when the same is read again. */
-export const lookedTripId: () => number | undefined = createRoot(() => createMemo(() => looked()?.trip.id));
-
 
 export const endLook = (): void => void setLooked(undefined);
+
+/** The id of the trip looked at; it changes only when another is looked at, not when the same is read again. */
+export const lookedTripId: () => number | undefined = createRoot(() => createMemo(() => looked()?.trip.id));
 
 /**
  * The day whose contents have a pane of their own: opened by the pad on the day's row,
@@ -160,15 +157,17 @@ export const onlyDay = (): Day | undefined => {
 /** The day in the pane of a day's contents, while the trip holds it: the one whose pad was pressed, or a trip's only day. */
 export const detailDay: () => Day | undefined = createRoot(() => createMemo(() => onlyDay() ?? openTrip()?.days.find((d) => d.id === detailDayId())));
 
-/** That day's stops and route points in riding order: the selected day's where it is that. */
-export const detailSequence: () => SequenceEntry[] = createRoot(() =>
-  createMemo(() => {
+/** That day's stops and route points in riding order: the selected day's where it is that, and its own otherwise, whatever the selected day then does. */
+export const detailSequence: () => SequenceEntry[] = createRoot(() => {
+  const isSelected = createMemo(() => detailDay() === selectedDay());
+  return createMemo(() => {
+    if (isSelected()) return selectedSequence();
     const day = detailDay();
-    return day === selectedDay() ? selectedSequence() : day ? daySequence(day) : [];
-  }),
-);
+    return day ? daySequence(day) : [];
+  });
+});
 
-/** That day's times. */
+/** That day's times, from its first stop with a time on. */
 export const detailTimeline: () => DayTimeline | undefined = createRoot(() => createMemo(() => dayTimeline(detailSequence())));
 
 /** Opens the pane of a day's contents, and shows the day on the map. */
@@ -351,12 +350,10 @@ function editDay(change: (trip: Trip, dayId: string) => Trip, label: string): vo
   if (dayId) edit((trip) => change(trip, dayId), label);
 }
 
-/** Applies a pure edit to the day a stop is on. */
-function editStopsDay(stopId: string, change: (trip: Trip, dayId: string) => Trip, label: string): void {
-  edit((trip) => {
-    const day = dayEdit.dayOfStop(trip, stopId);
-    return day ? change(trip, day.id) : trip;
-  }, label);
+/** The trip with a stop changed, on whichever day it is. */
+function withStopChanged(trip: Trip, stopId: string, change: Partial<Omit<Stop, 'id' | 'pointId'>>): Trip {
+  const day = dayEdit.dayOfStop(trip, stopId);
+  return day ? dayEdit.updateStop(trip, day.id, stopId, change) : trip;
 }
 
 /** Adds a route to a day, and takes it up where that is the selected day. */
@@ -486,24 +483,17 @@ export function moveStop(stopId: string, lngLat: LngLat): void {
 }
 
 export function removeStop(stopId: string): void {
-  editStopsDay(stopId, (trip, dayId) => dayEdit.removeStop(trip, dayId, stopId), t('Remove stop'));
+  edit((trip) => dayEdit.removeParts(trip, 'stop', [stopId]), t('Remove stop'));
 }
 
 /** Changes what a stop says about itself. */
 export function updateStop(stopId: string, change: Partial<Omit<Stop, 'id' | 'pointId'>>, label = t('Edit stop')): void {
-  editStopsDay(stopId, (trip, dayId) => dayEdit.updateStop(trip, dayId, stopId, change), label);
+  edit((trip) => withStopChanged(trip, stopId, change), label);
 }
 
 /** Gives stops a symbol, as one step to undo. */
 export function setStopSymbols(stopIds: readonly string[], symbol: string): void {
-  edit(
-    (trip) =>
-      stopIds.reduce((to, id) => {
-        const day = dayEdit.dayOfStop(to, id);
-        return day ? dayEdit.updateStop(to, day.id, id, { symbol }) : to;
-      }, trip),
-    t('Edit stop'),
-  );
+  edit((trip) => stopIds.reduce((to, id) => withStopChanged(to, id, { symbol }), trip), t('Edit stop'));
 }
 
 export function addDay(): void {
