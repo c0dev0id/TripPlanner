@@ -43,8 +43,15 @@ export const paneShown = (): boolean => tripInView() && !showingDuplicates() && 
 /** Whether a third pane is there, of what a day of the open trip holds, beside the one of its days; a trip's only day is in the trip's pane instead. */
 export const detailShown = (): boolean => paneShown() && openTrip()?.kind === 'trip' && !onlyDay() && detailDay() !== undefined;
 
+let tripMenu: () => MenuItem[] = () => [];
+
 /** What the menu of the open trip's row holds, as the library makes it; the trip's pane opens the same on its free space. */
-export const [openTripMenu, provideOpenTripMenu] = createSignal<() => MenuItem[]>(() => []);
+export const openTripMenu = (): MenuItem[] => tripMenu();
+
+/** Says how the open trip's menu is made: the library's part, whose actions it is made of. */
+export function provideOpenTripMenu(items: () => MenuItem[]): void {
+  tripMenu = items;
+}
 
 /** The folder asked for in each tree, none for its top: the one the tree marks, and that takes what is pasted with the keys or from the line that offers it. */
 const [markedFolders, setMarkedFolders] = createSignal<Partial<Record<TreeTab, number>>>({});

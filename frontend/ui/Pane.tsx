@@ -58,7 +58,6 @@ export function Pane(props: {
   onClose?: () => void;
   strip?: JSX.Element;
   onUse?: () => void;
-  /** The menu of the free space among what the pane holds. */
   menu?: () => MenuItem[];
   children: JSX.Element;
 }) {

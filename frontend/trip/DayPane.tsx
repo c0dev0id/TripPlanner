@@ -51,7 +51,7 @@ function DaysPane(props: { onLeave: () => void }) {
       label={trip().name}
       onClose={props.onLeave}
       onUse={endLook}
-      menu={() => openTripMenu()()}
+      menu={openTripMenu}
       strip={<DayStrip />}
       heading={
         <>

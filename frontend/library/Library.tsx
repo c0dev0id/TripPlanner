@@ -601,10 +601,13 @@ export function Library(props: {
   document.addEventListener('keydown', onKey);
   onCleanup(() => document.removeEventListener('keydown', onKey));
   let root!: HTMLDivElement;
-  // The panel around the tree is the top of the tree shown: what is dragged there and lies deeper moves up to it.
+  // The panel around the tree is the top of the tree shown: what is dragged there and lies deeper moves up to it, and its menu is the top's.
   onMount(() => {
     const panel = root.closest<HTMLElement>('.library-panel');
-    if (panel) dropTarget<Item[]>(panel, ITEMS, (items) => (shownTree() ? dropInto(items, rootOf(shownTree()!)) : null));
+    if (!panel) return;
+    dropTarget<Item[]>(panel, ITEMS, (items) => (shownTree() ? dropInto(items, rootOf(shownTree()!)) : null));
+    // Its free space answers as the line over the tree does.
+    spaceMenu(panel, () => (shownTree() ? treeMenu(shownTree()!) : []));
   });
 
   /** Adds a day at the end of a trip: of the open one as an edit that can be undone, which shows the day; of another on the server. */
@@ -732,7 +735,7 @@ export function Library(props: {
     const top = folders().find((f) => f.id === rootOf(tab));
     return top ? itemMenu({ folder: top }) : topMenu();
   };
-  provideOpenTripMenu(() => () => {
+  provideOpenTripMenu(() => {
     const open = trips().find((trip) => trip.id === openTripId());
     return open ? itemMenu({ trip: open }) : [];
   });
@@ -882,15 +885,7 @@ export function Library(props: {
   };
 
   return (
-    <div
-      class="library"
-      ref={(el) => {
-        root = el;
-        // The free space under the tree shown answers as the line over it does.
-        spaceMenu(el, () => treeMenu(shownTree()!));
-      }}
-      hidden={!shownTree()}
-    >
+    <div class="library" ref={root} hidden={!shownTree()}>
       <Show when={importNote()}>{(note) => <Said note={note()} />}</Show>
       {/* Reading a resource that failed throws; its error is shown instead. */}
       <Switch fallback={<p class="muted">{t('Loading…')}</p>}>

@@ -1,4 +1,5 @@
 import { onCleanup } from 'solid-js';
+import { isTextField } from './form';
 import { onLongPress } from './longPress';
 import { setMenu, type MenuItem } from './menu';
 
@@ -63,7 +64,7 @@ export function spaceMenu(space: HTMLElement, items: () => MenuItem[]): void {
   const contextMenu = (e: MouseEvent) => {
     // The menu key gives no position, and a row's own menu has answered already.
     if (e.defaultPrevented || pointerType !== 'mouse' || (e.clientX === 0 && e.clientY === 0)) return;
-    if ((e.target as Element).closest('.has-menu, .row, input, textarea, a') || getSelection()?.isCollapsed === false) return;
+    if ((e.target as Element).closest('.row, a') || isTextField(e.target) || getSelection()?.isCollapsed === false) return;
     const list = items();
     if (list.length === 0) return;
     e.preventDefault();
