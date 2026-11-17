@@ -1888,6 +1888,9 @@ entries at the end of their section.
   cover picture are written into the template from the trip, and an unknown token is
   answered 404 instead of a page that then fails to load. The page asks not to be
   indexed: a share link is for whom it is sent to.
+- **The shared API has no session.** PHP's file sessions lock, so the requests of one
+  browser wait for each other, and a page of photos loaded them one by one. A visitor
+  has nothing in a session; the middleware leaves the shared API out.
 - **The asset tags walk the manifest's imports.** With two entries, Vite puts the styles
   both import (MapLibre's and the markers') into the chunk they share, listed under that
   chunk in the manifest, not under the entries. The tags of a page are the stylesheets

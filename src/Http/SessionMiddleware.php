@@ -12,7 +12,9 @@ use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 
 /**
  * Starts the PHP session with a Lax, HttpOnly cookie that is Secure under HTTPS. Cookie and
- * session data last the configured time from the last request.
+ * session data last the configured time from the last request. The API of shared trips
+ * has no session: its requests are nobody's, and a session would make them wait for
+ * each other.
  */
 final class SessionMiddleware implements MiddlewareInterface
 {
@@ -24,6 +26,9 @@ final class SessionMiddleware implements MiddlewareInterface
 
     public function process(Request $request, RequestHandler $handler): Response
     {
+        if (str_starts_with($request->getUri()->getPath(), '/api/shared/')) {
+            return $handler->handle($request);
+        }
         $dir = $this->config->dataDir . '/sessions';
         if (!is_dir($dir)) {
             mkdir($dir, 0700, true);
