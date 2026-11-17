@@ -1,4 +1,4 @@
-import { addEntry, addMedia, createTrip, errorMessage, fetchTrip, keepRide, saveTrip } from '../api';
+import { addEntry, addMedia, createTrip, errorMessage, fetchTrip, keepRide, saveTrip, updateEntry } from '../api';
 import type { EntryTarget } from '../model/journal';
 import { newId, type LngLat, type Trip } from '../model/trip';
 import { withNewPartIds } from '../routing/dayEdit';
@@ -55,7 +55,9 @@ export async function importArchive(read: (path: string) => Promise<Blob | undef
       // An entry on a part that is not there goes on the trip.
       const key = (['dayId', 'stopId', 'routeId'] as const).find((k) => entry[k] !== null && ids.has(entry[k]));
       const target = (key ? { [key]: ids.get(entry[key]!) } : {}) as EntryTarget;
-      await addEntry(made.id, target, entry.text, file && new File([file], entry.fileName ?? 'file'), entry.lngLat ?? undefined, { createdAt: entry.createdAt });
+      const added = await addEntry(made.id, target, entry.text, file && new File([file], entry.fileName ?? 'file'), entry.lngLat ?? undefined, { createdAt: entry.createdAt });
+      // A photo is added where it was taken: one that was put elsewhere, or taken off the map, is put back.
+      if (String(added.lngLat) !== String(entry.lngLat ?? null)) await updateEntry(made.id, added.id, { lngLat: entry.lngLat ?? null });
     } catch (error) {
       note(entry.fileName ?? entry.text.slice(0, 40), error);
     }
