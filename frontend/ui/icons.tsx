@@ -180,6 +180,36 @@ export const ChevronIcon = () => (
   </Icon>
 );
 
+export const ChevronLeftIcon = () => (
+  <Icon>
+    <path d="M15 6l-6 6l6 6" />
+  </Icon>
+);
+
+export const ArrowDownIcon = () => (
+  <Icon>
+    <path d="M12 5l0 14" />
+    <path d="M18 13l-6 6" />
+    <path d="M6 13l6 6" />
+  </Icon>
+);
+
+export const ArrowUpIcon = () => (
+  <Icon>
+    <path d="M12 5l0 14" />
+    <path d="M18 11l-6 -6" />
+    <path d="M6 11l6 -6" />
+  </Icon>
+);
+
+export const BackIcon = () => (
+  <Icon>
+    <path d="M5 12l14 0" />
+    <path d="M5 12l6 6" />
+    <path d="M5 12l6 -6" />
+  </Icon>
+);
+
 export const GripIcon = () => (
   <Icon>
     <path d="M9 5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" />

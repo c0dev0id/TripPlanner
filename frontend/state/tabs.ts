@@ -3,7 +3,7 @@ import type { KeptRide } from '../api';
 import { selectIn } from '../ui/selection';
 import { isTreeTab, type LibraryTab, type TreeTab } from '../model/library';
 import { libraryTrips, mapTab, openTree, setQuery, showTab } from './library';
-import { foldPanel } from './panel';
+import { fold } from './panel';
 import { revealRide, RIDES } from './rides';
 import { openRecording, toggleRecording } from './recordingView';
 import { activeRecordingId } from './recordings';
@@ -39,7 +39,7 @@ function leaveFor(to: Exclude<LibraryTab, 'settings'>): void {
 /** Shows a recording of a day among the rides: the day's tab is left as its button leaves it, and the ride is opened there, selected and in view, with the library unfolded and not searched. */
 export function showInRides(ride: KeptRide): void {
   batch(() => {
-    foldPanel(false);
+    fold('library', false);
     leaveFor('recordings');
     setQuery('');
     selectIn(RIDES, new Set([String(ride.id)]));

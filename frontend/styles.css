@@ -1,8 +1,12 @@
 :root {
   --panel-width: 340px;
-  /* How high the bar of the library's tabs is, and with it the head of the strip the library folds away to. */
-  --library-bar-height: 55px;
   --side-pane-width: 360px;
+  --detail-pane-width: 380px;
+  /* How high the head of a pane is, and with it where its fold pad stands, folded or not. */
+  --pane-head-height: 55px;
+  /* How wide a pane folded to a strip is, and the least the map keeps beside the panes. */
+  --strip-width: 46px;
+  --map-min: 320px;
 }
 
 * {
@@ -22,51 +26,144 @@ body {
   color: var(--fg);
 }
 
+/* The panes stand side by side before the map, each as wide as it was dragged or folded to a strip; they give way before the map is narrower than its least. */
 #root {
-  display: grid;
-  grid-template-columns: var(--panel-shown, var(--panel-width)) 1fr;
-}
-
-/* With a day picked, its pane stands between the library and the map. */
-#root:has(> .side-pane) {
-  grid-template-columns: var(--panel-shown, var(--panel-width)) var(--side-pane-width) 1fr;
-}
-
-/* The library folded away: a strip with the button that brings it back. */
-#root:has(> .panel.folded) {
-  --panel-shown: 46px;
-}
-
-.panel.folded {
   display: flex;
+}
+
+/*
+ * A pane: its head, with what it is and the pads that fold and close it, over its body,
+ * which scrolls. Folded, it is a strip with the pads alone, the fold pad where it stood.
+ */
+.pane {
+  position: relative;
+  display: flex;
+  flex: 0 1 var(--pane-width);
   flex-direction: column;
-  padding: 0 6px;
-  overflow: hidden;
-  scrollbar-gutter: auto;
+  min-width: 280px;
+  padding: 0;
+  overflow: visible;
 }
 
-.panel.folded > :not(.panel-header),
-.panel.folded > .panel-header > :not(.icon) {
-  display: none;
+.pane-library {
+  --pane-width: var(--panel-width);
 }
 
-/* The open trip's name beside the button of the library folded away, on a phone, where no strip stands beside the map. */
-.open-trip {
-  display: none;
+.pane-second {
+  --pane-width: var(--side-pane-width);
+}
+
+.pane-detail {
+  --pane-width: var(--detail-pane-width);
+}
+
+.pane-head {
+  display: flex;
+  flex: none;
   align-items: center;
+  gap: 4px;
+  min-height: var(--pane-head-height);
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.pane-heading {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 4px;
   min-width: 0;
 }
 
-/* The open trip's days in the strip, a numbered button each; the day shown is ringed. A long trip's scroll. */
-.panel.folded > .day-strip {
+/* A pane's name wraps rather than lose its end to the buttons beside it. */
+.pane-heading .name {
+  font-weight: 600;
+  white-space: normal;
+}
+
+.pane-pads {
+  display: flex;
+  flex: none;
+  align-items: center;
+  /* At the same height whatever the heading takes, and as in the strip. */
+  align-self: flex-start;
+  margin-top: calc((var(--pane-head-height) - 32px) / 2 - 4px);
+}
+
+/* The pads that fold and close a pane are larger than a row's buttons: they are what the panes are moved by. */
+.panel button.icon.pane-pad {
+  width: 32px;
+  height: 32px;
+}
+
+.pane-pad svg {
+  width: 22px;
+  height: 22px;
+}
+
+.pane-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  /* The room of the scrollbar is kept while there is none, so that a tab with a short list is as wide as one with a long one. */
+  scrollbar-gutter: stable;
+  padding: 0 12px 12px;
+}
+
+.side-pane > .pane-body {
+  padding: 0 4px 12px;
+}
+
+/* The library's rows fill its pane, so that what is dropped under the last of them is dropped on the library. */
+.library-panel {
+  min-height: 100%;
+}
+
+.pane-strip {
+  display: none;
+}
+
+.pane.folded {
+  flex: none;
+  width: var(--strip-width);
+  min-width: 0;
+}
+
+.pane.folded > :is(.pane-body, .panel-resizer),
+.pane.folded .pane-heading {
+  display: none;
+}
+
+.pane.folded > .pane-head {
+  justify-content: center;
+  padding: 0;
+  border-bottom: 0;
+}
+
+/* The fold pad stands in the strip where it stood in the head, the pad that closes under it. */
+.pane.folded .pane-pads {
+  flex-direction: column;
+  gap: 6px;
+  margin-top: calc((var(--pane-head-height) - 32px) / 2);
+}
+
+.pane.folded > .pane-strip {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+}
+
+/* The open trip's days in the strip of their pane, a numbered button each; the day shown is ringed. A long trip's scroll. */
+.pane-strip > .day-strip {
   display: flex;
   flex: 1;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   min-height: 0;
-  /* As wide as the strip, so that the ring of the day shown has room. */
-  margin: 4px -6px 0;
+  margin: 4px 0 0;
   padding: 4px 0 10px;
   overflow-y: auto;
   list-style: none;
@@ -131,29 +228,6 @@ body {
   font-weight: 600;
 }
 
-/* The pane of the day picked: its heading, then its routes, stops and recordings. */
-.side-pane {
-  position: relative;
-  min-width: 0;
-  padding: 0 4px 12px;
-}
-
-.side-pane-header {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  gap: 4px;
-  padding: 10px 8px;
-  border-bottom: 1px solid var(--line);
-  background: var(--panel);
-}
-
-/* The day's name wraps rather than lose its end to the buttons beside it. */
-.side-pane-header .name {
-  font-weight: 600;
-  white-space: normal;
-}
-
 /* The days before and after, by buttons in the heading on a phone, where neither the list of days nor the strip of them is beside it. */
 .day-step {
   display: none;
@@ -168,20 +242,15 @@ body {
   display: contents;
 }
 
-/* On a phone the heading has the steps and stands in two lines: the name between the steps, the buttons under it, which would leave the name no room beside them. */
+/* On a phone a category's heading has the steps: no strip of them is beside it. */
 @media (max-width: 720px) {
   .day-step {
     display: contents;
   }
 
-  .side-pane-header {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
   .day-title {
     display: flex;
-    flex: 1 0 100%;
+    flex: 1;
     align-items: center;
     gap: 4px;
     min-width: 0;
@@ -200,33 +269,8 @@ a {
 /* The panel */
 
 .panel {
-  overflow: auto;
-  /* The room of the scrollbar is kept while there is none, so that a tab with a short list is as wide as one with a long one and the tabs stay where they are. */
-  scrollbar-gutter: stable;
   border-right: 1px solid var(--line);
-  padding: 0 12px 12px;
   background: var(--panel);
-}
-
-/*
- * The head of the strip the library folds away to, with the button that brings it back.
- * It is as high as the bar of tabs, and the button stands in it where it stands in that
- * bar: the panel's first row either way, so that folding and unfolding leave the button
- * under the pointer.
- */
-.panel-header {
-  display: flex;
-  align-items: center;
-  box-sizing: border-box;
-  height: var(--library-bar-height);
-  /* The strip is padded 6 px, the panel unfolded 12. */
-  margin-left: 6px;
-  padding-top: 4px;
-}
-
-/* The button that folds the library is drawn in the accent colour while the library folds by itself. */
-.panel button.icon.fold-button.auto {
-  color: var(--accent);
 }
 
 .panel h2 {
@@ -584,7 +628,7 @@ a {
   border-radius: 2px;
 }
 
-.side-pane-header button.icon[aria-pressed='true'] {
+.pane-heading button.icon[aria-pressed='true'] {
   color: var(--accent);
 }
 
@@ -662,20 +706,6 @@ button.icon.pin[aria-pressed='true'] {
 .side-pane .days > .card.open > .row {
   background: var(--active);
   box-shadow: inset 3px 0 0 var(--accent);
-}
-
-/* The button that folds the library away and its tabs, in one bar that stays at the top while the panel scrolls, so that folding it and another view are one click away from anywhere in a long one. */
-.library-bar {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  box-sizing: border-box;
-  gap: 2px;
-  min-height: var(--library-bar-height);
-  margin-bottom: 4px;
-  padding-top: 4px;
-  border-bottom: 1px solid var(--line);
-  background: var(--panel);
 }
 
 /*
@@ -1089,15 +1119,16 @@ fieldset.choices legend {
 
 .map-wrap {
   position: relative;
+  flex: 1 0 var(--map-min);
   min-width: 0;
 }
 
-/* The left edge of the day's pane and of the map, dragged to set the width of what stands before it. */
+/* The right edge of a pane, dragged to set its width. */
 .panel-resizer {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: -3px;
+  right: -3px;
   z-index: 7;
   width: 6px;
   cursor: col-resize;
@@ -1131,7 +1162,7 @@ fieldset.choices legend {
 /* Under a finger the edge is wider than it looks, more so over the map than over the rows' own buttons, and the handle larger. */
 @media (pointer: coarse) {
   .panel-resizer {
-    left: -6px;
+    right: -11px;
     width: 22px;
   }
 
@@ -1857,23 +1888,45 @@ fieldset.symbols {
 }
 
 /*
- * A screen that has room for a pane beside the map but not for two, such as a tablet
- * either way up: the map keeps the larger part. The library folded away leaves its strip
- * beside the day's pane; unfolded, it takes the pane's place until it is folded again.
+ * A window without room for the panes side by side: one pane is shown, the deepest that
+ * is open, and the one before it comes back as it closes. A pane that takes another's
+ * place comes in from the side it lies on.
  */
-@media (min-width: 721px) and (max-width: 1199px) {
-  #root:has(> .library-panel:not(.folded)) > .side-pane,
-  .side-pane > .panel-resizer {
+@media (max-width: 1199px) {
+  .pane:not(.shown) {
     display: none;
   }
 
-  #root,
-  #root:has(> .side-pane):has(> .library-panel:not(.folded)) {
-    grid-template-columns: min(var(--panel-shown, var(--panel-width)), 42vw) 1fr;
+  .pane {
+    --pane-width: min(var(--panel-width), 42vw);
   }
 
-  #root:has(> .side-pane):has(> .library-panel.folded) {
-    grid-template-columns: var(--panel-shown) min(var(--side-pane-width), 42vw) 1fr;
+  .pane.shown.enter-forward {
+    animation: pane-from-right 0.2s;
+  }
+
+  .pane.shown.enter-back {
+    animation: pane-from-left 0.2s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pane.shown {
+    animation: none;
+  }
+}
+
+@keyframes pane-from-right {
+  from {
+    transform: translateX(40%);
+    opacity: 0;
+  }
+}
+
+@keyframes pane-from-left {
+  from {
+    transform: translateX(-40%);
+    opacity: 0;
   }
 }
 
@@ -1907,98 +1960,63 @@ fieldset.symbols {
 }
 
 /*
- * A phone: the map is the page. The day picked is a sheet under it, pulled up and down by
- * its top edge; the library lies over everything and folds away to its button, which
- * stays over the map with the open trip's name.
+ * A phone held upright: the map is the page and the pane shown is a sheet under it,
+ * pulled up and down by its top edge. Folded, the sheet is its head alone, a bar at the
+ * bottom of the screen.
  */
-@media (max-width: 720px) {
-  #root,
-  #root:has(> .side-pane),
-  #root:has(> .panel.folded) {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
+@media (max-width: 720px) and (orientation: portrait) {
+  #root {
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .map-wrap {
-    grid-row: 1;
+    order: -1;
+    flex: 1 1 0;
     min-height: 0;
   }
 
-  .library-panel {
-    position: fixed;
-    inset: 0;
-    z-index: 8;
-    border: 0;
-  }
-
-  .library-panel.folded {
-    inset: 10px auto auto 10px;
-    z-index: 5;
-    max-width: calc(100% - 74px);
-    padding: 0;
-    overflow: visible;
-    background: none;
-  }
-
-  .panel.folded > .panel-header {
-    align-items: stretch;
-    gap: 8px;
-    height: auto;
-    margin: 0;
-    padding: 0;
-  }
-
-  .panel.folded > .panel-header > :is(.icon, .open-trip) {
-    height: 44px;
-    border-radius: 8px;
-    background: var(--panel);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-  }
-
-  .panel.folded > .panel-header > .icon {
+  .pane.shown,
+  .pane.shown.folded {
     flex: none;
-    width: 44px;
-  }
-
-  .panel.folded > .panel-header > .open-trip {
-    display: flex;
-    padding: 0 12px;
-  }
-
-  .panel.folded .open-trip > .name {
-    display: block;
-    font-weight: 600;
-  }
-
-  /* The sheet's heading steps through the days there. */
-  .panel.folded > .day-strip {
-    display: none;
-  }
-
-  .side-pane {
-    grid-row: 2;
+    width: auto;
+    min-width: 0;
     height: 45dvh;
     border-right: 0;
     border-top: 1px solid var(--line);
   }
 
-  .side-pane.sheet-full {
+  .pane.shown.sheet-full {
     height: calc(100dvh - 64px);
   }
 
-  .side-pane.sheet-peek:not(.dragging) {
+  .pane.shown.folded:not(.dragging) {
     height: auto;
   }
 
-  .side-pane.sheet-peek:not(.dragging) > :not(.sheet-handle, .side-pane-header) {
+  /* The bar keeps what the pane is beside its pads, and has no strip. */
+  .pane.folded .pane-heading {
+    display: flex;
+  }
+
+  .pane.folded > .pane-head {
+    justify-content: normal;
+    padding: 4px 8px;
+  }
+
+  .pane.folded .pane-pads {
+    flex-direction: row;
+    gap: 0;
+    margin-top: calc((var(--pane-head-height) - 32px) / 2 - 4px);
+  }
+
+  .pane.folded > .pane-strip {
     display: none;
   }
 
   .panel button.sheet-handle {
-    position: sticky;
-    top: 0;
-    z-index: 3;
     display: block;
+    flex: none;
     width: 100%;
     height: 18px;
     padding: 0;
@@ -2023,12 +2041,20 @@ fieldset.symbols {
     background: var(--line);
   }
 
-  /* The heading stands under the sheet's handle. */
-  .side-pane-header {
-    top: 18px;
-    padding-top: 2px;
+  .pane.shown.enter-forward,
+  .pane.shown.enter-back {
+    animation-name: pane-from-below;
   }
+}
 
+@keyframes pane-from-below {
+  from {
+    opacity: 0;
+  }
+}
+
+/* A phone, either way up. */
+@media (max-width: 720px) {
   .maplibregl-ctrl-top-right {
     top: 50px;
   }

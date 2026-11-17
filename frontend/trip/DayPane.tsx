@@ -4,15 +4,15 @@ import type { Day } from '../model/trip';
 import { routesDistance } from '../routing/legs';
 import { setShowNeighbours, showNeighbours } from '../state/drawing';
 import { mediaOf } from '../state/media';
-import { unfoldAfterPane } from '../state/panel';
 import { recordingsOf } from '../state/recordings';
 import { isPlaceList, paneShown, shownDay } from '../state/library';
 import { addDay, closeDaysPane, openTrip, openTripId, selectDay } from '../state/trip';
 import { counted, distanceText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { ChevronIcon, NeighboursIcon, PlusIcon } from '../ui/icons';
-import { SidePane } from '../ui/SidePane';
+import { Pane } from '../ui/Pane';
 import { SectionDetails } from './CollectionPanel';
+import { DayStrip } from './DayStrip';
 import { dayDetail, dayHeading, dayTitleOf } from './labels';
 import { TripPanel } from './TripPanel';
 
@@ -34,11 +34,6 @@ export function DayPane() {
   );
 }
 
-/** Closed by its own button, a pane gives the library its room back where the library folds by itself; to keep the library folded, a day is closed from its chip in the strip. */
-const closePane = () => {
-  closeDaysPane();
-  unfoldAfterPane();
-};
 
 /** The pane of the open trip: its name over how many days it has and how far they go, and its days, of which one at a time is shown with what it holds. */
 function DaysPane() {
@@ -47,9 +42,11 @@ function DaysPane() {
   const detail = () => [counted(trip().days.length, 'day'), distance() > 0 && distanceText(distance())].filter(Boolean).join(' · ');
   const neighboursLabel = () => t(showNeighbours() ? 'Hide adjacent days' : 'Show adjacent days (dimmed)');
   return (
-    <SidePane
+    <Pane
+      level="second"
       label={trip().name}
-      onClose={closePane}
+      onClose={closeDaysPane}
+      strip={<DayStrip />}
       heading={
         <>
           <span class="lines grow">
@@ -68,7 +65,7 @@ function DaysPane() {
       }
     >
       <TripPanel />
-    </SidePane>
+    </Pane>
   );
 }
 
@@ -83,9 +80,11 @@ function SectionPane() {
         const step = (by: number) => openTrip()!.days[openTrip()!.days.indexOf(shown()) + by];
         const detail = () => dayDetail(openTrip()!.kind, dayCounts(shown()), isPlaceList(openTripId()));
         return (
-          <SidePane
+          <Pane
+            level="second"
             label={label()}
-            onClose={closePane}
+            onClose={closeDaysPane}
+            strip={<DayStrip />}
             heading={
               <span class="day-title">
                 <span class="day-step">
@@ -108,7 +107,7 @@ function SectionPane() {
             }
           >
             <SectionDetails day={shown()} />
-          </SidePane>
+          </Pane>
         );
       }}
     </Show>

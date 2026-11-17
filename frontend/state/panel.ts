@@ -2,96 +2,64 @@ import { createEffect, createRoot, createSignal, on } from 'solid-js';
 import { readPreference, writePreference } from '../ui/preferences';
 import { paneShown } from './library';
 import { showingDuplicates } from './pane';
-import { editingRouteId, openDaysPane, openTrip, selectedDayId } from './trip';
-
-const PREFERENCE = 'panelFolded';
-
-/** Whether the library's panel is folded away to a strip, which this browser keeps as a preference. */
-const [panelFolded, setPanelFolded] = createSignal(readPreference(PREFERENCE) === '1');
-export { panelFolded };
-
-const AUTO_PREFERENCE = 'autoFold';
+import { openDaysPane } from './trip';
 
 /**
- * Whether the library folds away by itself for the pane beside it, so that one pane at
- * most stands beside the map, and comes back when the pane closes; on unless this
- * browser was told otherwise. On a phone, where the library lies over everything, it
- * does so either way.
+ * The panes beside the map: the library, the pane of what is open in it, and the pane of
+ * that one's day. Each is folded to a strip and unfolded by hand, which this browser
+ * keeps; none folds by itself. Where they do not fit side by side one is shown, the
+ * deepest that is open.
  */
-const [autoFold, setAuto] = createSignal(readPreference(AUTO_PREFERENCE) !== '0');
-export { autoFold };
+export const PANES = ['library', 'second', 'detail'] as const;
+export type PaneLevel = (typeof PANES)[number];
 
-/** Whether the library was folded away for the pane beside it, and comes back when the pane closes. */
-let foldedForPane = false;
+const PREFERENCE = 'foldedPanes';
 
-function setFolded(folded: boolean): void {
-  setPanelFolded(folded);
-  writePreference(PREFERENCE, folded ? '1' : undefined);
+const [folds, setFolds] = createSignal<ReadonlySet<string>>(new Set((readPreference(PREFERENCE) ?? '').split(',').filter(Boolean)));
+
+export const folded = (level: PaneLevel): boolean => folds().has(level);
+
+/** Folds a pane to its strip, or unfolds it. */
+export function fold(level: PaneLevel, to: boolean): void {
+  const next = new Set(folds());
+  if (to) next.add(level);
+  else next.delete(level);
+  setFolds(next);
+  writePreference(PREFERENCE, [...next].join(',') || undefined);
 }
 
-/** Folds the library away or brings it back, as the user asks; what the pane beside it did to it is forgotten. */
-export function foldPanel(folded: boolean): void {
-  foldedForPane = false;
-  setFolded(folded);
-}
-
-/** Whether the library folds by itself now: on a phone, and elsewhere unless the user turned that off. */
-export const foldsByItself = (): boolean => autoFold() || onPhone();
-
-/** Folds the library away for the pane beside it, where it folds by itself and is not folded already. */
-function foldForPane(): void {
-  if (panelFolded() || !foldsByItself()) return;
-  setFolded(true);
-  foldedForPane = true;
-}
-
-/** Opens the pane of the open trip's days as the button on its row asks: the library gives way to it where it folds by itself, also where the pane was open already. */
+/** Opens the pane of the open trip's days as the pad on its row asks, unfolded. */
 export function showDaysPane(): void {
   openDaysPane();
-  foldForPane();
+  fold('second', false);
 }
 
-/** Brings the library back as the pane beside it closes by its own button; not where it does not fold by itself, and so stays as the user left it. */
-export function unfoldAfterPane(): void {
-  if (foldsByItself()) foldPanel(false);
+/** Whether the window matches a media query, as it is resized and turned. */
+function matching(query: string): () => boolean {
+  const media = matchMedia(query);
+  const [matches, setMatches] = createSignal(media.matches);
+  media.addEventListener('change', (e) => setMatches(e.matches));
+  return matches;
 }
 
-/** Turns the folding by itself on or off, at once: on, the library gives way to a pane that is open; off, it comes back where it was folded for one. */
-export function setAutoFold(on: boolean): void {
-  setAuto(on);
-  writePreference(AUTO_PREFERENCE, on ? undefined : '0');
-  if (on && paneShown()) foldForPane();
-  else if (!on && foldedForPane) foldPanel(false);
-}
+/** Whether the window has room for one pane alone beside the map; the width is the one the styles turn at. */
+export const onePane = matching('(max-width: 1199px)');
 
-/** Whether the screen is a phone's, where the library lies over the map and the pane beside it is a sheet under the map; the width is the one the styles turn at. */
-export const onPhone = (): boolean => matchMedia('(max-width: 720px)').matches;
+/** Whether the pane shown is a sheet under the map: on a phone held upright, as the styles have it. */
+export const sheetMode = matching('(max-width: 720px) and (orientation: portrait)');
 
-/** Whether the screen has room for one pane beside the map, a tablet's: the unfolded library and the pane take turns there. The widths are the ones the styles turn at. */
-const onTablet = (): boolean => matchMedia('(min-width: 721px) and (max-width: 1199px)').matches;
+/** The deepest pane that is open: the one shown where one alone is. */
+export const shownLevel = (): PaneLevel => (showingDuplicates() || paneShown() ? 'second' : 'library');
 
-/** How much of a phone's screen the day's sheet takes: its heading alone, about half, or nearly all. */
-export type Sheet = 'peek' | 'half' | 'full';
-
-export const [sheet, setSheet] = createSignal<Sheet>('half');
+/** Which way the pane shown was come to, from the one shown before: forward to a deeper one, or back; none before the first change. */
+const [entered, setEntered] = createSignal<'enter-forward' | 'enter-back'>();
+export { entered };
 
 createRoot(() => {
-  // The pane folds the library away as it opens, and brings it back as it closes otherwise than by its own button or the strip, which say themselves what becomes of the library.
-  // Where the two cannot stand side by side, a phone's or a tablet's, a category of a list picked in the library folds it away as well.
-  createEffect(
-    on([paneShown, selectedDayId], ([shown], before) => {
-      if (!shown) {
-        if (foldedForPane && !showingDuplicates()) foldPanel(false);
-      } else if (!before?.[0] || ((onPhone() || onTablet()) && openTrip()?.kind === 'collection')) foldForPane();
-    }),
-  );
-  // The duplicates' report stands beside the library on a wide screen, which shows where a duplicate lies; elsewhere it folds the library away as a pane does.
-  createEffect(
-    on(showingDuplicates, (shown) => {
-      if (shown && (onPhone() || onTablet())) foldForPane();
-      else if (!shown && foldedForPane && !paneShown()) foldPanel(false);
-    }),
-  );
-  // A route is edited on the map, so the sheet folds down to its heading meanwhile.
-  createEffect(on(editingRouteId, (id) => setSheet(id ? 'peek' : 'half'), { defer: true }));
+  createEffect(on(shownLevel, (now, before) => before !== undefined && setEntered(PANES.indexOf(now) > PANES.indexOf(before) ? 'enter-forward' : 'enter-back')));
 });
+
+/** How much of a phone's screen the sheet takes while it is not folded: about half, or nearly all. */
+export type Sheet = 'half' | 'full';
+
+export const [sheet, setSheet] = createSignal<Sheet>('half');

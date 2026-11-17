@@ -5,24 +5,23 @@ import { switchTab } from './state/tabs';
 import { keepPinsOfOpenTrip } from './state/pinnedLines';
 import { PlaceKindDialog } from './map/PlaceKinds';
 import { isTreeTab } from './model/library';
-import { Explorer } from './library/Explorer';
-import { FoldButton } from './library/FoldButton';
+import { t } from './i18n/t';
+import { Explorer, LibraryTabs } from './library/Explorer';
 import { ContextMenu } from './ui/ContextMenu';
 import { Lightbox } from './ui/Lightbox';
-import { PanelResizer } from './ui/PanelResizer';
+import { Pane } from './ui/Pane';
 import { RoutingBar } from './map/RoutingBar';
 import { MapView, routesDrawn } from './map/MapView';
 import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
-import { folderOfTrip, libraryFolders, libraryTab, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab, tripShown } from './state/library';
+import { folderOfTrip, libraryFolders, libraryTab, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab } from './state/library';
 import { setShowingDuplicates, showingDuplicates } from './state/pane';
-import { panelFolded, showDaysPane } from './state/panel';
+import { showDaysPane } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, daysPaneOpen, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
 import { DayDialog } from './trip/DayDialog';
 import { DayPane } from './trip/DayPane';
-import { DayStrip } from './trip/DayStrip';
 import { ExportDialog } from './trip/ExportDialog';
 import { JournalDialog } from './trip/JournalDialog';
 import { partKeys } from './trip/partKeys';
@@ -134,30 +133,15 @@ export function App() {
 
   return (
     <>
-      <aside class="panel library-panel" classList={{ folded: panelFolded() }} data-drop-folder={dropFolder()} data-drop-rides={libraryTab() === 'recordings' ? '' : undefined}>
-        {/* Folded away, the strip has the button, where the bar of tabs has it while unfolded: the first thing of the panel either way, so that it stays under the pointer. */}
-        <Show when={panelFolded()}>
-          <header class="panel-header">
-            <FoldButton />
-            <Show when={openTrip()}>
-              {(trip) => (
-                <span class="open-trip">
-                  <span class="name">{trip().name}</span>
-                </span>
-              )}
-            </Show>
-          </header>
-        </Show>
-        <Show when={panelFolded() && tripShown() && openTrip()}>
-          <DayStrip />
-        </Show>
-        <Explorer onOpen={openPicked} onLeave={leave} onTab={(tab) => switchTab(tab, open)} error={error()} />
-      </aside>
+      <Pane level="library" label={t('Library')} heading={<LibraryTabs onTab={(tab) => switchTab(tab, open)} />}>
+        <div class="library-panel" data-drop-folder={dropFolder()} data-drop-rides={libraryTab() === 'recordings' ? '' : undefined}>
+          <Explorer onOpen={openPicked} onLeave={leave} error={error()} />
+        </div>
+      </Pane>
       <Show when={showingDuplicates()} fallback={<DayPane />}>
         <DuplicatesReport onOpen={openLocation} />
       </Show>
       <div class="map-wrap">
-        <PanelResizer />
         <MapView />
         <Show when={openTrip()}>
           <SaveProblem onReload={() => void reload()} />

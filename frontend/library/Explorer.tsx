@@ -4,13 +4,12 @@ import type { TripSummary } from '../model/trip';
 import { LIBRARY_TABS, TAB_NAMES, TREES, type LibraryTab } from '../model/library';
 import { libraryProblem, libraryTab, libraryTrips, query, setQuery, showFolder } from '../state/library';
 import { setShowingDuplicates, showingDuplicates } from '../state/pane';
-import { panelFolded } from '../state/panel';
+import { folded } from '../state/panel';
 import { openTripId, selectDay, takeUpRouteOf } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
 import { IconButton } from '../ui/IconButton';
 import { ActivityIcon, ArchiveIcon, CopyIcon, GearIcon, PinIcon, TripIcon } from '../ui/icons';
 import { Settings } from '../settings/Settings';
-import { FoldButton } from './FoldButton';
 import { Library } from './Library';
 import { Rides } from './Rides';
 import type { FoundRoute } from './search';
@@ -20,6 +19,31 @@ const TAB_ICONS = { stash: ArchiveIcon, trips: TripIcon, places: PinIcon, record
 
 /** What the search says it looks through, in the tab shown. */
 const searchText = (tab: Exclude<LibraryTab, 'settings'>): string => (tab === 'recordings' ? t('Search rides') : TREES[tab].search);
+
+/** The library's tabs, one for each of its views and, as a gear, the settings: the head of its pane. */
+export function LibraryTabs(props: { onTab: (tab: LibraryTab) => void }) {
+  return (
+    <div class="row library-tabs" role="tablist" aria-label={t('Library')}>
+      <For each={LIBRARY_TABS}>
+        {(tab) => (
+          <button role="tab" classList={{ grow: tab !== 'settings' }} data-tab={tab} aria-selected={libraryTab() === tab} aria-label={TAB_NAMES[tab]} title={TAB_NAMES[tab]} onClick={() => props.onTab(tab)}>
+            <Show
+              when={tab === 'settings'}
+              fallback={
+                <>
+                  {TAB_ICONS[tab as keyof typeof TAB_ICONS]()}
+                  {TAB_NAMES[tab]}
+                </>
+              }
+            >
+              <GearIcon />
+            </Show>
+          </button>
+        )}
+      </For>
+    </div>
+  );
+}
 
 /**
  * The library's pane: its switches and search, a tab for each of its views (the
@@ -33,8 +57,6 @@ export function Explorer(props: {
   /** Opens a trip, at a day and with a route of it taken up where they are given, and with `pane` the pane of its days. */
   onOpen: (id: number, dayId?: string, routeId?: string, pane?: boolean) => void;
   onLeave: () => Promise<void>;
-  /** Shows the tab the user picked, with what it had open. */
-  onTab: (tab: LibraryTab) => void;
   error: string | undefined;
 }) {
   /** Opens a trip and makes its folder the one shown: a trip of the tree or the search, or one just made. */
@@ -62,46 +84,21 @@ export function Explorer(props: {
     const tab = libraryTab();
     return tab === 'settings' ? undefined : tab;
   };
-  // The panel scrolls as a whole, so how far it was scrolled is kept for each tab and given back when the tab is shown again, and when the library folded away is brought back: folded, it holds nothing to scroll and stands at its top.
+  // The pane's body scrolls as a whole, so how far it was scrolled is kept for each tab and given back when the tab is shown again, and when the library folded away is brought back: folded, it holds nothing to scroll and stands at its top.
   let section!: HTMLElement;
   const scrolled: Partial<Record<LibraryTab, number>> = {};
   onMount(() => {
-    const panel = section.closest<HTMLElement>('.panel')!;
+    const body = section.closest<HTMLElement>('.pane-body')!;
     const keep = () => {
-      if (!panelFolded()) scrolled[libraryTab()] = panel.scrollTop;
+      if (!folded('library')) scrolled[libraryTab()] = body.scrollTop;
     };
-    panel.addEventListener('scroll', keep, { passive: true });
-    onCleanup(() => panel.removeEventListener('scroll', keep));
-    createEffect(on(libraryTab, (tab) => (panel.scrollTop = scrolled[tab] ?? 0), { defer: true }));
-    createEffect(on(panelFolded, (folded) => !folded && (panel.scrollTop = scrolled[libraryTab()] ?? 0), { defer: true }));
+    body.addEventListener('scroll', keep, { passive: true });
+    onCleanup(() => body.removeEventListener('scroll', keep));
+    createEffect(on(libraryTab, (tab) => (body.scrollTop = scrolled[tab] ?? 0), { defer: true }));
+    createEffect(on(() => folded('library'), (is) => !is && (body.scrollTop = scrolled[libraryTab()] ?? 0), { defer: true }));
   });
   return (
     <section class="explorer" ref={section}>
-      <div class="row library-bar">
-        {/* Folded away, the strip has the button. */}
-        <Show when={!panelFolded()}>
-          <FoldButton />
-        </Show>
-        <div class="row library-tabs" role="tablist" aria-label={t('Library')}>
-        <For each={LIBRARY_TABS}>
-          {(tab) => (
-            <button role="tab" classList={{ grow: tab !== 'settings' }} data-tab={tab} aria-selected={libraryTab() === tab} aria-label={TAB_NAMES[tab]} title={TAB_NAMES[tab]} onClick={() => props.onTab(tab)}>
-              <Show
-                when={tab === 'settings'}
-                fallback={
-                  <>
-                    {TAB_ICONS[tab as keyof typeof TAB_ICONS]()}
-                    {TAB_NAMES[tab]}
-                  </>
-                }
-              >
-                <GearIcon />
-              </Show>
-            </button>
-          )}
-        </For>
-        </div>
-      </div>
       <Show when={searched()}>
         {(tab) => (
           <div class="row search-row">

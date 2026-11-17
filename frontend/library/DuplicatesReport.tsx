@@ -17,7 +17,7 @@ import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
 import { fileVerb } from '../ui/fileVerb';
 import { clickRow, menuSelection, NOTHING_SELECTED, selectIn, selectionOf, toggleRow, type Selection } from '../ui/selection';
-import { SidePane } from '../ui/SidePane';
+import { Pane } from '../ui/Pane';
 import { Pad } from '../ui/Pad';
 
 /** Where a route of the report is: the folders its trip is in, its trip, and its day by number, date and name, or its section. Routes of one trip, or of one folder, read alike up to there. */
@@ -135,7 +135,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
   let details!: HTMLDivElement;
   // The pane comes back to where it was scrolled to, and keeps track of where it is.
   onMount(() => {
-    const pane = details.closest<HTMLElement>('.side-pane')!;
+    const pane = details.closest<HTMLElement>('.pane-body')!;
     pane.scrollTop = scrolled;
     pane.addEventListener('scroll', () => (scrolled = pane.scrollTop));
   });
@@ -147,7 +147,8 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
     items,
   };
   return (
-    <SidePane
+    <Pane
+      level="second"
       label={t('Duplicate routes')}
       onClose={() => setShowingDuplicates(false)}
       heading={
@@ -187,7 +188,7 @@ export function DuplicatesReport(props: { onOpen: (tripId: number, dayId: string
           </Match>
         </Switch>
       </div>
-    </SidePane>
+    </Pane>
   );
 }
 

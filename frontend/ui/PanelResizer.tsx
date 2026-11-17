@@ -1,51 +1,54 @@
 import { t } from '../i18n/t';
+import { onePane, type PaneLevel } from '../state/panel';
 import { followPointer } from './followPointer';
 import { readPreference, writePreference } from './preferences';
 
-/** A width an edge sets: its custom property, the preference this browser keeps it as, and the most of the window it may take. */
-type Width = { variable: string; preference: string; share: number };
+/** A pane's width: its custom property and the preference this browser keeps it as. */
+type Width = { variable: string; preference: string };
 
-const LIBRARY: Width = { variable: '--panel-width', preference: 'panelWidth', share: 0.6 };
-const SIDE_PANE: Width = { variable: '--side-pane-width', preference: 'sidePaneWidth', share: 0.4 };
+const WIDTHS: Record<PaneLevel, Width> = {
+  library: { variable: '--panel-width', preference: 'panelWidth' },
+  second: { variable: '--side-pane-width', preference: 'sidePaneWidth' },
+  detail: { variable: '--detail-pane-width', preference: 'detailPaneWidth' },
+};
+
+/** The narrowest a pane is dragged to, and the least of the map a pane leaves; as the styles have them. */
 const MIN_WIDTH = 280;
+const MAP_MIN = 320;
 
-const clamped = (of: Width, width: number): number => Math.max(MIN_WIDTH, Math.min(width, window.innerWidth * of.share));
-
-/** Sets a width within what the window allows; the default for undefined. */
+/** Sets a width; the default for undefined. */
 function applyWidth(of: Width, width: number | undefined): void {
-  document.documentElement.style.setProperty(of.variable, width === undefined ? null : `${clamped(of, width)}px`);
+  document.documentElement.style.setProperty(of.variable, width === undefined ? null : `${width}px`);
 }
 
-for (const of of [LIBRARY, SIDE_PANE]) applyWidth(of, Number(readPreference(of.preference)) || undefined);
-
-/** The column an edge sets the width of: the one before the column it stands on the left of. */
-const columnOf = (e: Event): Element => (e.currentTarget as HTMLElement).parentElement!.previousElementSibling!;
-
-const widthOf = (column: Element): Width => (column.classList.contains('side-pane') ? SIDE_PANE : LIBRARY);
+for (const of of Object.values(WIDTHS)) applyWidth(of, Number(readPreference(of.preference)) || undefined);
 
 /**
- * The left edge of a column: dragging it sets the width of the column before it, the
- * library's panel or the pane beside it, which this browser keeps as a preference; a
- * double click puts the default back.
+ * The right edge of a pane: dragging it sets the pane's width, between its least and
+ * what leaves the map its least, which this browser keeps as a preference; a double
+ * click puts the default back. Where one pane alone is shown, every pane has the
+ * library's width.
  */
-export function PanelResizer() {
+export function PanelResizer(props: { of: PaneLevel }) {
+  const width = () => WIDTHS[onePane() ? 'library' : props.of];
   const drag = (e: PointerEvent) => {
     if (e.button !== 0) return;
-    const column = columnOf(e);
-    const of = widthOf(column);
-    const left = column.getBoundingClientRect().left;
-    let width = e.clientX - left;
+    const of = width();
+    const pane = (e.currentTarget as HTMLElement).parentElement!;
+    const left = pane.getBoundingClientRect().left;
+    const most = pane.offsetWidth + document.querySelector<HTMLElement>('.map-wrap')!.offsetWidth - MAP_MIN;
+    const within = (x: number) => Math.round(Math.max(MIN_WIDTH, Math.min(x - left, most)));
+    let to = pane.offsetWidth;
     const move = (m: PointerEvent) => {
-      width = m.clientX - left;
-      applyWidth(of, width);
+      to = within(m.clientX);
+      applyWidth(of, to);
     };
-    followPointer(e, move, () => writePreference(of.preference, String(Math.round(clamped(of, width)))));
+    followPointer(e, move, () => writePreference(of.preference, String(to)));
     e.preventDefault();
   };
-  const reset = (e: MouseEvent) => {
-    const of = widthOf(columnOf(e));
-    writePreference(of.preference, undefined);
-    applyWidth(of, undefined);
+  const reset = () => {
+    writePreference(width().preference, undefined);
+    applyWidth(width(), undefined);
   };
   return <div class="panel-resizer" role="separator" aria-orientation="vertical" aria-label={t('Panel width')} title={t("Drag to resize the panel; double-click to reset")} onPointerDown={drag} onDblClick={reset} />;
 }

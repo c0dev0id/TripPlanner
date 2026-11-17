@@ -6,25 +6,19 @@ import { routeColoring } from '../state/preferences';
 import { PlaceKindMark } from '../map/PlaceKinds';
 import { dropsOnPart } from '../state/clipboard';
 import { isPlaceList } from '../state/library';
-import { foldPanel } from '../state/panel';
 import { openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
 import { ForById } from '../ui/ForById';
 import { dayCounts } from './DayPane';
 import { dayDetail, dayHeading, dayHolds, dayTitleOf } from './labels';
 
 /**
- * The open trip's days in the strip the library folds away to: a numbered button each, in
+ * The open trip's days in the strip their pane folds to: a numbered button each, in
  * the colour its routes have where the days are coloured apart; of a list of places, its
  * kinds, each by its mark. A click shows the day or kind, or closes it where it is shown
- * already, which leaves the library folded away. The button under the mouse says at once
+ * already. The button under the mouse says at once
  * what is behind it (`DayTip`).
  */
 export function DayStrip() {
-  /** Closes the day shown and leaves the library folded away, as it is asked for here: the pane's own button brings the library back. A trip's pane stays, with no day shown. */
-  const closeDay = () => {
-    foldPanel(true);
-    selectDay(undefined);
-  };
   /** The day whose button the mouse is on, and where its card stands: beside the button, at its middle. */
   const [hovered, setHovered] = createSignal<{ id: string; top: number; left: number }>();
   const hover = (id: string) => (e: PointerEvent) => {
@@ -56,8 +50,7 @@ export function DayStrip() {
                   onClick={() => {
                     // The pane that opens says the same, where the card would lie on it.
                     setHovered(undefined);
-                    if (shown()) closeDay();
-                    else selectDay(day().id);
+                    selectDay(shown() ? undefined : day().id);
                   }}
                 >
                   <Show when={places()} fallback={index() + 1}>
