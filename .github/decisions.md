@@ -1607,6 +1607,31 @@ entries at the end of their section.
   The tool hints that once floated over the map are gone: they repeated what a tool's
   tooltip says and covered the map on a phone; what remains over the map is the routing's
   state, while legs are being routed or failed to route, above the toolbar where there is one.
+- **The distance to the nearest line starts at the device, once, and is dragged from there.**
+  It answers whether what the map shows is within reach, for which the distance as
+  the crow flies is enough. The device's position is read once when the line is
+  switched on, not followed: the question is asked while looking through routes, not
+  while riding, and a mark that may be dragged asks the same of any other place, a
+  hotel or a ferry port, without a second tool. Switching it off and on is the way
+  back to the device, so nothing is kept. It does not use the locate-me control,
+  whose dot is the map's and cannot be dragged. A device that does not say where it
+  is gets the mark in the middle of the map rather than an error, since dragging is
+  half of what the line is for.
+- **What the map measures against is what it draws.** The lines come from five sources
+  fed by components that each make their features for themselves. Deriving the lines
+  a second time from the state would have to repeat every rule of what is shown
+  (the day selected, the look, pins, the tab the map follows); reading them back from
+  MapLibre is a round trip through its worker for every change. So every line source
+  is drawn through `drawFeatures` (`map/drawnLines.ts`), which hands the features to
+  the map and keeps their lines by source: what is measured is what is on the map by
+  construction, and a new line source counts once it is drawn that way. The nearest
+  place is found in a flat map around the mark (`geo/reach.ts`), which is exact near
+  it and off by a few percent in choosing between places hundreds of kilometres away;
+  the distance shown is the great circle's to the place chosen.
+- **The distance is a marker, not a label of the style.** A symbol layer would place
+  the text along the line by itself, but the raster base maps come without glyphs,
+  and no other text of the planner is drawn by the style. The label is a marker put
+  on the middle of the line's part in view, placed anew as the map moves.
 - **The route overlay is appended by a style transform.** MapLibre's `setStyle` replaces
   every source and layer. A transform given when the map is made is applied to every
   style it loads afterwards, so the overlay's source and layers are added in one place

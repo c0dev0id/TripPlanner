@@ -109,6 +109,11 @@ leaves trips, and does neither while a save has failed. What is pinned stays on 
 map whatever trip is open (`state/pins.ts`): a pin keeps a copy of its line for while
 its trip is not.
 
+Every line on the map is drawn through `drawFeatures` (`map/drawnLines.ts`), which also
+keeps the lines by source: what measures across all that is shown, such as the distance
+to the nearest route (`map/Reach.tsx`, `geo/reach.ts`), reads them there. A new line
+source is drawn the same way.
+
 `library/Library.tsx` holds the trees, their menus and keys; beside it are its cards
 (`cards.tsx`, `StashFileCard.tsx`), the Stash's verbs and menus (`stashMenu.ts`) and what
 is pure and tested: the rows' keys and what a folder takes (`items.ts`), the search

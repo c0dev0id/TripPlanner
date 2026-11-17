@@ -12,6 +12,7 @@ import { POI_IMAGES } from './poiImages';
 import { OWN_PLACES_LAYERS, OWN_PLACES_SOURCE } from './ownPlacesOverlay';
 import { PLACES_ATTRIBUTION, POI_LAYERS, POI_SOURCE } from './poiOverlay';
 import { COMPARED_SOURCE, comparedLayers, OPENED_RECORDING_SOURCE, RECORDING_POINT_LAYERS, RECORDING_POINT_SOURCE, recordingLayers, RECORDINGS_SOURCE } from './recordingOverlay';
+import { REACH_LAYERS, REACH_SOURCE } from './reachOverlay';
 import { LOOK_SOURCE, routeLayers, ROUTES_SOURCE } from './routeOverlay';
 
 // The worker is built as a file of its own; MapLibre's own lookup does not find it in a bundle.
@@ -27,13 +28,13 @@ setWorkerUrl(workerUrl);
 function withOverlays(previous: StyleSpecification | undefined, next: StyleSpecification, routeWidth: number, shown: readonly Overlay[], look: OverlayLook): StyleSpecification {
   const empty = (): GeoJSONSourceSpecification => ({ type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
   const sources: StyleSpecification['sources'] = { ...next.sources, [ROUTES_SOURCE]: previous?.sources[ROUTES_SOURCE] ?? { ...empty(), attribution: ROUTING_ATTRIBUTION, promoteId: 'route' } };
-  for (const id of [LOOK_SOURCE, RECORDINGS_SOURCE, OPENED_RECORDING_SOURCE, RECORDING_POINT_SOURCE, COMPARED_SOURCE, OWN_PLACES_SOURCE]) sources[id] = previous?.sources[id] ?? empty();
+  for (const id of [LOOK_SOURCE, RECORDINGS_SOURCE, OPENED_RECORDING_SOURCE, RECORDING_POINT_SOURCE, COMPARED_SOURCE, OWN_PLACES_SOURCE, REACH_SOURCE]) sources[id] = previous?.sources[id] ?? empty();
   sources[POI_SOURCE] = previous?.sources[POI_SOURCE] ?? { ...empty(), attribution: PLACES_ATTRIBUTION };
   const sharp = sharpUntil(next);
   const overlays = shown.map((overlay) => overlay.parts(sharp, look));
   // An overlay's data read once stays: a source written anew would be fetched again.
   for (const overlay of overlays) for (const [id, source] of Object.entries(overlay.sources)) sources[id] = previous?.sources[id] ?? source;
-  return { ...next, sources, layers: [...next.layers, ...overlays.flatMap((o) => o.layers), ...recordingLayers(routeWidth, sharp), ...routeLayers(routeWidth, sharp, LOOK_SOURCE), ...routeLayers(routeWidth, sharp), ...comparedLayers(routeWidth, sharp), ...POI_LAYERS, ...OWN_PLACES_LAYERS, ...RECORDING_POINT_LAYERS] };
+  return { ...next, sources, layers: [...next.layers, ...overlays.flatMap((o) => o.layers), ...recordingLayers(routeWidth, sharp), ...routeLayers(routeWidth, sharp, LOOK_SOURCE), ...routeLayers(routeWidth, sharp), ...comparedLayers(routeWidth, sharp), ...POI_LAYERS, ...OWN_PLACES_LAYERS, ...RECORDING_POINT_LAYERS, ...REACH_LAYERS] };
 }
 
 /** What a map draws beyond its base map and the trip's lines: how wide the routes are, and whether the overlays this browser switched on, with the control that switches them, and how opaque the rides among them. */

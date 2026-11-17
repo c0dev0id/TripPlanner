@@ -49,6 +49,9 @@ export const [exportScope, setExportScope] = createSignal<ExportScope>();
 /** Whether the print-and-share dialog is open. */
 export const [shareOpen, setShareOpen] = createSignal(false);
 
+/** Whether the map shows how far it is to the nearest route or track it draws. */
+export const [reachShown, setReachShown] = createSignal(false);
+
 /** Whether the map stays as it is while another day, route or recording is taken up, where it would otherwise show that whole. */
 export const [viewLocked, setViewLocked] = createSignal(false);
 

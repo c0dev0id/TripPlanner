@@ -721,5 +721,8 @@
   "Hide the contents of {name}": "Inhalt von {name} ausblenden",
   "Show the places of {name}": "Orte von {name} anzeigen",
   "Hide the places of {name}": "Orte von {name} ausblenden",
-  "Open {what}": "{what} öffnen"
+  "Open {what}": "{what} öffnen",
+  "Show the distance to the nearest route or track": "Entfernung zur nächsten Route oder zum nächsten Track anzeigen",
+  "Hide the distance to the nearest route or track": "Entfernung zur nächsten Route oder zum nächsten Track ausblenden",
+  "Drag to measure from another place": "Ziehen, um von einem anderen Ort aus zu messen"
 }

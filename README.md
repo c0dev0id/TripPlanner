@@ -25,6 +25,8 @@ share work; sharing between users is on the way.
 - **Three panes, opened by hand** — the library, a trip's days and a day's contents
   side by side. A click shows on the map, the arrow on a row opens the next pane, and
   every pane folds to a strip. On a phone the pane is a sheet under the map.
+- **Within reach?** — a dashed line from where you are to the nearest route or track on
+  the map, with the distance. Drag its start to measure from anywhere else.
 - **The day at a glance** — the panel lists a day's routes and its stops in riding order
   with the distance from the start; a click shows the stop on the map. The days before
   and after are drawn dimmed for orientation.

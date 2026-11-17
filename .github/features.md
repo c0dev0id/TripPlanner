@@ -731,6 +731,17 @@
   satellite raster tiles; the route lines
   and markers stay. A locate-me button shows where the browser is. The interface light
   or dark by hand, or as the browser says. Both choices are kept in the browser.
+- The distance to the nearest route or track, switched on by a button among the map's
+  controls: a slim dashed line from a mark to the nearest place on any line the map
+  draws at that moment (the open trip's days shown, a trip looked at, what is pinned,
+  recordings, rides and files of the Stash), labelled with how far that is as the
+  crow flies. The mark starts where the device is, read once; it is dragged to
+  measure from another place, and the line and its distance follow as it moves and
+  as what the map draws changes. Switched off and on again, the mark is back where
+  the device is. Where the device does not say where it is, the mark starts in the
+  middle of the map. The map stays where it is: the label stands on the part of the
+  line that is in view, so the distance is read also while the mark is far outside,
+  and beside the mark where the line is too short to bear it. Nothing of it is kept.
 - Overlays to switch on over the base map, each with a button of its sign among the
   map's controls, kept in the browser:
   the roadworks Rhineland-Palatinate's and Baden-Württemberg's services list, as a line

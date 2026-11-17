@@ -2,7 +2,7 @@ import { LngLatBounds, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import type { Day, LngLat, Route } from '../model/trip';
-import { panTarget, setViewLocked, showNeighbours, viewLocked } from '../state/drawing';
+import { panTarget, reachShown, setReachShown, setViewLocked, showNeighbours, viewLocked } from '../state/drawing';
 import { comparedLines } from '../state/duplicates';
 import { ridesOnMap } from '../state/rides';
 import { stashLines, stashWaypoints } from '../state/stash';
@@ -21,7 +21,7 @@ import { loadedTrack, previewedLines, recordingColor, shownRecordings } from '..
 import { lookColors, openRouteColors } from '../state/routeColors';
 import { failedLegs } from '../state/routing';
 import { activeRouteId, looked, lookedTripId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
-import { LockIcon, LockOpenIcon, PinIcon, PinOffIcon } from '../ui/icons';
+import { LockIcon, LockOpenIcon, PinIcon, PinOffIcon, ReachIcon } from '../ui/icons';
 import { newBaseMap } from './baseMap';
 import { OverlayInfo } from './OverlayInfo';
 import { Interactions } from './Interactions';
@@ -35,9 +35,10 @@ import { RouteHover } from './RouteHover';
 import { LOOK_SOURCE, ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { SearchBox } from './SearchBox';
 import { StopMarkers } from './StopMarkers';
+import { Reach } from './Reach';
 import { ToggleControl } from './ToggleControl';
-
 import { drawFeatures } from './drawnLines';
+
 /** The page's map, once it is loaded and while it stands. */
 const [shownMap, setShownMap] = createSignal<MapLibreMap>();
 
@@ -62,6 +63,16 @@ export function MapView() {
   onMount(() => {
     // The map keeps its view in the address, as `map=`, and starts from it.
     const m = newBaseMap(container, { hash: 'map' }, setShownMap, { routeWidth, overlays: true, ridesOpacity });
+    m.addControl(
+      new ToggleControl({
+        pressed: reachShown,
+        setPressed: setReachShown,
+        label: () => t(reachShown() ? 'Hide the distance to the nearest route or track' : 'Show the distance to the nearest route or track'),
+        on: ReachIcon,
+        off: ReachIcon,
+      }),
+      'top-right',
+    );
     m.addControl(
       new ToggleControl({
         pressed: placesHidden,
@@ -107,6 +118,9 @@ export function MapView() {
             <PlaceMarkers map={m()} />
             <OwnPlaceMarkers map={m()} />
             <OverlayInfo map={m()} />
+            <Show when={reachShown()}>
+              <Reach map={m()} />
+            </Show>
             {/* The opened recording's buttons take the search's place: a place is not looked for while a ride is studied. */}
             <Show when={!opened()}>
               <SearchBox map={m()} />
