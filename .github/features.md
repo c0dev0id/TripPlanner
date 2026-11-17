@@ -282,8 +282,8 @@
   already, and a shaping point is a point of the route and nothing more. A track's row counts its points and
   lists only its stops, which are free along its line, and the map shows no marker for
   each of its points. Its menu condenses it (Douglas–Peucker at a distance chosen from a
-  few, each with the count of points it leaves), and Convert in it makes a route of it:
-  fewer points, every leg routed, with the time the routing will take.
+  few, each with the count of points it leaves), and Convert in it makes a route of it
+  beside it: fewer points, every leg routed, with the time the routing will take.
 - KML and KMZ files are read wherever a GPX file is, but as recordings, which are
   kept as the GPX files they are: into a day, as the days of a trip, the sections of a
   collection or the places of a list, picked or dropped, alone or in a folder. A
@@ -453,14 +453,15 @@
   while on a large library, a ring turns beside how many routes are compared and the
   seconds gone.
 - Convert, in the menu of a day or section, of a route and of several selected stops,
-  with what the part can be turned into as its submenu. A track becomes a route
-  ("Track to route…", in its dialog). A route becomes a track ("Route to track"): its
-  line as it runs, kept as it is, with no points of its own; the stops on its points
-  stay, free. It is greyed out while legs of the route wait for their routing or
-  failed it, and a route of fewer than two points has none. Made a track and then a
-  route again, a route gets points all along its line: that is how a route that came
-  with two points and the way a planner had calculated between them is made one that
-  can be edited. A route whose legs still run along the way its file calculated says so
+  with what the part can be turned into as its submenu. A conversion of a route or a
+  track makes a new one right after it and leaves what it was made of as it is, so
+  that nothing is lost by it. "Track to route…", in its dialog, makes a route of a
+  track. "Route to track" makes a track of a route: its line as it runs, kept as it
+  is, with no points of its own. It is greyed out while legs of the route wait for
+  their routing or failed it, and a route of fewer than two points has none. A track
+  made of a route and a route made of that track again has points all along its
+  line: that is how a route that came with two points and the way a planner had
+  calculated between them gets one beside it that can be edited. A route whose legs still run along the way its file calculated says so
   on its row by the chip the Stash has for it, "GPXX route points", with how many of
   its legs do where not all do; the chip goes as those legs are routed again or the
   route is made a track. Nothing else a file's route or track carries (times,

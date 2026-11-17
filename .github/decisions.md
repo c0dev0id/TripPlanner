@@ -1270,10 +1270,17 @@ entries at the end of their section.
   first edit of a point, since a leg belongs to its two ends: a round of 262 km
   between two points side by side routed anew is a few hundred metres. Giving such a
   route more points directly would have been a second thinning beside the one a track
-  has. Instead a route becomes a track of its line as it runs, and a track becomes a
-  route by the dialog it had already, which thins it to the points that keep its
+  has. Instead a track is made of a route, of its line as it runs, and a route of a
+  track by the dialog it had already, which thins it to the points that keep its
   shape. The first step is refused while legs wait for their routing or failed it:
   the track would keep the gaps as straight lines.
+- **A conversion makes a new route or track and keeps the one it was made of.** Both
+  conversions replaced the route under its id at first. But a conversion is taken to
+  try something: a track's shape as a route at one tolerance and another, or a
+  planner's way kept as a track before the route is changed. Replacing meant an undo
+  to get back and nothing to compare with. The result now stands right after its
+  source, in the colour its place gives it, and removing either is the user's step.
+  Making a route of free stops still takes the stops: they become its points.
 - **A pin outlives the trip it was set in.** The pins were the open trip's and went
   when another was opened, so a route of one trip could not be held against a route of
   another, and a pinned route of a day that was neither shown nor next to it was not

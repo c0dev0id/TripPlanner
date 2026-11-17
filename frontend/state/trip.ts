@@ -306,14 +306,14 @@ export function condenseTrack(routeId: string, toleranceM: number): void {
   changeRoute(routeId, (r) => (r.kind === 'track' ? routeEdit.condenseTrack(r, toleranceM) : r), t('Reduce points'));
 }
 
-/** Makes a route of the track: its points thinned at `toleranceM`, the legs between them routed along the roads. */
+/** Makes a route of the track, right after it: its points thinned at `toleranceM`, the legs between them routed along the roads. The track stays. */
 export function convertTrackToRoute(routeId: string, toleranceM: number): void {
-  changeRoute(routeId, (r) => (r.kind === 'track' ? routeEdit.trackToRoute(r, toleranceM, newId) : r), t('Convert to route'));
+  edit((trip) => dayEdit.addMadeOf(trip, routeId, (r) => (r.kind === 'track' ? routeEdit.trackToRoute(r, toleranceM, newId) : undefined)), t('Convert to route'));
 }
 
-/** Makes a track of the route: its line as it runs now, kept as it is; the stops on its points stay, free. */
+/** Makes a track of the route, right after it: its line as it runs now, kept as it is. The route stays, with the stops on its points. */
 export function convertRouteToTrack(routeId: string): void {
-  changeRoute(routeId, (r) => (r.kind === 'routed' ? routeEdit.routeToTrack(r) : r), t('Convert to track'));
+  edit((trip) => dayEdit.addMadeOf(trip, routeId, (r) => (r.kind === 'routed' ? routeEdit.routeToTrack(r, newId()) : undefined)), t('Convert to track'));
 }
 
 /** Changes what a route says about itself; a new profile or motorway dial routes its legs again. */

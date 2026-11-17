@@ -108,22 +108,22 @@ describe('thinning a track', () => {
     expect({ ...condensed, line: track.line }).toEqual(track);
   });
 
-  it('is made of a route under its id: the line along its legs, as a way a file gave it runs', () => {
+  it('is made of a route, under an id of its own: the line along its legs, as a way a file gave it runs', () => {
     const ends: RoutedRoute = { id: 'r', name: 'Loop', kind: 'routed', profile: 'motorcycle', highways: 'avoid', optional: true, color: '#112233', points: [{ id: 'a', lngLat: corners[0]! }, { id: 'b', lngLat: corners[4]! }], legs: {} };
     const loop: RoutedRoute = { ...ends, legs: { [routedLegs(ends)[0]!.key]: { geometry: encodePolyline(corners), distanceM: 1, durationS: 1 } } };
-    const made = routeToTrack(loop);
-    expect(made).toEqual({ id: 'r', name: 'Loop', kind: 'track', profile: 'motorcycle', optional: true, color: '#112233', line: made.line });
+    const made = routeToTrack(loop, 'made');
+    expect(made).toEqual({ id: 'made', name: 'Loop', kind: 'track', profile: 'motorcycle', optional: true, color: null, line: made.line });
     expect(decodePolyline(made.line)).toEqual(corners);
   });
 
-  it('makes a route of it under its id, its points under new ids, every leg routed', () => {
+  it('makes a route of it under new ids, every leg routed', () => {
     let n = 0;
     const made = trackToRoute(track, 10, () => `p${n++}`);
-    expect(made).toMatchObject({ id: 't', name: 'Pass', kind: 'routed', profile: 'bicycle', highways: 'allow', optional: true, color: null, legs: {} });
+    expect(made).toMatchObject({ id: 'p0', name: 'Pass', kind: 'routed', profile: 'bicycle', highways: 'allow', optional: true, color: null, legs: {} });
     expect(made.points).toEqual([
-      { id: 'p0', lngLat: corners[0] },
-      { id: 'p1', lngLat: corners[2] },
-      { id: 'p2', lngLat: corners[4] },
+      { id: 'p1', lngLat: corners[0] },
+      { id: 'p2', lngLat: corners[2] },
+      { id: 'p3', lngLat: corners[4] },
     ]);
     expect(routedLegs(made)).toHaveLength(2);
   });

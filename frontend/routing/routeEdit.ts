@@ -62,16 +62,16 @@ export function condenseTrack(track: Track, toleranceM: number): Track {
   return { ...track, line: encodePolyline(thinnedLine(track, toleranceM)) };
 }
 
-/** The track as a route under the same id: thinned like `condenseTrack`, its points under new ids, every leg routed along the roads. */
+/** A route made of the track, under new ids and in the colour its place gives it: thinned like `condenseTrack`, every leg routed along the roads. */
 export function trackToRoute(track: Track, toleranceM: number, newId: () => string): RoutedRoute {
   const { line: _, ...base } = track;
-  return { ...base, kind: 'routed', highways: 'allow', points: thinnedLine(track, toleranceM).map((lngLat) => ({ id: newId(), lngLat })), legs: {} };
+  return { ...base, id: newId(), color: null, kind: 'routed', highways: 'allow', points: thinnedLine(track, toleranceM).map((lngLat) => ({ id: newId(), lngLat })), legs: {} };
 }
 
-/** The route as a track under the same id: its line as it runs now, along its legs, and no points of its own. */
-export function routeToTrack(route: RoutedRoute): Track {
+/** A track made of the route, under the id given and in the colour its place gives it: the route's line as it runs now, along its legs, and no points of its own. */
+export function routeToTrack(route: RoutedRoute, id: string): Track {
   const { points: _, legs: __, highways: ___, ...base } = route;
-  return { ...base, kind: 'track', line: encodePolyline(routeLine(route)) };
+  return { ...base, id, color: null, kind: 'track', line: encodePolyline(routeLine(route)) };
 }
 
 /** Stores a routed leg if the route still needs it (the request may be outdated). */

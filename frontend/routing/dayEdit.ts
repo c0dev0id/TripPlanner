@@ -266,6 +266,14 @@ export function moveRoute(trip: Trip, routeId: string, to: number): Trip {
     : trip;
 }
 
+/** The trip with what `make` makes of a route right after it in its day; the route stays as it is. Unchanged where `make` makes nothing of it. */
+export function addMadeOf(trip: Trip, routeId: string, make: (route: Route) => Route | undefined): Trip {
+  const day = dayOfRoute(trip, routeId);
+  const index = day?.routes.findIndex((r) => r.id === routeId) ?? -1;
+  const made = day && make(day.routes[index]!);
+  return day && made ? updateDay(trip, day.id, (d) => ({ ...d, routes: d.routes.toSpliced(index + 1, 0, made) })) : trip;
+}
+
 /** A copy of the route with new ids, right after it, named after it; the stops stay with the original. */
 export function duplicateRoute(trip: Trip, routeId: string, newId: () => string): Trip {
   const day = dayOfRoute(trip, routeId);

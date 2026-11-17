@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Trip } from '../model/trip';
 import { routedOf } from '../routing/testing';
-import { activeRouteId, addDay, closeDaysPane, daysPaneOpen, openDaysPane, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
+import { activeRouteId, addDay, convertRouteToTrack, convertTrackToRoute, closeDaysPane, daysPaneOpen, openDaysPane, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -182,6 +182,24 @@ describe('the open trip', () => {
     undo();
     expect(sent().version).toBe(3);
     expect(sent().days[0]!.routes).toHaveLength(0);
+  });
+
+  it('converts a route to a track and a track to a route beside it, leaving what it was made of', () => {
+    addDay();
+    addRoute();
+    const routeId = openTrip()!.days[0]!.routes[0]!.id;
+    appendPoint(routeId, [8, 49]);
+    appendPoint(routeId, [8.1, 49.1]);
+    const route = openTrip()!.days[0]!.routes[0]!;
+    convertRouteToTrack(routeId);
+    const [first, track] = openTrip()!.days[0]!.routes;
+    expect([first, track!.kind, track!.id === routeId]).toEqual([route, 'track', false]);
+    convertTrackToRoute(track!.id, 10);
+    expect(openTrip()!.days[0]!.routes.map((r) => r.kind)).toEqual(['routed', 'track', 'routed']);
+    expect(openTrip()!.days[0]!.routes[1]).toBe(track);
+    undo();
+    undo();
+    expect(openTrip()!.days[0]!.routes).toEqual([route]);
   });
 
   it('takes up a route of a collection without editing it', () => {
