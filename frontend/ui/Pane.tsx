@@ -55,8 +55,15 @@ export function Pane(props: { level: PaneLevel; label: string; heading: JSX.Elem
   const used = () => props.onUse?.();
   return (
     <aside
-      class={`panel pane pane-${props.level} sheet-${sheet()}`}
-      classList={{ 'side-pane': props.level !== 'library', folded: isFolded(), shown: shownLevel() === props.level, [entered() ?? '']: entered() !== undefined }}
+      class="panel pane"
+      classList={{
+        [`pane-${props.level}`]: true,
+        'side-pane': props.level !== 'library',
+        'sheet-full': sheet() === 'full',
+        folded: isFolded(),
+        shown: shownLevel() === props.level,
+        [entered() ?? '']: entered() !== undefined,
+      }}
       aria-label={props.label}
     >
       <SheetHandle level={props.level} />
