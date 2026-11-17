@@ -121,12 +121,6 @@ final class TripController
         return $moved ? $response->withStatus(204) : Json::error($response, 404, 'Trip not found.');
     }
 
-    /** The token the trip is shared under, or null. */
-    public function showShare(Request $request, Response $response, array $args): Response
-    {
-        return Json::of($response, ['token' => $this->trips->shareToken($this->currentUser->get()->id, (int) $args['id'])]);
-    }
-
     /** Makes the trip's read-only page public; the answer is its token. */
     public function share(Request $request, Response $response, array $args): Response
     {

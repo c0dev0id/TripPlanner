@@ -78,7 +78,8 @@ final class GpxExportController
         return self::download($response, TripGpx::fileName($document['name']) . '.zip', 'application/zip', $content);
     }
 
-    private static function download(Response $response, string $fileName, string $type, string $content): Response
+    /** The response as a download of the content under the name. */
+    public static function download(Response $response, string $fileName, string $type, string $content): Response
     {
         $response->getBody()->write($content);
         return $response

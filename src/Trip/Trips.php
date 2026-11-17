@@ -85,15 +85,6 @@ final class Trips
         return $statement->rowCount() === 1;
     }
 
-    /** The token the user's trip is shared under; null while it is not shared. */
-    public function shareToken(int $userId, int $tripId): ?string
-    {
-        $statement = $this->db->prepare('SELECT share_token FROM trips WHERE id = ? AND user_id = ?');
-        $statement->execute([$tripId, $userId]);
-        $token = $statement->fetchColumn();
-        return $token === false ? null : $token;
-    }
-
     /** Makes the user's trip public under a token, the one it has or a new one; null when there is no such trip. */
     public function share(int $userId, int $tripId): ?string
     {

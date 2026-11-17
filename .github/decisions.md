@@ -669,9 +669,10 @@ entries at the end of their section.
   journal, as the diary should. Media without their day would be files nobody can find,
   so the entries a save leaves without a day are removed with their files, right after
   the save that removed the day.
-- **Media are not shared.** The journal is on a shared trip's page with its files.
-  Booking confirmations and tickets carry names and addresses, so what a shared link
-  can list and fetch is the journal's kind alone, checked where the entries are read.
+- **Media are not shared.** The journal is on a shared trip's page with its files once
+  it is published. Booking confirmations and tickets carry names and addresses, so what
+  a shared link can list and fetch is the journal's kind alone, checked where the
+  entries are read.
 - **A PDF is shown by the browser.** The lightbox frames the file and leaves the pages
   to the browser's own viewer: no library to bundle, where the build already takes
   half a minute on the server. A browser that says it shows no PDF inline gets the
@@ -1863,8 +1864,25 @@ entries at the end of their section.
   from the API the page names: the owner's trip API at `/trips/{id}`, or the read-only
   API of a shared trip at `/t/{token}`, which needs no sign-in. Sharing is a random
   token on the trip, made and withdrawn by the owner; anyone with the link reads the
-  trip, its journal and its photos. The page prints: the map keeps its drawing buffer,
-  the controls are hidden.
+  trip. The page prints: the map keeps its drawing buffer, the controls are hidden.
+- **A shared trip is its plan; the journal is published apart.** The share link showed
+  the journal the moment it existed, so a trip shared before the ride to plan it with
+  others published every photo taken on it. The page has two uses, the plan before
+  the ride and the story after it, and the owner says when the second begins:
+  `journal_published` on the trip, off for a trip shared from now on, set for the trips
+  that were shared when it was introduced, so that nothing public disappeared.
+  Publishing is all or nothing; an entry that should not be read is not written into
+  the journal. The GPX file is offered unless switched off (`gpx_public`), since a plan
+  shared to be ridden is of little use without it. The cover is a photo of the journal
+  that the page shows at its top and a link's preview uses; it is readable while the
+  journal is not, as the one exception, because a plan is shared with a picture too.
+- **What a visitor gets is made in one place.** The shared API answered with the
+  owner's document, so a stop's contact (a host's name and number) and its booking
+  reference went to anyone with the link. `Share/PublicTrip` makes the public form of
+  the document and of an entry, and the shared GPX file is written from that form, so
+  that a field added to a stop is private until it is let through there. An entry
+  goes out without where its photo was taken, which the owner may have moved it away
+  from on purpose. The owner's own page keeps everything: it is the roadbook.
 - **The asset tags walk the manifest's imports.** With two entries, Vite puts the styles
   both import (MapLibre's and the markers') into the chunk they share, listed under that
   chunk in the manifest, not under the entries. The tags of a page are the stylesheets

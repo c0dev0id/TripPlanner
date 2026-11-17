@@ -699,7 +699,7 @@
   and deleted, from their menu and by the keys of the file verbs. They go with their
   day: removed with it after a question that names them, copied with a duplicated
   trip, moved with a merged one, written into the exported zip and read back from it.
-  They are the owner's alone: a shared link shows the journal and none of them. A
+  They are the owner's alone: a shared link shows none of them. A
   section of a collection lists the media it has, under the same heading.
 - Files that come with an import: the files in a folder that are neither GPX nor
   hidden are kept with what the folder becomes: a trip made of a folder keeps them
@@ -727,8 +727,13 @@
 - A read-only page of the trip for reading and printing: the map with every day, on the
   base map chosen but without the planner's overlays, the
   journal, each day with its routes and its stops in riding order with their times,
-  addresses, bookings and notes. The page is the owner's, or shared under a link that
-  needs no sign-in and can be withdrawn.
+  addresses, bookings and notes, and the trip as a GPX file to download. The page is the
+  owner's, or shared under a link that needs no sign-in and can be withdrawn. The shared
+  page shows the plan: the days, the routes and the stops with their names, addresses,
+  websites and notes, never a stop's contact or booking reference. The journal and its
+  photos are on it once the owner switches them on, and the GPX file unless the owner
+  switches it off, both where the trip is shared. A link to the shared page previews
+  with the trip's name and description.
 
 - A place and address search over the map, by Nominatim on Enter: the first place found
   gets a pin and the map flies there, the others are listed to pick from. The pin stays

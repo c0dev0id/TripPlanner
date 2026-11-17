@@ -1,8 +1,9 @@
 import { t } from '../i18n/t';
 import { createEffect, createMemo, createResource, For, Match, Show, Switch } from 'solid-js';
-import { errorMessage, fetchTripAt, listEntriesAt } from '../api';
+import { errorMessage, fetchTripAt, listEntriesAt, tripGpxUrl } from '../api';
 import { entriesOn, type Entry, type EntryTarget } from '../model/journal';
-import type { Day, Route, Stop, Trip } from '../model/trip';
+import type { ViewedTrip } from '../model/publication';
+import type { Day, Route, Stop } from '../model/trip';
 import { webAddress } from '../poi/details';
 import { routeDistance, routesDistance } from '../routing/legs';
 import { daySequence, standingAlone } from '../routing/sequence';
@@ -38,7 +39,7 @@ export function TripView(props: { api: string }) {
           const on = (target: EntryTarget) => entriesOn(p().entries, target);
           return (
             <article class="trip-view">
-              <Header trip={p().trip} />
+              <Header trip={p().trip} api={props.api} />
               <ViewMap trip={p().trip} entries={p().entries} api={props.api} />
               <EntryList entries={on({})} api={props.api} />
               <For each={p().trip.days}>{(day, index) => <DaySection day={day} index={index()} entriesOn={on} api={props.api} />}</For>
@@ -52,8 +53,8 @@ export function TripView(props: { api: string }) {
   );
 }
 
-/** The trip's name and state, its length in days, kilometres and dates, its description, and the print button. */
-function Header(props: { trip: Trip }) {
+/** The trip's name and state, its length in days, kilometres and dates, its description, the print button and, where the page offers it, the GPX file. */
+function Header(props: { trip: ViewedTrip; api: string }) {
   const dates = createMemo(() => props.trip.days.flatMap((d) => (d.date ? [d.date] : [])).sort());
   const distance = () => routesDistance(props.trip.days.flatMap((d) => d.routes));
   const days = () => counted(props.trip.days.length, 'day');
@@ -65,6 +66,11 @@ function Header(props: { trip: Trip }) {
     <header>
       <div class="row">
         <h1>{props.trip.name}</h1>
+        <Show when={props.trip.public?.gpx ?? true}>
+          <a class="print" href={tripGpxUrl(props.api)}>
+            {t('Download GPX')}
+          </a>
+        </Show>
         <button class="print" onClick={() => window.print()}>
           {t('Print')}
         </button>

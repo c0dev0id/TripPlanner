@@ -2,6 +2,7 @@ import { language } from './i18n/language';
 import { t } from './i18n/t';
 import { daysToSend } from './model/delta';
 import type { Entry, EntryTarget } from './model/journal';
+import type { Publication, ViewedTrip } from './model/publication';
 import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Route, Trip, TripKind, TripSummary } from './model/trip';
 import type { StashPart, StashFile, StashItem, StashMedia } from './model/stash';
@@ -140,7 +141,10 @@ export async function fetchTrip(id: number, onProgress?: (progress: Progress) =>
  * The read-only page reads a trip and its journal from the owner's trip API or from the
  * shared one, whichever `base` the page names.
  */
-export const fetchTripAt = (base: string): Promise<Trip> => request('GET', base);
+export const fetchTripAt = (base: string): Promise<ViewedTrip> => request('GET', base);
+
+/** The trip as one GPX file, from whichever API the page names. */
+export const tripGpxUrl = (base: string): string => `${base}/gpx`;
 
 export const listEntriesAt = (base: string): Promise<Entry[]> => request('GET', `${base}/entries`);
 
@@ -390,8 +394,10 @@ export const takeRideOffDay = (id: number, dayId: string): Promise<void> => requ
 /** A ride's GPX file; the browser undoes the compression it is sent with. */
 export const fetchRideGpx = async (id: number): Promise<string> => (await send('GET', `/api/rides/${id}/gpx`)).text();
 
-/** The token the trip's read-only page is public under, or null. */
-export const shareToken = (tripId: number): Promise<{ token: string | null }> => request('GET', `${tripApi(tripId)}/share`);
+/** What the trip's public page shows, with the token it is public under, or null. */
+export const fetchPublication = (tripId: number): Promise<Publication & { token: string | null }> => request('GET', `${tripApi(tripId)}/publication`);
+
+export const savePublication = (tripId: number, publication: Publication): Promise<void> => request('PUT', `${tripApi(tripId)}/publication`, publication);
 
 export const shareTrip = (tripId: number): Promise<{ token: string }> => request('POST', `${tripApi(tripId)}/share`);
 

@@ -226,17 +226,14 @@ final class TripDocumentsTest extends TestCase
     public function testSharesATripUnderAToken(): void
     {
         $this->save(TripFixture::document(), 1);
-        self::assertNull($this->trips->shareToken($this->userId, $this->tripId));
         self::assertNull($this->trips->share($this->userId + 1, $this->tripId));
         $token = $this->trips->share($this->userId, $this->tripId);
         self::assertMatchesRegularExpression('/^[0-9a-f]{32}$/', $token);
         self::assertSame($token, $this->trips->share($this->userId, $this->tripId));
-        self::assertSame($token, $this->trips->shareToken($this->userId, $this->tripId));
         self::assertSame('Alps', $this->documents->loadShared($token)['name']);
         self::assertNull($this->documents->loadShared(strrev($token)));
         self::assertTrue($this->trips->unshare($this->userId, $this->tripId));
         self::assertNull($this->documents->loadShared($token));
-        self::assertNull($this->trips->shareToken($this->userId, $this->tripId));
     }
 
     public function testRefusesToSaveOverANewerVersion(): void

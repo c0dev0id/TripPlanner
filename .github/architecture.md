@@ -78,7 +78,7 @@ flowchart TB
 | API client (frontend) | `api.ts`: requests to the JSON API, the one place that knows its URLs; every request names the page's language. |
 | Language (both) | `frontend/i18n/`: the page's language, from the browser or the kept choice, `t()` with plurals, and the German dictionary `de.json` by English text, which the server's `t()` reads too (`src/I18n/`); a middleware sets the request's language from a `lang` query parameter or `Accept-Language`, `Json::error` translates the API's messages, the templates their texts. |
 | HTTP (backend) | Slim routes and middleware (sessions, CSRF, body parsing, authentication, the request's language, gzip for JSON answers, which then carry their unpacked length as `X-Uncompressed-Length`), Plates templates for the public pages and the two bundle pages, JSON encoding of API answers (`Http/`, `Pages/`, `Api/`). |
-| Domain (backend) | The Stash's files and what is read from them to list them (`Stash/`), accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, trip documents with their validator and copies, the outline kept with each day (`Trip/`), GPX writing with its options, the proximity of free stops, the export presets and the zip of whole trips (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the files and links kept with the days, which are entries of a kind of their own (`Media/`), the user's rides and the days they are on, what is read from a ride's file to be kept beside it, and the lookup of the days of riding that may be a day's (`Recording/`), the places of the map: the kinds, the question to the Overpass API and its answer, the fetch of an area and the store by tile, and the places of the user's own lists (`Poi/`), the account's preferences (`Account/`), the read-only API of a shared trip (`Share/`), fetching Garmin's symbol pictures for `make garmin-icons` (`Symbols/`), fetching the motorcycle closures and converting their KML to GeoJSON for `make closures` (`Closures/`). |
+| Domain (backend) | The Stash's files and what is read from them to list them (`Stash/`), accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, what a trip's public page shows and what a visitor gets of it (`Share/`), trip documents with their validator and copies, the outline kept with each day (`Trip/`), GPX writing with its options, the proximity of free stops, the export presets and the zip of whole trips (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the files and links kept with the days, which are entries of a kind of their own (`Media/`), the user's rides and the days they are on, what is read from a ride's file to be kept beside it, and the lookup of the days of riding that may be a day's (`Recording/`), the places of the map: the kinds, the question to the Overpass API and its answer, the fetch of an area and the store by tile, and the places of the user's own lists (`Poi/`), the account's preferences (`Account/`), the read-only API of a shared trip (`Share/`), fetching Garmin's symbol pictures for `make garmin-icons` (`Symbols/`), fetching the motorcycle closures and converting their KML to GeoJSON for `make closures` (`Closures/`). |
 | Storage (backend) | PDO repositories over SQLite, the file store on disk (`Journal/FileStore`), mail over SMTP (`Mail/`). |
 
 ## API
@@ -104,9 +104,10 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `GET /trips/{id}/gpx` | The trip as GPX with the options `per=trip|day` (one file, or a zip with one per day), `form=tracks|routes`, `optional=0|1`, `reachM=<metres>`. `days=<ids>` takes those days alone and `routes=<ids>` those routes alone, ids separated by commas; what then lies in one day is that day's file. 404 when none of them is in the trip. |
 | `GET /trips/archive` | The trips named by `ids=` (comma-separated) as a zip to keep or to import again: a folder per trip with `trip.json` (document, journal, recordings), the journal's files, the recordings as GPX and a GPX file per day. Trips of another user are left out; 404 when none is left. |
 | `GET /trips/outlines` | The outlines of the user's trips by trip id: its days in order, each with its id, name and date, how many routes, stops and recordings it holds, its routes that have a name (`namedRoutes`: id, name, kind), its length in metres (`distanceM`) and the lines of its routes, thinned to a few points each, as polyline6 with the colour a route has of its own. |
-| `GET /trips/{id}/share` | `{token}`: the token the trip's read-only page is public under, or null. |
 | `POST /trips/{id}/share` | Makes the page public under the trip's token, a new one where it has none; answers `{token}`. |
 | `DELETE /trips/{id}/share` | Takes the page off the public. |
+| `GET /trips/{id}/publication` | What the public page shows besides the plan: `{token, journal, gpx, coverEntryId}`, the token the page is public under or null, whether the journal is on it, whether it offers the GPX file, and the journal entry whose photo stands at its top. |
+| `PUT /trips/{id}/publication` | Sets `{journal, gpx, coverEntryId}`; the cover is an image of the trip's journal, or null. |
 | `GET /trips/{id}/entries` | The trip's journal entries by their `position`, which orders them within a chapter (the trip's own entries, or a day's with those on its routes and stops): text, file (name, media type, size, whether an image, an image's width and height), the part it is on, when and where a photo was taken (`takenLngLat`) and where the entry stands on the map (`lngLat`). |
 | `POST /trips/{id}/entries` | Adds an entry from a multipart form: `text`, one of `dayId`, `stopId`, `routeId` (none for the trip), `file`, `lng` and `lat` for a spot on the map. It stands after every entry the trip has. An import hands on `createdAt`, the time the entry was written. A photo's EXIF time and position and an image's size are read; with `byDate` a photo with a time and no part goes to the day of that date. |
 | `PATCH /trips/{id}/entries/{entry}` | Changes what the body names: `text`; `link`, an object with one of `dayId`, `stopId`, `routeId`, or an empty one for the trip itself; `lngLat`, where the entry stands on the map, or null to take it off the map. An entry linked into another chapter goes to its end. |
@@ -157,9 +158,17 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `PATCH /folders/{id}` | Renames the folder from `{name}`, or moves it into the folder `{parentId}` (null for the top); a folder never goes into itself or a folder inside it, and one that holds collections never leaves the special folders, one that holds trips never enters them. A special folder is not found. |
 | `DELETE /folders/{id}` | Deletes the folder; its trips and folders move up into the folder it was in, or to the top. With `?contents=delete` they are deleted with it instead, at any depth, the trips' journal files included. |
 
-A trip shared under a token is readable without sign-in under `/api/shared/{token}`:
-the document, `/entries`, `/entries/{entry}/file` and `/entries/{entry}/preview`, as above;
-the journal alone, a day's media are neither listed nor fetched there.
+A trip shared under a token is readable without sign-in, and without a session, under
+`/api/shared/{token}`. Everything a visitor gets is made in `Share/PublicTrip`:
+
+- the document, its stops without their contact and booking reference, with what the
+  page shows besides the plan under `public` (`{journal, gpx, coverEntryId}`);
+- `/gpx`, the trip as one GPX file written from that document, 404 where the owner does
+  not offer it;
+- `/entries`, the journal without where its photos were taken, empty until it is
+  published; `/entries/{entry}/file` and `/entries/{entry}/preview`, 404 until then,
+  except for the cover's;
+- a day's media are neither listed nor fetched there.
 
 The read-only page is served at `/trips/{id}` for the owner and at `/t/{token}` for
 everyone; the page names the API it reads from.

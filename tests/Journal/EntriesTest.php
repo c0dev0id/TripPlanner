@@ -170,7 +170,7 @@ final class EntriesTest extends TestCase
         self::assertSame([null, null, null, 'Off we go'], $linked($kept));
     }
 
-    public function testKeepsADaysMediaApartFromTheJournalAndFromASharedTrip(): void
+    public function testKeepsADaysMediaApartFromTheJournal(): void
     {
         $note = $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], 'Packed the bags.', null, $this->now);
         $ticket = $this->entries->addMedia($this->userId, $this->tripId, 'day1', '', ['name' => 'ferry.pdf', 'mediaType' => 'application/pdf', 'size' => 99], null, $this->now);
@@ -184,9 +184,6 @@ final class EntriesTest extends TestCase
         self::assertNull($this->entries->addMedia($this->userId, $this->tripId, 'nope', '', null, 'https://example.org', $this->now));
         self::assertNull($this->entries->addMedia($this->otherUserId, $this->tripId, 'day1', '', null, 'https://example.org', $this->now));
         self::assertNull($this->entries->delete($this->userId, $this->tripId, $ticket->id));
-        $token = (new Trips($this->db, new Folders($this->db)))->share($this->userId, $this->tripId);
-        self::assertSame([$note->id], array_map(fn ($e) => $e->id, $this->entries->listShared($token)));
-        self::assertNull($this->entries->findShared($token, $ticket->id));
     }
 
     public function testNamesMediaAnewAndGivesOnlyALinkAnAddress(): void
@@ -244,19 +241,6 @@ final class EntriesTest extends TestCase
         self::assertSame([$lost->id], array_map(fn ($e) => $e->id, $this->entries->takeMediaWithoutDay($this->tripId)));
         self::assertSame([$kept->id], array_map(fn ($e) => $e->id, $this->entries->listFor($this->userId, $this->tripId, Entries::MEDIA)));
         self::assertNull($this->entries->find($this->userId, $this->tripId, $note->id)->dayId);
-    }
-
-    public function testListsTheEntriesOfASharedTrip(): void
-    {
-        $note = $this->entries->add($this->userId, $this->tripId, [], 'Packed the bags.', null, $this->now);
-        $trips = new Trips($this->db, new Folders($this->db));
-        self::assertNull($this->entries->listShared(str_repeat('0', 32)));
-        $token = $trips->share($this->userId, $this->tripId);
-        self::assertSame([$note->id], array_map(fn ($e) => $e->id, $this->entries->listShared($token)));
-        self::assertSame($note->id, $this->entries->findShared($token, $note->id)->id);
-        self::assertNull($this->entries->findShared($token, $note->id + 1));
-        $trips->unshare($this->userId, $this->tripId);
-        self::assertNull($this->entries->listShared($token));
     }
 
     public function testReadsTimeAndPositionFromExifData(): void

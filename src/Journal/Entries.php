@@ -36,12 +36,10 @@ final class Entries
         return $this->owns($userId, $tripId) ? $this->list('e.trip_id = ? AND e.kind = ?', [$tripId, $kind]) : null;
     }
 
-    /** @return ?Entry[] the entries of the trip shared under the token; null when none is */
-    public function listShared(string $token): ?array
+    /** @return Entry[] the journal of the trip shared under the token, where it is published */
+    public function listShared(string $token): array
     {
-        $statement = $this->db->prepare('SELECT 1 FROM trips WHERE share_token = ?');
-        $statement->execute([$token]);
-        return $statement->fetchColumn() === false ? null : $this->list('t.share_token = ? AND e.kind = ?', [$token, self::JOURNAL]);
+        return $this->list('t.share_token = ? AND t.journal_published = 1 AND e.kind = ?', [$token, self::JOURNAL]);
     }
 
     public function find(int $userId, int $tripId, int $entryId, string $kind = self::JOURNAL): ?Entry
@@ -49,10 +47,10 @@ final class Entries
         return $this->one('e.id = ? AND e.trip_id = ? AND t.user_id = ? AND e.kind = ?', [$entryId, $tripId, $userId, $kind]);
     }
 
-    /** An entry of the journal of the trip shared under the token; media are not shared. */
+    /** An entry of the published journal of the trip shared under the token, or the one whose photo is its page's cover; media are not shared. */
     public function findShared(string $token, int $entryId): ?Entry
     {
-        return $this->one('e.id = ? AND t.share_token = ? AND e.kind = ?', [$entryId, $token, self::JOURNAL]);
+        return $this->one('e.id = ? AND t.share_token = ? AND e.kind = ? AND (t.journal_published = 1 OR t.cover_entry_id = e.id)', [$entryId, $token, self::JOURNAL]);
     }
 
     /**
