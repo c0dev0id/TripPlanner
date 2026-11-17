@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { LngLat } from '../model/trip';
 import { distanceBetween } from './measure';
-import { nearestPlace, partInBox } from './reach';
+import { nearestPlaceOn, partInBox } from './reach';
+
+/** The nearest place asked once, in a flat map at the position's own latitude. */
+const nearestPlace = (from: LngLat, lines: LngLat[][]) => nearestPlaceOn(lines, from[1])(from);
 
 describe('nearestPlace', () => {
   const road: LngLat[] = [
@@ -28,6 +31,13 @@ describe('nearestPlace', () => {
     expect(nearestPlace([8.2, 49.2], [road, far])!.at[1]).toBeCloseTo(50, 6);
     expect(nearestPlace([8.2, 48.6], [road, far])!.at[1]).toBeCloseTo(48, 6);
     expect(nearestPlace([8.25, 48], [road, far])!.metres).toBeCloseTo(0, 6);
+  });
+
+  it('answers for many positions from one preparation, a degree of latitude off its own', () => {
+    const nearest = nearestPlaceOn([road], 49);
+    expect(nearest([8.5, 48.5])!.at[0]).toBeCloseTo(8.5, 6);
+    expect(nearest([8.5, 48.5])!.metres).toBeCloseTo(distanceBetween([8.5, 48.5], [8.5, 48]), 3);
+    expect(nearest([10, 48])!.at).toEqual([9, 48]);
   });
 
   it('takes a line of one point as that point, and finds nothing without a line', () => {

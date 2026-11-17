@@ -2,16 +2,24 @@ import type { LngLat } from '../model/trip';
 import { distanceBetween, planeAt } from './measure';
 import { nearestOnLines, type XY } from './nearest';
 
-/** The place on lines that is nearest to a position as the crow flies, and how far that is; none where there is no line. */
-export function nearestPlace(from: LngLat, lines: readonly (readonly LngLat[])[]): { at: LngLat; metres: number } | undefined {
-  const toPlane = planeAt(from);
-  const hit = nearestOnLines(lines.map((line) => line.map(toPlane)))(toPlane(from));
-  if (!hit) return undefined;
-  const line = lines[hit.index]!;
-  const a = line[hit.segment]!;
-  const b = line[Math.min(hit.segment + 1, line.length - 1)]!;
-  const at: LngLat = [a[0] + hit.t * (b[0] - a[0]), a[1] + hit.t * (b[1] - a[1])];
-  return { at, metres: distanceBetween(from, at) };
+/**
+ * The lines prepared for queries of the place on them that is nearest to a position as
+ * the crow flies, and how far that is; none where there is no line. The places are
+ * compared in a flat map true at `latitude`, which is to be near the positions asked
+ * for; the distance answered is the great circle's.
+ */
+export function nearestPlaceOn(lines: readonly (readonly LngLat[])[], latitude: number): (from: LngLat) => { at: LngLat; metres: number } | undefined {
+  const toPlane = planeAt([0, latitude]);
+  const nearest = nearestOnLines(lines.map((line) => line.map(toPlane)));
+  return (from) => {
+    const hit = nearest(toPlane(from));
+    if (!hit) return undefined;
+    const line = lines[hit.index]!;
+    const a = line[hit.segment]!;
+    const b = line[Math.min(hit.segment + 1, line.length - 1)]!;
+    const at: LngLat = [a[0] + hit.t * (b[0] - a[0]), a[1] + hit.t * (b[1] - a[1])];
+    return { at, metres: distanceBetween(from, at) };
+  };
 }
 
 /** The part of the segment a–b that lies in the box from the origin to `width` by `height`; none where it passes outside. */

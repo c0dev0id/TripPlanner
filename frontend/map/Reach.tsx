@@ -1,7 +1,7 @@
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, createSignal, onCleanup } from 'solid-js';
 import type { XY } from '../geo/nearest';
-import { nearestPlace, partInBox } from '../geo/reach';
+import { nearestPlaceOn, partInBox } from '../geo/reach';
 import { t } from '../i18n/t';
 import type { LngLat } from '../model/trip';
 import { distanceText } from '../ui/format';
@@ -9,8 +9,9 @@ import { drawnLines } from './drawnLines';
 import { MarkerHandle, toLngLat } from './markers';
 import { REACH_SOURCE, reachFeatures } from './reachOverlay';
 
-/** Below this length on the screen, in pixels, the line does not bear its label, which then stands this far from the mark. */
+/** Below this length on the screen, in pixels, the line does not bear its label. */
 const SHORT_PX = 90;
+/** How far from the mark, in pixels, the label of such a line stands. */
 const BESIDE_PX = 36;
 
 /**
@@ -21,15 +22,24 @@ const BESIDE_PX = 36;
  */
 export function Reach(props: { map: MapLibreMap }) {
   const [from, setFrom] = createSignal<LngLat>();
-  const nearest = createMemo(() => {
-    const position = from();
-    return position && nearestPlace(position, drawnLines());
+  // The lines are prepared once for a degree of latitude around the mark, not anew for every place it is dragged over.
+  const latitude = createMemo(() => from() && Math.round(from()![1]));
+  const nearestOn = createMemo(() => {
+    const at = latitude();
+    return at === undefined ? undefined : nearestPlaceOn(drawnLines(), at);
   });
+  const nearest = createMemo(
+    () => {
+      const position = from();
+      return position && nearestOn()?.(position);
+    },
+    undefined,
+    { equals: (a, b) => a?.metres === b?.metres && a?.at[0] === b?.at[0] && a?.at[1] === b?.at[1] },
+  );
 
-  let shown = true;
   navigator.geolocation.getCurrentPosition(
-    ({ coords }) => shown && setFrom([coords.longitude, coords.latitude]),
-    () => shown && setFrom(toLngLat(props.map.getCenter())),
+    ({ coords }) => setFrom([coords.longitude, coords.latitude]),
+    () => setFrom(toLngLat(props.map.getCenter())),
     { enableHighAccuracy: true, timeout: 10_000 },
   );
 
@@ -56,19 +66,20 @@ export function Reach(props: { map: MapLibreMap }) {
     const part = partInBox([a.x, a.y], [b.x, b.y], clientWidth, clientHeight);
     if (!part) return label.setPosition(undefined);
     const length = Math.hypot(a.x - b.x, a.y - b.y);
-    const beside: XY = length === 0 ? [a.x, a.y - BESIDE_PX] : [a.x + ((a.x - b.x) / length) * BESIDE_PX, a.y + ((a.y - b.y) / length) * BESIDE_PX];
-    const at: XY = length < SHORT_PX ? beside : [(part[0][0] + part[1][0]) / 2, (part[0][1] + part[1][1]) / 2];
-    text.textContent = distanceText(place.metres);
+    // Away from the line; over the mark where the line has no length and so no direction.
+    const away: XY = length === 0 ? [0, -1] : [(a.x - b.x) / length, (a.y - b.y) / length];
+    const at: XY = length < SHORT_PX ? [a.x + away[0] * BESIDE_PX, a.y + away[1] * BESIDE_PX] : [(part[0][0] + part[1][0]) / 2, (part[0][1] + part[1][1]) / 2];
     label.setPosition(toLngLat(props.map.unproject([at[0], at[1]])));
   };
   createEffect(placeLabel);
   props.map.on('move', placeLabel);
+  createEffect(() => (text.textContent = distanceText(nearest()?.metres ?? 0)));
 
+  // Not among the lines the map draws: the line would be the nearest to itself.
   const draw = (position: LngLat | undefined, to: LngLat | undefined) => props.map.getSource<GeoJSONSource>(REACH_SOURCE)?.setData(reachFeatures(position, to));
   createEffect(() => draw(from(), nearest()?.at));
 
   onCleanup(() => {
-    shown = false;
     props.map.off('move', placeLabel);
     mark.remove();
     label.remove();

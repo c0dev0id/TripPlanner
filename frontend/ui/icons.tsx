@@ -314,7 +314,6 @@ export const EyeOffIcon = () => (
   </Icon>
 );
 
-/** A winding way between two ends: along a route. */
 /** A dashed line from a spot to a road: how far the nearest route is. */
 export const ReachIcon = () => (
   <Icon>
@@ -324,6 +323,7 @@ export const ReachIcon = () => (
   </Icon>
 );
 
+/** A winding way between two ends: along a route. */
 export const RouteIcon = () => (
   <Icon>
     <path d="M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />

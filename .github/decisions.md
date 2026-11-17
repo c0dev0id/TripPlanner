@@ -1640,9 +1640,12 @@ entries at the end of their section.
   is drawn through `drawFeatures` (`map/drawnLines.ts`), which hands the features to
   the map and keeps their lines by source: what is measured is what is on the map by
   construction, and a new line source counts once it is drawn that way. The nearest
-  place is found in a flat map around the mark (`geo/reach.ts`), which is exact near
-  it and off by a few percent in choosing between places hundreds of kilometres away;
-  the distance shown is the great circle's to the place chosen.
+  place is found in a flat map true at the mark's latitude, to the degree
+  (`geo/reach.ts`): the lines are prepared once for it and asked again for every
+  place the mark is dragged over, where preparing them for each took tens of
+  milliseconds on a large trip. The map is off by a few percent in choosing between
+  places hundreds of kilometres away; the distance shown is the great circle's to
+  the place chosen.
 - **The distance is a marker, not a label of the style.** A symbol layer would place
   the text along the line by itself, but the raster base maps come without glyphs,
   and no other text of the planner is drawn by the style. The label is a marker put
