@@ -80,12 +80,14 @@
   of metadata, each with the icon of its kind: a folder, a trip, a list of places, a
   file; a trip's card also shows its shape, small, each line in the colour its route
   has on the map; right-click or a long press on a card opens its menu.
-- A right-click on the free space of a pane, where it hits no row, opens the menu of
-  what the pane shows: in the library the menu of the tree's top, as the line under
-  the tabs has it (New, Add, Paste, Export), in a trip's pane the open trip's menu
-  as on its row, in the pane of a day's contents that day's menu, in the pane of a
-  category its menu. The rides and the settings have none, and a text field, a link
-  and selected text keep the browser's menu.
+- A right-click on the free space of a pane, where it hits no row, opens a menu of
+  what is added to what the pane lists: in the library the menu of the tree's top,
+  as the line under the tabs has it (New, Add, Paste, Export); in a trip's pane Add
+  day, Paste, which puts the days on the clipboard after the trip's last, and
+  Journal…; in the pane of a day's contents Add route, Import GPX or KML…, Add
+  recording…, Add files… for its media, and Paste into the day. A trip of one day
+  has both in its one pane. The rides, the settings and the pane of a category
+  have none, and a text field, a link and selected text keep the browser's menu.
 - Folders and trips answer to one menu: New, Add, Rename, Duplicate, Cut, Copy, Paste,
   Move…, Merge, Export, Delete. Every menu of the planner holds only what can be done
   with what it is opened on, by its kind and by how many are selected: Rename is not

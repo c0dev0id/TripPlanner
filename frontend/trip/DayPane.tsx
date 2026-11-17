@@ -5,16 +5,19 @@ import { routesDistance } from '../routing/legs';
 import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawing';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
-import { detailShown, isPlaceList, openTripMenu, paneShown } from '../state/library';
+import { pasteDaysAtEnd } from '../state/clipboard';
+import { detailShown, isPlaceList, paneShown } from '../state/library';
 import { addDay, closeDetail, detailDay, endLook, onlyDay, openDetail, openTrip, openTripId, pickDay } from '../state/trip';
 import { counted, distanceText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { ChevronIcon, NeighboursIcon, PencilIcon, PlusIcon } from '../ui/icons';
+import { menuNote, type MenuItem } from '../ui/menu';
 import { Pane } from '../ui/Pane';
-import { SectionDetails, sectionMenu } from './CollectionPanel';
+import { openJournal } from '../state/journal';
+import { SectionDetails } from './CollectionPanel';
 import { DayStrip } from './DayStrip';
 import { dayDetail, dayHeading, dayTitleOf } from './labels';
-import { dayMenu, DayDetails, TripPanel } from './TripPanel';
+import { dayAddMenu, DayDetails, TripPanel } from './TripPanel';
 
 /** A day as its labels count it: its date, what it holds and how far its routes go. */
 export const dayCounts = (day: Day) => ({ date: day.date, routes: day.routes.length, stops: day.stops.length, recordings: recordingsOf(day.id).length, media: mediaOf(day.id).length, distanceM: routesDistance(day.routes) });
@@ -39,6 +42,12 @@ export function DayPane(props: { onLeave: () => void }) {
   );
 }
 
+/** What the free space of the open trip's pane offers: a day more, the days on the clipboard after its last, and its journal. */
+function tripAddMenu(): MenuItem[] {
+  const paste = pasteDaysAtEnd();
+  return [{ label: t('Add day'), run: addDay }, ...(paste.length > 0 ? paste : [menuNote(t('Paste'))]), { label: t('Journal…'), run: () => openJournal({}) }];
+}
+
 /** The pane of the open trip: its name over how many days it has and how far they go, and its days. Closing it closes the trip. */
 function DaysPane(props: { onLeave: () => void }) {
   const trip = () => openTrip()!;
@@ -51,7 +60,7 @@ function DaysPane(props: { onLeave: () => void }) {
       label={trip().name}
       onClose={props.onLeave}
       onUse={endLook}
-      menu={openTripMenu}
+      menu={tripAddMenu}
       strip={<DayStrip />}
       heading={
         <>
@@ -94,7 +103,7 @@ function DetailPane(props: { onLeave: () => void }) {
             label={label()}
             onClose={only() ? props.onLeave : closeDetail}
             onUse={() => pickDay(day().id)}
-            menu={() => dayMenu(day().id)}
+            menu={() => [...dayAddMenu(day()), ...(only() ? tripAddMenu() : [])]}
             heading={
               <>
                 <span class="lines grow">
@@ -138,7 +147,6 @@ function SectionPane() {
             label={label()}
             onClose={closeDetail}
             onUse={() => pickDay(shown().id)}
-            menu={() => sectionMenu(shown())}
             strip={<DayStrip />}
             heading={
               <span class="day-title">

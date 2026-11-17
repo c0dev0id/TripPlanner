@@ -6,7 +6,7 @@ import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/sta
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, dropsOnRow, libraryClip, libraryPasteItem, pasteItems as pasteIntoPart, stashFilesClip, type LibraryClip, type PasteInto, type PasteItem } from '../state/clipboard';
-import { heldOf, importNote, isPlaceList, paneShown, provideOpenTripMenu, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
+import { heldOf, importNote, isPlaceList, paneShown, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
 import { flushSave } from '../state/autosave';
@@ -735,10 +735,6 @@ export function Library(props: {
     const top = folders().find((f) => f.id === rootOf(tab));
     return top ? itemMenu({ folder: top }) : topMenu();
   };
-  provideOpenTripMenu(() => {
-    const open = trips().find((trip) => trip.id === openTripId());
-    return open ? itemMenu({ trip: open }) : [];
-  });
 
   /** The folders and trips of a folder, each unfolding to what it holds: folders to theirs, a trip to its days. */
   const Branch = (branch: { tree: TreeTab; parent: number | null }): JSX.Element => (

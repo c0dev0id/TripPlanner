@@ -43,6 +43,13 @@ export async function deleteMediaAsked(chosen: readonly Entry[]): Promise<void> 
   });
 }
 
+/** Asks for files and keeps them with a day of the open trip. */
+export function addMediaPicked(dayId: string): void {
+  void pickFiles({}).then((files) => {
+    if (files.length > 0) void mediaAction(dayId, () => addFiles(dayId, files));
+  });
+}
+
 /**
  * The opened day's additional media: the files and links kept with it, a row each. Files
  * are added with the plus, as many as are picked, a link with its own button.
@@ -52,7 +59,6 @@ export function DayMedia(props: { day: Day }) {
   const [linked, setLinked] = createSignal<Entry | true>();
   const [renamed, setRenamed] = createSignal<Entry>();
   const act = (job: () => Promise<void>) => void mediaAction(props.day.id, job);
-  const addPicked = () => void pickFiles({}).then((files) => files.length > 0 && act(() => addFiles(props.day.id, files)));
   const saveLink = (form: FormData, link: Entry | true) => {
     const url = webAddress(field(form, 'url'));
     if (!url) return;
@@ -65,7 +71,7 @@ export function DayMedia(props: { day: Day }) {
         <IconButton label={t('Add link…')} onClick={() => setLinked(true)}>
           <LinkIcon />
         </IconButton>
-        <IconButton label={t('Add files…')} onClick={addPicked}>
+        <IconButton label={t('Add files…')} onClick={() => addMediaPicked(props.day.id)}>
           <PlusIcon />
         </IconButton>
       </div>

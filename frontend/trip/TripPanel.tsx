@@ -10,12 +10,13 @@ import { standingAlone, type SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { panTo, pointItems, setTrackAction } from '../state/drawing';
 import { isDetailed, toggleDetail } from '../state/panel';
-import type { MenuItem } from '../ui/menu';
+import { menuNote, type MenuItem } from '../ui/menu';
+import { pickFiles } from '../ui/pickFile';
 import type { EntryTarget } from '../model/journal';
 import { entriesOn, openJournal } from '../state/journal';
 import { recordingsOf } from '../state/recordings';
 import { openRouteColors } from '../state/routeColors';
-import { dropsOnPart, isCut } from '../state/clipboard';
+import { dropsOnPart, isCut, pasteItems } from '../state/clipboard';
 import { partSelect } from '../state/partSelection';
 import {
   addParts,
@@ -46,7 +47,7 @@ import type { RowSelect } from '../ui/selection';
 import { StopShape } from '../ui/StopShape';
 import { dayDetail, dayHeading, dayLabel, offTime, routeKindLabel, routeLabel, timelineText, timesText } from './labels';
 import { RoutePin } from './RoutePin';
-import { DayMedia } from './Media';
+import { addMediaPicked, DayMedia } from './Media';
 import { addRecordingPicked, DayRecordings } from './Recordings';
 import { carriedWith, partMenu } from './partMenu';
 import { routeNamesNote } from './routeNames';
@@ -79,8 +80,33 @@ export function TripPanel() {
   );
 }
 
-/** A day's menu, on its row and on the free space of the pane of its contents. */
-export const dayMenu = (dayId: string): MenuItem[] => partMenu('day', dayId, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(dayId) }] });
+/** How the last import of a file into a day went, said under that day's routes. */
+const [importNote, setImportNote] = createSignal<{ dayId: string; text: string; error: boolean }>();
+
+/** Asks for a GPX or KML file and adds its routes and stops to the day. */
+async function importPicked(day: Day): Promise<void> {
+  const [file] = await pickFiles({ accept: ROUTE_FILE_TYPES });
+  if (!file) return;
+  try {
+    const parts = await readDayParts(file, defaultProfile(day));
+    addParts(day.id, parts);
+    setImportNote({ dayId: day.id, text: t('{file}: {routes}, {stops} added.', { file: file.name, routes: counted(parts.routes.length, 'route'), stops: counted(parts.stops.length, 'stop') }), error: false });
+  } catch (fault) {
+    setImportNote({ dayId: day.id, text: `${file.name}: ${errorMessage(fault)}`, error: true });
+  }
+}
+
+/** What the free space of the pane of a day's contents offers: what adds to the day, as the buttons on its headings do, and what is pasted into it. */
+export function dayAddMenu(day: Day): MenuItem[] {
+  const paste = pasteItems('day', day.id);
+  return [
+    { label: t('Add route'), run: () => addRoute(day.id) },
+    { label: t('Import GPX or KML…'), run: () => void importPicked(day) },
+    { label: t('Add recording…'), run: () => addRecordingPicked(day.id) },
+    { label: t('Add files…'), run: () => addMediaPicked(day.id) },
+    ...(paste.length > 0 ? paste : [menuNote(t('Paste'))]),
+  ];
+}
 
 /** A day as a card: its number and name over its date and length; its menu edits, duplicates, pastes into and removes it. A click shows the day on the map, or the whole trip again where the day is shown; the pad at its end opens the pane of what the day holds. */
 function DayItem(props: { day: Day; index: number }) {
@@ -90,7 +116,7 @@ function DayItem(props: { day: Day; index: number }) {
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
   const meta = () => dayDetail('trip', { date: props.day.date, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, media: 0, distanceM: distance() });
-  const more = () => dayMenu(props.day.id);
+  const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
   const select = partSelect('day', props.day.id, () => openTrip()!.days.map((d) => d.id));
   const detailed = () => isDetailed(props.day.id);
   let row!: HTMLLIElement;
@@ -138,19 +164,6 @@ export function DayDetails(props: { day: Day }) {
     for (const entry of detailSequence()) groups[entry.routeIndex]?.push(entry);
     return groups;
   });
-  const [importNote, setImportNote] = createSignal<{ text: string; error: boolean }>();
-  let fileInput!: HTMLInputElement;
-  const importFile = async (file: File | undefined) => {
-    fileInput.value = '';
-    if (!file) return;
-    try {
-      const parts = await readDayParts(file, defaultProfile(props.day));
-      addParts(props.day.id, parts);
-      setImportNote({ text: t('{file}: {routes}, {stops} added.', { file: file.name, routes: counted(parts.routes.length, 'route'), stops: counted(parts.stops.length, 'stop') }), error: false });
-    } catch (fault) {
-      setImportNote({ text: `${file.name}: ${errorMessage(fault)}`, error: true });
-    }
-  };
   return (
     <div class="day-details">
       <Show when={props.day.notes}>
@@ -163,18 +176,17 @@ export function DayDetails(props: { day: Day }) {
       </Show>
       <div class="row">
         <h4 class="grow">{t('Planning')}</h4>
-        <IconButton label={t('Import GPX or KML…')} onClick={() => fileInput.click()}>
+        <IconButton label={t('Import GPX or KML…')} onClick={() => void importPicked(props.day)}>
           <FileImportIcon />
         </IconButton>
         <IconButton label={t('Add route')} onClick={() => addRoute(props.day.id)}>
           <PlusIcon />
         </IconButton>
-        <input ref={fileInput} type="file" accept={ROUTE_FILE_TYPES} hidden onChange={(e) => void importFile(e.currentTarget.files?.[0])} />
       </div>
       <ul class="routes">
         <ForById each={props.day.routes}>{(route, index) => <RouteItem route={route()} index={index()} day={props.day} sequence={byRoute()[index()] ?? []} />}</ForById>
       </ul>
-      <Show when={importNote()}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
+      <Show when={importNote()?.dayId === props.day.id && importNote()}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
       <Show when={routeNamesNote(props.day.id)}>{(note) => <Said note={note()} />}</Show>
       <Show when={unplaced().length > 0}>
         <div class="row">

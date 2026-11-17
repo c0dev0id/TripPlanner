@@ -1068,18 +1068,21 @@ entries at the end of their section.
 - **The free space of a pane has the menu of what the pane shows.** Most of a pane is
   empty below its rows, and a right-click there did nothing or brought the browser's
   menu, while what one wants there (a new folder, files added, a paste) was in the
-  menu of a line at the top. The space answers with a menu that exists already, not
-  one of its own: the top of the tree shown, the open trip's row, the day, the
-  category, so that there is one list of what can be done with each. It is for the
+  menu of a line at the top. In the library the space answers with the menu of the
+  tree's top, which is that. In a trip's pane and in a day's contents it first
+  answered with the trip's and the day's whole menu, as on their rows; but Duplicate,
+  Move or Remove on empty space among a list of days say nothing of what they act
+  on. The space of a pane is about what the pane lists, so its menu holds what adds
+  to that list and what is pasted into it, as the buttons on the headings do, and
+  the trip's journal; what acts on the trip or the day itself stays on its row.
+  Paste in a trip's pane puts days after the last day as an edit of the open trip:
+  the paste of the trip's row in the library goes by the server and closes the trip
+  first, which would take the pane away under the pointer. It is for the
   mouse alone (`spaceMenu` in `ui/cardMenu.ts`): a long press would have to switch
   off the selection of text in the whole pane, as a row's does for the row, which
   would take the notes of a day with it, and on a touch screen every row and the
   line at the top have their menu button. A right-click on a row without a menu, a
-  text field, a link or selected text is left to the browser. The trip's pane asks
-  the library for the open trip's menu (`openTripMenu` in `state/library.ts`), which
-  the library provides, since that menu is made of the library's own actions; the
-  dialog that renames a category stands in `App.tsx` for the same reason, since its
-  list need not be unfolded in the tree while the category's pane is open.
+  text field, a link or selected text is left to the browser.
 - **Rows have a menu button where there is no right-click.** A long press opens a row's
   menu on a touch screen, but nothing says so. On a screen whose pointer cannot hover
   every row with a menu shows a button with three dots that opens the same menu; with

@@ -360,6 +360,12 @@ export function pasteItems(kind: PartKind, id: string): PasteItem[] {
   return copied ? partPaste(copied, kind, id) : [];
 }
 
+/** The item that pastes the days on the clipboard after the last day of the open trip, as an edit of it; none where the clipboard holds no days, or the trip no day to follow. */
+export function pasteDaysAtEnd(): PasteItem[] {
+  const [copied, last] = [clip(), openTrip()?.days.at(-1)];
+  return copied && 'days' in copied && last ? partPaste(copied, 'day', last.id) : [];
+}
+
 /** Makes the element a place where what a drag carries of a trip is dropped onto a day, a category or a route of the open trip: a drop does what a paste of it there would, the clipboard left alone. */
 export const dropsOnPart = (el: HTMLElement, kind: PartKind, id: () => string): void => dropTarget<Carried>(el, CLIP, (carried) => partPaste(carried, kind, id())[0]?.run ?? null);
 
