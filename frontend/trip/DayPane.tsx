@@ -6,7 +6,7 @@ import { setEditTarget, setShowNeighbours, showNeighbours } from '../state/drawi
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
 import { isPlaceList, paneShown } from '../state/library';
-import { addDay, closeDaysPane, closeDetail, detailDay, openDetail, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
+import { addDay, closeDaysPane, closeDetail, detailDay, endLook, openDetail, openTrip, openTripId, selectDay, selectedDayId } from '../state/trip';
 import { counted, distanceText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { ChevronIcon, NeighboursIcon, PencilIcon, PlusIcon } from '../ui/icons';
@@ -47,6 +47,7 @@ function DaysPane() {
       level="second"
       label={trip().name}
       onClose={closeDaysPane}
+      onUse={endLook}
       strip={<DayStrip />}
       heading={
         <>
@@ -81,6 +82,7 @@ function DetailPane() {
       {(day) => {
         const label = createMemo(() => dayTitleOf(openTrip()!, day()));
         const backToDay = () => {
+          endLook();
           if (selectedDayId() !== day().id) selectDay(day().id);
         };
         return (
@@ -122,6 +124,7 @@ function SectionPane() {
         const step = (by: number) => openTrip()!.days[openTrip()!.days.indexOf(shown()) + by];
         const detail = () => dayDetail(openTrip()!.kind, dayCounts(shown()), isPlaceList(openTripId()));
         const backToSection = () => {
+          endLook();
           if (selectedDayId() !== shown().id) selectDay(shown().id);
         };
         return (

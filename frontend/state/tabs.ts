@@ -7,7 +7,7 @@ import { fold } from './panel';
 import { revealRide, RIDES } from './rides';
 import { openRecording, toggleRecording } from './recordingView';
 import { activeRecordingId } from './recordings';
-import { activeRouteId, openTripId, selectedDayId, takeUpRoute } from './trip';
+import { activeRouteId, endLook, openTripId, selectedDayId, takeUpRoute } from './trip';
 
 /**
  * The library's tabs as views of their own: what a tab with a tree had open when the user
@@ -33,6 +33,7 @@ function leaveFor(to: Exclude<LibraryTab, 'settings'>): void {
   if (isTreeTab(from)) leftOpen[from] = tripId !== undefined && openTree() === from ? { tripId, dayId: selectedDayId(), routeId: activeRouteId(), recordingId: activeRecordingId() } : undefined;
   takeUpRoute(undefined);
   openRecording(undefined);
+  endLook();
   showTab(to);
 }
 

@@ -9,6 +9,9 @@ import { legCoordinates, legState, routeLegs, type LegState } from '../routing/l
 
 export const ROUTES_SOURCE = 'routes';
 
+/** The source of the lines of a trip that is looked at and not open: drawn as the open trip's are, by layers of its own, so that none of them is found under the pointer. */
+export const LOOK_SOURCE = 'look';
+
 /** The layer of the routes' lines as they are drawn, by which a route is found under the pointer. */
 export const ROUTE_LINE_LAYER = `${ROUTES_SOURCE}-line`;
 
@@ -28,11 +31,12 @@ const LINE_LAYOUT: LineLayerSpecification['layout'] = {
 };
 
 /**
- * The layers of the routes, a line `width` pixels wide at the zooms a trip is planned at
- * and wider closer in, over a base map drawn sharp up to the zoom `sharpUntil`: the edited
- * route wider than the others, the neighbouring days' narrower and paler.
+ * The layers of the routes of a source, a line `width` pixels wide at the zooms a trip is
+ * planned at and wider closer in, over a base map drawn sharp up to the zoom
+ * `sharpUntil`: the edited route wider than the others, the neighbouring days' narrower
+ * and paler.
  */
-export function routeLayers(width: number, sharpUntil: number): LayerSpecification[] {
+export function routeLayers(width: number, sharpUntil: number, source = ROUTES_SOURCE): LayerSpecification[] {
   /** The width by the route's role; under the pointer (see RouteHover), as wide as the edited route. */
   const byRole = (zoom: number, casing: number): ExpressionSpecification => {
     const line = lineAt(zoom, width, sharpUntil);
@@ -40,25 +44,25 @@ export function routeLayers(width: number, sharpUntil: number): LayerSpecificati
   };
   return [
     {
-      id: `${ROUTES_SOURCE}-casing`,
+      id: `${source}-casing`,
       type: 'line',
-      source: ROUTES_SOURCE,
+      source,
       filter: DRAWN,
       layout: LINE_LAYOUT,
       paint: { 'line-color': '#ffffff', 'line-width': atZooms((zoom) => byRole(zoom, 3.5)), 'line-opacity': ['match', ['get', 'role'], 'neighbour', 0.5, 0.9] },
     },
     {
-      id: ROUTE_LINE_LAYER,
+      id: `${source}-line`,
       type: 'line',
-      source: ROUTES_SOURCE,
+      source,
       filter: DRAWN,
       layout: LINE_LAYOUT,
       paint: { 'line-color': ['get', 'color'], 'line-width': atZooms((zoom) => byRole(zoom, 0)), 'line-opacity': ['match', ['get', 'role'], 'neighbour', 0.55, 1] },
     },
     {
-      id: `${ROUTES_SOURCE}-unrouted`,
+      id: `${source}-unrouted`,
       type: 'line',
-      source: ROUTES_SOURCE,
+      source,
       filter: ['all', ['==', ['geometry-type'], 'LineString'], ['in', ['get', 'state'], ['literal', ['pending', 'failed']]]],
       paint: {
         'line-color': ['match', ['get', 'state'], 'failed', '#e03131', '#495057'],
@@ -68,16 +72,16 @@ export function routeLayers(width: number, sharpUntil: number): LayerSpecificati
     },
     {
       // Drawn on the map rather than as markers, which a trip of thousands of stops made slow.
-      id: `${ROUTES_SOURCE}-dim-stops`,
+      id: `${source}-dim-stops`,
       type: 'circle',
-      source: ROUTES_SOURCE,
+      source,
       filter: ['all', ['==', ['geometry-type'], 'Point'], ['has', 'dim']],
       paint: { 'circle-radius': 3, 'circle-color': DIM_STOP_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
     },
     {
-      id: `${ROUTES_SOURCE}-marks`,
+      id: `${source}-marks`,
       type: 'circle',
-      source: ROUTES_SOURCE,
+      source,
       filter: ['all', ['==', ['geometry-type'], 'Point'], ['!', ['has', 'dim']]],
       paint: { 'circle-radius': 5, 'circle-color': FREE_COLOR, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
     },

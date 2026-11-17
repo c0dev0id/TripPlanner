@@ -1,4 +1,4 @@
-import { createEffect, createSignal, onCleanup, onMount, Show, untrack } from 'solid-js';
+import { createEffect, createMemo, createSignal, on, onCleanup, onMount, Show, untrack } from 'solid-js';
 import { errorMessage, fetchTrip, type Progress } from './api';
 import { DuplicatesReport } from './library/DuplicatesReport';
 import { switchTab } from './state/tabs';
@@ -12,14 +12,15 @@ import { Lightbox } from './ui/Lightbox';
 import { Pane } from './ui/Pane';
 import { RoutingBar } from './map/RoutingBar';
 import { MapView, routesDrawn } from './map/MapView';
+import { LOOK_SOURCE } from './map/routeOverlay';
 import { RecordingCards } from './map/RecordingCards';
 import { Toolbar } from './map/Toolbar';
 import { flushSave, resetSaveState, savedSinceLoad } from './state/autosave';
-import { folderOfTrip, libraryFolders, libraryTab, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab } from './state/library';
+import { folderOfTrip, libraryFolders, libraryTab, libraryTrips, relistTrips, rootOf, setOpening, showFolder, shownFolderId, showTab } from './state/library';
 import { setShowingDuplicates, showingDuplicates } from './state/pane';
 import { fold, showDaysPane } from './state/panel';
 import { keepViewOf, readPlace, withPlace } from './state/place';
-import { closeTrip, openDetail, daysPaneOpen, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
+import { closeTrip, endLook, lookAt, looked, openDetail, daysPaneOpen, editingRouteId, takeUpRoute, loadTrip, openTrip, openTripId, selectedDay, selectedDayId } from './state/trip';
 import { DayDialog } from './trip/DayDialog';
 import { DayPane } from './trip/DayPane';
 import { ExportDialog } from './trip/ExportDialog';
@@ -69,6 +70,39 @@ export function App() {
       setOpening(undefined);
     }
   };
+  /** Looks at a trip, or at a day of it: read from the server and drawn on the map, while the open trip stays open. */
+  const look = async (id: number, dayId?: string) => {
+    const ask = ++latest;
+    const say = (progress: Progress | 'arrived') => void (ask === latest && setOpening({ tripId: id, progress }));
+    say({ received: 0 });
+    setError(undefined);
+    try {
+      const trip = await fetchTrip(id, say);
+      if (ask !== latest) return;
+      lookAt(trip, dayId);
+      void routesDrawn(LOOK_SOURCE).then(() => ask === latest && setOpening(undefined));
+    } catch (e) {
+      if (ask !== latest) return;
+      setError(errorMessage(e));
+      setOpening(undefined);
+    }
+  };
+  /** The trip looked at as the library lists it: when it was last changed, null where it is listed no more, nothing while none is looked at or the trips are not listed. */
+  const lookListed = createMemo(() => {
+    const id = looked()?.trip.id;
+    const trips = libraryTrips.error ? undefined : libraryTrips();
+    return id === undefined || !trips ? undefined : ([id, trips.find((trip) => trip.id === id)?.updatedAt ?? null] as const);
+  });
+  // A trip looked at is read again once the library lists it as changed, and let go of once it lists it no more.
+  createEffect(
+    on(lookListed, (now, before) => {
+      if (!now) return;
+      const [id, changedAt] = now;
+      if (changedAt === null) return endLook();
+      if (before?.[0] !== id || before[1] === changedAt) return;
+      void fetchTrip(id).then((trip) => looked()?.trip.id === id && lookAt(trip, looked()!.dayId));
+    }),
+  );
   /** Loads the open trip again from the server, after it was changed elsewhere. */
   const reload = () => open(openTrip()!.id);
   /** Leaves the open trip, saved, and lists the trips afresh where a save changed one; nothing without one. */
@@ -137,7 +171,7 @@ export function App() {
     <>
       <Pane level="library" label={t('Library')} heading={<LibraryTabs onTab={(tab) => switchTab(tab, open)} />}>
         <div class="library-panel" data-drop-folder={dropFolder()} data-drop-rides={libraryTab() === 'recordings' ? '' : undefined}>
-          <Explorer onOpen={openPicked} onLeave={leave} error={error()} />
+          <Explorer onOpen={openPicked} onLook={(id, dayId) => void look(id, dayId)} onLeave={leave} error={error()} />
         </div>
       </Pane>
       <Show when={showingDuplicates()} fallback={<DayPane />}>

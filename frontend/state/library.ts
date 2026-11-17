@@ -6,7 +6,7 @@ import type { FolderKind } from '../model/trip';
 import * as dayEdit from '../routing/dayEdit';
 import { createRequest } from '../ui/request';
 import { stashFiles } from './stash';
-import { daysPaneOpen, detailDay, openTrip, openTripId, removeParts, selectedDay } from './trip';
+import { daysPaneOpen, detailDay, looked, openTrip, openTripId, removeParts, selectedDay } from './trip';
 
 /** The library as the server lists it, and where the user is in it. */
 
@@ -26,8 +26,11 @@ export function showTab(to: LibraryTab): void {
   if (to !== 'settings') setMapTab(to);
 }
 
-/** Whether the open trip is on the map and in the pane: while the map follows its tab; one not listed yet counts as in it. */
-export const tripShown = (): boolean => (openTree() ?? mapTab()) === mapTab();
+/** Whether the open trip's panes are there: while the map follows its tab; one not listed yet counts as in it. */
+export const tripInView = (): boolean => (openTree() ?? mapTab()) === mapTab();
+
+/** Whether the open trip is on the map and takes the keys: while its panes are there and no other trip is looked at. */
+export const tripShown = (): boolean => tripInView() && looked() === undefined;
 
 /** The day shown in the pane and on the map: the selected one, while the open trip is shown. */
 export const shownDay = () => (tripShown() ? selectedDay() : undefined);
@@ -36,7 +39,7 @@ export const shownDay = () => (tripShown() ? selectedDay() : undefined);
 export const detailShown = (): boolean => paneShown() && openTrip()?.kind === 'trip' && detailDay() !== undefined;
 
 /** Whether the pane beside the library is there: a trip's days while their pane is open, a list's category while its pane is open; neither while the map follows another tab. */
-export const paneShown = (): boolean => tripShown() && (openTrip()?.kind === 'trip' ? daysPaneOpen() : detailDay() !== undefined);
+export const paneShown = (): boolean => tripInView() && (openTrip()?.kind === 'trip' ? daysPaneOpen() : detailDay() !== undefined);
 
 /** The folder asked for in each tree, none for its top: the one the tree marks, and that takes what is pasted with the keys or from the line that offers it. */
 const [markedFolders, setMarkedFolders] = createSignal<Partial<Record<TreeTab, number>>>({});

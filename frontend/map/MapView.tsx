@@ -18,9 +18,9 @@ import { placesHidden, setPlacesHidden } from '../state/places';
 import { ridesOpacity, routeWidth } from '../state/preferences';
 import { comparedCover, opened, openedLineColors, somethingTakenUp } from '../state/recordingView';
 import { loadedTrack, previewedLines, recordingColor, shownRecordings } from '../state/recordings';
-import { openRouteColors } from '../state/routeColors';
+import { lookColors, openRouteColors } from '../state/routeColors';
 import { failedLegs } from '../state/routing';
-import { activeRouteId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
+import { activeRouteId, looked, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
 import { LockIcon, LockOpenIcon, PinIcon, PinOffIcon } from '../ui/icons';
 import { newBaseMap } from './baseMap';
 import { OverlayInfo } from './OverlayInfo';
@@ -32,7 +32,7 @@ import { PlaceMarkers } from './PlaceMarkers';
 import { COMPARED_SOURCE, dotFeatures, OPENED_RECORDING_SOURCE, RECORDINGS_SOURCE, recordingFeatures } from './recordingOverlay';
 import { RecordingPoint } from './RecordingPoint';
 import { RouteHover } from './RouteHover';
-import { ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
+import { LOOK_SOURCE, ROUTES_SOURCE, routeFeatures, type RouteRole } from './routeOverlay';
 import { SearchBox } from './SearchBox';
 import { StopMarkers } from './StopMarkers';
 import { ToggleControl } from './ToggleControl';
@@ -40,13 +40,13 @@ import { ToggleControl } from './ToggleControl';
 /** The page's map, once it is loaded and while it stands. */
 const [shownMap, setShownMap] = createSignal<MapLibreMap>();
 
-/** Resolves once the map has drawn the routes it was last given, whatever its base map still loads; at once while there is no map. */
-export const routesDrawn = (): Promise<void> =>
+/** Resolves once the map has drawn the routes its source was last given, whatever its base map still loads; at once while there is no map. */
+export const routesDrawn = (source = ROUTES_SOURCE): Promise<void> =>
   new Promise((resolve) => {
     const map = shownMap();
     if (!map) return resolve();
     const check = () => {
-      if (!map.isSourceLoaded(ROUTES_SOURCE)) return;
+      if (!map.isSourceLoaded(source)) return;
       map.off('render', check);
       resolve();
     };
@@ -94,6 +94,7 @@ export function MapView() {
         {(m) => (
           <>
             <RouteLines map={m()} />
+            <LookLines map={m()} />
             <RouteHover map={m()} />
             <RecordingLines map={m()} />
             <ComparedLines map={m()} />
@@ -246,18 +247,41 @@ function clearOfCards(map: MapLibreMap) {
   return padding;
 }
 
+/** Keeps the lines of the trip looked at on the map, its stops as dots, and shows it whole when it changes. */
+function LookLines(props: { map: MapLibreMap }) {
+  const days = createMemo(() => {
+    const look = looked();
+    return (look?.trip.days ?? []).filter((day) => look!.dayId === undefined || day.id === look!.dayId);
+  });
+  const stops = () => (looked()?.trip.kind === 'trip' ? days().flatMap((day) => day.stops.map((stop) => stop.lngLat)) : []);
+  const features = createMemo(() => routeFeatures(days().map((day) => ({ day, role: 'selected' as const })), lookColors(), undefined, new Set(), [], stops()));
+  createEffect(() => props.map.getSource<GeoJSONSource>(LOOK_SOURCE)?.setData(features()));
+  createEffect(
+    on(days, (shown) => {
+      if (viewLocked()) return;
+      const bounds = new LngLatBounds();
+      for (const day of shown) {
+        for (const route of day.routes) for (const position of routePositions(route)) bounds.extend(position);
+        for (const stop of day.stops) bounds.extend(stop.lngLat);
+      }
+      if (!bounds.isEmpty()) props.map.fitBounds(bounds, { padding: clearOfCards(props.map), maxZoom: 13, duration: 600 });
+    }),
+  );
+  return null;
+}
+
 /** Keeps the route lines on the map, shows the selected day with its recordings shown, or the whole trip, when it changes, and goes where the panel points. */
 function RouteLines(props: { map: MapLibreMap }) {
   // The trip changes as a whole; its lines are drawn again only when the routes drawn or the marks on them change.
   const days = createMemo(shownDays, [], { equals: sameLines });
-  const marks = createMemo(() => selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : [])), [], { equals: samePlaces });
+  const marks = createMemo(() => (tripShown() ? selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : [])) : []), [], { equals: samePlaces });
   const dims = createMemo(dimStops, [], { equals: samePlaces });
   // A pin set on a route that is drawn anyway changes no line.
   const drawn = createMemo(() => new Set(days().flatMap(({ day, role }) => day.routes.flatMap((route) => (routeDrawn(route, role) ? route.id : [])))), new Set<string>(), { equals: sameIds });
   const features = createMemo(() => routeFeatures(days(), openRouteColors(), activeRouteId(), failedLegs(), marks(), dims(), (route) => drawn().has(route.id)));
   createEffect(() => props.map.getSource<GeoJSONSource>(ROUTES_SOURCE)?.setData(features()));
   createEffect(
-    on([selectedDayId, openTripId], () => {
+    on([selectedDayId, openTripId, () => looked() === undefined], () => {
       // Back at the view the address names, the map stays there, as it does while its view is locked.
       if (keepsView(openTripId()) || viewLocked()) return;
       const bounds = new LngLatBounds();

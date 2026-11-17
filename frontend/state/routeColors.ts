@@ -3,7 +3,7 @@ import { apartFromRides, routeColors } from '../model/routeLook';
 import { routeColoring } from './preferences';
 import { isPreviewing } from './recordings';
 import { ridesCompared } from './rides';
-import { openTrip } from './trip';
+import { looked, openTrip } from './trip';
 
 const sameColors = (a: ReadonlyMap<string, string>, b: ReadonlyMap<string, string>): boolean => a.size === b.size && [...a].every(([id, color]) => b.get(id) === color);
 
@@ -12,6 +12,18 @@ export const openRouteColors = createRoot(() =>
   createMemo(
     () => {
       const colors = routeColors(openTrip()?.days ?? [], routeColoring());
+      return ridesCompared() || isPreviewing() ? apartFromRides(colors) : colors;
+    },
+    new Map<string, string>(),
+    { equals: sameColors },
+  ),
+);
+
+/** The colour of each route of the trip looked at, as the open trip's routes have theirs. */
+export const lookColors = createRoot(() =>
+  createMemo(
+    () => {
+      const colors = routeColors(looked()?.trip.days ?? [], routeColoring());
       return ridesCompared() || isPreviewing() ? apartFromRides(colors) : colors;
     },
     new Map<string, string>(),

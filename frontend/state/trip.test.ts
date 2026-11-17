@@ -6,7 +6,7 @@ import { answerQuestion, question } from '../ui/confirm';
 import { selectIn, selectionOf } from '../ui/selection';
 import './partSelection';
 import { routedOf } from '../routing/testing';
-import { activeRouteId, addDay, closeDetail, detailDay, openDetail, removeDay, setStopSymbols, removeStop, movePoint, convertRouteToTrack, convertTrackToRoute, closeDaysPane, daysPaneOpen, openDaysPane, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
+import { activeRouteId, addDay, lookAt, looked, closeDetail, detailDay, openDetail, removeDay, setStopSymbols, removeStop, movePoint, convertRouteToTrack, convertTrackToRoute, closeDaysPane, daysPaneOpen, openDaysPane, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -190,6 +190,26 @@ describe('the open trip', () => {
     expect(detailDay()?.id).toBe(first);
     closeDetail();
     expect(detailDay()).toBeUndefined();
+  });
+
+  it('ends a look at another trip when a day of the open one is shown', () => {
+    addDay();
+    const dayId = openTrip()!.days[0]!.id;
+    addRoute(dayId);
+    const other = { ...empty(), id: 2 };
+    lookAt(other, undefined);
+    // Looking lets go of the route taken up, and leaves the open trip as it is.
+    expect([looked()?.trip, editingRouteId(), openTrip()!.id]).toEqual([other, undefined, 1]);
+    selectDay(undefined);
+    expect(looked()?.trip).toBe(other);
+    selectDay(dayId);
+    expect(looked()).toBeUndefined();
+    lookAt(other);
+    openDetail(dayId);
+    expect(looked()).toBeUndefined();
+    lookAt(other);
+    loadTrip({ ...empty(), id: 3 });
+    expect(looked()).toBeUndefined();
   });
 
   it('keeps a selection made by the click that brings the day of the contents back to the map', () => {

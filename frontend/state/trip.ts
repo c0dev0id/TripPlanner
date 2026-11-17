@@ -102,6 +102,7 @@ export function selectDay(id: string | undefined): void {
   batch(() => {
     setSelectedDayId(id);
     if (id !== undefined) {
+      setLooked(undefined);
       setMarkInTrip(true);
       setDaysPaneOpen(true);
       setShowingDuplicates(false);
@@ -139,6 +140,29 @@ export const selectedSequence: () => SequenceEntry[] = createRoot(() =>
 export const selectedTimeline: () => DayTimeline | undefined = createRoot(() => createMemo(() => dayTimeline(selectedSequence())));
 
 /**
+ * A trip that is looked at: drawn on the map as it was read, in the open trip's place,
+ * without being open or edited; with `dayId`, that day of it alone. The open trip stays
+ * open beside it, and whatever shows a day of the open trip ends the look.
+ */
+export interface Looked {
+  trip: Trip;
+  dayId?: string;
+}
+
+const [looked, setLooked] = createSignal<Looked>();
+export { looked };
+
+/** Looks at a trip, or at a day of it; the route taken up in the open trip is let go. */
+export function lookAt(trip: Trip, dayId?: string): void {
+  batch(() => {
+    setActiveRouteId(undefined);
+    setLooked({ trip, dayId });
+  });
+}
+
+export const endLook = (): void => void setLooked(undefined);
+
+/**
  * The day whose contents have a pane of their own: opened by the pad on the day's row,
  * and not the selected day by necessity, which is the one on the map. A click in the
  * pane makes it the selected one.
@@ -164,6 +188,7 @@ export const detailTimeline: () => DayTimeline | undefined = createRoot(() => cr
 export function openDetail(dayId: string): void {
   batch(() => {
     if (selectedDayId() !== dayId) selectDay(dayId);
+    setLooked(undefined);
     setDetailDayId(dayId);
   });
 }
@@ -254,6 +279,7 @@ export function loadTrip(loaded: Trip, dayId?: string): void {
     setHistoryVersion((v) => v + 1);
     setSelectedDayId(dayId ?? (daysPaneOpen() ? onlyDayOf(loaded) : undefined));
     setDetailDayId(undefined);
+    setLooked(undefined);
     if (dayId !== undefined) setDaysPaneOpen(true);
     setMarkInTrip(true);
     setActiveRouteId(undefined);

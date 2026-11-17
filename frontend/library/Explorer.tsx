@@ -5,7 +5,7 @@ import { LIBRARY_TABS, TAB_NAMES, TREES, type LibraryTab } from '../model/librar
 import { libraryProblem, libraryTab, libraryTrips, query, setQuery, showFolder } from '../state/library';
 import { setShowingDuplicates, showingDuplicates } from '../state/pane';
 import { folded } from '../state/panel';
-import { openTripId, selectDay, takeUpRouteOf } from '../state/trip';
+import { lookAt, openTrip, openTripId, takeUpRouteOf } from '../state/trip';
 import { CollectionPanel } from '../trip/CollectionPanel';
 import { IconButton } from '../ui/IconButton';
 import { ActivityIcon, ArchiveIcon, CopyIcon, GearIcon, PinIcon, TripIcon } from '../ui/icons';
@@ -56,6 +56,8 @@ export function LibraryTabs(props: { onTab: (tab: LibraryTab) => void }) {
 export function Explorer(props: {
   /** Opens a trip, at a day and with a route of it taken up where they are given, and with `pane` the pane of its days. */
   onOpen: (id: number, dayId?: string, routeId?: string, pane?: boolean) => void;
+  /** Looks at a trip, or at a day of it, without opening it. */
+  onLook: (id: number, dayId?: string) => void;
   onLeave: () => Promise<void>;
   error: string | undefined;
 }) {
@@ -64,10 +66,11 @@ export function Explorer(props: {
     showFolder(trip.folderId);
     props.onOpen(trip.id, dayId, undefined, pane);
   };
-  /** Shows a route the search found: its trip at its day, opened where another is open, with the route taken up. */
+  /** Shows a route the search found: taken up where its trip is the open one, its day of a trip looked at otherwise; a list of places opens, as its row does. */
   const openRoute = (found: FoundRoute) => {
     showFolder(found.within.folderId);
     if (found.within.id === openTripId()) takeUpRouteOf(found.dayId, found.route.id);
+    else if (found.within.kind === 'trip') props.onLook(found.within.id, found.dayId);
     else props.onOpen(found.within.id, found.dayId, found.route.id);
   };
   /** Shows a folder the search found, leaving an open trip for it. */
@@ -77,8 +80,8 @@ export function Explorer(props: {
     const trip = libraryTrips()?.find((kept) => kept.id === tripId);
     if (trip) openIn(trip, dayId);
   };
-  /** Shows a day in its pane, opening its trip where another is open, without leaving the tab shown. */
-  const showDay = (tripId: number, dayId: string) => (tripId === openTripId() ? selectDay(dayId) : props.onOpen(tripId, dayId));
+  /** Shows a day on the map beside the rides, without leaving their tab or opening its trip: a look at it, of the open trip as it stands. */
+  const showDay = (tripId: number, dayId: string) => (tripId === openTripId() ? lookAt(openTrip()!, dayId) : props.onLook(tripId, dayId));
   /** The tab shown where it has a search, which the settings have not. */
   const searched = () => {
     const tab = libraryTab();

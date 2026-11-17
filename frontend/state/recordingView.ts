@@ -13,7 +13,7 @@ import { showWhole } from './drawing';
 import { isRecordingPinned, isRidePinned, isRoutePinned } from './pins';
 import { shownTrack } from './section';
 import { activeRecordingId, loadedTrack, setActiveRecordingId, shownRecordings, type ShownRecording } from './recordings';
-import { activeRouteId, openTrip, openTripId, selectedDayId, takeUpRoute } from './trip';
+import { activeRouteId, looked, openTrip, openTripId, selectedDayId, takeUpRoute } from './trip';
 
 /**
  * The recording opened for its figures, on its day or in the list of rides: its cards
@@ -193,8 +193,8 @@ const view = createRoot(() => {
     return shown && shown.values.map((v) => (dims && (v === null || !Number.isFinite(v)) ? DIMMED : colorAt(shown.scale, v)));
   });
 
-  // Another trip or day starts with none opened, as it starts with no route taken up; surfaces are matched for this page only.
-  createEffect(on([openTripId, selectedDayId], () => openRecording(undefined)));
+  // Another trip or day, and a trip looked at, start with none opened, as they start with no route taken up; surfaces are matched for this page only.
+  createEffect(on([openTripId, selectedDayId, () => looked()?.trip.id], () => openRecording(undefined)));
   // A point is an index into the track opened; the whole ride and its part on a section count differently.
   createEffect(on(() => opened()?.track, () => { setPickedIndex(undefined); setHoverIndex(undefined); }, { defer: true }));
   // One thing is taken up at a time: a route taken up closes the recording opened.
