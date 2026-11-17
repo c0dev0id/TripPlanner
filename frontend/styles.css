@@ -1850,6 +1850,14 @@ fieldset.symbols {
   width: 100%;
 }
 
+/* On a screen that is touched the window stands at the top, where the keyboard does not cover what is written and its buttons. */
+@media (hover: none) {
+  .journal-dialog:not(.placed) {
+    top: 12px;
+    transform: translateX(-50%);
+  }
+}
+
 /* A chapter of the journal as it is written: its rows, and under them the field of a new entry. */
 .journal-rows {
   margin: 0;
@@ -1874,6 +1882,33 @@ fieldset.symbols {
   position: relative;
   z-index: 1;
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.25);
+  /* What lies under the row is what the pointer is over: a chapter that may take it. */
+  pointer-events: none;
+}
+
+/* The chapter a row from another would be dropped into. */
+.journal-rows.drop-target {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* A chapter without rows is still a place to drop one. */
+.journal-rows:empty {
+  min-height: 12px;
+}
+
+/* On a screen that is touched, what is tapped is large enough to hit. */
+@media (hover: none) {
+  .journal-workspace .page-settings label.toggle,
+  .journal-row .entry-link {
+    min-height: 40px;
+    align-items: center;
+  }
+
+  .journal-workspace .page-settings label.toggle {
+    display: flex;
+    gap: 8px;
+  }
 }
 
 .journal-row .lines {
@@ -2064,6 +2099,29 @@ fieldset.symbols {
   border: 0;
   border-left: 1px solid var(--line);
   background: var(--panel);
+}
+
+/* On a narrow screen the settings scroll away with the journal, under a head that stays. */
+@media (max-width: 699px) {
+  .journal-workspace {
+    overflow: auto;
+  }
+
+  .journal-workspace > header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .journal-workspace .columns {
+    flex: none;
+  }
+
+  .journal-workspace .chapters {
+    flex: none;
+    width: 100%;
+    overflow: visible;
+  }
 }
 
 /* Without room for both, the page is looked at in a window of its own, which follows the journal the same way. */
