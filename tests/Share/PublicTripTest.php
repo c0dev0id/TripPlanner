@@ -58,7 +58,7 @@ final class PublicTripTest extends TestCase
         self::assertSame([], $this->entries->listShared(str_repeat('0', 32)));
 
         $token = $this->trips->share($this->userId, $this->tripId);
-        self::assertSame(['name' => 'Alps', 'description' => 'A weekend.', 'journal' => false, 'gpx' => true, 'coverEntryId' => null, 'hiddenRouteIds' => []], $this->publications->shared($token));
+        self::assertSame(['name' => 'Alps', 'description' => 'A weekend.', 'journal' => false, 'gpx' => true, 'coverEntryId' => null], $this->publications->shared($token));
         self::assertSame([], $this->entries->listShared($token));
         self::assertNull($this->entries->findShared($token, $photo->id));
 
@@ -85,7 +85,7 @@ final class PublicTripTest extends TestCase
     public function testLeavesOutWhatIsTheOwnersAlone(): void
     {
         $token = $this->trips->share($this->userId, $this->tripId);
-        $public = PublicTrip::document($this->documents->loadShared($token), $this->publications->shared($token));
+        $public = PublicTrip::document($this->documents->loadShared($token), $this->publications->shared($token), $this->publications->hiddenRouteIds($this->tripId));
         $hotel = $public['days'][0]['stops'][1];
         self::assertSame(['Hotel Post', 'Dorfplatz 1', 'Garage for the bikes', '', ''], [$hotel['name'], $hotel['address'], $hotel['notes'], $hotel['contact'], $hotel['bookingReference']]);
         self::assertSame(['journal' => false, 'gpx' => true, 'coverEntryId' => null], $public['public']);
@@ -101,6 +101,11 @@ final class PublicTripTest extends TestCase
         $entry = PublicTrip::entry($this->entries->find($this->userId, $this->tripId, $photo->id));
         self::assertSame([[10.5, 47.5], null, 'IMG_1.jpg'], [$entry['lngLat'], $entry['takenLngLat'], $entry['file']['name']]);
         self::assertStringNotContainsString('11.45', json_encode($entry));
+        self::assertArrayNotHasKey('tripId', $entry);
+        // What a stop comes to have is not a visitor's until it is let through.
+        $document = $this->documents->loadShared($token);
+        $document['days'][0]['stops'][0]['doorCode'] = '4711';
+        self::assertStringNotContainsString('4711', json_encode(PublicTrip::document($document, $this->publications->shared($token), [])));
     }
 
     public function testLeavesOutTheRoutesThePageDoesNotHaveWithTheStopsBoundToThem(): void
@@ -110,7 +115,7 @@ final class PublicTripTest extends TestCase
         $document['days'][0]['stops'][] = TripFixture::stop('s4', 'Shelter', [11.6, 47.9], 'r2-1');
         $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated($document), 2, $this->now);
         $token = $this->trips->share($this->userId, $this->tripId);
-        $public = fn () => PublicTrip::document($this->documents->loadShared($token), $this->publications->shared($token));
+        $public = fn () => PublicTrip::document($this->documents->loadShared($token), $this->publications->shared($token), $this->publications->hiddenRouteIds($this->tripId));
         self::assertSame([['r1', 'r2'], ['s1', 's2', 's3', 's4']], [array_column($public()['days'][0]['routes'], 'id'), array_column($public()['days'][0]['stops'], 'id')]);
 
         self::assertTrue($this->publications->set($this->userId, $this->tripId, false, true, null, ['r2', 'of another trip']));

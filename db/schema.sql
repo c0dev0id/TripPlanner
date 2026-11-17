@@ -167,6 +167,9 @@ CREATE TABLE IF NOT EXISTS routes (
     CHECK ((kind = 'routed') = (highways IS NOT NULL AND points IS NOT NULL AND legs IS NOT NULL AND line IS NULL)),
     CHECK ((kind = 'track') = (highways IS NULL AND points IS NULL AND legs IS NULL AND line IS NOT NULL))
 );
+-- The routes a page leaves out are few, and asked for with every look at a shared trip:
+-- without this the question reads through every route's line.
+CREATE INDEX IF NOT EXISTS routes_hidden ON routes(day_id) WHERE public = 0;
 CREATE INDEX IF NOT EXISTS routes_day ON routes(day_id, position);
 
 -- A stop is bound to a point of one of its day's routes (point_id, same position) or

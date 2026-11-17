@@ -33,7 +33,11 @@ final class PublicationController
     {
         [$userId, $tripId] = [$this->currentUser->get()->id, (int) $args['id']];
         $document = $this->documents->load($userId, $tripId);
-        return $document === null ? Json::error($response, 404, 'Trip not found.') : Json::of($response, PublicTrip::document($document, $this->publications->of($userId, $tripId)));
+        if ($document === null) {
+            return Json::error($response, 404, 'Trip not found.');
+        }
+        $publication = $this->publications->of($userId, $tripId);
+        return Json::of($response, PublicTrip::document($document, $publication, $publication['hiddenRouteIds']));
     }
 
     /** Sets all of it from `{journal, gpx, coverEntryId, hiddenRouteIds}`; the cover is an image of the trip's journal, or null. */

@@ -22,14 +22,14 @@ final class Publications
     public function of(int $userId, int $tripId): ?array
     {
         $trip = $this->trip('id = ? AND user_id = ?', [$tripId, $userId]);
-        return $trip === null ? null : ['token' => $trip['share_token']] + $this->shown($trip);
+        return $trip === null ? null : ['token' => $trip['share_token']] + self::shown($trip) + ['hiddenRouteIds' => $this->hiddenRouteIds((int) $trip['id'])];
     }
 
-    /** @return ?array{name: string, description: string, journal: bool, gpx: bool, coverEntryId: ?int, hiddenRouteIds: list<string>} those of the trip shared under the token, with what its page is headed with; null when none is */
+    /** @return ?array{name: string, description: string, journal: bool, gpx: bool, coverEntryId: ?int} what the page of the trip shared under the token shows, with what it is headed with; null when none is */
     public function shared(string $token): ?array
     {
         $trip = $this->trip('share_token = ?', [$token]);
-        return $trip === null ? null : ['name' => $trip['name'], 'description' => $trip['description']] + $this->shown($trip);
+        return $trip === null ? null : ['name' => $trip['name'], 'description' => $trip['description']] + self::shown($trip);
     }
 
     /**
@@ -61,16 +61,21 @@ final class Publications
         return $trip === false ? null : $trip;
     }
 
-    /** @return array{journal: bool, gpx: bool, coverEntryId: ?int, hiddenRouteIds: list<string>} */
-    private function shown(array $trip): array
+    /** @return list<string> the routes and tracks the trip's page leaves out */
+    public function hiddenRouteIds(int $tripId): array
     {
         $hidden = $this->db->prepare('SELECT r.id FROM routes r JOIN days d ON d.id = r.day_id WHERE d.trip_id = ? AND r.public = 0 ORDER BY d.position, r.position');
-        $hidden->execute([$trip['id']]);
+        $hidden->execute([$tripId]);
+        return $hidden->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /** @return array{journal: bool, gpx: bool, coverEntryId: ?int} */
+    private static function shown(array $trip): array
+    {
         return [
             'journal' => (bool) $trip['journal_published'],
             'gpx' => (bool) $trip['gpx_public'],
             'coverEntryId' => $trip['cover_entry_id'] === null ? null : (int) $trip['cover_entry_id'],
-            'hiddenRouteIds' => $hidden->fetchAll(PDO::FETCH_COLUMN),
         ];
     }
 }

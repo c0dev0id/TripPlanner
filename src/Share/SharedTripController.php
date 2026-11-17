@@ -75,6 +75,6 @@ final class SharedTripController
     private function publicDocument(string $token): ?array
     {
         $document = $this->documents->loadShared($token);
-        return $document === null ? null : PublicTrip::document($document, $this->publications->shared($token));
+        return $document === null ? null : PublicTrip::document($document, $this->publications->shared($token), $this->publications->hiddenRouteIds($document['id']));
     }
 }
