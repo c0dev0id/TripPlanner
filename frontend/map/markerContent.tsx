@@ -1,5 +1,5 @@
 import { Show, type JSX } from 'solid-js';
-import { entryFileUrl, entryPreviewUrl } from '../api';
+import { entryImageUrl } from '../api';
 import { entryTitle, type Entry } from '../model/journal';
 import type { Stop } from '../model/trip';
 import { NotebookIcon } from '../ui/icons';
@@ -34,13 +34,13 @@ export function stopContent(stop: () => Stop, mark?: () => JSX.Element): HTMLEle
 }
 
 /**
- * A journal entry's marker element: a photo as a small preview that opens it over the page,
+ * A journal entry's marker element: a photo small, which opens it large over the page,
  * under the API base the page reads from; anything else as a journal icon that says what
  * the entry is and runs `open` on a click, where given.
  */
 export function entryMarkerElement(entry: Entry, base: string, open?: () => void): HTMLDivElement {
   if (entry.file?.image) {
-    const image = { src: entryFileUrl(base, entry.id), preview: entryPreviewUrl(base, entry.id), name: entry.file.name };
+    const image = { src: entryImageUrl(base, entry, 2048), preview: entryImageUrl(base, entry, 400), name: entry.file.name };
     const photo = (
       <a class="photo" href={image.src} target="_blank" rel="noopener" title={image.name} on:click={(e) => openImage(e, image)}>
         <img src={image.preview} alt={image.name} />

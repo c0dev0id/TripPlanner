@@ -733,7 +733,9 @@
   websites and notes, never a stop's contact or booking reference. The journal and its
   photos are on it once the owner switches them on, and the GPX file unless the owner
   switches it off, both where the trip is shared. A link to the shared page previews
-  with the trip's name and description.
+  with the trip's name and description. The photos on the shared page are pictures
+  made of the uploads: they carry no position and nothing else of what the camera
+  wrote into the file.
 
 - A place and address search over the map, by Nominatim on Enter: the first place found
   gets a pin and the map flies there, the others are listed to pick from. The pin stays

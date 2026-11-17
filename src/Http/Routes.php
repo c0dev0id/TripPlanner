@@ -89,7 +89,7 @@ final class Routes
             $api->patch('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}', [JournalController::class, 'update']);
             $api->delete('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}', [JournalController::class, 'delete']);
             $api->get('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}/file', [JournalController::class, 'file']);
-            $api->get('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}/preview', [JournalController::class, 'preview']);
+            $api->get('/trips/{id:[0-9]+}/entries/{entry:[0-9]+}/image/{px:400|1280|2048}', [JournalController::class, 'image']);
             $api->get('/trips/{id:[0-9]+}/media', [MediaController::class, 'index']);
             $api->post('/trips/{id:[0-9]+}/media', [MediaController::class, 'add']);
             $api->patch('/trips/{id:[0-9]+}/media/{entry:[0-9]+}', [MediaController::class, 'change']);
@@ -140,7 +140,7 @@ final class Routes
             $shared->get('/gpx', [SharedTripController::class, 'gpx']);
             $shared->get('/entries', [SharedTripController::class, 'entries']);
             $shared->get('/entries/{entry:[0-9]+}/file', [SharedTripController::class, 'file']);
-            $shared->get('/entries/{entry:[0-9]+}/preview', [SharedTripController::class, 'preview']);
+            $shared->get('/entries/{entry:[0-9]+}/image/{px:400|1280|2048}', [SharedTripController::class, 'image']);
         });
     }
 }

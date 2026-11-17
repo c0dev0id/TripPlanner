@@ -16,7 +16,7 @@ flowchart LR
     httpd["httpd<br/>static files, FastCGI"]
     php["PHP application (Slim)<br/>pages, JSON API, GPX export, journal files"]
     db[("SQLite<br/>accounts, trips, journal, places")]
-    files[("File store<br/>the journal's files and previews")]
+    files[("File store<br/>the journal's files and the pictures made of its images")]
     smtpd["smtpd<br/>127.0.0.1:25"]
   end
   subgraph remote["Remote services"]
@@ -114,7 +114,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `PUT /trips/{id}/entries/order` | Puts the entries `{ids}` in that order in the chapter of the day `{dayId}`, or of the trip itself for null. An entry of another chapter joins this one: it is linked to the day, or to the trip. |
 | `DELETE /trips/{id}/entries/{entry}` | Deletes the entry with its file. |
 | `GET /trips/{id}/entries/{entry}/file` | The file as uploaded, shown in the browser where it can be, offered for download otherwise. |
-| `GET /trips/{id}/entries/{entry}/preview` | A small JPEG of an image entry. |
+| `GET /trips/{id}/entries/{entry}/image/{px}` | An image entry's picture as a JPEG of at most `px` on its longer side, 400, 1280 or 2048, never larger than the image is. |
 | `GET /trips/{id}/media` | The files and links kept with the trip's days, oldest first: entries of the kind `media`, each with its day, its name (`text`), and its file or its `url`. |
 | `POST /trips/{id}/media` | Keeps a file or a link with a day, from a multipart form: `dayId`, a `name`, and a `file` or a `url` (http or https). 422 for neither or both, 404 for a day that is not the trip's. |
 | `PATCH /trips/{id}/media/{entry}` | Moves it to the day `{dayId}`, of this trip or another of the user's, its file with it; or names it anew from `{name}`, a link with its `{url}`. |
@@ -166,8 +166,9 @@ A trip shared under a token is readable without sign-in, and without a session, 
 - `/gpx`, the trip as one GPX file written from that document, 404 where the owner does
   not offer it;
 - `/entries`, the journal without where its photos were taken, empty until it is
-  published; `/entries/{entry}/file` and `/entries/{entry}/preview`, 404 until then,
-  except for the cover's;
+  published; `/entries/{entry}/image/{px}` and, for a file that is no image,
+  `/entries/{entry}/file`, 404 until then, except for the cover's pictures. An image's
+  file as it was uploaded is never given out there;
 - a day's media are neither listed nor fetched there.
 
 The read-only page is served at `/trips/{id}` for the owner and at `/t/{token}` for
@@ -398,4 +399,5 @@ stop goes, the entry is linked to their day, and when a day goes, the key is set
 and the entry stays with the trip. The journal reads as chapters, the trip's own entries
 and then each day's with those on its routes and stops; `position` orders the entries
 within a chapter. An entry's file lies in the
-file store under `files/{trip}/{entry}`, its preview beside it.
+file store under `files/{trip}/{entry}`, and beside it the pictures made of an image,
+`{entry}.{px}.jpg`.

@@ -1847,8 +1847,30 @@ entries at the end of their section.
   not know the difference.
 - **Files are served through PHP, not by httpd.** A file is read by its owner or through
   the trip's share token, so every read passes the application's check; the file store
-  lies outside the web root. Previews are small JPEGs made with GD on first request and
-  kept beside the file, so a page with many photos loads a few hundred kilobytes.
+  lies outside the web root.
+- **An image is kept at three sizes, and a visitor gets those alone.** A photo is shown
+  in a list, in the column of a page and large over the page, so beside its file lie
+  JPEGs of 400, 1280 and 2048 px on the longer side, never larger than the image, made
+  with GD. They are made when the file is uploaded, from one decoding of it, so that
+  the first reader of a page of photos does not wait for forty of them; one that is
+  missing, as for photos uploaded before, is made on first request, written beside and
+  renamed, since two requests may ask for it at once. An image of more than twenty
+  million pixels is not decoded, GD holding four bytes for each, and is offered as a
+  file instead.
+  A photo's file carries what the camera wrote into it: the position, the device, an
+  embedded thumbnail, and it went to anyone with the share link. The shared API now
+  gives out the made pictures and no image's file. A picture made by GD has no
+  metadata at all, whatever the format of the file and whatever a camera invents next.
+  Rejected: removing the EXIF, XMP and IPTC segments from the JPEG as it is served,
+  which keeps the upload's exact pixels but is a list of what to remove, per format,
+  that has to be complete; and the upload is itself a re-encoding made in the browser,
+  so there are no original pixels to keep. The planner shows the same pictures, so
+  that what the owner sees is what a visitor gets; the file itself leaves with the
+  export of the trip.
+- **A file's address changes with the file.** The browser may keep a file a day, and
+  SQLite gives the id of an entry that was deleted last to the next one, so a new
+  photo could show as the one deleted before it. The address carries the file's size
+  and the time of the entry as a query the server ignores.
 - **The trip's state is part of the document.** Planned or done is saved with the trip
   like its name, counts as an undo step and shows in the library. A separate endpoint
   for one flag would have been a second way to change a trip.

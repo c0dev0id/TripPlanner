@@ -114,7 +114,7 @@ final class MediaController
 
     public function preview(Request $request, Response $response, array $args): Response
     {
-        return $this->responses->preview($response, $this->entries->find($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry'], Entries::MEDIA));
+        return $this->responses->image($response, $this->entries->find($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry'], Entries::MEDIA), FileStore::SIZES[0]);
     }
 
     /** What is wrong with a name and, where one is given, a link's address; null for none. */

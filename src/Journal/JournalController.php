@@ -12,7 +12,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\UploadedFileInterface;
 
-/** The journal API of a trip: its entries, adding one with a file, an entry's text, link and place, the order in a chapter, an entry's deletion, its file and preview. */
+/** The journal API of a trip: its entries, adding one with a file, an entry's text, link and place, the order in a chapter, an entry's deletion, its file and its picture. */
 final class JournalController
 {
     public function __construct(
@@ -68,6 +68,7 @@ final class JournalController
         }
         if ($upload !== null) {
             $this->files->store($upload, $tripId, $entry->id);
+            $this->files->makeImages($tripId, $entry->id, $entry->file['mediaType']);
         }
         return Json::of($response->withStatus(201), $entry);
     }
@@ -126,9 +127,9 @@ final class JournalController
         return $this->responses->file($response, $this->entries->find($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry']));
     }
 
-    public function preview(Request $request, Response $response, array $args): Response
+    public function image(Request $request, Response $response, array $args): Response
     {
-        return $this->responses->preview($response, $this->entries->find($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry']));
+        return $this->responses->image($response, $this->entries->find($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry']), (int) $args['px']);
     }
 
     /**

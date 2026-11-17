@@ -45,7 +45,7 @@ final class TripViewController
             'shared' => [
                 'title' => $trip['name'],
                 'description' => mb_strlen($description) > self::DESCRIPTION_LENGTH ? mb_substr($description, 0, self::DESCRIPTION_LENGTH - 1) . '…' : $description,
-                'image' => $trip['coverEntryId'] === null ? null : "{$this->config->baseUrl}$api/entries/{$trip['coverEntryId']}/preview",
+                'image' => $trip['coverEntryId'] === null ? null : "{$this->config->baseUrl}$api/entries/{$trip['coverEntryId']}/image/1280",
             ],
         ]);
     }

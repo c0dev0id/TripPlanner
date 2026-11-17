@@ -14,7 +14,7 @@ use Planner\Trip\TripDocuments;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-/** The read-only API of a trip shared under a token: its document, its GPX file, and its journal with its files once that is published. No sign-in. */
+/** The read-only API of a trip shared under a token: its document, its GPX file, and its journal with its pictures and files once that is published. No sign-in. */
 final class SharedTripController
 {
     public function __construct(
@@ -50,14 +50,16 @@ final class SharedTripController
         return Json::of($response, array_map(PublicTrip::entry(...), $this->entries->listShared($args['token'])));
     }
 
+    /** A file of the journal that is no image. An image goes out as the pictures made of it alone, which carry nothing the camera wrote into it. */
     public function file(Request $request, Response $response, array $args): Response
     {
-        return $this->files->file($response, $this->entries->findShared($args['token'], (int) $args['entry']));
+        $entry = $this->entries->findShared($args['token'], (int) $args['entry']);
+        return $this->files->file($response, str_starts_with($entry?->file['mediaType'] ?? '', 'image/') ? null : $entry);
     }
 
-    public function preview(Request $request, Response $response, array $args): Response
+    public function image(Request $request, Response $response, array $args): Response
     {
-        return $this->files->preview($response, $this->entries->findShared($args['token'], (int) $args['entry']));
+        return $this->files->image($response, $this->entries->findShared($args['token'], (int) $args['entry']), (int) $args['px']);
     }
 
     private function publicDocument(string $token): ?array

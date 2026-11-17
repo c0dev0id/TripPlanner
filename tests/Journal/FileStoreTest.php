@@ -29,26 +29,42 @@ final class FileStoreTest extends TestCase
         }
     }
 
-    public function testStoresAFileUnderItsTripMakesAPreviewOnceAndDeletesBoth(): void
+    public function testStoresAFileUnderItsTripMakesAnImageOnceAndDeletesBoth(): void
     {
         $this->files->store($this->upload(self::jpeg(640, 480)), 7, 1);
         self::assertFileExists($this->files->path(7, 1));
-        $preview = $this->files->preview(7, 1, 'image/jpeg');
-        self::assertNotNull($preview);
-        self::assertSame([400, 300], array_slice(getimagesize($preview), 0, 2));
-        $made = filemtime($preview);
-        self::assertSame($preview, $this->files->preview(7, 1, 'image/jpeg'));
-        self::assertSame($made, filemtime($preview));
+        $small = $this->files->image(7, 1, 'image/jpeg', 400);
+        self::assertNotNull($small);
+        self::assertSame([400, 300], array_slice(getimagesize($small), 0, 2));
+        $made = filemtime($small);
+        self::assertSame($small, $this->files->image(7, 1, 'image/jpeg', 400));
+        self::assertSame($made, filemtime($small));
         $this->files->delete(7, 1);
         self::assertFileDoesNotExist($this->files->path(7, 1));
-        self::assertFileDoesNotExist($preview);
+        self::assertFileDoesNotExist($small);
     }
 
-    public function testHasNoPreviewForAFileThatIsNoImageAndRemovesATripsFiles(): void
+    public function testMakesAnImageAtEverySizeNeverLargerThanItIsTurnedAndWithoutWhatTheCameraWrote(): void
+    {
+        $this->files->store($this->upload(self::jpeg(1600, 1200, 6)), 7, 1);
+        self::assertNotFalse(exif_read_data($this->files->path(7, 1))['Orientation'] ?? false);
+        $this->files->makeImages(7, 1, 'image/jpeg');
+        self::assertSame(['1', '1.1280.jpg', '1.2048.jpg', '1.400.jpg'], array_values(array_diff(scandir("$this->dir/7"), ['.', '..'])));
+        $sizes = array_map(fn (int $px) => array_slice(getimagesize($this->files->image(7, 1, 'image/jpeg', $px)), 0, 2), FileStore::SIZES);
+        self::assertSame([[300, 400], [960, 1280], [1200, 1600]], $sizes);
+        self::assertArrayNotHasKey('Orientation', (array) @exif_read_data($this->files->image(7, 1, 'image/jpeg', 2048)));
+    }
+
+    public function testHasNoImageForAFileThatIsNoneOrTooLargeAndRemovesATripsFiles(): void
     {
         $this->files->store($this->upload('not an image'), 8, 2);
-        self::assertNull($this->files->preview(8, 2, 'application/pdf'));
-        self::assertNull($this->files->preview(8, 2, 'image/jpeg'));
+        self::assertNull($this->files->image(8, 2, 'application/pdf', 400));
+        self::assertNull($this->files->image(8, 2, 'image/jpeg', 400));
+        // The head of a PNG of 6000 by 6000 pixels, which is all that is read of one too large.
+        $ihdr = 'IHDR' . pack('NN', 6000, 6000) . "\x08\x02\0\0\0";
+        $this->files->store($this->upload("\x89PNG\r\n\x1a\n" . pack('N', 13) . $ihdr . pack('N', crc32($ihdr))), 8, 3);
+        self::assertSame([6000, 6000], FileStore::pixelsOf($this->files->path(8, 3), 'image/png'));
+        self::assertNull($this->files->image(8, 3, 'image/png', 400));
         $this->files->deleteAll(8);
         self::assertDirectoryDoesNotExist("$this->dir/8");
         $this->files->deleteAll(9);
@@ -57,23 +73,23 @@ final class FileStoreTest extends TestCase
     public function testMovesATripsFilesToAnother(): void
     {
         $this->files->store($this->upload(self::jpeg(64, 48)), 8, 3);
-        $this->files->preview(8, 3, 'image/jpeg');
+        $this->files->image(8, 3, 'image/jpeg', 400);
         $this->files->store($this->upload('kept'), 7, 4);
         $this->files->moveAll(8, 7);
         self::assertDirectoryDoesNotExist("$this->dir/8");
-        self::assertSame(['3', '3.preview.jpg', '4'], array_values(array_diff(scandir("$this->dir/7"), ['.', '..'])));
+        self::assertSame(['3', '3.400.jpg', '4'], array_values(array_diff(scandir("$this->dir/7"), ['.', '..'])));
         $this->files->moveAll(9, 7);
     }
 
-    public function testMovesAndCopiesAnEntrysFileWithItsPreview(): void
+    public function testMovesAndCopiesAnEntrysFileWithItsImages(): void
     {
         $this->files->store($this->upload(self::jpeg(64, 48)), 8, 3);
-        $this->files->preview(8, 3, 'image/jpeg');
+        $this->files->image(8, 3, 'image/jpeg', 400);
         $this->files->copy(8, 3, 7, 5);
-        self::assertSame(['5', '5.preview.jpg'], array_values(array_diff(scandir("$this->dir/7"), ['.', '..'])));
+        self::assertSame(['5', '5.400.jpg'], array_values(array_diff(scandir("$this->dir/7"), ['.', '..'])));
         self::assertFileEquals("$this->dir/8/3", "$this->dir/7/5");
         $this->files->move(8, 3, 9);
-        self::assertSame(['3', '3.preview.jpg'], array_values(array_diff(scandir("$this->dir/9"), ['.', '..'])));
+        self::assertSame(['3', '3.400.jpg'], array_values(array_diff(scandir("$this->dir/9"), ['.', '..'])));
         self::assertSame([], array_values(array_diff(scandir("$this->dir/8"), ['.', '..'])));
         $this->files->move(9, 3, 9);
         self::assertFileExists("$this->dir/9/3");
@@ -98,9 +114,7 @@ final class FileStoreTest extends TestCase
         $path = tempnam(sys_get_temp_dir(), 'image');
         file_put_contents($path, self::jpeg(640, 480));
         self::assertSame([640, 480], FileStore::pixelsOf($path, 'image/jpeg'));
-        // The same picture with an EXIF block that says it is to be turned a quarter.
-        $exif = "Exif\0\0MM\0*\0\0\0\x08\0\x01\x01\x12\0\x03\0\0\0\x01\0\x06\0\0\0\0\0\0";
-        file_put_contents($path, "\xFF\xD8\xFF\xE1" . pack('n', strlen($exif) + 2) . $exif . substr(self::jpeg(640, 480), 2));
+        file_put_contents($path, self::jpeg(640, 480, 6));
         self::assertSame([480, 640], FileStore::pixelsOf($path, 'image/jpeg'));
         self::assertNull(FileStore::pixelsOf($path, 'application/pdf'));
         file_put_contents($path, 'no image');
@@ -115,11 +129,17 @@ final class FileStoreTest extends TestCase
         return new UploadedFile($path, 'photo.jpg', 'image/jpeg', strlen($content));
     }
 
-    private static function jpeg(int $width, int $height): string
+    /** A JPEG of that size, with an EXIF block that names the orientation where one is given. */
+    private static function jpeg(int $width, int $height, ?int $orientation = null): string
     {
         $image = imagecreatetruecolor($width, $height);
         ob_start();
         imagejpeg($image);
-        return ob_get_clean();
+        $jpeg = ob_get_clean();
+        if ($orientation === null) {
+            return $jpeg;
+        }
+        $exif = "Exif\0\0MM\0*\0\0\0\x08\0\x01\x01\x12\0\x03\0\0\0\x01" . pack('n', $orientation) . "\0\0\0\0\0\0";
+        return "\xFF\xD8\xFF\xE1" . pack('n', strlen($exif) + 2) . $exif . substr($jpeg, 2);
     }
 }

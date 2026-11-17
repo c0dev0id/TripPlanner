@@ -5,8 +5,8 @@
 - OpenBSD with httpd and php-fpm. php-fpm runs chrooted to `/var/www`, so the application,
   its data and the SQLite file live below that directory.
 - PHP 8.5 with pdo_sqlite, sqlite3, zip, simplexml, gd, intl, curl, xsl, and the core exif,
-  fileinfo, zlib, xmlreader and xmlwriter extensions: gd makes the journal's image
-  previews, fileinfo tells uploaded files' types, exif reads when and where a photo was
+  fileinfo, zlib, xmlreader and xmlwriter extensions: gd makes the pictures the
+  journal's images are shown as, at three sizes, fileinfo tells uploaded files' types, exif reads when and where a photo was
   taken (without exif, photos are kept but not placed), zlib checks that an uploaded
   recording is a compressed GPX file, xmlreader reads its line and start from it, and
   xmlwriter writes the GPX exports.
@@ -15,8 +15,10 @@
   `post_max_size` (2 MB and 8 MB by default) bound a photo's size, and that of a
   document kept with a day, which is sent as it is; phone photos need
   20 MB or so from all three, although a photo arrives as a JPEG of at most 2560 px made
-  in the browser (see the frontend). JPEG, PNG and WebP get a preview; a JPEG its EXIF
-  placement.
+  in the browser (see the frontend). JPEG, PNG and WebP are shown as images; a JPEG gets its
+  EXIF placement. Making an image's pictures decodes it, which takes four bytes a pixel
+  of php-fpm's `memory_limit`: some 20 MB for a photo as the browser sends it, 80 MB
+  for the largest image that is decoded at all.
 - A save sends the whole trip as one JSON body, so the same request body limits bound a
   trip's size. Tracks are stored as encoded lines of some six bytes a point: an imported
   trip of 1.5 million track points and 5,000 waypoints is an 8.4 MB body, which PHP

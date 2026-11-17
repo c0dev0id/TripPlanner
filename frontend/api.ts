@@ -148,9 +148,17 @@ export const tripGpxUrl = (base: string): string => `${base}/gpx`;
 
 export const listEntriesAt = (base: string): Promise<Entry[]> => request('GET', `${base}/entries`);
 
-export const entryFileUrl = (base: string, entryId: number): string => `${base}/entries/${entryId}/file`;
+/** What tells an entry's file from another's: the browser keeps a file a day, and an entry's id is used again once it is deleted. */
+const fileVersion = (entry: Entry): string => `${entry.file!.size}-${entry.createdAt.replace(/\D/g, '')}`;
 
-export const entryPreviewUrl = (base: string, entryId: number): string => `${base}/entries/${entryId}/preview`;
+/** An entry's file as it was uploaded. A shared trip gives it out only where it is no image. */
+export const entryFileUrl = (base: string, entry: Entry): string => `${base}/entries/${entry.id}/file?v=${fileVersion(entry)}`;
+
+/** The sizes the server keeps of an image: its longer side in pixels. */
+export type ImageSize = 400 | 1280 | 2048;
+
+/** An image entry's picture at one of those sizes, never larger than the image is. */
+export const entryImageUrl = (base: string, entry: Entry, px: ImageSize): string => `${base}/entries/${entry.id}/image/${px}?v=${fileVersion(entry)}`;
 
 /**
  * Adds a journal entry on the trip or on the part the target names, with a file where given, at a spot on the map where given;

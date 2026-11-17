@@ -3,6 +3,7 @@
 
 declare(strict_types=1);
 
+use Planner\Config;
 use Planner\Database;
 use Planner\Journal\Exif;
 use Planner\Journal\FileStore;
@@ -13,8 +14,9 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 // Run once after the journal became a document with an order of its own and a
 // publication apart from the share link, then delete this file. It adds the columns of
 // both, keeps the entries in the order they were added, publishes the journal of every
-// trip that is shared, and reads every image again for its size and for where it was
-// taken. Running it twice does no harm.
+// trip that is shared, reads every image again for its size and for where it was taken,
+// and gives the previews the name of the smallest of the sizes an image is now kept at.
+// Running it twice does no harm.
 $container = Kernel::container(dirname(__DIR__));
 $db = $container->get(PDO::class);
 $files = $container->get(FileStore::class);
@@ -50,4 +52,8 @@ foreach ($images->fetchAll() as $image) {
     $read++;
 }
 $db->commit();
-echo "The journal has its columns; read $read images for their size and place.\n";
+$renamed = 0;
+foreach (glob($container->get(Config::class)->dataDir . '/files/*/*.preview.jpg') as $preview) {
+    $renamed += (int) rename($preview, substr($preview, 0, -strlen('preview.jpg')) . FileStore::SIZES[0] . '.jpg');
+}
+echo "The journal has its columns; read $read images for their size and place and renamed $renamed previews.\n";
