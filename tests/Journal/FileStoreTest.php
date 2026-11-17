@@ -77,7 +77,7 @@ final class FileStoreTest extends TestCase
         $this->files->store($this->upload('kept'), 7, 4);
         $this->files->moveAll(8, 7);
         self::assertDirectoryDoesNotExist("$this->dir/8");
-        self::assertSame(['3', '3.400.jpg', '4'], array_values(array_diff(scandir("$this->dir/7"), ['.', '..'])));
+        self::assertSame(['3', '3.1280.jpg', '3.2048.jpg', '3.400.jpg', '4'], array_values(array_diff(scandir("$this->dir/7"), ['.', '..'])));
         $this->files->moveAll(9, 7);
     }
 
@@ -86,10 +86,10 @@ final class FileStoreTest extends TestCase
         $this->files->store($this->upload(self::jpeg(64, 48)), 8, 3);
         $this->files->image(8, 3, 'image/jpeg', 400);
         $this->files->copy(8, 3, 7, 5);
-        self::assertSame(['5', '5.400.jpg'], array_values(array_diff(scandir("$this->dir/7"), ['.', '..'])));
+        self::assertSame(['5', '5.1280.jpg', '5.2048.jpg', '5.400.jpg'], array_values(array_diff(scandir("$this->dir/7"), ['.', '..'])));
         self::assertFileEquals("$this->dir/8/3", "$this->dir/7/5");
         $this->files->move(8, 3, 9);
-        self::assertSame(['3', '3.400.jpg'], array_values(array_diff(scandir("$this->dir/9"), ['.', '..'])));
+        self::assertSame(['3', '3.1280.jpg', '3.2048.jpg', '3.400.jpg'], array_values(array_diff(scandir("$this->dir/9"), ['.', '..'])));
         self::assertSame([], array_values(array_diff(scandir("$this->dir/8"), ['.', '..'])));
         $this->files->move(9, 3, 9);
         self::assertFileExists("$this->dir/9/3");

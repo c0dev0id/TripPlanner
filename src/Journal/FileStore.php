@@ -67,7 +67,7 @@ final class FileStore
         if ($size === false) {
             return null;
         }
-        return $mediaType === 'image/jpeg' && self::orientation($path) >= 5 ? [$size[1], $size[0]] : [$size[0], $size[1]];
+        return self::orientation($path, $mediaType) >= 5 ? [$size[1], $size[0]] : [$size[0], $size[1]];
     }
 
     /** Why an upload cannot be taken, in the words the API answers with; null for one that can, and for none. */
@@ -171,7 +171,8 @@ final class FileStore
     {
         $path = $this->imagePath($tripId, $entryId, $px);
         if (!is_file($path)) {
-            $this->makeImages($tripId, $entryId, $mediaType, [$px]);
+            // Whatever else is missing is made from the same reading of the file: one that lacks a size lacks them all.
+            $this->makeImages($tripId, $entryId, $mediaType, array_filter(self::SIZES, fn (int $size): bool => !is_file($this->imagePath($tripId, $entryId, $size))));
         }
         return is_file($path) ? $path : null;
     }
@@ -189,7 +190,7 @@ final class FileStore
         if ($image === null) {
             return;
         }
-        $orientation = $mediaType === 'image/jpeg' ? self::orientation($file) : 1;
+        $orientation = self::orientation($file, $mediaType);
         foreach ($sizes as $px) {
             $path = $this->imagePath($tripId, $entryId, $px);
             // Written beside and renamed, so that a request made meanwhile never reads half a picture.
@@ -202,7 +203,7 @@ final class FileStore
     public static function previewOf(string $path, string $mediaType): ?string
     {
         $image = self::read($path, $mediaType);
-        return $image === null ? null : self::jpeg($image, self::SIZES[0], $mediaType === 'image/jpeg' ? self::orientation($path) : 1);
+        return $image === null ? null : self::jpeg($image, self::SIZES[0], self::orientation($path, $mediaType));
     }
 
     /** The image at the path as GD holds it; null where it is none read here, cannot be read, or is too large to be. */
@@ -245,10 +246,10 @@ final class FileStore
         return [$this->path($tripId, $entryId), ...array_map(fn (int $px) => $this->imagePath($tripId, $entryId, $px), self::SIZES)];
     }
 
-    /** The EXIF orientation of a JPEG: 1 where there is none or exif is missing. */
-    private static function orientation(string $path): int
+    /** The EXIF orientation of an image, which a JPEG alone has: 1 where there is none or exif is missing. */
+    private static function orientation(string $path, string $mediaType): int
     {
-        return function_exists('exif_read_data') ? (int) (@exif_read_data($path)['Orientation'] ?? 1) : 1;
+        return $mediaType === 'image/jpeg' && function_exists('exif_read_data') ? (int) (@exif_read_data($path)['Orientation'] ?? 1) : 1;
     }
 
     /** The image turned the way its EXIF orientation says it is to be seen. */

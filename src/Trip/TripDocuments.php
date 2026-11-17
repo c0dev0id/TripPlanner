@@ -418,15 +418,18 @@ final class TripDocuments
      */
     private function deleteMissing(string $table, string $scope, array $scopeParams, array $keep, ?string $entryLink = null): void
     {
-        $missing = $keep === [] ? $scope : "$scope AND id NOT IN (" . Database::placeholders($keep) . ')';
-        $params = [...$scopeParams, ...$keep];
-        if ($entryLink !== null) {
-            $this->db->prepare(
-                "UPDATE entries SET day_id = (SELECT day_id FROM $table WHERE id = entries.$entryLink), $entryLink = NULL
-                 WHERE $entryLink IN (SELECT id FROM $table WHERE $missing)",
-            )->execute($params);
+        $missing = $this->db->prepare("SELECT id FROM $table WHERE $scope" . ($keep === [] ? '' : ' AND id NOT IN (' . Database::placeholders($keep) . ')'));
+        $missing->execute([...$scopeParams, ...$keep]);
+        $ids = $missing->fetchAll(PDO::FETCH_COLUMN);
+        // Most saves remove nothing, and the entries have no index by their route or stop.
+        if ($ids === []) {
+            return;
         }
-        $this->db->prepare("DELETE FROM $table WHERE $missing")->execute($params);
+        $in = Database::placeholders($ids);
+        if ($entryLink !== null) {
+            $this->db->prepare("UPDATE entries SET day_id = (SELECT day_id FROM $table WHERE id = entries.$entryLink), $entryLink = NULL WHERE $entryLink IN ($in)")->execute($ids);
+        }
+        $this->db->prepare("DELETE FROM $table WHERE id IN ($in)")->execute($ids);
     }
 
     private function rows(string $sql, int $id): array
