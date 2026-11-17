@@ -20,6 +20,7 @@ import { folderOfTrip, libraryFolders, libraryTab, libraryTrips, relistTrips, ro
 import { showingDuplicates } from './state/pane';
 import { keepViewOf, readPlace, withPlace } from './state/place';
 import { closeTrip, detailDayId, editingRouteId, endLook, loadTrip, lookAt, looked, lookedTripId, openTrip, openTripId, refreshLook, selectedDay, selectedDayId, type OpenAt } from './state/trip';
+import { SectionDialog } from './trip/CollectionPanel';
 import { DayDialog } from './trip/DayDialog';
 import { DayPane } from './trip/DayPane';
 import { ExportDialog } from './trip/ExportDialog';
@@ -208,6 +209,7 @@ export function App() {
       <ConfirmDialog />
       <TripDialog />
       <DayDialog />
+      <SectionDialog />
       <RouteDialog />
       <TrackDialog />
       <StopDialog />

@@ -37,36 +37,47 @@ import { DayRecordings } from './Recordings';
  */
 export function CollectionPanel() {
   const collection = () => openTrip()!;
-  const [renamed, setRenamed] = createSignal<Day>();
   const places = createMemo(() => isPlaceList(openTripId()));
   return (
     <section class="trip">
       <ol class="days">
-        <ForById each={collection().days}>{(day, index) => <SectionItem day={day()} index={index()} places={places()} onRename={setRenamed} />}</ForById>
+        <ForById each={collection().days}>{(day, index) => <SectionItem day={day()} index={index()} places={places()} />}</ForById>
       </ol>
-      <NameDialog
-        title={t('Rename section')}
-        open={renamed() !== undefined}
-        placeholder={t('Section name')}
-        initial={renamed()?.name}
-        onClose={() => setRenamed(undefined)}
-        onSubmit={(name) => {
-          const day = renamed()!;
-          updateDay(day.id, { name, date: day.date, notes: day.notes });
-        }}
-      />
     </section>
   );
 }
 
+/** The section being renamed. */
+const [renamed, setRenamed] = createSignal<Day>();
+
+/** A section's menu, on its row and on the free space of the pane of what it holds: its Edit renames it. */
+export const sectionMenu = (day: Day): MenuItem[] => partMenu('day', day.id, { edit: () => setRenamed(day) });
+
+/** The dialog that renames a section, there whether its list is unfolded in the tree or not. */
+export function SectionDialog() {
+  return (
+    <NameDialog
+      title={t('Rename section')}
+      open={renamed() !== undefined}
+      placeholder={t('Section name')}
+      initial={renamed()?.name}
+      onClose={() => setRenamed(undefined)}
+      onSubmit={(name) => {
+        const day = renamed()!;
+        updateDay(day.id, { name, date: day.date, notes: day.notes });
+      }}
+    />
+  );
+}
+
 /** A section as a card: its name over what it holds, which in a list of places (`places`) are places. A click shows it on the map; the pad at its end opens the pane of what it holds. Its menu renames and removes it. */
-function SectionItem(props: { day: Day; index: number; places: boolean; onRename: (day: Day) => void }) {
+function SectionItem(props: { day: Day; index: number; places: boolean }) {
   const selected = () => selectedDayId() === props.day.id;
   // The section's routes change less often than the section.
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
   const meta = () => dayDetail('collection', { date: null, routes: routes().length, stops: props.day.stops.length, recordings: recordingsOf(props.day.id).length, media: mediaOf(props.day.id).length, distanceM: distance() }, props.places);
-  const items = (): MenuItem[] => partMenu('day', props.day.id, { edit: () => props.onRename(props.day) });
+  const items = () => sectionMenu(props.day);
   const select = partSelect('day', props.day.id, () => openTrip()!.days.map((d) => d.id));
   const detailed = () => isDetailed(props.day.id);
   let row!: HTMLLIElement;
