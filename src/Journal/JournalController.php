@@ -12,7 +12,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\UploadedFileInterface;
 
-/** The journal API of a trip: its entries, adding one with a file, an entry's text, its deletion, its file and preview. */
+/** The journal API of a trip: its entries, adding one with a file, an entry's text, link and place, the order in a chapter, an entry's deletion, its file and preview. */
 final class JournalController
 {
     public function __construct(
@@ -31,7 +31,8 @@ final class JournalController
 
     /**
      * Adds an entry from a multipart form: `text`, at most one of `dayId`, `stopId`, `routeId`, a `file`, `lng` and `lat` for a
-     * spot on the map, and for an entry written earlier and imported now `createdAt`, as the journal gives it.
+     * spot on the map, `byDate` for a photo without a part to go to the day of its date, and for an entry written earlier and
+     * imported now `createdAt`, as the journal gives it.
      */
     public function add(Request $request, Response $response, array $args): Response
     {
@@ -61,7 +62,7 @@ final class JournalController
             return Json::error($response, 422, 'createdAt is not a time.');
         }
         $tripId = (int) $args['id'];
-        $entry = $this->entries->add($this->currentUser->get()->id, $tripId, $target, $text, $upload === null ? null : self::fileOf($upload), $createdAt, $spot);
+        $entry = $this->entries->add($this->currentUser->get()->id, $tripId, $target, $text, $upload === null ? null : self::fileOf($upload), $createdAt, $spot, isset($body['byDate']));
         if ($entry === null) {
             return Json::error($response, 404, 'Trip or item not found.');
         }
@@ -71,14 +72,43 @@ final class JournalController
         return Json::of($response->withStatus(201), $entry);
     }
 
+    /**
+     * Changes what the body names of an entry: its `text`; its `link`, an object with at most one of `dayId`, `stopId`,
+     * `routeId`, none for the trip itself; its `lngLat`, where it stands on the map, null for nowhere.
+     */
     public function update(Request $request, Response $response, array $args): Response
     {
-        $text = Json::field($request, 'text');
-        if (!is_string($text) || mb_strlen($text) > Entries::MAX_TEXT) {
+        $body = (array) $request->getParsedBody();
+        $text = $body['text'] ?? null;
+        if (isset($body['text']) && (!is_string($text) || mb_strlen($text) > Entries::MAX_TEXT)) {
             return Json::error($response, 422, 'The text must be a string of up to 20000 characters.');
         }
-        $updated = $this->entries->updateText($this->currentUser->get()->id, (int) $args['id'], (int) $args['entry'], trim($text));
-        return $updated ? $response->withStatus(204) : Json::error($response, 404, 'Entry not found.');
+        $link = $body['link'] ?? null;
+        if ($link !== null && (!is_array($link) || count($link) > 1 || array_diff_key($link, Entries::PARTS) !== [] || array_filter($link, is_string(...)) !== $link)) {
+            return Json::error($response, 422, 'An entry can belong to only one item.');
+        }
+        $lngLat = $body['lngLat'] ?? null;
+        if ($lngLat !== null && !self::isPosition($lngLat)) {
+            return Json::error($response, 422, 'Invalid position.');
+        }
+        [$userId, $tripId, $entryId] = [$this->currentUser->get()->id, (int) $args['id'], (int) $args['entry']];
+        $found = $this->entries->find($userId, $tripId, $entryId) !== null
+            && ($text === null || $this->entries->updateText($userId, $tripId, $entryId, trim($text)))
+            && ($link === null || $this->entries->relink($userId, $tripId, $entryId, $link))
+            && (!array_key_exists('lngLat', $body) || $this->entries->place($userId, $tripId, $entryId, $lngLat));
+        return $found ? $response->withStatus(204) : Json::error($response, 404, 'Entry or item not found.');
+    }
+
+    /** Puts the entries `ids` in that order in the chapter of the day `dayId`, or with null of the trip itself. */
+    public function order(Request $request, Response $response, array $args): Response
+    {
+        $dayId = Json::field($request, 'dayId');
+        $ids = Json::field($request, 'ids');
+        if (($dayId !== null && !is_string($dayId)) || !is_array($ids) || !array_is_list($ids) || array_filter($ids, is_int(...)) !== $ids) {
+            return Json::error($response, 422, 'The order names a day and the ids of entries.');
+        }
+        $ordered = $this->entries->reorder($this->currentUser->get()->id, (int) $args['id'], $dayId, $ids);
+        return $ordered ? $response->withStatus(204) : Json::error($response, 404, 'Trip, day or entry not found.');
     }
 
     public function delete(Request $request, Response $response, array $args): Response
@@ -119,10 +149,19 @@ final class JournalController
         return [$lng, $lat];
     }
 
-    /** What the entry keeps about the upload, with a photo's EXIF time and position, read from the upload where it still lies. */
+    /** Whether a value of a JSON body is a position: longitude and latitude as numbers within their ranges. */
+    private static function isPosition(mixed $value): bool
+    {
+        return is_array($value) && array_is_list($value) && count($value) === 2
+            && (is_int($value[0]) || is_float($value[0])) && (is_int($value[1]) || is_float($value[1]))
+            && abs($value[0]) <= 180 && abs($value[1]) <= 90;
+    }
+
+    /** What the entry keeps about the upload, with a photo's EXIF time and position and an image's size, read from the upload where it still lies. */
     private static function fileOf(UploadedFileInterface $upload): array
     {
         $file = FileStore::describe($upload);
-        return [...$file, ...Exif::read((string) $upload->getStream()->getMetadata('uri'), $file['mediaType'])];
+        $path = (string) $upload->getStream()->getMetadata('uri');
+        return [...$file, ...Exif::read($path, $file['mediaType']), 'pixels' => FileStore::pixelsOf($path, $file['mediaType'])];
     }
 }

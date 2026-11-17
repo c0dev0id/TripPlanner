@@ -724,5 +724,8 @@
   "Open {what}": "{what} öffnen",
   "Show the distance to the nearest route or track": "Entfernung zur nächsten Route oder zum nächsten Track anzeigen",
   "Hide the distance to the nearest route or track": "Entfernung zur nächsten Route oder zum nächsten Track ausblenden",
-  "Drag to measure from another place": "Ziehen, um von einem anderen Ort aus zu messen"
+  "Drag to measure from another place": "Ziehen, um von einem anderen Ort aus zu messen",
+  "Entry or item not found.": "Eintrag oder Element nicht gefunden.",
+  "The order names a day and the ids of entries.": "Die Reihenfolge nennt einen Tag und die Kennungen von Einträgen.",
+  "Trip, day or entry not found.": "Tour, Tag oder Eintrag nicht gefunden."
 }

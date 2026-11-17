@@ -148,8 +148,11 @@ export const entryFileUrl = (base: string, entryId: number): string => `${base}/
 
 export const entryPreviewUrl = (base: string, entryId: number): string => `${base}/entries/${entryId}/preview`;
 
-/** Adds a journal entry on the trip or on the part the target names, with a file where given, at a spot on the map where given; an imported one as written at `createdAt`. */
-export function addEntry(tripId: number, target: EntryTarget, text: string, file: File | undefined, spot: LngLat | undefined, createdAt?: string): Promise<Entry> {
+/**
+ * Adds a journal entry on the trip or on the part the target names, with a file where given, at a spot on the map where given;
+ * an imported one as written at `createdAt`, and with `byDate` a photo on the trip on the day of its date.
+ */
+export function addEntry(tripId: number, target: EntryTarget, text: string, file: File | undefined, spot: LngLat | undefined, as: { createdAt?: string; byDate?: boolean } = {}): Promise<Entry> {
   const form = new FormData();
   form.set('text', text);
   for (const [key, value] of Object.entries(target)) form.set(key, value);
@@ -158,7 +161,8 @@ export function addEntry(tripId: number, target: EntryTarget, text: string, file
     form.set('lng', String(spot[0]));
     form.set('lat', String(spot[1]));
   }
-  if (createdAt) form.set('createdAt', createdAt);
+  if (as.createdAt) form.set('createdAt', as.createdAt);
+  if (as.byDate) form.set('byDate', '1');
   return request('POST', `${tripApi(tripId)}/entries`, form);
 }
 

@@ -36,8 +36,14 @@ CREATE TABLE IF NOT EXISTS password_resets (
     used_at TEXT
 );
 
--- The journal: notes and files on the trip, a day, a stop or a route; one whose part goes
--- stays with the trip. A photo's time and position come from its EXIF data.
+-- The journal: notes and files on the trip, a day, a stop or a route. It reads as one
+-- document: the entries on the trip first, then a chapter for each day with the entries
+-- on the day, its routes and its stops, in each by `position` and then by id. An entry
+-- whose route or stop goes stays with their day; one whose day goes stays with the trip.
+-- A photo's time and position come from its EXIF data: `taken_lng` and `taken_lat` are
+-- where it was taken, `lng` and `lat` where the entry stands on the map, which starts
+-- there, may be set by hand and is null for one that is not on the map. `width` and
+-- `height` are an image's size in pixels, as it is seen.
 -- A day's additional media are kept here too, as entries of their own kind: a file, or a
 -- link by its address, named by `text`; one whose day goes is removed at the next save.
 CREATE TABLE IF NOT EXISTS entries (
@@ -56,6 +62,11 @@ CREATE TABLE IF NOT EXISTS entries (
     created_at TEXT NOT NULL,
     kind TEXT NOT NULL DEFAULT 'journal' CHECK (kind IN ('journal', 'media')),
     url TEXT,
+    position INTEGER NOT NULL DEFAULT 0,
+    width INTEGER,
+    height INTEGER,
+    taken_lng REAL,
+    taken_lat REAL,
     CHECK ((day_id IS NOT NULL) + (stop_id IS NOT NULL) + (route_id IS NOT NULL) <= 1)
 );
 CREATE INDEX IF NOT EXISTS entries_trip ON entries(trip_id, id);

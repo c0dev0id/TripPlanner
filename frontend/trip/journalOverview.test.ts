@@ -13,9 +13,11 @@ const entry = (id: number, on: Partial<Pick<Entry, 'dayId' | 'stopId' | 'routeId
   file: null,
   takenAt: null,
   lngLat: null,
+  takenLngLat: null,
   createdAt: '2026-10-27T10:00:00Z',
   kind: 'journal',
   url: null,
+  position: 0,
   ...on,
 });
 

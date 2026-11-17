@@ -50,6 +50,21 @@ final class FileStore
         ];
     }
 
+    /**
+     * The size an image at the path is seen at, in pixels, turned as its EXIF orientation
+     * says; null for what is no image read here.
+     *
+     * @return ?array{0: int, 1: int}
+     */
+    public static function pixelsOf(string $path, string $mediaType): ?array
+    {
+        $size = in_array($mediaType, self::PREVIEWABLE, true) ? @getimagesize($path) : false;
+        if ($size === false) {
+            return null;
+        }
+        return $mediaType === 'image/jpeg' && self::orientation($path) >= 5 ? [$size[1], $size[0]] : [$size[0], $size[1]];
+    }
+
     /** Why an upload cannot be taken, in the words the API answers with; null for one that can, and for none. */
     public static function problemOf(mixed $upload): ?string
     {

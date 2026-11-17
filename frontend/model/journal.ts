@@ -8,6 +8,9 @@ export interface EntryFile {
   size: number;
   /** Whether the server has a preview of it: a JPEG, PNG or WebP; a HEIC or a document is offered by name. */
   image: boolean;
+  /** An image's size in pixels, as it is seen. */
+  width: number | null;
+  height: number | null;
 }
 
 export interface Entry {
@@ -21,13 +24,17 @@ export interface Entry {
   file: EntryFile | null;
   /** When a photo was taken, as its camera wrote it: YYYY-MM-DDTHH:MM:SS without a zone. */
   takenAt: string | null;
-  /** Where the entry stands on the map: where a photo was taken by its EXIF data, else where it was put. */
+  /** Where the entry stands on the map: where its photo was taken unless it was put elsewhere; none for one that is not on the map. */
   lngLat: LngLat | null;
+  /** Where its photo was taken, by its EXIF data. */
+  takenLngLat: LngLat | null;
   createdAt: string;
   /** An entry of the journal, or one of a day's additional media: a file or a link, named by its text. */
   kind: 'journal' | 'media';
   /** The address of a link among a day's media; none for anything else. */
   url: string | null;
+  /** Its place among the entries of its chapter: the trip's own, or a day's with its routes and stops. */
+  position: number;
 }
 
 /** What an entry is on: one part by its id, or the trip for an empty target. */

@@ -39,7 +39,7 @@ export function closeJournal(): void {
 
 /** Adds an entry and returns it as the server placed it: a photo with a time goes to the day of that date, one with a position stands there. */
 export async function addEntry(target: EntryTarget, text: string, file: File | undefined, spot: LngLat | undefined): Promise<Entry> {
-  const entry = await postEntry(openTripId()!, target, text, file, spot);
+  const entry = await postEntry(openTripId()!, target, text, file, spot, { byDate: true });
   mutate((list = []) => [...list, entry]);
   return entry;
 }

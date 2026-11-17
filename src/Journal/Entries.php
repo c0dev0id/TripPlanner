@@ -6,6 +6,7 @@ namespace Planner\Journal;
 
 use DateTimeImmutable;
 use PDO;
+use Planner\Database;
 use Planner\Timestamp;
 
 /**
@@ -29,7 +30,7 @@ final class Entries
     {
     }
 
-    /** @return ?Entry[] the trip's entries of the kind, oldest first; null when the user has no such trip */
+    /** @return ?Entry[] the trip's entries of the kind, in the order they stand in their chapters; null when the user has no such trip */
     public function listFor(int $userId, int $tripId, string $kind = self::JOURNAL): ?array
     {
         return $this->owns($userId, $tripId) ? $this->list('e.trip_id = ? AND e.kind = ?', [$tripId, $kind]) : null;
@@ -56,15 +57,16 @@ final class Entries
 
     /**
      * Adds an entry to the trip, on the part `$target` names (one of PARTS' keys, an id of
-     * the trip's) or on the trip itself; a photo with a time and no part goes to the day of
-     * that date. The entry stands where its photo was taken, else at `$spot` where given.
-     * Null when the user has no such trip or part.
+     * the trip's) or on the trip itself, after every entry the trip has; with `$byDate` a
+     * photo with a time and no part goes to the day of that date. The entry stands where
+     * its photo was taken, else at `$spot` where given. Null when the user has no such
+     * trip or part.
      *
      * @param array{dayId?: string, stopId?: string, routeId?: string} $target
-     * @param ?array{name: string, mediaType: string, size: int, takenAt: ?string, lngLat: ?array{0: float, 1: float}} $file
+     * @param ?array{name: string, mediaType: string, size: int, takenAt: ?string, lngLat: ?array{0: float, 1: float}, pixels: ?array{0: int, 1: int}} $file
      * @param ?array{0: float, 1: float} $spot
      */
-    public function add(int $userId, int $tripId, array $target, string $text, ?array $file, DateTimeImmutable $now, ?array $spot = null): ?Entry
+    public function add(int $userId, int $tripId, array $target, string $text, ?array $file, DateTimeImmutable $now, ?array $spot = null, bool $byDate = false): ?Entry
     {
         if (!$this->owns($userId, $tripId)) {
             return null;
@@ -75,18 +77,19 @@ final class Entries
             }
         }
         $dayId = $target['dayId'] ?? null;
-        if ($target === [] && isset($file['takenAt'])) {
+        if ($byDate && $target === [] && isset($file['takenAt'])) {
             $dayId = $this->dayOnDate($tripId, substr($file['takenAt'], 0, 10));
         }
-        $lngLat = $file['lngLat'] ?? $spot;
+        $taken = $file['lngLat'] ?? null;
+        $lngLat = $taken ?? $spot;
         $statement = $this->db->prepare(
-            'INSERT INTO entries (trip_id, day_id, stop_id, route_id, text, file_name, media_type, size, taken_at, lng, lat, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO entries (trip_id, day_id, stop_id, route_id, text, file_name, media_type, size, taken_at, lng, lat, created_at, position, width, height, taken_lng, taken_lat)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         );
         $statement->execute([
             $tripId, $dayId, $target['stopId'] ?? null, $target['routeId'] ?? null, $text,
             $file['name'] ?? null, $file['mediaType'] ?? null, $file['size'] ?? null, $file['takenAt'] ?? null, $lngLat[0] ?? null, $lngLat[1] ?? null,
-            Timestamp::of($now),
+            Timestamp::of($now), $this->nextPosition($tripId), $file['pixels'][0] ?? null, $file['pixels'][1] ?? null, $taken[0] ?? null, $taken[1] ?? null,
         ]);
         return $this->one('e.id = ?', [(int) $this->db->lastInsertId()]);
     }
@@ -98,6 +101,77 @@ final class Entries
             return false;
         }
         $this->db->prepare('UPDATE entries SET text = ? WHERE id = ?')->execute([$text, $entryId]);
+        return true;
+    }
+
+    /**
+     * Puts journal entries in the order given in a chapter of the trip: a day's, or with
+     * null the trip's own. An entry of another chapter joins this one, on the day or on
+     * the trip itself. False when the user has no such trip, day or entries.
+     *
+     * @param int[] $ids
+     */
+    public function reorder(int $userId, int $tripId, ?string $dayId, array $ids): bool
+    {
+        if (!$this->owns($userId, $tripId) || ($dayId !== null && !$this->partOf($tripId, 'days', $dayId))) {
+            return false;
+        }
+        $chapters = $this->chaptersOf($tripId, $ids);
+        if (count($chapters) !== count($ids)) {
+            return false;
+        }
+        $place = $this->db->prepare('UPDATE entries SET position = ? WHERE id = ?');
+        $join = $this->db->prepare('UPDATE entries SET day_id = ?, stop_id = NULL, route_id = NULL, position = ? WHERE id = ?');
+        $this->db->beginTransaction();
+        foreach ($ids as $position => $id) {
+            if ($chapters[$id] === $dayId) {
+                $place->execute([$position, $id]);
+            } else {
+                $join->execute([$dayId, $position, $id]);
+            }
+        }
+        $this->db->commit();
+        return true;
+    }
+
+    /**
+     * Links a journal entry to another part of its trip (one of PARTS' keys), or with no
+     * part to the trip itself. In another chapter it stands after every entry the trip
+     * has. False when the user has no such entry or part.
+     *
+     * @param array{dayId?: string, stopId?: string, routeId?: string} $target
+     */
+    public function relink(int $userId, int $tripId, int $entryId, array $target): bool
+    {
+        if ($this->find($userId, $tripId, $entryId) === null) {
+            return false;
+        }
+        foreach (self::PARTS as $key => $table) {
+            if (isset($target[$key]) && !$this->partOf($tripId, $table, $target[$key])) {
+                return false;
+            }
+        }
+        $chapter = $this->chaptersOf($tripId, [$entryId]);
+        $this->db->prepare('UPDATE entries SET day_id = ?, stop_id = ?, route_id = ? WHERE id = ?')
+            ->execute([$target['dayId'] ?? null, $target['stopId'] ?? null, $target['routeId'] ?? null, $entryId]);
+        if ($this->chaptersOf($tripId, [$entryId]) !== $chapter) {
+            $this->db->prepare('UPDATE entries SET position = ? WHERE id = ?')->execute([$this->nextPosition($tripId), $entryId]);
+        }
+        return true;
+    }
+
+    /**
+     * Stands a journal entry at a place on the map, or with null takes it off the map.
+     * False when the user has no such entry.
+     *
+     * @param ?array{0: float, 1: float} $lngLat
+     */
+    public function place(int $userId, int $tripId, int $entryId, ?array $lngLat): bool
+    {
+        if ($this->find($userId, $tripId, $entryId) === null) {
+            return false;
+        }
+        $this->db->prepare('UPDATE entries SET lng = ?, lat = ? WHERE id = ?')->execute([$lngLat[0] ?? null, $lngLat[1] ?? null, $entryId]);
         return true;
     }
 
@@ -200,7 +274,7 @@ final class Entries
     /** @return Entry[] */
     private function list(string $where, array $params): array
     {
-        $statement = $this->db->prepare(self::SELECT . "$where ORDER BY e.id");
+        $statement = $this->db->prepare(self::SELECT . "$where ORDER BY e.position, e.id");
         $statement->execute($params);
         return array_map(Entry::fromRow(...), $statement->fetchAll());
     }
@@ -248,6 +322,32 @@ final class Entries
         $statement = $this->db->prepare("SELECT 1 FROM $table WHERE id = ? AND $scope");
         $statement->execute([$id, $tripId]);
         return $statement->fetchColumn() !== false;
+    }
+
+    /** The place after every entry the trip has. */
+    private function nextPosition(int $tripId): int
+    {
+        return (int) $this->column('SELECT COALESCE(MAX(position), -1) + 1 FROM entries WHERE trip_id = ?', [$tripId])[0];
+    }
+
+    /**
+     * The chapter each of the trip's journal entries named stands in: the day it is on, or
+     * that its route or stop is on; null for the trip's own.
+     *
+     * @param int[] $ids
+     * @return array<int, ?string>
+     */
+    private function chaptersOf(int $tripId, array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+        $statement = $this->db->prepare(
+            'SELECT e.id, COALESCE(e.day_id, r.day_id, s.day_id) FROM entries e LEFT JOIN routes r ON r.id = e.route_id LEFT JOIN stops s ON s.id = e.stop_id
+             WHERE e.trip_id = ? AND e.kind = ? AND e.id IN (' . Database::placeholders($ids) . ')',
+        );
+        $statement->execute([$tripId, self::JOURNAL, ...$ids]);
+        return $statement->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
     private function dayOnDate(int $tripId, string $date): ?string

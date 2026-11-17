@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { Entry } from './journal';
 import { mediaDetail, mediaName, mediaOpens, shortAddress } from './media';
 
-const entry = (over: Partial<Entry>): Entry => ({ id: 1, tripId: 1, dayId: 'd', stopId: null, routeId: null, text: '', file: null, takenAt: null, lngLat: null, createdAt: '', kind: 'media', url: null, ...over });
-const file = (name: string, mediaType: string, image = false) => ({ name, mediaType, size: 2_400_000, image });
+const entry = (over: Partial<Entry>): Entry => ({ id: 1, tripId: 1, dayId: 'd', stopId: null, routeId: null, text: '', file: null, takenAt: null, lngLat: null, takenLngLat: null, createdAt: '', kind: 'media', url: null, position: 0, ...over });
+const file = (name: string, mediaType: string, image = false) => ({ name, mediaType, size: 2_400_000, image, width: null, height: null });
 
 describe('a day\'s media', () => {
   it('are called by the name given, else by the file, else by the address', () => {

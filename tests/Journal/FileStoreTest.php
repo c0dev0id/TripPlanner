@@ -93,6 +93,21 @@ final class FileStoreTest extends TestCase
         unlink((string) $upload->getStream()->getMetadata('uri'));
     }
 
+    public function testMeasuresAnImageAsItIsSeen(): void
+    {
+        $path = tempnam(sys_get_temp_dir(), 'image');
+        file_put_contents($path, self::jpeg(640, 480));
+        self::assertSame([640, 480], FileStore::pixelsOf($path, 'image/jpeg'));
+        // The same picture with an EXIF block that says it is to be turned a quarter.
+        $exif = "Exif\0\0MM\0*\0\0\0\x08\0\x01\x01\x12\0\x03\0\0\0\x01\0\x06\0\0\0\0\0\0";
+        file_put_contents($path, "\xFF\xD8\xFF\xE1" . pack('n', strlen($exif) + 2) . $exif . substr(self::jpeg(640, 480), 2));
+        self::assertSame([480, 640], FileStore::pixelsOf($path, 'image/jpeg'));
+        self::assertNull(FileStore::pixelsOf($path, 'application/pdf'));
+        file_put_contents($path, 'no image');
+        self::assertNull(FileStore::pixelsOf($path, 'image/jpeg'));
+        unlink($path);
+    }
+
     private function upload(string $content): UploadedFile
     {
         $path = tempnam(sys_get_temp_dir(), 'upload');

@@ -12,12 +12,14 @@ const entry = (id: number, on: Partial<Pick<Entry, 'dayId' | 'stopId' | 'routeId
   file: null,
   takenAt: null,
   lngLat: null,
+  takenLngLat: null,
   createdAt: '2026-10-27T10:00:00Z',
   kind: 'journal',
   url: null,
+  position: 0,
   ...on,
 });
-const photo = { name: 'a.jpg', mediaType: 'image/jpeg', size: 10, image: true };
+const photo = { name: 'a.jpg', mediaType: 'image/jpeg', size: 10, image: true, width: null, height: null };
 const day: Day = { id: 'd1', name: '', date: null, notes: '', routes: [{ id: 'r1', name: '', kind: 'routed', profile: 'motorcycle', highways: 'allow', optional: false, color: null, points: [], legs: {} }], stops: [] };
 
 describe('the journal', () => {

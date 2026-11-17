@@ -47,7 +47,10 @@ final class EntriesTest extends TestCase
         $note = $this->entries->add($this->userId, $this->tripId, [], 'Packed the bags.', null, $this->now);
         $photo = $this->entries->add($this->userId, $this->tripId, ['stopId' => 's2'], '', self::PHOTO, $this->now);
         self::assertSame([null, null, null, 'Packed the bags.', null], [$note->dayId, $note->stopId, $note->routeId, $note->text, $note->file]);
-        self::assertSame(['s2', ['name' => 'IMG_1.jpg', 'mediaType' => 'image/jpeg', 'size' => 1234, 'image' => true]], [$photo->stopId, $photo->file]);
+        self::assertSame(['s2', ['name' => 'IMG_1.jpg', 'mediaType' => 'image/jpeg', 'size' => 1234, 'image' => true, 'width' => null, 'height' => null]], [$photo->stopId, $photo->file]);
+        $measured = $this->entries->add($this->userId, $this->tripId, [], '', ['pixels' => [4000, 3000]] + self::PHOTO, $this->now);
+        self::assertSame([4000, 3000], [$measured->file['width'], $measured->file['height']]);
+        $this->entries->delete($this->userId, $this->tripId, $measured->id);
         self::assertSame([$note->id, $photo->id], array_map(fn ($e) => $e->id, $this->entries->listFor($this->userId, $this->tripId)));
         $heic = $this->entries->add($this->userId, $this->tripId, [], '', ['mediaType' => 'image/heic', 'name' => 'IMG_2.heic'] + self::PHOTO, $this->now);
         self::assertFalse($heic->file['image']);
@@ -55,17 +58,18 @@ final class EntriesTest extends TestCase
         self::assertNull($this->entries->add($this->otherUserId, $this->tripId, [], 'Mine', null, $this->now));
         self::assertNull($this->entries->add($this->userId, $this->tripId, ['dayId' => 'nope'], 'Nowhere', null, $this->now));
         self::assertNull($this->entries->find($this->userId, $this->tripId + 1, $note->id));
-        self::assertSame('{"id":' . $note->id . ',"tripId":' . $this->tripId . ',"dayId":null,"stopId":null,"routeId":null,"text":"Packed the bags.","file":null,"takenAt":null,"lngLat":null,"createdAt":"2026-10-27T10:00:00Z","kind":"journal","url":null}', json_encode($note));
+        self::assertSame('{"id":' . $note->id . ',"tripId":' . $this->tripId . ',"dayId":null,"stopId":null,"routeId":null,"text":"Packed the bags.","file":null,"takenAt":null,"lngLat":null,"takenLngLat":null,"createdAt":"2026-10-27T10:00:00Z","kind":"journal","url":null,"position":0}', json_encode($note));
     }
 
-    public function testPlacesAPhotoOnTheDayOfItsDate(): void
+    public function testPlacesAPhotoOnTheDayOfItsDateWhereAsked(): void
     {
         $taken = ['takenAt' => '2027-06-12T14:30:00', 'lngLat' => [11.45, 47.8]] + self::PHOTO;
-        $placed = $this->entries->add($this->userId, $this->tripId, [], '', $taken, $this->now);
+        $placed = $this->entries->add($this->userId, $this->tripId, [], '', $taken, $this->now, null, true);
         self::assertSame(['day1', '2027-06-12T14:30:00', [11.45, 47.8]], [$placed->dayId, $placed->takenAt, $placed->lngLat]);
+        self::assertNull($this->entries->add($this->userId, $this->tripId, [], '', $taken, $this->now)->dayId);
         $otherDay = ['takenAt' => '2027-06-20T09:00:00'] + self::PHOTO;
-        self::assertNull($this->entries->add($this->userId, $this->tripId, [], '', $otherDay, $this->now)->dayId);
-        $onStop = $this->entries->add($this->userId, $this->tripId, ['stopId' => 's1'], '', $taken, $this->now);
+        self::assertNull($this->entries->add($this->userId, $this->tripId, [], '', $otherDay, $this->now, null, true)->dayId);
+        $onStop = $this->entries->add($this->userId, $this->tripId, ['stopId' => 's1'], '', $taken, $this->now, null, true);
         self::assertSame(['s1', null], [$onStop->stopId, $onStop->dayId]);
     }
 
@@ -74,8 +78,60 @@ final class EntriesTest extends TestCase
         $note = $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], 'Viewpoint', null, $this->now, [10.5, 47.5]);
         self::assertSame([10.5, 47.5], $note->lngLat);
         $located = ['lngLat' => [11.45, 47.8]] + self::PHOTO;
-        self::assertSame([11.45, 47.8], $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], '', $located, $this->now, [10.5, 47.5])->lngLat);
-        self::assertSame([10.5, 47.5], $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], '', self::PHOTO, $this->now, [10.5, 47.5])->lngLat);
+        $photo = $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], '', $located, $this->now, [10.5, 47.5]);
+        self::assertSame([[11.45, 47.8], [11.45, 47.8]], [$photo->lngLat, $photo->takenLngLat]);
+        $put = $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], '', self::PHOTO, $this->now, [10.5, 47.5]);
+        self::assertSame([[10.5, 47.5], null], [$put->lngLat, $put->takenLngLat]);
+    }
+
+    public function testStandsWhereItIsPutOrNowhereAndKeepsWhereItWasTaken(): void
+    {
+        $photo = $this->entries->add($this->userId, $this->tripId, ['dayId' => 'day1'], '', ['lngLat' => [11.45, 47.8]] + self::PHOTO, $this->now);
+        self::assertFalse($this->entries->place($this->otherUserId, $this->tripId, $photo->id, [10.5, 47.5]));
+        self::assertTrue($this->entries->place($this->userId, $this->tripId, $photo->id, [10.5, 47.5]));
+        $moved = $this->entries->find($this->userId, $this->tripId, $photo->id);
+        self::assertSame([[10.5, 47.5], [11.45, 47.8]], [$moved->lngLat, $moved->takenLngLat]);
+        self::assertTrue($this->entries->place($this->userId, $this->tripId, $photo->id, null));
+        $hidden = $this->entries->find($this->userId, $this->tripId, $photo->id);
+        self::assertSame([null, [11.45, 47.8]], [$hidden->lngLat, $hidden->takenLngLat]);
+    }
+
+    public function testOrdersAChapterAndTakesInEntriesOfOthers(): void
+    {
+        $add = fn (array $target, string $text) => $this->entries->add($this->userId, $this->tripId, $target, $text, null, $this->now)->id;
+        [$onDay, $onRoute, $onTrip, $onStop] = [$add(['dayId' => 'day1'], 'Day'), $add(['routeId' => 'r1'], 'Route'), $add([], 'Trip'), $add(['stopId' => 's1'], 'Stop')];
+        $late = $add([], 'Late');
+        $listed = fn () => array_map(fn ($e) => [$e->id, $e->dayId, $e->routeId, $e->stopId], $this->entries->listFor($this->userId, $this->tripId));
+        self::assertSame([$onDay, $onRoute, $onTrip, $onStop, $late], array_column($listed(), 0));
+
+        self::assertTrue($this->entries->reorder($this->userId, $this->tripId, 'day1', [$onStop, $onRoute, $onDay]));
+        self::assertSame([[$onStop, null, null, 's1'], [$onRoute, null, 'r1', null], [$onDay, 'day1', null, null], [$onTrip, null, null, null], [$late, null, null, null]], $listed());
+        self::assertTrue($this->entries->reorder($this->userId, $this->tripId, null, [$late, $onRoute, $onTrip]));
+        self::assertSame([[$onStop, null, null, 's1'], [$late, null, null, null], [$onRoute, null, null, null], [$onDay, 'day1', null, null], [$onTrip, null, null, null]], $listed());
+        self::assertTrue($this->entries->reorder($this->userId, $this->tripId, 'day1', [$onTrip, $onStop, $onDay]));
+        self::assertSame([[$onTrip, 'day1', null, null], [$late, null, null, null], [$onRoute, null, null, null], [$onStop, null, null, 's1'], [$onDay, 'day1', null, null]], $listed());
+
+        $media = $this->entries->addMedia($this->userId, $this->tripId, 'day1', 'Hotel', null, 'https://example.org/hotel', $this->now);
+        self::assertFalse($this->entries->reorder($this->userId, $this->tripId, 'day1', [$onDay, $media->id]));
+        self::assertFalse($this->entries->reorder($this->userId, $this->tripId, 'day1', [$onDay, $onDay]));
+        self::assertFalse($this->entries->reorder($this->userId, $this->tripId, 'nope', [$onDay]));
+        self::assertFalse($this->entries->reorder($this->otherUserId, $this->tripId, 'day1', [$onDay]));
+    }
+
+    public function testLinksAnEntryAnewAndMovesItToTheEndOfAnotherChapter(): void
+    {
+        $add = fn (array $target, string $text) => $this->entries->add($this->userId, $this->tripId, $target, $text, null, $this->now)->id;
+        [$first, $second, $onTrip] = [$add(['dayId' => 'day1'], 'First'), $add(['dayId' => 'day1'], 'Second'), $add([], 'Trip')];
+        $linked = fn (int $id) => (fn ($e) => [$e->dayId, $e->routeId, $e->stopId, $e->position])($this->entries->find($this->userId, $this->tripId, $id));
+        self::assertTrue($this->entries->relink($this->userId, $this->tripId, $first, ['routeId' => 'r1']));
+        self::assertSame([null, 'r1', null, 0], $linked($first));
+        self::assertTrue($this->entries->relink($this->userId, $this->tripId, $first, []));
+        self::assertSame([null, null, null, 3], $linked($first));
+        self::assertTrue($this->entries->relink($this->userId, $this->tripId, $onTrip, ['stopId' => 's2']));
+        self::assertSame([null, null, 's2', 4], $linked($onTrip));
+        self::assertFalse($this->entries->relink($this->userId, $this->tripId, $second, ['stopId' => 'nope']));
+        self::assertFalse($this->entries->relink($this->otherUserId, $this->tripId, $second, []));
+        self::assertSame(['day1', null, null, 1], $linked($second));
     }
 
     public function testRefusesAnEntryOnTwoParts(): void

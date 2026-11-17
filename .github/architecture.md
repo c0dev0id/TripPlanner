@@ -107,9 +107,10 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `GET /trips/{id}/share` | `{token}`: the token the trip's read-only page is public under, or null. |
 | `POST /trips/{id}/share` | Makes the page public under the trip's token, a new one where it has none; answers `{token}`. |
 | `DELETE /trips/{id}/share` | Takes the page off the public. |
-| `GET /trips/{id}/entries` | The trip's journal entries, oldest first: text, file (name, media type, size, whether an image), the part it is on, when and where a photo was taken. |
-| `POST /trips/{id}/entries` | Adds an entry from a multipart form: `text`, one of `dayId`, `stopId`, `routeId` (none for the trip), `file`. An import hands on `createdAt`, the time the entry was written. A photo's EXIF time and position are read; one with a time and no part goes to the day of that date. |
-| `PATCH /trips/{id}/entries/{entry}` | Replaces the entry's text from `{text}`. |
+| `GET /trips/{id}/entries` | The trip's journal entries by their `position`, which orders them within a chapter (the trip's own entries, or a day's with those on its routes and stops): text, file (name, media type, size, whether an image, an image's width and height), the part it is on, when and where a photo was taken (`takenLngLat`) and where the entry stands on the map (`lngLat`). |
+| `POST /trips/{id}/entries` | Adds an entry from a multipart form: `text`, one of `dayId`, `stopId`, `routeId` (none for the trip), `file`, `lng` and `lat` for a spot on the map. It stands after every entry the trip has. An import hands on `createdAt`, the time the entry was written. A photo's EXIF time and position and an image's size are read; with `byDate` a photo with a time and no part goes to the day of that date. |
+| `PATCH /trips/{id}/entries/{entry}` | Changes what the body names: `text`; `link`, an object with one of `dayId`, `stopId`, `routeId`, or an empty one for the trip itself; `lngLat`, where the entry stands on the map, or null to take it off the map. An entry linked into another chapter goes to its end. |
+| `PUT /trips/{id}/entries/order` | Puts the entries `{ids}` in that order in the chapter of the day `{dayId}`, or of the trip itself for null. An entry of another chapter joins this one: it is linked to the day, or to the trip. |
 | `DELETE /trips/{id}/entries/{entry}` | Deletes the entry with its file. |
 | `GET /trips/{id}/entries/{entry}/file` | The file as uploaded, shown in the browser where it can be, offered for download otherwise. |
 | `GET /trips/{id}/entries/{entry}/preview` | A small JPEG of an image entry. |
@@ -355,11 +356,16 @@ erDiagram
     string media_type
     int size
     datetime taken_at "a photo's EXIF time, as the camera wrote it"
-    float lng "a photo's EXIF position"
+    float taken_lng "a photo's EXIF position"
+    float taken_lat
+    float lng "where it stands on the map; null for one that is not on it"
     float lat
     datetime created_at
     string kind "journal, or media: a file or a link kept with a day, named by text"
     string url "a link's address; null for anything else"
+    int width "an image's size in pixels, as it is seen"
+    int height
+    int position "its place among the entries of its chapter"
   }
 ```
 

@@ -55,7 +55,7 @@ export async function importArchive(read: (path: string) => Promise<Blob | undef
       // An entry on a part that is not there goes on the trip.
       const key = (['dayId', 'stopId', 'routeId'] as const).find((k) => entry[k] !== null && ids.has(entry[k]));
       const target = (key ? { [key]: ids.get(entry[key]!) } : {}) as EntryTarget;
-      await addEntry(made.id, target, entry.text, file && new File([file], entry.fileName ?? 'file'), entry.lngLat ?? undefined, entry.createdAt);
+      await addEntry(made.id, target, entry.text, file && new File([file], entry.fileName ?? 'file'), entry.lngLat ?? undefined, { createdAt: entry.createdAt });
     } catch (error) {
       note(entry.fileName ?? entry.text.slice(0, 40), error);
     }
