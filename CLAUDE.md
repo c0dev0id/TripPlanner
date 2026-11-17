@@ -85,14 +85,29 @@ Trips, Places and Recordings. The folders of kind `collections` and `places` are
 tops of the Stash's and the Places' trees and are never rows; each tree keeps its own
 mark and selection while another tab is shown.
 
-The Trips' tree stops at the trip: a click on a trip opens it, the one trip document
-that is loaded, and shows it on the map; its days are listed in the pane beside the
-library (`trip/DayPane.tsx`, `trip/TripPanel.tsx`), one shown at a time, and the pane is
-opened by the button on the trip's row (`daysPaneOpen` in `state/trip.ts`, `paneShown`
-in `state/library.ts`). A list of places keeps its categories in the tree, the open
-list's from its document (`trip/CollectionPanel.tsx`), the others' from the outlines,
-and the pane shows the category picked. What is pinned stays on the map whatever trip
-is open (`state/pins.ts`): a pin keeps a copy of its line for while its trip is not.
+There are three panes beside the map, each in the one shell `ui/Pane.tsx`: the library,
+the pane of the open trip's days or of a list's category, and the pane of a day's
+contents (`trip/DayPane.tsx`, `trip/TripPanel.tsx`). Navigation is explicit: a click on
+a row selects and shows on the map, the pad at the end of a row opens the next pane and
+closes it, and nothing opens or folds by itself. Panes fold to a strip by hand
+(`state/panel.ts`); below 1200 px one pane is shown, the deepest that is open, and on a
+phone held upright it is a sheet under the map.
+
+The Trips' tree stops at the trip. A click on a trip looks at it: the trip is read and
+drawn on the map from a source of its own, not opened (`looked`, `lookAt` in
+`state/trip.ts`; `tripShown()` in `state/library.ts` is false meanwhile, which turns
+off what acts on the open trip on the map). The pad on its row opens it, the one trip
+document that is loaded, and a trip is open exactly while its pane stands
+(`paneShown` in `state/library.ts`); closing the pane closes the trip. A trip of one
+day has that day's contents as its pane (`onlyDay`, `detailDay`). The day whose
+contents are shown (`detailDayId`) need not be the selected day, which is the one on
+the map: actions reached from the contents take their day, actions of the map the
+selected one. A list of places opens by a click and keeps its categories in the tree,
+the open list's from its document (`trip/CollectionPanel.tsx`), the others' from the
+outlines; a category's pad opens the pane of its places. `App.tsx` opens, looks at and
+leaves trips, and does neither while a save has failed. What is pinned stays on the
+map whatever trip is open (`state/pins.ts`): a pin keeps a copy of its line for while
+its trip is not.
 
 `library/Library.tsx` holds the trees, their menus and keys; beside it are its cards
 (`cards.tsx`, `StashFileCard.tsx`), the Stash's verbs and menus (`stashMenu.ts`) and what

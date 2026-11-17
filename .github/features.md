@@ -18,7 +18,8 @@
   Trips, the open list in Places, the file shown in Stash, the ride opened and the
   rides pinned in Recordings; pinned routes and recordings stay on the map whatever tab is
   shown. Trips and Places each keep what they had open when the user left them by
-  their tab, the trip or list, its day, the route taken up and the recording opened,
+  their tab, the trip or list, its day, the route taken up, the day whose contents
+  were open and the recording opened,
   and open it again when the user comes back by their tab; only one trip is open at a
   time, so coming back may open it afresh. No tab has a heading over its tree.
   Under the tabs a line says what the view holds, with the button that folds its tree
@@ -48,24 +49,25 @@
   changed. The tree has one mark, on the row clicked last: a folder, a trip, a list or
   a category of the open list. A click on a folder marks it, which makes it the one
   new trips, imports and pasted ones go into, and unfolds it; marked and unfolded
-  already, it folds. A click on a trip opens and marks it, which shows it whole on the
-  map, and changes nothing else in the tree. A list of places is a folder of
+  already, it folds. A click on a trip marks it and shows it whole on the map without
+  opening it (see below), and changes nothing else in the tree. A list of places is a folder of
   categories and answers as a folder does: a click marks it and unfolds it, which
-  opens a list that was not open; a click on a category marks it and shows it in its
-  pane, a click on the list then gives the mark back to the list and closes the
+  opens a list that was not open; a click on a category marks it and shows it on the
+  map, a click on the list then gives the mark back to the list and closes the
   category, the next click folds the list, the one after unfolds it again. What folds
   takes what it holds with it: a folder its folders and lists, a list its category
   shown. The marked row is tinted, and a coloured strip runs down the left of it and
   of what is open besides: the folders around the mark and the top, and the open trip
   or list while the mark is elsewhere. A click on a category of any list opens that
-  list at the category; a category reads the same in every list, open or not. The
+  list at the category; a category reads the same in every list, open or not, and
+  ends in a pad that opens the pane of its places, and closes it. The
   button in the line under the tabs folds every folder and list of the tree shown
   away.
   The open trip stays in the tree, the others around it, so that another trip is one
   click away. Above the tree stands the search, and beside the trips' the duplicates
-  report's switch as an icon. A trip's row ends in a button that opens the pane of
-  its days, opening the trip first where another is open, and closes the pane again
-  where it shows that trip's. The open trip's menu has what only the
+  report's switch as an icon. A trip's row ends in a pad that opens the trip, with its
+  pane beside the library, and closes it again; its arrow points to the pane while
+  the trip is closed and back while it is open. The open trip's menu has what only the
   open trip has: Edit… in place of Rename…, Export GPX…, Journal…, Print, share… and
   Close, which leaves it saved; a list of places has Close alone.
 - A library of the user's trips in folders, which may hold folders: create, open, rename,
@@ -111,7 +113,8 @@
   each other. Copied days are pasted onto a trip from its menu, at its end, with their
   media and the rides they are on.
 - A trip of one day says the day's date and length on its row in place of the count
-  of its days, its pane opens with that day shown, and its Paste also takes what only
+  of its days, its pane is that day's contents under the trip's name, with the button
+  that adds a day (the list of the days comes with the second), and its Paste also takes what only
   a day takes (stops, media, recordings), into that day, while the trip is open.
 - Trips as a sequence of days; a day as one or more routes and its stops. A day is a
   card with its number and name over its date and length, and its menu (right-click or
@@ -195,18 +198,34 @@
   symbol; any other symbol is drawn as Garmin's picture on a sign, and a stop without
   one as a plain pin. The dialog offers our icons and, behind *More Garmin symbols…*, all
   of Garmin's with their pictures and a search.
-- A trip opens whole: every day's routes on the map with the stops as dots, no day
-  shown. Its pane lists its days under each other, each by its number and name over
-  its date and length, with the grip that reorders them, its journal and its menu. A
-  click on a day shows it: on the map, and in the pane with what it holds under its
-  row. One day is shown at a time; a click on the day shown closes it, and the whole
-  trip is on the map again. The pane's heading has the trip's name over the count of
-  its days and their length, the switch that shows the neighbouring days on the map,
-  and the button that adds a day. The pane stays open while another trip is opened and
-  shows that trip's days; it closes by its own button, by the button on the trip's
-  row, or when the trip is closed. Loading the page again brings it back.
-- Three panes on a wide screen: the library, the pane of the open trip's days or of
-  the category picked in a list, the map. A day shown lists its routes with profile, distance and the number
+- A click on a trip's row looks at it: the trip is read and drawn whole on the map,
+  its stops as dots, without being opened. Nothing of it can be edited there, and
+  the open trip stays open with its panes; a click in them, a day picked or a click
+  on the open trip's row gives the map back to it. While another trip is looked at,
+  the keys that undo, redo, cut, copy and paste in the open trip are off. A route
+  the search finds in a trip that is not open is looked at with its day; a ride's
+  suggested day likewise.
+- The pad on a trip's row opens it, and a trip is open for as long as its pane stands
+  beside the library: the pane's pad that closes it, the pad on the row and Close in
+  the row's menu all close the trip, saved. A trip that is closed stays on the map,
+  looked at. While a save fails, the trip is neither closed nor left for another, and
+  the failure is said over the map. The pane lists the days under each other, each
+  by its number and name over its date and length, with the grip that reorders them,
+  its journal, its menu and a pad. A click on a day shows it on the map; a click on
+  the day shown shows the whole trip again. The pad on a day's row opens a third
+  pane with what the day holds, and closes it; that pane keeps its day while another
+  is shown on the map, and a click in it shows its own day again. The pane's heading
+  has the trip's name over the count of its days and their length, the switch that
+  shows the neighbouring days on the map, and the button that adds a day.
+- Three panes on a wide screen beside the map: the library, the pane of the open
+  trip's days or of a list's category, and the pane of a day's contents. Nothing
+  opens or folds by itself: a row's click shows on the map, a row's pad opens the
+  next pane. Each pane has two pads at the top right: one folds it to a narrow strip
+  and stands at the same place on the strip, where it unfolds the pane again; the
+  other closes it, on the strip as well, and closing a trip's pane closes the day's
+  contents with it. The library has the fold alone. Any panes may be folded at once,
+  which is kept per browser; a pad that opens a pane unfolds it.
+  A day's contents list its routes with profile, distance and the number
   of stops on each, folded: a click on a route takes it up to be edited and unfolds
   its stops and route points in riding order with the distance from the day's start,
   and a click on the route being edited ends that and folds them away; a route unfolded
@@ -215,46 +234,30 @@
   beside it they stand. A click pans the map to the entry. A route point's row has the
   menu its marker has on the map: Convert to stop, the leg to it straight or routed,
   Remove point. Free stops farther away, or
-  of a day without a route, are listed on their own. The button with three lines folds the library away
-  to a strip, which leaves the map the room, and brings it back; it stands before the
-  tabs, in the panel's first row, and at the same spot at the head of the strip, so
-  that a second click where the pointer is brings the library back. Nothing stands
-  over the tabs: the account, with the way to sign out, is under the settings. The strip keeps the
-  open trip's days in reach: a numbered button each, in the colour its routes have
+  of a day without a route, are listed on their own. Nothing stands
+  over the tabs: the account, with the way to sign out, is under the settings. The
+  strip of a trip's folded pane keeps the
+  days in reach: a numbered button each, in the colour its routes have
   where each day has one, the day shown ringed; a click shows the day, or the whole
-  trip again where that day is shown. Of an open list of places it keeps the
+  trip again where that day is shown. Of a list of places it keeps the
   categories instead, each by its icon, or its dot where it has none. A button
   under the mouse says at once, in a card beside it, what is behind it: the day's
   number and name, its date and length and what it holds, a category's name and how
-  many places it has. The strip has
-  them only while the trip or list is the one shown: with another tab's things on the
-  map it holds the button alone. The pane folds the library away to its
-  strip as it opens, so that one pane at most stands beside the map, and the library
-  comes back when the pane closes. The button on a trip's row does so also where the
-  pane was open already, beside a library the user had brought back. That is "Fold automatically" in the menu of the
-  button with three lines (right-click or a long press), on unless it is turned off
-  there, kept per browser; while it is on, the button is drawn in the accent colour. Turned off,
-  the library stays as the user leaves it, beside the pane or folded, and turning it
-  on or off takes effect at once. Closed by its own button, the pane brings the library
-  back where it folds by itself, also where the user had folded it away before; a category closed by a click on its
-  ringed button in the strip leaves the library folded away, as a trip's day closed there leaves its pane open. On a screen without
-  room for three panes, narrower than 1200 px, the strip stands beside the pane,
-  and the library brought back by its button takes the pane's place until it is folded
-  again, a trip's pane is asked for by the button on its row or a category is picked
-  in it, which folds it away; the pane stays open
-  meanwhile, so that the tabs can be used and the pane comes back. On a phone the map is the page: the pane is a sheet under it, pulled
-  up to nearly the whole screen or down to its heading by its top edge, and folded down
-  by itself while a route is edited; a category's heading steps to the one before and after, its
-  name between the steps, since no strip is beside it; the library lies over everything and folds away,
-  when a trip's pane is asked for or a category is picked in it, to its button over the map, beside the open trip's name.
+  many places it has. On a screen narrower than 1200 px one pane stands beside the
+  map, the deepest that is open: a pad that opens a pane shows it in the place of
+  the one it stands in, and the pad that closes reads Back and leads to the pane
+  before, which from a trip's pane closes the trip. On a phone held upright that
+  pane is a sheet under the map, pulled by its top edge up to nearly the whole
+  screen or down to its head, and folded to its head by its pad, an arrow down;
+  held sideways, the pane stands beside the map and folds to the side. A category's
+  heading steps to the one before and after, its name between the steps.
   A trip is saved by itself and nothing says so while that goes well; a save that fails is
   said over the map. There the menus come up from the bottom edge, a submenu in the list's place under a
   row that leads back, and the route
   tools are one bar with captions: the tools, undo and done, the rest under More. On a
   touch screen every row with a menu has a button with three dots that opens it. A save
   that failed, or a trip changed elsewhere, is said over the map. The days before and after
-  the selected one are drawn dimmed on the map, switchable. The library and the pane
-  beside it are each as wide as their edge is dragged, kept per browser; a double click
+  the selected one are drawn dimmed on the map, switchable. Each pane is as wide as its edge is dragged, kept per browser; a double click
   on the edge puts the default back. The edge bears a handle at its middle, and under a
   finger it is taken in a wider strip than it shows.
 - A date per day; a new day after a dated one is dated the day after, and the library
@@ -445,10 +448,10 @@
   The map draws the selected routes and brings them into view, each in a colour of its
   own that its row shows as well, the first eight selected, so that they are compared at a
   glance. The menu (right-click or long press) opens the location of a single route: its
-  trip opens at its day, the library shows the trip's tab, unfolds down to the day,
-  marks it and brings it into view, and the report stays in the pane beside it; a
-  click on that day, or picking it in the day strip, gives the pane to the day. The menu also copies or deletes the
-  selected ones, as Ctrl+C and Delete do. A day shown, or a trip's pane asked for on its row, takes the pane for
+  trip opens at its day, the library shows the trip's tab and its folder, and the
+  report stays in the pane beside it; the pad on the trip's row gives the pane to
+  the trip. The menu also copies or deletes the
+  selected ones, as Ctrl+C and Delete do. A pad that opens a trip, a day's contents or a category's places takes the pane for
   itself as well. The report is made once and kept while the page stands: shown again,
   it is there at once, where it was scrolled to; what is deleted from it is taken out
   of it, its heading says when it was made, and the button there makes it afresh. A
@@ -579,8 +582,8 @@
   for the rides that are on no day, as a day's lookup does for one, and lists what it
   finds above the rides, those of a day's date first, then the nearest: the trip and
   its day over the date of the riding, its ride or how many files, its length and why
-  it was found. A click shows the rides on the map and the day in its pane with its
-  routes, without leaving the tab, and marks the suggestion for as long as its rides
+  it was found. A click shows the rides on the map and the day's routes with them,
+  looked at, without leaving the tab or opening its trip, and marks the suggestion for as long as its rides
   are the ones shown. The rides are drawn in red, narrow over the routes, so that a
   route shows on both sides of a ride that followed it and each shows alone where
   they part; a route in the palette's magenta, which reads as that red, is drawn in
@@ -769,7 +772,8 @@
   recordings and of the routes the duplicates report and a day's lookup draw alike.
 - A spot of the map opened in Google Maps, OpenStreetMap or Google Street View, from the map's menu.
 - Loading the page again comes back to where it was: the folder shown, the open trip, its
-  selected day, the route being edited and the map's view are kept in the address, which
+  selected day, the route being edited, the day whose contents are open, the trip
+  looked at and the map's view are kept in the address, which
   can be bookmarked or opened on another device.
 - English and German. The planner follows the browser's language, or the one chosen in
   its settings, kept in the browser; numbers, dates and distances

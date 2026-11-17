@@ -22,6 +22,9 @@ share work; sharing between users is on the way.
   to the route when wanted. Each stop keeps its Garmin symbol: twelve are drawn as our
   own icons, every other one as Garmin's picture. Address, contact, booking reference and
   notes go with it.
+- **Three panes, opened by hand** — the library, a trip's days and a day's contents
+  side by side. A click shows on the map, the arrow on a row opens the next pane, and
+  every pane folds to a strip. On a phone the pane is a sheet under the map.
 - **The day at a glance** — the panel lists a day's routes and its stops in riding order
   with the distance from the start; a click shows the stop on the map. The days before
   and after are drawn dimmed for orientation.
@@ -93,20 +96,21 @@ share work; sharing between users is on the way.
 
 1. Enter your e-mail address on the landing page; the link to set your password comes
    by mail.
-2. Sign in, name a new trip with the map icon on top, add a day and a route with the
-   plus on their headers.
+2. Sign in and make a trip: *New → Trip…* in the menu of the line under the library's
+   tabs. It opens with its first day; add a route with the plus on the day's *Planning*
+   header.
 3. Pick the *Point* tool and tap the map for the route's points; the road between them
    is routed. Pick the *Stop* tool and tap a point to make it a stop, or tap beside the
    route for a free stop. *Done* or Esc leaves the route; a click on a route's row
    selects it again, with its stops listed under it.
 4. Open a stop's details for its arrival time and pause; the first stop's time starts
    the day's timeline.
-5. The download icon on the trip's path heading exports GPX: pick the scope and the
-   form, download.
+5. *Export GPX…* in the open trip's menu exports it: pick the scope and the form,
+   download.
 6. After the ride, the journal icon on a day, a stop or a route takes the notes and
-   photos, *Add journal entry…* in the map's menu puts one at a spot, and the trip's journal
-   icon reads it all top down; its share icon opens the trip's page or shares it under a
-   link.
+   photos, *Add journal entry…* in the map's menu puts one at a spot, and *Journal…* in
+   the open trip's menu reads it all top down; *Print, share…* opens the trip's page or
+   shares it under a link.
 
 | Key or gesture | Does |
 |---|---|
@@ -114,6 +118,9 @@ share work; sharing between users is on the way.
 | Ctrl+X, Ctrl+C, Ctrl+V, Delete | Cut, copy, paste and delete what is selected, in the trip and in the library |
 | Esc | Closes a menu; back to the Hand; leaves the route |
 | Space, held | The Hand while a drawing tool is picked |
+| Click or tap a trip in the library | Shows it on the map without opening it |
+| The arrow at the end of a trip's, a day's or a category's row | Opens it in the next pane; again closes it |
+| The arrow and the X at the top right of a pane | Fold it to a strip; close it |
 | Click or tap a route on the map | Shows its day and takes the route up |
 | The pin on a route or a recording | Keeps it on the map while another is taken up |
 | Cmd/Ctrl-click two points on a ride opened in Recordings | Lists the rides over that section, figures for the section alone |
@@ -124,5 +131,5 @@ share work; sharing between users is on the way.
 | Drag a trip's or a folder's pad onto a folder or the card one level up | Move it, or the selected trips, there |
 | Drop GPX files or folders from the computer on a folder | Import them into it |
 | Enter in the search box | Find a place; Esc closes the list |
-| Drag the panel's edge | Set the panel's width; double-click for the default |
+| Drag a pane's edge | Set the pane's width; double-click for the default |
 | Drag a day's or a route's grip | Put it in another place; the arrow keys on the grip move it one place |

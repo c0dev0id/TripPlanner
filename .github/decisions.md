@@ -308,8 +308,8 @@ entries at the end of their section.
   heading above it scrolled out of reach. That heading, a title, the account and the
   sign-out, then went altogether: with it over the tabs the button stood 130 px lower
   unfolded than at the head of the strip, and slipped from under the pointer at every
-  fold. The bar is the panel's first row now, the strip's head as high as it
-  (`--library-bar-height`) with the button at the same offset, the account and the
+  fold. The bar is the head of the library's pane now, as every pane has one, the
+  strip's head as high as it (`--pane-head-height`) with the pad at the same offset, the account and the
   sign-out are under the settings, where the user's other things are, and the browser's
   tab says what the page is. The duplicates report's switch, which had a row of its
   own under the heading, stands beside the trips' search: it is a report of trips'
@@ -787,12 +787,10 @@ entries at the end of their section.
   choice is a preference of the browser, in localStorage, as the theme is: a matter of
   the device, not of the trip, and it costs no table. The list is fixed in code; adding
   a service of one's own is Layer Slayer's business, not this planner's. The widths
-  of the library and of the pane beside it, dragged at their edges, are kept the same
-  way: they depend on the screen. An edge is the left edge of the next column rather
-  than the right one of the column it sizes, because the panels scroll and would take
-  it along; it finds what it sizes as the column before its own, so the map's edge
-  sizes the pane while there is one and the library otherwise. The library may take
-  six tenths of the window and the pane four, so that both edges stay in reach.
+  of the panes, dragged at their edges, are kept the same way: they depend on the
+  screen. Each pane holds its own edge, outside of what scrolls in it, and is told
+  which pane it sizes; a pane is at least 280 px wide and at most what leaves the map
+  its minimum.
 - **Overlays are a fixed list, switched on per browser.** Roadworks and motorcycle
   closures lie between the base map and the trip. An overlay's sources and layers are in
   the style only while it is switched on, put there by the same style transform as the
@@ -933,16 +931,73 @@ entries at the end of their section.
   loaded they are folded by a click on the control's own button (`baseMap.ts`), which
   is what a user does and leaves the control in a state it knows; the button stays
   and unfolds them.
-- **The day's pane folds the library away.** A day open beside the library left the map
-  the room of neither, and the library is not needed while a day is worked on: the
-  strip keeps the days in reach. So the pane folds the library away as it opens. How
-  it is closed says what becomes of the library: the pane's own button always brings
-  it back, since whoever closes the day there is done with it and wants the list
-  again, whether the pane had folded the library or the user had; a click on the
-  day's ringed button in the strip closes the day and leaves the library folded, for
-  the map alone. The earlier rule, bring it back only where the pane had folded it,
-  made the same button do two things by a past the user does not see. The duplicates' report does not fold it on a wide screen, since it shows
-  in the library where a duplicate lies.
+- **Nothing opens or folds by itself.** Panes opened and folded as side effects: a day
+  picked opened its pane, the pane folded the library, a click on a trip loaded another
+  document, and a switch ("Fold automatically") said whether the library gave way.
+  Each rule was reasonable alone; together the screen changed in ways the click did
+  not name, and which trip was open could not be seen. Navigation is explicit now. A
+  click on a row selects it and shows it on the map. The pad at the end of a row opens
+  the next pane and closes it again, and its arrow says which. Every pane folds to a
+  strip by the pad in its head, which stands at the same place on the strip, and is
+  unfolded there; the folds are kept per browser, in any combination. A pad that
+  opens a pane unfolds it, since it was asked for. The switch, the button with three
+  lines and the sheet that folded down while a route was edited went with the rules
+  they served.
+- **A trip is open for as long as its pane stands.** "Open" had no place on the screen:
+  a click on a row opened a trip, and its pane was a second thing that could be open
+  or not. The pad on a trip's row now opens the trip, and its pane is there for as
+  long as it is open, folded or not; closing the pane (its own pad, the pad on the
+  row, Close in the row's menu) closes the trip, saved. No flag says whether the pane
+  is open: it follows from the open trip (`paneShown` in `state/library.ts`). A list
+  of places is the exception: it opens by a click on its row, as a folder unfolds,
+  and has a pane only for the category whose pad was pressed; closing that pane
+  leaves the list open. The duplicates report stands in the pane's place while it is
+  switched on; the trip stays open behind it, and its pad brings the pane back.
+- **A trip of one day has the day's contents as its pane.** Most trips are of one day,
+  and a list of one row before its contents is a click that says nothing. The day
+  whose contents are shown (`detailDay` in `state/trip.ts`) is the only day of such a
+  trip, and the contents take the trip's pane, its place, width and fold, under the
+  trip's name and with the button that adds a day; the pad that closes it closes the
+  trip. A second day brings the list of the days and an undo takes it away again:
+  the pane follows the document, and nothing remembers which form it had.
+- **A click on a trip looks at it.** Looking through trips opened each: the open one
+  was saved and replaced, its undo ended, and the pane changed under the pointer. A
+  click on a trip's row now reads the trip and draws it on the map without opening it
+  (`looked` in `state/trip.ts`; read in `App.tsx` beside `open`, counted with it, so
+  that the later of the two wins). The open trip stays open with its panes, and a
+  click in them, a day picked or a click on its row gives the map back to it. The
+  look is drawn from a map source of its own (`LOOK_SOURCE`) by the same pure
+  `routeFeatures`, under the open trip's layers: nothing of it is hovered, taken up
+  or edited, and no reader of the open trip's lines had to learn of a second trip.
+  What acts on the open trip on the map asks `tripShown()`, which is false during a
+  look as it is on another tab: the keys, the markers, the route tools. A trip that
+  is closed while it is on the map stays there as a look, at the view the map has, so
+  that closing changes the panes and nothing else. The look is read again when the
+  library lists its trip as changed, and ends when it is listed no more. It costs a
+  request for each row clicked, as opening did.
+- **The mark is in the open trip, on the trip looked at, or on a folder.** The tree has
+  one mark. A look takes it. A click in the open trip's pane ends the look and gives
+  the map back, but not the mark, which a day takes when it is picked: a day's row
+  shows the whole trip again when it is clicked while marked, and a click that meant
+  "back to this trip" must not do that to the day it lands on. A folder clicked takes
+  the mark and leaves on the map what is there.
+- **The pane of a day's contents has a day of its own.** The selected day is the one on
+  the map, where it is edited; the day whose contents are shown (`detailDayId`) is
+  the one whose pad was pressed. They are the same when the pad is pressed and may
+  part: another day is shown on the map while the contents of the first stay. A
+  click in the contents makes their day the selected one before the row clicked hears
+  of it (the pane's `onUse`, in the capture phase), so that a route taken up there is
+  of the day on the map. What the contents' menus and buttons do takes its day as an
+  argument or finds it from the stop or route (`addRoute`, `addParts`,
+  `convertPoint`, `updateStop`, `removeStop`), where it acted on the selected day
+  before; what is done on the map keeps to the selected day.
+- **A trip whose save fails is not left.** Leaving saved first and went on whatever came
+  of it, so a trip closed or replaced while the server could not be reached lost its
+  last edits; a pad that closes makes leaving frequent. `open` and `leave` in
+  `App.tsx` stop where the save failed: the trip stays open with the problem shown,
+  and what asked for the leave (a delete, a merge, a paste onto the trip, an import)
+  does not go on. A save the server refuses as stale does not stop them: there the
+  way on is to load the trip again, which is a leave.
 - **Trips are listed by name.** They were listed last changed first, which put the
   trip worked on at the top. But anything that changes a trip moves it: a route moved
   from one trip to another sent both to the top of a long folder, out of sight of
@@ -960,68 +1015,52 @@ entries at the end of their section.
   showed a level of days for it; hiding that level for them made a third kind of row.
   Keeping every unfolded trip loaded would have made the rows equal, at the price of
   several open documents, each with its own undo, autosave, journal, recordings and
-  selection, where one is edited at a time. The tree now stops at the trip. A click
-  on a trip opens it and shows it on the map, and the tree stays as it is; the days
-  stand under each other in the pane beside the library, where they were shown one at
-  a time before, and the one shown has what it holds under its row. One day is shown
-  at a time, since the map, the routing and the selection are of the day shown. The
-  pane is opened by a button on the trip's row, which is one click for an open trip
-  and for any other, and it is the user's: it stays open while trips are looked
-  through, showing each, and is not opened by a click on a row. A trip of one day
-  shows that day when its pane opens, so that it takes no click more than before. Its
+  selection, where one is edited at a time. The tree now stops at the trip, and the
+  days stand under each other in the trip's pane beside the library (see "A trip is
+  open for as long as its pane stands"). Its
   row still pastes into its day what a trip does not take; what a trip takes (days,
   routes, files) it takes as a trip, open or not, so that the same paste does not
   mean two things. A list of places keeps its categories in the tree: its one
   category says what its places are, and a category is picked there far more often
   than a day of a trip was.
-- **Whether the library folds by itself is the user's to say.** The pane folding the
-  library was a rule with a memory: unfolded by hand beside a day, the library folded
-  again at the next day picked after a trip was opened, and nothing on the screen said
-  why. The rule now has a name and a switch, "Fold automatically" in the menu of the
-  button that folds the library, on by default and marked by the button's colour:
-  one pane at most beside the map, the library gives way to a pane as it opens and
-  comes back as it closes. Off, nothing folds or unfolds it but the user, and the
-  pane's own button leaves it as it is. It is a preference of the browser, as the
-  folded state is: it goes with the screen. The switch was first greyed out below
-  1200 px, where the library and a pane take turns and the library was to fold either
-  way; on a tablet that made the switch look broken, and whoever turns it off there
-  means it: the library then stays, the day's pane behind it until the library is
-  folded by hand. Only a phone folds either way, since the library lies over the map
-  there. The mark was first a small A on the button, which the edge of the strip cut
-  off; the button's colour says the same and needs no room.
+- **The panes are columns of a flex row, and the map keeps a minimum.** The page was a
+  grid whose columns followed from what was open, with a rule for each combination of
+  library, pane and strip. Three panes that fold on their own are too many
+  combinations. Each pane now has its width as its basis and gives way down to
+  280 px, a folded one is as wide as its strip, and the map takes the rest and never
+  less than 320 px, so that no combination of panes pushes it off the screen.
 - **The edge of a pane has a handle.** The edge was a strip of 6 px that showed only
   under the mouse, which a finger neither sees nor hits. It now bears a handle at its
   middle, and where the pointer is coarse the strip is 22 px wide, most of it over the
   map, so that it does not take the taps meant for the buttons at the end of a row.
-- **Small and touch screens by stylesheet rules, with two exceptions.** Between 721 and
-  1199 px, a tablet either way up, the panel takes at most 42 % of the width, and the
-  library unfolded and the day's pane take turns beside the folded strip: three panes
-  at 1024 px left the map 324 px, of which an opened recording's cards covered half.
-  The pane took the library's place before, strip and all, so that the tabs could only
-  be reached by closing the day, which a tab then could not reopen. The day's heading
-  steps to the days before and after on a phone alone, in two lines: on a tablet the
-  strip beside the pane picks the day, and steps in the heading said the same twice and
-  took a line from the pane. On a touch
+- **Below 1200 px one pane is shown, the deepest that is open.** Three panes at 1024 px
+  left the map 324 px. Below 1200 px one pane stands beside the map: a day's contents
+  where they are open, else the trip's pane, else the library (`shownLevel` in
+  `state/panel.ts`). A pad that opens a pane so shows it in the place of the one it
+  stands in, which slides in from the right, and back from the left. The pad that
+  closes a pane reads Back there and does what it does on a wide screen: back from a
+  trip's pane closes the trip. A way back that kept the trip open would be a trip
+  open without its pane, the state the rule above removed; the price is that the
+  library and its tabs are reached by closing the trip, where its undo ends. The
+  panes are the same elements at every width, and the width stands in the stylesheet
+  and once in the script, as the same media query.
+- **Touch screens by stylesheet rules.** On a touch
   screen every field's text is 16 px, below which Safari zooms into the page on focus
   and stays there, and an icon button is at least 36 px; a grip or a pad is drawn as
   narrow as before, since the row's name needs the room, and is hit in an area that
   reaches a finger's width around it; heights that follow the screen
-  use `dvh`, which leaves out what the browser's own bars cover. What the stylesheet
-  cannot do is in `state/panel.ts`: a phone or a tablet folds the library away when a
-  day is picked or the duplicates report asked for, and the sheet has a height the user sets
-  and folds down while a route is edited. The width a phone ends at,
-  720 px, therefore stands in the stylesheet and once in the script.
-- **A phone stacks the three panes.** The desktop's panes are the phone's layers: the
-  map is the page, the day's pane a sheet under it, the library a layer over
-  everything, folded away to the same button with three lines. Nothing is a mode of its
-  own and no component exists twice; the same elements are placed otherwise. The
-  library folds away by itself when a day is picked, since on a phone picking a day
-  means wanting to see it, and the sheet folds down to its heading while a route is
-  edited, since editing happens on the map.
+  use `dvh`, which leaves out what the browser's own bars cover.
+- **On a phone held upright the pane is a sheet under the map.** Up to 720 px wide and
+  upright, the one pane shown is a sheet: the library, a trip's pane and a day's
+  contents alike, pulled by its top edge to about half of the screen or nearly all
+  of it, and folded to its head by its pad, an arrow down there. Held sideways a
+  phone is a narrow desktop, the pane beside the map and folded to the side: a sheet
+  would take the height the map has. Nothing is a mode of its own and no component
+  exists twice; the same elements are placed otherwise.
 - **The day's sheet is a row under the map, not a layer over it.** A sheet over the map
   would cover MapLibre's credits and scale, and the route tools, the routing's state
   and the fitting of a day into view would each have to know how much of the map it
-  hides. As a row of the page's grid it makes the map smaller instead: everything on
+  hides. As a row of the page it makes the map smaller instead: everything on
   the map stays where it is seen, and MapLibre follows the size by itself. The price is
   that the map is redrawn while the sheet is dragged.
 - **Rows have a menu button where there is no right-click.** A long press opens a row's
@@ -1105,16 +1144,16 @@ entries at the end of their section.
 - **A row unfolds and folds by a click on it; there are no arrowheads.** A folder, a
   trip and a route each had an arrowhead beside the row that did part of what a click
   on the row did. They answer to one rule instead (which holds for folders and lists
-  of places since a trip's days moved to its pane; a trip's row opens it, and a day
-  in the pane is shown and closed by a click). The tree has one mark, on the row
-  clicked last. A click on a row that is not marked marks it and unfolds it, and for a
-  trip that opens it, for a day that shows it; a click on the marked row folds it, or
-  unfolds it where it was folded. A click on the trip while its day is shown closes the
-  day: the trip is then what is loaded, and the pane does not keep showing a day that
-  the tree no longer points at. The trip stays unfolded on that click and folds on the
-  next. Only the day that is shown has nothing to fold, so a click on it does nothing
-  but take the mark back from a folder that held it. What folds takes what it holds with it, a
-  folder its folders and trips, a trip its day, a day the lists of its routes: what was
+  of places since a trip's days moved to its pane; a trip's row shows it on the map,
+  and a day in the pane is shown and let go by a click). The tree has one mark, on
+  the row clicked last. A click on a row that is not marked marks it and unfolds it,
+  and for a list that opens it, for a category that shows it; a click on the marked
+  row folds it, or unfolds it where it was folded. A click on the list while its
+  category is shown closes the category: the list is then what is on the map. The
+  list stays unfolded on that click and folds on the next. Only the category that is
+  shown has nothing to fold, so a click on it does nothing but take the mark back
+  from a folder that held it. What folds takes what it holds with it, a folder its
+  folders and lists, a list its category, a day the lists of its routes: what was
   closed is closed when it is seen again. What is open above the mark carries the mark's strip
   without its tint, as do the open trip and its day while the mark is elsewhere, so that the way down to
   the mark and what is on the map and in the pane can be told from what is merely
@@ -1136,20 +1175,20 @@ entries at the end of their section.
   about the day on the map, so it is in the day's pane. Adding a day adds to the trip
   whichever day is shown, so it is in the trip's menu: there it needs no day picked
   and no trip open, and an empty trip needs no row of its own to offer its first.
-- **A day has a pane of its own.** A day's routes and stops were listed inside the day's
-  card, in the same narrow column as the library, the trip and its other days: on a wide
-  screen one level showed and the rest of the width went unused. The day picked now
-  opens beside the list, so that the days stay in view while one is worked on, and the
-  library folds away to a strip when the map is what matters: planning is the same
-  screen with other proportions, not another mode. Where three panes do not fit, the
-  day's pane stands in for the library until it is closed.
-- **The folded library keeps the days as numbers.** With the library folded away, the
-  day shown could only be changed by unfolding it again. The strip lists the open
+- **A day's contents have a pane of their own.** A day's routes and stops were listed
+  inside the day's card, in the same narrow column as the library, the trip and its
+  other days: on a wide screen one level showed and the rest of the width went
+  unused. They now stand in a pane beside the list of the days, opened by the pad on
+  the day's row, so that the days stay in view while one is worked on. Planning is
+  the same screen with other proportions, not another mode: each pane folds to a
+  strip when the map is what matters.
+- **A trip's pane folded keeps the days as numbers.** With the pane of the days folded,
+  the day shown could only be changed by unfolding it again. The strip lists the open
   trip's days as numbered buttons in their route colour. Numbers, not small pictures
   of each day's line: a number is read at once and is right while a route is being
   drawn, where a thumbnail of the line would come from the outline, which is as old as
   the last save, shows two days of a loop alike and an empty day as nothing. A phone
-  has no strip; its sheet steps through the days.
+  held upright has no strip: its sheet folds to a bar.
   What a number stands for is said by a card of the strip's own, not by the button's
   `title`: the browser shows a title only after the mouse has rested, in one line, and
   the strip is passed over to find a day. The card is there with the mouse and gone
@@ -1206,14 +1245,11 @@ entries at the end of their section.
 - **A duplicate's location is opened beside the report.** Opening it gave the pane to
   the day, so each look at where a route lies cost the report, and going through ten
   alike meant showing it again ten times. The trip now opens at the day with the
-  report still in the pane: the library marks the day and brings it into view, which
-  is what says where the route is, and the day's own pane is one click on it away.
-  Who has the pane is one rule in the state (`state/pane.ts`, `selectDay`, `pickDay`
-  in `state/trip.ts`): a day that is picked takes it, by its row, the day strip, a
-  ride or the journal alike; a day a trip is merely opened at does not. A first
-  version had the report remember the day it had opened and skip it in an effect of
-  its own, which left that day unable to take the pane from the day strip, the only
-  picker on a phone. The report's selection is not kept while it is away: with the
+  report still in the pane: the map shows the day, which says where the route is,
+  and the trip's own pane is one press of its pad away.
+  Who has the pane is one rule (`state/pane.ts`): a pad that opens a trip, a day's
+  contents or a category's places takes it; a day that is merely shown on the map
+  does not. The report's selection is not kept while it is away: with the
   location opened beside the report there is little to come back to, and the one
   selection there is belongs to what is in view.
 - **A route and a track are never duplicates of each other.** The report compared
@@ -1551,8 +1587,10 @@ entries at the end of their section.
   first, then to the recording's line: one popup opens, any other closes. A popup listening
   to the map's clicks itself would open on the click that ends a pan or closes a menu.
 - **Where the user is lives in the address's fragment.** The folder shown, the open trip,
-  its day and the route being edited are written there as they change, and read when the
-  page loads; the map keeps its view beside them (`map=`, MapLibre's own option). The
+  its day, the route being edited, the day whose contents have their pane (`detail`)
+  and the trip looked at (`look`, `lookday`) are written there as they change, and read when the
+  page loads. Which panes are folded is not there but kept per browser: it goes with
+  the screen, not with the place; the map keeps its view beside them (`map=`, MapLibre's own option). The
   address is replaced, not added to the history: the back button leaves the planner as
   before, as the user asked. Coming back, the map stays at the view the address names
   where opening a day would show it whole, once, for that trip. The tool, open dialogs
@@ -1983,11 +2021,10 @@ entries at the end of their section.
   It stood where the tree stands, so looking at a route it listed meant leaving the
   report, and the trip had to be left to show it. In the pane between the library and
   the map the tree stays, and the map draws what is selected in the report beside it.
-  It shares the pane with the day: the report has it while it is switched on, and a
-  day that is shown takes it back, since showing a day asks for its routes; opening a
-  route's location from the report does just that. The pane's frame (its
-  heading with the close button, the edge that sets its width, the handle that makes it
-  a sheet on a phone) is one component for both.
+  It shares the pane with the open trip: the report has it while it is switched on,
+  and a pad that opens a pane takes it back. The pane's frame (its head with the pads
+  that fold and close it, its strip, the edge that sets its width, the handle that
+  makes it a sheet on a phone) is one component for every pane (`ui/Pane.tsx`).
 - **Trips and folders are dragged by their pad.** The pad that selects a trip also drags
   it, a press that moves rather than a tap, and selected trips go together; folders got
   the same pad. A folder takes the drop
