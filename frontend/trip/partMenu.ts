@@ -1,12 +1,14 @@
 import { t } from '../i18n/t';
 import { FREE_COLOR } from '../model/routeLook';
 import { dayOfRoute, dayOfStop, numberedStops, type PartKind } from '../routing/dayEdit';
+import { legState, routeLegs } from '../routing/legs';
 import { copyParts, heldParts, pasteItems } from '../state/clipboard';
 import { setEditTarget, setExportScope, setTrackAction } from '../state/drawing';
 import { pinRoutes } from '../state/pins';
 import { isPlaceList } from '../state/library';
 import { clearPartSelection, partsOfMenu } from '../state/partSelection';
-import { duplicateParts, makeRouteOfStops, movePartsToDay, openTrip, removeParts, routeById, setStopSymbols } from '../state/trip';
+import { failedLegs } from '../state/routing';
+import { convertRouteToTrack, duplicateParts, makeRouteOfStops, movePartsToDay, openTrip, removeParts, routeById, setStopSymbols } from '../state/trip';
 import { OUR_ICONS, PLAIN_SYMBOL } from '../symbols/symbols';
 import type { Held } from '../ui/carry';
 import { askConfirmation } from '../ui/confirm';
@@ -79,7 +81,7 @@ function iconItem(ids: readonly string[]): MenuItem {
 }
 
 /**
- * Convert, with what a part can be turned into as its submenu: a track into a route; the free stops of a day, or those selected, into a
+ * Convert, with what a part can be turned into as its submenu: a track into a route, a route into a track once all its legs are routed; the free stops of a day, or those selected, into a
  * route, for a file that kept a route as waypoints, in the order they are listed or, the
  * numbered ones, by their number. None for a single stop, for several days or routes, in
  * a list of places, or where fewer than two of the stops are free: a stop on a point of a
@@ -89,9 +91,14 @@ function convertItem(kind: PartKind, ids: readonly string[]): MenuItem[] {
   const trip = openTrip()!;
   const several = ids.length > 1;
   if (isPlaceList(trip.id) || (kind === 'stop' ? !several : several)) return [];
-  // Of the routes a track alone is converted.
   if (kind === 'route') {
-    return routeById(ids[0]!)?.kind === 'track' ? [{ label: t('Convert'), items: [{ label: t('Track to route…'), run: () => setTrackAction({ routeId: ids[0]!, action: 'convert' }) }] }] : [];
+    const route = routeById(ids[0]!);
+    if (!route) return [];
+    if (route.kind === 'track') return [{ label: t('Convert'), items: [{ label: t('Track to route…'), run: () => setTrackAction({ routeId: route.id, action: 'convert' }) }] }];
+    // A route is a track along its legs: one that has none yet has no line, and one whose legs are not all routed would keep the gaps.
+    const legs = routeLegs(route);
+    const waits = legs.some((leg) => ['pending', 'failed'].includes(legState(route, leg, failedLegs())));
+    return legs.length === 0 ? [] : [{ label: t('Convert'), items: [{ label: t('Route to track'), disabled: waits, run: () => convertRouteToTrack(route.id) }] }];
   }
   const day = kind === 'day' ? trip.days.find((d) => d.id === ids[0]) : dayOfStop(trip, ids[0]!);
   const listed = (day?.stops ?? []).filter((stop) => stop.pointId === null && (kind === 'day' || ids.includes(stop.id)));

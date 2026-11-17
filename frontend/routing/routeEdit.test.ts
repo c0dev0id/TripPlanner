@@ -3,7 +3,7 @@ import type { LngLat, RoutedLeg, RoutedRoute, Track } from '../model/trip';
 import { routedLegs } from './legs';
 import { decodePolyline, encodePolyline } from './polyline';
 import { routedOf } from './testing';
-import { addLeg, appendPoint, changeSettings, condenseTrack, insertPoint, movePoint, removePoint, setStraight, trackToRoute } from './routeEdit';
+import { addLeg, appendPoint, changeSettings, condenseTrack, insertPoint, movePoint, removePoint, routeToTrack, setStraight, trackToRoute } from './routeEdit';
 
 const routed = (geometry: string): RoutedLeg => ({ geometry, distanceM: 1, durationS: 1 });
 
@@ -106,6 +106,14 @@ describe('thinning a track', () => {
     const condensed = condenseTrack(track, 10);
     expect(decodePolyline(condensed.line)).toEqual([corners[0], corners[2], corners[4]]);
     expect({ ...condensed, line: track.line }).toEqual(track);
+  });
+
+  it('is made of a route under its id: the line along its legs, as a way a file gave it runs', () => {
+    const ends: RoutedRoute = { id: 'r', name: 'Loop', kind: 'routed', profile: 'motorcycle', highways: 'avoid', optional: true, color: '#112233', points: [{ id: 'a', lngLat: corners[0]! }, { id: 'b', lngLat: corners[4]! }], legs: {} };
+    const loop: RoutedRoute = { ...ends, legs: { [routedLegs(ends)[0]!.key]: { geometry: encodePolyline(corners), distanceM: 1, durationS: 1 } } };
+    const made = routeToTrack(loop);
+    expect(made).toEqual({ id: 'r', name: 'Loop', kind: 'track', profile: 'motorcycle', optional: true, color: '#112233', line: made.line });
+    expect(decodePolyline(made.line)).toEqual(corners);
   });
 
   it('makes a route of it under its id, its points under new ids, every leg routed', () => {

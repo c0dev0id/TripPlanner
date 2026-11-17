@@ -311,6 +311,11 @@ export function convertTrackToRoute(routeId: string, toleranceM: number): void {
   changeRoute(routeId, (r) => (r.kind === 'track' ? routeEdit.trackToRoute(r, toleranceM, newId) : r), t('Convert to route'));
 }
 
+/** Makes a track of the route: its line as it runs now, kept as it is; the stops on its points stay, free. */
+export function convertRouteToTrack(routeId: string): void {
+  changeRoute(routeId, (r) => (r.kind === 'routed' ? routeEdit.routeToTrack(r) : r), t('Convert to track'));
+}
+
 /** Changes what a route says about itself; a new profile or motorway dial routes its legs again. */
 export function updateRoute(routeId: string, settings: Partial<routeEdit.RouteSettings>): void {
   changeRoute(routeId, (r) => routeEdit.changeSettings(r, settings), t('Edit route'));

@@ -1253,6 +1253,15 @@ entries at the end of their section.
   kept in the page and no longer: they say what is looked at now, not what the trip
   is. A recording added to a day or put on it by the lookup is not pinned: a pin is the
   user's own choice, and the comparison reads it (see below).
+- **A route is made a track, not given points along its way.** A route imported with
+  the way a planner had calculated keeps that way as its legs, and loses it with the
+  first edit of a point, since a leg belongs to its two ends: a round of 262 km
+  between two points side by side routed anew is a few hundred metres. Giving such a
+  route more points directly would have been a second thinning beside the one a track
+  has. Instead a route becomes a track of its line as it runs, and a track becomes a
+  route by the dialog it had already, which thins it to the points that keep its
+  shape. The first step is refused while legs wait for their routing or failed it:
+  the track would keep the gaps as straight lines.
 - **A pin outlives the trip it was set in.** The pins were the open trip's and went
   when another was opened, so a route of one trip could not be held against a route of
   another, and a pinned route of a day that was neither shown nor next to it was not

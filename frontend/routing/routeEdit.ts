@@ -1,6 +1,6 @@
 import { keepTolerances } from '../geo/simplify';
 import { withChanges, type LngLat, type Route, type RoutedLeg, type RoutedRoute, type RoutePoint, type Track } from '../model/trip';
-import { pruneLegs, routedLegs } from './legs';
+import { pruneLegs, routedLegs, routeLine } from './legs';
 import { decodeCached, encodePolyline } from './polyline';
 
 /** Pure edits of one route. Each result keeps exactly the routed legs it still needs. */
@@ -66,6 +66,12 @@ export function condenseTrack(track: Track, toleranceM: number): Track {
 export function trackToRoute(track: Track, toleranceM: number, newId: () => string): RoutedRoute {
   const { line: _, ...base } = track;
   return { ...base, kind: 'routed', highways: 'allow', points: thinnedLine(track, toleranceM).map((lngLat) => ({ id: newId(), lngLat })), legs: {} };
+}
+
+/** The route as a track under the same id: its line as it runs now, along its legs, and no points of its own. */
+export function routeToTrack(route: RoutedRoute): Track {
+  const { points: _, legs: __, highways: ___, ...base } = route;
+  return { ...base, kind: 'track', line: encodePolyline(routeLine(route)) };
 }
 
 /** Stores a routed leg if the route still needs it (the request may be outdated). */

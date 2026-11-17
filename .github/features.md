@@ -450,8 +450,14 @@
   while on a large library, a ring turns beside how many routes are compared and the
   seconds gone.
 - Convert, in the menu of a day or section, of a route and of several selected stops,
-  with what the part can be turned into as its submenu; a route that is no track has
-  none. A track becomes a route ("Track to route…", in its dialog). The free stops of
+  with what the part can be turned into as its submenu. A track becomes a route
+  ("Track to route…", in its dialog). A route becomes a track ("Route to track"): its
+  line as it runs, kept as it is, with no points of its own; the stops on its points
+  stay, free. It is greyed out while legs of the route wait for their routing or
+  failed it, and a route of fewer than two points has none. Made a track and then a
+  route again, a route gets points all along its line: that is how a route that came
+  with two points and the way a planner had calculated between them is made one that
+  can be edited. The free stops of
   a day or section, or those selected, become a route ("Waypoints to route", in a trip
   "Stops to route"), for a file that kept a route as a string of waypoints, which a
   collection keeps in the file's order: "By order" takes them all, top down; "By
