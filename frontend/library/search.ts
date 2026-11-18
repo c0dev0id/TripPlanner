@@ -27,35 +27,25 @@ export interface Found {
 /** A trip's days with their routes that have a name. */
 export type RouteDays = readonly { id: string; name: string; routes: readonly NamedRoute[] }[];
 
-/** The tags the trips are limited to, and what the tags on a trip are called, in lower case. */
-export interface Tagged {
-  wanted: ReadonlySet<number>;
-  namesOf: (trip: TripSummary) => readonly string[];
-}
-
-const UNTAGGED: Tagged = { wanted: new Set(), namesOf: () => [] };
-
 /**
  * What the lower-case `text` finds among the folders, trips and files that `inTree`
  * says are in the tree searched, whatever folder they are in; nothing for no text. The
- * special folders, each a tree's top, are never found. A trip is found by a tag on it
- * as by its name. Limited to tags, the trips are those that have all of them, with no
- * text all of those, and no folder is found.
+ * special folders, each a tree's top, are never found. A trip is found by the name of a
+ * tag on it as by its own; `tagNamesOf` gives those, in lower case.
  */
-export function searchLibrary(listed: Listed, text: string, inTree: (folderId: number | null) => boolean, routeDaysOf: (trip: TripSummary) => RouteDays, tagged: Tagged = UNTAGGED): Found {
-  const limited = tagged.wanted.size > 0;
-  if (!text && !limited) return { folders: [], trips: [], files: [], routes: [], items: [] };
+export function searchLibrary(listed: Listed, text: string, inTree: (folderId: number | null) => boolean, routeDaysOf: (trip: TripSummary) => RouteDays, tagNamesOf: (trip: TripSummary) => readonly string[]): Found {
+  if (!text) return { folders: [], trips: [], files: [], routes: [], items: [] };
   const isFound = (named: { name: string }) => named.name.toLowerCase().includes(text);
-  const trips = listed.trips.filter((trip) => inTree(trip.folderId) && [...tagged.wanted].every((id) => trip.tagIds.includes(id)));
+  const trips = listed.trips.filter((trip) => inTree(trip.folderId));
   const files = listed.files.filter((file) => inTree(file.folderId));
   return {
-    folders: limited ? [] : listed.folders.filter((f) => f.kind === 'folder' && inTree(f.id) && isFound(f)),
-    trips: trips.filter((trip) => isFound(trip) || tagged.namesOf(trip).some((name) => name.includes(text))),
-    files: limited ? [] : files.filter(isFound),
-    routes: (text ? trips : []).flatMap((trip) =>
+    folders: listed.folders.filter((f) => f.kind === 'folder' && inTree(f.id) && isFound(f)),
+    trips: trips.filter((trip) => isFound(trip) || tagNamesOf(trip).some((name) => name.includes(text))),
+    files: files.filter(isFound),
+    routes: trips.flatMap((trip) =>
       routeDaysOf(trip).flatMap((day, index) => day.routes.filter(isFound).map((route) => ({ within: trip, dayId: day.id, day: dayHeading(trip.kind, index, day.name), route }))),
     ),
-    items: (limited ? [] : files).flatMap((file) => file.items.filter(isFound).map((item) => ({ file, item }))),
+    items: files.flatMap((file) => file.items.filter(isFound).map((item) => ({ file, item }))),
   };
 }
 

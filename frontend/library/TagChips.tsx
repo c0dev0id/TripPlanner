@@ -1,7 +1,8 @@
 import { For, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { inkOn, tagsOn, type Tag } from '../model/tag';
-import { tags, toggleWanted, wantedTags } from '../state/tags';
+import { toggleWanted, wantedTags } from '../state/library';
+import { tags } from '../state/tags';
 
 const chipStyle = (tag: Tag) => ({ background: tag.color, color: inkOn(tag.color) });
 

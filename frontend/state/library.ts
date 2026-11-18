@@ -71,6 +71,20 @@ export const setQuery = (text: string): void => void setQueries({ ...queries(), 
 /** What the search looks for, as it is compared with names in lower case; empty while nothing is typed. */
 export const searchedFor = createRoot(() => createMemo(() => query().trim().toLowerCase()));
 
+/** The tags the trips are limited to, by id: those that have all of them are listed, in the tree's place as what a search finds is. */
+const [wantedTags, setWantedTags] = createSignal<ReadonlySet<number>>(new Set());
+export { wantedTags };
+
+/** Limits the trips to those with the tag as well, or no longer to it. */
+export function toggleWanted(tagId: number): void {
+  const next = new Set(wantedTags());
+  if (!next.delete(tagId)) next.add(tagId);
+  setWantedTags(next);
+}
+
+/** Limits the trips to a tag no more, as when it is deleted. */
+export const unwantTag = (tagId: number): void => void (wantedTags().has(tagId) && toggleWanted(tagId));
+
 const library = createRoot(() => {
   const [trips, { refetch: refetchTrips }] = createResource(listTrips);
   // The special folders are named as the tabs they are the tops of.
@@ -134,6 +148,8 @@ export const relistTrips = (): void => {
   void library.refetchTrips();
   void library.refetchOutlines();
 };
+/** Lists the trips afresh where their rows changed and nothing in them did: the outlines stay as they are. */
+export const relistTripRows = (): void => void library.refetchTrips();
 export const relistFolders = (): void => void library.refetchFolders();
 
 const requests = createRequest();
@@ -165,10 +181,11 @@ export async function deleteRoutes(routes: readonly { tripId: number; routeId: s
 /** How the last folder import goes or went, and what it could not read or save. */
 export const [importNote, setImportNote] = createSignal<{ text: string; errors: string[] }>();
 
-/** Makes a folder the one shown, null for the top of the trips: its tree is shown with the folder marked, and a search ends. */
+/** Makes a folder the one shown, null for the top of the trips: its tree is shown with the folder marked, and a search ends, as does limiting to tags. */
 export function showFolder(id: number | null): void {
   const tree = treeOf(id);
   setMarkedFolders({ ...markedFolders(), [tree]: id ?? undefined });
   showTab(tree);
   setQuery('');
+  setWantedTags(new Set<number>());
 }

@@ -6,7 +6,7 @@ import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/sta
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, dropsOnRow, libraryClip, libraryPasteItem, pasteItems as pasteIntoPart, stashFilesClip, type LibraryClip, type PasteInto, type PasteItem } from '../state/clipboard';
-import { detailShown, heldOf, importNote, isPlaceList, paneShown, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
+import { detailShown, heldOf, importNote, isPlaceList, paneShown, libraryFolders, libraryTab, libraryTrips, markedFolderOf, wantedTags, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
 import { flushSave } from '../state/autosave';
@@ -42,7 +42,7 @@ import { stashCopies, stashPlaces } from './stashOut';
 import { StandardPlaces } from '../map/PlaceKinds';
 import { keepPlaces, keptText, type KindedPlace } from './dropImport';
 import { tagsOn } from '../model/tag';
-import { setTagOn, tags, wantedTags } from '../state/tags';
+import { setTagOn, tags } from '../state/tags';
 import { firstFound, foundCount, foundKeys, routeKey, searchLibrary, type FoundRoute, type RouteDays } from './search';
 
 /** The top of the trips, as a place to paste into. */
@@ -294,13 +294,22 @@ export function Library(props: {
   const tagNamesOf = (trip: TripSummary) => tagsOn(tags(), trip.tagIds).map((tag) => tag.name.toLowerCase());
   /** Whether the tree shown is limited to what is searched for or to tags, and lists that in the tree's place. */
   const limited = () => searchedFor() !== '' || (shownTree() === 'trips' && wantedTags().size > 0);
-  /** What the search finds in the tree shown; nothing while the rides are. */
+  /**
+   * What the search finds in the tree shown; nothing while the rides are. Limited to
+   * tags, the trips that have all of them are what there is to find, and with nothing
+   * typed all of them are listed.
+   */
   const found = createMemo(() => {
     const tree = shownTree();
-    return searchLibrary(all(), tree ? searchedFor() : '', (folderId) => treeOf(folderId) === tree, routeDaysOf, { wanted: tree === 'trips' ? wantedTags() : new Set(), namesOf: tagNamesOf });
+    const inTree = (folderId: number | null) => treeOf(folderId) === tree;
+    const wanted = tree === 'trips' ? [...wantedTags()] : [];
+    if (wanted.length === 0) return searchLibrary(all(), tree ? searchedFor() : '', inTree, routeDaysOf, tagNamesOf);
+    const tagged = all().trips.filter((trip) => inTree(trip.folderId) && wanted.every((id) => trip.tagIds.includes(id)));
+    if (!searchedFor()) return { folders: [], trips: tagged, files: [], routes: [], items: [] };
+    return searchLibrary({ folders: [], trips: tagged, files: [] }, searchedFor(), inTree, routeDaysOf, tagNamesOf);
   });
-  /** Of what the search found, what is listed. */
-  const listed = createMemo(() => firstFound(found(), SEARCH_LIMIT));
+  /** Of what was found, what is listed: of a search the first, of the trips with a tag all. */
+  const listed = createMemo(() => (searchedFor() ? firstFound(found(), SEARCH_LIMIT) : found()));
   /** The rows the search lists that can be selected, top to bottom, by key. */
   const listedKeys = () => foundKeys(listed());
   const itemsIn = (keys: Selection<string>): FileItem[] => fileItemsOf(files(), keys);
@@ -891,8 +900,8 @@ export function Library(props: {
           <For each={listed().routes}>{(route) => <RouteCard found={route} onOpen={props.onOpenRoute} items={() => routeMenu(route)} select={selectRow(results.tree, routeKey(route), listedKeys)} />}</For>
           <For each={listed().items}>{(at) => <StashItemRow file={at.file} item={at.item} where={at.file.name} onShow={(item) => revealFile(at.file, item)} items={() => stashItemMenu(at)} select={selectRow(results.tree, itemKey(at), listedKeys)} />}</For>
         </ul>
-        <Show when={total() > SEARCH_LIMIT}>
-          <p class="muted">{t('{n} more. Refine your search.', { n: total() - SEARCH_LIMIT })}</p>
+        <Show when={total() > foundCount(listed())}>
+          <p class="muted">{t('{n} more. Refine your search.', { n: total() - foundCount(listed()) })}</p>
         </Show>
       </Show>
     );
