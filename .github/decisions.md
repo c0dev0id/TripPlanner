@@ -2150,6 +2150,17 @@ entries at the end of their section.
 - **A click that goes nowhere still answers.** Going to an entry whose place the map
   already shows changed nothing to see. Each going is counted (`gone` in
   `view/follow.ts`), and the ring's marker is made anew with one stronger ring for it.
+- **A video has the page's controls, not YouTube's.** The player's own bar brings a
+  row of buttons, the channel and more videos over the picture whenever the pointer
+  is on it. It is switched off (`controls=0`), and the page draws play, the position,
+  the sound and the whole screen under the picture from what the player says of
+  itself in its messages; the sound has to be there, since a video that starts by
+  itself starts without. Volume, captions and quality are given up for it; the link
+  to YouTube has them. What stays is what YouTube lets nobody remove: the title
+  before a video plays and while it is paused, and its channel's other videos then.
+  Nothing of the page lies over the picture, which YouTube's terms forbid. The whole
+  screen is the player and the page's bar together, so the bar is there too; an
+  iPhone, which gives no element the whole screen, has no such button.
 - **Markdown is rendered by micromark, with nothing that runs.** An entry's text is set
   into the page as HTML, so what makes it has to be trusted with a stranger's input,
   the preview being the owner's but the page everyone's. micromark escapes HTML unless

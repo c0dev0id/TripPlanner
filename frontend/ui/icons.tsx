@@ -445,3 +445,40 @@ export const NeighboursIcon = () => (
     <path d="M3 12l18 0" />
   </Icon>
 );
+
+export const PlayIcon = () => (
+  <Icon>
+    <path d="M7 4v16l13 -8l-13 -8" />
+  </Icon>
+);
+
+export const PauseIcon = () => (
+  <Icon>
+    <path d="M6 6a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -12" />
+    <path d="M14 6a1 1 0 0 1 1 -1h2a1 1 0 0 1 1 1v12a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1l0 -12" />
+  </Icon>
+);
+
+export const VolumeIcon = () => (
+  <Icon>
+    <path d="M15 8a5 5 0 0 1 0 8" />
+    <path d="M17.7 5a9 9 0 0 1 0 14" />
+    <path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.500 -4.500a.8 .8 0 0 1 1.500 .500v14a.8 .8 0 0 1 -1.500 .500l-3.500 -4.500" />
+  </Icon>
+);
+
+export const VolumeOffIcon = () => (
+  <Icon>
+    <path d="M6 15h-2a1 1 0 0 1 -1 -1v-4a1 1 0 0 1 1 -1h2l3.500 -4.500a.8 .8 0 0 1 1.500 .500v14a.8 .8 0 0 1 -1.500 .500l-3.500 -4.500" />
+    <path d="M16 10l4 4m0 -4l-4 4" />
+  </Icon>
+);
+
+export const FullscreenIcon = () => (
+  <Icon>
+    <path d="M4 8v-2a2 2 0 0 1 2 -2h2" />
+    <path d="M4 16v2a2 2 0 0 0 2 2h2" />
+    <path d="M16 4h2a2 2 0 0 1 2 2v2" />
+    <path d="M16 20h2a2 2 0 0 0 2 -2v-2" />
+  </Icon>
+);

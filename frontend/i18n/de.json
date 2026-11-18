@@ -778,5 +778,11 @@
   "Select {name}, or drag it to another place or into a folder": "{name} auswählen, oder an eine andere Stelle oder in einen Ordner ziehen",
   "Add location": "Ort hinzufügen",
   "Coordinates: latitude, longitude": "Koordinaten: Breite, Länge",
-  "No coordinates: latitude and longitude, as in 48.12345, 8.54321.": "Keine Koordinaten: Breite und Länge, wie in 48.12345, 8.54321."
+  "No coordinates: latitude and longitude, as in 48.12345, 8.54321.": "Keine Koordinaten: Breite und Länge, wie in 48.12345, 8.54321.",
+  "Play": "Abspielen",
+  "Pause": "Pause",
+  "Turn sound on": "Ton einschalten",
+  "Turn sound off": "Ton ausschalten",
+  "Full screen": "Vollbild",
+  "Position in the video": "Position im Video"
 }

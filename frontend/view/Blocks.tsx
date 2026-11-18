@@ -1,16 +1,16 @@
 import { t } from '../i18n/t';
-import { createMemo, For, Match, Show, Switch } from 'solid-js';
+import { createMemo, createSignal, For, Match, Show, Switch } from 'solid-js';
 import { entryFileUrl, entryImageUrl } from '../api';
 import { sizeText, type Entry } from '../model/journal';
 import { blocksOf } from '../model/journalDocument';
 import type { Trip } from '../model/trip';
 import { partLabel } from '../trip/labels';
 import { ForById } from '../ui/ForById';
-import { PinIcon } from '../ui/icons';
+import { FullscreenIcon, PauseIcon, PinIcon, PlayIcon, VolumeIcon, VolumeOffIcon } from '../ui/icons';
 import { openImage, type LightboxImage } from '../ui/Lightbox';
 import { markdownHtml } from '../ui/markdown';
 import { entryMark } from './follow';
-import { playerUrl, playWhenRead } from './videos';
+import { playerUrl, playWhenRead, type Player } from './videos';
 
 /** What the story's parts are told to do with what is being read: to watch an element that names a mark, and to go to one. */
 export interface Reading {
@@ -78,12 +78,46 @@ function Gallery(props: { entries: Entry[]; trip: Trip; api: string; reading: Re
   );
 }
 
-/** A video in its player, which plays while it is read; under it its caption, and the way to it on YouTube, which is all a printed page has of it. */
+/** A moment of a video as minutes and seconds. */
+const moment = (seconds: number): string => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
+
+/**
+ * A video in its player, which plays while it is read, with the page's own bar under it: play, where it is, the
+ * sound and the whole screen. Under that its caption, and the way to it on YouTube, which is all a printed page has
+ * of it.
+ */
 function Video(props: { entry: Entry; videoId: string; caption: string; trip: Trip; reading: Reading }) {
+  let box!: HTMLDivElement;
+  const [player, setPlayer] = createSignal<Player>();
+  const playback = () => player()?.playback() ?? { playing: false, muted: true, time: 0, duration: 0 };
   const placed = () => isSomewhere(props.entry);
+  const whole = () => (document.fullscreenElement === box ? document.exitFullscreen() : box.requestFullscreen());
   return (
     <figure class="video" data-mark={placed() ? entryMark(props.entry.id) : undefined} ref={(el) => placed() && props.reading.watch(el)}>
-      <iframe ref={playWhenRead} src={playerUrl(props.videoId)} title={props.caption || t('Video')} loading="lazy" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" />
+      <div class="player" ref={box}>
+        <iframe ref={(frame) => setPlayer(playWhenRead(frame))} src={playerUrl(props.videoId)} title={props.caption || t('Video')} loading="lazy" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" />
+        <div class="player-bar">
+          <button type="button" title={playback().playing ? t('Pause') : t('Play')} aria-label={playback().playing ? t('Pause') : t('Play')} onClick={() => player()?.toggle()}>
+            <Show when={playback().playing} fallback={<PlayIcon />}>
+              <PauseIcon />
+            </Show>
+          </button>
+          <input type="range" min="0" max={playback().duration || 1} step="any" value={playback().time} aria-label={t('Position in the video')} onInput={(e) => player()?.seek(Number(e.currentTarget.value))} />
+          <span class="time">
+            {moment(playback().time)} / {moment(playback().duration)}
+          </span>
+          <button type="button" title={playback().muted ? t('Turn sound on') : t('Turn sound off')} aria-label={playback().muted ? t('Turn sound on') : t('Turn sound off')} onClick={() => player()?.sound()}>
+            <Show when={playback().muted} fallback={<VolumeIcon />}>
+              <VolumeOffIcon />
+            </Show>
+          </button>
+          <Show when={document.fullscreenEnabled}>
+            <button type="button" title={t('Full screen')} aria-label={t('Full screen')} onClick={whole}>
+              <FullscreenIcon />
+            </button>
+          </Show>
+        </div>
+      </div>
       <figcaption>
         <div class="captions">
           <Show when={props.caption}>

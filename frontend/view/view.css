@@ -541,12 +541,70 @@ figcaption {
   margin: 36px 0;
 }
 
+/* The player and the page's own bar under it; over the whole screen the player fills what the bar leaves. */
+.player {
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+
 .video iframe {
   width: 100%;
   aspect-ratio: 16 / 9;
   border: 0;
   border-radius: 3px;
   background: var(--rule);
+}
+
+.player:fullscreen iframe {
+  flex: 1 1 0;
+  min-height: 0;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+
+.player-bar {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 4px 0 0;
+  font-family: var(--label);
+  font-size: 13px;
+  color: var(--soft);
+}
+
+.player:fullscreen .player-bar {
+  padding: 6px 10px;
+}
+
+.player-bar button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.player-bar button:hover {
+  color: var(--mark);
+}
+
+.player-bar input {
+  flex: 1 1 auto;
+  min-width: 0;
+  accent-color: var(--mark);
+}
+
+.player-bar .time {
+  flex: none;
+  margin: 0 6px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Photos: one as wide as the text, two beside each other, more in rows of three; each with its caption under it. */
@@ -929,6 +987,7 @@ figcaption {
   .route summary,
   .gpx,
   .video iframe,
+  .player-bar,
   .maplibregl-ctrl {
     display: none !important;
   }
