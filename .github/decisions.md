@@ -1997,7 +1997,12 @@ entries at the end of their section.
   then all done there. Limiting to several tags means having all of them, since a
   second tag is pressed to narrow. Limited to tags, the trips are listed flat as a
   search lists them, because a tree of mostly empty folders hides what was asked
-  for. A copy of a trip starts without tags.
+  for. The limiting is done before the search, not in it: the trips with the tags
+  are what the search is given, so the search knows nothing of it but the names of
+  the tags on a trip; all of them are listed, where a search lists its first twenty,
+  and a folder that is shown ends the limiting as it ends a search. A tag put on a
+  trip lists the trips afresh without their outlines, which a tag does not change.
+  A copy of a trip starts without tags.
 - **The card of a shared link is drawn in the owner's browser.** A link posted
   somewhere is shown with a picture, which the place it is posted at fetches without
   running the page. A tilted map of the routes cannot be drawn by PHP, and a browser
@@ -2013,8 +2018,10 @@ entries at the end of their section.
   three kilometres of one asked before taking its name. The card carries a mark of
   the name and the lines it shows; the page settings make it anew where the mark is
   another, so a trip changed without opening them keeps its card until then, which
-  was accepted over rendering on every save. The page's address for the card names
-  the mark, so a changed card is fetched anew. The attribution of the map is written
+  was accepted over rendering on every save. A card is made once its mark has stayed
+  for two seconds, since a name is typed letter by letter, and one that could not be
+  made is not tried again until it would show something else. The card's address
+  names the mark, so it is cached for good and a changed card is fetched anew. The attribution of the map is written
   into the picture.
 - **A video is a text that is a YouTube address.** The journal keeps no video files:
   they are large, and a rider's videos are on YouTube already. An entry whose first

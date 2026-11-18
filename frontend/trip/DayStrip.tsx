@@ -77,20 +77,23 @@ export function RouteStrip(props: { day: Day }) {
   return (
     <ol class="day-strip">
       <ForById each={props.day.routes}>
-        {(route, index) => (
-          <li>
-            <button
-              class="day-chip colored"
-              style={{ background: openRouteColors().get(route().id) }}
-              title={routeLabel(route(), props.day)}
-              aria-label={routeLabel(route(), props.day)}
-              aria-pressed={isRouteActive(route().id)}
-              onClick={() => (isRouteActive(route().id) ? takeUpRoute(undefined) : takeUpRouteOf(props.day.id, route().id))}
-            >
-              {index() + 1}
-            </button>
-          </li>
-        )}
+        {(route, index) => {
+          const label = () => routeLabel(route(), props.day);
+          return (
+            <li>
+              <button
+                class="day-chip colored"
+                style={{ background: openRouteColors().get(route().id) }}
+                title={label()}
+                aria-label={label()}
+                aria-pressed={isRouteActive(route().id)}
+                onClick={() => (isRouteActive(route().id) ? takeUpRoute(undefined) : takeUpRouteOf(props.day.id, route().id))}
+              >
+                {index() + 1}
+              </button>
+            </li>
+          );
+        }}
       </ForById>
     </ol>
   );

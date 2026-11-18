@@ -2541,22 +2541,11 @@ fieldset.symbols {
   white-space: nowrap;
 }
 
-/* The tags on a trip's row, and over the trips as switches that limit the list. */
-.tag-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 3px;
-}
-
-.tag-chip {
-  padding: 1px 7px;
+/* The tags on a trip's row, and over the trips as switches that limit the list: chips in the tag's own colour. */
+.chip.tag-chip {
   border: 0;
-  border-radius: 9px;
-  font-size: 11px;
+  padding: 1px 7px;
   font-weight: 600;
-  line-height: 16px;
-  white-space: nowrap;
 }
 
 .tag-filter {

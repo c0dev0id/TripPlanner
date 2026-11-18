@@ -11,10 +11,10 @@ export function TagChips(props: { ids: readonly number[] }) {
   const on = () => tagsOn(tags(), props.ids);
   return (
     <Show when={on().length > 0}>
-      <span class="tag-chips">
+      <span class="chips">
         <For each={on()}>
           {(tag) => (
-            <span class="tag-chip" style={chipStyle(tag)}>
+            <span class="chip tag-chip" style={chipStyle(tag)}>
               {tag.name}
             </span>
           )}
@@ -28,10 +28,10 @@ export function TagChips(props: { ids: readonly number[] }) {
 export function TagFilter() {
   return (
     <Show when={tags().length > 0}>
-      <div class="tag-chips tag-filter" role="group" aria-label={t('Limit to tags')}>
+      <div class="chips tag-filter" role="group" aria-label={t('Limit to tags')}>
         <For each={tags()}>
           {(tag) => (
-            <button type="button" class="tag-chip" style={chipStyle(tag)} aria-pressed={wantedTags().has(tag.id)} onClick={() => toggleWanted(tag.id)}>
+            <button type="button" class="chip tag-chip" style={chipStyle(tag)} aria-pressed={wantedTags().has(tag.id)} onClick={() => toggleWanted(tag.id)}>
               {tag.name}
             </button>
           )}
