@@ -3,6 +3,7 @@ import { createEffect, on } from 'solid-js';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { DEFAULT_RIDES_OPACITY, DEFAULT_ROUTE_WIDTH } from '../model/routeLook';
 import { ROUTING_ATTRIBUTION } from '../routing/valhalla';
+import { showsDark } from '../ui/theme';
 import { BaseMapControl } from './BaseMapControl';
 import { OverlayControl } from './OverlayControl';
 import { chosenBaseMap, RELIEF, sharpUntil } from './baseMaps';
@@ -35,7 +36,7 @@ function withOverlays(previous: StyleSpecification | undefined, next: StyleSpeci
   const overlays = shown.map((overlay) => overlay.parts(sharp, look));
   // An overlay's data read once stays: a source written anew would be fetched again.
   for (const overlay of overlays) for (const [id, source] of Object.entries(overlay.sources)) sources[id] = previous?.sources[id] ?? source;
-  return { ...next, ...(relief ? { terrain: RELIEF.terrain, sky: RELIEF.sky } : {}), sources, layers: [...next.layers, ...overlays.flatMap((o) => o.layers), ...recordingLayers(routeWidth, sharp), ...routeLayers(routeWidth, sharp, LOOK_SOURCE), ...routeLayers(routeWidth, sharp), ...comparedLayers(routeWidth, sharp), ...POI_LAYERS, ...OWN_PLACES_LAYERS, ...RECORDING_POINT_LAYERS, ...REACH_LAYERS] };
+  return { ...next, ...(relief ? { terrain: RELIEF.terrain, sky: RELIEF.sky(showsDark()) } : {}), sources, layers: [...next.layers, ...overlays.flatMap((o) => o.layers), ...recordingLayers(routeWidth, sharp), ...routeLayers(routeWidth, sharp, LOOK_SOURCE), ...routeLayers(routeWidth, sharp), ...comparedLayers(routeWidth, sharp), ...POI_LAYERS, ...OWN_PLACES_LAYERS, ...RECORDING_POINT_LAYERS, ...REACH_LAYERS] };
 }
 
 /** What a map draws beyond its base map and the trip's lines: how wide the routes are, and whether the overlays this browser switched on, with the control that switches them, and how opaque the rides among them, and whether the ground is raised under a sky. */
@@ -63,6 +64,8 @@ export function newBaseMap(container: HTMLElement, options: Partial<MapOptions>,
   provideImages(map, new Map([...POI_IMAGES, ...OVERLAYS.flatMap((overlay) => [...overlay.images])]));
   // The style follows the base map chosen, the overlays switched on, the width of the routes and how opaque the rides are.
   createEffect(on([chosenBaseMap, shown, routeWidth, ridesOpacity], () => map.setStyle(chosenBaseMap().style), { defer: true }));
+  // The sky follows the page's colours without the style being read again.
+  if (relief) createEffect(on(showsDark, (dark) => map.setSky(RELIEF.sky(dark)), { defer: true }));
   map.once('load', () => ready(map));
   // The credits fold five seconds after they are shown, by the control's own button, as a click on it does.
   map.once('load', () => setTimeout(() => container.querySelector<HTMLElement>('.maplibregl-ctrl-attrib.maplibregl-compact-show > .maplibregl-ctrl-attrib-button')?.click(), 5000));

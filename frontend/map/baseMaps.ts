@@ -67,9 +67,9 @@ export function ownBaseMapChoice(own: string, first: string): void {
 
 /**
  * The lie of the land for a map seen at a tilt: elevation tiles the ground is raised by, and a sky over the horizon
- * that the ground far off fades into.
+ * that the ground far off fades into, by day or, for a page in dark colours, by night.
  */
-export const RELIEF: Pick<StyleSpecification, 'terrain' | 'sky'> & { source: StyleSpecification['sources'][string] } = {
+export const RELIEF: Pick<StyleSpecification, 'terrain'> & { source: StyleSpecification['sources'][string]; sky: (dark: boolean) => NonNullable<StyleSpecification['sky']> } = {
   source: {
     type: 'raster-dem',
     tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
@@ -79,5 +79,10 @@ export const RELIEF: Pick<StyleSpecification, 'terrain' | 'sky'> & { source: Sty
     attribution: 'Elevation: <a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Mapzen terrain tiles</a>',
   },
   terrain: { source: 'relief', exaggeration: 1.3 },
-  sky: { 'sky-color': '#6ea8e6', 'horizon-color': '#dbe8f4', 'fog-color': '#dbe8f4', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.8, 'fog-ground-blend': 0.6 },
+  sky: (dark) => ({
+    ...(dark ? { 'sky-color': '#070b1c', 'horizon-color': '#1d2a4a', 'fog-color': '#131b30' } : { 'sky-color': '#6ea8e6', 'horizon-color': '#dbe8f4', 'fog-color': '#dbe8f4' }),
+    'sky-horizon-blend': 0.7,
+    'horizon-fog-blend': 0.8,
+    'fog-ground-blend': 0.6,
+  }),
 };
