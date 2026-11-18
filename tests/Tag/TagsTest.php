@@ -7,6 +7,7 @@ namespace Planner\Tests\Tag;
 use DateTimeImmutable;
 use PHPUnit\Framework\TestCase;
 use Planner\Account\Users;
+use Planner\Name;
 use Planner\Tag\Tags;
 use Planner\Tests\TestDatabase;
 use Planner\Trip\Folders;
@@ -36,14 +37,14 @@ final class TagsTest extends TestCase
         self::assertFalse($tags->change($otherId, $idea['id'], 'Mine', '#ff8800'));
         self::assertSame(['id' => $idea['id'], 'name' => 'Ideas', 'color' => '#ff8800'], $tags->listFor($userId)[0]);
 
-        self::assertTrue($tags->put($userId, $tripId, $ridden['id'], true));
-        self::assertTrue($tags->put($userId, $tripId, $ridden['id'], true));
-        self::assertTrue($tags->put($userId, $tripId, $idea['id'], true));
-        self::assertFalse($tags->put($userId, $tripId, $theirs['id'], true));
-        self::assertFalse($tags->put($otherId, $tripId, $theirs['id'], true));
+        self::assertTrue($tags->set($userId, $tripId, $ridden['id'], true));
+        self::assertTrue($tags->set($userId, $tripId, $ridden['id'], true));
+        self::assertTrue($tags->set($userId, $tripId, $idea['id'], true));
+        self::assertFalse($tags->set($userId, $tripId, $theirs['id'], true));
+        self::assertFalse($tags->set($otherId, $tripId, $theirs['id'], true));
         self::assertSame([$ridden['id'], $idea['id']], $trips->listFor($userId)[0]->tagIds);
 
-        self::assertTrue($tags->put($userId, $tripId, $ridden['id'], false));
+        self::assertTrue($tags->set($userId, $tripId, $ridden['id'], false));
         self::assertFalse($tags->delete($otherId, $idea['id']));
         self::assertTrue($tags->delete($userId, $idea['id']));
         self::assertSame([], $trips->listFor($userId)[0]->tagIds);
@@ -51,10 +52,10 @@ final class TagsTest extends TestCase
 
     public function testTakesANameAndAColour(): void
     {
-        self::assertSame('Ridden', Tags::nameOf(' Ridden '));
-        self::assertNull(Tags::nameOf(''));
-        self::assertNull(Tags::nameOf(str_repeat('a', Tags::MAX_NAME + 1)));
-        self::assertNull(Tags::nameOf(7));
+        self::assertSame('Ridden', Name::of(' Ridden ', Tags::MAX_NAME));
+        self::assertNull(Name::of('', Tags::MAX_NAME));
+        self::assertNull(Name::of(str_repeat('a', Tags::MAX_NAME + 1), Tags::MAX_NAME));
+        self::assertNull(Name::of(7, Tags::MAX_NAME));
         self::assertSame('#a1b2c3', Tags::colorOf('#A1B2C3'));
         self::assertNull(Tags::colorOf('red'));
         self::assertNull(Tags::colorOf('#fff'));

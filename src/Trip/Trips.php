@@ -118,7 +118,7 @@ final class Trips
     }
 
     /** @param list<int> $tagIds */
-    private function summary(array $row, array $tagIds = []): TripSummary
+    private function summary(array $row, array $tagIds): TripSummary
     {
         return new TripSummary((int) $row['id'], $row['kind'], $row['name'], $row['folder_id'] === null ? null : (int) $row['folder_id'], $row['state'], $row['starts_on'], (int) $row['day_count'], $row['updated_at'], $tagIds);
     }

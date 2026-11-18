@@ -6,6 +6,7 @@ namespace Planner\Tag;
 
 use Planner\Account\CurrentUser;
 use Planner\Http\Json;
+use Planner\Name;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -28,21 +29,28 @@ final class TagController
 
     public function create(Request $request, Response $response): Response
     {
-        [$name, $color] = [Tags::nameOf(Json::field($request, 'name')), Tags::colorOf(Json::field($request, 'color'))];
-        if ($name === null || $color === null) {
+        $fields = self::fields($request);
+        if ($fields === null) {
             return Json::error($response, 422, self::INVALID);
         }
-        $tag = $this->tags->create($this->currentUser->get()->id, $name, $color);
+        $tag = $this->tags->create($this->currentUser->get()->id, ...$fields);
         return $tag === null ? Json::error($response, 409, self::TAKEN) : Json::of($response, $tag)->withStatus(201);
     }
 
     public function change(Request $request, Response $response, array $args): Response
     {
-        [$name, $color] = [Tags::nameOf(Json::field($request, 'name')), Tags::colorOf(Json::field($request, 'color'))];
-        if ($name === null || $color === null) {
+        $fields = self::fields($request);
+        if ($fields === null) {
             return Json::error($response, 422, self::INVALID);
         }
-        return $this->tags->change($this->currentUser->get()->id, (int) $args['tag'], $name, $color) ? $response->withStatus(204) : Json::error($response, 409, self::TAKEN);
+        return $this->tags->change($this->currentUser->get()->id, (int) $args['tag'], ...$fields) ? $response->withStatus(204) : Json::error($response, 409, self::TAKEN);
+    }
+
+    /** @return ?array{string, string} the name and the colour a request gives a tag; null where either is none */
+    private static function fields(Request $request): ?array
+    {
+        [$name, $color] = [Name::of(Json::field($request, 'name'), Tags::MAX_NAME), Tags::colorOf(Json::field($request, 'color'))];
+        return $name === null || $color === null ? null : [$name, $color];
     }
 
     public function delete(Request $request, Response $response, array $args): Response
@@ -64,6 +72,6 @@ final class TagController
 
     private function set(Response $response, array $args, bool $on): Response
     {
-        return $this->tags->put($this->currentUser->get()->id, (int) $args['id'], (int) $args['tag'], $on) ? $response->withStatus(204) : Json::error($response, 404, 'Trip or tag not found.');
+        return $this->tags->set($this->currentUser->get()->id, (int) $args['id'], (int) $args['tag'], $on) ? $response->withStatus(204) : Json::error($response, 404, 'Trip or tag not found.');
     }
 }

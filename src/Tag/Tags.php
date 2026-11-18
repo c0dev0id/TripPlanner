@@ -15,13 +15,6 @@ final class Tags
     {
     }
 
-    /** The name as stored, or null where the value is none or too long. */
-    public static function nameOf(mixed $value): ?string
-    {
-        $name = is_string($value) ? trim($value) : '';
-        return $name === '' || mb_strlen($name) > self::MAX_NAME ? null : $name;
-    }
-
     /** The colour as stored: six hexadecimal digits after a hash; null for anything else. */
     public static function colorOf(mixed $value): ?string
     {
@@ -61,7 +54,7 @@ final class Tags
     }
 
     /** Puts the user's tag on the user's trip, or takes it off. False where the user has no such trip or tag. */
-    public function put(int $userId, int $tripId, int $tagId, bool $on): bool
+    public function set(int $userId, int $tripId, int $tagId, bool $on): bool
     {
         $owned = $this->db->prepare('SELECT 1 FROM trips t, tags g WHERE t.id = ? AND t.user_id = ? AND g.id = ? AND g.user_id = ?');
         $owned->execute([$tripId, $userId, $tagId, $userId]);
