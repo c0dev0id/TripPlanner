@@ -786,7 +786,7 @@
     the video, with the lines after it as its caption; it plays without sound while it
     is scrolled to, one video at a time. The player has no controls of YouTube's: under
     it the page has its own, to play and pause, to move in the video, for the sound and
-    for the whole screen. Photos that follow each other are one gallery:
+    for the whole screen. Once the sound is turned on, the videos after it start with it. Photos that follow each other are one gallery:
     one as wide as the text, or half of it in the middle where it is higher than wide, two side by side, at their shape where both are higher than wide, more in rows of three, each with its caption
     under it and, where it has a place, a pin on it that shows it on the map; a click
     opens a photo large, with the others of the gallery a step away by the arrows.

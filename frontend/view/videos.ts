@@ -35,10 +35,17 @@ const players = new Set<HTMLIFrameElement>();
 const inView = new Set<HTMLIFrameElement>();
 const ready = new WeakSet<HTMLIFrameElement>();
 let playing: HTMLIFrameElement | undefined;
+/** Whether the reader turned the sound on: the videos that start after that have it too. */
+let audible = false;
 
 const tell = (frame: HTMLIFrameElement, message: object) => frame.contentWindow?.postMessage(JSON.stringify(message), VIDEO_HOST);
 const command = (frame: HTMLIFrameElement, func: 'playVideo' | 'pauseVideo' | 'seekTo' | 'mute' | 'unMute', ...args: unknown[]) => ready.has(frame) && tell(frame, { event: 'command', func, args });
 /** What each player said of itself last, to be told what it says now. */
+/** Starts a player, with the sound as the reader last chose it. */
+const start = (frame: HTMLIFrameElement) => {
+  command(frame, audible ? 'unMute' : 'mute');
+  command(frame, 'playVideo');
+};
 const told = new WeakMap<HTMLIFrameElement, (info: Record<string, unknown>) => void>();
 
 /** Has the one video play that is in the window, the uppermost of several, and the one that played stop. */
@@ -47,7 +54,7 @@ function turn(): void {
   if (next === playing) return;
   if (playing) command(playing, 'pauseVideo');
   playing = next;
-  if (next) command(next, 'playVideo');
+  if (next) start(next);
 }
 
 let watcher: IntersectionObserver | undefined;
@@ -62,7 +69,7 @@ function watching(): IntersectionObserver {
     if (said.info) told.get(frame)?.(said.info);
     if (said.event !== 'onReady') return;
     ready.add(frame);
-    if (frame === playing) command(frame, 'playVideo');
+    if (frame === playing) start(frame);
   });
   watcher = new IntersectionObserver(
     (entries) => {
@@ -106,6 +113,9 @@ export function playWhenRead(frame: HTMLIFrameElement): Player {
     playback,
     toggle: () => command(frame, playback().playing ? 'pauseVideo' : 'playVideo'),
     seek: (seconds) => command(frame, 'seekTo', seconds, true),
-    sound: () => command(frame, playback().muted ? 'unMute' : 'mute'),
+    sound: () => {
+      audible = playback().muted;
+      command(frame, audible ? 'unMute' : 'mute');
+    },
   };
 }
