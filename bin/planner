@@ -27,6 +27,13 @@ switch ($command) {
         Database::applySchema($container->get(PDO::class), $root . '/db/schema.sql');
         echo "Schema applied.\n";
         break;
+    case 'db:vacuum':
+        $db = $container->get(PDO::class);
+        $megabytes = fn (): int => intdiv((int) $db->query('PRAGMA page_count')->fetchColumn() * (int) $db->query('PRAGMA page_size')->fetchColumn(), 1_000_000);
+        $before = $megabytes();
+        $db->exec('VACUUM');
+        echo "Database vacuumed: $before MB before, {$megabytes()} MB now.\n";
+        break;
     case 'db:recreate':
         Database::dropAll($container->get(PDO::class));
         Database::applySchema($container->get(PDO::class), $root . '/db/schema.sql');
@@ -105,7 +112,7 @@ switch ($command) {
         }
         break;
     default:
-        fwrite(STDERR, "Usage: bin/planner db:init | db:recreate | invite <email> | user:create <email> | user:password <email> <password> | admin:grant <email> | garmin:icons | closures:fetch | places:fetch [<area>]\n");
+        fwrite(STDERR, "Usage: bin/planner db:init | db:vacuum | db:recreate | invite <email> | user:create <email> | user:password <email> <password> | admin:grant <email> | garmin:icons | closures:fetch | places:fetch [<area>]\n");
         exit(1);
 }
 

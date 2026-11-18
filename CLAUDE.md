@@ -18,9 +18,9 @@ is the planner itself.
 | `npx vitest run frontend/routing/legs.test.ts` | One frontend test file; `-t <name>` for one test. |
 | `npm run typecheck` | TypeScript check alone. |
 | `npm run dev` | Vite dev server on port 5173; set `vite_dev_server` in `config/local.php` so the PHP templates load from it. |
-| `php bin/planner <command>` | `db:init`, `db:recreate`, `invite`, `user:create`, `user:password`, `admin:grant`, `garmin:icons`, `closures:fetch`, `places:fetch <area>`. |
+| `php bin/planner <command>` | `db:init`, `db:vacuum`, `db:recreate`, `invite`, `user:create`, `user:password`, `admin:grant`, `garmin:icons`, `closures:fetch`, `places:fetch <area>`. |
 
-The Makefile targets `init`, `recreate`, `invite`, `user`, `password`, `admin` and `places` wrap
+The Makefile targets `init`, `vacuum`, `recreate`, `invite`, `user`, `password`, `admin` and `places` wrap
 `bin/planner` with `doas -u www` and `pass` for the production OpenBSD box; in
 development call `php bin/planner` directly. The Makefile must stay portable between
 OpenBSD make and GNU make: no conditionals, no shell functions.

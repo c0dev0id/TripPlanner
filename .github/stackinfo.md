@@ -90,6 +90,8 @@
 - The database, the file store, the sessions and the local configuration live outside the checkout.
   `make init` applies the schema (new tables only); `make recreate` drops everything and
   applies it afresh, which is how a schema change is deployed before the first release.
+  `make vacuum` gives the room the database no longer uses back to the disk; SQLite
+  reuses that room by itself, so this is for after much was deleted, not for every day.
 - `make garmin-icons` fetches Garmin's symbol pictures into `public/garmin-symbols` once
   (with `php-8.5`; `PHP=` names another binary); a second run fetches only what is missing.
   httpd serves that directory as static files, as it serves `public/build`

@@ -24,6 +24,11 @@ install: node_modules/.package-lock.json
 init:
 	doas -u www $(PHP) bin/planner db:init
 
+# Gives the room the database no longer uses back to the disk. It takes about as much
+# free room as the database is large while it runs.
+vacuum:
+	doas -u www $(PHP) bin/planner db:vacuum
+
 # A fresh start while nothing is released: drops every table, applies the schema again
 # and removes the journal's files. Every account, trip and file is lost.
 recreate:
@@ -76,4 +81,4 @@ check:
 	$(NPM) test
 	$(NPM) run build
 
-.PHONY: build install init recreate invite user password admin garmin-icons closures places check
+.PHONY: build install init vacuum recreate invite user password admin garmin-icons closures places check
