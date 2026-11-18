@@ -1,10 +1,10 @@
 import { Marker, type Map as MapLibreMap } from 'maplibre-gl';
-import { For, onCleanup } from 'solid-js';
+import { createMemo, For, onCleanup } from 'solid-js';
 import { tripApi } from '../api';
 import { placedEntriesOfDay, type Entry } from '../model/journal';
 import type { Day } from '../model/trip';
 import { roundLngLat } from '../routing/legs';
-import { allEntries, placeEntry, showDayJournal } from '../state/journal';
+import { allEntries, photosOnMap, placeEntry, showDayJournal } from '../state/journal';
 import { shownDay } from '../state/library';
 import { entryMarkerElement } from './markerContent';
 import { toLngLat } from './markers';
@@ -12,10 +12,23 @@ import { toLngLat } from './markers';
 /**
  * The selected day's journal entries where they stand: a photo small, which opens it
  * large, a note as an icon that opens the day's journal at it. A marker is dragged to
- * where its entry should stand.
+ * where its entry should stand. While the map shows the photos of all the library, the
+ * others stand there too, to be opened large.
  */
 export function EntryMarkers(props: { map: MapLibreMap }) {
-  return <For each={shownDay() ? placedEntriesOfDay(allEntries(), shownDay()!) : []}>{(entry) => <EntryMarker map={props.map} entry={entry} day={shownDay()!} />}</For>;
+  const ofDay = createMemo(() => (shownDay() ? placedEntriesOfDay(allEntries(), shownDay()!) : []));
+  return (
+    <>
+      <For each={ofDay()}>{(entry) => <EntryMarker map={props.map} entry={entry} day={shownDay()!} />}</For>
+      <For each={photosOnMap().filter((photo) => !ofDay().some((entry) => entry.id === photo.id))}>{(photo) => <PhotoMarker map={props.map} photo={photo} />}</For>
+    </>
+  );
+}
+
+function PhotoMarker(props: { map: MapLibreMap; photo: Entry }) {
+  const marker = new Marker({ element: entryMarkerElement(props.photo, tripApi(props.photo.tripId)) }).setLngLat(props.photo.lngLat!).addTo(props.map);
+  onCleanup(() => marker.remove());
+  return null;
 }
 
 function EntryMarker(props: { map: MapLibreMap; entry: Entry; day: Day }) {

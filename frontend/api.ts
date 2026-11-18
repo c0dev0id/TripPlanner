@@ -183,6 +183,9 @@ export const tripPageUrl = (tripId: number): string => `/trips/${tripId}`;
 
 export const listEntriesAt = (base: string): Promise<Entry[]> => request('GET', `${base}/entries`);
 
+/** The photos of all the user's journals that stand somewhere on the map. */
+export const listPhotosOnMap = (): Promise<Entry[]> => request('GET', '/api/photos');
+
 /** What tells an entry's file from another's: the browser keeps a file a day, and an entry's id is used again once it is deleted. */
 const fileVersion = (entry: Entry): string => `${entry.file!.size}-${entry.createdAt.replace(/\D/g, '')}`;
 

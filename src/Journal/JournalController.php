@@ -29,6 +29,11 @@ final class JournalController
         return $entries === null ? Json::error($response, 404, 'Trip not found.') : Json::of($response, $entries);
     }
 
+    public function photos(Request $request, Response $response): Response
+    {
+        return Json::of($response, $this->entries->photosOnMap($this->currentUser->get()->id));
+    }
+
     /**
      * Adds an entry from a multipart form: `text`, at most one of `dayId`, `stopId`, `routeId`, a `file`, `lng` and `lat` for a
      * spot on the map, `byDate` for a photo without a part to go to the day of its date, and for an entry written earlier and

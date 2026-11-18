@@ -42,6 +42,13 @@ final class Entries
         return $this->list('t.share_token = ? AND t.journal_published = 1 AND e.kind = ?', [$token, self::JOURNAL]);
     }
 
+    /** @return Entry[] the photos of all the user's journals that stand somewhere on the map */
+    public function photosOnMap(int $userId): array
+    {
+        $images = implode(',', array_fill(0, count(FileStore::PREVIEWABLE), '?'));
+        return $this->list("t.user_id = ? AND e.kind = ? AND e.lng IS NOT NULL AND e.media_type IN ($images)", [$userId, self::JOURNAL, ...FileStore::PREVIEWABLE]);
+    }
+
     public function find(int $userId, int $tripId, int $entryId, string $kind = self::JOURNAL): ?Entry
     {
         return $this->one('e.id = ? AND e.trip_id = ? AND t.user_id = ? AND e.kind = ?', [$entryId, $tripId, $userId, $kind]);

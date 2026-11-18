@@ -1,5 +1,5 @@
 import { batch, createEffect, createMemo, createResource, createRoot, createSignal, on } from 'solid-js';
-import { addEntry as postEntry, deleteEntry, errorMessage, listEntriesAt, orderEntries, tripApi, updateEntry } from '../api';
+import { addEntry as postEntry, deleteEntry, errorMessage, listEntriesAt, listPhotosOnMap, orderEntries, tripApi, updateEntry } from '../api';
 import { dayOfEntry, entriesOn as entriesOf, type Entry, type EntryTarget } from '../model/journal';
 import { chaptersOf, type Chapter } from '../model/journalDocument';
 import type { LngLat } from '../model/trip';
@@ -30,6 +30,18 @@ export const entriesOn = (target: EntryTarget): Entry[] => entriesOf(allEntries(
 const chapters = createRoot(() => createMemo((): Chapter[] => (openTrip() ? chaptersOf(openTrip()!, allEntries()) : [])));
 /** The open trip's journal as it is read: the trip's own entries, then a chapter for each day. */
 export { chapters };
+
+/** Whether the map shows the photos of all the library's journals, not those of the day shown alone. */
+export const [allPhotosShown, setAllPhotosShown] = createSignal(false);
+// Read anew when another trip is opened: the one left may have been written to.
+const [libraryPhotos] = createRoot(() => createResource(() => allPhotosShown() && ([openTripId()] as const), listPhotosOnMap));
+
+/** The photos of the library that stand somewhere, while the map shows them all: the open trip's as they are now, the others' as they were read. */
+export function photosOnMap(): Entry[] {
+  if (!allPhotosShown()) return [];
+  const others = libraryPhotos.error ? [] : (libraryPhotos() ?? []).filter((e) => e.tripId !== openTripId());
+  return [...others, ...allEntries().filter((e) => e.lngLat !== null && e.file?.image)];
+}
 
 /** Whether the pane of a day's contents shows the day's journal instead. */
 export const [dayJournalShown, setDayJournalShown] = createSignal(false);

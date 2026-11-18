@@ -90,6 +90,7 @@ final class Routes
             $api->delete('/trips/{id:[0-9]+}/tags/{tag:[0-9]+}', [TagController::class, 'take']);
             $api->get('/trips/{id:[0-9]+}/card', [CardController::class, 'show']);
             $api->post('/trips/{id:[0-9]+}/card', [CardController::class, 'replace']);
+            $api->get('/photos', [JournalController::class, 'photos']);
             $api->get('/trips/{id:[0-9]+}/entries', [JournalController::class, 'index']);
             $api->post('/trips/{id:[0-9]+}/entries', [JournalController::class, 'add']);
             $api->put('/trips/{id:[0-9]+}/entries/order', [JournalController::class, 'order']);

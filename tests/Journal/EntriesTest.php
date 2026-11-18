@@ -96,6 +96,17 @@ final class EntriesTest extends TestCase
         self::assertSame([null, [11.45, 47.8]], [$hidden->lngLat, $hidden->takenLngLat]);
     }
 
+    public function testListsThePhotosOfAllTheUsersTripsThatStandSomewhere(): void
+    {
+        $here = $this->entries->add($this->userId, $this->tripId, [], '', self::PHOTO, $this->now, [10.5, 47.5]);
+        $this->entries->add($this->userId, $this->tripId, [], '', self::PHOTO, $this->now);
+        $this->entries->add($this->userId, $this->tripId, [], 'A note with a place.', null, $this->now, [10.6, 47.6]);
+        $other = (new Trips($this->db, new Folders($this->db)))->create($this->userId, 'Another', $this->now)->id;
+        $there = $this->entries->add($this->userId, $other, [], '', self::PHOTO, $this->now, [11.5, 48.5]);
+        self::assertEqualsCanonicalizing([$here->id, $there->id], array_map(fn ($e) => $e->id, $this->entries->photosOnMap($this->userId)));
+        self::assertSame([], $this->entries->photosOnMap($this->otherUserId));
+    }
+
     public function testOrdersAChapterAndTakesInEntriesOfOthers(): void
     {
         $add = fn (array $target, string $text) => $this->entries->add($this->userId, $this->tripId, $target, $text, null, $this->now)->id;

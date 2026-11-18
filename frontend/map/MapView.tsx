@@ -21,7 +21,8 @@ import { loadedTrack, previewedLines, recordingColor, shownRecordings } from '..
 import { lookColors, openRouteColors } from '../state/routeColors';
 import { failedLegs } from '../state/routing';
 import { activeRouteId, looked, lookedTripId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
-import { LockIcon, LockOpenIcon, PinIcon, PinOffIcon, ReachIcon } from '../ui/icons';
+import { LockIcon, LockOpenIcon, PhotoIcon, PinIcon, PinOffIcon, ReachIcon } from '../ui/icons';
+import { allPhotosShown, setAllPhotosShown } from '../state/journal';
 import { newBaseMap } from './baseMap';
 import { OverlayInfo } from './OverlayInfo';
 import { Interactions } from './Interactions';
@@ -80,6 +81,16 @@ export function MapView() {
         label: () => t(placesHidden() ? 'Show places' : 'Hide all places'),
         on: PinOffIcon,
         off: PinIcon,
+      }),
+      'top-right',
+    );
+    m.addControl(
+      new ToggleControl({
+        pressed: allPhotosShown,
+        setPressed: setAllPhotosShown,
+        label: () => t(allPhotosShown() ? 'Hide the photos of other trips' : 'Show the photos of all trips'),
+        on: PhotoIcon,
+        off: PhotoIcon,
       }),
       'top-right',
     );

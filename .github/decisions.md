@@ -2144,6 +2144,14 @@ entries at the end of their section.
   asks for at the page's pitches (about four tiles in five were fetched ahead), not
   derived from its code: after a change of the pitches or of MapLibre's level of
   detail they are to be measured again.
+- **All photos on the map are read once, and only looked at.** With the switch on, the
+  planner asks for every photo of the user's journals that has a place
+  (`GET /api/photos`) and reads them again when another trip is opened, since the one
+  left may have been written to; the open trip's are taken from its own journal, which
+  is current. They open large and are not dragged: a photo is put somewhere in its
+  day, where what it belongs to is in view. They are markers like the day's, which
+  holds for the hundreds of photos a library has; thousands would want a layer drawn
+  by the map with clusters.
 - **A file's name is not shown to a visitor.** A photo's marker and its lightbox are
   called by the entry's text, or "Photo": the name a camera or a screenshot gave a
   file says nothing to a reader and may say what the owner did not mean to publish.

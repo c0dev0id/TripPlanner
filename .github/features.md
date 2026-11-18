@@ -849,6 +849,10 @@
   satellite raster tiles; the route lines
   and markers stay. A locate-me button shows where the browser is. The interface light
   or dark by hand, or as the browser says. Both choices are kept in the browser.
+- The photos of all trips on the map, switched on by a button among the map's
+  controls: every photo of the library's journals that stands somewhere, to be opened
+  large. Switched off, the map shows the photos of the day shown alone, which are the
+  ones that can be moved.
 - The distance to the nearest route or track, switched on by a button among the map's
   controls: a slim dashed line from a mark to the nearest place on any line the map
   draws at that moment (the open trip's days shown, a trip looked at, what is pinned,
