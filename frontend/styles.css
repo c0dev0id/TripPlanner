@@ -393,6 +393,11 @@ a {
   }
 }
 
+/* A pane's head has it with a mouse too: what its menu holds, such as a trip's journal and sharing, has no other button in a trip of one day. */
+.panel .pane-heading button.icon.menu-button {
+  display: inline-grid;
+}
+
 /* The handle a row is dragged by and the pad a row is selected by, drawn alike. */
 .panel button.icon:is(.grip, .pad) {
   padding: 2px 0;
