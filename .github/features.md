@@ -40,6 +40,13 @@
   folders or trips are not deleted, and the menu says so. A changed search starts with
   nothing selected. In Recordings it leaves the rides whose names contain it, every
   year of them unfolded, with their count and length over them.
+- Tags tell trips apart. A tag is a name in a colour, made, renamed, recoloured and
+  deleted in the settings. The menu of a trip, or of the trips selected, puts each
+  tag on them or takes it off, ticked where all of them have it; a trip shows its
+  tags as coloured chips on its row. Above the trips the tags stand as switches:
+  those pressed limit the list to the trips that have all of them, in whatever
+  folder, and the search then looks among those. The search also finds a trip by the
+  name of a tag on it. Lists of places and the Stash have no tags.
 - Stash, Trips and Places are each a tree: its folders and trips as rows. A folder
   unfolds in place by a click on it to its folders and trips, a file of the Stash to
   what it holds, a list of places to its categories, as many at once as wanted; what is
@@ -255,7 +262,9 @@
   categories instead, each by its icon, or its dot where it has none. A button
   under the mouse says at once, in a card beside it, what is behind it: the day's
   number and name, its date and length and what it holds, a category's name and how
-  many places it has. On a screen narrower than 1200 px one pane stands beside the
+  many places it has. The strip of a day's folded contents keeps its routes and
+  tracks in reach the same way: a numbered button each, in the route's colour, the
+  one taken up ringed; a click takes the route up, or lets go of it. On a screen narrower than 1200 px one pane stands beside the
   map, the deepest that is open: a pad that opens a pane shows it in the place of
   the one it stands in, and the pad that closes reads Back and leads to the pane
   before, which from a trip's pane closes the trip. On a phone held upright that

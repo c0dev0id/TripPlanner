@@ -78,7 +78,7 @@ flowchart TB
 | API client (frontend) | `api.ts`: requests to the JSON API, the one place that knows its URLs; every request names the page's language. |
 | Language (both) | `frontend/i18n/`: the page's language, from the browser or the kept choice, `t()` with plurals, and the German dictionary `de.json` by English text, which the server's `t()` reads too (`src/I18n/`); a middleware sets the request's language from a `lang` query parameter or `Accept-Language`, `Json::error` translates the API's messages, the templates their texts. |
 | HTTP (backend) | Slim routes and middleware (sessions, CSRF, body parsing, authentication, the request's language, gzip for JSON answers, which then carry their unpacked length as `X-Uncompressed-Length`), Plates templates for the public pages and the two bundle pages, JSON encoding of API answers (`Http/`, `Pages/`, `Api/`). |
-| Domain (backend) | The Stash's files and what is read from them to list them (`Stash/`), accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, what a trip's public page shows and what a visitor gets of it (`Share/`), trip documents with their validator and copies, the outline kept with each day (`Trip/`), GPX writing with its options, the proximity of free stops, the export presets and the zip of whole trips (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the files and links kept with the days, which are entries of a kind of their own (`Media/`), the user's rides and the days they are on, what is read from a ride's file to be kept beside it, and the lookup of the days of riding that may be a day's (`Recording/`), the places of the map: the kinds, the question to the Overpass API and its answer, the fetch of an area and the store by tile, and the places of the user's own lists (`Poi/`), the account's preferences (`Account/`), the read-only API of a shared trip (`Share/`), fetching Garmin's symbol pictures for `make garmin-icons` (`Symbols/`), fetching the motorcycle closures and converting their KML to GeoJSON for `make closures` (`Closures/`). |
+| Domain (backend) | The Stash's files and what is read from them to list them (`Stash/`), accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, what a trip's public page shows and what a visitor gets of it (`Share/`), the user's tags and the trips they are on (`Tag/`), trip documents with their validator and copies, the outline kept with each day (`Trip/`), GPX writing with its options, the proximity of free stops, the export presets and the zip of whole trips (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the files and links kept with the days, which are entries of a kind of their own (`Media/`), the user's rides and the days they are on, what is read from a ride's file to be kept beside it, and the lookup of the days of riding that may be a day's (`Recording/`), the places of the map: the kinds, the question to the Overpass API and its answer, the fetch of an area and the store by tile, and the places of the user's own lists (`Poi/`), the account's preferences (`Account/`), the read-only API of a shared trip (`Share/`), fetching Garmin's symbol pictures for `make garmin-icons` (`Symbols/`), fetching the motorcycle closures and converting their KML to GeoJSON for `make closures` (`Closures/`). |
 | Storage (backend) | PDO repositories over SQLite, the file store on disk (`Journal/FileStore`), mail over SMTP (`Mail/`). |
 
 ## API
@@ -93,7 +93,12 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `PUT /password` | Sets a new password, `{current, password, repeat}`, once `current` is the password in use. |
 | `GET /places/own` | The places the user keeps in the lists of the Places folder, by list, kind and name: id, name, symbol, position, address, contact, website, notes, and the list (`tripId`, `list`) and kind (`dayId`, `kind`) each is in. |
 | `GET /places/{x}/{y}` | The places in a tile of the web's maps at zoom 10 whose kind is among `kinds=` (comma-separated): id, kind, position and tags. Cacheable for a day. |
-| `GET /trips` | The user's trips and collections by name, with their kind, folder, state, day count and first dated day. |
+| `GET /trips` | The user's trips and collections by name, with their kind, folder, state, day count, first dated day and the ids of the tags on them. |
+| `GET /tags` | The user's tags by name: `{id, name, color}`. |
+| `POST /tags` | Makes a tag of `{name, color}`, the colour as `#rrggbb`; 409 for a name the user has. |
+| `PUT /tags/{tag}` | Gives the tag another name and colour. |
+| `DELETE /tags/{tag}` | Deletes the tag, which takes it off its trips. |
+| `PUT /trips/{id}/tags/{tag}`, `DELETE …` | Puts the tag on the trip, or takes it off. |
 | `POST /trips` | Creates a trip from `{name, folderId, kind}`; the folder may be null, the kind is `trip` (the default) or `collection`. A collection goes into a special folder or a folder in one, a trip anywhere else; 422 otherwise. |
 | `GET /trips/{id}` | The trip document: kind, name, description, state, version, days (each with its date) with routes and stops in riding order. |
 | `PUT /trips/{id}` | Replaces the trip's content with the document sent, which carries the version it was loaded at. A day, or a route of a day sent whole, may be sent as `{id, unchanged: true}` and then stands for the stored one. 409 when the version is no longer the current one, 422 when the document is malformed, names parts of another trip or leaves out as unchanged what the trip does not hold. |
@@ -205,6 +210,8 @@ erDiagram
   STOP }o--o| ROUTE : "bound to a point of"
   TRIP ||--o{ ENTRY : "journal"
   TRIP ||--o| TRIP_CARD : "its link's picture"
+  USER ||--o{ TAG : makes
+  TRIP }o--o{ TAG : "tagged (trip_tags)"
   DAY |o--o{ ENTRY : "on"
   STOP |o--o{ ENTRY : "on"
   ROUTE |o--o{ ENTRY : "on"
@@ -334,6 +341,12 @@ erDiagram
     datetime exported_at "read from the file: the time in its head, or null"
     string digest "the SHA-256 of the file as imported, once per user"
     blob gpx "the GPX file, compressed with gzip"
+  }
+  TAG {
+    int id PK
+    int user_id FK
+    string name "once per user, whatever the case"
+    string color "as #rrggbb"
   }
   TRIP_CARD {
     int trip_id PK

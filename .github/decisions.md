@@ -1988,6 +1988,16 @@ entries at the end of their section.
   the text the map is a pane of its own and keeps the drag. What fits the map leaves
   room for the card at its foot as tall as the card is, and an eighth of the map at
   the edges, so that a band of three hundred pixels does not shrink a trip to a dot.
+- **Tags are made first and then put on trips.** A tag typed freely on a trip gives
+  three spellings of the same thing and no place for its colour. Tags are rows of
+  their own (`tags`, once per user by name whatever the case) and `trip_tags` says
+  which trips have them, so renaming or recolouring one changes it everywhere and
+  deleting one takes it off its trips by the foreign key. The list of trips carries
+  the ids, and the browser reads the tags once: chips, menu and the limiting are
+  then all done there. Limiting to several tags means having all of them, since a
+  second tag is pressed to narrow. Limited to tags, the trips are listed flat as a
+  search lists them, because a tree of mostly empty folders hides what was asked
+  for. A copy of a trip starts without tags.
 - **The card of a shared link is drawn in the owner's browser.** A link posted
   somewhere is shown with a picture, which the place it is posted at fetches without
   running the page. A tilted map of the routes cannot be drawn by PHP, and a browser
