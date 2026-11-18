@@ -944,6 +944,16 @@ entries at the end of their section.
   opens a pane unfolds it, since it was asked for. The switch, the button with three
   lines and the sheet that folded down while a route was edited went with the rules
   they served.
+- **A pane that stands follows the row clicked.** With the pad alone moving a pane,
+  looking through trips or days meant a click and a pad for every row, and the pane
+  beside the list showed another row's contents than the one marked. While the pane of
+  the next level is open, a click on a row acts as its pad: another trip is opened in
+  the place of the open one, another day's or category's contents take the pane. A
+  trip opened this way while a day's contents are shown shows those of its first day,
+  so that the panes stay as they are while trips are gone through; a trip of one day
+  has its contents as its pane and none beside it. A pane that is closed still opens
+  by the pad alone, and none is unfolded by a click. Selecting a day from the map
+  leaves the contents where they are.
 - **A trip is open for as long as its pane stands.** "Open" had no place on the screen:
   a click on a row opened a trip, and its pane was a second thing that could be open
   or not. The pad on a trip's row now opens the trip, and its pane is there for as

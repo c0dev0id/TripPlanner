@@ -89,7 +89,9 @@ There are three panes beside the map, each in the one shell `ui/Pane.tsx`: the l
 the pane of the open trip's days or of a list's category, and the pane of a day's
 contents (`trip/DayPane.tsx`, `trip/TripPanel.tsx`). Navigation is explicit: a click on
 a row selects and shows on the map, the pad at the end of a row opens the next pane and
-closes it, and nothing opens or folds by itself. Panes fold to a strip by hand
+closes it, and nothing opens or folds by itself; while the next pane is open, a click
+on a row acts as its pad (`pickDay` in `state/trip.ts`, `clickTrip` in
+`library/Library.tsx`). Panes fold to a strip by hand
 (`state/panel.ts`); below 1200 px one pane is shown, the deepest that is open, and on a
 phone held upright it is a sheet under the map.
 

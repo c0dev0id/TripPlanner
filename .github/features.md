@@ -230,7 +230,9 @@
 - Three panes on a wide screen beside the map: the library, the pane of the open
   trip's days or of a list's category, and the pane of a day's contents. Nothing
   opens or folds by itself: a row's click shows on the map, a row's pad opens the
-  next pane. Each pane has two pads at the top right: one folds it to a narrow strip
+  next pane. While that pane is open it follows the row clicked: another trip is
+  opened in its place, with the contents of its first day where a day's are shown,
+  and another day's or category's contents take theirs. Each pane has two pads at the top right: one folds it to a narrow strip
   and stands at the same place on the strip, where it unfolds the pane again; the
   other closes it, on the strip as well, and closing a trip's pane closes the day's
   contents with it. The library has the fold alone. Any panes may be folded at once,
