@@ -2125,6 +2125,25 @@ entries at the end of their section.
   satellite nor a visitor's choice there changes the planner's map in the same browser.
   A place is seen steeper than before, at 72 degrees, which is where the horizon
   comes into the picture.
+- **The trip's map fetches ahead through the browser's cache.** With satellite
+  pictures and raised ground a flight ended over ground not yet drawn. MapLibre has
+  no way to load a view it is not showing, so the page asks for the tiles itself
+  (`view/preload.ts`): the browser keeps them, and the map's own request for the same
+  address is then answered from there. This holds for sources whose tiles have plain
+  addresses and are kept by the browser, which the pictures and the heights are; a
+  vector style is left alone. Only what comes next in reading order is fetched, two
+  places and the next day, a few requests at a time and at low priority: every place
+  of a long trip at once is thousands of requests per reader, and the bulk fetching
+  the tile servers' terms forbid. A second, hidden map that visits the places would
+  ask for exactly the right tiles, at the price of a second WebGL context decoding
+  every tile twice on the phone the flights are to be smooth on. Which tiles a tilted
+  view draws is therefore reckoned (`tilesInView` in `geo/tiles.ts`): the level the
+  place is seen at over the view, a few of four coarser levels around it, and for a
+  steep view two finer levels toward the ground at the view's foot and past it.
+  The levels and where the finer ones lie were measured against what MapLibre 6
+  asks for at the page's pitches (about four tiles in five were fetched ahead), not
+  derived from its code: after a change of the pitches or of MapLibre's level of
+  detail they are to be measured again.
 - **A file's name is not shown to a visitor.** A photo's marker and its lightbox are
   called by the entry's text, or "Photo": the name a camera or a screenshot gave a
   file says nothing to a reader and may say what the owner did not mean to publish.

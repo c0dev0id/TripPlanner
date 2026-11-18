@@ -1,6 +1,6 @@
 import { BAND_QUERY } from './layout';
 import { t } from '../i18n/t';
-import { GeoJSONSource, Marker, type LngLatLike, type Map as MapLibreMap } from 'maplibre-gl';
+import { GeoJSONSource, Marker, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show } from 'solid-js';
 import { frameOf, zoomToFit } from '../geo/frame';
 import { newBaseMap } from '../map/baseMap';
@@ -14,6 +14,7 @@ import { routePositions, routesDistance } from '../routing/legs';
 import { distanceText } from '../ui/format';
 import { Callouts } from './Callouts';
 import { dayMark, entryMark, TRIP_MARK } from './follow';
+import { preload, tileUrls } from './preload';
 
 /** How long the reading has to stay on something before the map goes there, in milliseconds. */
 const SETTLE_MS = 200;
@@ -30,6 +31,19 @@ const MOST_TURN = { high: 30, wide: 60 };
 const WIDE = 1.6;
 /** How much farther off a tilted map shows an area than a fit reckons, which does so for a map seen from above. */
 const TILT_ZOOM_OUT = 0.35;
+
+/** How many of the places the map goes to next have their tiles fetched ahead, and how long after the map set out for where it is. */
+const AHEAD = 2;
+const AHEAD_MS = 3000;
+
+/** Where the map looks and how. */
+interface View {
+  center: LngLat;
+  zoom: number;
+  pitch: number;
+  bearing: number;
+  offset: [number, number];
+}
 
 /** Where a day's routes run and its stops stand. */
 const positionsOf = (day: Day): LngLat[] => [...day.routes.flatMap(routePositions), ...day.stops.map((stop) => stop.lngLat)];
@@ -72,8 +86,9 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
   const entry = createMemo(() => props.entries.find((e) => entryMark(e.id) === at()));
   const day = createMemo(() => (entry() ? dayOfEntry(props.trip.days, entry()!) : props.trip.days.find((d) => dayMark(d.id) === at())));
   const spot = () => entry() && placeOfEntry(props.trip.days, entry()!);
-  /** The entries that stand somewhere in the chapter read. */
-  const chapter = createMemo(() => props.entries.filter((e) => e.lngLat && dayOfEntry(props.trip.days, e) === day()));
+  /** The entries that stand somewhere in a day's chapter, and in the one read. */
+  const chapterOf = (of: Day | undefined) => props.entries.filter((e) => e.lngLat && dayOfEntry(props.trip.days, e) === of);
+  const chapter = createMemo(() => chapterOf(day()));
 
   createEffect(() => {
     const days = props.trip.days.map((d) => ({ day: d, role: day() === undefined || d === day() ? ('selected' as const) : ('neighbour' as const) }));
@@ -118,11 +133,37 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
   /** The stops shown: of the day read, or of every day. */
   const stops = createMemo(() => (day() ? [day()!] : props.trip.days).flatMap((d) => d.stops));
 
+  /**
+   * How the map shows a day, or an entry of it that stands somewhere, or without either the whole trip: a day at a
+   * tilt, turned a little where that fills the map better; a place of it closer and steeper, in the day's turn;
+   * all of it from above with `still`. Nothing where there is nothing to show.
+   */
+  const viewOf = (of: Day | undefined, e: Entry | undefined, still: boolean): View | undefined => {
+    // The card at the foot of the map covers some of it: what is shown stands above it, and off the edges by less on a small map.
+    const foot = footOf();
+    const edge = Math.min(60, Math.round(container.clientHeight / 8));
+    const lines = of ? of.routes.map(routePositions).filter((line) => line.length > 1) : [];
+    const shape = container.clientWidth / Math.max(1, container.clientHeight - foot);
+    const turn = still || lines.length === 0 ? 0 : bestBearing(lines, shape, DAY_PITCH, shape > WIDE ? MOST_TURN.wide : MOST_TURN.high);
+    // A place is moved up by an offset, not by a padding, which the map would keep and add to the next one.
+    const offset: [number, number] = [0, -foot / 2];
+    const at = e && placeOfEntry(props.trip.days, e);
+    if (at) return { center: at, zoom: e.lngLat ? ENTRY_ZOOM : SPOT_ZOOM, pitch: still ? 0 : SPOT_PITCH, bearing: turn, offset };
+    const shown = (of ? [of] : props.trip.days).flatMap(positionsOf);
+    if (of) for (const placed of chapterOf(of)) shown.push(placed.lngLat!);
+    if (shown.length === 0) return undefined;
+    // What is shown is fitted as the map is turned, into the room over the card and off the edges.
+    const tilted = of !== undefined && !still;
+    const frame = frameOf(shown, turn);
+    const zoom = Math.min(13, zoomToFit(frame, { width: container.clientWidth - 2 * edge, height: container.clientHeight - foot - 2 * edge }));
+    return { center: frame.center, zoom: zoom - (tilted ? TILT_ZOOM_OUT : 0), pitch: tilted ? DAY_PITCH : 0, bearing: turn, offset };
+  };
+
   // The map goes to what is read once the reading has stayed there; at first, and for printing, it is there at once.
   let timer: ReturnType<typeof setTimeout> | undefined;
   let moved = false;
   createEffect(
-    on([map, spot, day, () => props.trip, printing], ([on, at, of, trip, now]) => {
+    on([map, entry, day, () => props.trip, printing], ([on, e, of, , now]) => {
       if (!on) return;
       clearTimeout(timer);
       const move = () => {
@@ -131,34 +172,35 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
         const flown = moved && !still;
         moved = true;
         on.stop();
-        // The card at the foot of the map covers some of it: what is shown stands above it, and off the edges by less on a small map.
-        const foot = footOf();
-        const edge = Math.min(60, Math.round(container.clientHeight / 8));
+        const to = viewOf(of, e, still);
+        if (!to) return;
         // The map flies: up and over to where it goes, the longer the farther that is.
-        const fly = (to: { center: LngLatLike; zoom: number; pitch: number; bearing: number; offset?: [number, number] }) => {
-          const away = on.project(to.center);
-          const far = Math.hypot(away.x - container.clientWidth / 2, away.y - container.clientHeight / 2);
-          on.flyTo({ ...to, curve: 1.25, duration: flown ? Math.min(MOVE_MS.most, MOVE_MS.least + far * 0.7) : 0, essential: true });
-        };
-        // A day is seen at a tilt, turned a little where that fills the map better; a place of it closer and steeper, in the day's turn.
-        const lines = of ? of.routes.map(routePositions).filter((line) => line.length > 1) : [];
-        const shape = container.clientWidth / Math.max(1, container.clientHeight - foot);
-        const turn = still || lines.length === 0 ? 0 : bestBearing(lines, shape, DAY_PITCH, shape > WIDE ? MOST_TURN.wide : MOST_TURN.high);
-        // A place is moved up by an offset, not by a padding, which the map would keep and add to the next one.
-        if (at) return fly({ center: at, zoom: entry()?.lngLat ? ENTRY_ZOOM : SPOT_ZOOM, pitch: still ? 0 : SPOT_PITCH, bearing: turn, offset: [0, -foot / 2] });
-        const shown = (of ? [of] : trip.days).flatMap(positionsOf);
-        if (of) for (const e of chapter()) shown.push(e.lngLat!);
-        if (shown.length === 0) return;
-        // What is shown is fitted as the map is turned, into the room over the card and off the edges.
-        const tilted = of !== undefined && !still;
-        const frame = frameOf(shown, turn);
-        const zoom = Math.min(13, zoomToFit(frame, { width: container.clientWidth - 2 * edge, height: container.clientHeight - foot - 2 * edge }));
-        fly({ center: frame.center, zoom: zoom - (tilted ? TILT_ZOOM_OUT : 0), pitch: tilted ? DAY_PITCH : 0, bearing: turn, offset: [0, -foot / 2] });
+        const away = on.project(to.center);
+        const far = Math.hypot(away.x - container.clientWidth / 2, away.y - container.clientHeight / 2);
+        on.flyTo({ ...to, curve: 1.25, duration: flown ? Math.min(MOVE_MS.most, MOVE_MS.least + far * 0.7) : 0, essential: true });
       };
       if (moved && !now) timer = setTimeout(move, SETTLE_MS);
       else move();
       // What is printed is what was drawn last.
       if (now) on.redraw();
+    }),
+  );
+
+  /** What the map goes to as the page is read on, in that order: the trip, then each day and after it its entries that stand somewhere. */
+  const stations = createMemo(() => [{}, ...props.trip.days.flatMap((d) => [{ day: d }, ...props.entries.filter((e) => placeOfEntry(props.trip.days, e) && dayOfEntry(props.trip.days, e) === d).map((e) => ({ day: d, entry: e }))])] as { day?: Day; entry?: Entry }[]);
+
+  // What the map goes to next is fetched before it does, once the map has had the time to ask for what it shows now.
+  createEffect(
+    on([map, entry, day, stations], ([on, e, of, all]) => {
+      if (!on || !props.rail) return;
+      const fetching = setTimeout(() => {
+        const here = all.findIndex((station) => station.day === of && station.entry === e);
+        const ahead = [...all.slice(here + 1, here + 1 + AHEAD), all.slice(here + 1).find((station) => station.day !== of && !station.entry)];
+        const size = { width: container.clientWidth, height: container.clientHeight };
+        const sources = on.getStyle().sources;
+        preload(ahead.flatMap((station) => (station ? [viewOf(station.day, station.entry, false)] : [])).flatMap((view) => (view ? tileUrls(sources, view, size) : [])));
+      }, AHEAD_MS);
+      onCleanup(() => clearTimeout(fetching));
     }),
   );
   onCleanup(() => clearTimeout(timer));

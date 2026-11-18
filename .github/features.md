@@ -791,6 +791,9 @@
   - The map is satellite imagery over raised ground, with a sky over the horizon that
     the land far off fades into, a night's sky where the page is dark; another base map can be chosen there, and the choice
     is the page's own, apart from the planner's.
+  - The tiles of where the map goes next as the page is read on, the two places after
+    the one read and the next day, are fetched ahead, so that the map flies over
+    ground that is drawn; not for a reader whose browser saves data.
   - The map flies to what is read: a day is seen at a tilt and turned a little to
     fill the map, an entry's place closer and steeper with a ring going out from it,
     the whole trip from above. Where an entry itself stands, a photo's place, the map
