@@ -73,7 +73,7 @@ export function bestBearing(lines: readonly (readonly LngLat[])[], aspect: numbe
 }
 
 /** The look of the card, counted up when it changes, so that the cards made before are made anew. */
-const LOOK = 1;
+const LOOK = 2;
 
 /** A mark of what a card shows: another one once the trip's name or a line on it is another. */
 export function cardMark(name: string, days: readonly LngLat[][][]): string {

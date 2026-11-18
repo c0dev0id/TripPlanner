@@ -276,7 +276,9 @@
   said over the map. There the menus come up from the bottom edge, a submenu in the list's place under a
   row that leads back, and the route
   tools are one bar with captions: the tools, undo and done, the rest under More. On a
-  touch screen every row with a menu has a button with three dots that opens it. A save
+  touch screen every row with a menu has a button with three dots that opens it. The head of the
+  open trip's pane has that button with a mouse as well: it is where a trip of one day
+  has its journal and sharing. A save
   that failed, or a trip changed elsewhere, is said over the map. The days before and after
   the selected one are drawn dimmed on the map, switchable. Each pane is as wide as its edge is dragged, kept per browser; a double click
   on the edge puts the default back. The edge bears a handle at its middle, and under a
@@ -801,7 +803,9 @@
     previews with the trip's name, description and card: the routes on the page on a
     map without names, tilted and turned to fill the picture, and under it the trip's
     name and the places its days begin and end at, each named once while the trip
-    stays there ("Hockenheim – La Bresse – Hockenheim"). The card is made in the
+    stays there ("Hockenheim – La Bresse – Hockenheim"); of more places than two lines
+    hold, those in the middle give way to a mark, so that the first and the last are
+    always named. The card is made in the
     owner's browser while the journal's page settings are shown, anew when the name
     or a route on the page changed; a page without a card previews with its cover. The photos on the shared page
     are pictures made of the uploads: they carry no position and nothing else of what

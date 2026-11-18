@@ -46,18 +46,36 @@ interface Setting {
 }
 const TITLE: Setting = { font: `600 64px ${PROSE}`, color: INK, height: 70, baseline: 52 };
 const PLACES: Setting = { font: `500 30px ${LABEL}`, color: MARK, height: 40, baseline: 30 };
+/** How many lines the name has at most, and the places. */
+const LINES = 2;
 /** The room over the caption's first line, between the name and the places, and under its last line. */
 const [ABOVE, BETWEEN, BELOW] = [40, 10, 44];
+
+/** Names as the words of a line, a dash after each but the last. */
+const dashed = (names: readonly string[]): string[] => names.map((name, n) => (n < names.length - 1 ? `${name} –` : name));
+
+/** The places that fit the caption's lines: all of them, or with those in the middle left out for a mark, so that where the trip begins and where it ends are always named. */
+function placesThatFit(context: CanvasRenderingContext2D, places: readonly string[]): string[] {
+  let [first, last] = [places.slice(0, Math.ceil(places.length / 2)), places.slice(Math.ceil(places.length / 2))];
+  let shown = [...places];
+  while (first.length + last.length > 2 && linesOf(context, dashed(shown), CARD_WIDTH - 2 * EDGE, Infinity).length > LINES) {
+    if (first.length > last.length) first = first.slice(0, -1);
+    else last = last.slice(1);
+    shown = [...first, '…', ...last];
+  }
+  return shown;
+}
 
 /** What stands under the map: the trip's name and the places it goes to, each line with how it is set and how far under the caption's top it stands, and how high the caption is. */
 function captionOf(context: CanvasRenderingContext2D, name: string, destinations: readonly string[]) {
   const set = (setting: Setting, words: readonly string[], top: number) => {
     context.font = setting.font;
-    return linesOf(context, words, CARD_WIDTH - 2 * EDGE, 2).map((text, i) => ({ text, setting, y: top + i * setting.height + setting.baseline }));
+    return linesOf(context, words, CARD_WIDTH - 2 * EDGE, LINES).map((text, i) => ({ text, setting, y: top + i * setting.height + setting.baseline }));
   };
   const title = set(TITLE, name.split(/\s+/), ABOVE);
   const under = ABOVE + title.length * TITLE.height + BETWEEN;
-  const places = destinations.length > 1 ? set(PLACES, destinations.map((place, n) => (n < destinations.length - 1 ? `${place} –` : place)), under) : [];
+  context.font = PLACES.font;
+  const places = destinations.length > 1 ? set(PLACES, dashed(placesThatFit(context, destinations)), under) : [];
   return { lines: [...title, ...places], height: (places.length > 0 ? under + places.length * PLACES.height : under - BETWEEN) + BELOW };
 }
 
