@@ -161,6 +161,8 @@ body {
   flex: 1;
   flex-direction: column;
   align-items: center;
+  /* As wide as the strip, so that the ring of the button shown is not cut off. */
+  align-self: stretch;
   gap: 8px;
   min-height: 0;
   margin: 4px 0 0;
