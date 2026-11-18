@@ -1988,6 +1988,17 @@ entries at the end of their section.
   the text the map is a pane of its own and keeps the drag. What fits the map leaves
   room for the card at its foot as tall as the card is, and an eighth of the map at
   the edges, so that a band of three hundred pixels does not shrink a trip to a dot.
+- **A file in the database is bound as a blob.** The Stash's GPX files are gzip and
+  were written through `execute()` with the other values, which binds a string as
+  text. SQLite keeps the bytes either way and the planner read them back whole, so
+  nothing showed; but text ends at its first zero byte for whatever treats it as
+  text (`length()`, a dump of the database), and a restore from such a dump would
+  have held three bytes of every file. They are bound as `PDO::PARAM_LOB` now, as
+  the rides, the media and the cards were, and a test asks the column for its type.
+- **A fetch of places notes the kinds it asked for and keeps no others.** An answer
+  for one kind holds places that are of another kind first, a hotel that is a
+  restaurant; counted and kept, they overwrote that other kind's note with a count
+  of one or two. Such places are left to their own kind's fetch.
 - **Tags are made first and then put on trips.** A tag typed freely on a trip gives
   three spellings of the same thing and no place for its colour. Tags are rows of
   their own (`tags`, once per user by name whatever the case) and `trip_tags` says

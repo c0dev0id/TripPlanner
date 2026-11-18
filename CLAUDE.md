@@ -61,7 +61,9 @@ There is no linter beyond `php -l` and `tsc`. PHPUnit fails on warnings and depr
   `bin/migrate-…` script that is run once on the server and then deleted. A table that
   keeps files (`stash_files`, `recordings`) has the file as its last column, so that a
   listing does not read through it: such a table gains a column by being made anew in
-  its script, never by `ALTER TABLE … ADD COLUMN`.
+  its script, never by `ALTER TABLE … ADD COLUMN`. A file is bound as `PDO::PARAM_LOB`:
+  bound as a string it is kept as text, which tools outside the planner cut at its
+  first zero byte.
 - The SQLite file, the journal's file store and `config/local.php` live outside the
   deployed checkout; php-fpm runs chrooted, so paths are given relative to the checkout.
 
