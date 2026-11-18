@@ -778,7 +778,8 @@
     one as wide as the text, two side by side, more in rows of three, their captions
     under them; a click opens a photo large, with the others of the gallery a step away
     by the arrows.
-  - The map follows what is read. The day being read stands out and fills the map with
+  - The map follows what is read, down to the last day, also where that is too short
+    to be scrolled up the page. The day being read stands out and fills the map with
     its stops and the photos and notes that stand somewhere on it; an entry with a place
     is gone to when it is read. A button on such an entry shows it on the map, a marker
     on the map goes to where it is told of, and the map's card names what is shown and

@@ -1984,7 +1984,15 @@ entries at the end of their section.
   its chapter while it is there. The map moves once the reading has stayed a fifth of
   a second, stopping a move under way, to an area reckoned once per day; with reduced
   motion it jumps. A scroll handler that maps the scroll position to the map was the
-  alternative: it runs on every frame and has to know the layout. Only the stops and
+  alternative: it runs on every frame and has to know the layout. The end of the page
+  is where the band alone fails: a last day with little or nothing written never
+  comes up to the upper half, since the page scrolls no further, and was never read.
+  So over the last of the scrolling the line that is read at goes down from the band
+  to the foot of the window, and there the scrolling is listened to and the elements
+  are asked where they are; a page little longer than the window does so over all of
+  its scrolling. What is gone to by the card or a marker stays the one read until the
+  reader moves the page, or the line at the foot would take a jump to the day before
+  the last straight to the last. Only the stops and
   entries of the day read have markers, so a trip of four hundred photos puts a dozen
   on the map at a time. A place is shown above the map's card by an offset, not by a
   padding: MapLibre keeps a padding given to a move and adds it to the next one.
