@@ -1,3 +1,4 @@
+import { BAND_QUERY } from './layout';
 import { t } from '../i18n/t';
 import { GeoJSONSource, LngLatBounds, Marker, type Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, createSignal, For, on, onCleanup, onMount, Show } from 'solid-js';
@@ -17,8 +18,6 @@ const SETTLE_MS = 200;
 const MOVE_MS = 900;
 /** How close the map goes to a single place. */
 const SPOT_ZOOM = 12;
-/** The window in which the story's map is a band above the text, as the stylesheet has it. */
-const BAND_QUERY = '(max-width: 899px), (orientation: portrait) and (max-width: 1199px)';
 
 /** The area a day's routes and stops lie in; reckoned once for each day, since a route's line is long. */
 const areas = new WeakMap<Day, LngLatBounds>();

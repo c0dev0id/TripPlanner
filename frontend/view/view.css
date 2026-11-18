@@ -73,6 +73,7 @@ body {
   height: 100%;
 }
 
+/* The band's two conditions are stated in layout.ts as well, for what the script decides by them. */
 @media (max-width: 899px), (orientation: portrait) and (max-width: 1199px) {
   .story-map.beside {
     flex-basis: 100%;

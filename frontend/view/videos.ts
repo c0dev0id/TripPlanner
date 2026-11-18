@@ -9,7 +9,8 @@ export const playerUrl = (videoId: string): string => `${VIDEO_HOST}/embed/${vid
 /** How much of a video is in the window before it is the one read. */
 const IN_VIEW = 0.6;
 
-/** The players in the window, those that take commands by now, and the one that plays. */
+/** The page's players, those in the window, those that take commands by now, and the one that plays. */
+const players = new Set<HTMLIFrameElement>();
 const inView = new Set<HTMLIFrameElement>();
 const ready = new WeakSet<HTMLIFrameElement>();
 let playing: HTMLIFrameElement | undefined;
@@ -32,7 +33,7 @@ function watching(): IntersectionObserver {
   // A player says that it takes commands once it is told that the page listens.
   window.addEventListener('message', (e) => {
     if (e.origin !== VIDEO_HOST || typeof e.data !== 'string' || !e.data.includes('"onReady"')) return;
-    const frame = [...document.querySelectorAll<HTMLIFrameElement>('.video iframe')].find((f) => f.contentWindow === e.source);
+    const frame = [...players].find((player) => player.contentWindow === e.source);
     if (!frame) return;
     ready.add(frame);
     if (frame === playing) command(frame, 'playVideo');
@@ -54,9 +55,11 @@ function watching(): IntersectionObserver {
 export function playWhenRead(frame: HTMLIFrameElement): void {
   const listen = () => tell(frame, { event: 'listening', id: 1, channel: 'widget' });
   frame.addEventListener('load', listen);
+  players.add(frame);
   watching().observe(frame);
   onCleanup(() => {
     watching().unobserve(frame);
+    players.delete(frame);
     inView.delete(frame);
     turn();
   });

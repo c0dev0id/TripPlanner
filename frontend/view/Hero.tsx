@@ -1,3 +1,4 @@
+import { sizesBeside } from './layout';
 import { t } from '../i18n/t';
 import { createMemo, Show } from 'solid-js';
 import { coverImageUrl, routeGpxUrl } from '../api';
@@ -23,7 +24,7 @@ export function Hero(props: { trip: Trip; shown: Shown; api: string }) {
   return (
     <header class="hero">
       <Show when={props.shown.coverEntryId !== null}>
-        <img class="cover" src={cover(1280)} srcset={`${cover(1280)} 1280w, ${cover(2048)} 2048w`} sizes="(min-width: 900px) 64vw, 100vw" alt="" />
+        <img class="cover" src={cover(1280)} srcset={`${cover(1280)} 1280w, ${cover(2048)} 2048w`} sizes={sizesBeside('64vw')} alt="" />
       </Show>
       <div class="column">
         <p class="overline">{[counted(props.trip.days.length, 'day'), distance() > 0 && distanceText(distance()), span(), props.trip.state === 'done' && t('completed')].filter(Boolean).join(' · ')}</p>
