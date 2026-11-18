@@ -71,6 +71,8 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
   const entry = createMemo(() => props.entries.find((e) => entryMark(e.id) === at()));
   const day = createMemo(() => (entry() ? dayOfEntry(props.trip.days, entry()!) : props.trip.days.find((d) => dayMark(d.id) === at())));
   const spot = () => entry() && placeOfEntry(props.trip.days, entry()!);
+  /** The entries that stand somewhere in the chapter read. */
+  const chapter = createMemo(() => props.entries.filter((e) => e.lngLat && dayOfEntry(props.trip.days, e) === day()));
 
   createEffect(() => {
     const days = props.trip.days.map((d) => ({ day: d, role: day() === undefined || d === day() ? ('selected' as const) : ('neighbour' as const) }));
@@ -81,10 +83,9 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
   createEffect(() => {
     const on = map();
     if (!on) return;
-    const chapter = props.entries.filter((e) => e.lngLat && dayOfEntry(props.trip.days, e) === day());
     const markers = [
       ...(day() ? [day()!] : props.trip.days).flatMap((d) => d.stops).map((stop) => new Marker({ element: markerElement('stop-marker', stopContent(() => stop)), anchor: 'bottom' }).setLngLat(stop.lngLat)),
-      ...chapter.map((e) => {
+      ...chapter().map((e) => {
         const told = () => props.go(entryMark(e.id));
         return new Marker({ element: entryMarkerElement(e, props.api, { photo: told, note: told }) }).setLngLat(e.lngLat!);
       }),
@@ -110,6 +111,7 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
         // A place is moved up by an offset, not by a padding, which the map would keep and add to the next one.
         if (at) return on.easeTo({ center: at, zoom: Math.max(on.getZoom(), SPOT_ZOOM), offset: [0, -foot / 2], duration });
         const area = (of ? [of] : trip.days).reduce((all, d) => all.extend(areaOf(d)), new LngLatBounds());
+        if (of) for (const e of chapter()) area.extend(e.lngLat!);
         if (!area.isEmpty()) on.fitBounds(area, { padding: { top: edge, left: edge, right: edge, bottom: edge + foot }, maxZoom: 13, duration });
       };
       if (moved && !now) timer = setTimeout(move, SETTLE_MS);
