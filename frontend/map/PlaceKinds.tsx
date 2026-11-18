@@ -1,7 +1,7 @@
 import { createSignal, For, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { poiBadgeUrl } from './poiImages';
-import { isStoreKind, POI_CATEGORIES } from '../poi/categories';
+import { BADGES, isStoreKind, POI_CATEGORIES } from '../poi/categories';
 import { ownKindColor } from '../state/ownPlaces';
 import { cyclePlaceMode, isTooFarOut, placeMode, type PlaceMode } from '../state/places';
 import { changePlaceKind, placeBadge, placeReachM } from '../state/preferences';
@@ -34,7 +34,7 @@ const KindDot = (props: { id: string }) => <span class="own-dot" style={{ backgr
 export function PlaceKindMark(props: { id: string }) {
   return (
     <Show when={placeBadge(props.id)} fallback={<KindDot id={props.id} />}>
-      {(badge) => <img class="poi-badge" src={poiBadgeUrl(POI_CATEGORIES.find((category) => category.id === badge())!)} alt="" />}
+      {(badge) => <img class="poi-badge" src={poiBadgeUrl(badge())} alt="" />}
     </Show>
   );
 }
@@ -83,7 +83,7 @@ export function StandardPlaces() {
 export function PlaceKindDialog() {
   const save = (form: FormData, kind: EditedKind) => {
     const reach = Math.round(Math.max(0.1, Math.min(MAX_KM, Number(form.get('reach')) || 0.2)) * 1000);
-    const picked = POI_CATEGORIES.find((category) => category.id === form.get('icon'))?.id;
+    const picked = BADGES.find((badge) => badge.id === form.get('icon'))?.id;
     // A kind's own look is kept as no choice: the store's kind its own badge, a list's kind its dot.
     void changePlaceKind(kind.id, reach, picked === kind.id ? undefined : picked);
   };
@@ -104,12 +104,12 @@ export function PlaceKindDialog() {
                 {t("Colored dot")}
               </label>
             </Show>
-            <For each={POI_CATEGORIES}>
-              {(category) => (
+            <For each={BADGES}>
+              {(badge) => (
                 <label>
-                  <input type="radio" name="icon" value={category.id} checked={placeBadge(kind.id) === category.id} />
-                  <img class="poi-badge" src={poiBadgeUrl(category)} alt="" />
-                  {category.label}
+                  <input type="radio" name="icon" value={badge.id} checked={placeBadge(kind.id) === badge.id} />
+                  <img class="poi-badge" src={poiBadgeUrl(badge.id)} alt="" />
+                  {badge.label}
                 </label>
               )}
             </For>

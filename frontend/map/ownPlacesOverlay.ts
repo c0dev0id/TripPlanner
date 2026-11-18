@@ -1,6 +1,6 @@
 import type { Feature, FeatureCollection, Point } from 'geojson';
 import type { LayerSpecification } from 'maplibre-gl';
-import type { PoiCategoryId } from '../poi/categories';
+import type { BadgeId } from '../poi/categories';
 import type { OwnPlace } from '../poi/ownPlaces';
 import { poiImageId } from './poiImages';
 
@@ -26,7 +26,7 @@ export const OWN_PLACES_LAYERS: LayerSpecification[] = [
 ];
 
 /** The places as features, each with its kind's colour and, where `badgeOf` names one for its kind, the badge it is drawn with. */
-export function ownPlaceFeatures(places: readonly { place: OwnPlace; color: string }[], badgeOf: (kind: string) => PoiCategoryId | undefined): FeatureCollection<Point> {
+export function ownPlaceFeatures(places: readonly { place: OwnPlace; color: string }[], badgeOf: (kind: string) => BadgeId | undefined): FeatureCollection<Point> {
   return {
     type: 'FeatureCollection',
     features: places.map(({ place, color }): Feature<Point> => {

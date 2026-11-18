@@ -907,7 +907,7 @@ entries at the end of their section.
   taken up, else the day's routes, since the places along a plan are of no use beside a
   ride that went another way. The states are the browser's, as the map's other layers are; how far
   "along" reaches and the badge a kind is drawn with are the account's, set from the
-  kind's gear, the badge one of those the kinds of the store have, so that every place
+  kind's gear, the badge one of a fixed set drawn alike, so that every place
   on the map looks like a place and none like a stop.
 - **A route's colour says which route it is, not what state it is in.** Routes were
   orange, the neighbouring days' grey: among roads drawn in orange and yellow and the red
@@ -1617,11 +1617,21 @@ entries at the end of their section.
 - **A place is Maki's icon on a disc, not one of our stop drawings.** Maki is the
   icon set made for maps and named after OpenStreetMap's features, which Layer Slayer
   draws its layers with: white on a disc of the kind's colour, small enough for hundreds
-  and not to be taken for a stop of the trip. The six icons are bundled as SVG text and
+  and not to be taken for a stop of the trip. The icons are bundled as SVG text and
   drawn into map images in the browser when a style first needs one, which every change
   of base map does again: through MapLibre's resolver for missing images, which it waits
   for. Its `styleimagemissing` event comes after the request is answered, too late for
   the first drawing. The same picture stands in the preferences.
+- **Badges beyond the store's kinds are a fixed list, not the user's drawings.** The
+  categories of a list of one's own are the user's words, and six badges named after
+  OpenStreetMap's amenities do not cover what riders collect: ruins, meetups, bunkers,
+  trailheads, friends, roads to ride or to avoid. Eight more badges are offered in the
+  kind's settings, each an icon of Maki or of Temaki, the set that adds to Maki in the
+  same grid, on a colour of its own. They are badges only: nothing is fetched for them
+  and they are not kinds of the store (`places.json` stays what the server fetches by).
+  A kind keeps the badge's id in the preferences; an id the planner does not know is
+  drawn as no choice. Rejected: a free choice of icon and colour per category, which
+  needs a picker over hundreds of icons for a handful of uses.
 - **One place decides what a tap on the map is.** `Interactions` filters clicks into taps
   and gives a tap that does no tool's work to the popups of the places and the closures
   first, then to the recording's line: one popup opens, any other closes. A popup listening

@@ -887,8 +887,9 @@
   along what is looked at, and none: along the recording opened or the route taken up,
   else along the selected day's routes; without a day shown, "along" shows none.
   Its gear opens the kind's settings: how far from a route its places are still shown
-  along it, 200 m to begin with, and the badge they are drawn with, one of the kinds'
-  badges. The switches are kept for the browser, the settings with the account. A tap on a place shows name, address, cuisine, opening hours, phone and links to
+  along it, 200 m to begin with, and the badge they are drawn with: one of the kinds'
+  badges, or one of eight more for what a list of one's own holds (historic sites,
+  biker meetups, bunkers, trailheads, friends, good roads, bad roads, roadblocks). The switches are kept for the browser, the settings with the account. A tap on a place shows name, address, cuisine, opening hours, phone and links to
   its homepage and OpenStreetMap. The store is filled area by area by `make places`, which lists
   the areas to pick from when run without one, and names those of which a kind of place
   is behind the others or missing. `make update-places` fetches what is missing: for
