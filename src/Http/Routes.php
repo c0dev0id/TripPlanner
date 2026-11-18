@@ -19,6 +19,7 @@ use Planner\Pages\AppController;
 use Planner\Poi\PlacesController;
 use Planner\Pages\TripViewController;
 use Planner\Recording\RecordingController;
+use Planner\Share\CardController;
 use Planner\Share\PublicationController;
 use Planner\Share\SharedTripController;
 use Planner\Stash\StashController;
@@ -84,6 +85,8 @@ final class Routes
             $api->get('/trips/{id:[0-9]+}/publication', [PublicationController::class, 'show']);
             $api->put('/trips/{id:[0-9]+}/publication', [PublicationController::class, 'replace']);
             $api->get('/trips/{id:[0-9]+}/public', [PublicationController::class, 'preview']);
+            $api->get('/trips/{id:[0-9]+}/card', [CardController::class, 'show']);
+            $api->post('/trips/{id:[0-9]+}/card', [CardController::class, 'replace']);
             $api->get('/trips/{id:[0-9]+}/entries', [JournalController::class, 'index']);
             $api->post('/trips/{id:[0-9]+}/entries', [JournalController::class, 'add']);
             $api->put('/trips/{id:[0-9]+}/entries/order', [JournalController::class, 'order']);
@@ -139,6 +142,7 @@ final class Routes
         $app->group('/api/shared/{token:[0-9a-f]{32}}', function (RouteCollectorProxy $shared): void {
             $shared->get('', [SharedTripController::class, 'document']);
             $shared->get('/gpx', [SharedTripController::class, 'gpx']);
+            $shared->get('/card', [CardController::class, 'shared']);
             $shared->get('/entries', [SharedTripController::class, 'entries']);
             $shared->get('/entries/{entry:[0-9]+}/file', [SharedTripController::class, 'file']);
             $shared->get('/entries/{entry:[0-9]+}/image/{px:400|1280|2048}', [SharedTripController::class, 'image']);

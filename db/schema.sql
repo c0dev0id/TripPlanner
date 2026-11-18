@@ -296,6 +296,14 @@ CREATE TABLE IF NOT EXISTS stash_media (
     UNIQUE (file_id, digest)
 );
 
+-- The picture a shared trip's link is shown with where it is posted: made in the
+-- owner's browser, with a mark of what it was made of.
+CREATE TABLE IF NOT EXISTS trip_cards (
+    trip_id INTEGER PRIMARY KEY REFERENCES trips(id) ON DELETE CASCADE,
+    made_of TEXT NOT NULL,
+    image BLOB NOT NULL
+);
+
 -- The places the map shows of the kinds the planner knows (frontend/poi/places.json),
 -- fetched from OpenStreetMap area by area by `make places` and asked for by the planner
 -- tile by tile: the tiles of the web's maps at zoom 10. id is the OpenStreetMap object,

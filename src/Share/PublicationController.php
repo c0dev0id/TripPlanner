@@ -18,14 +18,16 @@ final class PublicationController
         private readonly Publications $publications,
         private readonly TripDocuments $documents,
         private readonly Entries $entries,
+        private readonly Cards $cards,
         private readonly CurrentUser $currentUser,
     ) {
     }
 
     public function show(Request $request, Response $response, array $args): Response
     {
-        $publication = $this->publications->of($this->currentUser->get()->id, (int) $args['id']);
-        return $publication === null ? Json::error($response, 404, 'Trip not found.') : Json::of($response, $publication);
+        [$userId, $tripId] = [$this->currentUser->get()->id, (int) $args['id']];
+        $publication = $this->publications->of($userId, $tripId);
+        return $publication === null ? Json::error($response, 404, 'Trip not found.') : Json::of($response, $publication + ['card' => $this->cards->madeOf($userId, $tripId)]);
     }
 
     /** The trip's document as the shared API gives it, whether the trip is shared or not. */

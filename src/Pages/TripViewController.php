@@ -6,6 +6,7 @@ namespace Planner\Pages;
 
 use Planner\Config;
 use Planner\Http\View;
+use Planner\Share\Cards;
 use Planner\Share\Publications;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -21,6 +22,7 @@ final class TripViewController
         private readonly ViteAssets $assets,
         private readonly View $view,
         private readonly Publications $publications,
+        private readonly Cards $cards,
         private readonly Config $config,
     ) {
     }
@@ -33,7 +35,7 @@ final class TripViewController
         return $this->view->render($response, 'trip-view', ['api' => $api, 'document' => $asPublic ? "$api/public" : $api, 'assets' => $this->assets->tags(ViteAssets::VIEW)]);
     }
 
-    /** The shared page, headed with the trip's name, description and cover for whoever is sent its link. */
+    /** The shared page, headed with the trip's name, description and picture for whoever is sent its link: its card, or without one its cover. */
     public function shared(Request $request, Response $response, array $args): Response
     {
         $trip = $this->publications->shared($args['token']);
@@ -41,6 +43,7 @@ final class TripViewController
             throw new HttpNotFoundException($request);
         }
         $api = '/api/shared/' . $args['token'];
+        $card = $this->cards->sharedMadeOf($args['token']);
         $description = trim((string) preg_replace('/\s+/', ' ', $trip['description']));
         return $this->view->render($response, 'trip-view', [
             'api' => $api,
@@ -49,7 +52,12 @@ final class TripViewController
             'shared' => [
                 'title' => $trip['name'],
                 'description' => mb_strlen($description) > self::DESCRIPTION_LENGTH ? mb_substr($description, 0, self::DESCRIPTION_LENGTH - 1) . '…' : $description,
-                'image' => $trip['coverEntryId'] === null ? null : "{$this->config->baseUrl}$api/entries/{$trip['coverEntryId']}/image/1280",
+                'image' => match (true) {
+                    $card !== null => "{$this->config->baseUrl}$api/card?v=$card",
+                    $trip['coverEntryId'] !== null => "{$this->config->baseUrl}$api/entries/{$trip['coverEntryId']}/image/1280",
+                    default => null,
+                },
+                'card' => $card !== null,
             ],
         ]);
     }

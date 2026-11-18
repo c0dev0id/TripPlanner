@@ -14,6 +14,10 @@
 <?php endif ?>
 <?php if ($shared['image'] !== null): ?>
 <meta property="og:image" content="<?= $this->e($shared['image']) ?>">
+<?php if ($shared['card']): ?>
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<?php endif ?>
 <meta name="twitter:card" content="summary_large_image">
 <?php endif ?>
 <?php else: ?>
