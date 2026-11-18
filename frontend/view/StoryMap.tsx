@@ -19,7 +19,7 @@ import { preload, tileUrls } from './preload';
 /** How long the reading has to stay on something before the map goes there, in milliseconds. */
 const SETTLE_MS = 200;
 /** How long the map takes to get there at the least and at the most; farther takes longer. */
-const MOVE_MS = { least: 1100, most: 2600 };
+const MOVE_MS = { least: 2200, most: 5200 };
 /** How close the map goes to a stop, and to where an entry itself stands. */
 const [SPOT_ZOOM, ENTRY_ZOOM] = [11.5, 14];
 /** How far the map is tilted over a day and over a single place, in degrees. */
@@ -177,7 +177,7 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
         // The map flies: up and over to where it goes, the longer the farther that is.
         const away = on.project(to.center);
         const far = Math.hypot(away.x - container.clientWidth / 2, away.y - container.clientHeight / 2);
-        on.flyTo({ ...to, curve: 1.25, duration: flown ? Math.min(MOVE_MS.most, MOVE_MS.least + far * 0.7) : 0, essential: true });
+        on.flyTo({ ...to, curve: 1.25, duration: flown ? Math.min(MOVE_MS.most, MOVE_MS.least + far * 1.4) : 0, essential: true });
       };
       if (moved && !now) timer = setTimeout(move, SETTLE_MS);
       else move();
