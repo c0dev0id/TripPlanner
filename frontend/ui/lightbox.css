@@ -24,6 +24,7 @@
   max-width: calc(100vw - 32px);
   max-height: calc(100dvh - 76px);
   object-fit: contain;
+  cursor: zoom-out;
 }
 
 /* A document in the browser's own viewer, on paper's white. */

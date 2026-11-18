@@ -2097,7 +2097,9 @@ entries at the end of their section.
   set as wide as the text at its own shape, an upright one at half that width, which as wide as the text fills the window, two side by side, more in rows of three
   cropped to one shape; their sizes are known from the entry, so the page does not
   jump while they load, and the browser picks one of the three kept sizes by the width
-  it is shown at. The lightbox steps through the gallery it was opened in. A caption
+  it is shown at. The lightbox steps through the gallery it was opened in, and a click on the photo
+  closes it, as the click on it opened it. It has no link to the file: that is for a
+  document, which the lightbox only frames. A caption
   stands under its photo and the way to the map is a pin on the photo: collected under
   the gallery, captions could not be told to their photos, and the one button there
   showed the first photo's place alone. What is read is still the gallery as a whole,

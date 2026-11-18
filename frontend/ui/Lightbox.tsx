@@ -29,7 +29,7 @@ export function openDocument(e: MouseEvent, document: { src: string; name: strin
   setShowing({ images: [document], at: 0 });
 }
 
-/** An image or a document over the page, as large as the viewport allows, with its name and a link to the file; an image of a gallery with the steps to the one before and after, which the arrow keys take too. */
+/** An image or a document over the page, as large as the viewport allows, with its name; a click on an image closes it, and a document has a link to its file; an image of a gallery with the steps to the one before and after, which the arrow keys take too. */
 export function Lightbox() {
   let dialog!: HTMLDialogElement;
   const image = () => showing()?.images[showing()!.at];
@@ -54,7 +54,7 @@ export function Lightbox() {
         {(shown) => (
           <figure>
             <Show when={shown.preview} fallback={<iframe src={shown.src} title={shown.name} />}>
-              <img src={loaded() === shown.src ? shown.src : shown.preview} alt={shown.name} />
+              <img src={loaded() === shown.src ? shown.src : shown.preview} alt={shown.name} onClick={close} />
             </Show>
             <figcaption>
               <span class="name" title={shown.name}>
@@ -68,9 +68,11 @@ export function Lightbox() {
                   <ChevronIcon />
                 </button>
               </Show>
-              <a href={shown.src} target="_blank" rel="noopener">
-                {t('Open file')}
-              </a>
+              <Show when={!shown.preview}>
+                <a href={shown.src} target="_blank" rel="noopener">
+                  {t('Open file')}
+                </a>
+              </Show>
               {/* Focused first: a document's frame would take the keys otherwise, Escape among them. */}
               <button type="button" title={t('Close')} aria-label={t('Close')} autofocus onClick={close}>
                 <CloseIcon />
