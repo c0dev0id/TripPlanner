@@ -1965,6 +1965,18 @@ fieldset.symbols {
   text-align: left;
 }
 
+/* Where a photo was taken: said while the entry stands there, and a link that puts it there while it does not. */
+.journal-row .taken-at {
+  align-self: flex-start;
+  padding: 0 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.journal-row button.taken-at {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
 .journal-row .entry-link svg {
   flex: none;
   width: 14px;

@@ -3,7 +3,7 @@ import { createEffect, Show } from 'solid-js';
 import { tripApi } from '../api';
 import { dayOfEntry, entryTitle, placeOfEntry, type Entry, type EntryTarget } from '../model/journal';
 import { byTimeTaken } from '../model/journalDocument';
-import type { Day } from '../model/trip';
+import type { Day, LngLat } from '../model/trip';
 import { roundLngLat } from '../routing/legs';
 import { panTo } from '../state/drawing';
 import { addEntry, chapters, editEntry, journalError, linkEntry, orderChapter, placeEntry, removeEntry, shownEntryId } from '../state/journal';
@@ -109,12 +109,21 @@ function EntryText(props: { entry: Entry; run: Runner }) {
   );
 }
 
-/** A row of the journal: the grip it is put in order by, its file, its text, what it is linked to and where it stands, and its menu. */
+/** A position as it is read: latitude and longitude to five decimals, a metre or so. */
+const coordinatesText = ([lng, lat]: LngLat): string => `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+
+/**
+ * A row of the journal: the grip it is put in order by, its file, its text, what it is
+ * linked to and where it stands, where its photo was taken, and its menu. Where the
+ * photo was taken puts the entry there by a click while it stands elsewhere or nowhere.
+ */
 function EntryRow(props: { entry: Entry; index: number; day: Day | undefined; onMove: (to: number) => void; run: Runner }) {
   let row!: HTMLLIElement;
   const items = () => entryMenu(props.entry, props.day, props.run);
   /** What the entry is on where that is a route or a stop: the day is the chapter itself. */
   const part = () => partLabel(openTrip()!, props.entry);
+  /** Whether the entry stands on the map where its photo was taken. */
+  const standsWhereTaken = () => String(props.entry.lngLat) === String(props.entry.takenLngLat);
   createEffect(() => {
     if (shownEntryId() === props.entry.id) row.scrollIntoView({ block: 'nearest' });
   });
@@ -138,6 +147,15 @@ function EntryRow(props: { entry: Entry; index: number; day: Day | undefined; on
             </Show>
             {[part(), props.entry.takenAt && takenAtText(props.entry.takenAt)].filter(Boolean).join(' · ')}
           </button>
+        </Show>
+        <Show when={props.entry.takenLngLat}>
+          {(taken) => (
+            <Show when={!standsWhereTaken()} fallback={<span class="taken-at muted detail">{coordinatesText(taken())}</span>}>
+              <button type="button" class="entry-link taken-at detail" title={t('Put where it was taken')} onClick={() => void props.run(() => placeEntry(props.entry, taken()))}>
+                {coordinatesText(taken())}
+              </button>
+            </Show>
+          )}
         </Show>
       </div>
       <MenuButton of={entryTitle(props.entry)} items={items} />

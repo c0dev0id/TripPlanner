@@ -735,7 +735,8 @@
     menu at a spot, on the route being edited or else on the day shown. It takes a
     text, any number of files, or both.
   - A day's journal takes the place of the day's contents in their pane, from the
-    notebook on the day's row or in the pane's head. Its entries are rows: dragged
+    notebook on the day's row or in the pane's head, for as long as the pane stands:
+    closed and opened again by the pad, the pane has the contents. Its entries are rows: dragged
     into order by their grip, their text written in place and saved as it is written,
     photos put in the order they were taken by one button. A row's menu links it to
     the day, one of its routes or one of its stops, moves it to another chapter, and
@@ -753,7 +754,9 @@
     is used; the page says how many are on their way and lists what failed, to be
     tried again or dropped.
   - A photo's time and position are read from its EXIF data: it is shown with the time
-    it was taken and stands on the map where it was taken. Photos added to the trip
+    it was taken and stands on the map where it was taken. A photo with a position
+    says it under its time; while the entry stands elsewhere or is off the map, that
+    is a link that puts it there. Photos added to the trip
     itself go to the days of their dates. An entry's place is changed by dragging its
     marker; from its menu an entry is put on the map, put back where its photo was
     taken, or taken off the map.
