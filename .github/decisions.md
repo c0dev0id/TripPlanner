@@ -863,7 +863,11 @@ entries at the end of their section.
   of the new. The time of the last fetch is kept per area and kind, so `make places`
   names the areas where a kind is behind the others or was never fetched, the ones to
   run again before their turn; the fetch itself ends with an error then, which a cron
-  job mails.
+  job mails. `make update-places` asks for exactly those that were never fetched,
+  area by area: fetching the whole area again for one kind would replace five kinds
+  that are there to get a sixth, and a kind the planner learns of later is missing in
+  every area at once. A kind fetched with no place found has its note and is not
+  asked for again; an area without any fetch is not one the user chose.
 - **An answer is tab-separated values with a mark at its end.** A region's places are tens
   of megabytes as JSON, which PHP would hold whole; as CSV with only the columns kept
   they are a tenth of that and read row by row. Overpass says nothing in a CSV answer it

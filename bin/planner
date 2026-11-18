@@ -111,8 +111,22 @@ switch ($command) {
             exit(1);
         }
         break;
+    case 'places:fill':
+        $unanswered = false;
+        foreach ($container->get(PlaceFetch::class)->fill(new DateTimeImmutable()) as $area => $filled) {
+            echo "Places of $area: {$filled['places']} fetched.\n";
+            if ($filled['missed'] !== []) {
+                fwrite(STDERR, "Not answered for $area: " . implode(', ', $filled['missed']) . ".\n");
+                $unanswered = true;
+            }
+        }
+        if ($unanswered) {
+            fwrite(STDERR, "Run it again for what was not answered.\n");
+            exit(1);
+        }
+        break;
     default:
-        fwrite(STDERR, "Usage: bin/planner db:init | db:vacuum | db:recreate | invite <email> | user:create <email> | user:password <email> <password> | admin:grant <email> | garmin:icons | closures:fetch | places:fetch [<area>]\n");
+        fwrite(STDERR, "Usage: bin/planner db:init | db:vacuum | db:recreate | invite <email> | user:create <email> | user:password <email> <password> | admin:grant <email> | garmin:icons | closures:fetch | places:fetch [<area>] | places:fill\n");
         exit(1);
 }
 

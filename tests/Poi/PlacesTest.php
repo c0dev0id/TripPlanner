@@ -92,6 +92,15 @@ final class PlacesTest extends TestCase
         );
     }
 
+    public function testSaysWhichKindsAnAreaWithPlacesWasNeverFetchedFor(): void
+    {
+        self::assertSame([], $this->places->unfetched(['fuel', 'cafe', 'hotel']));
+        $this->places->replaceKinds('CH-LU', ['fuel', 'cafe'], $this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Agip']]), $this->now);
+        $this->places->replaceKinds('CH-ZG', ['fuel', 'cafe', 'hotel'], $this->answer([['node', 9, 47.02, 8.29, 'fuel', 'Zug']]), $this->now);
+        // A kind fetched with no place found is fetched; an area with nothing fetched is not asked about.
+        self::assertSame(['CH-LU' => ['hotel']], $this->places->unfetched(['fuel', 'cafe', 'hotel']));
+    }
+
     public function testAnAnswerForOneKindLeavesWhatItHasOfAnotherToThatKindsFetch(): void
     {
         $this->places->replaceKinds('CH-LU', ['fuel', 'cafe'], $this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Agip'], ['node', 2, 47.02, 8.29, 'cafe', 'Stays'], ['node', 3, 47.02, 8.29, 'cafe', 'Too']]), $this->now);

@@ -858,7 +858,8 @@
   badges. The switches are kept for the browser, the settings with the account. A tap on a place shows name, address, cuisine, opening hours, phone and links to
   its homepage and OpenStreetMap. The store is filled area by area by `make places`, which lists
   the areas to pick from when run without one, and names those of which a kind of place
-  is behind the others or missing.
+  is behind the others or missing. `make update-places` fetches what is missing: for
+  every area that has places, the kinds never fetched for it, and nothing else.
 - Settings under the gear at the right of the library's tabs, in the pane where the
   other tabs show their tree, by section, each kept as soon as it changes. User: the
   language, kept in the browser, and the password, changed with the one in use. Map:

@@ -72,6 +72,12 @@ closures:
 places:
 	doas -u www $(PHP) bin/planner places:fetch $(AREA)
 
+# Fetches, for every area that has places, the kinds that were never fetched for it: a
+# kind the planner learned of since, or one a fetch was not answered for. What is kept
+# stays as it is.
+update-places:
+	doas -u www $(PHP) bin/planner places:fill
+
 # Runs what CI runs: syntax checks, PHP tests, type check, frontend tests and the build.
 check:
 	$(COMPOSER) validate
@@ -81,4 +87,4 @@ check:
 	$(NPM) test
 	$(NPM) run build
 
-.PHONY: build install init vacuum recreate invite user password admin garmin-icons closures places check
+.PHONY: build install init vacuum recreate invite user password admin garmin-icons closures places update-places check

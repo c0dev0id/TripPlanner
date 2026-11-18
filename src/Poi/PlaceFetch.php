@@ -35,13 +35,50 @@ final class PlaceFetch
      */
     public function fetch(string $area, DateTimeImmutable $now): array
     {
-        $all = $this->fetchKinds($area, $this->kinds->kinds, $now);
+        return $this->fetchOf($area, $this->kinds->kinds, $now);
+    }
+
+    /**
+     * Fetches, for every area that has places, the kinds that were never fetched for it,
+     * and leaves what is kept as it is: an area a kind was added after, or one whose fetch
+     * missed a kind. Each area is given as it is done.
+     *
+     * @return iterable<string, array{places: int, missed: list<string>}> by the area; an area that was not answered at all has every kind asked for as missed
+     */
+    public function fill(DateTimeImmutable $now): iterable
+    {
+        $first = true;
+        foreach ($this->places->unfetched($this->kinds->ids()) as $area => $ids) {
+            if (!$first) {
+                sleep(self::PAUSE_S);
+            }
+            $first = false;
+            try {
+                yield $area => $this->fetchOf($area, array_values(array_filter($this->kinds->kinds, fn (array $kind) => in_array($kind['id'], $ids, true))), $now);
+            } catch (RuntimeException) {
+                yield $area => ['places' => 0, 'missed' => $ids];
+            }
+        }
+    }
+
+    /**
+     * @param list<array> $kinds
+     * @return array{places: int, missed: list<string>}
+     * @throws RuntimeException where no kind was answered
+     */
+    private function fetchOf(string $area, array $kinds, DateTimeImmutable $now): array
+    {
+        $all = $this->fetchKinds($area, $kinds, $now);
         if ($all !== null) {
             return ['places' => $all, 'missed' => []];
         }
+        // One kind alone was asked already.
+        if (count($kinds) === 1) {
+            throw new RuntimeException("The Overpass API gave no places for $area: it did not answer in full, or knows no area of that code. Nothing was changed.");
+        }
         $places = 0;
         $missed = [];
-        foreach ($this->kinds->kinds as $kind) {
+        foreach ($kinds as $kind) {
             sleep(self::PAUSE_S);
             $kept = $this->fetchKinds($area, [$kind], $now);
             $places += $kept ?? 0;
@@ -49,7 +86,7 @@ final class PlaceFetch
                 $missed[] = $kind['id'];
             }
         }
-        if (count($missed) === count($this->kinds->kinds)) {
+        if (count($missed) === count($kinds)) {
             throw new RuntimeException("The Overpass API gave no places for $area: it did not answer in full, or knows no area of that code. Nothing was changed.");
         }
         return ['places' => $places, 'missed' => $missed];

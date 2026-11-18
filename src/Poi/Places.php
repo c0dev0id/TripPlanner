@@ -75,6 +75,21 @@ final class Places
         );
     }
 
+    /**
+     * The kinds that were never fetched for an area that has others fetched, by the area.
+     *
+     * @param list<string> $kinds the kinds there are
+     * @return array<string, list<string>>
+     */
+    public function unfetched(array $kinds): array
+    {
+        $fetched = [];
+        foreach ($this->fetches() as $fetch) {
+            $fetched[$fetch['area']][] = $fetch['kind'];
+        }
+        return array_filter(array_map(fn (array $had) => array_values(array_diff($kinds, $had)), $fetched));
+    }
+
     /** @return list<array{area: string, kind: string, places: int, fetchedAt: string}> the last fetch of each kind in each area, by area and kind */
     public function fetches(): array
     {
