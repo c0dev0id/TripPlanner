@@ -4,7 +4,7 @@ import { dayOfEntry, entriesOn as entriesOf, type Entry, type EntryTarget } from
 import { chaptersOf, type Chapter } from '../model/journalDocument';
 import type { LngLat } from '../model/trip';
 import { flushSave } from './autosave';
-import { openDetail, openTrip, openTripId, partsLost } from './trip';
+import { detailDayId, openDetail, openTrip, openTripId, partsLost } from './trip';
 
 /** The open trip's journal, loaded with the trip; changes go to the server at once, there is no undo. */
 
@@ -53,6 +53,9 @@ export function showDayJournal(dayId: string, entryId?: number): void {
  * on the map it stands on where it is made from there; none while nothing is written.
  */
 const [journal, setJournal] = createSignal<{ target: EntryTarget; spot?: LngLat }>();
+
+// A day's journal is shown in the pane of its contents for as long as that pane stands: opened again, the pane has the contents.
+createRoot(() => createEffect(on(detailDayId, (dayId) => dayId === undefined && setDayJournalShown(false), { defer: true })));
 
 // The journal is the open trip's: what shows it closes with it, and with it a trip that another is opened over.
 createRoot(() =>
