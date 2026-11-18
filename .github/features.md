@@ -761,7 +761,9 @@
     The head and the trip's own entries come first, then the days to jump to, then a
     chapter for each day: its number and date, its name, its length, the shape of its
     route, the plan of the day folded under "Route and stops", and what was written and
-    photographed. Texts are Markdown. Photos that follow each other are one gallery:
+    photographed. Texts are Markdown. A text that is a YouTube address is
+    the video, with the lines after it as its caption; it plays without sound while it
+    is scrolled to, one video at a time. Photos that follow each other are one gallery:
     one as wide as the text, two side by side, more in rows of three, their captions
     under them; a click opens a photo large, with the others of the gallery a step away
     by the arrows.

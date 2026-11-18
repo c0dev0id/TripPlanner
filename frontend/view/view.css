@@ -354,6 +354,22 @@ figcaption {
   height: 16px;
 }
 
+/* A video in its player, as wide as the text. */
+.video {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 36px 0;
+}
+
+.video iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 3px;
+  background: var(--rule);
+}
+
 /* Photos: one as wide as the text, two beside each other, more in rows of three. */
 .gallery {
   display: flex;
@@ -393,7 +409,8 @@ figcaption {
   background: none;
 }
 
-.gallery figcaption {
+.gallery figcaption,
+.video figcaption {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
@@ -665,6 +682,7 @@ figcaption {
   .day-list,
   .route summary,
   .gpx,
+  .video iframe,
   .maplibregl-ctrl {
     display: none !important;
   }

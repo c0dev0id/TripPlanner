@@ -167,7 +167,8 @@ The trip's page (`view/`) is a plan until it has a journal and then a story:
 `TripView.tsx` chooses, `Hero.tsx` heads both, `PlanDays.tsx` is the plan's days,
 `Story.tsx` the chapters, `Blocks.tsx` what a chapter's entries read as (`blocksOf` in
 `model/journalDocument.ts`: texts as Markdown through `ui/markdown.ts`, photos that
-follow each other as one gallery). `follow.ts` says what is being read, by the elements
+follow each other as one gallery, a text that is a YouTube address as its video,
+played one at a time by `view/videos.ts`). `follow.ts` says what is being read, by the elements
 that name themselves with `data-mark`, and `StoryMap.tsx` goes there. The page's styles
 are `view/view.css` alone, with their own colours and the bundled serif; it shares no
 stylesheet of the planner's but the map's and the lightbox's.

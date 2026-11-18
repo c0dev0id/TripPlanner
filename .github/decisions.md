@@ -1966,7 +1966,8 @@ entries at the end of their section.
   whichever is more. The design was settled on a mock first (prose and headings in Newsreader,
   labels and figures in the system's sans, the planner's accent, the visitor's light or
   dark scheme). The typeface is bundled, not fetched from a font service: a visitor's
-  browser talks to nobody but this server and the map's.
+  browser talks to nobody but this server and the map's, and YouTube's where the
+  journal has a video.
 - **The map follows the reading, not the scrolling.** The elements that can be read (the
   head, a chapter, an entry that stands somewhere) name themselves; an
   IntersectionObserver with a band across the upper half of the window says which are
@@ -1987,6 +1988,19 @@ entries at the end of their section.
   the text the map is a pane of its own and keeps the drag. What fits the map leaves
   room for the card at its foot as tall as the card is, and an eighth of the map at
   the edges, so that a band of three hundred pixels does not shrink a trip to a dot.
+- **A video is a text that is a YouTube address.** The journal keeps no video files:
+  they are large, and a rider's videos are on YouTube already. An entry whose first
+  line is such an address and nothing else is read as a video, the lines after it as
+  its caption; this is decided where the entries are read as blocks, so the server,
+  the schema and the editor know nothing of it, and the address stays a link wherever
+  else the text is shown. The owner chose that the players load and start by
+  themselves over a placeholder that asks first: the one video that is at least six
+  tenths in the window plays, the uppermost of several, and stops when it is left.
+  A video that starts by itself has no sound, which browsers require. The players come
+  from youtube-nocookie.com and take their commands as messages, without YouTube's
+  script in the page; they are sent the page's origin as the referrer, which YouTube
+  requires, and not its address, which holds the share's token. A printed page has
+  the link.
 - **Photos that follow each other are a gallery.** The journal has no gallery to make:
   an entry is one photo, and what stands between two photos is a text. One photo is
   set as wide as the text at its own shape, two side by side, more in rows of three

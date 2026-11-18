@@ -10,6 +10,7 @@ import { PinIcon } from '../ui/icons';
 import { openImage, type LightboxImage } from '../ui/Lightbox';
 import { markdownHtml } from '../ui/markdown';
 import { entryMark } from './follow';
+import { playerUrl, playWhenRead } from './videos';
 
 /** What the story's parts are told to do with what is being read: to watch an element that names a mark, and to go to one. */
 export interface Reading {
@@ -68,6 +69,29 @@ function Gallery(props: { entries: Entry[]; trip: Trip; api: string; reading: Re
   );
 }
 
+/** A video in its player, which plays while it is read; under it its caption, and the way to it on YouTube, which is all a printed page has of it. */
+function Video(props: { entry: Entry; videoId: string; caption: string; trip: Trip; reading: Reading }) {
+  const placed = () => isSomewhere(props.entry);
+  return (
+    <figure class="video" data-mark={placed() ? entryMark(props.entry.id) : undefined} ref={(el) => placed() && props.reading.watch(el)}>
+      <iframe ref={playWhenRead} src={playerUrl(props.videoId)} title={props.caption || t('Video')} loading="lazy" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="strict-origin-when-cross-origin" />
+      <figcaption>
+        <div class="captions">
+          <Show when={props.caption}>
+            <div innerHTML={markdownHtml(props.caption)} />
+          </Show>
+          <a href={`https://www.youtube.com/watch?v=${props.videoId}`} target="_blank" rel="noopener noreferrer">
+            {t('Watch on YouTube')}
+          </a>
+        </div>
+        <Show when={placed()}>
+          <Chip entry={props.entry} trip={props.trip} go={props.reading.go} />
+        </Show>
+      </figcaption>
+    </figure>
+  );
+}
+
 /** A chapter's entries as they are read: texts, galleries of the photos that follow each other, and files that are no image. */
 export function Blocks(props: { entries: Entry[]; trip: Trip; api: string; reading: Reading }) {
   const blocks = createMemo(() => blocksOf(props.entries).map((block) => ({ ...block, id: block.kind === 'gallery' ? block.entries[0]!.id : block.entry.id })));
@@ -79,6 +103,10 @@ export function Blocks(props: { entries: Entry[]; trip: Trip; api: string; readi
             const b = block();
             return b.kind === 'gallery' && b.entries;
           };
+          const video = () => {
+            const b = block();
+            return b.kind === 'video' && b;
+          };
           const entry = (kind: 'text' | 'file') => {
             const b = block();
             return b.kind === kind && b.entry;
@@ -86,6 +114,7 @@ export function Blocks(props: { entries: Entry[]; trip: Trip; api: string; readi
           return (
             <Switch>
               <Match when={photos()}>{(entries) => <Gallery entries={entries()} trip={props.trip} api={props.api} reading={props.reading} />}</Match>
+              <Match when={video()}>{(v) => <Video entry={v().entry} videoId={v().videoId} caption={v().caption} trip={props.trip} reading={props.reading} />}</Match>
               <Match when={entry('text')}>
                 {(text) => (
                   <div class="prose" data-mark={isSomewhere(text()) ? entryMark(text().id) : undefined} ref={(el) => isSomewhere(text()) && props.reading.watch(el)}>
