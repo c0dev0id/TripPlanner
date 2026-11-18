@@ -14,7 +14,7 @@ export type ClipKind = 'days' | 'categories' | 'routes' | 'stops' | 'recordings'
 
 /** The kinds of clipboard each place takes. */
 const TAKES: Record<Place, readonly ClipKind[]> = {
-  tripsFolder: ['files', 'folders'],
+  tripsFolder: ['days', 'files', 'folders'],
   placesFolder: ['files'],
   trip: ['days', 'routes', 'files', 'folders', 'parts'],
   list: ['categories', 'stops', 'files', 'parts'],

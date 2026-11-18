@@ -3,7 +3,7 @@ import { createEffect, createMemo, createSignal, For, Match, on, onCleanup, onMo
 import { changeTrip, createFolder, createTrip, deleteFolder, deleteStashFile, deleteTrip, moveStashFile, duplicateTrip, errorMessage, mergeTrips, moveFolder, moveTrip, renameFolder, renameTrip, tripArchiveUrl } from '../api';
 import { TAB_NAMES, TREE_TABS, TREES, type TreeTab } from '../model/library';
 import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/stash';
-import { newId, type Folder, type TripSummary } from '../model/trip';
+import { newId, type Day, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, dropsOnRow, libraryClip, libraryPasteItem, pasteItems as pasteIntoPart, stashFilesClip, type LibraryClip, type PasteInto, type PasteItem } from '../state/clipboard';
 import { detailShown, heldOf, importNote, isPlaceList, paneShown, libraryFolders, libraryTab, libraryTrips, markedFolderOf, wantedTags, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
@@ -21,7 +21,7 @@ import { reveal } from '../state/panel';
 import { readPreference, writePreference } from '../ui/preferences';
 import { cardMenu, spaceMenu } from '../ui/cardMenu';
 import { askChoice, askConfirmation } from '../ui/confirm';
-import { counted } from '../ui/format';
+import { counted, dateText } from '../ui/format';
 import { IconButton } from '../ui/IconButton';
 import { FoldIcon } from '../ui/icons';
 import { dropTarget, type Drop } from '../ui/carry';
@@ -513,10 +513,24 @@ export function Library(props: {
   });
   /** Pastes copied routes into the trip where an import would put them, and saves it. */
   const pasteInto = (tripId: number, routes: CopiedRoute[]) => changeTrip(tripId, (trip) => pasteIntoTrip(trip, routes, newId));
-  /** The item that imports what was copied of the Stash into a folder, null for the top of the trips: among the trips files and folders, as trips; among the places files, as lists. None for a folder of the Stash, where they are. */
+  /** Makes a trip of each day in a folder, null for the top: named as the day, else by its date, with the day's media and the rides it is on. */
+  const pasteDaysAsTrips = (into: number | null, days: readonly Day[], from: { tripId: number; cut: boolean }) =>
+    runLibrary(async () => {
+      for (const day of days) {
+        const trip = await createTrip(day.name || (day.date ? dateText(day.date) : t('New trip')), into, 'trip');
+        let made: string[] = [];
+        await changeTrip(trip.id, (empty) => {
+          const pasted = pasteDays(empty, [day], undefined, newId);
+          made = pasted.days.map((of) => of.id);
+          return pasted;
+        });
+        await bringWithDays(from.tripId, [day], made, from.cut);
+      }
+    }, relistTrips);
+  /** The item that pastes into a folder, null for the top, what is no trip, list or folder: among the trips, files and folders of the Stash as trips and days as trips of one day each; among the places, files as lists. None for a folder of the Stash. */
   const pasteFilesItem = (into: number | null): PasteItem[] => {
     const tree = treeOf(into);
-    if (tree === 'trips') return libraryPasteItem('tripsFolder', { files: (files, copied) => imports.pasteAsTrips(into, files, copied) });
+    if (tree === 'trips') return libraryPasteItem('tripsFolder', { files: (files, copied) => imports.pasteAsTrips(into, files, copied), days: (days, from) => pasteDaysAsTrips(into, days, from) });
     return tree === 'places' ? libraryPasteItem('placesFolder', { files: (files) => imports.pasteFiles(into, files) }) : [];
   };
   /** Whether the folder, null for the top, takes the trips, lists and folders on the clipboard. */
@@ -610,7 +624,8 @@ export function Library(props: {
       return void (routes.length > 0 ? removeRoutes(routes) : removeItems(parts, relist));
     }
     // Files and folders of the Stash are copied, to be imported where they are pasted; cut, they move within the Stash.
-    const pasteFiles = verb === 'paste' && shownTree() ? pasteFilesItem(shownFolderId())[0] : undefined;
+    // Days are pasted into a folder from its menu: the key pastes them into the open trip.
+    const pasteFiles = verb === 'paste' && shownTree() && stashFilesClip() ? pasteFilesItem(shownFolderId())[0] : undefined;
     if (pasteFiles) {
       e.preventDefault();
       return pasteFiles.run();

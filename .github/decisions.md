@@ -2162,6 +2162,12 @@ entries at the end of their section.
   label that describes a state and those were the long ones. A list of places has
   "categories" throughout, which some texts still called sections; the way a file
   calculated for a route is its "path".
+- **A day pasted into a folder becomes a trip.** A folder of the trips takes days
+  (`model/paste.ts`): each is made a trip of that one day under the day's name, with
+  what a day brings to another trip, its media and the rides it is on. The journal
+  stays where it was written, as it does when days are pasted onto a trip. It is
+  offered in the folder's menu and not by the key: with a trip open, Ctrl+V of a day
+  means the day after the one picked, and the library's keys would take it first.
 - **A file's name is not shown to a visitor.** A photo's marker and its lightbox are
   called by the entry's text, or "Photo": the name a camera or a screenshot gave a
   file says nothing to a reader and may say what the owner did not mean to publish.

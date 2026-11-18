@@ -10,7 +10,7 @@ const KINDS: ClipKind[] = ['days', 'categories', 'routes', 'stops', 'recordings'
 /** The matrix, a row for each place: what it takes, in the order of KINDS. */
 const MATRIX: Record<Place, string> = {
   //            days cat  rout stop rec  med  file fold part
-  tripsFolder: '.    .    .    .    .    .    x    x    .',
+  tripsFolder: 'x    .    .    .    .    .    x    x    .',
   placesFolder: '.   .    .    .    .    .    x    .    .',
   trip: '       x    .    x    .    .    .    x    x    x',
   list: '       .    x    .    x    .    .    x    .    x',

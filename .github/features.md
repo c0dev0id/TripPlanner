@@ -132,7 +132,7 @@
   undated day at the end; a collection's sections go at its end. The journal moves
   along, and the merged trips are deleted. Trips and collections are not merged with
   each other. Copied days are pasted onto a trip from its menu, at its end, with their
-  media and the rides they are on.
+  media and the rides they are on. Pasted into a folder of the trips, or at their top, from its menu, each day becomes a trip of its own with that one day, named as the day (by its date where it has no name), with its media and the rides it is on; cut, the days leave their trip.
 - A trip of one day says the day's date and length on its row in place of the count
   of its days, its pane is that day's contents under the trip's name, with the button
   that adds a day (the list of the days comes with the second), and its Paste also takes what only
