@@ -92,6 +92,15 @@ final class PlacesTest extends TestCase
         );
     }
 
+    public function testAnAnswerForOneKindLeavesWhatItHasOfAnotherToThatKindsFetch(): void
+    {
+        $this->places->replaceKinds('CH-LU', ['fuel', 'cafe'], $this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Agip'], ['node', 2, 47.02, 8.29, 'cafe', 'Stays'], ['node', 3, 47.02, 8.29, 'cafe', 'Too']]), $this->now);
+        self::assertSame(1, $this->places->replaceKinds('CH-LU', ['fuel'], $this->answer([['node', 5, 47.02, 8.29, 'fuel', 'Eni'], ['node', 9, 47.02, 8.29, 'cafe', 'Not asked for']]), $this->now->modify('+1 day')));
+        [$x, $y] = Tile::of(8.29, 47.02);
+        self::assertSame(['node/2', 'node/3', 'node/5'], array_column($this->places->inTile($x, $y, $this->kinds->ids()), 'id'));
+        self::assertSame(['cafe' => 2, 'fuel' => 1], array_column($this->places->fetches(), 'places', 'kind'));
+    }
+
     public function testAnIncompleteAnswerOrOneThatLeavesNoPlaceChangesNothing(): void
     {
         $this->places->replaceKinds('CH-LU', ['fuel'], $this->answer([['node', 1, 47.02, 8.29, 'fuel', 'Agip']]), $this->now);

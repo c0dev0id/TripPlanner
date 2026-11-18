@@ -33,6 +33,10 @@ final class Places
         $insert = $this->db->prepare('INSERT OR REPLACE INTO places (id, kind, lng, lat, tile_x, tile_y, tags, area) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
         $counts = array_fill_keys($kinds, 0);
         foreach ($answer->places() as $place) {
+            // An answer for one kind has places that are of another first, such as a hotel that is a restaurant: that kind's own fetch keeps those.
+            if (!isset($counts[$place['kind']])) {
+                continue;
+            }
             [$x, $y] = Tile::of($place['lng'], $place['lat']);
             $insert->execute([$place['id'], $place['kind'], $place['lng'], $place['lat'], $x, $y, Json::encode((object) $place['tags']), $area]);
             $counts[$place['kind']]++;
