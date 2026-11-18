@@ -50,15 +50,15 @@ const BEARINGS = [0, ...Array.from({ length: 17 }, (_, i) => [(i + 1) * 5, -(i +
  * The bearing at which lines fill a tilted picture of the given shape best: the turn of
  * the map, in degrees and between north-west and north-east of east and west, at which
  * the lines' extent is nearest to the picture's shape, the height counted as the tilt
- * shortens it.
+ * shortens it. `within` keeps the turn to so many degrees either way of north up.
  */
-export function bestBearing(lines: readonly (readonly LngLat[])[], aspect: number, pitch: number): number {
+export function bestBearing(lines: readonly (readonly LngLat[])[], aspect: number, pitch: number, within = 90): number {
   const points = lines.flat();
   const plane = planeAt(points[0]!);
   const flat = points.map(plane);
   const shortened = Math.cos((pitch * Math.PI) / 180);
   let best = { bearing: 0, scale: 0 };
-  for (const bearing of BEARINGS) {
+  for (const bearing of BEARINGS.filter((turn) => Math.abs(turn) <= within)) {
     const turn = (bearing * Math.PI) / 180;
     const [cos, sin] = [Math.cos(turn), Math.sin(turn)];
     let [left, right, bottom, top] = [Infinity, -Infinity, Infinity, -Infinity];
