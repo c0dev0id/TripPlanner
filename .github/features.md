@@ -791,7 +791,7 @@
   - The map flies to what is read: a day is seen at a tilt and turned a little to
     fill the map, an entry's place closer and steeper with a ring going out from it,
     the whole trip from above. Where an entry itself stands, a photo's place, the map
-    goes down to the houses, and the photo read is larger on the map than the others.
+    goes closer, to where its scale reads some 300 m, and the photo read is larger on the map than the others.
     Going to an entry by its button answers with one stronger ring, also where the map
     is there already. A photo on the map is called by its caption, never by its
     file's name. The stops' names stand a little off their pins with a

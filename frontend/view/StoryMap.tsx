@@ -20,7 +20,7 @@ const SETTLE_MS = 200;
 /** How long the map takes to get there at the least and at the most; farther takes longer. */
 const MOVE_MS = { least: 1100, most: 2600 };
 /** How close the map goes to a stop, and to where an entry itself stands. */
-const [SPOT_ZOOM, ENTRY_ZOOM] = [11.5, 17];
+const [SPOT_ZOOM, ENTRY_ZOOM] = [11.5, 14];
 /** How far the map is tilted over a day and over a single place, in degrees. */
 const [DAY_PITCH, SPOT_PITCH] = [48, 60];
 /** How far the map is turned off north at the most to fill itself with a day: more where it is a band much wider than high, which a day running north would be lost in. */
