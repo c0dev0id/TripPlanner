@@ -1,0 +1,22 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Planner\Kernel;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Run once, then delete this file. The Stash's GPX files were written as text, which
+// they are not: they are gzip. The planner read them all the same, but a tool that
+// treats text as text, such as a dump of the database, cuts them at their first zero
+// byte. This makes every one of them a blob, byte for byte, and then gives the room
+// the database no longer uses back to the disk, which takes about as much free room
+// as the database is large while it runs. Running it twice does no harm.
+$db = Kernel::container(dirname(__DIR__))->get(PDO::class);
+
+$made = $db->exec("UPDATE stash_files SET gpx = CAST(gpx AS BLOB) WHERE typeof(gpx) = 'text'");
+$pages = fn (): int => (int) $db->query('PRAGMA page_count')->fetchColumn() * (int) $db->query('PRAGMA page_size')->fetchColumn();
+$before = $pages();
+$db->exec('VACUUM');
+printf("Made %d Stash files blobs; the database went from %d MB to %d MB.\n", $made, intdiv($before, 1_000_000), intdiv($pages(), 1_000_000));

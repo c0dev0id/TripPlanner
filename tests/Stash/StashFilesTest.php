@@ -46,6 +46,7 @@ final class StashFilesTest extends TestCase
         self::assertSame(['Over the pass', 'Morning', ''], array_column($kept['file']['items'], 'name'));
         self::assertSame([$kept['file']], $this->files->listFor($this->userId));
         self::assertSame(StashFixture::gpx(), gzdecode($this->files->gzip($this->userId, $kept['file']['id'])));
+        self::assertSame('blob', $this->db->query('SELECT typeof(gpx) FROM stash_files')->fetchColumn());
     }
 
     public function testAFileKeptAlreadyIsNotKeptAgainWhereverItIs(): void
@@ -90,6 +91,7 @@ final class StashFilesTest extends TestCase
         $id = $this->keep(StashFixture::gpx())['file']['id'];
         self::assertTrue($this->files->renameItem($this->userId, $id, 'track', 1, 'Evening <late>'));
         self::assertTrue($this->files->renameItem($this->userId, $id, 'route', 0, 'Pass'));
+        self::assertSame('blob', $this->db->query('SELECT typeof(gpx) FROM stash_files')->fetchColumn());
         self::assertSame(['Pass', 'Morning', 'Evening <late>'], array_column($this->files->listFor($this->userId)[0]['items'], 'name'));
         $gpx = (string) gzdecode($this->files->gzip($this->userId, $id));
         self::assertStringContainsString('<trk><name>Evening &lt;late&gt;</name>', preg_replace('/>\s+</', '><', $gpx));

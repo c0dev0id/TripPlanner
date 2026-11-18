@@ -65,8 +65,12 @@ final class StashFiles
         if ($added) {
             $index = GpxIndex::of($gpx);
             $this->db->beginTransaction();
-            $this->db->prepare('INSERT INTO stash_files (user_id, folder_id, name, created_at, waypoints, creator, exported_at, digest, gpx) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
-                ->execute([$userId, $folderId, $name, Timestamp::of($now), $index->waypoints, $index->creator, $index->exportedAt, $digest, $gzip]);
+            $insert = $this->db->prepare('INSERT INTO stash_files (user_id, folder_id, name, created_at, waypoints, creator, exported_at, digest, gpx) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            foreach ([$userId, $folderId, $name, Timestamp::of($now), $index->waypoints, $index->creator, $index->exportedAt, $digest] as $at => $value) {
+                $insert->bindValue($at + 1, $value);
+            }
+            $insert->bindValue(9, $gzip, PDO::PARAM_LOB);
+            $insert->execute();
             $id = $this->db->lastInsertId();
             $this->index((int) $id, $index);
             $this->db->commit();
@@ -172,7 +176,11 @@ final class StashFiles
         }
         $index = GpxIndex::of($gpx);
         $this->db->beginTransaction();
-        $this->db->prepare('UPDATE stash_files SET waypoints = ?, gpx = ? WHERE id = ?')->execute([$index->waypoints, gzencode($gpx), $id]);
+        $update = $this->db->prepare('UPDATE stash_files SET waypoints = ?, gpx = ? WHERE id = ?');
+        $update->bindValue(1, $index->waypoints);
+        $update->bindValue(2, gzencode($gpx), PDO::PARAM_LOB);
+        $update->bindValue(3, $id);
+        $update->execute();
         $this->db->prepare('DELETE FROM stash_items WHERE file_id = ?')->execute([$id]);
         $this->index($id, $index);
         $this->db->commit();
