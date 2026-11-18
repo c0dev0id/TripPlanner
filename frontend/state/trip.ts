@@ -84,10 +84,17 @@ export function selectDay(id: string | undefined): void {
   });
 }
 
-/** Picks a day in its list: it is shown, or where it is shown already, takes the mark back from a folder or a trip looked at. */
+/**
+ * Picks a day in its list: it is shown, or where it is shown already, takes the mark
+ * back from a folder or a trip looked at. The pane of a day's contents follows while
+ * it is open.
+ */
 export function pickDay(id: string): void {
-  if (selectedDayId() !== id) selectDay(id);
-  else markInOpenTrip();
+  batch(() => {
+    if (selectedDayId() !== id) selectDay(id);
+    else markInOpenTrip();
+    if (detailDayId() !== undefined) setDetailDayId(id);
+  });
 }
 
 /** The selected day; it changes only when that day does. */
@@ -252,11 +259,16 @@ function restore(earlier: Trip | undefined, current: Trip): void {
 let saved: Trip | undefined;
 export const savedTrip = (): Trip | undefined => saved;
 
-/** Where a trip is opened at: its day shown on the map, that day's route taken up, and the day whose contents have their pane. */
+/**
+ * Where a trip is opened at: its day shown on the map, that day's route taken up, and
+ * the day whose contents have their pane, which with `detailFirst` is the first day of
+ * a trip of several where none is named.
+ */
 export interface OpenAt {
   dayId?: string;
   routeId?: string;
   detailDayId?: string;
+  detailFirst?: boolean;
 }
 
 /** Opens a trip as loaded from the server, at the days `at` names or with none shown; nothing before it can be undone. */
@@ -267,7 +279,7 @@ export function loadTrip(loaded: Trip, at: OpenAt = {}): void {
     setOpenTrip(loaded);
     setHistoryVersion((v) => v + 1);
     setSelectedDayId(at.dayId);
-    setDetailDayId(at.detailDayId);
+    setDetailDayId(at.detailDayId ?? (at.detailFirst && loaded.days.length > 1 ? loaded.days[0]!.id : undefined));
     markInOpenTrip();
     setActiveRouteId(loaded.days.find((day) => day.id === at.dayId)?.routes.some((route) => route.id === at.routeId) ? at.routeId : undefined);
   });

@@ -193,6 +193,35 @@ describe('the open trip', () => {
     expect(detailDay()).toBeUndefined();
   });
 
+  it('moves the contents of a day to the day picked while their pane is open', () => {
+    addDay();
+    addDay();
+    const [first, second] = openTrip()!.days.map((day) => day.id);
+    pickDay(first!);
+    expect(detailDay()).toBeUndefined();
+    openDetail(first!);
+    pickDay(second!);
+    expect([selectedDay()?.id, detailDay()?.id]).toEqual([second, second]);
+  });
+
+  it('opens a trip with the contents of its first day where that is asked for', () => {
+    addDay();
+    const one = openTrip()!;
+    addDay();
+    const two = openTrip()!;
+    const [first, second] = two.days.map((day) => day.id);
+    loadTrip(two, { detailFirst: true });
+    expect([detailDay()?.id, selectedDay()]).toEqual([first, undefined]);
+    loadTrip(two, { detailFirst: true, detailDayId: second });
+    expect(detailDay()?.id).toBe(second);
+    loadTrip(two);
+    expect(detailDay()).toBeUndefined();
+    // A trip of one day has its contents as its pane, and none beside it once it has a second day.
+    loadTrip(one, { detailFirst: true });
+    addDay();
+    expect(detailDay()).toBeUndefined();
+  });
+
   it('ends a look at another trip when a day of the open one is shown', () => {
     addDay();
     const dayId = openTrip()!.days[0]!.id;
