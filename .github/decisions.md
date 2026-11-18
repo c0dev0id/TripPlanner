@@ -1988,6 +1988,24 @@ entries at the end of their section.
   the text the map is a pane of its own and keeps the drag. What fits the map leaves
   room for the card at its foot as tall as the card is, and an eighth of the map at
   the edges, so that a band of three hundred pixels does not shrink a trip to a dot.
+- **The card of a shared link is drawn in the owner's browser.** A link posted
+  somewhere is shown with a picture, which the place it is posted at fetches without
+  running the page. A tilted map of the routes cannot be drawn by PHP, and a browser
+  on the server is not something an OpenBSD box with a chrooted php-fpm should run.
+  So the owner's browser draws it, on a map of its own that is never seen (Positron
+  without its symbol layers, the routes in the page's accent, a dot where a day
+  begins and ends), puts the name and the places under it on a canvas, and uploads
+  a JPEG, which the server checks for its kind and size and keeps in `trip_cards`.
+  The bearing is the one of every fifth degree at which the lines' extent comes
+  nearest to the picture's shape, counted with the tilt; since a fit reckons without
+  the tilt, the map is then moved until the projected lines fill their box. The
+  places are asked of Nominatim for each day's first and last point, one within
+  three kilometres of one asked before taking its name. The card carries a mark of
+  the name and the lines it shows; the page settings make it anew where the mark is
+  another, so a trip changed without opening them keeps its card until then, which
+  was accepted over rendering on every save. The page's address for the card names
+  the mark, so a changed card is fetched anew. The attribution of the map is written
+  into the picture.
 - **A video is a text that is a YouTube address.** The journal keeps no video files:
   they are large, and a rider's videos are on YouTube already. An entry whose first
   line is such an address and nothing else is read as a video, the lines after it as

@@ -789,7 +789,12 @@
     distances, nor among its files, and the stops bound to it go with it. The journal
     and its photos are on the shared page once the owner switches them on, and the GPX
     files unless the owner switches them off. A link to the shared page
-    previews with the trip's name, description and cover. The photos on the shared page
+    previews with the trip's name, description and card: the routes on the page on a
+    map without names, tilted and turned to fill the picture, and under it the trip's
+    name and the places its days begin and end at, each named once while the trip
+    stays there ("Hockenheim – La Bresse – Hockenheim"). The card is made in the
+    owner's browser while the journal's page settings are shown, anew when the name
+    or a route on the page changed; a page without a card previews with its cover. The photos on the shared page
     are pictures made of the uploads: they carry no position and nothing else of what
     the camera wrote into the file.
 

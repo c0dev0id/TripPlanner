@@ -78,7 +78,8 @@ share work; sharing between users is on the way.
 - **A page to share** — before the ride it is the plan: the map, the days, the stops,
   and a GPX file for each route. After it, publish the journal and it is the story,
   with the map following what is read. Shared under a link that needs no account,
-  without your booking details, and it prints.
+  without your booking details, and it prints. Posted somewhere, the link shows a
+  card with the route and where it goes.
 - **Roadworks and closures** — a button each on the map shows the roadworks of
   Rhineland-Palatinate and Baden-Württemberg and the roads closed to motorcycles; tap one
   for what and until when.

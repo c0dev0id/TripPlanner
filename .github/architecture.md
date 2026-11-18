@@ -106,8 +106,10 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `GET /trips/outlines` | The outlines of the user's trips by trip id: its days in order, each with its id, name and date, how many routes, stops and recordings it holds, its routes that have a name (`namedRoutes`: id, name, kind), its length in metres (`distanceM`) and the lines of its routes, thinned to a few points each, as polyline6 with the colour a route has of its own. |
 | `POST /trips/{id}/share` | Makes the page public under the trip's token, a new one where it has none; answers `{token}`. |
 | `DELETE /trips/{id}/share` | Takes the page off the public. |
-| `GET /trips/{id}/publication` | What the public page shows besides the plan: `{token, journal, gpx, coverEntryId, hiddenRouteIds}`, the token the page is public under or null, whether the journal is on it, whether it offers GPX files, the journal entry whose photo stands at its top, and the routes and tracks it leaves out. |
+| `GET /trips/{id}/publication` | What the public page shows besides the plan: `{token, journal, gpx, coverEntryId, hiddenRouteIds, card}`, `card` the mark of what the page's card was made of or null, the token the page is public under or null, whether the journal is on it, whether it offers GPX files, the journal entry whose photo stands at its top, and the routes and tracks it leaves out. |
 | `PUT /trips/{id}/publication` | Sets `{journal, gpx, coverEntryId, hiddenRouteIds}`; the cover is an image of the trip's journal, or null. |
+| `GET /trips/{id}/card` | The card a link to the shared page is shown with, a JPEG of 1200 by 630 pixels. |
+| `POST /trips/{id}/card` | Keeps the card sent as the form's `image`, with the mark `of` of what it was made of, in the place of the one before. |
 | `GET /trips/{id}/public` | The trip's document as the shared API gives it, for the owner to look at, whether the trip is shared or not. |
 | `GET /trips/{id}/entries` | The trip's journal entries by their `position`, which orders them within a chapter (the trip's own entries, or a day's with those on its routes and stops): text, file (name, media type, size, whether an image, an image's width and height), the part it is on, when and where a photo was taken (`takenLngLat`) and where the entry stands on the map (`lngLat`). |
 | `POST /trips/{id}/entries` | Adds an entry from a multipart form: `text`, one of `dayId`, `stopId`, `routeId` (none for the trip), `file`, `lng` and `lat` for a spot on the map. It stands after every entry the trip has. An import hands on `createdAt`, the time the entry was written. A photo's EXIF time and position and an image's size are read; with `byDate` a photo with a time and no part goes to the day of that date. |
@@ -165,6 +167,7 @@ A trip shared under a token is readable without sign-in, and without a session, 
 - the document without the routes and tracks the page leaves out and the stops bound
   to them, its stops without their contact and booking reference, with what the page
   shows besides the plan under `public` (`{journal, gpx, coverEntryId}`);
+- `/card`, the picture the page's link is shown with, as the owner's browser made it;
 - `/gpx?routes=<id>`, one route or track as a GPX file of its own, written from that
   document by the export, 404 where the owner offers no GPX files. There is no file of
   the whole trip or of a day: a file holds one line;
@@ -201,6 +204,7 @@ erDiagram
   DAY ||--o{ STOP : "stops"
   STOP }o--o| ROUTE : "bound to a point of"
   TRIP ||--o{ ENTRY : "journal"
+  TRIP ||--o| TRIP_CARD : "its link's picture"
   DAY |o--o{ ENTRY : "on"
   STOP |o--o{ ENTRY : "on"
   ROUTE |o--o{ ENTRY : "on"
@@ -330,6 +334,11 @@ erDiagram
     datetime exported_at "read from the file: the time in its head, or null"
     string digest "the SHA-256 of the file as imported, once per user"
     blob gpx "the GPX file, compressed with gzip"
+  }
+  TRIP_CARD {
+    int trip_id PK
+    string made_of "the mark of the name and the lines it shows"
+    blob image "a JPEG of 1200 by 630 pixels"
   }
   STASH_MEDIA {
     int id PK

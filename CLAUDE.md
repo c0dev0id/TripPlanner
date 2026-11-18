@@ -159,7 +159,8 @@ and stops, each by `position`. It is written in three places that share
 a day's journal in the pane of the day's contents, the whole trip's over the page
 (`trip/JournalWorkspace.tsx`), beside the trip's page as a visitor gets it and under what
 that page shows to whom (`state/publication.ts`). The page in the frame is the read-only
-page itself (`/trips/{id}?as=public`); every write to a trip in `api.ts` tells it to read again (`onTripChanged`). Its changes go to the server at once and are not undone;
+page itself (`/trips/{id}?as=public`); every write to a trip in `api.ts` tells it to read again (`onTripChanged`). The card a shared link is posted with is made there too (`trip/ShareCard.tsx`: what it
+shows and its mark in `model/shareCard.ts`, the picture in `map/cardPicture.ts`). Its changes go to the server at once and are not undone;
 a write that names a part saves the trip first (`flushSave`), and files are sent from
 a queue (`state/uploads.ts`).
 
