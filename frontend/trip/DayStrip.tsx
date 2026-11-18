@@ -6,10 +6,11 @@ import { routeColoring } from '../state/preferences';
 import { PlaceKindMark } from '../map/PlaceKinds';
 import { dropsOnPart } from '../state/clipboard';
 import { isPlaceList } from '../state/library';
-import { isDayMarked, openTrip, openTripId, pickDay, selectDay, selectedDayId } from '../state/trip';
+import { openRouteColors } from '../state/routeColors';
+import { isDayMarked, isRouteActive, openTrip, openTripId, pickDay, selectDay, selectedDayId, takeUpRoute, takeUpRouteOf } from '../state/trip';
 import { ForById } from '../ui/ForById';
 import { dayCounts } from './DayPane';
-import { dayDetail, dayHeading, dayHolds, dayTitleOf } from './labels';
+import { dayDetail, dayHeading, dayHolds, dayTitleOf, routeLabel } from './labels';
 
 /**
  * The open trip's days in the strip their pane folds to: a numbered button each, in
@@ -64,6 +65,34 @@ export function DayStrip() {
       </ol>
       <Show when={hoveredDay()}>{(day) => <DayTip day={day()} top={hovered()!.top} left={hovered()!.left} />}</Show>
     </>
+  );
+}
+
+/**
+ * A day's routes and tracks in the strip the pane of its contents folds to: a numbered
+ * button each, in the route's colour. A click takes the route up, as a click on its row
+ * does, or lets go of it where it is taken up already.
+ */
+export function RouteStrip(props: { day: Day }) {
+  return (
+    <ol class="day-strip">
+      <ForById each={props.day.routes}>
+        {(route, index) => (
+          <li>
+            <button
+              class="day-chip colored"
+              style={{ background: openRouteColors().get(route().id) }}
+              title={routeLabel(route(), props.day)}
+              aria-label={routeLabel(route(), props.day)}
+              aria-pressed={isRouteActive(route().id)}
+              onClick={() => (isRouteActive(route().id) ? takeUpRoute(undefined) : takeUpRouteOf(props.day.id, route().id))}
+            >
+              {index() + 1}
+            </button>
+          </li>
+        )}
+      </ForById>
+    </ol>
   );
 }
 

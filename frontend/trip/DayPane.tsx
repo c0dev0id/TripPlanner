@@ -16,7 +16,7 @@ import { MenuButton } from '../ui/MenuButton';
 import { Pane } from '../ui/Pane';
 import { dayJournalShown, setDayJournalShown, setWorkspaceOpen } from '../state/journal';
 import { SectionDetails } from './CollectionPanel';
-import { DayStrip } from './DayStrip';
+import { DayStrip, RouteStrip } from './DayStrip';
 import { dayDetail, dayHeading, dayTitleOf } from './labels';
 import { ChapterEditor } from './JournalEditor';
 import { journalItem, openTripItems } from './tripMenu';
@@ -120,6 +120,7 @@ function DetailPane(props: { onLeave: () => void }) {
             label={label()}
             onClose={only() ? props.onLeave : closeDetail}
             onUse={() => pickDay(day().id)}
+            strip={<RouteStrip day={day()} />}
             menu={() => (only() ? onlyDayMenu(day()) : dayAddMenu(day()))}
             heading={
               <>
