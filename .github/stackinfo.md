@@ -68,7 +68,8 @@
   The planner reads the database.
 - Base maps: OpenFreeMap's vector styles (Liberty, Bright, Positron, Dark) without an
   API key, and raster tiles from OpenTopoMap, OpenStreetMap, CyclOSM, the BKG's TopPlusOpen
-  and Esri's World Imagery, each with its attribution; the choice is kept in the browser.
+  and Esri's World Imagery, each with its attribution; the choice is kept in the browser. The trip's page raises the ground by
+  the AWS Terrain Tiles (Mapzen's elevation data, Terrarium-encoded, on S3 without a key).
 
 ## Targets
 

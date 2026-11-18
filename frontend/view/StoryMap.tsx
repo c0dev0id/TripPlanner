@@ -22,7 +22,9 @@ const MOVE_MS = { least: 1100, most: 2600 };
 /** How close the map goes to a stop, and to where an entry itself stands. */
 const [SPOT_ZOOM, ENTRY_ZOOM] = [11.5, 14];
 /** How far the map is tilted over a day and over a single place, in degrees. */
-const [DAY_PITCH, SPOT_PITCH] = [48, 60];
+const [DAY_PITCH, SPOT_PITCH] = [48, 72];
+/** How far the map can be tilted by hand: to where the horizon and the sky over it are seen. */
+const MOST_PITCH = 80;
 /** How far the map is turned off north at the most to fill itself with a day: more where it is a band much wider than high, which a day running north would be lost in. */
 const MOST_TURN = { high: 30, wide: 60 };
 const WIDE = 1.6;
@@ -45,7 +47,7 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
   const [map, setMap] = createSignal<MapLibreMap>();
   // The drawing buffer is kept so that the map prints.
   onMount(() => {
-    const made = newBaseMap(container, { canvasContextAttributes: { preserveDrawingBuffer: true } }, setMap);
+    const made = newBaseMap(container, { canvasContextAttributes: { preserveDrawingBuffer: true }, maxPitch: MOST_PITCH }, setMap, { relief: true });
     // Where the page scrolls over the map (the plan's, and the story's while it is a band above the text), one finger
     // or the wheel scrolls the page, and the map takes two fingers or the wheel with Ctrl.
     const band = matchMedia(BAND_QUERY);

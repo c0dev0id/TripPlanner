@@ -8,7 +8,10 @@ import './map/markers.css';
 import '@fontsource-variable/newsreader';
 import '@fontsource-variable/newsreader/wght-italic.css';
 import './view/view.css';
+import { ownBaseMapChoice } from './map/baseMaps';
 import { TripView } from './view/TripView';
+
+ownBaseMapChoice('viewBaseMap', 'satellite');
 
 const root = document.getElementById('root')!;
 render(() => <TripView api={root.dataset.api!} document={root.dataset.document!} />, root);

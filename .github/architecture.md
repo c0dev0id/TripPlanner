@@ -23,7 +23,7 @@ flowchart LR
     valhalla["Valhalla<br/>valhalla1.openstreetmap.de<br/>routing, road surfaces"]
     nominatim["Nominatim<br/>place search, place names"]
     overpass["Overpass API<br/>places of an area"]
-    tiles["OpenFreeMap, OpenTopoMap, OpenStreetMap,<br/>CyclOSM, BKG, Esri<br/>base map tiles"]
+    tiles["OpenFreeMap, OpenTopoMap, OpenStreetMap,<br/>CyclOSM, BKG, Esri<br/>base map tiles,<br/>AWS Terrain Tiles (trip's page)"]
     roadworks["Mobilitätsatlas RLP, MobiData BW<br/>roadworks (WFS)"]
     closures["mintelonline.de<br/>motorcycle closures (KMZ)"]
   end

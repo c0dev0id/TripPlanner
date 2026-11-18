@@ -47,12 +47,37 @@ export function sharpUntil(style: Pick<StyleSpecification, 'sources'>): number {
   return sharp.length > 0 ? Math.max(...sharp) : Infinity;
 }
 
-const stored = readPreference('baseMap');
+/** The preference the choice is kept under. */
+let preference = 'baseMap';
+const chosenOr = (first: string): BaseMap => BASE_MAPS.find((b) => b.id === (readPreference(preference) ?? first))!;
 /** The base map this browser chose last, or the first. */
-const [chosenBaseMap, setChosenBaseMap] = createSignal(BASE_MAPS.find((b) => b.id === stored) ?? BASE_MAPS[0]!);
+const [chosenBaseMap, setChosenBaseMap] = createSignal(chosenOr(BASE_MAPS[0]!.id));
 export { chosenBaseMap };
 
 export function chooseBaseMap(baseMap: BaseMap): void {
   setChosenBaseMap(baseMap);
-  writePreference('baseMap', baseMap.id);
+  writePreference(preference, baseMap.id);
 }
+
+/** Gives the page a choice of its own, kept under `own`, which is the base map `first` until one is chosen there. Called before the page's map is made. */
+export function ownBaseMapChoice(own: string, first: string): void {
+  preference = own;
+  setChosenBaseMap(chosenOr(first));
+}
+
+/**
+ * The lie of the land for a map seen at a tilt: elevation tiles the ground is raised by, and a sky over the horizon
+ * that the ground far off fades into.
+ */
+export const RELIEF: Pick<StyleSpecification, 'terrain' | 'sky'> & { source: StyleSpecification['sources'][string] } = {
+  source: {
+    type: 'raster-dem',
+    tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+    encoding: 'terrarium',
+    tileSize: 256,
+    maxzoom: 15,
+    attribution: 'Elevation: <a href="https://github.com/tilezen/joerd/blob/master/docs/attribution.md">Mapzen terrain tiles</a>',
+  },
+  terrain: { source: 'relief', exaggeration: 1.3 },
+  sky: { 'sky-color': '#6ea8e6', 'horizon-color': '#dbe8f4', 'fog-color': '#dbe8f4', 'sky-horizon-blend': 0.7, 'horizon-fog-blend': 0.8, 'fog-ground-blend': 0.6 },
+};

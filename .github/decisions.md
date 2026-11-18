@@ -2114,6 +2114,17 @@ entries at the end of their section.
   showed the first photo's place alone. What is read is still the gallery as a whole,
   by its first photo with a place: a mark for each photo would send the map on a
   flight for every row scrolled past.
+- **The trip's page shows the land.** Its map starts on satellite imagery, with the
+  ground raised and a sky over it (`RELIEF` in `map/baseMaps.ts`, set into every style
+  the page loads by `newBaseMap`'s `relief`): a story of a ride is about the country
+  it went through, which a road map tilted flat does not show. The planner's map
+  stays flat, where places are put by hand and a raised ground moves what is clicked.
+  The elevation comes from the AWS Terrain Tiles: open data, no key, fetched by the
+  browser as the map tiles are. The page keeps its choice of base map under a
+  preference of its own (`ownBaseMapChoice`), so that neither the page's start on
+  satellite nor a visitor's choice there changes the planner's map in the same browser.
+  A place is seen steeper than before, at 72 degrees, which is where the horizon
+  comes into the picture.
 - **A file's name is not shown to a visitor.** A photo's marker and its lightbox are
   called by the entry's text, or "Photo": the name a camera or a screenshot gave a
   file says nothing to a reader and may say what the owner did not mean to publish.

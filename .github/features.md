@@ -788,6 +788,9 @@
     one as wide as the text, or half of it in the middle where it is higher than wide, two side by side, at their shape where both are higher than wide, more in rows of three, each with its caption
     under it and, where it has a place, a pin on it that shows it on the map; a click
     opens a photo large, with the others of the gallery a step away by the arrows.
+  - The map is satellite imagery over raised ground, with a sky over the horizon that
+    the land far off fades into; another base map can be chosen there, and the choice
+    is the page's own, apart from the planner's.
   - The map flies to what is read: a day is seen at a tilt and turned a little to
     fill the map, an entry's place closer and steeper with a ring going out from it,
     the whole trip from above. Where an entry itself stands, a photo's place, the map

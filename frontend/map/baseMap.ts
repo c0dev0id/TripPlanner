@@ -5,7 +5,7 @@ import { DEFAULT_RIDES_OPACITY, DEFAULT_ROUTE_WIDTH } from '../model/routeLook';
 import { ROUTING_ATTRIBUTION } from '../routing/valhalla';
 import { BaseMapControl } from './BaseMapControl';
 import { OverlayControl } from './OverlayControl';
-import { chosenBaseMap, sharpUntil } from './baseMaps';
+import { chosenBaseMap, RELIEF, sharpUntil } from './baseMaps';
 import { provideImages } from './mapImages';
 import { OVERLAYS, shownOverlays, type Overlay, type OverlayLook } from './overlays';
 import { POI_IMAGES } from './poiImages';
@@ -23,25 +23,27 @@ setWorkerUrl(workerUrl);
  * a POI search found, the user's own places and the point picked on a recording over them, and under all of these the overlays switched on: their
  * sources and layers are appended to every style the map loads, and the trip's sources
  * keep their data across a change of base map, since MapLibre hands the transform the
- * style it is leaving.
+ * style it is leaving. With `relief`, the ground is raised and has a sky over it.
  */
-function withOverlays(previous: StyleSpecification | undefined, next: StyleSpecification, routeWidth: number, shown: readonly Overlay[], look: OverlayLook): StyleSpecification {
+function withOverlays(previous: StyleSpecification | undefined, next: StyleSpecification, routeWidth: number, shown: readonly Overlay[], look: OverlayLook, relief: boolean): StyleSpecification {
   const empty = (): GeoJSONSourceSpecification => ({ type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
   const sources: StyleSpecification['sources'] = { ...next.sources, [ROUTES_SOURCE]: previous?.sources[ROUTES_SOURCE] ?? { ...empty(), attribution: ROUTING_ATTRIBUTION, promoteId: 'route' } };
   for (const id of [LOOK_SOURCE, RECORDINGS_SOURCE, OPENED_RECORDING_SOURCE, RECORDING_POINT_SOURCE, COMPARED_SOURCE, OWN_PLACES_SOURCE, REACH_SOURCE]) sources[id] = previous?.sources[id] ?? empty();
   sources[POI_SOURCE] = previous?.sources[POI_SOURCE] ?? { ...empty(), attribution: PLACES_ATTRIBUTION };
   const sharp = sharpUntil(next);
+  if (relief) sources.relief = RELIEF.source;
   const overlays = shown.map((overlay) => overlay.parts(sharp, look));
   // An overlay's data read once stays: a source written anew would be fetched again.
   for (const overlay of overlays) for (const [id, source] of Object.entries(overlay.sources)) sources[id] = previous?.sources[id] ?? source;
-  return { ...next, sources, layers: [...next.layers, ...overlays.flatMap((o) => o.layers), ...recordingLayers(routeWidth, sharp), ...routeLayers(routeWidth, sharp, LOOK_SOURCE), ...routeLayers(routeWidth, sharp), ...comparedLayers(routeWidth, sharp), ...POI_LAYERS, ...OWN_PLACES_LAYERS, ...RECORDING_POINT_LAYERS, ...REACH_LAYERS] };
+  return { ...next, ...(relief ? { terrain: RELIEF.terrain, sky: RELIEF.sky } : {}), sources, layers: [...next.layers, ...overlays.flatMap((o) => o.layers), ...recordingLayers(routeWidth, sharp), ...routeLayers(routeWidth, sharp, LOOK_SOURCE), ...routeLayers(routeWidth, sharp), ...comparedLayers(routeWidth, sharp), ...POI_LAYERS, ...OWN_PLACES_LAYERS, ...RECORDING_POINT_LAYERS, ...REACH_LAYERS] };
 }
 
-/** What a map draws beyond its base map and the trip's lines: how wide the routes are, and whether the overlays this browser switched on, with the control that switches them, and how opaque the rides among them. */
+/** What a map draws beyond its base map and the trip's lines: how wide the routes are, and whether the overlays this browser switched on, with the control that switches them, and how opaque the rides among them, and whether the ground is raised under a sky. */
 interface Look {
   routeWidth?: () => number;
   overlays?: boolean;
   ridesOpacity?: () => number;
+  relief?: boolean;
 }
 
 /**
@@ -50,9 +52,9 @@ interface Look {
  * the map once it has loaded. Called while a component is set up, whose lifetime the
  * map's following of the choices takes.
  */
-export function newBaseMap(container: HTMLElement, options: Partial<MapOptions>, ready: (map: MapLibreMap) => void, { routeWidth = () => DEFAULT_ROUTE_WIDTH, overlays = false, ridesOpacity = () => DEFAULT_RIDES_OPACITY }: Look = {}): MapLibreMap {
+export function newBaseMap(container: HTMLElement, options: Partial<MapOptions>, ready: (map: MapLibreMap) => void, { routeWidth = () => DEFAULT_ROUTE_WIDTH, overlays = false, ridesOpacity = () => DEFAULT_RIDES_OPACITY, relief = false }: Look = {}): MapLibreMap {
   const shown = (): readonly Overlay[] => (overlays ? shownOverlays() : []);
-  const map = new MapLibreMap({ container, style: chosenBaseMap().style, transformStyle: (previous, next) => withOverlays(previous, next, routeWidth(), shown(), { ridesOpacity: ridesOpacity() }), center: [10.5, 47.5], zoom: 5, attributionControl: { compact: true }, ...options });
+  const map = new MapLibreMap({ container, style: chosenBaseMap().style, transformStyle: (previous, next) => withOverlays(previous, next, routeWidth(), shown(), { ridesOpacity: ridesOpacity() }, relief), center: [10.5, 47.5], zoom: 5, attributionControl: { compact: true }, ...options });
   map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
   map.addControl(new GeolocateControl({ positionOptions: { enableHighAccuracy: true }, fitBoundsOptions: { maxZoom: 13 } }), 'top-right');
   map.addControl(new BaseMapControl(), 'top-right');
