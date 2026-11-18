@@ -17,7 +17,7 @@ final class Trips
     ) {
     }
 
-    /** @return TripSummary[] the user's trips by name, as folders and files are listed, each starting on its first dated day */
+    /** @return TripSummary[] the user's trips by name, as folders and files are listed, each starting on its first dated day and with the tags that are on it */
     public function listFor(int $userId): array
     {
         $statement = $this->db->prepare(
@@ -26,7 +26,14 @@ final class Trips
              WHERE t.user_id = ? GROUP BY t.id ORDER BY t.name COLLATE NOCASE, t.id',
         );
         $statement->execute([$userId]);
-        return array_map($this->summary(...), $statement->fetchAll());
+        $trips = $statement->fetchAll();
+        $tagged = $this->db->prepare('SELECT x.trip_id, x.tag_id FROM trip_tags x JOIN trips t ON t.id = x.trip_id WHERE t.user_id = ? ORDER BY x.tag_id');
+        $tagged->execute([$userId]);
+        $tags = [];
+        foreach ($tagged->fetchAll() as $row) {
+            $tags[(int) $row['trip_id']][] = (int) $row['tag_id'];
+        }
+        return array_map(fn (array $row) => $this->summary($row, $tags[(int) $row['id']] ?? []), $trips);
     }
 
     public const KINDS = ['trip', 'collection'];
@@ -110,8 +117,9 @@ final class Trips
         return $statement->rowCount() === 1;
     }
 
-    private function summary(array $row): TripSummary
+    /** @param list<int> $tagIds */
+    private function summary(array $row, array $tagIds = []): TripSummary
     {
-        return new TripSummary((int) $row['id'], $row['kind'], $row['name'], $row['folder_id'] === null ? null : (int) $row['folder_id'], $row['state'], $row['starts_on'], (int) $row['day_count'], $row['updated_at']);
+        return new TripSummary((int) $row['id'], $row['kind'], $row['name'], $row['folder_id'] === null ? null : (int) $row['folder_id'], $row['state'], $row['starts_on'], (int) $row['day_count'], $row['updated_at'], $tagIds);
     }
 }

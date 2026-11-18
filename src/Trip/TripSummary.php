@@ -18,6 +18,8 @@ final readonly class TripSummary
         public ?string $startsOn,
         public int $dayCount,
         public string $updatedAt,
+        /** @var list<int> the user's tags that are on it */
+        public array $tagIds = [],
     ) {
     }
 }

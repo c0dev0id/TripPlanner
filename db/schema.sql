@@ -296,6 +296,24 @@ CREATE TABLE IF NOT EXISTS stash_media (
     UNIQUE (file_id, digest)
 );
 
+-- The tags a user made to tell trips apart, each a name in a colour, and the trips they
+-- are on.
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL COLLATE NOCASE,
+    color TEXT NOT NULL,
+    UNIQUE (user_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS trip_tags (
+    trip_id INTEGER NOT NULL REFERENCES trips(id) ON DELETE CASCADE,
+    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (trip_id, tag_id)
+) WITHOUT ROWID;
+
+CREATE INDEX IF NOT EXISTS trip_tags_tag ON trip_tags(tag_id);
+
 -- The picture a shared trip's link is shown with where it is posted: made in the
 -- owner's browser, with a mark of what it was made of.
 CREATE TABLE IF NOT EXISTS trip_cards (

@@ -20,6 +20,7 @@ use Planner\Poi\PlacesController;
 use Planner\Pages\TripViewController;
 use Planner\Recording\RecordingController;
 use Planner\Share\CardController;
+use Planner\Tag\TagController;
 use Planner\Share\PublicationController;
 use Planner\Share\SharedTripController;
 use Planner\Stash\StashController;
@@ -85,6 +86,8 @@ final class Routes
             $api->get('/trips/{id:[0-9]+}/publication', [PublicationController::class, 'show']);
             $api->put('/trips/{id:[0-9]+}/publication', [PublicationController::class, 'replace']);
             $api->get('/trips/{id:[0-9]+}/public', [PublicationController::class, 'preview']);
+            $api->put('/trips/{id:[0-9]+}/tags/{tag:[0-9]+}', [TagController::class, 'put']);
+            $api->delete('/trips/{id:[0-9]+}/tags/{tag:[0-9]+}', [TagController::class, 'take']);
             $api->get('/trips/{id:[0-9]+}/card', [CardController::class, 'show']);
             $api->post('/trips/{id:[0-9]+}/card', [CardController::class, 'replace']);
             $api->get('/trips/{id:[0-9]+}/entries', [JournalController::class, 'index']);
@@ -133,6 +136,10 @@ final class Routes
             $api->delete('/stash/files/{file:[0-9]+}/media', [StashMediaController::class, 'delete']);
             $api->get('/stash/files/{file:[0-9]+}/media/{media:[0-9]+}/file', [StashMediaController::class, 'file']);
             $api->get('/stash/files/{file:[0-9]+}/media/{media:[0-9]+}/preview', [StashMediaController::class, 'preview']);
+            $api->get('/tags', [TagController::class, 'index']);
+            $api->post('/tags', [TagController::class, 'create']);
+            $api->put('/tags/{tag:[0-9]+}', [TagController::class, 'change']);
+            $api->delete('/tags/{tag:[0-9]+}', [TagController::class, 'delete']);
             $api->get('/folders', [FolderController::class, 'index']);
             $api->post('/folders', [FolderController::class, 'create']);
             $api->patch('/folders/{id:[0-9]+}', [FolderController::class, 'change']);
