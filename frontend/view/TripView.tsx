@@ -61,13 +61,13 @@ export function TripView(props: { api: string; document: string }) {
                 fallback={
                   <main>
                     <Hero trip={p().trip} shown={p().shown} api={props.api} />
-                    <StoryMap trip={p().trip} entries={[]} api={props.api} at={TRIP_MARK} go={reading.go} rail={false} />
+                    <StoryMap trip={p().trip} entries={[]} api={props.api} at={TRIP_MARK} gone={0} go={reading.go} rail={false} />
                     <PlanDays trip={p().trip} api={props.api} gpx={p().shown.gpx} />
                     <footer>{t('Planned with Trip Planner')}</footer>
                   </main>
                 }
               >
-                <StoryMap trip={p().trip} entries={p().entries} api={props.api} at={reading.at()} go={reading.go} rail />
+                <StoryMap trip={p().trip} entries={p().entries} api={props.api} at={reading.at()} gone={reading.gone()} go={reading.go} rail />
                 <Story trip={p().trip} chapters={chapters()} shown={p().shown} api={props.api} reading={reading} />
               </Show>
               <ContextMenu />

@@ -21,51 +21,58 @@ export interface Reading {
 /** Whether an entry has somewhere to be shown on the map: a place of its own, or a route or a stop it is on. */
 const isSomewhere = (entry: Entry): boolean => entry.lngLat !== null || (entry.routeId ?? entry.stopId) !== null;
 
-/** The button that shows on the map where an entry belongs, called by its route or stop where it is on one. */
+/** What the way to an entry on the map is called: by its route or stop where it is on one. */
+const placeLabel = (trip: Trip, entry: Entry): string => partLabel(trip, entry) ?? t('On the map');
+
+/** The button that shows on the map where an entry belongs. */
 function Chip(props: { entry: Entry; trip: Trip; go: (mark: string) => void }) {
-  const label = () => partLabel(props.trip, props.entry) ?? t('On the map');
   return (
     <button type="button" class="chip" onClick={() => props.go(entryMark(props.entry.id))}>
       <PinIcon />
-      {label()}
+      {placeLabel(props.trip, props.entry)}
     </button>
   );
 }
 
-/** The photos that follow each other, as one figure: one alone as wide as the text, two beside each other, more in rows; their captions under them. A click opens a photo large, with the others a step away. */
+/**
+ * The photos that follow each other: one alone as wide as the text, two beside each other, more in rows. Each has its
+ * caption under it and, where it has somewhere to be shown, a pin on it that shows it on the map. A click opens a
+ * photo large, with the others a step away.
+ */
 function Gallery(props: { entries: Entry[]; trip: Trip; api: string; reading: Reading }) {
-  const images = createMemo((): LightboxImage[] => props.entries.map((entry) => ({ src: entryImageUrl(props.api, entry, 2048), preview: entryImageUrl(props.api, entry, 400), name: entry.text || entry.file!.name })));
+  const images = createMemo((): LightboxImage[] => props.entries.map((entry) => ({ src: entryImageUrl(props.api, entry, 2048), preview: entryImageUrl(props.api, entry, 400), name: entry.text || t('Photo') })));
   const placed = () => props.entries.find(isSomewhere);
-  const captions = () => props.entries.filter((entry) => entry.text !== '');
   const sizes = () => (props.entries.length === 1 ? '(min-width: 900px) 760px, 100vw' : '(min-width: 900px) 380px, 50vw');
   return (
-    <figure class="gallery" classList={{ single: props.entries.length === 1, pair: props.entries.length === 2 }} data-mark={placed() && entryMark(placed()!.id)} ref={(el) => placed() && props.reading.watch(el)}>
-      <div class="photos">
-        <For each={props.entries}>
-          {(entry, index) => (
-            <a href={images()[index()]!.src} data-told={entryMark(entry.id)} onClick={(e) => openImage(e, images()[index()]!, images())}>
-              <img
-                src={entryImageUrl(props.api, entry, 1280)}
-                srcset={`${entryImageUrl(props.api, entry, 400)} 400w, ${entryImageUrl(props.api, entry, 1280)} 1280w, ${entryImageUrl(props.api, entry, 2048)} 2048w`}
-                sizes={sizes()}
-                width={entry.file!.width ?? undefined}
-                height={entry.file!.height ?? undefined}
-                alt={entry.text || t('Photo')}
-                loading="lazy"
-              />
-            </a>
-          )}
-        </For>
-      </div>
-      <Show when={captions().length > 0 || placed()}>
-        <figcaption>
-          <div class="captions">
-            <For each={captions()}>{(entry) => <div innerHTML={markdownHtml(entry.text)} />}</For>
-          </div>
-          <Show when={placed()}>{(entry) => <Chip entry={entry()} trip={props.trip} go={props.reading.go} />}</Show>
-        </figcaption>
-      </Show>
-    </figure>
+    <div class="gallery" classList={{ single: props.entries.length === 1, pair: props.entries.length === 2 }} data-mark={placed() && entryMark(placed()!.id)} ref={(el) => placed() && props.reading.watch(el)}>
+      <For each={props.entries}>
+        {(entry, index) => (
+          <figure data-told={entryMark(entry.id)}>
+            <div class="frame">
+              <a href={images()[index()]!.src} onClick={(e) => openImage(e, images()[index()]!, images())}>
+                <img
+                  src={entryImageUrl(props.api, entry, 1280)}
+                  srcset={`${entryImageUrl(props.api, entry, 400)} 400w, ${entryImageUrl(props.api, entry, 1280)} 1280w, ${entryImageUrl(props.api, entry, 2048)} 2048w`}
+                  sizes={sizes()}
+                  width={entry.file!.width ?? undefined}
+                  height={entry.file!.height ?? undefined}
+                  alt={entry.text || t('Photo')}
+                  loading="lazy"
+                />
+              </a>
+              <Show when={isSomewhere(entry)}>
+                <button type="button" class="pin" title={placeLabel(props.trip, entry)} aria-label={placeLabel(props.trip, entry)} onClick={() => props.reading.go(entryMark(entry.id))}>
+                  <PinIcon />
+                </button>
+              </Show>
+            </div>
+            <Show when={entry.text}>
+              <figcaption class="captions" innerHTML={markdownHtml(entry.text)} />
+            </Show>
+          </figure>
+        )}
+      </For>
+    </div>
   );
 }
 

@@ -20,10 +20,11 @@ export function readingLine(scrolled: number, range: number, height: number): nu
  * `data-mark`; the one that lies lowest of those the reading line crosses is the one
  * read. `go` scrolls to a mark and reads it until the reader scrolls on; a mark no watched
  * element names is gone to where an element says it is told of (`data-told`), as a photo
- * within a gallery is.
+ * within a gallery is. `gone` counts the times something was gone to, for what answers to that.
  */
-export function createFollowing(first: string): { at: Accessor<string>; watch: (el: HTMLElement) => void; go: (mark: string) => void } {
+export function createFollowing(first: string): { at: Accessor<string>; gone: Accessor<number>; watch: (el: HTMLElement) => void; go: (mark: string) => void } {
   const [at, setAt] = createSignal(first);
+  const [gone, setGone] = createSignal(0);
   const watched = new Set<HTMLElement>();
   const inBand = new Set<Element>();
   /** Whether what was gone to is still read: until the reader moves the page. */
@@ -76,11 +77,12 @@ export function createFollowing(first: string): { at: Accessor<string>; watch: (
   };
   const go = (mark: string) => {
     setAt(mark);
+    setGone((times) => times + 1);
     held = true;
     const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
     document.querySelector(`[data-mark="${CSS.escape(mark)}"], [data-told="${CSS.escape(mark)}"]`)?.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: mark.startsWith('e:') ? 'center' : 'start' });
   };
-  return { at, watch, go };
+  return { at, gone, watch, go };
 }
 
 /** The mark of the trip as a whole, of a day's chapter, and of an entry that stands somewhere. */

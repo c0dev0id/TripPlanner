@@ -19,8 +19,8 @@ import { dayMark, entryMark, TRIP_MARK } from './follow';
 const SETTLE_MS = 200;
 /** How long the map takes to get there at the least and at the most; farther takes longer. */
 const MOVE_MS = { least: 1100, most: 2600 };
-/** How close the map goes to a single place. */
-const SPOT_ZOOM = 11.5;
+/** How close the map goes to a stop, and to where an entry itself stands. */
+const [SPOT_ZOOM, ENTRY_ZOOM] = [11.5, 17];
 /** How far the map is tilted over a day and over a single place, in degrees. */
 const [DAY_PITCH, SPOT_PITCH] = [48, 60];
 /** How far the map is turned off north at the most to fill itself with a day: more where it is a band much wider than high, which a day running north would be lost in. */
@@ -37,9 +37,9 @@ const positionsOf = (day: Day): LngLat[] => [...day.routes.flatMap(routePosition
  * fills the map with its stops and with the entries that stand somewhere on it; an entry
  * read is gone to; the trip as a whole shows every day. With `rail`, a card says what is
  * shown and has every day to go to, as wide as the day is long. A marker goes to where
- * its entry is told of. While the page is printed, the map shows the trip as a whole.
+ * its entry is told of, and the one of the entry read is larger. Each time something is gone to (`gone`), a ring strikes out from where it stands. While the page is printed, the map shows the trip as a whole.
  */
-export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at: string; go: (mark: string) => void; rail: boolean }) {
+export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at: string; gone: number; go: (mark: string) => void; rail: boolean }) {
   let container!: HTMLDivElement;
   let card: HTMLDivElement | undefined;
   const [map, setMap] = createSignal<MapLibreMap>();
@@ -89,13 +89,26 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
         const told = () => props.go(entryMark(e.id));
         const element = entryMarkerElement(e, props.api, { photo: told, note: told });
         element.style.setProperty('--n', String(n));
+        createEffect(() => element.classList.toggle('read', entry() === e));
         return new Marker({ element }).setLngLat(e.lngLat!);
       }),
-      // Where what is read stands, a ring goes out from.
-      ...(spot() ? [new Marker({ element: markerElement('spot-marker', document.createElement('i')) }).setLngLat(spot()!)] : []),
     ];
     for (const marker of markers) marker.addTo(on);
     onCleanup(() => markers.forEach((marker) => marker.remove()));
+  });
+
+  // Where what is read stands, a ring goes out from: around a photo that stands there itself, and once more strongly when it was gone to.
+  let struck = 0;
+  createEffect(() => {
+    const [on, at, gone] = [map(), spot(), props.gone];
+    const strike = gone !== struck;
+    struck = gone;
+    if (!on || !at) return;
+    const element = markerElement('spot-marker', document.createElement('i'));
+    element.classList.toggle('struck', strike);
+    element.classList.toggle('around-photo', Boolean(entry()?.lngLat && entry()!.file?.image));
+    const marker = new Marker({ element }).setLngLat(at).addTo(on);
+    onCleanup(() => marker.remove());
   });
 
   /** How much of the map's foot the card covers; nothing while the page is printed, which has no card. */
@@ -130,7 +143,7 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
         const shape = container.clientWidth / Math.max(1, container.clientHeight - foot);
         const turn = still || lines.length === 0 ? 0 : bestBearing(lines, shape, DAY_PITCH, shape > WIDE ? MOST_TURN.wide : MOST_TURN.high);
         // A place is moved up by an offset, not by a padding, which the map would keep and add to the next one.
-        if (at) return fly({ center: at, zoom: SPOT_ZOOM, pitch: still ? 0 : SPOT_PITCH, bearing: turn, offset: [0, -foot / 2] });
+        if (at) return fly({ center: at, zoom: entry()?.lngLat ? ENTRY_ZOOM : SPOT_ZOOM, pitch: still ? 0 : SPOT_PITCH, bearing: turn, offset: [0, -foot / 2] });
         const shown = (of ? [of] : trip.days).flatMap(positionsOf);
         if (of) for (const e of chapter()) shown.push(e.lngLat!);
         if (shown.length === 0) return;

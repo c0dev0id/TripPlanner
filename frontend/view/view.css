@@ -184,6 +184,79 @@ body {
   }
 }
 
+/* Around a photo the ring begins at its rim. */
+.spot-marker.around-photo i {
+  width: 100px;
+  height: 100px;
+  animation-name: spot-out-photo;
+}
+
+@keyframes spot-out-photo {
+  from {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+/* What was gone to answers once with a stronger ring. */
+.spot-marker.struck::after {
+  position: absolute;
+  inset: 0;
+  border: 5px solid var(--mark);
+  border-radius: 50%;
+  content: '';
+  animation: spot-struck 0.9s ease-out both;
+}
+
+@keyframes spot-struck {
+  from {
+    opacity: 1;
+    transform: scale(0.4);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(4.5);
+  }
+}
+
+.spot-marker.around-photo.struck::after {
+  animation-name: spot-struck-photo;
+}
+
+@keyframes spot-struck-photo {
+  from {
+    opacity: 1;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(2.2);
+  }
+}
+
+/* The photo read is larger on the map than the others, and lies over them. */
+.story-map .photo-marker img {
+  transition:
+    width 0.3s ease-out,
+    height 0.3s ease-out;
+}
+
+.story-map .photo-marker.read {
+  z-index: 1;
+}
+
+.story-map .photo-marker.read img {
+  width: 96px;
+  height: 96px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .callouts line,
   .callout,
@@ -199,6 +272,24 @@ body {
 
   .spot-marker i {
     opacity: 0;
+  }
+
+  .spot-marker.struck::after {
+    animation-name: spot-struck-still;
+  }
+
+  @keyframes spot-struck-still {
+    from {
+      opacity: 1;
+    }
+
+    to {
+      opacity: 0;
+    }
+  }
+
+  .story-map .photo-marker img {
+    transition: none;
   }
 }
 
@@ -490,26 +581,32 @@ figcaption {
   background: var(--rule);
 }
 
-/* Photos: one as wide as the text, two beside each other, more in rows of three. */
+/* Photos: one as wide as the text, two beside each other, more in rows of three; each with its caption under it. */
 .gallery {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 8px;
   margin: 36px 0;
 }
 
-.gallery .photos {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-
-.gallery.pair .photos {
+.gallery.pair {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.gallery.single .photos {
+.gallery.single {
   display: block;
+}
+
+.gallery figure {
+  margin: 0;
+}
+
+.gallery figcaption {
+  margin-top: 6px;
+}
+
+.gallery .frame {
+  position: relative;
 }
 
 .gallery img {
@@ -522,14 +619,47 @@ figcaption {
   object-fit: cover;
 }
 
+/* A photo alone keeps its shape, and its frame is as wide as it, so that the pin stands on the photo. */
+.gallery.single .frame {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
 .gallery.single img {
-  aspect-ratio: auto;
+  width: auto;
+  max-width: 100%;
   max-height: 86vh;
-  object-fit: contain;
+  aspect-ratio: auto;
   background: none;
 }
 
-.gallery figcaption,
+/* The way from a photo to where it stands on the map. */
+.gallery .pin {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+  cursor: pointer;
+}
+
+.gallery .pin:hover {
+  background: var(--mark);
+}
+
+.gallery .pin svg {
+  width: 16px;
+  height: 16px;
+}
+
 .video figcaption {
   display: flex;
   flex-wrap: wrap;

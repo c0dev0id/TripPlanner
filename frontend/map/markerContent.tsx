@@ -1,4 +1,5 @@
 import { Show, type JSX } from 'solid-js';
+import { t } from '../i18n/t';
 import { entryImageUrl } from '../api';
 import { entryTitle, type Entry } from '../model/journal';
 import type { Stop } from '../model/trip';
@@ -35,7 +36,7 @@ export function stopContent(stop: () => Stop, mark?: () => JSX.Element): HTMLEle
 
 /**
  * A journal entry's marker element, under the API base the page reads from: a photo
- * small, anything else as a journal icon that says what the entry is. A click runs what
+ * small and called by its note, anything else as a journal icon that says what the entry is. A click runs what
  * `on` has for it; without that a photo opens large over the page and a note does nothing.
  */
 export function entryMarkerElement(entry: Entry, base: string, on: { photo?: () => void; note?: () => void } = {}): HTMLDivElement {
@@ -48,8 +49,8 @@ export function entryMarkerElement(entry: Entry, base: string, on: { photo?: () 
       on.photo();
     };
     const photo = (
-      <a class="photo" href={image.src} target="_blank" rel="noopener" title={image.name} on:click={click}>
-        <img src={image.preview} alt={image.name} />
+      <a class="photo" href={image.src} target="_blank" rel="noopener" title={entry.text ? entryTitle(entry) : undefined} on:click={click}>
+        <img src={image.preview} alt={entry.text ? entryTitle(entry) : t('Photo')} />
       </a>
     ) as HTMLElement;
     return markerElement('photo-marker', photo);

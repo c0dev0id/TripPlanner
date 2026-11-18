@@ -785,12 +785,16 @@
     photographed. Texts are Markdown. A text that is a YouTube address is
     the video, with the lines after it as its caption; it plays without sound while it
     is scrolled to, one video at a time. Photos that follow each other are one gallery:
-    one as wide as the text, two side by side, more in rows of three, their captions
-    under them; a click opens a photo large, with the others of the gallery a step away
-    by the arrows.
+    one as wide as the text, two side by side, more in rows of three, each with its caption
+    under it and, where it has a place, a pin on it that shows it on the map; a click
+    opens a photo large, with the others of the gallery a step away by the arrows.
   - The map flies to what is read: a day is seen at a tilt and turned a little to
     fill the map, an entry's place closer and steeper with a ring going out from it,
-    the whole trip from above. The stops' names stand a little off their pins with a
+    the whole trip from above. Where an entry itself stands, a photo's place, the map
+    goes down to the houses, and the photo read is larger on the map than the others.
+    Going to an entry by its button answers with one stronger ring, also where the map
+    is there already. A photo on the map is called by its caption, never by its
+    file's name. The stops' names stand a little off their pins with a
     line to them, on a translucent ground, set so that they lie on nothing else, and
     come in one after the other when the map is there; the entries of the day pop in
     likewise. With reduced motion the map jumps and stays seen from above.

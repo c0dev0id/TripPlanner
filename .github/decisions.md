@@ -2097,7 +2097,18 @@ entries at the end of their section.
   set as wide as the text at its own shape, two side by side, more in rows of three
   cropped to one shape; their sizes are known from the entry, so the page does not
   jump while they load, and the browser picks one of the three kept sizes by the width
-  it is shown at. The lightbox steps through the gallery it was opened in.
+  it is shown at. The lightbox steps through the gallery it was opened in. A caption
+  stands under its photo and the way to the map is a pin on the photo: collected under
+  the gallery, captions could not be told to their photos, and the one button there
+  showed the first photo's place alone. What is read is still the gallery as a whole,
+  by its first photo with a place: a mark for each photo would send the map on a
+  flight for every row scrolled past.
+- **A file's name is not shown to a visitor.** A photo's marker and its lightbox are
+  called by the entry's text, or "Photo": the name a camera or a screenshot gave a
+  file says nothing to a reader and may say what the owner did not mean to publish.
+- **A click that goes nowhere still answers.** Going to an entry whose place the map
+  already shows changed nothing to see. Each going is counted (`gone` in
+  `view/follow.ts`), and the ring's marker is made anew with one stronger ring for it.
 - **Markdown is rendered by micromark, with nothing that runs.** An entry's text is set
   into the page as HTML, so what makes it has to be trusted with a stranger's input,
   the preview being the owner's but the page everyone's. micromark escapes HTML unless
