@@ -778,6 +778,12 @@
     one as wide as the text, two side by side, more in rows of three, their captions
     under them; a click opens a photo large, with the others of the gallery a step away
     by the arrows.
+  - The map flies to what is read: a day is seen at a tilt and turned a little to
+    fill the map, an entry's place closer and steeper with a ring going out from it,
+    the whole trip from above. The stops' names stand a little off their pins with a
+    line to them, on a translucent ground, set so that they lie on nothing else, and
+    come in one after the other when the map is there; the entries of the day pop in
+    likewise. With reduced motion the map jumps and stays seen from above.
   - The map follows what is read, down to the last day, also where that is too short
     to be scrolled up the page. The day being read stands out and fills the map with
     its stops and the photos and notes that stand somewhere on it; an entry with a place

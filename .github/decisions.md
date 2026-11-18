@@ -1996,6 +1996,23 @@ entries at the end of their section.
   entries of the day read have markers, so a trip of four hundred photos puts a dozen
   on the map at a time. A place is shown above the map's card by an offset, not by a
   padding: MapLibre keeps a padding given to a move and adds it to the next one.
+- **The story's map flies, and names its stops beside them.** Going from day to day was
+  a pan seen from above with every stop's name glued to its pin, names on names where
+  stops are close. A day is now flown to and seen at a tilt, turned off north by up
+  to thirty degrees where that fills the map better (sixty where the map is a band
+  much wider than high), and an entry's place closer and steeper; the whole trip, a
+  printed page and a reader who asked for less motion get the map from above, the
+  latter two at once. The flight takes longer the farther it goes, within bounds.
+  What is shown is fitted as the map is turned (`geo/frame.ts`): MapLibre fits the
+  box of longitudes and latitudes and turns that, which leaves a day that runs aslant
+  small in the middle. The names are not MapLibre's markers but an overlay set once
+  the map rests (`view/callouts.ts`, pure and tested): each a little off its stop on
+  the first of eight sides where it lies on no other name, on no pin and not under
+  the button to the whole trip, with a line to the pin; a stop without such a side
+  keeps its pin and gets no name, and a small map names few. While the map moves
+  there are no names, so they need no reckoning per frame, and they come in one after
+  the other when it is there. The planner's map keeps the names at the pins: there
+  they are read while the map is dragged.
 - **Where the page scrolls over the map, one finger scrolls the page.** A map takes a
   drag for itself. On a phone the story's map is a band at the top of the window, and
   a thumb that lands on it moved the map and the page stood still; the plan's map lies
