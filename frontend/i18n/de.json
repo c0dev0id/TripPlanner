@@ -757,5 +757,11 @@
   "GPX: {name}": "GPX: {name}",
   "The publication names the journal, the GPX files, a cover and the routes left out.": "Die Veröffentlichung nennt das Tagebuch, die GPX-Dateien, ein Titelbild und die ausgelassenen Routen.",
   "Watch on YouTube": "Auf YouTube ansehen",
-  "Video": "Video"
+  "Video": "Video",
+  "Making the share card…": "Die Vorschaukarte wird erstellt …",
+  "The share card could not be made: {error}": "Die Vorschaukarte konnte nicht erstellt werden: {error}",
+  "Share card": "Vorschaukarte",
+  "The picture the link is shown with where it is posted": "Das Bild, mit dem der Link gezeigt wird, wo er geteilt wird",
+  "The map of the share card took too long to draw.": "Die Karte der Vorschaukarte brauchte zu lange.",
+  "The share card could not be drawn.": "Die Vorschaukarte konnte nicht gezeichnet werden."
 }

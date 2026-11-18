@@ -2051,6 +2051,18 @@ fieldset.symbols {
   align-items: center;
 }
 
+.journal-workspace .page-settings .share-card a {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.journal-workspace .page-settings .share-card img {
+  width: 54px;
+  height: 28px;
+  border-radius: 3px;
+}
+
 .journal-workspace .page-settings .cover img {
   width: 40px;
   height: 28px;

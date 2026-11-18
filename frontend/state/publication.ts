@@ -1,5 +1,5 @@
 import { createResource, createRoot } from 'solid-js';
-import { fetchPublication, savePublication, shareTrip, unshareTrip } from '../api';
+import { fetchPublication, savePublication, shareTrip, unshareTrip, type OwnPublication } from '../api';
 import type { Publication } from '../model/publication';
 import { flushSave } from './autosave';
 import { openTripId } from './trip';
@@ -9,7 +9,7 @@ import { openTripId } from './trip';
 const [publication, { mutate }] = createRoot(() => createResource(openTripId, fetchPublication));
 
 /** None until it is read. */
-export const openPublication = (): (Publication & { token: string | null }) | undefined => (publication.state === 'ready' ? publication() : undefined);
+export const openPublication = (): OwnPublication | undefined => (publication.state === 'ready' ? publication() : undefined);
 
 /** Makes the trip's page public, or takes it off the public. */
 export async function setShared(shared: boolean): Promise<void> {
@@ -25,3 +25,6 @@ export async function publish(change: Partial<Publication>): Promise<void> {
   await savePublication(openTripId()!, { journal, gpx, coverEntryId, hiddenRouteIds });
   mutate((p) => p && { ...p, ...change });
 }
+
+/** Notes that the trip has a card made of what the mark says. */
+export const cardMade = (tripId: number, mark: string): void => void (openTripId() === tripId && mutate((p) => p && { ...p, card: mark }));

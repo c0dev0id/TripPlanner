@@ -433,7 +433,10 @@ export const fetchRideGpx = async (id: number): Promise<string> => (await send('
 export const publicPreviewUrl = (tripId: number): string => `${tripPageUrl(tripId)}?as=public`;
 
 /** What the trip's public page shows, with the token it is public under, or null. */
-export const fetchPublication = (tripId: number): Promise<Publication & { token: string | null }> => request('GET', `${tripApi(tripId)}/publication`);
+/** The trip's public page as its owner set it, with the token it is public under and the mark of what its card was made of. */
+export type OwnPublication = Publication & { token: string | null; card: string | null };
+
+export const fetchPublication = (tripId: number): Promise<OwnPublication> => request('GET', `${tripApi(tripId)}/publication`);
 
 export const savePublication = (tripId: number, publication: Publication): Promise<void> => told(tripId, request('PUT', `${tripApi(tripId)}/publication`, publication));
 
@@ -442,6 +445,17 @@ export const shareTrip = (tripId: number): Promise<{ token: string }> => request
 export const unshareTrip = (tripId: number): Promise<void> => request('DELETE', `${tripApi(tripId)}/share`);
 
 /** The read-only page of a trip shared under a token. */
+/** Keeps the card a link to the trip's page is shown with, under the mark of what it was made of. */
+export function saveCard(tripId: number, mark: string, image: Blob): Promise<void> {
+  const form = new FormData();
+  form.set('of', mark);
+  form.set('image', image, 'card.jpg');
+  return request('POST', `${tripApi(tripId)}/card`, form);
+}
+
+/** The trip's card as its owner sees it; the mark has the browser read it anew when it is another. */
+export const cardUrl = (tripId: number, mark: string): string => `${tripApi(tripId)}/card?v=${mark}`;
+
 export const sharedPageUrl = (token: string): string => `${location.origin}/t/${token}`;
 
 /**

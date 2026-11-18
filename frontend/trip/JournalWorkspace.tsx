@@ -10,6 +10,7 @@ import { CloseIcon } from '../ui/icons';
 import { createRequest } from '../ui/request';
 import { ChapterEditor } from './JournalEditor';
 import { dayLabelOf, routeLabel } from './labels';
+import { ShareCard } from './ShareCard';
 
 /** What the trip's page shows to whom: the link it is shared under, the journal and the GPX files on it, its cover, and which of the trip's routes and tracks it has at all. */
 function PageSettings(props: { tripId: number }) {
@@ -74,6 +75,7 @@ function PageSettings(props: { tripId: number }) {
               </span>
             )}
           </Show>
+          <ShareCard />
           <a href={tripPageUrl(props.tripId)} target="_blank" rel="noopener">
             {t('Open the page for printing')}
           </a>
