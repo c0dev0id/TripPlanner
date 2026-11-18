@@ -113,19 +113,14 @@ switch ($command) {
         break;
     case 'places:fill':
         $unanswered = false;
-        try {
-            foreach ($container->get(PlaceFetch::class)->fill(new DateTimeImmutable()) as $area => $filled) {
-                if ($filled['places'] > 0 || $filled['missed'] === []) {
-                    echo "Places of $area: {$filled['places']} fetched.\n";
-                }
-                if ($filled['missed'] !== []) {
-                    fwrite(STDERR, "Not answered for $area: " . implode(', ', $filled['missed']) . ".\n");
-                    $unanswered = true;
-                }
+        foreach ($container->get(PlaceFetch::class)->fill(new DateTimeImmutable()) as $area => $filled) {
+            if ($filled['places'] > 0 || $filled['missed'] === []) {
+                echo "Places of $area: {$filled['places']} fetched.\n";
             }
-        } catch (RuntimeException $failure) {
-            fwrite(STDERR, $failure->getMessage() . "\n");
-            exit(1);
+            if ($filled['missed'] !== []) {
+                fwrite(STDERR, "Not answered for $area: " . implode(', ', $filled['missed']) . ".\n");
+                $unanswered = true;
+            }
         }
         if ($unanswered) {
             fwrite(STDERR, "Run it again for what was not answered.\n");

@@ -44,12 +44,10 @@ final class PlaceFetch
      * missed a kind. Each area is given as it is done.
      *
      * @return iterable<string, array{places: int, missed: list<string>}> by the area; an area that was not answered at all has every kind asked for as missed
-     * @throws RuntimeException once two areas in a row were not answered at all: the server is not getting through, and the areas left are not asked for
      */
     public function fill(DateTimeImmutable $now): iterable
     {
         $first = true;
-        $unanswered = 0;
         foreach ($this->places->unfetched($this->kinds->ids()) as $area => $ids) {
             if (!$first) {
                 sleep(self::PAUSE_S);
@@ -57,12 +55,8 @@ final class PlaceFetch
             $first = false;
             try {
                 yield $area => $this->fetchOf($area, array_values(array_filter($this->kinds->kinds, fn (array $kind) => in_array($kind['id'], $ids, true))), $now);
-                $unanswered = 0;
             } catch (RuntimeException) {
                 yield $area => ['places' => 0, 'missed' => $ids];
-                if (++$unanswered === 2) {
-                    throw new RuntimeException('The Overpass API answered for neither of two areas in a row; the areas after them were not asked for. Try again later.');
-                }
             }
         }
     }
@@ -109,17 +103,27 @@ final class PlaceFetch
         }
     }
 
-    /** Asks for the kinds in the area and saves the answer to a file, whose name it gives back. */
+    /** How often a question is put to a server that turns it away. */
+    private const TRIES = 3;
+
+    /** Asks for the kinds in the area and saves the answer to a file, whose name it gives back. A server that turns the question away is asked again after the pause. */
     private function ask(string $area, array $kinds): string
     {
         $file = tempnam(sys_get_temp_dir(), 'places');
-        try {
-            Download::post($this->config->overpassUrl, ['data' => OverpassQuery::of($area, $kinds, $this->kinds)], $file, 'make places', OverpassQuery::TIMEOUT_S + 60);
-        } catch (RuntimeException $failure) {
-            // A server too busy says so with a status; the answer then counts as none.
-            file_put_contents($file, '');
-            fwrite(STDERR, $failure->getMessage() . "\n");
+        $query = OverpassQuery::of($area, $kinds, $this->kinds);
+        for ($try = 1; ; $try++) {
+            try {
+                Download::post($this->config->overpassUrl, ['data' => $query], $file, 'make places', OverpassQuery::TIMEOUT_S + 60);
+                return $file;
+            } catch (RuntimeException $failure) {
+                if ($try === self::TRIES) {
+                    // A server too busy says so with a status; the answer then counts as none.
+                    file_put_contents($file, '');
+                    fwrite(STDERR, $failure->getMessage() . "\n");
+                    return $file;
+                }
+                sleep(self::PAUSE_S);
+            }
         }
-        return $file;
     }
 }

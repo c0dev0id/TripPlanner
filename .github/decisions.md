@@ -867,9 +867,12 @@ entries at the end of their section.
   area by area: fetching the whole area again for one kind would replace five kinds
   that are there to get a sixth, and a kind the planner learns of later is missing in
   every area at once. A kind fetched with no place found has its note and is not
-  asked for again; an area without any fetch is not one the user chose. Two areas in a
-  row without any answer end the run: the server is down or busy then, and asking it
-  for the rest, half a minute apart, helps neither side.
+  asked for again; an area without any fetch is not one the user chose. The public
+  server turns questions away by spells (a 502 for three areas, then answers for
+  four), so a question turned away is put again after the pause, three times in all,
+  and the run goes on to the next area whatever came of it: ending the run after a
+  few areas without an answer, which was tried, would have kept it from the areas
+  that were answered.
 - **An answer is tab-separated values with a mark at its end.** A region's places are tens
   of megabytes as JSON, which PHP would hold whole; as CSV with only the columns kept
   they are a tenth of that and read row by row. Overpass says nothing in a CSV answer it
