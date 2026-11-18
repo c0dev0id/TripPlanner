@@ -43,14 +43,15 @@ export function entryMarkerElement(entry: Entry, base: string, on: { photo?: () 
   const open = on.note;
   if (entry.file?.image) {
     const image = { src: entryImageUrl(base, entry, 2048), preview: entryImageUrl(base, entry, 400), name: entry.file.name };
+    const title = entry.text ? entryTitle(entry) : undefined;
     const click = (e: MouseEvent) => {
       if (!on.photo) return openImage(e, image);
       e.preventDefault();
       on.photo();
     };
     const photo = (
-      <a class="photo" href={image.src} target="_blank" rel="noopener" title={entry.text ? entryTitle(entry) : undefined} on:click={click}>
-        <img src={image.preview} alt={entry.text ? entryTitle(entry) : t('Photo')} />
+      <a class="photo" href={image.src} target="_blank" rel="noopener" title={title} on:click={click}>
+        <img src={image.preview} alt={title ?? t('Photo')} />
       </a>
     ) as HTMLElement;
     return markerElement('photo-marker', photo);

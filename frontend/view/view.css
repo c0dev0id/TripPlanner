@@ -49,6 +49,9 @@ body {
 }
 
 .story-map {
+  /* How large the photo read is on the map. */
+  --read-photo: 96px;
+
   position: relative;
   background: var(--rule);
 }
@@ -164,6 +167,9 @@ body {
 }
 
 .spot-marker i {
+  --from: 0.6;
+  --to: 3.2;
+
   display: block;
   width: 26px;
   height: 26px;
@@ -175,70 +181,40 @@ body {
 @keyframes spot-out {
   from {
     opacity: 0.9;
-    transform: scale(0.6);
+    transform: scale(var(--from));
   }
 
   to {
     opacity: 0;
-    transform: scale(3.2);
+    transform: scale(var(--to));
   }
 }
 
-/* Around a photo the ring begins at its rim. */
+/* Around a photo the ring begins at its rim, which is the photo and its border. */
 .spot-marker.around-photo i {
-  width: 100px;
-  height: 100px;
-  animation-name: spot-out-photo;
-}
+  --from: 1;
+  --to: 1.7;
 
-@keyframes spot-out-photo {
-  from {
-    opacity: 0.9;
-    transform: scale(1);
-  }
-
-  to {
-    opacity: 0;
-    transform: scale(1.7);
-  }
+  width: calc(var(--read-photo) + 4px);
+  height: calc(var(--read-photo) + 4px);
 }
 
 /* What was gone to answers once with a stronger ring. */
 .spot-marker.struck::after {
+  --from: 0.4;
+  --to: 4.5;
+
   position: absolute;
   inset: 0;
   border: 5px solid var(--mark);
   border-radius: 50%;
   content: '';
-  animation: spot-struck 0.9s ease-out both;
-}
-
-@keyframes spot-struck {
-  from {
-    opacity: 1;
-    transform: scale(0.4);
-  }
-
-  to {
-    opacity: 0;
-    transform: scale(4.5);
-  }
+  animation: spot-out 0.9s ease-out both;
 }
 
 .spot-marker.around-photo.struck::after {
-  animation-name: spot-struck-photo;
-}
-
-@keyframes spot-struck-photo {
-  from {
-    opacity: 1;
-    transform: scale(0.9);
-  }
-
-  to {
-    opacity: 0;
-    transform: scale(2.2);
-  }
+  --from: 0.9;
+  --to: 2.2;
 }
 
 /* The photo read is larger on the map than the others, and lies over them. */
@@ -253,8 +229,8 @@ body {
 }
 
 .story-map .photo-marker.read img {
-  width: 96px;
-  height: 96px;
+  width: var(--read-photo);
+  height: var(--read-photo);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -275,17 +251,8 @@ body {
   }
 
   .spot-marker.struck::after {
-    animation-name: spot-struck-still;
-  }
-
-  @keyframes spot-struck-still {
-    from {
-      opacity: 1;
-    }
-
-    to {
-      opacity: 0;
-    }
+    --from: 1;
+    --to: 1;
   }
 
   .story-map .photo-marker img {
@@ -560,7 +527,8 @@ figcaption {
   cursor: pointer;
 }
 
-.chip svg {
+.chip svg,
+.gallery .pin svg {
   width: 16px;
   height: 16px;
 }
@@ -642,12 +610,14 @@ figcaption {
 .gallery.single.upright .frame,
 .gallery.single.upright figcaption {
   width: calc(50% - 4px);
+}
+
+.gallery.single.upright figcaption {
   margin-inline: auto;
 }
 
 .gallery.single.upright img {
   width: 100%;
-  object-fit: cover;
 }
 
 /* The way from a photo to where it stands on the map. */
@@ -669,11 +639,6 @@ figcaption {
 
 .gallery .pin:hover {
   background: var(--mark);
-}
-
-.gallery .pin svg {
-  width: 16px;
-  height: 16px;
 }
 
 .video figcaption {

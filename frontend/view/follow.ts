@@ -1,4 +1,4 @@
-import { createSignal, onCleanup, type Accessor } from 'solid-js';
+import { batch, createSignal, onCleanup, type Accessor } from 'solid-js';
 
 /** Where down the window the line lies that is read at, as a part of its height. */
 const READ_AT = 0.4;
@@ -76,8 +76,10 @@ export function createFollowing(first: string): { at: Accessor<string>; gone: Ac
     });
   };
   const go = (mark: string) => {
-    setAt(mark);
-    setGone((times) => times + 1);
+    batch(() => {
+      setAt(mark);
+      setGone((times) => times + 1);
+    });
     held = true;
     const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
     document.querySelector(`[data-mark="${CSS.escape(mark)}"], [data-told="${CSS.escape(mark)}"]`)?.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: mark.startsWith('e:') ? 'center' : 'start' });

@@ -58,7 +58,7 @@ function Gallery(props: { entries: Entry[]; trip: Trip; api: string; reading: Re
                   sizes={sizes()}
                   width={entry.file!.width ?? undefined}
                   height={entry.file!.height ?? undefined}
-                  alt={entry.text || t('Photo')}
+                  alt={images()[index()]!.name}
                   loading="lazy"
                 />
               </a>
