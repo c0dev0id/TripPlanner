@@ -25,15 +25,31 @@ export function chaptersOf(trip: Trip, entries: readonly Entry[]): Chapter[] {
   return [undefined, ...trip.days].map((day) => ({ day, entries: (byDay.get(day) ?? []).sort(inOrder) }));
 }
 
-/** What a run of entries is read as: a text, the photos that follow each other as one gallery, or a file that is no image. */
-export type Block = { kind: 'text'; entry: Entry } | { kind: 'gallery'; entries: Entry[] } | { kind: 'file'; entry: Entry };
+/** The video a YouTube address names, in any of the forms the site hands out; none for another address. */
+export function youtubeIdOf(address: string): string | undefined {
+  if (!URL.canParse(address)) return undefined;
+  const url = new URL(address);
+  const host = url.hostname.replace(/^(www|m)\./, '');
+  const id = host === 'youtu.be' ? url.pathname.slice(1) : host === 'youtube.com' || host === 'youtube-nocookie.com' ? (url.pathname === '/watch' ? url.searchParams.get('v') : /^\/(?:shorts|embed|live)\/([^/]+)$/.exec(url.pathname)?.[1]) : undefined;
+  return id && /^[\w-]{11}$/.test(id) ? id : undefined;
+}
+
+/** What a run of entries is read as: a text, a video, the photos that follow each other as one gallery, or a file that is no image. */
+export type Block = { kind: 'text'; entry: Entry } | { kind: 'video'; entry: Entry; videoId: string; caption: string } | { kind: 'gallery'; entries: Entry[] } | { kind: 'file'; entry: Entry };
+
+/** The video a text is, where its first line is a YouTube address and nothing else; the lines after it are the caption. */
+function videoOf(entry: Entry): Block | undefined {
+  const [first, ...rest] = entry.text.trim().split('\n');
+  const videoId = youtubeIdOf(first!.trim());
+  return videoId === undefined ? undefined : { kind: 'video', entry, videoId, caption: rest.join('\n').trim() };
+}
 
 /** The blocks a chapter's entries make. A photo's text is its caption; a file's, the note beside it. */
 export function blocksOf(entries: readonly Entry[]): Block[] {
   const blocks: Block[] = [];
   for (const entry of entries) {
     const last = blocks.at(-1);
-    if (!entry.file) blocks.push({ kind: 'text', entry });
+    if (!entry.file) blocks.push(videoOf(entry) ?? { kind: 'text', entry });
     else if (!entry.file.image) blocks.push({ kind: 'file', entry });
     else if (last?.kind === 'gallery') last.entries.push(entry);
     else blocks.push({ kind: 'gallery', entries: [entry] });

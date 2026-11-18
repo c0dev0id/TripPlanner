@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Entry } from './journal';
-import { blocksOf, byTimeTaken, chaptersOf, losesParts } from './journalDocument';
+import { blocksOf, byTimeTaken, chaptersOf, losesParts, youtubeIdOf } from './journalDocument';
 import type { Day, Trip } from './trip';
 
 const entry = (id: number, on: Partial<Entry> = {}): Entry => ({
@@ -54,6 +54,17 @@ describe('the journal as a document', () => {
   it('makes one gallery of photos that follow each other', () => {
     const blocks = blocksOf([entry(1, { text: 'Off' }), entry(2, { file: photo }), entry(3, { file: photo, text: 'The pass' }), entry(4, { file: pdf }), entry(5, { file: photo }), entry(6, { text: 'Home' })]);
     expect(blocks.map((b) => (b.kind === 'gallery' ? b.entries.map((e) => e.id) : `${b.kind} ${b.entry.id}`))).toEqual(['text 1', [2, 3], 'file 4', [5], 'text 6']);
+  });
+
+  it('reads a YouTube address in the forms the site hands out', () => {
+    const id = 'dQw4w9WgXcQ';
+    for (const address of [`https://www.youtube.com/watch?v=${id}`, `https://youtube.com/watch?t=42&v=${id}`, `https://youtu.be/${id}?si=abc`, `https://m.youtube.com/shorts/${id}`, `https://www.youtube.com/live/${id}`, `https://www.youtube-nocookie.com/embed/${id}`]) expect(youtubeIdOf(address)).toBe(id);
+    for (const address of ['', 'youtu.be/' + id, 'https://example.org/watch?v=' + id, 'https://youtu.be/short', `https://www.youtube.com/watch?v=${id} and more`, 'https://www.youtube.com/channel/' + id]) expect(youtubeIdOf(address)).toBeUndefined();
+  });
+
+  it('makes a video of a text whose first line is a YouTube address alone', () => {
+    const blocks = blocksOf([entry(1, { text: ' https://youtu.be/dQw4w9WgXcQ \nOver the pass.\nTwice.' }), entry(2, { text: 'See https://youtu.be/dQw4w9WgXcQ' }), entry(3, { text: 'https://youtu.be/dQw4w9WgXcQ' })]);
+    expect(blocks.map((b) => (b.kind === 'video' ? [b.videoId, b.caption] : b.kind))).toEqual([['dQw4w9WgXcQ', 'Over the pass.\nTwice.'], 'text', ['dQw4w9WgXcQ', '']]);
   });
 
   it('orders what says when it was taken by that and leaves the rest where it stood', () => {
