@@ -40,7 +40,7 @@ function Chip(props: { entry: Entry; trip: Trip; go: (mark: string) => void }) {
  * photo large, with the others a step away.
  */
 function Gallery(props: { entries: Entry[]; trip: Trip; api: string; reading: Reading }) {
-  const images = createMemo((): LightboxImage[] => props.entries.map((entry) => ({ src: entryImageUrl(props.api, entry, 2048), preview: entryImageUrl(props.api, entry, 400), name: entry.text || t('Photo') })));
+  const images = createMemo((): LightboxImage[] => props.entries.map((entry) => ({ src: entryImageUrl(props.api, entry, 2048), preview: entryImageUrl(props.api, entry, 400), name: entry.text || t('Photo'), caption: markdownHtml(entry.text) })));
   const placed = () => props.entries.find(isSomewhere);
   /** Whether the photos are all higher than wide: one alone or two of them are then set at half the text's width each, uncropped in shape. */
   const upright = () => props.entries.length <= 2 && props.entries.every((entry) => (entry.file!.height ?? 0) > (entry.file!.width ?? 0));

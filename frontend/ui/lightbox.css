@@ -1,4 +1,4 @@
-/* An image over the page in a translucent frame that fades in and out, with its name under it. */
+/* An image over the page in a translucent frame that fades in and out. */
 
 .lightbox {
   max-width: none;
@@ -54,14 +54,10 @@
   }
 }
 
-.lightbox figure {
-  margin: 0;
-}
-
 /* The image is of its shape (--ratio) before it has loaded, within the window and no wider than reads well; its corners follow the frame's. */
 .lightbox img {
   display: block;
-  width: min(1100px, calc(100vw - 44px), calc((82dvh - 80px) * var(--ratio)));
+  width: min(1100px, calc(100vw - 44px), calc((86dvh - 44px) * var(--ratio)));
   height: auto;
   aspect-ratio: var(--ratio);
   border-radius: 12px;
@@ -79,7 +75,84 @@
   background: #fff;
 }
 
-.lightbox figcaption {
+.lightbox figure {
+  position: relative;
+  margin: 0;
+}
+
+/* What stands on an image: its caption at the top left, the way out at the top right, the steps at its sides, each on a dimmed ground. */
+.lightbox .on-image,
+.lightbox .disk {
+  position: absolute;
+  background: rgb(0 0 0 / 0.55);
+  color: #fff;
+}
+
+.lightbox .on-image {
+  top: 10px;
+  left: 10px;
+  max-width: calc(100% - 72px);
+  max-height: 40%;
+  padding: 6px 12px;
+  overflow: hidden;
+  border-radius: 16px;
+  font-family: var(--prose, inherit);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.lightbox .on-image p {
+  margin: 0;
+}
+
+.lightbox .on-image a {
+  color: inherit;
+}
+
+.lightbox .disk {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.lightbox .disk:hover:not(:disabled) {
+  background: var(--mark, var(--accent));
+}
+
+.lightbox .disk:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.lightbox .disk svg {
+  width: 16px;
+  height: 16px;
+}
+
+.lightbox .close {
+  top: 10px;
+  right: 10px;
+}
+
+.lightbox :is(.previous, .next) {
+  top: calc(50% - 16px);
+}
+
+.lightbox .previous {
+  left: 10px;
+}
+
+.lightbox .next {
+  right: 10px;
+}
+
+/* Under a document: its name, the link to its file and the way out. */
+.lightbox .bar {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -95,11 +168,11 @@
   white-space: nowrap;
 }
 
-.lightbox a {
+.lightbox .bar a {
   color: inherit;
 }
 
-.lightbox button {
+.lightbox .bar button {
   display: flex;
   padding: 2px;
   border: none;
@@ -110,12 +183,20 @@
 
 /* On a screen that is touched, a button is large enough to hit. */
 @media (hover: none) {
-  .lightbox button {
+  .lightbox .bar button {
     padding: 9px;
   }
 
-  .lightbox figcaption {
-    gap: 4px;
-    padding: 2px 6px 2px 12px;
+  .lightbox .disk {
+    width: 40px;
+    height: 40px;
+  }
+
+  .lightbox :is(.previous, .next) {
+    top: calc(50% - 20px);
+  }
+
+  .lightbox .on-image {
+    max-width: calc(100% - 80px);
   }
 }

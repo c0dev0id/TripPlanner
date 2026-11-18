@@ -10,6 +10,8 @@ export interface LightboxImage {
   /** A small version of an image, shown until the image has loaded; none for a document. */
   preview?: string;
   name: string;
+  /** What is written on an image, as HTML, in place of its name; nothing for an empty one. */
+  caption?: string;
 }
 
 /** The images the one asked for is stepped among, a gallery's or the one alone, and which of them it is; kept after the lightbox has closed. */
@@ -42,9 +44,9 @@ export function openDocument(e: MouseEvent, document: { src: string; name: strin
 }
 
 /**
- * An image or a document over the page in a frame that fades in and out, with its name; a click on an image closes
- * it, and a document has a link to its file; an image of a gallery with the steps to the one before and after,
- * which the arrow keys take too. An image comes once its small version says what shape it has, so the frame is of
+ * An image or a document over the page in a frame that fades in and out, an image with its caption or name and its buttons on it,
+ * a document with its name and a link to its file under it. A click on an image closes it; an image of a gallery has
+ * the steps to the one before and after, which the arrow keys take too. An image comes once its small version says what shape it has, so the frame is of
  * its size from the first.
  */
 export function Lightbox() {
@@ -76,29 +78,37 @@ export function Lightbox() {
           <figure>
             <Show when={shown.preview} fallback={<iframe src={shown.src} title={shown.name} />}>
               <img src={loaded() === shown.src ? shown.src : shown.preview} alt={shown.name} style={{ '--ratio': ratio }} onClick={close} />
-            </Show>
-            <figcaption>
-              <span class="name" title={shown.name}>
-                {shown.name}
-              </span>
+              <Show when={shown.caption !== undefined} fallback={<figcaption class="on-image">{shown.name}</figcaption>}>
+                <Show when={shown.caption}>
+                  <figcaption class="on-image" innerHTML={shown.caption} />
+                </Show>
+              </Show>
               <Show when={showing()!.images.length > 1}>
-                <button type="button" title={t('Previous')} aria-label={t('Previous')} disabled={showing()!.at === 0} onClick={() => step(-1)}>
+                <button type="button" class="disk previous" title={t('Previous')} aria-label={t('Previous')} disabled={showing()!.at === 0} onClick={() => step(-1)}>
                   <ChevronLeftIcon />
                 </button>
-                <button type="button" title={t('Next')} aria-label={t('Next')} disabled={showing()!.at === showing()!.images.length - 1} onClick={() => step(1)}>
+                <button type="button" class="disk next" title={t('Next')} aria-label={t('Next')} disabled={showing()!.at === showing()!.images.length - 1} onClick={() => step(1)}>
                   <ChevronIcon />
                 </button>
               </Show>
-              <Show when={!shown.preview}>
+              <button type="button" class="disk close" title={t('Close')} aria-label={t('Close')} autofocus onClick={close}>
+                <CloseIcon />
+              </button>
+            </Show>
+            <Show when={!shown.preview}>
+              <figcaption class="bar">
+                <span class="name" title={shown.name}>
+                  {shown.name}
+                </span>
                 <a href={shown.src} target="_blank" rel="noopener">
                   {t('Open file')}
                 </a>
-              </Show>
-              {/* Focused first: a document's frame would take the keys otherwise, Escape among them. */}
-              <button type="button" title={t('Close')} aria-label={t('Close')} autofocus onClick={close}>
-                <CloseIcon />
-              </button>
-            </figcaption>
+                {/* Focused first: a document's frame would take the keys otherwise, Escape among them. */}
+                <button type="button" title={t('Close')} aria-label={t('Close')} autofocus onClick={close}>
+                  <CloseIcon />
+                </button>
+              </figcaption>
+            </Show>
           </figure>
         )}
       </Show>

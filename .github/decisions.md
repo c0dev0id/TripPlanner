@@ -2103,7 +2103,12 @@ entries at the end of their section.
   of the photo has loaded, which says what shape it has: opened before, it was the
   small version's size and grew when the large one came. It fades in and out by the
   dialog's own transitions (`@starting-style`, `allow-discrete`), which is why what
-  it holds is kept after it is closed; a browser without them shows it at once. A caption
+  it holds is kept after it is closed; a browser without them shows it at once. What belongs to a photo stands on it, each
+  on the dimmed ground the pin of a gallery's photo has: the caption at the top left
+  in the page's own type, the way out at the top right, the steps at the sides. A
+  photo without a caption has none there; in the planner, where a file is known by
+  its name, the name stands in its place. A document keeps a bar under it, since
+  what stood on it would cover the viewer's own controls. A caption
   stands under its photo and the way to the map is a pin on the photo: collected under
   the gallery, captions could not be told to their photos, and the one button there
   showed the first photo's place alone. What is read is still the gallery as a whole,
