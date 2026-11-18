@@ -6,7 +6,7 @@ import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/sta
 import { newId, type Folder, type TripSummary } from '../model/trip';
 import { addDay as withDayAdded, pasteDays, pasteIntoTrip, type CopiedRoute } from '../routing/dayEdit';
 import { bringWithDays, clearClip, copyLibraryItems, copyStashFiles, copyStashParts, dropsOnRow, libraryClip, libraryPasteItem, pasteItems as pasteIntoPart, stashFilesClip, type LibraryClip, type PasteInto, type PasteItem } from '../state/clipboard';
-import { heldOf, importNote, isPlaceList, paneShown, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
+import { detailShown, heldOf, importNote, isPlaceList, paneShown, libraryFolders, libraryTab, libraryTrips, markedFolderOf, deleteRoutes, openTree, outlineOf, query, relistFolders, searchedFor, relistTrips, rootOf, treeOf, runLibrary, setImportNote, showFolder, shownFolderId } from '../state/library';
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
 import { flushSave } from '../state/autosave';
@@ -186,14 +186,18 @@ export function Library(props: {
   /** Whether the trip holds the tree's mark: a trip looked at, or the open one while the mark is in it, on itself or on a day in its pane; a list itself, rather than its category shown under it. */
   const isMarkedTrip = (trip: TripSummary): boolean => trip.id === markedLookId() || (trip.id === openTripId() && (trip.kind === 'trip' ? isMarkInTrip() : isTripMarked()));
   /**
-   * A click on a trip shows it whole on the map and marks it, and opens nothing: the
-   * open trip gives the map back to all its days, another is looked at. A list of
-   * places is a folder of categories: a click marks it and unfolds it, one that is not
+   * A click on a trip shows it whole on the map and marks it: the open trip gives the
+   * map back to all its days, another is looked at, or, while a trip's pane stands,
+   * opened in its place, with the contents of its first day where a day's are shown.
+   * A list of places is a folder of categories: a click marks it and unfolds it, one that is not
    * open opens, and the open one closes its category that is shown; marked already, it
    * folds, and unfolds again at the next click.
    */
   const clickTrip = (trip: TripSummary) => {
-    if (trip.kind === 'trip') return trip.id === openTripId() ? markTrip() : props.onLook(trip);
+    if (trip.kind === 'trip') {
+      if (trip.id === openTripId()) return markTrip();
+      return openTrip()?.kind === 'trip' && paneShown() ? props.onOpen(trip, { detailFirst: detailShown() }) : props.onLook(trip);
+    }
     const key = keyOf({ trip });
     if (isMarkedTrip(trip)) return fold([key], !unfolded().has(key));
     fold([key], true);
