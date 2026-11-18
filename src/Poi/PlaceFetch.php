@@ -44,10 +44,12 @@ final class PlaceFetch
      * missed a kind. Each area is given as it is done.
      *
      * @return iterable<string, array{places: int, missed: list<string>}> by the area; an area that was not answered at all has every kind asked for as missed
+     * @throws RuntimeException once two areas in a row were not answered at all: the server is not getting through, and the areas left are not asked for
      */
     public function fill(DateTimeImmutable $now): iterable
     {
         $first = true;
+        $unanswered = 0;
         foreach ($this->places->unfetched($this->kinds->ids()) as $area => $ids) {
             if (!$first) {
                 sleep(self::PAUSE_S);
@@ -55,8 +57,12 @@ final class PlaceFetch
             $first = false;
             try {
                 yield $area => $this->fetchOf($area, array_values(array_filter($this->kinds->kinds, fn (array $kind) => in_array($kind['id'], $ids, true))), $now);
+                $unanswered = 0;
             } catch (RuntimeException) {
                 yield $area => ['places' => 0, 'missed' => $ids];
+                if (++$unanswered === 2) {
+                    throw new RuntimeException('The Overpass API answered for neither of two areas in a row; the areas after them were not asked for. Try again later.');
+                }
             }
         }
     }
