@@ -768,7 +768,7 @@
     is gone to when it is read. A button on such an entry shows it on the map, a marker
     on the map goes to where it is told of, and the map's card names what is shown and
     has every day to go to, each as wide as the day is long, and the whole trip. On a
-    narrow screen the map is a band above the text.
+    narrow screen, and on a tablet held upright, the map is a band above the text.
   - Where the page scrolls over the map (the plan's map, and the story's while it is a
     band above the text), one finger or the wheel scrolls the page and the map takes two
     fingers, or the wheel with Ctrl.

@@ -18,7 +18,7 @@ const MOVE_MS = 900;
 /** How close the map goes to a single place. */
 const SPOT_ZOOM = 12;
 /** The window in which the story's map is a band above the text, as the stylesheet has it. */
-const BAND_QUERY = '(max-width: 899px)';
+const BAND_QUERY = '(max-width: 899px), (orientation: portrait) and (max-width: 1199px)';
 
 /** The area a day's routes and stops lie in; reckoned once for each day, since a route's line is long. */
 const areas = new WeakMap<Day, LngLatBounds>();

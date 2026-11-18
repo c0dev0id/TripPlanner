@@ -1950,7 +1950,10 @@ entries at the end of their section.
   the preview. The plan is the head, the map and the days as cards. The story is the
   journal as a document in a column of a readable measure, with the map beside it,
   which stays while the text is read; without room for both, the map is a band above
-  the text. The design was settled on a mock first (prose and headings in Newsreader,
+  the text: below 900 pixels of width, and below 1200 in a window taller than wide,
+  where a third of the width is a strip too narrow to show a day and the height has
+  room to spare. The band is three hundred pixels or three tenths of the height,
+  whichever is more. The design was settled on a mock first (prose and headings in Newsreader,
   labels and figures in the system's sans, the planner's accent, the visitor's light or
   dark scheme). The typeface is bundled, not fetched from a font service: a visitor's
   browser talks to nobody but this server and the map's.
