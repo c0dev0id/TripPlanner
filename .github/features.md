@@ -756,7 +756,10 @@
   - A photo's time and position are read from its EXIF data: it is shown with the time
     it was taken and stands on the map where it was taken. A photo with a position
     says it under its time; while the entry stands elsewhere or is off the map, that
-    is a link that puts it there. Photos added to the trip
+    is a link that puts it there. A photo without a position that stands nowhere has
+    "Add location" there: coordinates typed or pasted in, as decimal degrees or as
+    degrees, minutes and seconds, with or without the letters of the hemispheres, put
+    it on the map. Photos added to the trip
     itself go to the days of their dates. An entry's place is changed by dragging its
     marker; from its menu an entry is put on the map, put back where its photo was
     taken, or taken off the map.

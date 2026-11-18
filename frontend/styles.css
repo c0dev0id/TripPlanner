@@ -1972,6 +1972,16 @@ fieldset.symbols {
   font-variant-numeric: tabular-nums;
 }
 
+.journal-row input.taken-at {
+  width: 14em;
+  max-width: 100%;
+  padding: 1px 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+}
+
 .journal-row button.taken-at {
   color: var(--accent);
   text-decoration: underline;

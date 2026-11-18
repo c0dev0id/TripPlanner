@@ -1,9 +1,10 @@
 import { t } from '../i18n/t';
-import { createEffect, Show } from 'solid-js';
+import { createEffect, createSignal, Match, Show, Switch } from 'solid-js';
 import { tripApi } from '../api';
 import { dayOfEntry, entryTitle, placeOfEntry, type Entry, type EntryTarget } from '../model/journal';
 import { byTimeTaken } from '../model/journalDocument';
 import type { Day, LngLat } from '../model/trip';
+import { parseCoordinates } from '../geo/coordinates';
 import { roundLngLat } from '../routing/legs';
 import { panTo } from '../state/drawing';
 import { addEntry, chapters, editEntry, journalError, linkEntry, orderChapter, placeEntry, removeEntry, shownEntryId } from '../state/journal';
@@ -115,13 +116,16 @@ const coordinatesText = ([lng, lat]: LngLat): string => `${lat.toFixed(5)}, ${ln
 /**
  * A row of the journal: the grip it is put in order by, its file, its text, what it is
  * linked to and where it stands, where its photo was taken, and its menu. Where the
- * photo was taken puts the entry there by a click while it stands elsewhere or nowhere.
+ * photo was taken puts the entry there by a click while it stands elsewhere or nowhere;
+ * a photo that says nothing of it and stands nowhere takes coordinates typed or pasted in.
  */
 function EntryRow(props: { entry: Entry; index: number; day: Day | undefined; onMove: (to: number) => void; run: Runner }) {
   let row!: HTMLLIElement;
   const items = () => entryMenu(props.entry, props.day, props.run);
   /** What the entry is on where that is a route or a stop: the day is the chapter itself. */
   const part = () => partLabel(openTrip()!, props.entry);
+  /** Whether a place is being typed in for a photo that has none. */
+  const [adding, setAdding] = createSignal(false);
   /** Whether the entry stands on the map where its photo was taken. */
   const standsWhereTaken = () => String(props.entry.lngLat) === String(props.entry.takenLngLat);
   createEffect(() => {
@@ -148,15 +152,46 @@ function EntryRow(props: { entry: Entry; index: number; day: Day | undefined; on
             {[part(), props.entry.takenAt && takenAtText(props.entry.takenAt)].filter(Boolean).join(' · ')}
           </button>
         </Show>
-        <Show when={props.entry.takenLngLat}>
-          {(taken) => (
-            <Show when={!standsWhereTaken()} fallback={<span class="taken-at muted detail">{coordinatesText(taken())}</span>}>
-              <button type="button" class="entry-link taken-at detail" title={t('Put where it was taken')} onClick={() => void props.run(() => placeEntry(props.entry, taken()))}>
-                {coordinatesText(taken())}
-              </button>
+        <Switch>
+          <Match when={props.entry.takenLngLat}>
+            {(taken) => (
+              <Show when={!standsWhereTaken()} fallback={<span class="taken-at muted detail">{coordinatesText(taken())}</span>}>
+                <button type="button" class="entry-link taken-at detail" title={t('Put where it was taken')} onClick={() => void props.run(() => placeEntry(props.entry, taken()))}>
+                  {coordinatesText(taken())}
+                </button>
+              </Show>
+            )}
+          </Match>
+          <Match when={props.entry.lngLat}>{(stands) => <span class="taken-at muted detail">{coordinatesText(stands())}</span>}</Match>
+          <Match when={props.entry.file?.image}>
+            <Show
+              when={adding()}
+              fallback={
+                <button type="button" class="entry-link taken-at detail" onClick={() => setAdding(true)}>
+                  {t('Add location')}
+                </button>
+              }
+            >
+              <input
+                class="taken-at detail"
+                ref={(el) => queueMicrotask(() => el.focus())}
+                placeholder="48.12345, 8.54321"
+                aria-label={t('Coordinates: latitude, longitude')}
+                title={t('Coordinates: latitude, longitude')}
+                onInput={(e) => e.currentTarget.setCustomValidity('')}
+                onBlur={(e) => e.currentTarget.value.trim() === '' && setAdding(false)}
+                on:keydown={(e) => {
+                  if (e.key === 'Escape') return setAdding(false);
+                  if (e.key !== 'Enter') return;
+                  const at = parseCoordinates(e.currentTarget.value);
+                  if (at) return void props.run(() => placeEntry(props.entry, at));
+                  e.currentTarget.setCustomValidity(t('No coordinates: latitude and longitude, as in 48.12345, 8.54321.'));
+                  e.currentTarget.reportValidity();
+                }}
+              />
             </Show>
-          )}
-        </Show>
+          </Match>
+        </Switch>
       </div>
       <MenuButton of={entryTitle(props.entry)} items={items} />
     </li>
