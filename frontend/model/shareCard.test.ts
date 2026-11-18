@@ -12,7 +12,7 @@ const three = trip([day('d1', [track('out', [HOME, AWAY])]), day('d2', [track('l
 
 describe('the card of a shared trip', () => {
   it('has the lines the page shows, by day', () => {
-    const days = cardDays(three, ['hidden']);
+    const days = cardDays(three.days, ['hidden']);
     expect(days.map((lines) => lines.length)).toEqual([1, 1, 1]);
     expect(dayEnds(days)).toEqual([HOME, AWAY, AWAY, AWAY, AWAY, HOME]);
   });
@@ -23,7 +23,7 @@ describe('the card of a shared trip', () => {
       asked.push(at);
       return at[0] > 8 ? 'Hockenheim' : 'La Bresse';
     };
-    expect(await destinationsOf(dayEnds(cardDays(three, ['hidden'])), nameAt)).toEqual(['Hockenheim', 'La Bresse', 'Hockenheim']);
+    expect(await destinationsOf(dayEnds(cardDays(three.days, ['hidden'])), nameAt)).toEqual(['Hockenheim', 'La Bresse', 'Hockenheim']);
     expect(asked).toEqual([HOME, AWAY]);
     // A place without a name is left out, and what it stands between is not joined.
     expect(await destinationsOf([HOME, [0, 0], HOME], async (at) => (at[0] === 0 ? undefined : 'Hockenheim'))).toEqual(['Hockenheim']);
@@ -38,10 +38,10 @@ describe('the card of a shared trip', () => {
   });
 
   it('marks what the card shows', () => {
-    const days = cardDays(three, []);
+    const days = cardDays(three.days, []);
     expect(cardMark('Vosges', days)).toMatch(/^[0-9a-z]{1,7}$/);
-    expect(cardMark('Vosges', days)).toBe(cardMark('Vosges', cardDays(three, [])));
+    expect(cardMark('Vosges', days)).toBe(cardMark('Vosges', cardDays(three.days, [])));
     expect(cardMark('Vogesen', days)).not.toBe(cardMark('Vosges', days));
-    expect(cardMark('Vosges', cardDays(three, ['hidden']))).not.toBe(cardMark('Vosges', days));
+    expect(cardMark('Vosges', cardDays(three.days, ['hidden']))).not.toBe(cardMark('Vosges', days));
   });
 });

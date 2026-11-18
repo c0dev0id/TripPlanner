@@ -37,19 +37,36 @@ function linesOf(context: CanvasRenderingContext2D, words: readonly string[], wi
   return lines;
 }
 
-/** What stands under the map: the trip's name and the places it goes to, each in its lines, and how high that is. */
-function captionOf(context: CanvasRenderingContext2D, name: string, destinations: readonly string[]) {
-  const width = CARD_WIDTH - 2 * EDGE;
-  context.font = `600 64px ${PROSE}`;
-  const title = linesOf(context, name.split(/\s+/), width, 2);
-  context.font = `500 30px ${LABEL}`;
-  const places = destinations.length > 1 ? linesOf(context, destinations.map((place, i) => (i < destinations.length - 1 ? `${place} –` : place)), width, 2) : [];
-  return { title, places, height: 40 + title.length * 70 + (places.length > 0 ? 10 + places.length * 40 : 0) + 44 };
+/** How a line of the caption is set: its font and colour, how high the line is and how far under its top its letters stand. */
+interface Setting {
+  font: string;
+  color: string;
+  height: number;
+  baseline: number;
 }
+const TITLE: Setting = { font: `600 64px ${PROSE}`, color: INK, height: 70, baseline: 52 };
+const PLACES: Setting = { font: `500 30px ${LABEL}`, color: MARK, height: 40, baseline: 30 };
+/** The room over the caption's first line, between the name and the places, and under its last line. */
+const [ABOVE, BETWEEN, BELOW] = [40, 10, 44];
+
+/** What stands under the map: the trip's name and the places it goes to, each line with how it is set and how far under the caption's top it stands, and how high the caption is. */
+function captionOf(context: CanvasRenderingContext2D, name: string, destinations: readonly string[]) {
+  const set = (setting: Setting, words: readonly string[], top: number) => {
+    context.font = setting.font;
+    return linesOf(context, words, CARD_WIDTH - 2 * EDGE, 2).map((text, i) => ({ text, setting, y: top + i * setting.height + setting.baseline }));
+  };
+  const title = set(TITLE, name.split(/\s+/), ABOVE);
+  const under = ABOVE + title.length * TITLE.height + BETWEEN;
+  const places = destinations.length > 1 ? set(PLACES, destinations.map((place, n) => (n < destinations.length - 1 ? `${place} –` : place)), under) : [];
+  return { lines: [...title, ...places], height: (places.length > 0 ? under + places.length * PLACES.height : under - BETWEEN) + BELOW };
+}
+
+/** The base map's style as it was read, kept for the cards made after the first. */
+let baseStyle: StyleSpecification | undefined;
 
 /** The map's style without its names and signs, and with the routes and the ends of the days on it. */
 async function styleOf(days: readonly LngLat[][][]): Promise<StyleSpecification> {
-  const base = (await (await fetch(STYLE_URL)).json()) as StyleSpecification;
+  const base = (baseStyle ??= (await (await fetch(STYLE_URL)).json()) as StyleSpecification);
   const round = { 'line-cap': 'round', 'line-join': 'round' } as const;
   return {
     ...base,
@@ -83,11 +100,12 @@ function fill(map: MapLibreMap, points: readonly LngLat[], box: { left: number; 
 
 /** The card of a trip with these lines by day, headed with its name and the places named; throws where the map cannot be drawn. */
 export async function cardPicture(name: string, days: readonly LngLat[][][], destinations: readonly string[]): Promise<Blob> {
-  await Promise.all([document.fonts.load(`600 64px ${PROSE}`), document.fonts.load(`500 30px ${LABEL}`)]);
+  await Promise.all([TITLE, PLACES].map((setting) => document.fonts.load(setting.font)));
   const picture = Object.assign(document.createElement('canvas'), { width: CARD_WIDTH, height: CARD_HEIGHT });
   const context = picture.getContext('2d')!;
   const caption = captionOf(context, name, destinations);
   const lines = days.flat();
+  const points = lines.flat();
   const container = document.createElement('div');
   container.style.cssText = `position: fixed; left: -${2 * CARD_WIDTH}px; top: 0; width: ${CARD_WIDTH}px; height: ${CARD_HEIGHT}px;`;
   document.body.append(container);
@@ -96,9 +114,9 @@ export async function cardPicture(name: string, days: readonly LngLat[][][], des
     await new Promise<void>((drawn, failed) => {
       const late = setTimeout(() => failed(new Error(t('The map of the share card took too long to draw.'))), DRAWN_WITHIN_MS);
       map.once('load', () => {
-        const area = lines.flat().reduce((all, point) => all.extend(point), new LngLatBounds());
+        const area = points.reduce((all, point) => all.extend(point), new LngLatBounds());
         map.fitBounds(area, { bearing: bestBearing(lines, CARD_WIDTH / (CARD_HEIGHT - caption.height), CARD_PITCH), pitch: CARD_PITCH, padding: EDGE, animate: false });
-        fill(map, lines.flat(), { left: EDGE, top: EDGE, right: CARD_WIDTH - EDGE, bottom: CARD_HEIGHT - caption.height - EDGE / 2 });
+        fill(map, points, { left: EDGE, top: EDGE, right: CARD_WIDTH - EDGE, bottom: CARD_HEIGHT - caption.height - EDGE / 2 });
         map.once('idle', () => {
           clearTimeout(late);
           drawn();
@@ -118,20 +136,10 @@ export async function cardPicture(name: string, days: readonly LngLat[][][], des
   context.fillRect(0, top - 40, CARD_WIDTH, 40);
   context.fillStyle = PAPER;
   context.fillRect(0, top, CARD_WIDTH, caption.height);
-  context.textBaseline = 'alphabetic';
-  let line = top + 40 + 52;
-  context.font = `600 64px ${PROSE}`;
-  context.fillStyle = INK;
-  for (const text of caption.title) {
-    context.fillText(text, EDGE, line);
-    line += 70;
-  }
-  context.font = `500 30px ${LABEL}`;
-  context.fillStyle = MARK;
-  line += 10 - 22;
-  for (const text of caption.places) {
-    context.fillText(text, EDGE, line);
-    line += 40;
+  for (const { text, setting, y } of caption.lines) {
+    context.font = setting.font;
+    context.fillStyle = setting.color;
+    context.fillText(text, EDGE, top + y);
   }
   context.font = `400 15px ${LABEL}`;
   context.fillStyle = SOFT;

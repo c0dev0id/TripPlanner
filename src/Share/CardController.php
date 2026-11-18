@@ -6,9 +6,9 @@ namespace Planner\Share;
 
 use Planner\Account\CurrentUser;
 use Planner\Http\Json;
+use Planner\Journal\FileStore;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Http\Message\UploadedFileInterface;
 
 /** The card of a trip's shared page: kept as the owner's browser made it, and given to the owner and to whoever is sent the link. */
 final class CardController
@@ -24,7 +24,11 @@ final class CardController
     {
         $of = ((array) $request->getParsedBody())['of'] ?? null;
         $upload = $request->getUploadedFiles()['image'] ?? null;
-        if (!is_string($of) || preg_match('/^[0-9a-z]{1,32}$/', $of) !== 1 || !$upload instanceof UploadedFileInterface || $upload->getError() !== UPLOAD_ERR_OK || $upload->getSize() > Cards::MAX_BYTES) {
+        $problem = FileStore::problemOf($upload);
+        if ($problem !== null) {
+            return Json::error($response, 422, $problem);
+        }
+        if (!is_string($of) || preg_match('/^[0-9a-z]{1,32}$/', $of) !== 1 || $upload === null) {
             return Json::error($response, 422, 'The card is a picture with a mark of what it was made of.');
         }
         $image = (string) $upload->getStream();
@@ -36,21 +40,22 @@ final class CardController
 
     public function show(Request $request, Response $response, array $args): Response
     {
-        return self::picture($response, $this->cards->image($this->currentUser->get()->id, (int) $args['id']), 'private, no-cache');
+        return self::picture($response, $this->cards->image($this->currentUser->get()->id, (int) $args['id']), 'private');
     }
 
-    /** The shared page's card; its address names what it was made of, so it is kept for a day. */
+    /** The shared page's card. */
     public function shared(Request $request, Response $response, array $args): Response
     {
-        return self::picture($response, $this->cards->sharedImage($args['token']), 'public, max-age=86400');
+        return self::picture($response, $this->cards->sharedImage($args['token']), 'public');
     }
 
-    private static function picture(Response $response, ?string $image, string $cache): Response
+    /** A card for whom it is kept by: its address names what it was made of, so it is kept for good. */
+    private static function picture(Response $response, ?string $image, string $keptBy): Response
     {
         if ($image === null) {
             return Json::error($response, 404, 'Not found.');
         }
         $response->getBody()->write($image);
-        return $response->withHeader('Content-Type', 'image/jpeg')->withHeader('Cache-Control', $cache);
+        return $response->withHeader('Content-Type', 'image/jpeg')->withHeader('Cache-Control', "$keptBy, max-age=31536000, immutable");
     }
 }

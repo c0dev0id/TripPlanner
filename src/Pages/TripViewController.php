@@ -57,7 +57,7 @@ final class TripViewController
                     $trip['coverEntryId'] !== null => "{$this->config->baseUrl}$api/entries/{$trip['coverEntryId']}/image/1280",
                     default => null,
                 },
-                'card' => $card !== null,
+                'imageSize' => $card !== null ? [Cards::WIDTH, Cards::HEIGHT] : null,
             ],
         ]);
     }
