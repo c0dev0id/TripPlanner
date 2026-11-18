@@ -40,6 +40,10 @@
   folders or trips are not deleted, and the menu says so. A changed search starts with
   nothing selected. In Recordings it leaves the rides whose names contain it, every
   year of them unfolded, with their count and length over them.
+- The folders at the top of the trips' and of the Stash's tree stand in the order the
+  user puts them in, by dragging one by its grip or with the arrow keys on it; a new
+  one comes after them. Everything below, and the trips and lists beside them, is by
+  name.
 - Tags tell trips apart. A tag is a name in a colour, made, renamed, recoloured and
   deleted in the settings. The menu of a trip, or of the trips selected, puts each
   tag on them or takes it off, ticked where all of them have it; a trip shows its

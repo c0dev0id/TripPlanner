@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { StashFile, StashItem } from '../model/stash';
 import type { Folder, TripSummary } from '../model/trip';
-import { countText, fileItemsOf, itemKey, itemOf, itemsOf, keyOf, mediaKey, partsOf, takerOf, tripsWithin, waypointsKey, type Listed } from './items';
+import { countText, fileItemsOf, inGivenOrder, reordered, itemKey, itemOf, itemsOf, keyOf, mediaKey, partsOf, takerOf, tripsWithin, waypointsKey, type Listed } from './items';
 
 const folder = (id: number, parentId: number | null, kind: Folder['kind'] = 'folder'): Folder => ({ id, name: `f${id}`, parentId, kind });
 const trip = (id: number, folderId: number | null, kind: TripSummary['kind'] = 'trip') => ({ id, name: `t${id}`, folderId, kind }) as TripSummary;
@@ -83,5 +83,22 @@ describe('countText', () => {
   it('counts folders with trips, or with files where there are any', () => {
     expect(countText([{ folder: listed.folders[0]! }, { trip: listed.trips[0]! }, { trip: listed.trips[1]! }])).toBe('1 folder and 2 trips');
     expect(countText([{ file: listed.files[0]! }, { file: listed.files[1]! }])).toBe('2 files');
+  });
+});
+
+describe('the order of the folders at the top', () => {
+  const top = (id: number, name: string): Folder => ({ id, name, parentId: null, kind: 'folder' });
+  const byName = [top(1, '2024'), top(2, '2025'), top(3, 'Sonstiges'), top(4, 'Touren')];
+
+  it('puts the folders named first, as they are named, and the others after them as they come', () => {
+    expect(inGivenOrder(byName, []).map((f) => f.id)).toEqual([1, 2, 3, 4]);
+    expect(inGivenOrder(byName, [4, 99, 2]).map((f) => f.id)).toEqual([4, 2, 1, 3]);
+  });
+
+  it('keeps the new order of those shown after what is named beside them', () => {
+    expect(reordered([], byName, 3, 0)).toEqual([4, 1, 2, 3]);
+    expect(reordered([70, 4, 71], byName, 0, 2)).toEqual([70, 71, 2, 3, 1, 4]);
+    // A place beyond the folders, as among the trips under them, is the last.
+    expect(reordered([], byName, 0, 9)).toEqual([2, 3, 4, 1]);
   });
 });

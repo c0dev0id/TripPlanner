@@ -14,6 +14,7 @@ import { IconButton } from '../ui/IconButton';
 import { ChevronIcon, ChevronLeftIcon, CollectionIcon, FolderIcon, GripIcon, TripIcon } from '../ui/icons';
 import type { MenuItem } from '../ui/menu';
 import { MenuButton } from '../ui/MenuButton';
+import { Grip } from '../ui/Grip';
 import { Pad } from '../ui/Pad';
 import type { Held } from '../ui/carry';
 import type { RowSelect } from '../ui/selection';
@@ -189,7 +190,13 @@ export function TripCard(props: {
  * dropped from the computer are imported there (`data-drop-folder`); with `select`, its
  * pad selects it or drags it into another.
  */
-export function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[]; select?: CardSelect; fold?: CardFold; children?: JSX.Element }) {
+/** How a folder is put at another place among those beside it, where the user orders them: where it stands, and what puts it elsewhere. */
+export interface CardSort {
+  index: () => number;
+  onMove: (to: number) => void;
+}
+
+export function FolderCard(props: { folder: Folder; note: string; onOpen: (id: number) => void; items: () => MenuItem[]; select?: CardSelect; sort?: CardSort; fold?: CardFold; children?: JSX.Element }) {
   return (
     <li
       class="card"
@@ -200,7 +207,12 @@ export function FolderCard(props: { folder: Folder; note: string; onOpen: (id: n
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Show when={props.select}>
           {(select) => (
-            <Pad label={t('Select {name}, or drag it into a folder', { name: props.folder.name })} selected={select().selected()} onToggle={select().onToggle} carries={select().carries} />
+            <Show
+              when={props.sort}
+              fallback={<Pad label={t('Select {name}, or drag it into a folder', { name: props.folder.name })} selected={select().selected()} onToggle={select().onToggle} carries={select().carries} />}
+            >
+              {(sort) => <Grip label={t('Select {name}, or drag it to another place or into a folder', { name: props.folder.name })} index={sort().index()} onMove={sort().onMove} onToggle={select().onToggle} carries={select().carries} />}
+            </Show>
           )}
         </Show>
         <button class="text grow" aria-expanded={props.fold?.unfolded()} onClick={(e) => props.select?.onClick(e) || props.onOpen(props.folder.id)}>

@@ -183,7 +183,7 @@ of Stash files. Every paste entry, the line above a list and the keys ask it thr
 `state/clipboard.ts` (`pasteItems` for the open trip, `libraryPasteItem` for the
 library); a change to what is offered where is a change to that table and its test.
 Trips, lists and folders moved among folders follow their trees instead (`takerOf` in
-`library/items.ts`): a folder never leaves its tree.
+`library/items.ts`): a folder never leaves its tree. The folders at the top of a tree are in the order the user put them in, kept in the preferences (`inGivenOrder`, `reordered` there); all others are by name.
 
 ### The trip document
 

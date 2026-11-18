@@ -275,6 +275,8 @@ export interface Preferences {
   routeColoring?: RouteColoring;
   /** How opaque a ride is drawn in the overlay of all rides, from 0 to 1. */
   ridesOpacity?: number;
+  /** The folders at the top of the library's trees in the order they were put in, by id; one not named comes after those, by name. */
+  folderOrder?: number[];
 }
 
 export const fetchPreferences = (): Promise<Preferences> => request('GET', `/api/preferences`);

@@ -34,7 +34,7 @@ import { menuRows, NOTHING_SELECTED, rowSelect, selectIn, selectionOf, type RowS
 import { fileVerb } from '../ui/fileVerb';
 import { ForById } from '../ui/ForById';
 import { FolderCard, loneDay, RouteCard, TripCard, TripDays, type CardPane, type CardSelect } from './cards';
-import { countText, fileItemsOf, filesOf, folderOf, foldersOf, itemKey, itemsOf, keyOf, mediaKey, nameOf, partsOf, waypointsKey, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
+import { countText, fileItemsOf, inGivenOrder, reordered, filesOf, folderOf, foldersOf, itemKey, itemsOf, keyOf, mediaKey, nameOf, partsOf, waypointsKey, takerOf as takerAmong, tripsOf, tripsWithin as tripsAmong, type FileItem, type Item, type Listed } from './items';
 import { libraryImports } from './importActions';
 import { StashFileCard, StashItemRow } from './StashFileCard';
 import { addPartsTo, applyGroups, filesMenu, partsMenu, removeItems, takeOut, type StashMenuHost } from './stashMenu';
@@ -42,6 +42,7 @@ import { stashCopies, stashPlaces } from './stashOut';
 import { StandardPlaces } from '../map/PlaceKinds';
 import { keepPlaces, keptText, type KindedPlace } from './dropImport';
 import { tagsOn } from '../model/tag';
+import { changePreferences, folderOrder } from '../state/preferences';
 import { setTagOn, tags } from '../state/tags';
 import { firstFound, foundCount, foundKeys, routeKey, searchLibrary, type FoundRoute, type RouteDays } from './search';
 
@@ -129,8 +130,15 @@ export function Library(props: {
       if (keys.some((key) => !unfolded().has(key))) fold(keys, true);
     }),
   );
+  /** Whether a folder is the top of a tree, null being the trips': the folders in it are in the order the user put them in, all others by name. */
+  const isTop = (parent: number | null) => TREE_TABS.some((tree) => rootOf(tree) === parent);
   /** The folders in a folder, null for the top of the trips; the special folders are in none, each the top of its own tree. */
-  const childFolders = (parent: number | null) => folders().filter((f) => f.parentId === parent && f.kind === 'folder');
+  const childFolders = (parent: number | null) => {
+    const within = folders().filter((f) => f.parentId === parent && f.kind === 'folder');
+    return isTop(parent) ? inGivenOrder(within, folderOrder()) : within;
+  };
+  /** Puts a folder at the top of a tree at another place among those there. */
+  const sortTop = (parent: number | null, from: number, to: number) => void runLibrary(() => changePreferences({ folderOrder: reordered(folderOrder(), childFolders(parent), from, to) }));
   const childTrips = (parent: number | null) => trips().filter((trip) => trip.folderId === parent);
   /** The Stash's files by the folder they are in, and by their id. */
   const filesIn = createMemo(() => {
@@ -774,6 +782,7 @@ export function Library(props: {
             onOpen={() => clickFolder(f())}
             items={() => itemMenu({ folder: f() })}
             select={select(branch.tree, { folder: f() })}
+            sort={isTop(branch.parent) ? { index: () => childFolders(branch.parent).indexOf(f()), onMove: (to) => sortTop(branch.parent, childFolders(branch.parent).indexOf(f()), to) } : undefined}
             fold={{ unfolded: () => isUnfolded({ folder: f() }), current: () => isMarkedFolder(f().id) }}
           >
             <Branch tree={branch.tree} parent={f().id} />

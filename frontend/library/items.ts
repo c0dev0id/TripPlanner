@@ -105,3 +105,29 @@ export function takerOf(listed: Listed, items: readonly Item[]): (into: number |
 /** How many folders and trips, or files, which no tree holds beside trips: 2 folders and 3 trips. */
 export const countText = (items: readonly Item[]): string =>
   countsText(foldersOf(items).length, tripsOf(items).length || filesOf(items).length, filesOf(items).length > 0 ? 'file' : 'trip');
+
+/**
+ * Folders in the order the user gave them: those `order` names first, as it names them,
+ * and after them the others as they come, which is by name. An id in the order that no
+ * folder has, as of one deleted since, counts for nothing.
+ */
+export function inGivenOrder(folders: readonly Folder[], order: readonly number[]): Folder[] {
+  const place = (folder: Folder) => {
+    const at = order.indexOf(folder.id);
+    return at < 0 ? Infinity : at;
+  };
+  // The sort is stable: folders without a place keep theirs among each other.
+  return [...folders].sort((a, b) => place(a) - place(b));
+}
+
+/**
+ * The order to keep once the folder at `from` of those shown is put at `to`: the ids
+ * shown in their new order, after what the order names beside them, the folders of
+ * another tree.
+ */
+export function reordered(order: readonly number[], shown: readonly Folder[], from: number, to: number): number[] {
+  const ids = shown.map((folder) => folder.id);
+  const [moved] = ids.splice(from, 1);
+  ids.splice(Math.max(0, Math.min(ids.length, to)), 0, moved!);
+  return [...order.filter((id) => !ids.includes(id)), ...ids];
+}

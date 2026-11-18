@@ -774,5 +774,6 @@
   "A tag needs a name of up to 40 characters and a color.": "Ein Tag braucht einen Namen mit höchstens 40 Zeichen und eine Farbe.",
   "There is a tag of that name already.": "Es gibt bereits einen Tag mit diesem Namen.",
   "Tag not found.": "Tag nicht gefunden.",
-  "Trip or tag not found.": "Reise oder Tag nicht gefunden."
+  "Trip or tag not found.": "Reise oder Tag nicht gefunden.",
+  "Select {name}, or drag it to another place or into a folder": "{name} auswählen, oder an eine andere Stelle oder in einen Ordner ziehen"
 }

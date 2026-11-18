@@ -2033,6 +2033,17 @@ entries at the end of their section.
   for one kind holds places that are of another kind first, a hotel that is a
   restaurant; counted and kept, they overwrote that other kind's note with a count
   of one or two. Such places are left to their own kind's fetch.
+- **The folders at the top of a tree are in the order they are put in; all others by
+  name.** A handful of top folders are the user's own table of contents, which the
+  alphabet orders badly ("Unsere Touren" under "NEW"); below them the names are
+  dates and places, which it orders well, and an order kept by hand for hundreds of
+  rows would be work without use. The order is a list of folder ids in the account's
+  preferences, not a column of `folders`: it is how one user arranges a view, it
+  needs no change to a table, and an id of a folder deleted since counts for nothing
+  while a folder made since comes after those named, by name. One list serves the
+  three trees, whose folders it cannot confuse. A top folder has the grip that sorts
+  in the place of the pad: it selects by a tap and is dragged into a folder as
+  before, and to another place among its neighbours as well.
 - **Tags are made first and then put on trips.** A tag typed freely on a trip gives
   three spellings of the same thing and no place for its colour. Tags are rows of
   their own (`tags`, once per user by name whatever the case) and `trip_tags` says

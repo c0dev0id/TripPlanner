@@ -39,6 +39,9 @@ export const ridesOpacity = createRoot(() => createMemo((): number => preference
 /** How routes without a colour of their own get one. */
 export const routeColoring = createRoot(() => createMemo((): RouteColoring => preferences().routeColoring ?? DEFAULT_ROUTE_COLORING));
 
+/** The order the folders at the top of the trees were put in, by id. */
+export const folderOrder = createRoot(() => createMemo((): readonly number[] => preferences().folderOrder ?? []));
+
 /** Sets the preferences given and keeps them with the account. */
 export async function changePreferences(change: Preferences): Promise<void> {
   const next = { ...preferences(), ...change };
