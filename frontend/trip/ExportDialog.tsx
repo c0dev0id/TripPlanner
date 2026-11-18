@@ -102,7 +102,7 @@ export function ExportDialog() {
               <input type="radio" name="form" checked={options().form === 'tracks'} onChange={() => set('form', 'tracks')} /> {t('Tracks (the line exactly as planned)')}
             </label>
             <label>
-              <input type="radio" name="form" checked={options().form === 'routes'} onChange={() => set('form', 'routes')} /> {t('Routes (points only; the device calculates the way)')}
+              <input type="radio" name="form" checked={options().form === 'routes'} onChange={() => set('form', 'routes')} /> {t('Routes (points only; the device calculates the route)')}
             </label>
           </fieldset>
           <label class="toggle">

@@ -1361,7 +1361,7 @@ entries at the end of their section.
   846 of those 930 files do: they are BaseCamp routes that DMD's planner calculated
   again, and its way can be far from the author's (one round of 145 km between two
   points is 22 km in DMD's). A leg does not keep which planner its way is from, so a
-  trip's row says "Original way" for either. The index of the Stash follows the same
+  trip's row says "Original path" for either. The index of the Stash follows the same
   order for a route's line and length.
 - **A via point of Garmin's trip planning is a stop on its route point.** BaseCamp and
   the devices mark each point of a route as a via point, which is announced and counts
@@ -2152,6 +2152,16 @@ entries at the end of their section.
   day, where what it belongs to is in view. They are markers like the day's, which
   holds for the hundreds of photos a library has; thousands would want a layer drawn
   by the map with clusters.
+- **Interface texts follow the conventions of software, not of prose.** The texts of
+  the journal, the publication and the later features had been written as sentences
+  that describe ("Share the page under a link", "Put where it was taken", "No cover: a
+  photo is made the cover from its menu"). They are now short labels that name the
+  action and rely on their place for the rest, and explanations in panes are gone or
+  moved into tooltips; the rules are in CLAUDE.md under Language. The publication's
+  three settings became buttons that name what a click does, since a checkbox needs a
+  label that describes a state and those were the long ones. A list of places has
+  "categories" throughout, which some texts still called sections; the way a file
+  calculated for a route is its "path".
 - **A file's name is not shown to a visitor.** A photo's marker and its lightbox are
   called by the entry's text, or "Photo": the name a camera or a screenshot gave a
   file says nothing to a reader and may say what the owner did not mean to publish.

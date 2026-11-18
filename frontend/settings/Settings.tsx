@@ -64,7 +64,7 @@ export function Settings() {
           </select>
         </label>
         <label>
-          {t('My rides on the map: opacity per ride (%)')}
+          {t('Ride opacity on the map (%)')}
           <input
             type="range"
             min={5}
@@ -95,7 +95,7 @@ function TagSettings() {
   return (
     <section class="tag-settings">
       <h3>{t('Tags')}</h3>
-      <p class="muted">{t('Tags are put on trips from their menu and limit the list of trips.')}</p>
+      <p class="muted">{t('Assign tags from a trip’s menu.')}</p>
       <For each={tags()}>
         {(tag) => (
           <p class="row">

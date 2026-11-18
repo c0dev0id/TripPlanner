@@ -332,11 +332,11 @@ function losingOriginalWay(current: Trip, next: Trip): Route[] {
  * there.
  */
 async function askAboutOriginalWay(routes: readonly Route[], change: (trip: Trip) => Trip, label: string): Promise<void> {
-  const [without, keep] = [t('Change without'), t('Keep the original')];
+  const [without, keep] = [t('Discard original'), t('Keep as track')];
   const question =
     routes.length === 1
-      ? t('“{name}” still runs along the way its file calculated. This change routes that way again, and it is lost. Keep it as a track beside the route first?', { name: routes[0]!.name || t('Unnamed route') })
-      : t('{n} routes still run along the ways their files calculated. This change routes those ways again, and they are lost. Keep them as tracks beside the routes first?', { n: routes.length });
+      ? t('“{name}” still follows the path from its file. This change reroutes it, and the original path is lost. Keep the original as a track?', { name: routes[0]!.name || t('Unnamed route') })
+      : t('{n} routes still follow the paths from their files. This change reroutes them, and the original paths are lost. Keep the originals as tracks?', { n: routes.length });
   const answer = await askChoice(question, [without, keep]);
   if (answer === undefined) return;
   for (const route of routes) askedAbout.add(route.id);
@@ -523,7 +523,7 @@ export function addDay(): void {
 /** Adds a section of the name to the open collection and shows it. */
 export function addSection(name: string): void {
   const id = newId();
-  edit((trip) => dayEdit.updateDay(dayEdit.addDay(trip, id), id, (day) => ({ ...day, name })), t('Add section'));
+  edit((trip) => dayEdit.updateDay(dayEdit.addDay(trip, id), id, (day) => ({ ...day, name })), t('Add category'));
   selectDay(id);
 }
 

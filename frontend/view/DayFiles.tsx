@@ -10,7 +10,7 @@ export function DayFiles(props: { day: Day; api: string }) {
     <For each={props.day.routes}>
       {(route) => (
         <a class="gpx" href={routeGpxUrl(props.api, route.id)}>
-          {props.day.routes.length === 1 ? t('GPX of the day') : t('GPX: {name}', { name: routeLabel(route, props.day) })}
+          {props.day.routes.length === 1 ? t('Download GPX') : t('GPX: {name}', { name: routeLabel(route, props.day) })}
         </a>
       )}
     </For>

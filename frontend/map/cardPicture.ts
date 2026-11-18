@@ -130,7 +130,7 @@ export async function cardPicture(name: string, days: readonly LngLat[][][], des
   const map = new MapLibreMap({ container, style: await styleOf(days), interactive: false, attributionControl: false, pixelRatio: 1, fadeDuration: 0, canvasContextAttributes: { preserveDrawingBuffer: true } });
   try {
     await new Promise<void>((drawn, failed) => {
-      const late = setTimeout(() => failed(new Error(t('The map of the share card took too long to draw.'))), DRAWN_WITHIN_MS);
+      const late = setTimeout(() => failed(new Error(t('Drawing the share card map timed out.'))), DRAWN_WITHIN_MS);
       map.once('load', () => {
         const area = points.reduce((all, point) => all.extend(point), new LngLatBounds());
         map.fitBounds(area, { bearing: bestBearing(lines, CARD_WIDTH / (CARD_HEIGHT - caption.height), CARD_PITCH), pitch: CARD_PITCH, padding: EDGE, animate: false });

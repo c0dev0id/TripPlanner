@@ -22,7 +22,7 @@ export interface Reading {
 const isSomewhere = (entry: Entry): boolean => entry.lngLat !== null || (entry.routeId ?? entry.stopId) !== null;
 
 /** What the way to an entry on the map is called: by its route or stop where it is on one. */
-const placeLabel = (trip: Trip, entry: Entry): string => partLabel(trip, entry) ?? t('On the map');
+const placeLabel = (trip: Trip, entry: Entry): string => partLabel(trip, entry) ?? t('Show on map');
 
 /** The button that shows on the map where an entry belongs. */
 function Chip(props: { entry: Entry; trip: Trip; go: (mark: string) => void }) {
@@ -102,11 +102,11 @@ function Video(props: { entry: Entry; videoId: string; caption: string; trip: Tr
               <PauseIcon />
             </Show>
           </button>
-          <input type="range" min="0" max={playback().duration || 1} step="any" value={playback().time} aria-label={t('Position in the video')} onInput={(e) => player()?.seek(Number(e.currentTarget.value))} />
+          <input type="range" min="0" max={playback().duration || 1} step="any" value={playback().time} aria-label={t('Seek')} onInput={(e) => player()?.seek(Number(e.currentTarget.value))} />
           <span class="time">
             {moment(playback().time)} / {moment(playback().duration)}
           </span>
-          <button type="button" title={playback().muted ? t('Turn sound on') : t('Turn sound off')} aria-label={playback().muted ? t('Turn sound on') : t('Turn sound off')} onClick={() => player()?.sound()}>
+          <button type="button" title={playback().muted ? t('Unmute') : t('Mute')} aria-label={playback().muted ? t('Unmute') : t('Mute')} onClick={() => player()?.sound()}>
             <Show when={playback().muted} fallback={<VolumeIcon />}>
               <VolumeOffIcon />
             </Show>

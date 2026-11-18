@@ -47,11 +47,11 @@ final class PublicationController
     {
         [$journal, $gpx, $coverEntryId, $hidden] = [Json::field($request, 'journal'), Json::field($request, 'gpx'), Json::field($request, 'coverEntryId'), Json::field($request, 'hiddenRouteIds')];
         if (!is_bool($journal) || !is_bool($gpx) || ($coverEntryId !== null && !is_int($coverEntryId)) || !is_array($hidden) || !array_is_list($hidden) || array_filter($hidden, is_string(...)) !== $hidden) {
-            return Json::error($response, 422, 'The publication names the journal, the GPX files, a cover and the routes left out.');
+            return Json::error($response, 422, 'The publication settings are malformed.');
         }
         [$userId, $tripId] = [$this->currentUser->get()->id, (int) $args['id']];
         if ($coverEntryId !== null && !($this->entries->find($userId, $tripId, $coverEntryId)?->file['image'] ?? false)) {
-            return Json::error($response, 422, 'The cover is a photo of the journal.');
+            return Json::error($response, 422, 'The cover must be a photo of the journal.');
         }
         return $this->publications->set($userId, $tripId, $journal, $gpx, $coverEntryId, $hidden) ? $response->withStatus(204) : Json::error($response, 404, 'Trip not found.');
     }

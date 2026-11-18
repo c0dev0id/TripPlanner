@@ -223,6 +223,14 @@ its entry in `de.json`; a missing one shows the English and, in a dev build, is 
 exceptions speak the English keys; `Http/Json::error` translates on the way out. The
 validator's messages, the command line and Garmin symbol names are not translated.
 
+Interface texts are worded as software usually words them. A label names the action or
+the thing in a few words ("Publish", "Use as cover", "Remove from map") and leaves out
+what its place already says: the page, the trip, the day it stands in. A switch between
+two states is a button that names what a click does ("Publish" / "Unpublish"). Panes,
+menus and rows do not explain how the application works; a hint that is needed goes into
+a tooltip, an empty list's one line or a dialog. Terms stay the same everywhere: a list
+of places has categories, a route has a path, files are uploaded.
+
 ## Testing
 
 PHPUnit covers repositories, the validator and the export against an in-memory SQLite

@@ -67,7 +67,7 @@ export function DayMedia(props: { day: Day }) {
   return (
     <>
       <div class="row">
-        <h4 class="grow">{t('Additional Media')}</h4>
+        <h4 class="grow">{t('Additional media')}</h4>
         <IconButton label={t('Add link…')} onClick={() => setLinked(true)}>
           <LinkIcon />
         </IconButton>

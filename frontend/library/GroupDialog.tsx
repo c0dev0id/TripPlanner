@@ -13,9 +13,9 @@ export interface Grouping {
 
 /** What tied a group's files, as its chips say it. */
 const CLUES: Record<GroupClue, string> = {
-  name: t('Names alike'),
-  onward: t('One continues the other'),
-  thereAndBack: t('There and back'),
+  name: t('Similar names'),
+  onward: t('Consecutive'),
+  thereAndBack: t('Out and back'),
   together: t('Exported together'),
 };
 
@@ -31,7 +31,7 @@ export function GroupDialog(props: { grouping: Grouping | undefined; onClose: ()
     <EditDialog label={t('Group files')} value={props.grouping} title={() => t('Group files')} submit={t('Create folders')} onClose={props.onClose} onSubmit={(form, { groups }) => props.onApply(ticked(form, groups))}>
       {({ groups }) => (
         <>
-          <p class="muted">{t('Each group becomes a folder holding its files. Untick a group to leave its files where they are.')}</p>
+          <p class="muted">{t('Each selected group becomes a folder.')}</p>
           <ul class="groups">
             <For each={groups}>
               {(group, i) => (

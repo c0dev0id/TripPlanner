@@ -134,7 +134,7 @@ async function importIntoStash(dropped: Dropped, folderId: number, onProgress: (
     } else known++;
   });
   const text = keptText(kept, known, 'file', t('No GPX or KML files found.'));
-  return { text: media > 0 ? `${text} ${t('{what} kept with them.', { what: counted(media, 'attachment') })}` : text, errors };
+  return { text: media > 0 ? `${text} ${t('{what} included.', { what: counted(media, 'attachment') })}` : text, errors };
 }
 
 /** Keeps places in the list `tripId`, each in the section of its kind; a place the list holds already is left out. Answers how many were kept and how many were there already. */
@@ -162,7 +162,7 @@ async function importPlaces(files: readonly ImportSource[], into: { folderId: nu
   await eachFile(sources, onProgress, errors, async (source) => {
     const file = await source.open();
     const gpx = await readRouteFile(file);
-    if (gpx.routes.length + gpx.tracks.length > 0) errors.push(`${source.path}: ${t('Its routes and tracks were skipped: a place list holds only places.')}`);
+    if (gpx.routes.length + gpx.tracks.length > 0) errors.push(`${source.path}: ${t('Routes and tracks skipped: a place list holds only places.')}`);
     const places = kindedWaypoints(gpx);
     if (places.length === 0) return;
     const name = asName(gpx.name ?? file.name.replace(ROUTE_FILE, '')) || t('Places');

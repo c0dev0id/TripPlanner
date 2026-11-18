@@ -18,15 +18,15 @@ import { TripShape } from './TripShape';
 
 /** What a route or a track carries, as its row's chips say it, each with what it means. */
 const FEATURES: Record<StashFeature, { label: string; title: string }> = {
-  time: { label: t('Time'), title: t('Its points have timestamps') },
-  elevation: { label: t('Elevation'), title: t('Its points have elevations') },
-  lean: { label: t('Lean angle'), title: t('Its points have lean angles') },
-  acceleration: { label: t('G-force'), title: t('Its points have accelerations') },
-  routeExtension: { label: t('GPXX route'), title: t('The route has Garmin’s route extension') },
-  routePointExtension: { label: t('GPXX route points'), title: t('Its points have Garmin’s route point extension: the way calculated between them') },
-  tripExtension: { label: t('Garmin trip'), title: t('Its points have Garmin’s trip planning: which of them are stops and which only shape the route') },
-  dmd: { label: 'DMD', title: t('Has data DMD wrote into it') },
-  rumo: { label: 'Rumo', title: t('Has data Rumo wrote into it') },
+  time: { label: t('Time'), title: t('Contains timestamps') },
+  elevation: { label: t('Elevation'), title: t('Contains elevation data') },
+  lean: { label: t('Lean angle'), title: t('Contains lean angles') },
+  acceleration: { label: t('G-force'), title: t('Contains acceleration data') },
+  routeExtension: { label: t('GPXX route'), title: t('Contains Garmin’s route extension') },
+  routePointExtension: { label: t('GPXX route points'), title: t('Contains Garmin’s route point extension: the calculated path between points') },
+  tripExtension: { label: t('Garmin trip'), title: t('Contains Garmin trip planning data: which points are stops and which only shape the route') },
+  dmd: { label: 'DMD', title: t('Contains data written by DMD') },
+  rumo: { label: 'Rumo', title: t('Contains data written by Rumo') },
 };
 
 /** What a route or a track of a file is called: its name, or what it is where it has none. */
@@ -128,15 +128,15 @@ function StashMediaRow(props: { file: StashFile; items: () => MenuItem[]; select
   return (
     <li class="card" classList={{ selected: props.select.selected() }}>
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
-        <Pad label={t('Select {name}', { name: t('Additional Media') })} selected={props.select.selected()} onToggle={props.select.onToggle} />
+        <Pad label={t('Select {name}', { name: t('Additional media') })} selected={props.select.selected()} onToggle={props.select.onToggle} />
         <button class="text grow" aria-expanded={listed()} onClick={(e) => props.select.onClick(e) || setListed(!listed())}>
           <span class="swatch" style={{ background: 'none' }} />
           <span class="lines">
-            <span class="name">{t('Additional Media')}</span>
+            <span class="name">{t('Additional media')}</span>
             <span class="muted detail">{counted(props.file.media.length, 'file')}</span>
           </span>
         </button>
-        <MenuButton of={t('Additional Media')} items={props.items} />
+        <MenuButton of={t('Additional media')} items={props.items} />
       </div>
       <Show when={listed()}>
         <ul class="media">

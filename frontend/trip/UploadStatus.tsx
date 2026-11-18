@@ -10,17 +10,17 @@ export function UploadStatus() {
     <Show when={uploads().length > 0}>
       <div class="panel upload-status" role="status">
         <Show when={pendingUploads().length > 0}>
-          <p>{t('Sending {files} to the journal…', { files: counted(pendingUploads().length, 'file') })}</p>
+          <p>{t('Uploading {files}…', { files: counted(pendingUploads().length, 'file') })}</p>
         </Show>
         <For each={failed()}>
           {(upload) => (
             <p class="error">
               {upload.file.name}: {upload.error}{' '}
               <button type="button" onClick={() => retryUpload(upload.id)}>
-                {t('Try again')}
+                {t('Retry')}
               </button>{' '}
               <button type="button" onClick={() => dropUpload(upload.id)}>
-                {t('Drop')}
+                {t('Discard')}
               </button>
             </p>
           )}

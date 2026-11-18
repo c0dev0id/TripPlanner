@@ -271,7 +271,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
         </p>
       </Show>
       <Show when={!ridesLoading() && !ridesError() && allRides().length === 0}>
-        <p class="muted">{t('No rides yet. Drop the GPX files of your recordings here or add them with the plus button. Recordings added to a day are listed here too.')}</p>
+        <p class="muted">{t('No rides yet. Drop GPX recordings here, or add them with the plus button.')}</p>
       </Show>
       <Show when={allRides().length > 0 && listed().length === 0}>
         <p class="muted">{t('Nothing found.')}</p>

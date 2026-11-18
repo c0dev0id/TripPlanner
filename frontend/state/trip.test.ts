@@ -340,7 +340,7 @@ describe('the open trip', () => {
     const routes = () => openTrip()!.days[0]!.routes;
     // Refused, the edit is not made; asked again, it is made without the original, and no more is asked of that route.
     movePoint('r', 'b', [8.1, 49.01]);
-    expect([routes(), question()?.actions]).toEqual([[loop], ['Change without', 'Keep the original']]);
+    expect([routes(), question()?.actions]).toEqual([[loop], ['Discard original', 'Keep as track']]);
     answerQuestion();
     await Promise.resolve();
     expect(routes()).toEqual([loop]);
@@ -349,7 +349,7 @@ describe('the open trip', () => {
     expect([routes()[0] === loop, question()]).toEqual([false, undefined]);
     undo();
     movePoint('r', 'b', [8.1, 49.01]);
-    answerQuestion('Keep the original');
+    answerQuestion('Keep as track');
     await Promise.resolve();
     await Promise.resolve();
     expect(routes().map((r) => [r.kind, r.name])).toEqual([

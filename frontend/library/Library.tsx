@@ -408,8 +408,8 @@ export function Library(props: {
   };
   const merge = async (into: TripSummary, others: TripSummary[]) => {
     const what = counted(others.length, into.kind);
-    const where = t(into.kind === 'collection' ? 'Their sections are moved into it' : 'Their days and journal are moved into it; a day is combined with the day of the same date, if there is one');
-    const question = plural(others.length, 'Merge {what} into “{name}”? {where}, and the merged one is deleted.|Merge {what} into “{name}”? {where}, and the merged ones are deleted.', { what, name: into.name, where });
+    const where = t(into.kind === 'collection' ? 'Their categories move into it.' : 'Their days and journal entries move into it; days with the same date are combined.');
+    const question = plural(others.length, 'Merge {what} into “{name}”? {where} The merged one is deleted.|Merge {what} into “{name}”? {where} The merged ones are deleted.', { what, name: into.name, where });
     if (!(await askConfirmation(question, t('Merge')))) return;
     if (holdsOpen([{ trip: into }, ...others.map((trip) => ({ trip }))]) && !(await props.onLeave())) return;
     const merged = others.map((trip) => trip.id);
@@ -746,7 +746,7 @@ export function Library(props: {
   const proposeGroups = (folderId: number) => {
     const groups = groupFiles(childFiles(folderId), files().filter((file) => file.folderId !== folderId));
     if (groups.length > 0) setGrouping({ id: folderId, groups });
-    else setImportNote({ text: t('Found no files that belong together.'), errors: [] });
+    else setImportNote({ text: t('No related files found.'), errors: [] });
   };
 
   /** What the open trip's menu has besides: its GPX export, its journal with the page it is shared on, and closing it, saved. */

@@ -495,7 +495,7 @@
   made of a route and a route made of that track again has points all along its
   line: that is how a route that came with two points and the way a planner had
   calculated between them gets one beside it that can be edited. A route whose legs still run along the way its file calculated says so
-  on its row by a chip, "Original way", with how many of its legs do where not all
+  on its row by a chip, "Original path", with how many of its legs do where not all
   do; the chip goes as those legs are routed again. The first edit that would route
   such a way again (a point moved, added on it or removed, another profile, Reroute)
   is asked about before it is made: the original is kept as a track beside the route

@@ -78,7 +78,7 @@ export function QuickEntry() {
               <h3 class="name grip" title={label()} onPointerDown={drag}>
                 {t('New journal entry')} · {label()}
               </h3>
-              <textarea ref={(el) => ((text = el), setTimeout(() => el.focus()))} rows={4} maxlength={20000} placeholder={t('Write what happened. Markdown works.')} />
+              <textarea ref={(el) => ((text = el), setTimeout(() => el.focus()))} rows={4} maxlength={20000} placeholder={t('What happened? Markdown is supported.')} />
               <Show when={files().length > 0}>
                 <p class="muted hint">{counted(files().length, 'file')}</p>
               </Show>

@@ -44,7 +44,7 @@ export function Reach(props: { map: MapLibreMap }) {
   );
 
   const dot = document.createElement('span');
-  dot.title = t('Drag to measure from another place');
+  dot.title = t('Drag to measure from another point');
   const mark = new MarkerHandle(props.map, dot, 'reach-mark');
   mark.setDraggable(true);
   mark.marker.on('drag', () => setFrom(toLngLat(mark.marker.getLngLat())));

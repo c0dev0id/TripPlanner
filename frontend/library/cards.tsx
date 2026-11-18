@@ -88,7 +88,7 @@ export function TripDays(props: { trip: TripSummary; onOpen: (dayId: string, pan
         )}
       </ForById>
       <Show when={days().length === 0}>
-        <li class="muted no-days">{t('No sections yet.')}</li>
+        <li class="muted no-days">{t('No categories yet.')}</li>
       </Show>
     </ol>
   );
@@ -211,7 +211,7 @@ export function FolderCard(props: { folder: Folder; note: string; onOpen: (id: n
               when={props.sort}
               fallback={<Pad label={t('Select {name}, or drag it into a folder', { name: props.folder.name })} selected={select().selected()} onToggle={select().onToggle} carries={select().carries} />}
             >
-              {(sort) => <Grip label={t('Select {name}, or drag it to another place or into a folder', { name: props.folder.name })} index={sort().index()} onMove={sort().onMove} onToggle={select().onToggle} carries={select().carries} />}
+              {(sort) => <Grip label={t('Select {name}, or drag it to reorder or into a folder', { name: props.folder.name })} index={sort().index()} onMove={sort().onMove} onToggle={select().onToggle} carries={select().carries} />}
             </Show>
           )}
         </Show>

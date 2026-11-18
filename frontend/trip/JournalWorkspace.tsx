@@ -32,9 +32,9 @@ function PageSettings(props: { tripId: number }) {
     <Show when={openPublication()}>
       {(publication) => (
         <div class="page-settings">
-          <label class="toggle">
-            <input type="checkbox" checked={publication().token !== null} onChange={(e) => void run(() => setShared(e.currentTarget.checked))} /> {t('Share the page under a link')}
-          </label>
+          <button type="button" onClick={() => void run(() => setShared(publication().token === null))}>
+            {t(publication().token === null ? 'Publish' : 'Unpublish')}
+          </button>
           <Show when={publication().token}>
             {(token) => (
               <span class="share-link">
@@ -45,14 +45,14 @@ function PageSettings(props: { tripId: number }) {
               </span>
             )}
           </Show>
-          <label class="toggle">
-            <input type="checkbox" checked={publication().journal} onChange={(e) => void run(() => publish({ journal: e.currentTarget.checked }))} /> {t('Show the journal on the page')}
-          </label>
-          <label class="toggle">
-            <input type="checkbox" checked={publication().gpx} onChange={(e) => void run(() => publish({ gpx: e.currentTarget.checked }))} /> {t('Offer the routes as GPX files')}
-          </label>
+          <button type="button" onClick={() => void run(() => publish({ journal: !publication().journal }))}>
+            {t(publication().journal ? 'Hide journal' : 'Show journal')}
+          </button>
+          <button type="button" onClick={() => void run(() => publish({ gpx: !publication().gpx }))}>
+            {t(publication().gpx ? 'Disable route download' : 'Enable route download')}
+          </button>
           <details class="page-routes">
-            <summary>{t('Routes and tracks on the page: {shown} of {all}', { shown: routeCount() - publication().hiddenRouteIds.length, all: routeCount() })}</summary>
+            <summary>{t('Routes and tracks shown: {shown} of {all}', { shown: routeCount() - publication().hiddenRouteIds.length, all: routeCount() })}</summary>
             <For each={openTrip()!.days}>
               {(day, index) => (
                 <For each={day.routes}>
@@ -65,7 +65,7 @@ function PageSettings(props: { tripId: number }) {
               )}
             </For>
           </details>
-          <Show when={cover()} fallback={<span class="muted">{t('No cover: a photo is made the cover from its menu.')}</span>}>
+          <Show when={cover()} fallback={<span class="muted" title={t('Set one from a photo’s menu')}>{t('No cover photo')}</span>}>
             {(entry) => (
               <span class="cover">
                 <img src={entryImageUrl(tripApi(props.tripId), entry(), 400)} alt="" /> {t('Cover')}
@@ -77,7 +77,7 @@ function PageSettings(props: { tripId: number }) {
           </Show>
           <ShareCard />
           <a href={tripPageUrl(props.tripId)} target="_blank" rel="noopener">
-            {t('Open the page for printing')}
+            {t('Print view')}
           </a>
           <Show when={error()}>{(message) => <span class="error">{message()}</span>}</Show>
         </div>
@@ -111,7 +111,7 @@ export function JournalWorkspace() {
                 {t('Journal')} · {trip().name}
               </h2>
               <a class="preview-link" href={publicPreviewUrl(trip().id)} target="_blank" rel="noopener">
-                {t('Preview in a window of its own')}
+                {t('Open preview')}
               </a>
               <button type="button" class="icon" title={t('Close')} aria-label={t('Close')} onClick={close}>
                 <CloseIcon />
@@ -129,7 +129,7 @@ export function JournalWorkspace() {
                   )}
                 </ForById>
               </div>
-              <iframe class="preview" title={t('The page as a visitor sees it')} src={publicPreviewUrl(trip().id)} />
+              <iframe class="preview" title={t('Preview')} src={publicPreviewUrl(trip().id)} />
             </div>
           </div>
         );

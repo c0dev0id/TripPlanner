@@ -48,9 +48,9 @@ function entryMenu(entry: Entry, day: Day | undefined, run: Runner): MenuItem[] 
   const items: MenuItem[] = [];
   if (day) {
     items.push({
-      label: t('Link to'),
+      label: t('Attach to'),
       items: [
-        { label: t('The day'), checked: entry.dayId === day.id, run: link({ dayId: day.id }) },
+        { label: t('Day'), checked: entry.dayId === day.id, run: link({ dayId: day.id }) },
         ...day.routes.map((route) => ({ label: routeLabel(route, day), checked: entry.routeId === route.id, run: link({ routeId: route.id }) })),
         ...day.stops.map((stop) => ({ label: stop.name, checked: entry.stopId === stop.id, run: link({ stopId: stop.id }) })),
       ],
@@ -59,13 +59,13 @@ function entryMenu(entry: Entry, day: Day | undefined, run: Runner): MenuItem[] 
   const others: MenuItem[] = [...(day ? [{ label: t('Introduction'), run: link({}) }] : []), ...trip.days.filter((d) => d !== day).map((d) => ({ label: dayLabelOf(trip, d), run: link({ dayId: d.id }) }))];
   if (others.length > 0) items.push({ label: t('Move to'), items: others });
   const view = mapView();
-  if (!entry.lngLat && day && view) items.push({ label: t('Put on the map'), run: place(roundLngLat([(view.bounds[0] + view.bounds[2]) / 2, (view.bounds[1] + view.bounds[3]) / 2])) });
-  if (entry.takenLngLat && String(entry.takenLngLat) !== String(entry.lngLat)) items.push({ label: t('Put where it was taken'), run: place(entry.takenLngLat) });
-  if (entry.lngLat) items.push({ label: t('Take off the map'), run: place(null) });
+  if (!entry.lngLat && day && view) items.push({ label: t('Place on map'), run: place(roundLngLat([(view.bounds[0] + view.bounds[2]) / 2, (view.bounds[1] + view.bounds[3]) / 2])) });
+  if (entry.takenLngLat && String(entry.takenLngLat) !== String(entry.lngLat)) items.push({ label: t('Move to photo location'), run: place(entry.takenLngLat) });
+  if (entry.lngLat) items.push({ label: t('Remove from map'), run: place(null) });
   const publication = openPublication();
   if (entry.file?.image && publication) {
     const isCover = publication.coverEntryId === entry.id;
-    items.push({ label: t(isCover ? 'No longer the cover of the page' : 'Use as the cover of the page'), run: () => void run(() => publish({ coverEntryId: isCover ? null : entry.id })) });
+    items.push({ label: t(isCover ? 'Remove as cover' : 'Use as cover'), run: () => void run(() => publish({ coverEntryId: isCover ? null : entry.id })) });
   }
   items.push({
     label: t('Delete'),
@@ -156,7 +156,7 @@ function EntryRow(props: { entry: Entry; index: number; day: Day | undefined; on
           <Match when={props.entry.takenLngLat}>
             {(taken) => (
               <Show when={!standsWhereTaken()} fallback={<span class="taken-at muted detail">{coordinatesText(taken())}</span>}>
-                <button type="button" class="entry-link taken-at detail" title={t('Put where it was taken')} onClick={() => void props.run(() => placeEntry(props.entry, taken()))}>
+                <button type="button" class="entry-link taken-at detail" title={t('Move to photo location')} onClick={() => void props.run(() => placeEntry(props.entry, taken()))}>
                   {coordinatesText(taken())}
                 </button>
               </Show>
@@ -176,8 +176,8 @@ function EntryRow(props: { entry: Entry; index: number; day: Day | undefined; on
                 class="taken-at detail"
                 ref={(el) => queueMicrotask(() => el.focus())}
                 placeholder="48.12345, 8.54321"
-                aria-label={t('Coordinates: latitude, longitude')}
-                title={t('Coordinates: latitude, longitude')}
+                aria-label={t('Latitude, longitude')}
+                title={t('Latitude, longitude')}
                 onInput={(e) => e.currentTarget.setCustomValidity('')}
                 onBlur={(e) => e.currentTarget.value.trim() === '' && setAdding(false)}
                 on:keydown={(e) => {
@@ -185,7 +185,7 @@ function EntryRow(props: { entry: Entry; index: number; day: Day | undefined; on
                   if (e.key !== 'Enter') return;
                   const at = parseCoordinates(e.currentTarget.value);
                   if (at) return void props.run(() => placeEntry(props.entry, at));
-                  e.currentTarget.setCustomValidity(t('No coordinates: latitude and longitude, as in 48.12345, 8.54321.'));
+                  e.currentTarget.setCustomValidity(t('Enter latitude and longitude, e.g. 48.12345, 8.54321.'));
                   e.currentTarget.reportValidity();
                 }}
               />
@@ -239,7 +239,7 @@ export function ChapterEditor(props: { day: Day | undefined }) {
       </ul>
       <Show when={journalError() ?? error()}>{(message) => <p class="error">{message()}</p>}</Show>
       <form class="journal-add" onSubmit={add} on:keydown={(e) => e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.currentTarget.requestSubmit()}>
-        <textarea ref={text} rows={2} maxlength={20000} placeholder={t('Write what happened. Markdown works.')} />
+        <textarea ref={text} rows={2} maxlength={20000} placeholder={t('What happened? Markdown is supported.')} />
         <div class="row end">
           <button type="button" onClick={() => void addFiles()}>
             {t('Photos or files…')}

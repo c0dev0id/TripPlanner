@@ -62,7 +62,7 @@ export function Pane(props: {
   children: JSX.Element;
 }) {
   const isFolded = () => folded(props.level);
-  const foldLabel = () => t(isFolded() ? 'Unfold {what}' : 'Fold {what}', { what: props.label });
+  const foldLabel = () => t(isFolded() ? 'Expand {what}' : 'Collapse {what}', { what: props.label });
   const closeLabel = () => (onePane() ? t('Back') : t('Close {what}', { what: props.label }));
   const used = () => props.onUse?.();
   return (

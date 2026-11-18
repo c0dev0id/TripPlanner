@@ -58,11 +58,11 @@ export function ShareCard() {
   return (
     <span class="share-card">
       <Switch>
-        <Match when={making()}>{t('Making the share card…')}</Match>
-        <Match when={failure()}>{(message) => <span class="error">{t('The share card could not be made: {error}', { error: message() })}</span>}</Match>
+        <Match when={making()}>{t('Creating share card…')}</Match>
+        <Match when={failure()}>{(message) => <span class="error">{t('Share card failed: {error}', { error: message() })}</span>}</Match>
         <Match when={wanted() && openPublication()?.card}>
           {(mark) => (
-            <a href={cardUrl(openTripId()!, mark())} target="_blank" rel="noopener" title={t('The picture the link is shown with where it is posted')}>
+            <a href={cardUrl(openTripId()!, mark())} target="_blank" rel="noopener" title={t('Preview image for the shared link')}>
               <img src={cardUrl(openTripId()!, mark())} alt="" /> {t('Share card')}
             </a>
           )}

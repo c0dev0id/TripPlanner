@@ -88,7 +88,7 @@ export function MapView() {
       new ToggleControl({
         pressed: allPhotosShown,
         setPressed: setAllPhotosShown,
-        label: () => t(allPhotosShown() ? 'Hide the photos of other trips' : 'Show the photos of all trips'),
+        label: () => t(allPhotosShown() ? 'Hide photos of other trips' : 'Show photos of all trips'),
         on: PhotoIcon,
         off: PhotoIcon,
       }),

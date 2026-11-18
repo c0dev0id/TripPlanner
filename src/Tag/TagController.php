@@ -14,7 +14,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 final class TagController
 {
     private const INVALID = 'A tag needs a name of up to 40 characters and a color.';
-    private const TAKEN = 'There is a tag of that name already.';
+    private const TAKEN = 'A tag with this name already exists.';
 
     public function __construct(
         private readonly Tags $tags,

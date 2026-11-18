@@ -174,9 +174,7 @@ export function DayDetails(props: { day: Day }) {
         <p class="muted notes">{props.day.notes}</p>
       </Show>
       <Show when={detailSequence().some((e) => e.stop)}>
-        <Show when={detailTimeline()} fallback={<p class="day-summary muted">{t("Set a time on the first stop to calculate the day's times.")}</p>}>
-          {(timeline) => <DaySummary timeline={timeline()} />}
-        </Show>
+        <Show when={detailTimeline()}>{(timeline) => <DaySummary timeline={timeline()} />}</Show>
       </Show>
       <div class="row">
         <h4 class="grow">{t('Planning')}</h4>
@@ -296,13 +294,13 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
               <Show when={lateCount() > 0}>
                 <span class="late"> · {lateText(lateCount())}</span>
               </Show>
-              {props.route.optional ? ' · optional' : ''}
+              {props.route.optional ? ` · ${t('optional')}` : ''}
             </span>
             {/* What the route still carries of its file: the way a planner calculated, Garmin's or DMD's, which a leg does not say. */}
             <Show when={fileLegs().kept > 0}>
               <span class="chips">
-                <span class="chip" title={t('{n} of {m} legs run along the way the file calculated. A leg that is routed again loses it.', { n: fileLegs().kept, m: fileLegs().of })}>
-                  {t('Original way')}
+                <span class="chip" title={t('{n} of {m} legs follow the path stored in the file. Rerouting a leg discards it.', { n: fileLegs().kept, m: fileLegs().of })}>
+                  {t('Original path')}
                   {fileLegs().kept < fileLegs().of ? ` ${fileLegs().kept}/${fileLegs().of}` : ''}
                 </span>
               </span>
@@ -377,8 +375,8 @@ function SequenceItem(props: { entry: SequenceEntry; routeId: string; time: Entr
             <span class="muted detail">
               <Show when={props.time}>{(time) => <>{timesText(time())} · </>}</Show>
               {distanceText(props.entry.distanceM)}
-              <Show when={props.entry.near}>{(near) => <> · {distanceText(near().distanceM)} beside the route</>}</Show>
-              <Show when={stop()?.optional}> · optional</Show>
+              <Show when={props.entry.near}>{(near) => <> · {t('{distance} from the route', { distance: distanceText(near().distanceM) })}</>}</Show>
+              <Show when={stop()?.optional}> · {t('optional')}</Show>
             </span>
           </span>
         </button>
@@ -402,7 +400,7 @@ function AloneStopItem(props: { stop: Stop }) {
         <span class="lines">
           <span class="name">{props.stop.name}</span>
           <Show when={props.stop.optional}>
-            <span class="muted detail">optional</span>
+            <span class="muted detail">{t('optional')}</span>
           </Show>
         </span>
       </button>

@@ -99,7 +99,7 @@ export function StopDialog() {
           </label>
           <Show when={ridden()}>
             <label class="toggle">
-              <input type="checkbox" name="optional" checked={s.optional} /> {t('Optional: decided on the day; can be left out of an export')}
+              <input type="checkbox" name="optional" checked={s.optional} /> {t('Optional (can be excluded from an export)')}
             </label>
           </Show>
         </>

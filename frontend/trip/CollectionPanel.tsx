@@ -57,9 +57,9 @@ export const sectionMenu = (day: Day): MenuItem[] => partMenu('day', day.id, { e
 export function SectionDialog() {
   return (
     <NameDialog
-      title={t('Rename section')}
+      title={t('Rename category')}
       open={renamed() !== undefined}
-      placeholder={t('Section name')}
+      placeholder={t('Category name')}
       initial={renamed()?.name}
       onClose={() => setRenamed(undefined)}
       onSubmit={(name) => {
@@ -129,7 +129,7 @@ export function SectionDetails(props: { day: Day }) {
   return (
     <div class="day-details">
       <Show when={empty()}>
-        <p class="muted">{places() ? t('No places in this category yet. Right-click the map to add one, or add a GPX file to the list.') : t('No routes in this section yet.')}</p>
+        <p class="muted">{places() ? t('No places in this category yet. Right-click the map to add one, or add a GPX file to the list.') : t('No routes in this category yet.')}</p>
       </Show>
       <Show when={props.day.routes.length > 0}>
         <ul class="routes">

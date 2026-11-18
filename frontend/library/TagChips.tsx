@@ -28,7 +28,7 @@ export function TagChips(props: { ids: readonly number[] }) {
 export function TagFilter() {
   return (
     <Show when={tags().length > 0}>
-      <div class="chips tag-filter" role="group" aria-label={t('Limit to tags')}>
+      <div class="chips tag-filter" role="group" aria-label={t('Filter by tag')}>
         <For each={tags()}>
           {(tag) => (
             <button type="button" class="chip tag-chip" style={chipStyle(tag)} aria-pressed={wantedTags().has(tag.id)} onClick={() => toggleWanted(tag.id)}>

@@ -111,7 +111,7 @@ final class JournalController
         $dayId = Json::field($request, 'dayId');
         $ids = Json::field($request, 'ids');
         if (($dayId !== null && !is_string($dayId)) || !is_array($ids) || !array_is_list($ids) || array_filter($ids, is_int(...)) !== $ids) {
-            return Json::error($response, 422, 'The order names a day and the ids of entries.');
+            return Json::error($response, 422, 'The order is malformed.');
         }
         $ordered = $this->entries->reorder($this->currentUser->get()->id, (int) $args['id'], $dayId, $ids);
         return $ordered ? $response->withStatus(204) : Json::error($response, 404, 'Trip, day or entry not found.');
