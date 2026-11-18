@@ -1,6 +1,8 @@
 import { createResource, createRoot, createSignal, For, Show } from 'solid-js';
 import { changePassword, fetchMe, logout } from '../api';
 import { createRequest } from '../ui/request';
+import { NEW_TAG_COLOR } from '../model/tag';
+import { addTag, removeTag, saveTag, tags } from '../state/tags';
 import { chooseLanguage, LANGUAGES, languageChoice, type Language } from '../i18n/language';
 import { t } from '../i18n/t';
 import { DEFAULT_RIDES_OPACITY, DEFAULT_ROUTE_WIDTH, ROUTE_WIDTHS } from '../model/routeLook';
@@ -73,7 +75,45 @@ export function Settings() {
           />
         </label>
       </section>
+      <TagSettings />
     </div>
+  );
+}
+
+/** The user's tags: each with its colour and its name to change and a button that deletes it, and a line that makes a new one. */
+function TagSettings() {
+  const request = createRequest();
+  const add = (e: SubmitEvent) => {
+    e.preventDefault();
+    const form = e.currentTarget as HTMLFormElement;
+    const fields = new FormData(form);
+    void request.run(async () => {
+      await addTag(String(fields.get('name')), String(fields.get('color')));
+      form.reset();
+    });
+  };
+  return (
+    <section class="tag-settings">
+      <h3>{t('Tags')}</h3>
+      <p class="muted">{t('Tags are put on trips from their menu and limit the list of trips.')}</p>
+      <For each={tags()}>
+        {(tag) => (
+          <p class="row">
+            <input type="color" aria-label={t('Color of {name}', { name: tag.name })} value={tag.color} onChange={(e) => void request.run(() => saveTag({ ...tag, color: e.currentTarget.value }))} />
+            <input class="grow" aria-label={t('Name of {name}', { name: tag.name })} value={tag.name} maxlength={40} required onChange={(e) => void request.run(() => saveTag({ ...tag, name: e.currentTarget.value }))} />
+            <button type="button" class="link" onClick={() => void request.run(() => removeTag(tag.id))}>
+              {t('Delete')}
+            </button>
+          </p>
+        )}
+      </For>
+      <form class="row" onSubmit={add}>
+        <input type="color" name="color" aria-label={t('Color of the new tag')} value={NEW_TAG_COLOR} />
+        <input class="grow" name="name" placeholder={t('New tag')} aria-label={t('New tag')} maxlength={40} required />
+        <button type="submit">{t('Add')}</button>
+      </form>
+      <Show when={request.error()}>{(error) => <p class="error">{error()}</p>}</Show>
+    </section>
   );
 }
 

@@ -41,6 +41,8 @@ import { addPartsTo, applyGroups, filesMenu, partsMenu, removeItems, takeOut, ty
 import { stashCopies, stashPlaces } from './stashOut';
 import { StandardPlaces } from '../map/PlaceKinds';
 import { keepPlaces, keptText, type KindedPlace } from './dropImport';
+import { tagsOn } from '../model/tag';
+import { setTagOn, tags, wantedTags } from '../state/tags';
 import { firstFound, foundCount, foundKeys, routeKey, searchLibrary, type FoundRoute, type RouteDays } from './search';
 
 /** The top of the trips, as a place to paste into. */
@@ -285,13 +287,17 @@ export function Library(props: {
   };
   for (const tree of TREE_TABS) createEffect(on(() => markedFolderOf(tree), () => selectIn(ownerOf(tree), NOTHING_SELECTED), { defer: true }));
   // What a search lists is not what was listed before: nothing stays selected out of view.
-  createEffect(on(query, () => TREE_TABS.forEach((tree) => selectIn(ownerOf(tree), NOTHING_SELECTED)), { defer: true }));
+  createEffect(on([query, wantedTags], () => TREE_TABS.forEach((tree) => selectIn(ownerOf(tree), NOTHING_SELECTED)), { defer: true }));
   /** A trip's days with their routes: the open trip's as it is edited, another's with those that have a name, as its outline lists them. */
   const routeDaysOf = (trip: TripSummary): RouteDays => (trip.id === openTripId() ? openTrip()!.days : (outlineOf(trip.id) ?? []).map((day) => ({ id: day.id, name: day.name, routes: day.namedRoutes })));
+  /** What the tags on a trip are called, as the search compares them. */
+  const tagNamesOf = (trip: TripSummary) => tagsOn(tags(), trip.tagIds).map((tag) => tag.name.toLowerCase());
+  /** Whether the tree shown is limited to what is searched for or to tags, and lists that in the tree's place. */
+  const limited = () => searchedFor() !== '' || (shownTree() === 'trips' && wantedTags().size > 0);
   /** What the search finds in the tree shown; nothing while the rides are. */
   const found = createMemo(() => {
     const tree = shownTree();
-    return searchLibrary(all(), tree ? searchedFor() : '', (folderId) => treeOf(folderId) === tree, routeDaysOf);
+    return searchLibrary(all(), tree ? searchedFor() : '', (folderId) => treeOf(folderId) === tree, routeDaysOf, { wanted: tree === 'trips' ? wantedTags() : new Set(), namesOf: tagNamesOf });
   });
   /** Of what the search found, what is listed. */
   const listed = createMemo(() => firstFound(found(), SEARCH_LIMIT));
@@ -699,10 +705,24 @@ export function Library(props: {
         ? [{ label: t('Merge into “{name}”', { name: first!.name }), run: () => void merge(first!, others) }]
         : []),
       ...groupEntries,
+      ...(onlyTrips && chosenTrips.every((trip) => trip.kind === 'trip') ? [tagsItem(chosenTrips)] : []),
       ...exportEntries,
       ...(!several && 'trip' in item && item.trip.id === openTripId() ? openTripRowItems(item.trip) : []),
       { label: t('Delete'), run: () => void remove(chosen) },
     ];
+  };
+
+  /** The tags to put on trips or to take off them: ticked where all of the trips have it; greyed out while the user has made no tag. */
+  const tagsItem = (of: readonly TripSummary[]): MenuItem => {
+    const all = tags();
+    if (all.length === 0) return menuNote(t('Tags'));
+    return {
+      label: t('Tags'),
+      items: all.map((tag) => {
+        const checked = of.every((trip) => trip.tagIds.includes(tag.id));
+        return { label: tag.name, swatch: tag.color, checked, run: () => void runLibrary(() => setTagOn(of, tag.id, !checked)) };
+      }),
+    };
   };
 
   /** Proposes which of the files a folder of the Stash holds itself belong together, or says that none do. */
@@ -886,7 +906,7 @@ export function Library(props: {
         <Match when={libraryTrips.error ?? libraryFolders.error ?? stashFiles.error}>{(error) => <p class="error">{errorMessage(error())}</p>}</Match>
         <Match when={libraryTrips() && libraryFolders()}>
           <Show
-            when={searchedFor() ? shownTree() : undefined}
+            when={limited() ? shownTree() : undefined}
             keyed
             fallback={
               <>

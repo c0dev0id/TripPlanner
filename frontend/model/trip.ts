@@ -166,6 +166,8 @@ export interface TripSummary {
   startsOn: string | null;
   dayCount: number;
   updatedAt: string;
+  /** The user's tags that are on it, by id. */
+  tagIds: number[];
 }
 
 /** A folder of the user's making, or one of the two every user has at the top of the library, which stay as they are. */

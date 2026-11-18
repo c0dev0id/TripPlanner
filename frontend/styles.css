@@ -2540,3 +2540,49 @@ fieldset.symbols {
   font-weight: 600;
   white-space: nowrap;
 }
+
+/* The tags on a trip's row, and over the trips as switches that limit the list. */
+.tag-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.tag-chip {
+  padding: 1px 7px;
+  border: 0;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+.tag-filter {
+  margin: 0 0 8px;
+}
+
+.panel .tag-filter button.tag-chip {
+  padding: 3px 10px;
+  opacity: 0.45;
+}
+
+.panel .tag-filter button.tag-chip[aria-pressed='true'] {
+  opacity: 1;
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+
+.settings .tag-settings .row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 0;
+}
+
+.settings .tag-settings input[type='color'] {
+  width: 34px;
+  height: 28px;
+  padding: 1px;
+}

@@ -3,6 +3,7 @@ import { t } from '../i18n/t';
 import type { OutlineDay } from '../api';
 import type { Day, Folder, TripSummary } from '../model/trip';
 import { fetchingTrip, isOpening, opening, outlineOf } from '../state/library';
+import { TagChips } from './TagChips';
 import { openTrip, openTripId } from '../state/trip';
 import { dayCounts } from '../trip/DayPane';
 import { dayDetail, dayHeading, routeOrTrack } from '../trip/labels';
@@ -162,6 +163,7 @@ export function TripCard(props: {
                 {openingText(loading()!)}
               </Show>
             </span>
+            <TagChips ids={props.trip.tagIds} />
           </span>
           <Show when={shape()?.length ? shape() : undefined}>{(days) => <TripShape days={days()} />}</Show>
         </button>

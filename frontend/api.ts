@@ -3,6 +3,7 @@ import { t } from './i18n/t';
 import { daysToSend } from './model/delta';
 import type { Entry, EntryTarget } from './model/journal';
 import type { Publication, ViewedTrip } from './model/publication';
+import type { Tag } from './model/tag';
 import type { RouteColoring } from './model/routeLook';
 import type { Folder, LngLat, Route, Trip, TripKind, TripSummary } from './model/trip';
 import type { StashPart, StashFile, StashItem, StashMedia } from './model/stash';
@@ -56,6 +57,17 @@ async function request<T>(method: string, url: string, body?: unknown, keepalive
 export const fetchMe = (): Promise<Me> => request('GET', '/api/me');
 
 export const listTrips = (): Promise<TripSummary[]> => request('GET', '/api/trips');
+
+export const listTags = (): Promise<Tag[]> => request('GET', '/api/tags');
+
+export const createTag = (name: string, color: string): Promise<Tag> => request('POST', '/api/tags', { name, color });
+
+export const changeTag = (tag: Tag): Promise<void> => request('PUT', `/api/tags/${tag.id}`, { name: tag.name, color: tag.color });
+
+export const deleteTag = (id: number): Promise<void> => request('DELETE', `/api/tags/${id}`);
+
+/** Puts a tag on a trip, or takes it off. */
+export const tagTrip = (tripId: number, tagId: number, on: boolean): Promise<void> => request(on ? 'PUT' : 'DELETE', `/api/trips/${tripId}/tags/${tagId}`);
 
 export const createTrip = (name: string, folderId: number | null, kind: TripKind = 'trip'): Promise<TripSummary> => request('POST', '/api/trips', { name, folderId, kind });
 

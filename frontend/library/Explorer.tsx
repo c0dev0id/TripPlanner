@@ -2,6 +2,7 @@ import { createEffect, For, on, onCleanup, onMount, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import type { TripSummary } from '../model/trip';
 import { LIBRARY_TABS, TAB_NAMES, TREES, type LibraryTab } from '../model/library';
+import { TagFilter } from './TagChips';
 import { libraryProblem, libraryTab, libraryTrips, query, setQuery, showFolder } from '../state/library';
 import { setShowingDuplicates, showingDuplicates } from '../state/pane';
 import { folded } from '../state/panel';
@@ -117,6 +118,9 @@ export function Explorer(props: {
             </Show>
           </div>
         )}
+      </Show>
+      <Show when={libraryTab() === 'trips'}>
+        <TagFilter />
       </Show>
       <Show when={libraryProblem() ?? props.error}>{(message) => <p class="error">{message()}</p>}</Show>
       <Library onOpen={openIn} onLook={lookIn} onOpenRoute={openRoute} onLeave={props.onLeave}>

@@ -763,5 +763,16 @@
   "Share card": "Vorschaukarte",
   "The picture the link is shown with where it is posted": "Das Bild, mit dem der Link gezeigt wird, wo er geteilt wird",
   "The map of the share card took too long to draw.": "Die Karte der Vorschaukarte brauchte zu lange.",
-  "The share card could not be drawn.": "Die Vorschaukarte konnte nicht gezeichnet werden."
+  "The share card could not be drawn.": "Die Vorschaukarte konnte nicht gezeichnet werden.",
+  "Tags": "Tags",
+  "Limit to tags": "Auf Tags beschränken",
+  "Tags are put on trips from their menu and limit the list of trips.": "Tags werden über das Menü einer Reise vergeben und beschränken die Liste der Reisen.",
+  "Color of {name}": "Farbe von {name}",
+  "Name of {name}": "Name von {name}",
+  "Color of the new tag": "Farbe des neuen Tags",
+  "New tag": "Neuer Tag",
+  "A tag needs a name of up to 40 characters and a color.": "Ein Tag braucht einen Namen mit höchstens 40 Zeichen und eine Farbe.",
+  "There is a tag of that name already.": "Es gibt bereits einen Tag mit diesem Namen.",
+  "Tag not found.": "Tag nicht gefunden.",
+  "Trip or tag not found.": "Reise oder Tag nicht gefunden."
 }
