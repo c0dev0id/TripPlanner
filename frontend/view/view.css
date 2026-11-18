@@ -634,6 +634,22 @@ figcaption {
   background: none;
 }
 
+/* Photos higher than wide: two beside each other at their shape, one alone as wide as one of two, in the middle. */
+.gallery.pair.upright img {
+  aspect-ratio: 3 / 4;
+}
+
+.gallery.single.upright .frame,
+.gallery.single.upright figcaption {
+  width: calc(50% - 4px);
+  margin-inline: auto;
+}
+
+.gallery.single.upright img {
+  width: 100%;
+  object-fit: cover;
+}
+
 /* The way from a photo to where it stands on the map. */
 .gallery .pin {
   position: absolute;

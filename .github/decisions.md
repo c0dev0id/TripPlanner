@@ -2094,7 +2094,7 @@ entries at the end of their section.
   the link.
 - **Photos that follow each other are a gallery.** The journal has no gallery to make:
   an entry is one photo, and what stands between two photos is a text. One photo is
-  set as wide as the text at its own shape, two side by side, more in rows of three
+  set as wide as the text at its own shape, an upright one at half that width, which as wide as the text fills the window, two side by side, more in rows of three
   cropped to one shape; their sizes are known from the entry, so the page does not
   jump while they load, and the browser picks one of the three kept sizes by the width
   it is shown at. The lightbox steps through the gallery it was opened in. A caption

@@ -785,7 +785,7 @@
     photographed. Texts are Markdown. A text that is a YouTube address is
     the video, with the lines after it as its caption; it plays without sound while it
     is scrolled to, one video at a time. Photos that follow each other are one gallery:
-    one as wide as the text, two side by side, more in rows of three, each with its caption
+    one as wide as the text, or half of it in the middle where it is higher than wide, two side by side, at their shape where both are higher than wide, more in rows of three, each with its caption
     under it and, where it has a place, a pin on it that shows it on the map; a click
     opens a photo large, with the others of the gallery a step away by the arrows.
   - The map flies to what is read: a day is seen at a tilt and turned a little to
