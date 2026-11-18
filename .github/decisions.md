@@ -2099,7 +2099,11 @@ entries at the end of their section.
   jump while they load, and the browser picks one of the three kept sizes by the width
   it is shown at. The lightbox steps through the gallery it was opened in, and a click on the photo
   closes it, as the click on it opened it. It has no link to the file: that is for a
-  document, which the lightbox only frames. A caption
+  document, which the lightbox only frames. The frame opens once the small version
+  of the photo has loaded, which says what shape it has: opened before, it was the
+  small version's size and grew when the large one came. It fades in and out by the
+  dialog's own transitions (`@starting-style`, `allow-discrete`), which is why what
+  it holds is kept after it is closed; a browser without them shows it at once. A caption
   stands under its photo and the way to the map is a pin on the photo: collected under
   the gallery, captions could not be told to their photos, and the one button there
   showed the first photo's place alone. What is read is still the gallery as a whole,

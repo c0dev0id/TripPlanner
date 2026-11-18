@@ -1,38 +1,81 @@
-/* An image over the page, as large as the viewport allows, with its name under it. */
+/* An image over the page in a translucent frame that fades in and out, with its name under it. */
 
 .lightbox {
-  max-width: calc(100vw - 32px);
-  max-height: calc(100dvh - 32px);
-  padding: 0;
-  border: none;
-  border-radius: 8px;
-  background: #111;
+  max-width: none;
+  max-height: none;
+  padding: 10px;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 22px;
+  background: rgb(24 24 27 / 0.6);
   color: #eee;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.5);
+  opacity: 0;
+  transform: scale(0.94);
+  transition:
+    opacity 0.22s ease-out,
+    transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+    overlay 0.28s allow-discrete,
+    display 0.28s allow-discrete;
+  backdrop-filter: blur(18px) saturate(1.3);
+}
+
+.lightbox[open] {
+  opacity: 1;
+  transform: none;
 }
 
 .lightbox::backdrop {
-  background: rgba(0, 0, 0, 0.7);
+  background: rgb(0 0 0 / 0);
+  transition:
+    background-color 0.28s ease-out,
+    overlay 0.28s allow-discrete,
+    display 0.28s allow-discrete;
+}
+
+.lightbox[open]::backdrop {
+  background: rgb(0 0 0 / 0.5);
+}
+
+@starting-style {
+  .lightbox[open] {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+
+  .lightbox[open]::backdrop {
+    background: rgb(0 0 0 / 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox,
+  .lightbox::backdrop {
+    transition: none;
+  }
 }
 
 .lightbox figure {
   margin: 0;
 }
 
+/* The image is of its shape (--ratio) before it has loaded, within the window and no wider than reads well; its corners follow the frame's. */
 .lightbox img {
   display: block;
-  max-width: calc(100vw - 32px);
-  max-height: calc(100dvh - 76px);
-  object-fit: contain;
+  width: min(1100px, calc(100vw - 44px), calc((82dvh - 80px) * var(--ratio)));
+  height: auto;
+  aspect-ratio: var(--ratio);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 0.06);
   cursor: zoom-out;
 }
 
 /* A document in the browser's own viewer, on paper's white. */
 .lightbox iframe {
   display: block;
-  width: min(1100px, calc(100vw - 32px));
-  height: calc(100dvh - 76px);
+  width: min(1100px, calc(100vw - 44px));
+  height: calc(100dvh - 100px);
   border: none;
+  border-radius: 12px;
   background: #fff;
 }
 
@@ -40,7 +83,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
+  padding: 10px 6px 2px 8px;
   font-size: 13px;
 }
 
