@@ -262,14 +262,13 @@
   over the tabs: the account, with the way to sign out, is under the settings. The
   strip of a trip's folded pane keeps the
   days in reach: a numbered button each, in the colour its routes have
-  where each day has one, the day shown ringed; a click shows the day, or the whole
-  trip again where that day is shown. Of a list of places it keeps the
+  where each day has one, the day shown ringed; a click shows the day whole, as a click on its row does. Of a list of places it keeps the
   categories instead, each by its icon, or its dot where it has none. A button
   under the mouse says at once, in a card beside it, what is behind it: the day's
   number and name, its date and length and what it holds, a category's name and how
   many places it has. The strip of a day's folded contents keeps its routes and
   tracks in reach the same way: a numbered button each, in the route's colour, the
-  one taken up ringed; a click takes the route up, or lets go of it. On a screen narrower than 1200 px one pane stands beside the
+  one taken up ringed; a click takes the route up, and it stays taken up when clicked again. On a screen narrower than 1200 px one pane stands beside the
   map, the deepest that is open: a pad that opens a pane shows it in the place of
   the one it stands in, and the pad that closes reads Back and leads to the pane
   before, which from a trip's pane closes the trip. On a phone held upright that

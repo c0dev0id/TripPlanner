@@ -7,7 +7,8 @@ import { PlaceKindMark } from '../map/PlaceKinds';
 import { dropsOnPart } from '../state/clipboard';
 import { isPlaceList } from '../state/library';
 import { openRouteColors } from '../state/routeColors';
-import { isDayMarked, isRouteActive, openTrip, openTripId, pickDay, selectDay, selectedDayId, takeUpRoute, takeUpRouteOf } from '../state/trip';
+import { showDayWhole } from '../state/recordingView';
+import { isRouteActive, openTrip, openTripId, selectedDayId, takeUpRouteOf } from '../state/trip';
 import { ForById } from '../ui/ForById';
 import { dayCounts } from './DayPane';
 import { dayDetail, dayHeading, dayHolds, dayTitleOf, routeLabel } from './labels';
@@ -15,8 +16,8 @@ import { dayDetail, dayHeading, dayHolds, dayTitleOf, routeLabel } from './label
 /**
  * The open trip's days in the strip their pane folds to: a numbered button each, in
  * the colour its routes have where the days are coloured apart; of a list of places, its
- * kinds, each by its mark. A click shows the day or kind, or closes it where it is shown
- * already. The button under the mouse says at once
+ * kinds, each by its mark. A click shows the day or kind whole, as a click on its row
+ * does. The button under the mouse says at once
  * what is behind it (`DayTip`).
  */
 export function DayStrip() {
@@ -50,8 +51,7 @@ export function DayStrip() {
                   onPointerLeave={() => setHovered(undefined)}
                   onClick={() => {
                     setHovered(undefined);
-                    if (isDayMarked(day().id)) selectDay(undefined);
-                    else pickDay(day().id);
+                    showDayWhole(day().id);
                   }}
                 >
                   <Show when={places()} fallback={index() + 1}>
@@ -71,7 +71,7 @@ export function DayStrip() {
 /**
  * A day's routes and tracks in the strip the pane of its contents folds to: a numbered
  * button each, in the route's colour. A click takes the route up, as a click on its row
- * does, or lets go of it where it is taken up already.
+ * does.
  */
 export function RouteStrip(props: { day: Day }) {
   return (
@@ -87,7 +87,7 @@ export function RouteStrip(props: { day: Day }) {
                 title={label()}
                 aria-label={label()}
                 aria-pressed={isRouteActive(route().id)}
-                onClick={() => (isRouteActive(route().id) ? takeUpRoute(undefined) : takeUpRouteOf(props.day.id, route().id))}
+                onClick={() => takeUpRouteOf(props.day.id, route().id)}
               >
                 {index() + 1}
               </button>

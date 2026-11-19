@@ -1,5 +1,5 @@
 import { t } from '../i18n/t';
-import { createEffect, createMemo, createRoot, createSignal, on } from 'solid-js';
+import { batch, createEffect, createMemo, createRoot, createSignal, on } from 'solid-js';
 import type { KeptRide } from '../api';
 import { deltaToTrack, offsetsFrom, type Delta } from '../recording/delta';
 import { DIFFERENCE_FIGURES, FIGURES, METRICS } from '../recording/figures';
@@ -13,7 +13,7 @@ import { showWhole } from './drawing';
 import { isRecordingPinned, isRidePinned, isRoutePinned } from './pins';
 import { shownTrack } from './section';
 import { activeRecordingId, loadedTrack, setActiveRecordingId, shownRecordings, type ShownRecording } from './recordings';
-import { activeRouteId, lookedTripId, openTrip, openTripId, selectedDayId, takeUpRoute } from './trip';
+import { activeRouteId, lookedTripId, openTrip, openTripId, pickDay, selectedDayId, takeUpRoute } from './trip';
 
 /**
  * The recording opened for its figures, on its day or in the list of rides: its cards
@@ -36,6 +36,15 @@ export function openRecording(id: number | undefined): void {
   if (id !== activeRecordingId()) setPickedIndex(undefined);
   setHoverIndex(undefined);
   setActiveRecordingId(id);
+}
+
+/** Shows a day of the open trip whole, as a click on it does: what is taken up of it is let go, the route as the recording. */
+export function showDayWhole(id: string): void {
+  batch(() => {
+    pickDay(id);
+    takeUpRoute(undefined);
+    openRecording(undefined);
+  });
 }
 
 /**

@@ -1,5 +1,5 @@
 import { plural, t } from '../i18n/t';
-import { batch, createEffect, createMemo, createSignal, on, Show } from 'solid-js';
+import { createEffect, createMemo, createSignal, on, Show } from 'solid-js';
 import { errorMessage } from '../api';
 import { readDayParts, ROUTE_FILE_TYPES } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR, ROUTE_PALETTE } from '../model/routeLook';
@@ -15,7 +15,7 @@ import { pickFiles } from '../ui/pickFile';
 import type { EntryTarget } from '../model/journal';
 import { chapters, entriesOn, openJournal, showDayJournal } from '../state/journal';
 import { recordingsOf } from '../state/recordings';
-import { openRecording } from '../state/recordingView';
+import { showDayWhole } from '../state/recordingView';
 import { openRouteColors } from '../state/routeColors';
 import { dropsOnPart, isCut, pasteItems } from '../state/clipboard';
 import { partSelect } from '../state/partSelection';
@@ -28,7 +28,6 @@ import {
   moveDay,
   moveRoute,
   openTrip,
-  pickDay,
   selectedDayId,
   updateRoute,
   detailSequence,
@@ -123,13 +122,6 @@ function DayItem(props: { day: Day; index: number }) {
   const more = (): MenuItem[] => partMenu('day', props.day.id, { more: [{ label: t('Add recording…'), run: () => addRecordingPicked(props.day.id) }] });
   const select = partSelect('day', props.day.id, () => openTrip()!.days.map((d) => d.id));
   const detailed = () => isDetailed(props.day.id);
-  /** Shows the day whole: what is taken up of it is let go, the route as the recording. */
-  const showDay = () =>
-    batch(() => {
-      pickDay(props.day.id);
-      takeUpRoute(undefined);
-      openRecording(undefined);
-    });
   let row!: HTMLLIElement;
   // The day shown is brought into view: one opened from elsewhere may lie far down its trip.
   createEffect(on(selected, (is) => is && requestAnimationFrame(() => row.scrollIntoView({ block: 'nearest' }))));
@@ -150,7 +142,7 @@ function DayItem(props: { day: Day; index: number }) {
           onToggle={select.onToggle}
           carries={() => carriedWith('day', props.day.id, label())}
         />
-        <button class="text grow" onClick={(e) => select.onClick(e) || showDay()} aria-expanded={selected()}>
+        <button class="text grow" onClick={(e) => select.onClick(e) || showDayWhole(props.day.id)} aria-expanded={selected()}>
           <span class="lines">
             <span class="name">{dayHeading('trip', props.index, props.day.name)}</span>
             <span class="muted detail">{meta()}</span>

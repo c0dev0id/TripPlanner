@@ -1209,7 +1209,8 @@ entries at the end of their section.
   of the route or recording taken up, the trip's row the whole trip, the file's row
   the file whole. A recording also keeps its close button over the map, the one way
   to close a ride in Recordings, which has no row above it. The buttons of a folded
-  pane's strip stay switches: with the panes folded there is no row above to click.
+  pane's strip follow their rows, so that a click means the same folded or not; the
+  way back is the row or button above there too, in the pane before.
 - **A day looks the same whether its trip is open or not.** An unopened trip listed its
   days as one bare line each, the open one as cards of two lines under a heading with
   two buttons, though both said the same. The outlines now carry what the second line
