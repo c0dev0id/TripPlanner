@@ -1,0 +1,71 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Planner\Kernel;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// Run once, then delete this file. A stop was its day's and only listed under the route
+// or track that passed closest; it is now of one route or track. This gives the stops
+// table the column for that and brings every trip in line, as an import of its files
+// would have made it: a stop on a route point is that route's; every other stop of a
+// day goes to each route and track of the day as a copy of its own, on the route's point
+// where it stands on one and beside the route or track otherwise. The stop itself stays
+// as the copy of the first route the trip's page shows, so that journal entries on it
+// keep their stop. A day without a route or track loses its stops, and their journal
+// entries become the day's. Lists of places are left as they are: a place is of no
+// route. Running it twice does no harm.
+$db = Kernel::container(dirname(__DIR__))->get(PDO::class);
+
+if (!in_array('route_id', array_column($db->query('PRAGMA table_info(stops)')->fetchAll(PDO::FETCH_ASSOC), 'name'), true)) {
+    $db->exec('ALTER TABLE stops ADD COLUMN route_id TEXT');
+}
+
+$routesOf = $db->prepare('SELECT id, points FROM routes WHERE day_id = ? ORDER BY public DESC, position');
+$looseOf = $db->prepare('SELECT * FROM stops WHERE day_id = ? AND route_id IS NULL ORDER BY position');
+$give = $db->prepare('UPDATE stops SET route_id = ?, point_id = ? WHERE id = ?');
+$toDay = $db->prepare('UPDATE entries SET day_id = ?, stop_id = NULL WHERE stop_id = ?');
+$remove = $db->prepare('DELETE FROM stops WHERE id = ?');
+[$bound, $given, $copied, $removed] = [0, 0, 0, 0];
+
+$db->beginTransaction();
+foreach ($db->query("SELECT d.id FROM days d JOIN trips t ON t.id = d.trip_id WHERE t.kind = 'trip'")->fetchAll(PDO::FETCH_COLUMN) as $dayId) {
+    $routesOf->execute([$dayId]);
+    $routes = array_map(fn (array $route): array => ['id' => $route['id'], 'points' => $route['points'] === null ? [] : json_decode($route['points'], true)], $routesOf->fetchAll(PDO::FETCH_ASSOC));
+    $routeOfPoint = [];
+    foreach ($routes as $route) {
+        foreach ($route['points'] as $point) {
+            $routeOfPoint[$point['id']] = $route['id'];
+        }
+    }
+    $looseOf->execute([$dayId]);
+    foreach ($looseOf->fetchAll(PDO::FETCH_ASSOC) as $stop) {
+        if ($stop['point_id'] !== null && isset($routeOfPoint[$stop['point_id']])) {
+            $give->execute([$routeOfPoint[$stop['point_id']], $stop['point_id'], $stop['id']]);
+            $bound++;
+            continue;
+        }
+        if ($routes === []) {
+            $toDay->execute([$dayId, $stop['id']]);
+            $remove->execute([$stop['id']]);
+            $removed++;
+            continue;
+        }
+        foreach ($routes as $i => $route) {
+            // On the route's point where the stop stands on one, as an import binds a waypoint.
+            $on = array_find($route['points'], fn (array $point): bool => (float) $point['lngLat'][0] === (float) $stop['lng'] && (float) $point['lngLat'][1] === (float) $stop['lat']);
+            if ($i === 0) {
+                $give->execute([$route['id'], $on['id'] ?? null, $stop['id']]);
+                $given++;
+                continue;
+            }
+            $copy = ['id' => bin2hex(random_bytes(16)), 'route_id' => $route['id'], 'point_id' => $on['id'] ?? null] + $stop;
+            $db->prepare('INSERT INTO stops (' . implode(', ', array_keys($copy)) . ') VALUES (' . implode(', ', array_fill(0, count($copy), '?')) . ')')->execute(array_values($copy));
+            $copied++;
+        }
+    }
+}
+$db->commit();
+printf("%d stops on route points given their route; %d other stops given to a route or track, with %d copies for the others of their days; %d stops of days without a route removed.\n", $bound, $given, $copied, $removed);
