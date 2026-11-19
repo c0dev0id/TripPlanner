@@ -481,6 +481,9 @@ export function addStopBeside(lngLat: LngLat): void {
 /** Whether the map shows the stops of the route or track `routeId`: all while nothing is taken up, else those of what is taken up alone, as its line is drawn alone. */
 export const showsStopsOf = (routeId: string | null): boolean => activeRouteId() === undefined || routeId === activeRouteId();
 
+/** Of a day's stops those the map shows (see showsStopsOf), each place once where several routes have a copy of it. */
+export const stopsOnMap = (stops: readonly Stop[]): Stop[] => dayEdit.distinctStops(stops.filter((stop) => showsStopsOf(stop.routeId)));
+
 /** Where its route passes closest to a stop of the selected day that stands beside it; none for a stop on a point, or beside a route without a line. */
 const nearOf = (stopId: string): SequenceEntry['near'] => selectedSequence().find((e) => e.stop?.id === stopId)?.near;
 

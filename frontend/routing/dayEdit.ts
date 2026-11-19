@@ -465,9 +465,9 @@ export function moveStopIntoRoute(trip: Trip, stopId: string, routeId: string): 
   const target = dayOfRoute(trip, routeId);
   const stop = from?.stops.find((s) => s.id === stopId);
   if (!from || !target || !stop || stop.routeId === routeId) return trip;
-  const [moved] = asStopsOf(target.routes.find((r) => r.id === routeId)!, [stop], () => stopId);
+  const moved = asStopsOf(target.routes.find((r) => r.id === routeId)!, [stop], () => stopId);
   const left = updateDay(trip, from.id, (d) => ({ ...d, stops: d.stops.filter((s) => s.id !== stopId) }));
-  return updateDay(left, target.id, (d) => ({ ...d, stops: [...d.stops, moved!] }));
+  return updateDay(left, target.id, (d) => ({ ...d, stops: [...d.stops, ...moved] }));
 }
 
 /** Moves the days to right after the day `afterId`, in the order they are in; the same trip where `afterId` is one of them or no day. */

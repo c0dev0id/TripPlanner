@@ -178,8 +178,8 @@ are `view/view.css` alone, with their own colours and the bundled serif; it shar
 stylesheet of the planner's but the map's and the lightbox's.
 
 What is pasted where is one table, `model/paste.ts`: for each kind of place (a folder of
-the trips or the places, a trip's row, a list's row, a day, a category, a route, a file
-of the Stash, the recordings) the kinds of clipboard it takes, and what it has a use for
+the trips or the places, a trip's row, a list's row, a day, a day without a route or
+track, a category, a route, a file of the Stash, the recordings) the kinds of clipboard it takes, and what it has a use for
 of Stash files. Every paste entry, the line above a list and the keys ask it through
 `state/clipboard.ts` (`pasteItems` for the open trip, `libraryPasteItem` for the
 library); a change to what is offered where is a change to that table and its test.

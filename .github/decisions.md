@@ -43,7 +43,8 @@ entries at the end of their section.
   - A day of a trip has no stops of its own. Stops that reach a day without a line of
     their own, pasted onto it, moved to it or read from a file of waypoints alone, go to
     each route and track the day has, as an import's do; a day without one takes none,
-    and the paste is not offered. Such places belong in a list of places, whose places
+    and the paste is not offered: such a day is a place of its own in the paste table
+    (`bareDay`), which takes a file's waypoints only with its routes and tracks. Such places belong in a list of places, whose places
     are of no route. This ends making a route of a file that kept one as waypoints by
     importing the file into an empty day: the stops selected beside a route can still be
     made a route.

@@ -5,7 +5,7 @@ import { dayOfRoute } from '../routing/dayEdit';
 import { routeLine as lineOf } from '../routing/legs';
 import { dayHeading, routeLabel } from '../trip/labels';
 import { mapTab } from './library';
-import { keepPins, isRecordingPinned, pinnedLinesAside, pinnedRecordings, pinnedRoutes, pinRecordings, pinRides, pinRoutes, type KeptPin, type PinName, type PinnedLine } from './pins';
+import { keepPins, isRecordingPinned, pinnedLinesAside, pinnedRecordings, pinnedRoutes, pinRecordings, pinRides, pinRoutes, pinLine, type KeptPin, type PinName, type PinnedLine } from './pins';
 import { loadedTrack, recordingColor, recordingsOf, ridesPinned, shownRecordings } from './recordings';
 import { openRouteColors } from './routeColors';
 import { openTrip, routeById } from './trip';
@@ -67,7 +67,7 @@ export function keepPinsOfOpenTrip(): void {
 /** The pinned lines the map draws beside the open trip's routes and the recordings shown. */
 export function pinnedLines(): PinnedLine[] {
   const shown = new Set(shownRecordings().map((recording) => recording.id));
-  return [...pinnedLinesAside(), ...[...keptRecordings()].flatMap(([id, kept]) => (shown.has(id) ? [] : [{ points: kept.points, color: kept.color }]))];
+  return [...pinnedLinesAside(), ...[...keptRecordings()].flatMap(([id, kept]) => (shown.has(id) ? [] : [pinLine(kept)]))];
 }
 
 /** A pinned thing as the list over the map has it: what it is called, the colour of its line and how it is let go of. */

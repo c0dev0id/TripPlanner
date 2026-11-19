@@ -15,6 +15,7 @@ const MATRIX: Record<Place, string> = {
   trip: '       x    .    x    .    .    .    x    x    x',
   list: '       .    x    .    x    .    .    x    .    x',
   day: '        x    x    x    x    x    x    x    .    x',
+  bareDay: '    x    .    x    .    x    x    x    .    x',
   category: '   .    x    .    x    .    .    x    .    x',
   route: '      .    .    .    x    .    .    .    .    .',
   stashFile: '  .    .    .    .    .    .    .    .    x',
@@ -57,6 +58,11 @@ describe('sharesOf', () => {
     expect(sharesOf('list', [whole])).toEqual([{ ...whole, items: [], media: false }]);
     expect(sharesOf('category', [whole])).toEqual([{ ...whole, items: [], media: false }]);
     expect(sharesOf('recordings', [whole])).toEqual([{ ...whole, items: [item('track')], waypoints: false, media: false }]);
+  });
+
+  it('gives a day without a route the waypoints only with the routes and tracks they come with', () => {
+    expect(sharesOf('bareDay', [wholeFile(file(2, [], 3))])).toEqual([]);
+    expect(sharesOf('bareDay', [whole])).toEqual([{ ...whole, media: whole.media }]);
   });
 
   it('leaves out a part the place has no use for, and waypoints or media a file has none of', () => {

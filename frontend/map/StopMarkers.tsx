@@ -2,27 +2,22 @@ import { t } from '../i18n/t';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, onCleanup } from 'solid-js';
 import type { Stop } from '../model/trip';
-import { distinctStops, pointOfDay } from '../routing/dayEdit';
+import { pointOfDay } from '../routing/dayEdit';
 import { dragsMarkers, setEditTarget, straightLegItem, tapAction } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import { PlaceKindMark } from './PlaceKinds';
 import { isPlaceList, shownDay } from '../state/library';
-import { activeRouteId, canConnect, showsStopsOf, connectStop, disconnectStop, editingRouteId, moveStop, openTripId, removeStop, selectedDay, selectedDayId } from '../state/trip';
+import { canConnect, stopsOnMap, connectStop, disconnectStop, editingRouteId, moveStop, openTripId, removeStop, selectedDay, selectedDayId } from '../state/trip';
 import { stopContent } from './markerContent';
 import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
 import { ForById } from '../ui/ForById';
 
 /**
- * The stops of the selected day, drawn by their kind and named: of the route or track
- * taken up alone while one is (showsStopsOf), else each place once, where several routes
- * have a copy of it. They are draggable while a route of the day is edited with a tool
+ * The stops of the selected day the map shows (stopsOnMap), drawn by their kind and named. They are draggable while a route of the day is edited with a tool
  * other than the hand; the other shown days' stops are dots on the map (routeOverlay).
  */
 export function StopMarkers(props: { map: MapLibreMap }) {
-  const stops = createMemo(() => {
-    const shown = (shownDay()?.stops ?? []).filter((stop) => showsStopsOf(stop.routeId));
-    return activeRouteId() === undefined ? distinctStops(shown) : shown;
-  });
+  const stops = createMemo(() => stopsOnMap(shownDay()?.stops ?? []));
   return <ForById each={stops()}>{(stop) => <StopMarker map={props.map} stop={stop()} />}</ForById>;
 }
 

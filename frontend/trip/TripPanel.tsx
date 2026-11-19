@@ -4,7 +4,7 @@ import { errorMessage } from '../api';
 import { readDayParts, ROUTE_FILE_TYPES } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR, ROUTE_PALETTE } from '../model/routeLook';
 import type { Day, Route } from '../model/trip';
-import { defaultProfile } from '../routing/dayEdit';
+import { defaultProfile, takesStops } from '../routing/dayEdit';
 import { fileLegCount, pointCount, routedLegs, routeDistance, routesDistance } from '../routing/legs';
 import type { SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
@@ -92,11 +92,11 @@ async function importPicked(day: Day): Promise<void> {
   if (!file) return;
   try {
     const parts = await readDayParts(file, defaultProfile(day));
+    if (parts.routes.length === 0 && parts.stops.length > 0 && !takesStops(openTrip()!, day)) return void setImportNote({ dayId: day.id, text: t('{file}: no route or track to add the waypoints to.', { file: file.name }), error: true });
     const stopsOfDay = () => openTrip()?.days.find((d) => d.id === day.id)?.stops.length ?? 0;
     const before = stopsOfDay();
     addParts(day.id, parts);
     const stops = stopsOfDay() - before;
-    if (parts.routes.length === 0 && stops === 0 && parts.stops.length > 0) return void setImportNote({ dayId: day.id, text: t('{file}: no route or track to add the waypoints to.', { file: file.name }), error: true });
     setImportNote({ dayId: day.id, text: t('{file}: {routes}, {stops} added.', { file: file.name, routes: counted(parts.routes.length, 'route'), stops: counted(stops, 'stop') }), error: false });
   } catch (fault) {
     setImportNote({ dayId: day.id, text: `${file.name}: ${errorMessage(fault)}`, error: true });

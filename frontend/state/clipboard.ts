@@ -372,7 +372,8 @@ export const dropsOnPart = (el: HTMLElement, kind: PartKind, id: () => string): 
 function partPaste(copied: Clip, kind: PartKind, id: string): PasteItem[] {
   const trip = openTrip();
   if (!trip || kind === 'stop') return [];
-  const place: Place = kind === 'route' ? 'route' : trip.kind === 'collection' ? 'category' : 'day';
+  const bare = !trip.days.some((day) => day.id === id && takesStops(trip, day));
+  const place: Place = kind === 'route' ? 'route' : trip.kind === 'collection' ? 'category' : bare ? 'bareDay' : 'day';
   if (!taken(place, copied) || copied.cut?.ids.includes(id) || (place !== 'route' && isAtHome(copied, id))) return [];
   const label = pasteLabel(copied, place);
   if (place === 'route') return 'stops' in copied ? [{ label, run: pasted(copied, (ids) => moveStopsIntoRoute(ids, id), () => pasteStopsIntoRoute(id, copied.stops)) }] : [];
@@ -396,8 +397,6 @@ function partPaste(copied: Clip, kind: PartKind, id: string): PasteItem[] {
           else void pasteDaysAfter(id, copied.days, copied.tripId, cut);
         } }];
   }
-  const day = trip.days.find((d) => d.id === id);
-  if (('categories' in copied || 'stops' in copied) && place === 'day' && !(day && takesStops(trip, day))) return [];
   // The places of a category join the day or the category it is pasted onto; cut within its list, the category goes.
   if ('categories' in copied) return [{ label, run: shown(pasted(copied, (ids) => mergeDaysInto(ids, id), () => pasteStops(id, placesOf(copied.categories).stops))) }];
   if ('stops' in copied) return [{ label, run: shown(pasted(copied, (ids) => movePartsToDay('stop', ids, id), () => pasteStops(id, copied.stops))) }];

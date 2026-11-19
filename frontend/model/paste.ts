@@ -6,8 +6,13 @@ import type { CopiedFolder, StashFile, StashPart } from './stash';
  * and folders moved among folders follow their trees instead (`library/items.ts`).
  */
 
-/** A kind of place a paste goes into: a folder of the trips or of the places, the row of a trip or of a list of places, a day, a category of a list, a route, a file of the Stash, the recordings. */
-export type Place = 'tripsFolder' | 'placesFolder' | 'trip' | 'list' | 'day' | 'category' | 'route' | 'stashFile' | 'recordings';
+/**
+ * A kind of place a paste goes into: a folder of the trips or of the places, the row of a
+ * trip or of a list of places, a day, a day without a route or track (`bareDay`), which
+ * has nothing to take stops, a category of a list, a route, a file of the Stash, the
+ * recordings.
+ */
+export type Place = 'tripsFolder' | 'placesFolder' | 'trip' | 'list' | 'day' | 'bareDay' | 'category' | 'route' | 'stashFile' | 'recordings';
 
 /** A kind of thing on the clipboard; `folders` are files of the Stash copied with folders of it. */
 export type ClipKind = 'days' | 'categories' | 'routes' | 'stops' | 'recordings' | 'media' | 'files' | 'folders' | 'parts';
@@ -19,6 +24,7 @@ const TAKES: Record<Place, readonly ClipKind[]> = {
   trip: ['days', 'routes', 'files', 'folders', 'parts'],
   list: ['categories', 'stops', 'files', 'parts'],
   day: ['days', 'categories', 'routes', 'stops', 'recordings', 'media', 'files', 'parts'],
+  bareDay: ['days', 'routes', 'recordings', 'media', 'files', 'parts'],
   category: ['categories', 'stops', 'files', 'parts'],
   route: ['stops'],
   stashFile: ['parts'],
@@ -35,6 +41,7 @@ const SHARES: Partial<Record<Place, readonly Share[]>> = {
   trip: ['routes', 'tracks', 'routeStops'],
   list: ['waypoints'],
   day: ['routes', 'tracks', 'waypoints', 'media'],
+  bareDay: ['routes', 'tracks', 'routeStops', 'media'],
   category: ['waypoints'],
   stashFile: ['routes', 'tracks', 'waypoints', 'media'],
   recordings: ['tracks'],
