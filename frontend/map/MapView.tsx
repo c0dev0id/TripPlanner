@@ -304,7 +304,8 @@ function LookLines(props: { map: MapLibreMap }) {
 function RouteLines(props: { map: MapLibreMap }) {
   // The trip changes as a whole; its lines are drawn again only when the routes drawn or the marks on them change.
   const days = createMemo(shownDays, [], { equals: sameLines });
-  const marks = createMemo(() => (tripShown() ? selectedSequence().flatMap((e) => (e.near ? [e.near.lngLat] : [])) : []), [], { equals: samePlaces });
+  // The marks of the stops beside their routes: of the route taken up alone while one is, as the stops are.
+  const marks = createMemo(() => (tripShown() ? selectedSequence().flatMap((e) => (e.near && (activeRouteId() === undefined || e.near.routeId === activeRouteId()) ? [e.near.lngLat] : [])) : []), [], { equals: samePlaces });
   const dims = createMemo(dimStops, [], { equals: samePlaces });
   // A pin set on a route that is drawn anyway changes no line.
   const drawn = createMemo(() => new Set(days().flatMap(({ day, role }) => day.routes.flatMap((route) => (routeDrawn(route, role) ? route.id : [])))), new Set<string>(), { equals: sameIds });
