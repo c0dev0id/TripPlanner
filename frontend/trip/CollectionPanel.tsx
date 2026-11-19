@@ -72,7 +72,8 @@ export function SectionDialog() {
 
 /** A section as a card: its name over what it holds, which in a list of places (`places`) are places. A click shows it on the map; the pad at its end opens the pane of what it holds. Its menu renames and removes it. */
 function SectionItem(props: { day: Day; index: number; places: boolean }) {
-  const selected = () => selectedDayId() === props.day.id;
+  // A memo, so that the effect on it runs when it turns and not whenever the category is made anew.
+  const selected = createMemo(() => selectedDayId() === props.day.id);
   // The section's routes change less often than the section.
   const routes = createMemo(() => props.day.routes);
   const distance = createMemo(() => routesDistance(routes()));
@@ -162,7 +163,8 @@ export function SectionDetails(props: { day: Day }) {
 function RouteItem(props: { route: Route; day: Day }) {
   const label = createMemo(() => routeLabel(props.route, props.day));
   const distance = createMemo(() => routeDistance(props.route));
-  const active = () => isRouteActive(props.route.id);
+  // A memo, so that the effect on it runs when it turns and not whenever the route is made anew.
+  const active = createMemo(() => isRouteActive(props.route.id));
   let row!: HTMLDivElement;
   // A route taken up on the map is brought into view.
   createEffect(on(active, (is) => is && row.scrollIntoView({ block: 'nearest' })));

@@ -117,7 +117,8 @@ export function dayAddMenu(day: Day): MenuItem[] {
 
 /** A day as a card: its number and name over its date and length; its menu edits, duplicates, pastes into and removes it. A click shows the day whole on the map; the pad at its end opens the pane of what the day holds. */
 function DayItem(props: { day: Day; index: number }) {
-  const selected = () => selectedDayId() === props.day.id;
+  // A memo, so that effects on it run when it turns and not whenever the day is made anew, as every leg routed makes it.
+  const selected = createMemo(() => selectedDayId() === props.day.id);
   const label = createMemo(() => dayLabel(props.day, props.index));
   // The day's routes change less often than the day.
   const routes = createMemo(() => props.day.routes);
@@ -220,7 +221,8 @@ function DaySummary(props: { timeline: DayTimeline }) {
  * and points in riding order under it, out of `sequence`, its part of the day's.
  */
 function RouteItem(props: { route: Route; index: number; day: Day; sequence: SequenceEntry[] }) {
-  const editing = () => isRouteActive(props.route.id);
+  // A memo, so that effects on it run when it turns and not whenever the route is made anew, as every leg routed makes it.
+  const editing = createMemo(() => isRouteActive(props.route.id));
   const label = createMemo(() => routeLabel(props.route, props.day));
   const distance = createMemo(() => routeDistance(props.route));
   /** The route's points and bound stops, and the free stops that stand beside it; not where a track ends, which is no point of its own. */
@@ -246,7 +248,9 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
   /** The route's points that are no stops are listed on request, and while the point tool works on them. */
   const plainPoints = createMemo(() => entries().filter((e) => !e.stop).length);
   const [pointsShown, setPointsShown] = createSignal(false);
-  createEffect(() => editing() && currentTool() === 'point' && setPointsShown(true));
+  // A memo for the same reason: currentTool reads the route.
+  const pointTool = createMemo(() => editing() && currentTool() === 'point');
+  createEffect(on(pointTool, (is) => is && setPointsShown(true)));
   const listed = createMemo(() => (pointsShown() ? entries() : entries().filter((e) => e.stop)));
   let row!: HTMLDivElement;
   // A route taken up on the map is unfolded and brought into view as one clicked here is.

@@ -211,7 +211,9 @@ Trips, lists and folders moved among folders follow their trees instead (`takerO
 - The open trip is an immutable value in a signal, not a Solid store; every edit is a pure
   function that returns a new trip sharing the untouched parts. Consequences: lists keep
   rows by id (`ui/ForById`), dialogs hold their element by id, and components must not
-  hold a part's object across edits.
+  hold a part's object across edits. A row's part is new after every edit, a leg routed
+  included, so an effect that is to run when a row's state turns (selected, taken up)
+  reads that state through a memo, which changes only when the state does.
 - Coordinates are rounded to six decimals in the edit actions of `state/trip.ts`. Leg keys
   are built from coordinates as text in both TypeScript and PHP and only agree under that
   invariant.
