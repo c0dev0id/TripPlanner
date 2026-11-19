@@ -186,8 +186,11 @@ describe('withImportedDay', () => {
     expect(order(null)).toEqual(['a', 'b', 'c', 'n']);
   });
 
-  it('names and dates the day and fills it with what the files gave', () => {
-    const stop = { id: 's', name: 'Inn', lngLat: [8, 49] } as Trip['days'][number]['stops'][number];
-    expect(withImportedDay(trip, { name: 'New', date: null }, [{ routes: [], stops: [stop] }], 'n').days.at(-1)).toMatchObject({ id: 'n', name: 'New', date: null, stops: [stop] });
+  it('names and dates the day and fills it with what the files gave, the waypoints of a file without a route going to the routes of the others', () => {
+    const waypoint = { id: 's', name: 'Inn', lngLat: [8, 49], routeId: null, pointId: null } as Trip['days'][number]['stops'][number];
+    const track = { id: 't', name: '', kind: 'track', profile: 'motorcycle', optional: false, color: null, line: '' } as const;
+    const made = withImportedDay(trip, { name: 'New', date: null }, [{ routes: [], stops: [waypoint] }, { routes: [track], stops: [] }], 'n').days.at(-1)!;
+    expect(made).toMatchObject({ id: 'n', name: 'New', date: null, routes: [track], stops: [{ name: 'Inn', routeId: 't', pointId: null }] });
+    expect(withImportedDay(trip, { name: 'New', date: null }, [{ routes: [], stops: [waypoint] }], 'n').days.at(-1)!.stops).toEqual([]);
   });
 });
