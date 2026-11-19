@@ -3,10 +3,10 @@ import { createEffect, createMemo, createSignal, on, Show } from 'solid-js';
 import { errorMessage } from '../api';
 import { readDayParts, ROUTE_FILE_TYPES } from '../gpx/import';
 import { BOUND_COLOR, FREE_COLOR, ROUTE_PALETTE } from '../model/routeLook';
-import type { Day, Route, Stop } from '../model/trip';
+import type { Day, Route } from '../model/trip';
 import { defaultProfile } from '../routing/dayEdit';
 import { fileLegCount, pointCount, routedLegs, routeDistance, routesDistance } from '../routing/legs';
-import { standingAlone, type SequenceEntry } from '../routing/sequence';
+import type { SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
 import { panTo, pointItems, setTrackAction } from '../state/drawing';
 import { isDetailed, toggleDetail } from '../state/panel';
@@ -92,8 +92,11 @@ async function importPicked(day: Day): Promise<void> {
   if (!file) return;
   try {
     const parts = await readDayParts(file, defaultProfile(day));
+    // Waypoints alone go to the day's routes and tracks, and a day without one takes none.
+    if (parts.routes.length + day.routes.length === 0) return void setImportNote({ dayId: day.id, text: t('{file}: no route or track to add the waypoints to.', { file: file.name }), error: true });
     addParts(day.id, parts);
-    setImportNote({ dayId: day.id, text: t('{file}: {routes}, {stops} added.', { file: file.name, routes: counted(parts.routes.length, 'route'), stops: counted(parts.stops.length, 'stop') }), error: false });
+    const stops = parts.routes.length > 0 ? parts.stops.length : parts.stops.length * day.routes.length;
+    setImportNote({ dayId: day.id, text: t('{file}: {routes}, {stops} added.', { file: file.name, routes: counted(parts.routes.length, 'route'), stops: counted(stops, 'stop') }), error: false });
   } catch (fault) {
     setImportNote({ dayId: day.id, text: `${file.name}: ${errorMessage(fault)}`, error: true });
   }
@@ -158,9 +161,8 @@ function DayItem(props: { day: Day; index: number }) {
   );
 }
 
-/** A day's notes and times, its routes with their stops, and the stops that stand beside no route: what the pane of the day's contents holds. */
+/** A day's notes and times and its routes with their stops: what the pane of the day's contents holds. */
 export function DayDetails(props: { day: Day }) {
-  const unplaced = createMemo(() => standingAlone(props.day, detailSequence()));
   /** The sequence by route, in order: each route's points and the stops placed along it. */
   const byRoute = createMemo(() => {
     const groups = props.day.routes.map((): SequenceEntry[] => []);
@@ -189,14 +191,6 @@ export function DayDetails(props: { day: Day }) {
       </ul>
       <Show when={importNote()?.dayId === props.day.id && importNote()}>{(note) => <p class="hint" classList={{ muted: !note().error, error: note().error }}>{note().text}</p>}</Show>
       <Show when={routeNamesNote(props.day.id)}>{(note) => <Said note={note()} />}</Show>
-      <Show when={unplaced().length > 0}>
-        <div class="row">
-          <h4 class="grow">{t('Free stops')}</h4>
-        </div>
-        <ol class="stops">
-          <ForById each={unplaced()}>{(stop) => <AloneStopItem stop={stop()} />}</ForById>
-        </ol>
-      </Show>
       <DayRecordings day={props.day} />
       <DayMedia day={props.day} />
     </div>
@@ -385,27 +379,6 @@ function SequenceItem(props: { entry: SequenceEntry; routeId: string; time: Entr
         </Show>
       </li>
     </>
-  );
-}
-
-/** A stop that stands for itself beside no route, with no place or times on the ride; a click pans the map there. */
-function AloneStopItem(props: { stop: Stop }) {
-  const select = stopSelect(props.stop.id);
-  return (
-    <li class="row sequence-item" classList={{ selected: select.selected(), cut: isCut(props.stop.id) }} ref={(el) => cardMenu(el, () => partMenu('stop', props.stop.id))}>
-      <Pad label={t('Select {name}, or drag it', { name: props.stop.name })} selected={select.selected()} onToggle={select.onToggle} carries={() => carriedWith('stop', props.stop.id, props.stop.name)} />
-      <button class="text grow" onClick={(e) => select.onClick(e) || panTo(props.stop.lngLat)}>
-        <StopShape symbol={props.stop.symbol} color={FREE_COLOR} height={22} />
-        <span class="lines">
-          <span class="name">{props.stop.name}</span>
-          <Show when={props.stop.optional}>
-            <span class="muted detail">{t('optional')}</span>
-          </Show>
-        </span>
-      </button>
-      <PartJournalButton target={{ stopId: props.stop.id }} of={props.stop.name} />
-      <MenuButton of={props.stop.name} items={() => partMenu('stop', props.stop.id)} />
-    </li>
   );
 }
 

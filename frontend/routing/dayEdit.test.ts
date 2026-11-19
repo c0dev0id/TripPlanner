@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { withChanges, type Day, type RoutedLeg, type Trip } from '../model/trip';
-import { addDay, addFreeStop, addParts, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, duplicateParts, moveDay, moveDaysAfter, moveRoute, moveRouteToDay, moveStop, moveStopIntoRoute, moveStopToDay, numberedStops, pasteDays, pasteIntoTrip, pasteRoute, pasteStop, pasteStopIntoRoute, removeParts, removeRoute, removeStop, routedOnly, routeFromStops, updateDay, updateRoute, updateStop, withNewPartIds } from './dayEdit';
+import { addDay, addParts, addStopBeside, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, duplicateParts, moveDay, moveDaysAfter, moveRoute, moveRouteToDay, moveStop, moveStopIntoRoute, moveStopToDay, numberedStops, pasteDays, pasteIntoTrip, pasteRoute, pasteStops, pasteStopIntoRoute, removeParts, removeRoute, removeStop, routedOnly, routeFromStops, updateDay, updateRoute, updateStop, withNewPartIds } from './dayEdit';
 import { changeSettings } from './routeEdit';
 import { pointCount, routedLegs } from './legs';
 import { encodePolyline } from './polyline';
@@ -13,10 +13,16 @@ const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', st
 
 const day = (trip: Trip): Day => trip.days[0]!;
 
+/** Ids of the prefix numbered from 1, in the order asked for. */
+const ids = (prefix: string) => {
+  let n = 0;
+  return () => `${prefix}${++n}`;
+};
+
 /** The first day of the trip, dated. */
 const dateDay = (trip: Trip, date: string): Trip => updateDay(trip, 'd', (d) => withChanges(d, { date }));
 
-/** A day with one routed route of three points, a stop bound to the middle one, and a free stop. */
+/** A day with one routed route of three points, a stop bound to the middle one, and a stop beside the route. */
 function fixture(): Trip {
   let trip = addRoute(empty(), 'd', 'r');
   for (const [id, lngLat] of [['a', [1, 1]], ['b', [2, 2]], ['c', [3, 3]]] as const) {
@@ -26,7 +32,7 @@ function fixture(): Trip {
   const legs = Object.fromEntries(routedLegs(route).map((l) => [l.key, routed(l.key)]));
   trip = { ...trip, days: [{ ...day(trip), routes: [{ ...route, legs }] }] };
   trip = convertPoint(trip, 'd', 'b', 's1');
-  return addFreeStop(trip, 'd', [2.5, 2.4], 's2');
+  return addStopBeside(trip, 'd', 'r', [2.5, 2.4], 's2');
 }
 
 describe('routes and points', () => {
@@ -51,10 +57,11 @@ describe('routes and points', () => {
     expect(day(trip).stops[0]).toMatchObject({ pointId: null, lngLat: [2, 2] });
   });
 
-  it('frees the stops of a removed route', () => {
-    const trip = removeRoute(fixture(), 'd', 'r');
-    expect(day(trip).routes).toEqual([]);
-    expect(day(trip).stops.map((s) => s.pointId)).toEqual([null, null]);
+  it('removes a route with its stops, and leaves those of another', () => {
+    const other = addStopBeside(addRoute(fixture(), 'd', 'q'), 'd', 'q', [4, 4], 's3');
+    const trip = removeRoute(other, 'd', 'r');
+    expect(day(trip).routes.map((r) => r.id)).toEqual(['q']);
+    expect(day(trip).stops.map((s) => s.id)).toEqual(['s3']);
   });
 
   it('inserts a point without touching the stops', () => {
@@ -76,22 +83,22 @@ describe('stops', () => {
     expect(day(trip).stops[2]).toMatchObject({ id: 's3', pointId: 'x', lngLat: [1.5, 1.5] });
   });
 
-  it('inserts a stop on a track as a free stop where it was asked for', () => {
+  it('inserts a stop on a track as a stop beside it where it was asked for', () => {
     const track = { id: 't', name: '', kind: 'track' as const, profile: 'motorcycle' as const, optional: false, color: null, line: encodePolyline([[1, 1], [2, 2]]) };
-    const trip = insertStop(addParts(fixture(), 'd', { routes: [track], stops: [] }), 'd', 't', 1, [1.5, 1.5], 'x', 's3');
+    const trip = insertStop(addParts(fixture(), 'd', { routes: [track], stops: [] }, ids('n')), 'd', 't', 1, [1.5, 1.5], 'x', 's3');
     expect(day(trip).routes[1]).toEqual(track);
-    expect(day(trip).stops[2]).toMatchObject({ id: 's3', pointId: null, lngLat: [1.5, 1.5] });
+    expect(day(trip).stops[2]).toMatchObject({ id: 's3', routeId: 't', pointId: null, lngLat: [1.5, 1.5] });
   });
 
   it('converts a point once', () => {
     const trip = fixture();
-    expect(day(trip).stops[0]).toMatchObject({ id: 's1', name: 'Stop 1', symbol: 'Pin, Blue', lngLat: [2, 2], pointId: 'b' });
+    expect(day(trip).stops[0]).toMatchObject({ id: 's1', name: 'Stop 1', symbol: 'Pin, Blue', lngLat: [2, 2], routeId: 'r', pointId: 'b' });
     expect(convertPoint(trip, 'd', 'b', 's9')).toBe(trip);
     expect(convertPoint(trip, 'd', 'nowhere', 's9')).toBe(trip);
   });
 
-  it('connects a free stop by a new point at its position', () => {
-    const trip = connectStop(fixture(), 'd', 's2', 'r', 2, 'p');
+  it('connects a stop beside its route by a new point at its position', () => {
+    const trip = connectStop(fixture(), 'd', 's2', 2, 'p');
     expect(routedOf(day(trip).routes[0]!).points.map((p) => [p.id, p.lngLat])).toEqual([
       ['a', [1, 1]],
       ['b', [2, 2]],
@@ -100,13 +107,13 @@ describe('stops', () => {
     ]);
     expect(day(trip).stops[1]!.pointId).toBe('p');
     expect(Object.keys(routedOf(day(trip).routes[0]!).legs)).toEqual(['motorcycle:allow/1,1;2,2']);
-    expect(connectStop(trip, 'd', 's2', 'r', 2, 'q')).toBe(trip);
+    expect(connectStop(trip, 'd', 's2', 2, 'q')).toBe(trip);
   });
 
   it('disconnects a bound stop, which stays where it was', () => {
     const trip = disconnectStop(fixture(), 'd', 's1');
     expect(routedOf(day(trip).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'c']);
-    expect(day(trip).stops[0]).toMatchObject({ pointId: null, lngLat: [2, 2] });
+    expect(day(trip).stops[0]).toMatchObject({ routeId: 'r', pointId: null, lngLat: [2, 2] });
     expect(disconnectStop(trip, 'd', 's1')).toBe(trip);
   });
 
@@ -149,10 +156,6 @@ describe('days', () => {
 });
 
 describe('reordering and copying', () => {
-  const ids = (prefix: string) => {
-    let n = 0;
-    return () => `${prefix}${++n}`;
-  };
   const twoDays = (): Trip => addDay(dateDay(fixture(), '2027-06-12'), 'e');
 
   it('moves a day to another place, within the ends', () => {
@@ -187,15 +190,20 @@ describe('reordering and copying', () => {
       ['c1', 'Loop copy', 3],
       ['r2', '', 0],
     ]);
-    expect(day(copied).stops[0]!.pointId).toBe('b');
+    expect(day(copied).stops.map((s) => [s.id, s.routeId, s.pointId])).toEqual([
+      ['s1', 'r', 'b'],
+      ['s2', 'r', null],
+      ['c5', 'c1', 'c3'],
+      ['c6', 'c1', null],
+    ]);
   });
 
-  it('moves a route to another day with its bound stops', () => {
+  it('moves a route to another day with its stops', () => {
     const trip = moveRouteToDay(twoDays(), 'r', 'e');
     expect(day(trip).routes).toEqual([]);
-    expect(day(trip).stops.map((s) => s.id)).toEqual(['s2']);
+    expect(day(trip).stops).toEqual([]);
     expect(trip.days[1]!.routes.map((r) => r.id)).toEqual(['r']);
-    expect(trip.days[1]!.stops.map((s) => [s.id, s.pointId])).toEqual([['s1', 'b']]);
+    expect(trip.days[1]!.stops.map((s) => [s.id, s.pointId])).toEqual([['s1', 'b'], ['s2', null]]);
     const same = twoDays();
     expect(moveRouteToDay(same, 'r', 'd')).toBe(same);
   });
@@ -211,19 +219,19 @@ describe('reordering and copying', () => {
     expect(renewed.stops.map((s) => [s.id, s.pointId])).toEqual([[made.get('s1'), made.get('b')], [made.get('s2'), null], [made.get('lost'), null]]);
   });
 
-  it('removes several parts at once: days whole, routes leaving their stops free, stops leaving their points', () => {
+  it('removes several parts at once: days whole, routes with their stops, stops leaving their points', () => {
     const trip = twoDays();
     expect(removeParts(trip, 'day', ['e', 'nowhere']).days.map((d) => d.id)).toEqual(['d']);
     expect(removeParts(trip, 'day', ['nowhere'])).toBe(trip);
     const routeless = removeParts(trip, 'route', ['r']);
     expect(day(routeless).routes).toEqual([]);
-    expect(day(routeless).stops.map((s) => [s.id, s.pointId])).toEqual([['s1', null], ['s2', null]]);
+    expect(day(routeless).stops).toEqual([]);
     const stopless = removeParts(trip, 'stop', ['s1', 's2']);
     expect(day(stopless).stops).toEqual([]);
     expect(routedOf(day(stopless).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'b', 'c']);
   });
 
-  it('duplicates several parts, a stop as a free copy beside the original', () => {
+  it('duplicates several parts, a stop as a copy beside its route after the original', () => {
     const trip = duplicateParts(twoDays(), 'stop', ['s1', 's2'], ids('n'));
     expect(day(trip).stops.map((s) => [s.id, s.pointId, s.name])).toEqual([
       ['s1', 'b', 'Stop 1'],
@@ -235,24 +243,38 @@ describe('reordering and copying', () => {
     expect(duplicateParts(twoDays(), 'day', ['d', 'e'], ids('n')).days).toHaveLength(4);
   });
 
-  it('moves a stop to another day, free, its point gone from the route it was on', () => {
-    const trip = moveStopToDay(twoDays(), 's1', 'e');
-    expect(routedOf(day(trip).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'c']);
+  it('moves a stop to another day, where each route takes a copy of it, and leaves it where the day has no route', () => {
+    const none = twoDays();
+    expect(moveStopToDay(none, 's1', 'e', ids('n'))).toBe(none);
+    expect(moveStopToDay(none, 's1', 'd', ids('n'))).toBe(none);
+    const trip = moveStopToDay(addRoute(addRoute(twoDays(), 'e', 'q'), 'e', 'u'), 's1', 'e', ids('n'));
+    expect(routedOf(day(trip).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'b', 'c']);
     expect(day(trip).stops.map((s) => s.id)).toEqual(['s2']);
-    expect(trip.days[1]!.stops.map((s) => [s.id, s.pointId])).toEqual([['s1', null]]);
-    const same = twoDays();
-    expect(moveStopToDay(same, 's1', 'd')).toBe(same);
+    expect(trip.days[1]!.stops.map((s) => [s.id, s.routeId, s.pointId])).toEqual([
+      ['n1', 'q', null],
+      ['n2', 'u', null],
+    ]);
   });
 
-  it('moves a stop onto a route of another day as a point of it, keeping its id', () => {
+  it('moves a place of a list of places to another category as it is', () => {
+    const list: Trip = { ...empty(), kind: 'collection', days: [{ ...day(empty()), stops: [{ ...day(fixture()).stops[1]!, routeId: null }] }, { ...day(empty()), id: 'e' }] };
+    expect(moveStopToDay(list, 's2', 'e', ids('n')).days.map((d) => d.stops.map((s) => [s.id, s.routeId]))).toEqual([[], [['n1', null]]]);
+  });
+
+  it('moves a stop to a route of another day as its own, keeping its id: on a point it stands on, else beside the route', () => {
     let trip = addRoute(twoDays(), 'e', 'q');
-    for (const [id, lngLat] of [['x', [5, 5]], ['y', [6, 5]]] as const) {
+    for (const [id, lngLat] of [['x', [5, 5]], ['y', [2, 2]]] as const) {
       trip = updateRoute(trip, 'q', routedOnly((r) => routeEdit.appendPoint(r, { id, lngLat: [...lngLat] })));
     }
-    const moved = moveStopIntoRoute(trip, 's2', 'q', 'p');
-    expect(day(moved).stops.map((s) => s.id)).toEqual(['s1']);
-    expect(moved.days[1]!.stops.map((s) => [s.id, s.pointId])).toEqual([['s2', 'p']]);
-    expect(routedOf(moved.days[1]!.routes[0]!).points.map((p) => p.id)).toEqual(['p', 'x', 'y']);
+    const moved = moveStopIntoRoute(moveStopIntoRoute(trip, 's2', 'q'), 's1', 'q');
+    expect(day(moved).stops).toEqual([]);
+    expect(moved.days[1]!.stops.map((s) => [s.id, s.routeId, s.pointId])).toEqual([
+      ['s2', 'q', null],
+      ['s1', 'q', 'y'],
+    ]);
+    expect(routedOf(day(moved).routes[0]!).points.map((p) => p.id)).toEqual(['a', 'b', 'c']);
+    expect(routedOf(moved.days[1]!.routes[0]!).points.map((p) => p.id)).toEqual(['x', 'y']);
+    expect(moveStopIntoRoute(moved, 's1', 'q')).toBe(moved);
   });
 
   it('moves days to after another, in their order, and leaves the trip where nothing moves', () => {
@@ -272,36 +294,38 @@ describe('reordering and copying', () => {
     expect(collection.days.map((d) => d.date)).toEqual([null, null]);
   });
 
-  it('pastes a stop into a day as a free stop', () => {
-    const trip = pasteStop(twoDays(), 'e', day(twoDays()).stops[0]!, 'c');
-    expect(trip.days[1]!.stops).toEqual([{ ...day(trip).stops[0]!, id: 'c', pointId: null }]);
+  it('pastes stops into a day of a trip as the own of each of its routes, and into a category of a list as places', () => {
+    const stops = day(twoDays()).stops;
+    expect(pasteStops(twoDays(), 'e', stops, ids('c'))).toEqual(twoDays());
+    const trip = pasteStops(addRoute(addRoute(twoDays(), 'e', 'q'), 'e', 'u'), 'e', [stops[0]!], ids('c'));
+    expect(trip.days[1]!.stops).toEqual([
+      { ...stops[0]!, id: 'c1', routeId: 'q', pointId: null },
+      { ...stops[0]!, id: 'c2', routeId: 'u', pointId: null },
+    ]);
+    const list = pasteStops({ ...twoDays(), kind: 'collection' }, 'e', [stops[0]!], ids('c'));
+    expect(list.days[1]!.stops).toEqual([{ ...stops[0]!, id: 'c1', routeId: null, pointId: null }]);
   });
 
-  it('pastes a stop into a route as a point of it where the route passes closest, or off its ends', () => {
-    let trip = addRoute(empty(), 'd', 'r');
-    for (const [id, lngLat] of [['a', [1, 1]], ['b', [2, 1]], ['c', [3, 1]]] as const) {
-      trip = updateRoute(trip, 'r', routedOnly((r) => routeEdit.appendPoint(r, { id, lngLat: [...lngLat] })));
-    }
-    const stop = { ...day(fixture()).stops[1]!, name: 'Café' };
-    const at = (lngLat: [number, number]) => {
-      const pasted = pasteStopIntoRoute(trip, 'r', { ...stop, lngLat }, 'new', 'p');
-      expect(day(pasted).stops).toEqual([{ ...stop, lngLat, id: 'new', pointId: 'p' }]);
-      return routedOf(day(pasted).routes[0]!).points.map((point) => point.id);
-    };
-    expect(at([2.4, 1.2])).toEqual(['a', 'b', 'p', 'c']);
-    expect(at([1.5, 0.9])).toEqual(['a', 'p', 'b', 'c']);
-    expect(at([3.5, 1])).toEqual(['a', 'b', 'c', 'p']);
-    expect(at([0.5, 1])).toEqual(['p', 'a', 'b', 'c']);
-    expect(routedOf(day(pasteStopIntoRoute(addRoute(empty(), 'd', 'r'), 'r', stop, 'new', 'p')).routes[0]!).points.map((point) => point.id)).toEqual(['p']);
+  it('pastes a stop into a route as its own, on a point it stands on and else beside the route, which stays as it is', () => {
+    const trip = fixture();
+    const stop = { ...day(trip).stops[1]!, name: 'Café', routeId: 'elsewhere', pointId: 'gone' };
+    const beside = pasteStopIntoRoute(trip, 'r', stop, 'new');
+    expect(day(beside).stops[2]).toEqual({ ...stop, id: 'new', routeId: 'r', pointId: null });
+    expect(day(beside).routes).toBe(day(trip).routes);
+    expect(day(pasteStopIntoRoute(trip, 'r', { ...stop, lngLat: [3, 3] }, 'new')).stops[2]).toMatchObject({ id: 'new', routeId: 'r', pointId: 'c' });
+    expect(pasteStopIntoRoute(trip, 'nowhere', stop, 'new')).toBe(trip);
   });
 
-  it('pastes a copied route with its bound stops under new ids, the stops bound to the new points', () => {
+  it('pastes a copied route with its stops under new ids, the stops on the new points or beside the new route', () => {
     const copied = copiedRoute(day(twoDays()), day(twoDays()).routes[0]!);
-    expect(copied.stops.map((s) => s.id)).toEqual(['s1']);
+    expect(copied.stops.map((s) => s.id)).toEqual(['s1', 's2']);
     const trip = pasteRoute(twoDays(), 'e', copied, ids('p'));
     const pasted = routedOf(trip.days[1]!.routes[0]!);
     expect([pasted.id, pasted.points.map((p) => p.id), pasted.legs]).toEqual(['p1', ['p2', 'p3', 'p4'], routedOf(day(trip).routes[0]!).legs]);
-    expect(trip.days[1]!.stops.map((s) => [s.id, s.name, s.pointId])).toEqual([['p5', 'Stop 1', 'p3']]);
+    expect(trip.days[1]!.stops.map((s) => [s.id, s.name, s.routeId, s.pointId])).toEqual([
+      ['p5', 'Stop 1', 'p1', 'p3'],
+      ['p6', 'Stop 2', 'p1', null],
+    ]);
   });
 
   it('pastes routes into a trip onto the day of their date, a new day of that date among the others, or a new day at the end', () => {
@@ -315,7 +339,7 @@ describe('reordering and copying', () => {
       ['2027-06-14', '', 0],
       [null, 'Loose', 1],
     ]);
-    expect(trip.days[2]!.stops.map((s) => s.pointId)).toEqual([routedOf(trip.days[2]!.routes[0]!).points[1]!.id]);
+    expect(trip.days[2]!.stops.map((s) => s.pointId)).toEqual([routedOf(trip.days[2]!.routes[0]!).points[1]!.id, null]);
   });
 
   it('pastes routes into a collection as a new section each, named after the route', () => {
@@ -330,20 +354,29 @@ describe('reordering and copying', () => {
 });
 
 describe('addParts', () => {
-  it('appends routes and stops to the day and leaves an empty import alone', () => {
+  it('appends routes with their stops to the day and leaves an empty import alone', () => {
     const trip = fixture();
-    expect(addParts(trip, 'd', { routes: [], stops: [] })).toBe(trip);
+    expect(addParts(trip, 'd', { routes: [], stops: [] }, ids('n'))).toBe(trip);
     const route = { ...day(trip).routes[0]!, id: 'imported', points: [] };
-    const stop = { ...day(trip).stops[1]!, id: 'w' };
-    const added = addParts(trip, 'd', { routes: [route], stops: [stop] });
+    const stop = { ...day(trip).stops[1]!, id: 'w', routeId: 'imported' };
+    const added = addParts(trip, 'd', { routes: [route], stops: [stop] }, ids('n'));
     expect(day(added).routes.map((r) => r.id)).toEqual(['r', 'imported']);
-    expect(day(added).stops.map((s) => s.id)).toEqual(['s1', 's2', 'w']);
+    expect(day(added).stops.map((s) => [s.id, s.routeId])).toEqual([['s1', 'r'], ['s2', 'r'], ['w', 'imported']]);
+  });
+
+  it('gives stops that come without a route to each route of the day, and to a day without one none', () => {
+    const loose = { ...day(fixture()).stops[1]!, id: 'w', routeId: null };
+    const route = { ...day(fixture()).routes[0]!, id: 'imported', points: [] };
+    const added = addParts(fixture(), 'd', { routes: [route], stops: [loose] }, ids('n'));
+    expect(day(added).stops.slice(2).map((s) => [s.id, s.routeId])).toEqual([['n1', 'r'], ['n2', 'imported']]);
+    expect(day(addParts(empty(), 'd', { routes: [], stops: [loose] }, ids('n'))).stops).toEqual([]);
+    expect(day(addParts({ ...empty(), kind: 'collection' }, 'd', { routes: [], stops: [loose] }, ids('n'))).stops).toEqual([{ ...loose, id: 'n1' }]);
   });
 });
 
 describe('a route kept as waypoints', () => {
-  /** A day of free stops by these names, a degree apart, in this order. */
-  const waypoints = (...names: string[]): Trip => names.reduce((trip, name, i) => updateStop(addFreeStop(trip, 'd', [i, i], `s${i}`), 'd', `s${i}`, { name }), empty());
+  /** A day of stops on no point by these names, a degree apart, in this order. */
+  const waypoints = (...names: string[]): Trip => names.reduce((trip, name, i) => updateStop(addStopBeside(trip, 'd', null, [i, i], `s${i}`), 'd', `s${i}`, { name }), empty());
   /** Ids n1, n2, … in the order asked for. */
   const counter = () => {
     let n = 0;

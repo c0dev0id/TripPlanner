@@ -28,7 +28,7 @@ const day = (id: string, routeId: string, stopId: string): Day => ({
   date: null,
   notes: '',
   routes: [{ id: routeId, name: '', kind: 'routed', profile: 'motorcycle', highways: 'allow', optional: false, color: null, points: [], legs: {} }],
-  stops: [{ id: stopId, name: '', symbol: null, lngLat: [0, 0], pointId: null, address: '', contact: '', bookingReference: '', website: '', notes: '', arriveAt: null, pauseMinutes: null, optional: false }],
+  stops: [{ id: stopId, name: '', symbol: null, lngLat: [0, 0], routeId, pointId: null, address: '', contact: '', bookingReference: '', website: '', notes: '', arriveAt: null, pauseMinutes: null, optional: false }],
 });
 const trip = (days: Day[]): Trip => ({ id: 1, kind: 'trip', name: 'Alps', description: '', state: 'planned', version: 1, days });
 

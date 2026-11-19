@@ -81,11 +81,11 @@ function iconItem(ids: readonly string[]): MenuItem {
 }
 
 /**
- * Convert, with what a part can be turned into as its submenu: a track into a route, a route into a track once all its legs are routed; the free stops of a day, or those selected, into a
- * route, for a file that kept a route as waypoints, in the order they are listed or, the
- * numbered ones, by their number. None for a single stop, for several days or routes, in
- * a list of places, or where fewer than two of the stops are free: a stop on a point of a
- * route is part of that route already.
+ * Convert, with what a part can be turned into as its submenu: a track into a route, a route into a track once all its legs are routed; the stops selected that stand beside their routes into a
+ * route, in the order they are listed or, the numbered ones, by their number. None for a
+ * day, for a single stop, for several routes, in a list of places, or where fewer than
+ * two of the stops stand beside their routes: a stop on a point of a route is part of
+ * that route already.
  */
 function convertItem(kind: PartKind, ids: readonly string[]): MenuItem[] {
   const trip = openTrip()!;
@@ -100,9 +100,9 @@ function convertItem(kind: PartKind, ids: readonly string[]): MenuItem[] {
     const waits = legs.some((leg) => ['pending', 'failed'].includes(legState(route, leg, failedLegs())));
     return legs.length === 0 ? [] : [{ label: t('Convert'), items: [{ label: t('Route to track'), disabled: waits, run: () => convertRouteToTrack(route.id) }] }];
   }
-  const day = kind === 'day' ? trip.days.find((d) => d.id === ids[0]) : dayOfStop(trip, ids[0]!);
-  const listed = (day?.stops ?? []).filter((stop) => stop.pointId === null && (kind === 'day' || ids.includes(stop.id)));
-  // A route is made of two free stops or more: with fewer among what is acted on, there is nothing to offer.
+  if (kind === 'day') return [];
+  const listed = (dayOfStop(trip, ids[0]!)?.stops ?? []).filter((stop) => stop.pointId === null && ids.includes(stop.id));
+  // A route is made of two stops beside their routes or more: with fewer among what is acted on, there is nothing to offer.
   const by = (label: string, stops: readonly Stop[]): MenuItem[] => (stops.length < 2 ? [] : [{ label: t(label, { n: stops.length }), run: () => makeRouteOfStops(stops.map((stop) => stop.id)) }]);
   const ways = [...by('By order ({n})', listed), ...by('By number ({n})', numberedStops(listed))];
   return ways.length === 0 ? [] : [{ label: t('Convert'), items: [{ label: t(trip.kind === 'trip' ? 'Stops to route' : 'Waypoints to route'), items: ways }] }];

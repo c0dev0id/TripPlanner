@@ -87,7 +87,7 @@ function withPlaces(list: Trip, places: readonly KindedPlace[]): Trip {
   }
   return [...byKind].reduce((to, [kind, stops]) => {
     const section = to.days.find((day) => day.name === kind);
-    return section ? addParts(to, section.id, { routes: [], stops }) : withImportedDay(to, { name: kind, date: null }, [{ routes: [], stops }]);
+    return section ? addParts(to, section.id, { routes: [], stops }, newId) : withImportedDay(to, { name: kind, date: null }, [{ routes: [], stops }]);
   }, list);
 }
 

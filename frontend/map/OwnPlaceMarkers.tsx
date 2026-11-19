@@ -49,7 +49,7 @@ export function OwnPlaceMarkers(props: { map: MapLibreMap }) {
               </p>
             )}
           </Show>
-          <Show when={openTrip()?.kind === 'trip' && shownDay()}>
+          <Show when={openTrip()?.kind === 'trip' && shownDay()?.routes.length}>
             <p>
               <button type="button" onClick={add}>
                 {t('Add as stop')}

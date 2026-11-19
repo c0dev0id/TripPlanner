@@ -53,7 +53,7 @@ describe('sharesOf', () => {
   });
 
   it('gives the row of a trip the routes and tracks, a list and a category the waypoints, the recordings the tracks', () => {
-    expect(sharesOf('trip', [whole])).toEqual([{ ...whole, waypoints: false, media: false }]);
+    expect(sharesOf('trip', [whole])).toEqual([{ ...whole, media: false }]);
     expect(sharesOf('list', [whole])).toEqual([{ ...whole, items: [], media: false }]);
     expect(sharesOf('category', [whole])).toEqual([{ ...whole, items: [], media: false }]);
     expect(sharesOf('recordings', [whole])).toEqual([{ ...whole, items: [item('track')], waypoints: false, media: false }]);

@@ -5,7 +5,7 @@ import type { SequenceEntry } from './sequence';
 import { dayTimeline } from './timeline';
 
 /** A stop on the ride, bound to a route point. */
-const stop = (id: string, arriveAt: string | null = null, pauseMinutes: number | null = null): Stop => ({ ...newStop(id, id, [0, 0], `point-${id}`), arriveAt, pauseMinutes });
+const stop = (id: string, arriveAt: string | null = null, pauseMinutes: number | null = null): Stop => ({ ...newStop(id, id, [0, 0], 'r', `point-${id}`), arriveAt, pauseMinutes });
 
 const entry = (timeS: number, s?: Stop, routeIndex = 0): SequenceEntry => ({ id: s?.id ?? `p${timeS}`, routeIndex, distanceM: timeS * 15, timeS, lngLat: [0, 0], ...(s && { stop: s }) });
 

@@ -7,7 +7,7 @@ import { opened, pickPoint, setPickedIndex, somethingTakenUp } from '../state/re
 import { mapTab, tripShown } from '../state/library';
 import { markSectionEnd } from '../state/section';
 import { activeRecordingId } from '../state/recordings';
-import { addFreeStop, appendPoint, editingRoute, insertPoint, insertStop, openTrip, redo, takeUpRoute, takeUpRouteOf, undo } from '../state/trip';
+import { addStopBeside, appendPoint, editingRoute, insertPoint, insertStop, openTrip, redo, takeUpRoute, takeUpRouteOf, undo } from '../state/trip';
 import { fromMarker, toLngLat } from './markers';
 import { recordingPointAt } from './recordingPick';
 import { routeAt } from './RouteHover';
@@ -111,7 +111,7 @@ export function Interactions(props: { map: MapLibreMap }) {
       else appendPoint(route.id, toLngLat(e.lngLat));
     } else if (action === 'stop') {
       if (hit) insertStop(route.id, hit.legIndex + 1, hit.lngLat);
-      else addFreeStop(toLngLat(e.lngLat));
+      else addStopBeside(toLngLat(e.lngLat));
     }
   };
   // A tap made before a key comes first, so that Esc or Undo act on it.

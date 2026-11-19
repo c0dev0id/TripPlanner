@@ -30,15 +30,18 @@ type Share = 'routes' | 'tracks' | 'waypoints' | 'media';
 
 /** What each place has a use for of files of the Stash and of their parts: a file or a part with none of it is not pasted there. */
 const SHARES: Partial<Record<Place, readonly Share[]>> = {
-  tripsFolder: ['routes', 'tracks'],
+  tripsFolder: ['routes', 'tracks', 'waypoints'],
   placesFolder: ['waypoints'],
-  trip: ['routes', 'tracks'],
+  trip: ['routes', 'tracks', 'waypoints'],
   list: ['waypoints'],
   day: ['routes', 'tracks', 'waypoints', 'media'],
   category: ['waypoints'],
   stashFile: ['routes', 'tracks', 'waypoints', 'media'],
   recordings: ['tracks'],
 };
+
+/** The places that take waypoints only with a route or a track: stops are their routes', and these places make the days, which have none yet. */
+const WAYPOINTS_WITH_ROUTES: readonly Place[] = ['tripsFolder', 'trip'];
 
 /** A file of the Stash as all of it. */
 export const wholeFile = (file: StashFile): StashPart => ({ file, items: file.items, waypoints: file.waypoints > 0, media: file.media.length > 0 });
@@ -56,7 +59,7 @@ export function sharesOf(place: Place, parts: readonly StashPart[]): StashPart[]
       waypoints: shares.includes('waypoints') && part.waypoints && part.file.waypoints > 0,
       media: shares.includes('media') && part.media && part.file.media.length > 0,
     }))
-    .filter((part) => part.items.length > 0 || part.waypoints || part.media);
+    .filter((part) => part.items.length > 0 || (part.waypoints && !WAYPOINTS_WITH_ROUTES.includes(place)) || part.media);
 }
 
 /** Whether a place takes a clipboard of the kind; `parts` is what it holds of the Stash, files as all of them. */

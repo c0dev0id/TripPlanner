@@ -6,7 +6,7 @@ import { gpxToDayParts } from '../gpx/import';
 import { filesIn, sharesOf, takes, wholeFile, type ClipKind, type Place } from '../model/paste';
 import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/stash';
 import { newId, type Day, type Route, type Stop } from '../model/trip';
-import { copiedRoute, defaultProfile, removeParts, stopsBoundTo, type CopiedRoute, type PartKind } from '../routing/dayEdit';
+import { copiedRoute, defaultProfile, removeParts, type CopiedRoute, type PartKind } from '../routing/dayEdit';
 import { counted, listText } from '../ui/format';
 import { askConfirmation } from '../ui/confirm';
 import { dropTarget, type Held } from '../ui/carry';
@@ -242,9 +242,10 @@ function pasteLabel(copied: Clip, place: Place): string {
 
 /**
  * Imports parts of files of the Stash into a day of the open trip, as a file picked for
- * the day is read: the routes and tracks taken, with the waypoints on their points, and
- * with a file's waypoints the others as free stops. A file's media, where they are
- * taken, are kept with the day.
+ * the day is read: the routes and tracks taken, each with the waypoints on its points,
+ * and with a file's waypoints, where they are taken, all of them as its own stops;
+ * waypoints taken without a route or track go to each the day has. A file's media, where
+ * they are taken, are kept with the day.
  */
 async function pastePartsIntoDay(dayId: string, parts: readonly StashPart[]): Promise<void> {
   const tripId = openTripId();
@@ -257,7 +258,7 @@ async function pastePartsIntoDay(dayId: string, parts: readonly StashPart[]): Pr
       const taken = (kind: StashItem['kind']) => (_: unknown, position: number) => items.some((item) => item.kind === kind && item.position === position);
       const read = gpxToDayParts({ ...gpx, routes: gpx.routes.filter(taken('route')), tracks: gpx.tracks.filter(taken('track')) }, { fileName: file.name, profile: defaultProfile(day), newId });
       added.routes.push(...read.routes);
-      added.stops.push(...(waypoints ? read.stops : read.routes.flatMap((route) => stopsBoundTo(route, read.stops))));
+      added.stops.push(...read.stops.filter((stop) => waypoints || stop.pointId !== null));
     }
     if (openTripId() !== tripId) return;
     selectDay(dayId);
@@ -346,7 +347,7 @@ function isAtHome(copied: Clip, dayId: string): boolean {
   const day = copied.cut?.tripId === openTripId() ? openTrip()?.days.find((d) => d.id === dayId) : undefined;
   if (!day || !copied.cut) return false;
   const { kind, ids } = copied.cut;
-  return kind === 'route' ? ids.every((id) => day.routes.some((r) => r.id === id)) : kind === 'stop' && ids.every((id) => day.stops.some((s) => s.id === id && s.pointId === null));
+  return kind === 'route' ? ids.every((id) => day.routes.some((r) => r.id === id)) : kind === 'stop' && ids.every((id) => day.stops.some((s) => s.id === id));
 }
 
 /**
@@ -397,6 +398,8 @@ function partPaste(copied: Clip, kind: PartKind, id: string): PasteItem[] {
           else void pasteDaysAfter(id, copied.days, copied.tripId, cut);
         } }];
   }
+  // A day of a trip has no stops but those of its routes and tracks: without one it takes none.
+  if (('categories' in copied || 'stops' in copied) && place === 'day' && !trip.days.some((day) => day.id === id && day.routes.length > 0)) return [];
   // The places of a category join the day or the category it is pasted onto; cut within its list, the category goes.
   if ('categories' in copied) return [{ label, run: shown(pasted(copied, (ids) => mergeDaysInto(ids, id), () => pasteStops(id, placesOf(copied.categories).stops))) }];
   if ('stops' in copied) return [{ label, run: shown(pasted(copied, (ids) => movePartsToDay('stop', ids, id), () => pasteStops(id, copied.stops))) }];

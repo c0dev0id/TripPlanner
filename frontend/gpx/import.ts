@@ -1,14 +1,14 @@
 import { t } from '../i18n/t';
 import { lineLength } from '../geo/measure';
 import { asName, asNotes, asSymbol, asWebsite, newId, type LngLat, type Profile, type Route, type RoutedLeg, type RoutePoint, type Stop } from '../model/trip';
-import { newStop, routePoints } from '../routing/dayEdit';
+import { asStopOf, newStop, routePoints } from '../routing/dayEdit';
 import { legKey, roundLngLat } from '../routing/legs';
 import { encodePolyline } from '../routing/polyline';
 import { parseGpx, type GpxContent, type GpxVia } from './gpx';
 import { parseKml } from './kml';
 import { zipEntries } from './zip';
 
-/** What a GPX file becomes in a day: routes, and stops for its waypoints. */
+/** What a GPX file becomes in a day: routes, each with its own stops for the file's waypoints; of a file of waypoints alone, stops of no route. */
 export interface DayParts {
   routes: Route[];
   stops: Stop[];
@@ -51,11 +51,13 @@ function calculatedLegs(points: readonly LngLat[], ways: readonly LngLat[][], pr
  * Routes and stops from a GPX file. A GPX route keeps all its points and its legs are
  * routed with `profile`, except those it carries the way Garmin calculated for. A track
  * keeps its line with every point; condensing it or making a route of it is the user's
- * choice. Unnamed routes are named after the file. A waypoint becomes a stop, bound to a
- * point of a GPX route it stands on, free otherwise, with its Garmin symbol as the file
- * names it and its address and phone numbers where Garmin gave them. A point Garmin's
- * trip planning marks a via point becomes a stop on that point as well, unless a
- * waypoint stands there already.
+ * choice. Unnamed routes are named after the file. A GPX file's waypoints are of none of
+ * its routes and tracks, so each route and track gets every waypoint as a stop of its
+ * own: on a point of the route it stands on, beside the route or track otherwise, with
+ * its Garmin symbol as the file names it and its address and phone numbers where Garmin
+ * gave them. A point Garmin's trip planning marks a via point becomes a stop on that
+ * point as well, unless a waypoint stands there already. A file without a route or a
+ * track gives its waypoints as stops of no route.
  * Names and notes are fitted to what a trip holds: composed, blank runs closed up, overlong text cut.
  */
 export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string }): DayParts {
@@ -69,9 +71,13 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
     const points = cleanPoints(line.points).map((lngLat) => ({ id: options.newId(), lngLat }));
     return { ...base, kind: 'routed', highways: 'allow', points, legs: calculatedLegs(line.points, line.ways, options.profile) };
   });
-  const pointAt = new Map(routes.flatMap((r) => routePoints(r).map((p) => [p.lngLat.join(','), p.id] as const)));
-  const stops = waypointStops(gpx, options.newId, (lngLat) => pointAt.get(lngLat.join(',')) ?? null);
-  for (const [i, line] of lines.entries()) if (line.kind === 'routed') stops.push(...viaStops(routePoints(routes[i]!), line.points, line.vias, stops, options.newId));
+  if (routes.length === 0) return { routes, stops: waypointStops(gpx, options.newId) };
+  const waypoints = waypointStops(gpx, options.newId);
+  const stops = routes.flatMap((route, i) => {
+    const own = waypoints.map((stop) => asStopOf(route, stop, options.newId()));
+    const line = lines[i]!;
+    return line.kind === 'routed' ? [...own, ...viaStops(route.id, routePoints(route), line.points, line.vias, own, options.newId)] : own;
+  });
   return { routes, stops };
 }
 
@@ -81,7 +87,7 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
  * kept of them, which are without those that repeat the one before (see cleanPoints).
  * None for a point that holds one of `taken`, or a via point before it, already.
  */
-function viaStops(points: readonly RoutePoint[], listed: readonly LngLat[], vias: readonly (GpxVia | undefined)[], taken: readonly Stop[], newId: () => string): Stop[] {
+function viaStops(routeId: string, points: readonly RoutePoint[], listed: readonly LngLat[], vias: readonly (GpxVia | undefined)[], taken: readonly Stop[], newId: () => string): Stop[] {
   const held = new Set(taken.map((stop) => stop.pointId));
   const rounded = listed.map(roundLngLat);
   const stops: Stop[] = [];
@@ -92,7 +98,7 @@ function viaStops(points: readonly RoutePoint[], listed: readonly LngLat[], vias
     const [via, point] = [vias[i], points[kept]];
     if (!via || !point || held.has(point.id)) continue;
     held.add(point.id);
-    stops.push({ ...newStop(newId(), asName(via.name ?? t('Waypoint {n}', { n: stops.length + 1 })), point.lngLat, point.id), symbol: asSymbol(via.symbol) });
+    stops.push({ ...newStop(newId(), asName(via.name ?? t('Waypoint {n}', { n: stops.length + 1 })), point.lngLat, routeId, point.id), symbol: asSymbol(via.symbol) });
   }
   return stops;
 }
@@ -120,12 +126,12 @@ export function ownWebsites(waypoints: readonly { links: readonly string[] }[]):
   return waypoints.map((w) => w.links.findLast((link) => hostOf(link) !== undefined && !source.has(hostOf(link)!)) ?? '');
 }
 
-/** The file's waypoints as stops, each bound to the point `pointAt` names for its position, with the page of its own it links to. */
-export function waypointStops(gpx: GpxContent, newId: () => string, pointAt: (lngLat: LngLat) => string | null = () => null): Stop[] {
+/** The file's waypoints as stops of no route, each with the page of its own it links to. */
+export function waypointStops(gpx: GpxContent, newId: () => string): Stop[] {
   const websites = ownWebsites(gpx.waypoints);
   return gpx.waypoints.map((w, i) => {
     const lngLat = roundLngLat(w.lngLat);
-    const stop = newStop(newId(), asName(w.name ?? t('Waypoint {n}', { n: i + 1 })), lngLat, pointAt(lngLat));
+    const stop = newStop(newId(), asName(w.name ?? t('Waypoint {n}', { n: i + 1 })), lngLat, null, null);
     return { ...stop, symbol: asSymbol(w.symbol), address: asNotes(w.address ?? ''), contact: asNotes(w.phone ?? ''), website: asWebsite(websites[i]!), notes: asNotes(w.description ?? '') };
   });
 }

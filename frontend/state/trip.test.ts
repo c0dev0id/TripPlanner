@@ -6,7 +6,7 @@ import { answerQuestion, question } from '../ui/confirm';
 import { selectIn, selectionOf } from '../ui/selection';
 import './partSelection';
 import { routedOf } from '../routing/testing';
-import { activeRouteId, addDay, lookAt, looked, closeDetail, detailDay, openDetail, removeDay, setStopSymbols, removeStop, movePoint, convertRouteToTrack, convertTrackToRoute, endLook, markedLookId, onlyDay, pickDay, refreshLook, mergeDaysInto, pasteDays, addFreeStop, addRoute, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
+import { activeRouteId, addDay, lookAt, looked, closeDetail, detailDay, openDetail, removeDay, setStopSymbols, removeStop, movePoint, convertRouteToTrack, convertTrackToRoute, endLook, markedLookId, onlyDay, pickDay, refreshLook, mergeDaysInto, pasteDays, addPlace, addRoute, addStopBeside, appendPoint, closeTrip, convertPoint, editingRoute, editingRouteId, isDayMarked, isMarkInTrip, isTripMarked, loadTrip, markFolder, markSaved, markInOpenTrip, markTrip, openTrip, redo, savedTrip, selectDay, selectedDay, takeUpRouteOf, undo, undoLabel, updateStop } from './trip';
 
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 
@@ -52,11 +52,11 @@ describe('the open trip', () => {
   it('makes stops of points and beside the route', () => {
     dayWithRoute();
     convertPoint(sent().days[0]!.routes[0]!.id, routedOf(sent().days[0]!.routes[0]!).points[1]!.id);
-    addFreeStop([1.5, 1.6]);
+    addStopBeside([1.5, 1.6]);
     const stops = sent().days[0]!.stops;
-    expect(stops.map((s) => [s.name, s.pointId !== null])).toEqual([
-      ['Stop 1', true],
-      ['Stop 2', false],
+    expect(stops.map((s) => [s.name, s.routeId === editingRouteId(), s.pointId !== null])).toEqual([
+      ['Stop 1', true, true],
+      ['Stop 2', true, false],
     ]);
     updateStop(stops[0]!.id, { name: 'Lunch', symbol: 'Restaurant' });
     expect(sent().days[0]!.stops[0]).toMatchObject({ name: 'Lunch', symbol: 'Restaurant' });
@@ -71,11 +71,12 @@ describe('the open trip', () => {
     expect(made.map((id) => sent().days.find((day) => day.id === id)!.name)).toEqual(['B', 'A']);
   });
 
-  it('merges days into another as one step: their stops move and the days go', () => {
+  it('merges categories of a list into another as one step: their places move and the categories go', () => {
+    loadTrip({ ...empty(), kind: 'collection' });
     addDay();
-    addFreeStop([1, 1]);
+    addPlace([1, 1]);
     addDay();
-    addFreeStop([2, 2]);
+    addPlace([2, 2]);
     const [into, merged] = sent().days;
     mergeDaysInto([merged!.id], into!.id);
     expect(sent().days.map((day) => day.stops.map((stop) => stop.lngLat))).toEqual([[[1, 1], [2, 2]]]);

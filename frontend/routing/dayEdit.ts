@@ -1,42 +1,59 @@
 import { t } from '../i18n/t';
 import { withChanges, type Day, type LngLat, type Profile, type Route, type RoutedRoute, type RoutePoint, type Stop, type Trip } from '../model/trip';
-import { planeAt } from '../geo/measure';
-import { nearestOnLines } from '../geo/nearest';
 import { PLAIN_SYMBOL } from '../symbols/symbols';
-import { legCoordinates, routeLegs } from './legs';
+import { roundLngLat } from './legs';
 import * as routeEdit from './routeEdit';
 
 /**
- * Pure edits of a trip's days: routes, their points, and the stops that are bound to a
- * point of a routed route or free. A bound stop stands at its point; after every change of
- * a day's routes the stops are aligned, and a stop whose point is gone becomes free where
- * it was. A track has no points of its own: the stops along it are free.
+ * Pure edits of a trip's days: routes, their points, and the stops, each of which is of
+ * one route or track of its day: bound to a point of a routed route, or beside its route.
+ * A bound stop stands at its point; after every change of a day's routes the stops are
+ * aligned: a stop whose point is gone stands beside its route where it was, and one
+ * whose route is gone goes with it. A track has no points of its own: its stops stand
+ * beside it. A place of a list of places is of no route.
  */
 
 /** The points a route runs through as points of its own, which a track has none of. */
 export const routePoints = (route: Route): readonly RoutePoint[] => (route.kind === 'routed' ? route.points : []);
 
-/** The stops bound to the route's points. */
-export function stopsBoundTo(route: Route, stops: readonly Stop[]): Stop[] {
-  const pointIds = new Set(routePoints(route).map((p) => p.id));
-  return stops.filter((s) => s.pointId !== null && pointIds.has(s.pointId));
+/** The stops that are the route's own: on its points and beside it. */
+export const stopsOf = (route: Route, stops: readonly Stop[]): Stop[] => stops.filter((s) => s.routeId === route.id);
+
+/** A stop with nothing said about it yet, of the route `routeId` and on its point `pointId`, or of none. */
+export function newStop(id: string, name: string, lngLat: LngLat, routeId: string | null, pointId: string | null): Stop {
+  return { id, name, symbol: PLAIN_SYMBOL, lngLat, routeId, pointId, address: '', contact: '', bookingReference: '', website: '', notes: '', arriveAt: null, pauseMinutes: null, optional: false };
 }
 
-/** A stop with nothing said about it yet. */
-export function newStop(id: string, name: string, lngLat: LngLat, pointId: string | null): Stop {
-  return { id, name, symbol: PLAIN_SYMBOL, lngLat, pointId, address: '', contact: '', bookingReference: '', website: '', notes: '', arriveAt: null, pauseMinutes: null, optional: false };
+/** The stop as the route's own under `id`: on the route's point where it stands on one, else beside the route. */
+export function asStopOf(route: Route, stop: Stop, id: string): Stop {
+  const at = roundLngLat(stop.lngLat);
+  const point = routePoints(route).find((p) => p.lngLat[0] === at[0] && p.lngLat[1] === at[1]);
+  return { ...stop, id, lngLat: at, routeId: route.id, pointId: point?.id ?? null };
 }
 
-/** The day's stops with every bound one at its route point, or free where its point no longer is. */
+/**
+ * Stops of no route as a day takes them, under new ids: in a trip each route and track of
+ * the day gets its own copy of each, and a day without one takes none; in a list of
+ * places they are places of the category.
+ */
+function takenByDay(trip: Trip, day: Day, stops: readonly Stop[], newId: () => string): Stop[] {
+  if (trip.kind === 'collection') return stops.map((stop) => ({ ...stop, id: newId(), routeId: null, pointId: null }));
+  return day.routes.flatMap((route) => stops.map((stop) => asStopOf(route, stop, newId())));
+}
+
+/** The day's stops with every bound one at its route point, or beside its route where its point no longer is; without those whose route no longer is. */
 export function alignStops(day: Day): Day {
+  const routeIds = new Set(day.routes.map((route) => route.id));
   const positions = new Map(day.routes.flatMap((route) => routePoints(route).map((p) => [p.id, p.lngLat] as const)));
-  const stops = day.stops.map((stop) => {
-    if (stop.pointId === null) return stop;
-    const at = positions.get(stop.pointId);
-    if (at === undefined) return { ...stop, pointId: null };
-    return at === stop.lngLat ? stop : { ...stop, lngLat: at };
-  });
-  return stops.every((s, i) => s === day.stops[i]) ? day : { ...day, stops };
+  const stops = day.stops
+    .filter((stop) => stop.routeId === null || routeIds.has(stop.routeId))
+    .map((stop) => {
+      if (stop.pointId === null) return stop;
+      const at = positions.get(stop.pointId);
+      if (at === undefined) return { ...stop, pointId: null };
+      return at === stop.lngLat ? stop : { ...stop, lngLat: at };
+    });
+  return stops.length === day.stops.length && stops.every((s, i) => s === day.stops[i]) ? day : { ...day, stops };
 }
 
 export function updateDay(trip: Trip, dayId: string, change: (day: Day) => Day): Trip {
@@ -122,13 +139,17 @@ export function routeFromStops(trip: Trip, stopIds: readonly string[], routeId: 
   return updateDay(trip, day.id, (d) => ({ ...d, routes: [...d.routes, route], stops: d.stops.filter((stop) => !taken.includes(stop)) }));
 }
 
-/** Adds routes and stops, as read from a file, to the day. */
-export function addParts(trip: Trip, dayId: string, parts: { routes: Route[]; stops: Stop[] }): Trip {
+/** Adds routes with their stops, as read from a file, to the day; stops that come without a route are taken as the day takes them (see takenByDay), by the routes it has by then. */
+export function addParts(trip: Trip, dayId: string, parts: { routes: Route[]; stops: Stop[] }, newId: () => string): Trip {
   if (parts.routes.length === 0 && parts.stops.length === 0) return trip;
-  return updateDay(trip, dayId, (day) => ({ ...day, routes: [...day.routes, ...parts.routes], stops: [...day.stops, ...parts.stops] }));
+  return updateDay(trip, dayId, (day) => {
+    const withRoutes = { ...day, routes: [...day.routes, ...parts.routes] };
+    const [own, loose] = [parts.stops.filter((stop) => stop.routeId !== null), parts.stops.filter((stop) => stop.routeId === null)];
+    return { ...withRoutes, stops: [...day.stops, ...own, ...takenByDay(trip, withRoutes, loose, newId)] };
+  });
 }
 
-/** Removes a route; the stops bound to its points stay, free. */
+/** Removes a route, and its stops with it. */
 export function removeRoute(trip: Trip, dayId: string, routeId: string): Trip {
   return updateDay(trip, dayId, (day) => (day.routes.some((r) => r.id === routeId) ? alignStops({ ...day, routes: day.routes.filter((r) => r.id !== routeId) }) : day));
 }
@@ -144,25 +165,26 @@ export function convertPoint(trip: Trip, dayId: string, pointId: string, id: str
     if (day.stops.some((s) => s.pointId === pointId)) return day;
     const point = pointOfDay(day, pointId)?.point;
     if (!point) return day;
-    return { ...day, stops: [...day.stops, newStop(id, t('Stop {n}', { n: day.stops.length + 1 }), point.lngLat, pointId)] };
+    return { ...day, stops: [...day.stops, newStop(id, t('Stop {n}', { n: day.stops.length + 1 }), point.lngLat, pointOfDay(day, pointId)!.route.id, pointId)] };
   });
 }
 
-/** Inserts a point of the route before the one at `index` and makes a stop of it; on a track, which has no points of its own, a free stop there. */
+/** Inserts a point of the route before the one at `index` and makes a stop of it; on a track, which has no points of its own, a stop beside it there. */
 export function insertStop(trip: Trip, dayId: string, routeId: string, index: number, lngLat: LngLat, pointId: string, stopId: string): Trip {
-  if (dayOfRoute(trip, routeId)?.routes.find((r) => r.id === routeId)?.kind === 'track') return addFreeStop(trip, dayId, lngLat, stopId);
+  if (dayOfRoute(trip, routeId)?.routes.find((r) => r.id === routeId)?.kind === 'track') return addStopBeside(trip, dayId, routeId, lngLat, stopId);
   return convertPoint(updateRoute(trip, routeId, routedOnly((r) => routeEdit.insertPoint(r, index, { id: pointId, lngLat }))), dayId, pointId, stopId);
 }
 
-/** Adds a free stop at a position. */
-export function addFreeStop(trip: Trip, dayId: string, lngLat: LngLat, id: string): Trip {
-  return updateDay(trip, dayId, (day) => ({ ...day, stops: [...day.stops, newStop(id, t('Stop {n}', { n: day.stops.length + 1 }), lngLat, null)] }));
+/** Adds a stop at a position beside the route or track `routeId` of the day; with null, a place of a category of a list of places. */
+export function addStopBeside(trip: Trip, dayId: string, routeId: string | null, lngLat: LngLat, id: string): Trip {
+  return updateDay(trip, dayId, (day) => ({ ...day, stops: [...day.stops, newStop(id, t('Stop {n}', { n: day.stops.length + 1 }), lngLat, routeId, null)] }));
 }
 
-/** Binds a free stop to a new point of the routed route, inserted before the point at `index` at the stop's position. */
-export function connectStop(trip: Trip, dayId: string, stopId: string, routeId: string, index: number, pointId: string): Trip {
+/** Binds a stop beside its routed route to a new point of it, inserted before the point at `index` at the stop's position. */
+export function connectStop(trip: Trip, dayId: string, stopId: string, index: number, pointId: string): Trip {
   return updateDay(trip, dayId, (day) => {
     const stop = day.stops.find((s) => s.id === stopId);
+    const routeId = stop?.routeId;
     if (!stop || stop.pointId !== null || !day.routes.some((r) => r.id === routeId && r.kind === 'routed')) return day;
     const routes = day.routes.map((r) => (r.id === routeId && r.kind === 'routed' ? routeEdit.insertPoint(r, index, { id: pointId, lngLat: stop.lngLat }) : r));
     const stops = day.stops.map((s) => (s.id === stopId ? { ...s, pointId } : s));
@@ -170,7 +192,7 @@ export function connectStop(trip: Trip, dayId: string, stopId: string, routeId: 
   });
 }
 
-/** Frees a bound stop where it stands; its route point goes and the route runs past. */
+/** Takes a bound stop off its point to stand beside its route there; the route point goes and the route runs past. */
 export function disconnectStop(trip: Trip, dayId: string, stopId: string): Trip {
   return updateDay(trip, dayId, (day) => {
     const stop = day.stops.find((s) => s.id === stopId);
@@ -240,9 +262,8 @@ export function duplicateDay(trip: Trip, dayId: string, id: string, newId: () =>
 }
 
 /**
- * The day with its routes, their points and its stops under new ids, bound stops following
- * their points, and the new id of each old one; a stop bound to a point that is not there
- * stands free.
+ * The day with its routes, their points and its stops under new ids, the stops following
+ * their routes and points, and the new id of each old one.
  */
 export function withNewPartIds(day: Day, newId: () => string): { day: Day; ids: Map<string, string> } {
   const routes = day.routes.map((route) => copyRoute(route, newId));
@@ -250,7 +271,7 @@ export function withNewPartIds(day: Day, newId: () => string): { day: Day; ids: 
   const stops = day.stops.map((stop) => {
     const id = newId();
     ids.set(stop.id, id);
-    return { ...stop, id, pointId: (stop.pointId !== null && ids.get(stop.pointId)) || null };
+    return { ...stop, id, routeId: (stop.routeId !== null && ids.get(stop.routeId)) || null, pointId: (stop.pointId !== null && ids.get(stop.pointId)) || null };
   });
   return { day: { ...day, routes, stops }, ids };
 }
@@ -266,27 +287,32 @@ export function moveRoute(trip: Trip, routeId: string, to: number): Trip {
     : trip;
 }
 
-/** The trip with what `make` makes of a route right after it in its day; the route stays as it is. Unchanged where `make` makes nothing of it. */
-export function addMadeOf(trip: Trip, routeId: string, make: (route: Route) => Route | undefined): Trip {
-  const day = dayOfRoute(trip, routeId);
-  const index = day?.routes.findIndex((r) => r.id === routeId) ?? -1;
-  const made = day && make(day.routes[index]!);
-  return day && made ? updateDay(trip, day.id, (d) => ({ ...d, routes: d.routes.toSpliced(index + 1, 0, made) })) : trip;
-}
-
-/** A copy of the route with new ids, right after it, named after it; the stops stay with the original. */
+/** A copy of the route with new ids, right after it, named after it, with copies of its stops. */
 export function duplicateRoute(trip: Trip, routeId: string, newId: () => string): Trip {
   const day = dayOfRoute(trip, routeId);
   if (!day) return trip;
   return updateDay(trip, day.id, (d) => {
     const index = d.routes.findIndex((r) => r.id === routeId);
-    const route = d.routes[index]!;
-    const copy = { ...copyRoute(route, newId), name: route.name === '' ? '' : `${route.name} copy` };
-    return { ...d, routes: d.routes.toSpliced(index + 1, 0, copy) };
+    const { route, stops } = withNewIds(copiedRoute(d, d.routes[index]!), newId);
+    return { ...d, routes: d.routes.toSpliced(index + 1, 0, { ...route, name: route.name === '' ? '' : `${route.name} copy` }), stops: [...d.stops, ...stops] };
   });
 }
 
-/** Moves the route to the end of another day, with the stops bound to its points. */
+/**
+ * The trip with what `make` makes of a route right after it in its day, with copies of
+ * the route's stops beside it; the route stays as it is. Unchanged where `make` makes
+ * nothing of it.
+ */
+export function addMadeOf(trip: Trip, routeId: string, make: (route: Route) => Route | undefined, newId: () => string): Trip {
+  const day = dayOfRoute(trip, routeId);
+  const index = day?.routes.findIndex((r) => r.id === routeId) ?? -1;
+  const made = day && make(day.routes[index]!);
+  if (!day || !made) return trip;
+  const stops = stopsOf(day.routes[index]!, day.stops).map((stop) => asStopOf(made, stop, newId()));
+  return updateDay(trip, day.id, (d) => ({ ...d, routes: d.routes.toSpliced(index + 1, 0, made), stops: [...d.stops, ...stops] }));
+}
+
+/** Moves the route to the end of another day, with its stops. */
 export function moveRouteToDay(trip: Trip, routeId: string, dayId: string): Trip {
   const from = dayOfRoute(trip, routeId);
   if (!from || from.id === dayId || !trip.days.some((d) => d.id === dayId)) return trip;
@@ -299,23 +325,29 @@ export function moveRouteToDay(trip: Trip, routeId: string, dayId: string): Trip
   return { ...trip, days };
 }
 
-/** A route as copied to be pasted into a day, of its trip or another, with the stops bound to its points and the date and name of the day it was on. */
+/** A route as copied to be pasted into a day, of its trip or another, with its stops and the date and name of the day it was on. */
 export interface CopiedRoute {
   route: Route;
   stops: Stop[];
   from: Pick<Day, 'date' | 'name'>;
 }
 
-/** The route of the day with the stops bound to its points, as a copy to paste. */
+/** The route of the day with its stops, as a copy to paste. */
 export function copiedRoute(day: Day, route: Route): CopiedRoute {
-  return { route, stops: stopsBoundTo(route, day.stops), from: { date: day.date, name: day.name } };
+  return { route, stops: stopsOf(route, day.stops), from: { date: day.date, name: day.name } };
 }
 
-/** Adds a copied route at the end of the day, it, its points and its stops under new ids, the stops bound to the new points. */
-export function pasteRoute(trip: Trip, dayId: string, copied: CopiedRoute, newId: () => string): Trip {
+/** A copied route with itself, its points and its stops under new ids, the stops on the new points. */
+function withNewIds(copied: CopiedRoute, newId: () => string): CopiedRoute {
   const route = copyRoute(copied.route, newId);
   const pointIds = new Map(copiedPointIds(copied.route, route));
-  const stops = copied.stops.map((s) => ({ ...s, id: newId(), pointId: pointIds.get(s.pointId!)! }));
+  const stops = copied.stops.map((s) => ({ ...s, id: newId(), routeId: route.id, pointId: (s.pointId !== null && pointIds.get(s.pointId)) || null }));
+  return { ...copied, route, stops };
+}
+
+/** Adds a copied route at the end of the day, it, its points and its stops under new ids. */
+export function pasteRoute(trip: Trip, dayId: string, copied: CopiedRoute, newId: () => string): Trip {
+  const { route, stops } = withNewIds(copied, newId);
   return updateDay(trip, dayId, (day) => ({ ...day, routes: [...day.routes, route], stops: [...day.stops, ...stops] }));
 }
 
@@ -345,42 +377,25 @@ export function pasteIntoTrip(trip: Trip, copied: readonly CopiedRoute[], newId:
   return next;
 }
 
-/** Adds a copied stop to the day under `id`, free where it stands. */
-export function pasteStop(trip: Trip, dayId: string, stop: Stop, id: string): Trip {
-  return updateDay(trip, dayId, (day) => ({ ...day, stops: [...day.stops, { ...stop, id, pointId: null }] }));
+/** Adds copied stops to the day, as the day takes them (see takenByDay). */
+export function pasteStops(trip: Trip, dayId: string, stops: readonly Stop[], newId: () => string): Trip {
+  return updateDay(trip, dayId, (day) => {
+    const pasted = takenByDay(trip, day, stops, newId);
+    return pasted.length > 0 ? { ...day, stops: [...day.stops, ...pasted] } : day;
+  });
 }
 
-/**
- * Where in the route a new point at the position goes: into the leg that passes closest,
- * or before the first point or after the last where the position lies off that end.
- */
-function placeInRoute(route: RoutedRoute, lngLat: LngLat): number {
-  const legs = routeLegs(route);
-  const toPlane = planeAt(lngLat);
-  const lines = legs.map((leg) => legCoordinates(route, leg));
-  const hit = nearestOnLines(lines.map((line) => line.map(toPlane)))(toPlane(lngLat));
-  if (!hit) return route.points.length;
-  if (hit.index === 0 && hit.segment === 0 && hit.t === 0) return 0;
-  const atEnd = hit.index === lines.length - 1 && hit.segment === lines[hit.index]!.length - 2 && hit.t === 1;
-  return atEnd ? route.points.length : hit.index + 1;
-}
-
-/**
- * Adds a copied stop to the route's day under `id`, bound to a new point `pointId` of the
- * route where it passes closest to the stop; beside a track, which has no points, free.
- */
-export function pasteStopIntoRoute(trip: Trip, routeId: string, stop: Stop, id: string, pointId: string): Trip {
+/** Adds a copied stop to the route's day under `id` as the route's own: on its point where the stop stands on one, else beside it. */
+export function pasteStopIntoRoute(trip: Trip, routeId: string, stop: Stop, id: string): Trip {
   const day = dayOfRoute(trip, routeId);
   const route = day?.routes.find((r) => r.id === routeId);
-  if (!day || !route) return trip;
-  const pasted = pasteStop(trip, day.id, stop, id);
-  return route.kind === 'track' ? pasted : connectStop(pasted, day.id, id, routeId, placeInRoute(route, stop.lngLat), pointId);
+  return day && route ? updateDay(trip, day.id, (d) => ({ ...d, stops: [...d.stops, asStopOf(route, stop, id)] })) : trip;
 }
 
 /** What a trip holds below itself that is selected, copied and moved: its days, their routes, their stops. */
 export type PartKind = 'day' | 'route' | 'stop';
 
-/** Removes the parts: a day with all it holds, a route leaving its stops free, a stop leaving its point to the route. */
+/** Removes the parts: a day with all it holds, a route with its stops, a stop leaving its point to the route. */
 export function removeParts(trip: Trip, kind: PartKind, ids: readonly string[]): Trip {
   if (kind === 'day') return ids.some((id) => trip.days.some((d) => d.id === id)) ? { ...trip, days: trip.days.filter((d) => !ids.includes(d.id)) } : trip;
   return ids.reduce((next, id) => {
@@ -390,7 +405,7 @@ export function removeParts(trip: Trip, kind: PartKind, ids: readonly string[]):
   }, trip);
 }
 
-/** A copy of each part right after it: a day or a route as their own duplicates are made, a stop free where the original stands. */
+/** A copy of each part right after it: a day or a route as their own duplicates are made, a stop beside its route where the original stands. */
 export function duplicateParts(trip: Trip, kind: PartKind, ids: readonly string[], newId: () => string): Trip {
   return ids.reduce((next, id) => {
     if (kind === 'day') return duplicateDay(next, id, newId(), newId);
@@ -406,32 +421,40 @@ export function duplicateParts(trip: Trip, kind: PartKind, ids: readonly string[
   }, trip);
 }
 
-/** Moves the stop to another day, free where it stands; the point it was bound to goes from its route. */
-export function moveStopToDay(trip: Trip, stopId: string, dayId: string): Trip {
+/**
+ * Moves the stop to another day, which takes it as it takes any (see takenByDay): a
+ * place of a list of places goes to the other category, a stop of a trip to each route
+ * and track of the day. It stays where it is where the day has none to take it.
+ */
+export function moveStopToDay(trip: Trip, stopId: string, dayId: string, newId: () => string): Trip {
   const from = dayOfStop(trip, stopId);
-  if (!from || from.id === dayId || !trip.days.some((d) => d.id === dayId)) return trip;
-  const freed = disconnectStop(trip, from.id, stopId);
-  const stop = dayOfStop(freed, stopId)!.stops.find((s) => s.id === stopId)!;
-  const days = freed.days.map((d) => {
+  const to = trip.days.find((d) => d.id === dayId);
+  if (!from || !to || from.id === dayId) return trip;
+  const taken = takenByDay(trip, to, [from.stops.find((s) => s.id === stopId)!], newId);
+  if (taken.length === 0) return trip;
+  const days = trip.days.map((d) => {
     if (d.id === from.id) return { ...d, stops: d.stops.filter((s) => s.id !== stopId) };
-    return d.id === dayId ? { ...d, stops: [...d.stops, stop] } : d;
+    return d.id === dayId ? { ...d, stops: [...d.stops, ...taken] } : d;
   });
-  return { ...freed, days };
+  return { ...trip, days };
 }
 
 /**
- * Moves the stop onto the route, of its day or another: bound to a new point `pointId` where
- * the route passes closest; beside a track, free in the track's day.
+ * Moves the stop to the route or track, of its day or another, as that route's own: on
+ * its point where the stop stands on one, else beside it. A point the stop stood on stays
+ * with the route it was of.
  */
-export function moveStopIntoRoute(trip: Trip, stopId: string, routeId: string, pointId: string): Trip {
+export function moveStopIntoRoute(trip: Trip, stopId: string, routeId: string): Trip {
   const from = dayOfStop(trip, stopId);
   const target = dayOfRoute(trip, routeId);
-  if (!from || !target) return trip;
-  const moved = from.id === target.id ? disconnectStop(trip, from.id, stopId) : moveStopToDay(trip, stopId, target.id);
-  const day = moved.days.find((d) => d.id === target.id)!;
-  const route = day.routes.find((r) => r.id === routeId)!;
-  if (route.kind === 'track') return moved;
-  return connectStop(moved, day.id, stopId, routeId, placeInRoute(route, day.stops.find((s) => s.id === stopId)!.lngLat), pointId);
+  const stop = from?.stops.find((s) => s.id === stopId);
+  if (!from || !target || !stop || stop.routeId === routeId) return trip;
+  const moved = asStopOf(target.routes.find((r) => r.id === routeId)!, stop, stopId);
+  const days = trip.days.map((d) => {
+    const stops = d.id === from.id ? d.stops.filter((s) => s.id !== stopId) : d.stops;
+    return d.id === target.id ? { ...d, stops: [...stops, moved] } : stops === d.stops ? d : { ...d, stops };
+  });
+  return { ...trip, days };
 }
 
 /** Moves the days to right after the day `afterId`, in the order they are in; the same trip where `afterId` is one of them or no day. */

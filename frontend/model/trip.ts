@@ -67,6 +67,9 @@ export interface Stop {
   /** The Garmin waypoint symbol, as a GPX file names it; null for none. Our icons stand for some (see symbols). */
   symbol: string | null;
   lngLat: LngLat;
+  /** The route or track of its day the stop is of; null for a place of a list of places, which is of no route. */
+  routeId: string | null;
+  /** The point of its route it stands on; null for a stop beside its route, and beside a track, which has no points. */
   pointId: string | null;
   address: string;
   contact: string;

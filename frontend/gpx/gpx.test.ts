@@ -61,17 +61,25 @@ describe('gpxToDayParts', () => {
   let n = 0;
   const options = { fileName: 'tour', profile: 'bicycle' as const, newId: () => `id${n++}` };
 
-  it('routes GPX routes, keeps a track as its line, makes stops of waypoints', async () => {
+  it('routes GPX routes, keeps a track as its line, and gives each of them every waypoint as a stop of its own', async () => {
     const parts = gpxToDayParts(await parseGpx(GPX_11), options);
     const [planned, track] = parts.routes;
     expect([planned!.name, planned!.kind, planned!.profile, routedOf(planned!).points.map((p) => p.lngLat)]).toEqual(['Planned', 'routed', 'bicycle', [[11.5, 48.1], [11.7, 48.3]]]);
     expect(track).toMatchObject({ name: 'tour 2', kind: 'track', profile: 'bicycle' });
     expect(track!.kind === 'track' && decodePolyline(track!.line)).toEqual([[12, 47], [12.1, 47.1], [12.2, 47.2]]);
-    // The café stands on the route's first point and is bound to it; the castle has no symbol, only a type.
-    expect(parts.stops.map((s) => [s.name, s.symbol, s.notes, s.pointId])).toEqual([
-      ['Café', 'Navaid, Black', 'Good cake', routedOf(planned!).points[0]!.id],
-      ['Waypoint 2', null, 'No name', null],
+    // The café stands on the route's first point and is bound to it there, and stands beside the track; the castle has no symbol, only a type.
+    expect(parts.stops.map((s) => [s.name, s.symbol, s.notes, s.routeId, s.pointId])).toEqual([
+      ['Café', 'Navaid, Black', 'Good cake', planned!.id, routedOf(planned!).points[0]!.id],
+      ['Waypoint 2', null, 'No name', planned!.id, null],
+      ['Café', 'Navaid, Black', 'Good cake', track!.id, null],
+      ['Waypoint 2', null, 'No name', track!.id, null],
     ]);
+    expect(new Set(parts.stops.map((s) => s.id)).size).toBe(4);
+  });
+
+  it('gives the waypoints of a file without a route or a track as stops of no route', async () => {
+    const gpx = '<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><wpt lat="48" lon="11"><name>Hut</name></wpt></gpx>';
+    expect(gpxToDayParts(await parseGpx(gpx), options)).toMatchObject({ routes: [], stops: [{ name: 'Hut', routeId: null, pointId: null }] });
   });
 
   it("keeps a waypoint's Garmin symbol as the file names it, trimmed, and reads nothing from its type", async () => {

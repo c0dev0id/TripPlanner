@@ -211,7 +211,7 @@ function tripOfFile(folders: string[], stem: string, file: number): PlannedTrip 
 
 /** The trip with a day added under `id`, named and dated, holding what the GPX files gave: where its date puts it among the trip's days, at the end without one. */
 export function withImportedDay(trip: Trip, day: { name: string; date: string | null }, parts: readonly DayParts[], id = newId()): Trip {
-  return parts.reduce((to, p) => addParts(to, id, p), withDayByDate(trip, id, day.name, day.date));
+  return parts.reduce((to, p) => addParts(to, id, p, newId), withDayByDate(trip, id, day.name, day.date));
 }
 
 /** A day as an import read it: as planned, with what its GPX files hold and the media that are its own. */

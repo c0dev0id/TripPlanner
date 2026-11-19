@@ -8,7 +8,7 @@ import { placesNear } from '../poi/near';
 import { libraryFolders, libraryTab, libraryTrips, tripShown } from './library';
 import { anyOwnKindShown, alongLines, placeMode, placesHidden } from './places';
 import { placeReachM } from './preferences';
-import { addParts, openTripId, selectedDayId } from './trip';
+import { editingRoute, openTripId, pasteStops, pasteStopsIntoRoute, selectedDayId } from './trip';
 
 /**
  * The user's own places on the map, each kind a section of a list in the folder for
@@ -53,8 +53,11 @@ export const ownPlacesOnMap = () => (placesHidden() ? [] : own.shown());
 export const ownPlaceById = (id: string): OwnPlace | undefined => own.all().find((place) => place.id === id);
 
 
-/** Adds a copy of the place to a day as a free stop: what the place says goes with it, and stays as it is when the place changes. */
+/** Adds a copy of the place as a stop to the route being edited, else to each route and track of the day: what the place says goes with it, and stays as it is when the place changes. */
 export function addOwnPlaceAsStop(place: OwnPlace, dayId: string): void {
   const { name, symbol, lngLat, address, contact, website, notes } = place;
-  addParts(dayId, { routes: [], stops: [{ ...newStop(newId(), name, lngLat, null), symbol, address, contact, website, notes }] });
+  const stop = { ...newStop(newId(), name, lngLat, null, null), symbol, address, contact, website, notes };
+  const routeId = editingRoute()?.id;
+  if (routeId) pasteStopsIntoRoute(routeId, [stop]);
+  else pasteStops(dayId, [stop]);
 }

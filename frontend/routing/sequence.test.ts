@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import type { Day, LngLat, Route, RoutedLeg, Stop } from '../model/trip';
 import { newStop } from './dayEdit';
 import { encodePolyline } from './polyline';
-import { daySequence, standingAlone, withStopsInRidingOrder } from './sequence';
+import { daySequence, withStopsInRidingOrder } from './sequence';
 
 const decode = (geometry: string): LngLat[] => JSON.parse(geometry);
 const leg = (geometry: LngLat[], distanceM: number): RoutedLeg => ({ geometry: JSON.stringify(geometry), distanceM, durationS: 1 });
 
-const stop = (id: string, lngLat: LngLat, pointId: string | null): Stop => newStop(id, id, lngLat, pointId);
+/** A stop of the route `routeId`, on its point `pointId` or beside it. */
+const stop = (id: string, lngLat: LngLat, pointId: string | null, routeId: string | null = 'r'): Stop => newStop(id, id, lngLat, routeId, pointId);
 
 /** A route north along 11°E from 47° to 47.2°, in two legs of 11 km each (the second bends east). */
 const route: Route = {
@@ -32,7 +33,7 @@ const route: Route = {
 const day = (stops: Stop[], routes: Route[] = [route]): Day => ({ id: 'd', name: '', date: null, notes: '', routes, stops });
 
 describe('daySequence', () => {
-  it('places a free stop at the leg and the spot where the route passes closest', () => {
+  it('places a stop beside its route at the leg and the spot where the route passes closest', () => {
     const [entry] = daySequence(day([stop('cafe', [11.005, 47.05], null)]), decode).filter((e) => e.stop);
     expect(entry!.near).toMatchObject({ routeId: 'r', legIndex: 0 });
     expect(entry!.near!.lngLat[0]).toBeCloseTo(11, 6);
@@ -51,19 +52,22 @@ describe('daySequence', () => {
     expect(entry!.distanceM).toBeLessThan(11_000 + 7_000);
   });
 
-  it('leaves out a free stop that no route passes within reach of: it stands alone', () => {
-    const far = day([stop('far', [11.01, 47.05], null)]);
-    const entries = daySequence(far, decode);
-    expect(entries.map((e) => e.id)).toEqual(['a', 'b', 'c']);
-    expect(standingAlone(far, entries).map((s) => s.id)).toEqual(['far']);
+  it('places a stop along its own route however far it stands, and not along another that passes closer', () => {
+    const north: Route = { ...route, id: 'n', points: [{ id: 'n1', lngLat: [11, 48] }, { id: 'n2', lngLat: [11, 48.1] }], legs: {} };
+    const entries = daySequence(day([stop('far', [11.005, 48.05], null)], [route, north]), decode);
+    expect(entries.map((e) => [e.id, e.routeIndex])).toEqual([['a', 0], ['b', 0], ['c', 0], ['far', 0], ['n1', 1], ['n2', 1]]);
+    expect(entries[3]!.near).toMatchObject({ routeId: 'r', legIndex: 1 });
+    expect(entries[3]!.near!.distanceM).toBeGreaterThan(90_000);
   });
 
-  it('gives the free stops of a day without a leg no place: they stand alone, in their order', () => {
+  it('puts the stops beside a route without a line at its start, and leaves out a place of no route', () => {
     const onePoint = { ...route, points: route.points.slice(0, 1), legs: {} };
-    const lonely = day([stop('x', [11, 47], null), stop('y', [12, 48], null)], [onePoint]);
-    const entries = daySequence(lonely, decode);
-    expect(entries.map((e) => e.id)).toEqual(['a']);
-    expect(standingAlone(lonely, entries).map((s) => s.id)).toEqual(['x', 'y']);
+    const entries = daySequence(day([stop('x', [11, 47], null), stop('y', [12, 48], null), stop('place', [11, 47], null, null)], [onePoint]), decode);
+    expect(entries.map((e) => [e.id, e.distanceM, e.near])).toEqual([
+      ['a', 0, undefined],
+      ['x', 0, undefined],
+      ['y', 0, undefined],
+    ]);
   });
 
   it('lists points and stops in riding order with their distance from the start', () => {
@@ -80,7 +84,7 @@ describe('daySequence', () => {
     expect(entries[1]!.near?.lngLat[1]).toBeCloseTo(47.05, 3);
   });
 
-  it('carries the riding time, a free stop at its share of the leg', () => {
+  it('carries the riding time, a stop beside the route at its share of the leg', () => {
     const entries = daySequence(day([stop('cafe', [11.005, 47.05], null)]), decode);
     // Each leg is 11 km and takes a second in the fixture; the café is half way along the first.
     expect(entries.map((e) => [e.id, Math.round(e.timeS * 100) / 100])).toEqual([
@@ -110,8 +114,8 @@ describe('daySequence along a track', () => {
   // North along 11°E from 47° to 47.2° in steps of 0.05°, about 5.56 km each; the decoder is the real one.
   const track: Route = { id: 't', name: '', kind: 'track', profile: 'motorcycle', optional: false, color: null, line: encodePolyline([[11, 47], [11, 47.05], [11, 47.1], [11, 47.15], [11, 47.2]]) };
 
-  it('places a free stop along the line and ends with the track', () => {
-    const entries = daySequence(day([stop('cafe', [11.002, 47.12], null)], [track]));
+  it('places a stop beside the track along its line and ends with the track', () => {
+    const entries = daySequence(day([stop('cafe', [11.002, 47.12], null, 't')], [track]));
     expect(entries.map((e) => e.id)).toEqual(['cafe', 't']);
     expect(entries[0]!.near).toMatchObject({ routeId: 't', legIndex: 0 });
     expect(entries[0]!.distanceM).toBeCloseTo(13_343, -1);
@@ -131,13 +135,13 @@ describe('withStopsInRidingOrder', () => {
     const stops = [stop('end', [11, 47.2], 'c'), stop('cafe', [11.005, 47.05], null), stop('start', [11, 47], 'a'), stop('fuel', [11, 47.1], 'b')];
     // Not routed yet, the legs run straight between the points.
     const straight = { ...route, legs: {} };
-    const trip = withStopsInRidingOrder({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [day(stops, [straight]), day([stop('lost', [12, 48], null)], [])] });
+    const trip = withStopsInRidingOrder({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [day(stops, [straight]), day([stop('lost', [12, 48], null, null)], [])] });
     expect(trip.days[0]!.stops.map((s) => s.id)).toEqual(['start', 'cafe', 'fuel', 'end']);
     expect(trip.days[1]!.stops.map((s) => s.id)).toEqual(['lost']);
   });
 
   it('leaves the stops of a day without a route in the order they are listed, as a file gave them', () => {
-    const listed = [stop('c', [11.2, 47], null), stop('a', [11, 47.3], null), stop('d', [10.9, 47.1], null), stop('b', [11.1, 46.9], null)];
+    const listed = [stop('c', [11.2, 47], null, null), stop('a', [11, 47.3], null, null), stop('d', [10.9, 47.1], null, null), stop('b', [11.1, 46.9], null, null)];
     const trip = withStopsInRidingOrder({ id: 1, kind: 'collection', name: 'T', description: '', state: 'planned', version: 1, days: [day(listed, [])] });
     expect(trip.days[0]!.stops.map((s) => s.id)).toEqual(['c', 'a', 'd', 'b']);
   });

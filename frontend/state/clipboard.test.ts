@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Trip } from '../model/trip';
 import { dropOn, dropTarget } from '../ui/carry';
 import { clearClip, copyParts, dropsOnPart, heldParts, pasteItems } from './clipboard';
-import { addDay, addFreeStop, closeTrip, loadTrip, openTrip, selectDay } from './trip';
+import { addDay, addRoute, addStopBeside, closeTrip, loadTrip, openTrip, selectDay, selectedDayId } from './trip';
 
 // The library and the open trip's media list themselves when they are imported or a trip is loaded.
 vi.mock('../api', async (original) => ({ ...(await original<typeof import('../api')>()), listTrips: async () => [], listFolders: async () => [], listMedia: async () => [], listRecordings: async () => [] }));
@@ -10,11 +10,13 @@ vi.mock('../api', async (original) => ({ ...(await original<typeof import('../ap
 const empty = (): Trip => ({ id: 1, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 const days = () => openTrip()!.days;
 
-/** Two days, a free stop on the first. */
+/** Two days with a route each, a stop beside the route of the first. */
 function twoDays(): { first: string; second: string; stop: string } {
   addDay();
-  addFreeStop([1, 1]);
+  addRoute(selectedDayId()!);
+  addStopBeside([1, 1]);
   addDay();
+  addRoute(selectedDayId()!);
   const [first, second] = days();
   selectDay(first!.id);
   return { first: first!.id, second: second!.id, stop: first!.stops[0]!.id };
@@ -34,12 +36,12 @@ describe('what a drag carries', () => {
     loadTrip(empty());
   });
 
-  it('is dropped as a cut is pasted: a stop moves to the day it is dropped on', () => {
+  it('is dropped as a cut is pasted: a stop moves to the route of the day it is dropped on', () => {
     const { first, second, stop } = twoDays();
     const drop = dropStopOnDay(stop, second);
     expect(drop).toBeTypeOf('function');
     drop!();
-    expect(days().map((day) => day.stops.map((s) => s.id))).toEqual([[], [stop]]);
+    expect(days().map((day) => day.stops.map((s) => s.routeId === day.routes[0]!.id))).toEqual([[], [true]]);
     expect(days().map((day) => day.id)).toEqual([first, second]);
   });
 
@@ -71,5 +73,13 @@ describe('a paste of what was cut', () => {
     copyParts('stop', [stop], true);
     expect(pasteItems('day', first)).toEqual([]);
     expect(pasteItems('day', second)).toHaveLength(1);
+  });
+
+  it('is not offered on a day without a route or a track, which takes no stops', () => {
+    const { stop } = twoDays();
+    addDay();
+    copyParts('stop', [stop]);
+    expect(pasteItems('day', days()[2]!.id)).toEqual([]);
+    expect(pasteItems('route', days()[1]!.routes[0]!.id)).toHaveLength(1);
   });
 });

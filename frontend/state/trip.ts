@@ -383,7 +383,7 @@ export function addRoute(dayId: string): void {
 
 /** Adds routes and stops read from a file to a day, as one step. */
 export function addParts(dayId: string, parts: { routes: Route[]; stops: Stop[] }): void {
-  edit((trip) => dayEdit.addParts(trip, dayId, parts), t('Import file'));
+  edit((trip) => dayEdit.addParts(trip, dayId, parts, newId), t('Import file'));
 }
 
 /** Makes a route of stops of a day, which become its points, as one step to undo. */
@@ -412,14 +412,14 @@ export function condenseTrack(routeId: string, toleranceM: number): void {
   changeRoute(routeId, (r) => (r.kind === 'track' ? routeEdit.condenseTrack(r, toleranceM) : r), t('Reduce points'));
 }
 
-/** Makes a route of the track, right after it: its points thinned at `toleranceM`, the legs between them routed along the roads. The track stays. */
+/** Makes a route of the track, right after it, with copies of the track's stops: its points thinned at `toleranceM`, the legs between them routed along the roads. The track stays. */
 export function convertTrackToRoute(routeId: string, toleranceM: number): void {
-  edit((trip) => dayEdit.addMadeOf(trip, routeId, (r) => (r.kind === 'track' ? routeEdit.trackToRoute(r, toleranceM, newId) : undefined)), t('Convert to route'));
+  edit((trip) => dayEdit.addMadeOf(trip, routeId, (r) => (r.kind === 'track' ? routeEdit.trackToRoute(r, toleranceM, newId) : undefined), newId), t('Convert to route'));
 }
 
-/** Makes a track of the route, right after it: its line as it runs now, kept as it is. The route stays, with the stops on its points. */
+/** Makes a track of the route, right after it, with copies of the route's stops beside it: its line as it runs now, kept as it is. The route stays. */
 export function convertRouteToTrack(routeId: string): void {
-  edit((trip) => dayEdit.addMadeOf(trip, routeId, (r) => (r.kind === 'routed' ? routeEdit.routeToTrack(r, newId()) : undefined)), t('Convert to track'));
+  edit((trip) => dayEdit.addMadeOf(trip, routeId, (r) => (r.kind === 'routed' ? routeEdit.routeToTrack(r, newId()) : undefined), newId), t('Convert to track'));
 }
 
 /** Changes what a route says about itself; a new profile or motorway dial routes its legs again. */
@@ -472,24 +472,25 @@ export function insertStop(routeId: string, index: number, lngLat: LngLat): void
   editDay((trip, dayId) => dayEdit.insertStop(trip, dayId, routeId, index, roundLngLat(lngLat), newId(), newId()), t('Add stop'));
 }
 
-/** Adds a free stop to the selected day. */
-export function addFreeStop(lngLat: LngLat): void {
-  editDay((trip, dayId) => dayEdit.addFreeStop(trip, dayId, roundLngLat(lngLat), newId()), t('Add stop'));
+/** Adds a stop beside the route being edited. */
+export function addStopBeside(lngLat: LngLat): void {
+  const routeId = editingRouteId();
+  if (routeId) editDay((trip, dayId) => dayEdit.addStopBeside(trip, dayId, routeId, roundLngLat(lngLat), newId()), t('Add stop'));
 }
 
-/** Where the routes of the selected day pass closest to a free stop of it, within reach; none for a stop that stands alone or is bound. */
+/** Where its route passes closest to a stop of the selected day that stands beside it; none for a stop on a point, or beside a route without a line. */
 const nearOf = (stopId: string): SequenceEntry['near'] => selectedSequence().find((e) => e.stop?.id === stopId)?.near;
 
-/** Whether a free stop of the selected day can be bound where its routes pass closest: a track there has no points to bind to. */
+/** Whether a stop of the selected day that stands beside its route can be bound where the route passes closest: a track has no points to bind to. */
 export function canConnect(stopId: string): boolean {
   const near = nearOf(stopId);
   return near !== undefined && routeById(near.routeId)?.kind === 'routed';
 }
 
-/** Binds a free stop of the selected day to its routes where they pass closest. */
+/** Binds a stop of the selected day that stands beside its route to the route where it passes closest. */
 export function connectStop(stopId: string): void {
   const near = nearOf(stopId);
-  if (near) editDay((trip, dayId) => dayEdit.connectStop(trip, dayId, stopId, near.routeId, near.legIndex + 1, newId()), t('Connect stop'));
+  if (near) editDay((trip, dayId) => dayEdit.connectStop(trip, dayId, stopId, near.legIndex + 1, newId()), t('Connect stop'));
 }
 
 export function disconnectStop(stopId: string): void {
@@ -530,7 +531,7 @@ export function addSection(name: string): void {
 /** Adds a place at a position to the section shown, for its dialog to name: the answer is its id. */
 export function addPlace(lngLat: LngLat): string {
   const id = newId();
-  editDay((trip, dayId) => dayEdit.updateStop(dayEdit.addFreeStop(trip, dayId, roundLngLat(lngLat), id), dayId, id, { name: t('New place') }), t('Add place'));
+  editDay((trip, dayId) => dayEdit.updateStop(dayEdit.addStopBeside(trip, dayId, null, roundLngLat(lngLat), id), dayId, id, { name: t('New place') }), t('Add place'));
   return id;
 }
 
@@ -544,22 +545,19 @@ export function moveRoute(routeId: string, to: number): void {
   edit((trip) => dayEdit.moveRoute(trip, routeId, to), t('Move route'));
 }
 
-/** Adds copied routes, with their bound stops, at the end of a day, as one step to undo. */
+/** Adds copied routes, with their stops, at the end of a day, as one step to undo. */
 export function pasteRoutes(dayId: string, copied: readonly dayEdit.CopiedRoute[]): void {
   edit((trip) => copied.reduce((t, c) => dayEdit.pasteRoute(t, dayId, c, newId), trip), t(copied.length > 1 ? 'Paste routes' : 'Paste route'));
 }
 
-/** Adds copied stops to a day, free where they stand, as one step to undo. */
+/** Adds copied stops to a day, as one step to undo: to each of its routes and tracks its own copy, or as places to a category of a list of places. */
 export function pasteStops(dayId: string, stops: readonly Stop[]): void {
-  edit((trip) => stops.reduce((next, stop) => dayEdit.pasteStop(next, dayId, stop, newId()), trip), t(stops.length > 1 ? 'Paste stops' : 'Paste stop'));
+  edit((trip) => dayEdit.pasteStops(trip, dayId, stops, newId), t(stops.length > 1 ? 'Paste stops' : 'Paste stop'));
 }
 
-/** Adds copied stops to a route, each as a point of it where it passes closest; beside a track, free. */
+/** Adds copied stops to a route or track as its own, each on its point where it stands on one, else beside it. */
 export function pasteStopsIntoRoute(routeId: string, stops: readonly Stop[]): void {
-  edit(
-    (trip) => stops.reduce((next, stop) => dayEdit.pasteStopIntoRoute(next, routeId, { ...stop, lngLat: roundLngLat(stop.lngLat) }, newId(), newId()), trip),
-    t(stops.length > 1 ? 'Paste stops' : 'Paste stop'),
-  );
+  edit((trip) => stops.reduce((next, stop) => dayEdit.pasteStopIntoRoute(next, routeId, stop, newId()), trip), t(stops.length > 1 ? 'Paste stops' : 'Paste stop'));
 }
 
 /** Adds copied days, with their routes and stops, after a day or at the trip's end; answers the ids of the days made, in the order of `days`. */
@@ -586,22 +584,22 @@ export function duplicateParts(kind: dayEdit.PartKind, ids: readonly string[]): 
   edit((trip) => dayEdit.duplicateParts(trip, kind, ids, newId), t('Duplicate'));
 }
 
-/** Moves routes, with the stops bound to them, or stops, which then stand free, to another day. */
+/** Moves routes, with their stops, or stops, which the day's routes and tracks then take, to another day. */
 export function movePartsToDay(kind: 'route' | 'stop', ids: readonly string[], dayId: string): void {
-  edit((trip) => ids.reduce((next, id) => (kind === 'route' ? dayEdit.moveRouteToDay(next, id, dayId) : dayEdit.moveStopToDay(next, id, dayId)), trip), t(kind === 'route' ? 'Move route' : 'Move stop'));
+  edit((trip) => ids.reduce((next, id) => (kind === 'route' ? dayEdit.moveRouteToDay(next, id, dayId) : dayEdit.moveStopToDay(next, id, dayId, newId)), trip), t(kind === 'route' ? 'Move route' : 'Move stop'));
   leaveWhatIsGone();
 }
 
-/** Moves stops onto a route, of their day or another, each as a point of it where it passes closest. */
+/** Moves stops to a route or track, of their day or another, as its own. */
 export function moveStopsIntoRoute(ids: readonly string[], routeId: string): void {
-  edit((trip) => ids.reduce((next, id) => dayEdit.moveStopIntoRoute(next, id, routeId, newId()), trip), t('Move stop'));
+  edit((trip) => ids.reduce((next, id) => dayEdit.moveStopIntoRoute(next, id, routeId), trip), t('Move stop'));
 }
 
 /** Moves the stops of days into another day and removes the days, as one step to undo: categories of a list of places joined into one. */
 export function mergeDaysInto(ids: readonly string[], dayId: string): void {
   edit((trip) => {
     const stops = trip.days.filter((day) => ids.includes(day.id)).flatMap((day) => day.stops);
-    return dayEdit.removeParts(stops.reduce((next, stop) => dayEdit.moveStopToDay(next, stop.id, dayId), trip), 'day', ids);
+    return dayEdit.removeParts(stops.reduce((next, stop) => dayEdit.moveStopToDay(next, stop.id, dayId, newId), trip), 'day', ids);
   }, t('Merge categories'));
   leaveWhatIsGone();
 }
