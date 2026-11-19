@@ -17,14 +17,14 @@ final class TripGpxTest extends TestCase
 {
     private const GPX = 'http://www.topografix.com/GPX/1/1';
 
-    /** The fixture with a second day of two routes and a free stop far from both. */
+    /** The fixture with a second day of two routes, the first with a stop on its start and one far beside it. */
     private function document(): array
     {
         $document = TripFixture::document();
         $document['days'][] = TripFixture::day(
             'day2',
             [TripFixture::route('r2', [[11.4, 47.3], [11.5, 48.1]]), ['name' => 'Hike'] + TripFixture::route('r3', [[11.4, 47.3], [11.41, 47.31]])],
-            [TripFixture::stop('s4', 'Hotel Post', [11.4, 47.3], 'r2-0', 'Hotel'), TripFixture::stop('s5', 'Far away', [12.5, 47.3], null)],
+            [TripFixture::stop('s4', 'Hotel Post', [11.4, 47.3], 'r2-0', 'Hotel'), TripFixture::stop('s5', 'Far away', [12.5, 47.3], null, null, 'r2')],
         );
         return $document;
     }
@@ -42,8 +42,9 @@ final class TripGpxTest extends TestCase
         self::assertSame('Alps', (string) $xml->xpath('/g:gpx/g:metadata/g:name')[0]);
         self::assertSame('2026-10-27T08:00:00Z', (string) $xml->xpath('/g:gpx/g:metadata/g:time')[0]);
         $waypoints = $xml->xpath('/g:gpx/g:wpt');
-        self::assertSame(['Home', 'Hotel Post', 'Café & Bar', 'Hotel Post'], array_map(fn ($w) => (string) $w->name, $waypoints));
-        self::assertSame(['', 'Hotel', 'Navaid, Black', 'Hotel'], array_map(fn ($w) => (string) $w->sym, $waypoints));
+        // The hotel is a stop of both days' routes, alike in name, position and symbol, and written once.
+        self::assertSame(['Home', 'Hotel Post', 'Café & Bar'], array_map(fn ($w) => (string) $w->name, $waypoints));
+        self::assertSame(['', 'Hotel', 'Navaid, Black'], array_map(fn ($w) => (string) $w->sym, $waypoints));
         self::assertCount(0, $xml->xpath('/g:gpx/g:wpt/g:type'));
         self::assertSame('47.810000', (string) $waypoints[2]['lat']);
         $tracks = $xml->xpath('/g:gpx/g:trk');
@@ -61,7 +62,7 @@ final class TripGpxTest extends TestCase
         self::assertCount(3, $routes);
     }
 
-    public function testLeavesOutAFreeStopFarFromEveryRoute(): void
+    public function testLeavesOutAStopFarBesideItsRoute(): void
     {
         $xml = $this->parse(TripGpx::day($this->document(), 1, new DateTimeImmutable()));
         self::assertSame('Alps – Day 2', (string) $xml->xpath('/g:gpx/g:metadata/g:name')[0]);
@@ -79,11 +80,24 @@ final class TripGpxTest extends TestCase
         self::assertSame(['Day 2 – Route 1', 'Day 2 – Hike'], $names(TripGpx::days($this->document(), [1], $now)));
         self::assertCount(3, $names(TripGpx::days($this->document(), [0, 1], $now)));
 
-        // The hike alone: its day's bound stop stands at its start, so it is within reach; the far one is not.
+        // The hike alone: the stops are the other route's and stay out, though one stands at the hike's start.
         $hike = $this->parse(TripGpx::days($this->document(), [1], $now, new ExportOptions(), ['r3']));
         self::assertSame(['Day 2'], array_map('strval', $hike->xpath('/g:gpx/g:trk/g:name')));
-        self::assertSame(['Hotel Post'], array_map('strval', $hike->xpath('/g:gpx/g:wpt/g:name')));
+        self::assertSame([], array_map('strval', $hike->xpath('/g:gpx/g:wpt/g:name')));
+        $first = $this->parse(TripGpx::days($this->document(), [1], $now, new ExportOptions(), ['r2']));
+        self::assertSame(['Hotel Post'], array_map('strval', $first->xpath('/g:gpx/g:wpt/g:name')));
         self::assertSame($names(TripGpx::day($this->document(), 1, $now, new ExportOptions(), ['r3'])), ['Day 2']);
+    }
+
+    public function testWritesAStopOnceThatARouteAndATrackEachHaveACopyOf(): void
+    {
+        $document = TripFixture::document();
+        $document['days'][0]['routes'][] = TripFixture::track('t1');
+        $document['days'][0]['stops'][] = TripFixture::stop('s4', 'Hotel Post', [11.4, 47.3], null, 'Hotel', 't1');
+        $document['days'][0]['stops'][] = TripFixture::stop('s5', 'Hut', [11.35, 47.2], null, null, 't1');
+        $names = fn (?array $routeIds): array => array_map('strval', $this->parse(TripGpx::day($document, 0, new DateTimeImmutable(), new ExportOptions(), $routeIds))->xpath('/g:gpx/g:wpt/g:name'));
+        self::assertSame(['Home', 'Hotel Post', 'Café & Bar', 'Hut'], $names(null));
+        self::assertSame(['Hotel Post', 'Hut'], $names(['t1']));
     }
 
     public function testWritesRoutesAsRoutePointsOnRequest(): void
@@ -94,7 +108,7 @@ final class TripGpxTest extends TestCase
         self::assertSame(['Day 1 South', 'Day 2 – Route 1', 'Day 2 – Hike'], array_map(fn ($r) => (string) $r->name, $routes));
         self::assertCount(3, $routes[0]->rtept);
         self::assertSame('48.100000', (string) $routes[0]->rtept[0]['lat']);
-        self::assertCount(4, $xml->xpath('/g:gpx/g:wpt'));
+        self::assertCount(3, $xml->xpath('/g:gpx/g:wpt'));
     }
 
     public function testLeavesOutOptionalPartsOnRequest(): void
@@ -104,11 +118,11 @@ final class TripGpxTest extends TestCase
         $document['days'][0]['stops'][2]['optional'] = true;
         $xml = $this->parse(TripGpx::trip($document, new DateTimeImmutable(), new ExportOptions(optional: false)));
         self::assertSame(['Day 1 South', 'Day 2'], array_map(fn ($t) => (string) $t->name, $xml->xpath('/g:gpx/g:trk')));
-        // The café is optional; day 2's hotel stood on the optional route's point and is now a free stop beside the hike.
-        self::assertSame(['Home', 'Hotel Post', 'Hotel Post'], array_map(fn ($w) => (string) $w->name, $xml->xpath('/g:gpx/g:wpt')));
+        // The café is optional, and the stops of day 2's optional route stay out with it.
+        self::assertSame(['Home', 'Hotel Post'], array_map(fn ($w) => (string) $w->name, $xml->xpath('/g:gpx/g:wpt')));
         $all = $this->parse(TripGpx::trip($document, new DateTimeImmutable()));
         self::assertCount(3, $all->xpath('/g:gpx/g:trk'));
-        self::assertCount(4, $all->xpath('/g:gpx/g:wpt'));
+        self::assertCount(3, $all->xpath('/g:gpx/g:wpt'));
     }
 
     public function testReadsOptionsFromAQueryOrJson(): void

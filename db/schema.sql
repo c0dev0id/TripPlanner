@@ -184,6 +184,9 @@ CREATE TABLE IF NOT EXISTS stops (
     symbol TEXT,
     lng REAL NOT NULL,
     lat REAL NOT NULL,
+    -- The route or track of its day the stop is of; none for a place of a list of places.
+    route_id TEXT,
+    -- The point of that route it stands on; none for a stop beside its route.
     point_id TEXT,
     address TEXT NOT NULL DEFAULT '',
     contact TEXT NOT NULL DEFAULT '',

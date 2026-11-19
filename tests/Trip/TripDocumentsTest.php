@@ -197,12 +197,12 @@ final class TripDocumentsTest extends TestCase
     public function testMovesAStopToAnotherDay(): void
     {
         $document = TripFixture::document();
-        $document['days'][] = TripFixture::day('day2');
+        $document['days'][] = TripFixture::day('day2', [TripFixture::route('r2', [[1, 1], [2, 2]])]);
         $this->save($document, 1);
-        $free = $document['days'][0]['stops'][2];
+        $beside = ['routeId' => 'r2'] + $document['days'][0]['stops'][2];
         unset($document['days'][0]['stops'][2]);
         $document['days'][0]['stops'] = array_values($document['days'][0]['stops']);
-        $document['days'][1]['stops'] = [$free];
+        $document['days'][1]['stops'] = [$beside];
         $this->save($document, 2);
         $loaded = $this->documents->load($this->userId, $this->tripId);
         self::assertSame(['s1', 's2'], array_column($loaded['days'][0]['stops'], 'id'));

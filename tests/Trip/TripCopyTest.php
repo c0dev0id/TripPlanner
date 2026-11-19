@@ -29,6 +29,7 @@ final class TripCopyTest extends TestCase
         self::assertSame($route['points'][0]['id'], $day['stops'][0]['pointId']);
         self::assertSame($route['points'][2]['id'], $day['stops'][1]['pointId']);
         self::assertNull($day['stops'][2]['pointId']);
+        self::assertSame([$route['id'], $route['id'], $route['id']], array_column($day['stops'], 'routeId'));
         self::assertSame(['id' => $day['routes'][1]['id']] + TripFixture::track('t1'), $day['routes'][1]);
         self::assertNotSame('t1', $day['routes'][1]['id']);
         self::assertSame('Café & Bar', $day['stops'][2]['name']);

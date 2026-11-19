@@ -112,7 +112,7 @@ final class TripDocuments
         foreach ($this->rows($routes, $tripId) as $row) {
             $days[$row['day_id']]['routes'][] = self::route($row);
         }
-        $stops = 'SELECT id, day_id, name, symbol, lng, lat, point_id, address, contact, booking_reference, website, notes, arrive_at, pause_minutes, optional
+        $stops = 'SELECT id, day_id, name, symbol, lng, lat, route_id, point_id, address, contact, booking_reference, website, notes, arrive_at, pause_minutes, optional
                   FROM stops WHERE day_id IN (SELECT id FROM days WHERE trip_id = ?) ORDER BY position';
         foreach ($this->rows($stops, $tripId) as $stop) {
             $days[$stop['day_id']]['stops'][] = [
@@ -120,6 +120,7 @@ final class TripDocuments
                 'name' => $stop['name'],
                 'symbol' => $stop['symbol'],
                 'lngLat' => [(float) $stop['lng'], (float) $stop['lat']],
+                'routeId' => $stop['route_id'],
                 'pointId' => $stop['point_id'],
                 'address' => $stop['address'],
                 'contact' => $stop['contact'],
@@ -167,17 +168,17 @@ final class TripDocuments
     {
         $this->db->beginTransaction();
         try {
-            $statement = $this->db->prepare('SELECT version FROM trips WHERE id = ? AND user_id = ?');
+            $statement = $this->db->prepare('SELECT version, kind FROM trips WHERE id = ? AND user_id = ?');
             $statement->execute([$tripId, $userId]);
-            $current = $statement->fetchColumn();
-            if ($current === false) {
+            $trip = $statement->fetch(PDO::FETCH_ASSOC);
+            if ($trip === false) {
                 $this->db->rollBack();
                 return null;
             }
-            if ((int) $current !== $version) {
-                throw new VersionConflict((int) $current);
+            if ((int) $trip['version'] !== $version) {
+                throw new VersionConflict((int) $trip['version']);
             }
-            $document = TripDocumentValidator::validated($this->completed($tripId, $body));
+            $document = TripDocumentValidator::validated($this->completed($tripId, $body), $trip['kind']);
             $this->assertIdsNotElsewhere($tripId, $document['days']);
             $this->saveDays($tripId, $document['days']);
             $this->db->prepare('UPDATE trips SET name = ?, description = ?, state = ?, version = ?, updated_at = ? WHERE id = ?')
@@ -368,10 +369,10 @@ final class TripDocuments
                  line = excluded.line',
         );
         $upsertStop = $this->db->prepare(
-            'INSERT INTO stops (id, day_id, position, name, symbol, lng, lat, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional, website)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            'INSERT INTO stops (id, day_id, position, name, symbol, lng, lat, route_id, point_id, address, contact, booking_reference, notes, arrive_at, pause_minutes, optional, website)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON CONFLICT(id) DO UPDATE SET day_id = excluded.day_id, position = excluded.position, name = excluded.name, symbol = excluded.symbol, lng = excluded.lng, lat = excluded.lat,
-                 point_id = excluded.point_id, address = excluded.address, contact = excluded.contact, booking_reference = excluded.booking_reference,
+                 route_id = excluded.route_id, point_id = excluded.point_id, address = excluded.address, contact = excluded.contact, booking_reference = excluded.booking_reference,
                  notes = excluded.notes, arrive_at = excluded.arrive_at, pause_minutes = excluded.pause_minutes, optional = excluded.optional, website = excluded.website',
         );
         $placeDay = $this->db->prepare('UPDATE days SET position = ? WHERE id = ? AND trip_id = ?');
@@ -405,7 +406,7 @@ final class TripDocuments
             }
             foreach ($day['stops'] as $index => $stop) {
                 $upsertStop->execute([
-                    $stop['id'], $day['id'], $index, $stop['name'], $stop['symbol'], $stop['lngLat'][0], $stop['lngLat'][1], $stop['pointId'],
+                    $stop['id'], $day['id'], $index, $stop['name'], $stop['symbol'], $stop['lngLat'][0], $stop['lngLat'][1], $stop['routeId'], $stop['pointId'],
                     $stop['address'], $stop['contact'], $stop['bookingReference'], $stop['notes'], $stop['arriveAt'], $stop['pauseMinutes'], (int) $stop['optional'], $stop['website'],
                 ]);
             }

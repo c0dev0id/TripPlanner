@@ -6,7 +6,7 @@ namespace Planner\Tests\Trip;
 
 /**
  * A small valid trip document: one day with a route of three points, a stop bound to its
- * first and last point, and a free stop beside it.
+ * first and last point, and a stop beside it.
  */
 final class TripFixture
 {
@@ -33,13 +33,15 @@ final class TripFixture
         ];
     }
 
-    public static function stop(string $id, string $name, array $lngLat, ?string $pointId, ?string $symbol = null): array
+    /** A stop on the point `$pointId` of the route the point is named after, or beside the route `$routeId`; with neither, a place of no route. */
+    public static function stop(string $id, string $name, array $lngLat, ?string $pointId, ?string $symbol = null, ?string $routeId = 'r1'): array
     {
         return [
             'id' => $id,
             'name' => $name,
             'symbol' => $symbol,
             'lngLat' => $lngLat,
+            'routeId' => $pointId === null ? $routeId : explode('-', $pointId)[0],
             'pointId' => $pointId,
             'address' => '',
             'contact' => '',

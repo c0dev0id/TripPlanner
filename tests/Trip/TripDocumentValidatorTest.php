@@ -41,8 +41,17 @@ final class TripDocumentValidatorTest extends TestCase
         $document['days'][0]['routes'][0]['points'] = [];
         $document['days'][0]['stops'] = [TripFixture::stop('s3', 'Café', [11.46, 47.81], null)];
         self::assertCount(0, TripDocumentValidator::validated($document)['days'][0]['routes'][0]['points']);
-        $document['days'][0]['routes'] = [];
-        self::assertCount(1, TripDocumentValidator::validated($document)['days'][0]['stops']);
+        $document['days'][0] = ['routes' => [], 'stops' => []] + $document['days'][0];
+        self::assertCount(0, TripDocumentValidator::validated($document)['days'][0]['routes']);
+    }
+
+    public function testTakesAPlaceOfNoRouteInAListOfPlacesAndNotInATrip(): void
+    {
+        $document = TripFixture::document();
+        $document['days'][0] = ['routes' => [], 'stops' => [TripFixture::stop('p1', 'Inn', [11.46, 47.81], null, null, null)]] + $document['days'][0];
+        self::assertNull(TripDocumentValidator::validated($document, 'collection')['days'][0]['stops'][0]['routeId']);
+        $this->expectExceptionMessage('stops[0].routeId names no route of the day');
+        TripDocumentValidator::validated($document);
     }
 
     public function testKeepsAStopsSymbolAsGiven(): void
@@ -105,7 +114,12 @@ final class TripDocumentValidatorTest extends TestCase
             $d['days'][0]['routes'][] = TripFixture::route('r2', [[1, 1]]);
             $d['days'][0]['routes'][1]['points'][0]['id'] = 'r1-0';
         }, "routes' points hold the same id twice"];
-        yield 'stop bound to an unknown point' => [fn (array &$d) => $d['days'][0]['stops'][0]['pointId'] = 'nowhere', 'names no route point'];
+        yield 'stop bound to an unknown point' => [fn (array &$d) => $d['days'][0]['stops'][0]['pointId'] = 'nowhere', "names no point of the stop's route"];
+        yield 'stop of an unknown route' => [fn (array &$d) => $d['days'][0]['stops'][2]['routeId'] = 'nowhere', 'stops[2].routeId names no route of the day'];
+        yield 'stop on a point of another route than its own' => [function (array &$d): void {
+            $d['days'][0]['routes'][] = TripFixture::route('r2', [[1, 1]]);
+            $d['days'][0]['stops'][0]['routeId'] = 'r2';
+        }, "names no point of the stop's route"];
         yield 'bound stop away from its point' => [fn (array &$d) => $d['days'][0]['stops'][0]['lngLat'] = [11.5, 48.11], 'must stand at its route point'];
         yield 'bad arrival time' => [fn (array &$d) => $d['days'][0]['stops'][0]['arriveAt'] = '25:00', 'arriveAt'];
         yield 'negative pause' => [fn (array &$d) => $d['days'][0]['stops'][0]['pauseMinutes'] = -5, 'pauseMinutes'];
@@ -120,6 +134,6 @@ final class TripDocumentValidatorTest extends TestCase
         yield 'track with half a point' => [fn (array &$d) => $d['days'][0]['routes'][] = ['line' => '_y}eyA'] + TripFixture::track('t1'), 'line must be a polyline'];
         yield 'stop bound to a track' => [function (array &$d): void {
             $d['days'][0]['routes'] = [TripFixture::track('r1')];
-        }, 'names no route point'];
+        }, "names no point of the stop's route"];
     }
 }

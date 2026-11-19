@@ -12,7 +12,6 @@ use Planner\Tests\TestDatabase;
 use Planner\Tests\Trip\TripFixture;
 use Planner\Trip\Folders;
 use Planner\Trip\TripDocuments;
-use Planner\Trip\TripDocumentValidator;
 use Planner\Trip\Trips;
 
 final class OwnPlacesTest extends TestCase
@@ -27,13 +26,13 @@ final class OwnPlacesTest extends TestCase
         $documents = new TripDocuments($db);
         $special = array_column($folders->listFor($userId), 'id', 'kind');
         $save = function (int $tripId, array $days) use ($documents, $userId, $now): void {
-            $documents->save($userId, $tripId, TripDocumentValidator::validated(['name' => 'Our places', 'days' => $days] + TripFixture::document()), 1, $now);
+            $documents->save($userId, $tripId, ['name' => 'Our places', 'days' => $days] + TripFixture::document(), 1, $now);
         };
 
         $list = $trips->create($userId, 'Our places', $now, $folders->create($userId, 'Club', $special['places'], $now)->id, 'collection')->id;
         $save($list, [
-            ['name' => 'Inns'] + TripFixture::day('inns', [], [['website' => 'https://post.example/'] + TripFixture::stop('p2', 'Post', [8.5, 47.1], null, 'Restaurant'), TripFixture::stop('p1', 'Adler', [8.4, 47.0], null)]),
-            ['name' => 'Hotels'] + TripFixture::day('hotels', [], [TripFixture::stop('p3', 'Krone', [8.6, 47.2], null)]),
+            ['name' => 'Inns'] + TripFixture::day('inns', [], [['website' => 'https://post.example/'] + TripFixture::stop('p2', 'Post', [8.5, 47.1], null, 'Restaurant', null), TripFixture::stop('p1', 'Adler', [8.4, 47.0], null, null, null)]),
+            ['name' => 'Hotels'] + TripFixture::day('hotels', [], [TripFixture::stop('p3', 'Krone', [8.6, 47.2], null, null, null)]),
         ]);
 
         $places = (new OwnPlaces($db))->of($userId);

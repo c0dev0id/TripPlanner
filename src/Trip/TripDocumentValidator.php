@@ -20,14 +20,15 @@ final class TripDocumentValidator
     public const MAX_TEXT = 20000;
     private const MAX_SYMBOL = 100;
 
-    public static function validated(mixed $body): array
+    /** @param string $kind the kind of trip the document is of: in a `trip` every stop is of a route or track of its day, in a list of places a place is of none */
+    public static function validated(mixed $body, string $kind = 'trip'): array
     {
         if (!is_array($body)) {
             throw new InvalidDocument('The document must be a JSON object.');
         }
         $days = [];
         foreach (self::list($body, 'days') as $i => $day) {
-            $days[] = self::day($day, "days[$i]");
+            $days[] = self::day($day, "days[$i]", $kind === 'trip');
         }
         self::unique(array_column($days, 'id'), 'days');
         return [
@@ -45,7 +46,7 @@ final class TripDocumentValidator
         return is_array($part) && ($part['unchanged'] ?? null) === true;
     }
 
-    private static function day(mixed $day, string $at): array
+    private static function day(mixed $day, string $at, bool $ownedStops): array
     {
         if (!is_array($day)) {
             throw new InvalidDocument("$at must be an object.");
@@ -54,20 +55,20 @@ final class TripDocumentValidator
             return ['id' => self::id($day, $at), 'unchanged' => true];
         }
         $routes = [];
-        $positions = [];
+        $points = [];
         foreach (self::list($day, 'routes') as $i => $route) {
             $routes[] = $checked = self::route($route, "$at.routes[$i]");
             foreach ($checked['points'] ?? [] as $point) {
-                if (isset($positions[$point['id']])) {
+                if (isset($points[$point['id']])) {
                     throw new InvalidDocument("$at.routes' points hold the same id twice.");
                 }
-                $positions[$point['id']] = $point['lngLat'];
+                $points[$point['id']] = ['routeId' => $checked['id'], 'lngLat' => $point['lngLat']];
             }
         }
         self::unique(array_column($routes, 'id'), "$at.routes");
         $stops = [];
         foreach (self::list($day, 'stops') as $i => $stop) {
-            $stops[] = self::stop($stop, $positions, "$at.stops[$i]");
+            $stops[] = self::stop($stop, array_column($routes, 'id'), $points, $ownedStops, "$at.stops[$i]");
         }
         self::unique(array_column($stops, 'id'), "$at.stops");
         return [
@@ -80,19 +81,27 @@ final class TripDocumentValidator
         ];
     }
 
-    /** @param array<string, array{0: float, 1: float}> $positions the day's route points by id */
-    private static function stop(mixed $stop, array $positions, string $at): array
+    /**
+     * @param list<string> $routeIds the day's routes and tracks
+     * @param array<string, array{routeId: string, lngLat: array{0: float, 1: float}}> $points the day's route points by id, each with its route
+     * @param bool $owned whether the stop must be of a route, as in a trip
+     */
+    private static function stop(mixed $stop, array $routeIds, array $points, bool $owned, string $at): array
     {
         if (!is_array($stop)) {
             throw new InvalidDocument("$at must be an object.");
         }
         $lngLat = self::lngLat($stop['lngLat'] ?? null, "$at.lngLat");
+        $routeId = $stop['routeId'] ?? null;
+        if ($routeId === null ? $owned : !in_array($routeId, $routeIds, true)) {
+            throw new InvalidDocument("$at.routeId names no route of the day.");
+        }
         $pointId = $stop['pointId'] ?? null;
         if ($pointId !== null) {
-            if (!is_string($pointId) || !isset($positions[$pointId])) {
-                throw new InvalidDocument("$at.pointId names no route point of the day.");
+            if (!is_string($pointId) || !isset($points[$pointId]) || $points[$pointId]['routeId'] !== $routeId) {
+                throw new InvalidDocument("$at.pointId names no point of the stop's route.");
             }
-            if ($positions[$pointId] !== $lngLat) {
+            if ($points[$pointId]['lngLat'] !== $lngLat) {
                 throw new InvalidDocument("$at must stand at its route point.");
             }
         }
@@ -106,6 +115,7 @@ final class TripDocumentValidator
             'name' => self::text($stop, 'name', $at, 200),
             'symbol' => self::symbol($stop, $at),
             'lngLat' => $lngLat,
+            'routeId' => $routeId,
             'pointId' => $pointId,
             'address' => self::text($stop, 'address', $at),
             'contact' => self::text($stop, 'contact', $at),

@@ -6,7 +6,7 @@ namespace Planner\Export;
 
 /**
  * How a trip is written as GPX: one file or one per day, the routes as tracks or as
- * routes, with or without the optional parts, free stops within reach. Read from the
+ * routes, with or without the optional parts, stops beside their routes within reach. Read from the
  * query of a download and from a preset's JSON alike; the public properties are its JSON.
  */
 final readonly class ExportOptions
@@ -21,7 +21,7 @@ final readonly class ExportOptions
         public string $form = 'tracks',
         /** Whether optional routes and stops are written. */
         public bool $optional = true,
-        /** How far from a route a free stop may stand to be written, in metres. */
+        /** How far from its route a stop beside it may stand to be written, in metres. */
         public int $reachM = 2000,
     ) {
     }

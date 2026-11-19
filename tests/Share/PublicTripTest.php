@@ -108,15 +108,16 @@ final class PublicTripTest extends TestCase
         self::assertStringNotContainsString('4711', json_encode(PublicTrip::document($document, $this->publications->shared($token), [])));
     }
 
-    public function testLeavesOutTheRoutesThePageDoesNotHaveWithTheStopsBoundToThem(): void
+    public function testLeavesOutTheRoutesThePageDoesNotHaveWithTheirStops(): void
     {
         $document = TripFixture::document();
         $document['days'][0]['routes'][] = ['name' => 'In the rain'] + TripFixture::route('r2', [[11.5, 48.1], [11.6, 47.9]]);
         $document['days'][0]['stops'][] = TripFixture::stop('s4', 'Shelter', [11.6, 47.9], 'r2-1');
+        $document['days'][0]['stops'][] = TripFixture::stop('s5', 'Shelter beside', [11.55, 48.0], null, null, 'r2');
         $this->documents->save($this->userId, $this->tripId, TripDocumentValidator::validated($document), 2, $this->now);
         $token = $this->trips->share($this->userId, $this->tripId);
         $public = fn () => PublicTrip::document($this->documents->loadShared($token), $this->publications->shared($token), $this->publications->hiddenRouteIds($this->tripId));
-        self::assertSame([['r1', 'r2'], ['s1', 's2', 's3', 's4']], [array_column($public()['days'][0]['routes'], 'id'), array_column($public()['days'][0]['stops'], 'id')]);
+        self::assertSame([['r1', 'r2'], ['s1', 's2', 's3', 's4', 's5']], [array_column($public()['days'][0]['routes'], 'id'), array_column($public()['days'][0]['stops'], 'id')]);
 
         self::assertTrue($this->publications->set($this->userId, $this->tripId, false, true, null, ['r2', 'of another trip']));
         self::assertSame(['r2'], $this->publications->of($this->userId, $this->tripId)['hiddenRouteIds']);
