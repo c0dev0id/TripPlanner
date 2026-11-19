@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Trip } from '../model/trip';
-import { isRecordingPinned, isRoutePinned, keepPinnedLines, pinRecordings, pinRoutes, pinnedLinesAside, unpinTrips, type PinnedLine } from './pins';
+import { isRecordingPinned, isRoutePinned, keepPins, pinRecordings, pinRoutes, pinnedLinesAside, pinnedRoutes, unpinTrips, type KeptPin, type PinnedLine } from './pins';
 import { closeTrip, loadTrip } from './trip';
 
 const empty = (id: number): Trip => ({ id, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 const line = (color: string): PinnedLine => ({ points: [[8, 47]], color });
+const kept = (color: string): KeptPin => ({ line: line(color), name: color, where: ['T', 'Day 1'] });
 const none = () => undefined;
 
 describe('the pins', () => {
@@ -27,33 +28,34 @@ describe('the pins', () => {
     pinRoutes(['a'], true);
     pinRecordings([7], true);
     expect(pinnedLinesAside()).toEqual([]);
-    keepPinnedLines(() => line('red'), () => line('blue'));
+    keepPins(() => kept('red'), () => kept('blue'));
     loadTrip(empty(2));
     expect([isRoutePinned('a'), isRecordingPinned(7)]).toEqual([true, true]);
     expect(pinnedLinesAside()).toEqual([line('red'), line('blue')]);
+    expect(pinnedRoutes().get('a')).toEqual({ tripId: 1, kept: kept('red') });
     loadTrip(empty(1));
     expect(pinnedLinesAside()).toEqual([]);
   });
 
   it('take a new copy each time their trip is left, and leave the copies of other trips alone', () => {
     pinRoutes(['a'], true);
-    keepPinnedLines(() => line('red'), none);
+    keepPins(() => kept('red'), none);
     loadTrip(empty(2));
     pinRoutes(['b'], true);
-    keepPinnedLines(() => line('green'), none);
+    keepPins(() => kept('green'), none);
     closeTrip();
     expect(pinnedLinesAside()).toEqual([line('red'), line('green')]);
   });
 
   it('go where their trip is left and they have no line any more', () => {
     pinRoutes(['a', 'gone'], true);
-    keepPinnedLines((id) => (id === 'a' ? line('red') : undefined), none);
+    keepPins((id) => (id === 'a' ? kept('red') : undefined), none);
     expect([isRoutePinned('a'), isRoutePinned('gone')]).toEqual([true, false]);
   });
 
   it('go with a trip that is deleted', () => {
     pinRoutes(['a'], true);
-    keepPinnedLines(() => line('red'), none);
+    keepPins(() => kept('red'), none);
     loadTrip(empty(2));
     pinRoutes(['b'], true);
     unpinTrips([1]);

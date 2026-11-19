@@ -84,7 +84,7 @@ const listedRide = createRoot(() =>
 );
 
 /** The rides pinned in their tab, in the order they were pinned; the same while they read the same. */
-const ridesPinned = createRoot(() =>
+export const ridesPinned = createRoot(() =>
   createMemo((): KeptRide[] => [...pinnedRides()].flatMap((id) => keptRide(id) ?? []), [], { equals: (a, b) => a.length === b.length && a.every((ride, i) => sameRide(ride, b[i])) }),
 );
 

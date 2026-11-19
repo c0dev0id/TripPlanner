@@ -5,9 +5,10 @@ import { openTripId } from './trip';
 /**
  * What the user has pinned to the map: routes and recordings that stay on it whatever
  * else is taken up, whatever day is shown and whatever trip is open, until they are let
- * go of on their row, and the rides pinned in their own tab. Nothing is pinned to begin
- * with. A pin names the trip its route or recording is of and keeps a copy of its line,
- * taken when that trip is left: the map draws the copy while the trip is not open.
+ * go of, and the rides pinned in their own tab. Nothing is pinned to begin with. A pin
+ * names the trip its route or recording is of and keeps a copy of its line and of what
+ * it is called, taken when that trip is left: the map draws the copy while the trip is
+ * not open.
  */
 
 /** A pinned line as the map draws it while its trip is not open. */
@@ -16,14 +17,25 @@ export interface PinnedLine {
   color: string;
 }
 
-/** A pin: the trip its route or recording is of, and its line as it stood when that trip was last left. */
-interface Pin {
-  tripId: number;
-  line?: PinnedLine;
+/** What a pin is called: its own name and where it is found, from its trip down. */
+export interface PinName {
+  name: string;
+  where: readonly string[];
 }
 
+/** What is kept of a pin for while its trip is not open. */
+export type KeptPin = PinName & { line: PinnedLine };
+
+/** A pin: the trip its route or recording is of, and what was kept of it when that trip was last left. */
+export interface Pin {
+  tripId: number;
+  kept?: KeptPin;
+}
+
+/** The pinned routes and the recordings pinned on days, by id, in the order they were pinned. */
 const [pinnedRoutes, setPinnedRoutes] = createSignal<ReadonlyMap<string, Pin>>(new Map());
 const [pinnedRecordings, setPinnedRecordings] = createSignal<ReadonlyMap<number, Pin>>(new Map());
+export { pinnedRoutes, pinnedRecordings };
 
 /** The pins with those of the open trip added for the ids, or without the ids. */
 function withPins<T>(pins: ReadonlyMap<T, Pin>, ids: readonly T[], pinned: boolean): ReadonlyMap<T, Pin> {
@@ -45,31 +57,31 @@ export const pinRoutes = (ids: readonly string[], pinned: boolean): void => void
 /** Pins recordings on days of the open trip, or lets go of them. */
 export const pinRecordings = (ids: readonly number[], pinned: boolean): void => void setPinnedRecordings(withPins(pinnedRecordings(), ids, pinned));
 
-/** The pins of the open trip with the lines `lineOf` gives them; a pin it has no line for is let go of. */
-function withLines<T>(pins: ReadonlyMap<T, Pin>, lineOf: (id: T) => PinnedLine | undefined): ReadonlyMap<T, Pin> {
+/** The pins of the open trip with what `keptOf` keeps of them; a pin it keeps nothing of is let go of. */
+function withKept<T>(pins: ReadonlyMap<T, Pin>, keptOf: (id: T) => KeptPin | undefined): ReadonlyMap<T, Pin> {
   const tripId = openTripId();
   const next = new Map<T, Pin>();
   for (const [id, pin] of pins) {
-    const line = pin.tripId === tripId ? lineOf(id) : pin.line;
-    if (line || pin.tripId !== tripId) next.set(id, { tripId: pin.tripId, line });
+    const kept = pin.tripId === tripId ? keptOf(id) : pin.kept;
+    if (kept || pin.tripId !== tripId) next.set(id, { tripId: pin.tripId, kept });
   }
   return next;
 }
 
 /**
- * Copies the lines of the open trip's pins, for the map to draw once the trip is no
- * longer open. A pin without a line goes: its route was removed, or its recording was
- * taken off its day or never read.
+ * Copies the lines and names of the open trip's pins, for the map to show once the trip
+ * is no longer open. A pin without a line goes: its route was removed, or its recording
+ * was taken off its day or never read.
  */
-export function keepPinnedLines(routeLine: (id: string) => PinnedLine | undefined, recordingLine: (id: number) => PinnedLine | undefined): void {
-  setPinnedRoutes(withLines(pinnedRoutes(), routeLine));
-  setPinnedRecordings(withLines(pinnedRecordings(), recordingLine));
+export function keepPins(routeKept: (id: string) => KeptPin | undefined, recordingKept: (id: number) => KeptPin | undefined): void {
+  setPinnedRoutes(withKept(pinnedRoutes(), routeKept));
+  setPinnedRecordings(withKept(pinnedRecordings(), recordingKept));
 }
 
 /** The copied lines of what is pinned of trips that are not open. */
 export function pinnedLinesAside(): PinnedLine[] {
   const tripId = openTripId();
-  return [...pinnedRoutes().values(), ...pinnedRecordings().values()].flatMap((pin) => (pin.tripId !== tripId && pin.line ? [pin.line] : []));
+  return [...pinnedRoutes().values(), ...pinnedRecordings().values()].flatMap((pin) => (pin.tripId !== tripId && pin.kept ? [pin.kept.line] : []));
 }
 
 /** Lets go of what is pinned of trips that are no more. */
