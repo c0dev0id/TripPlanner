@@ -14,26 +14,66 @@ entries at the end of their section.
   stop; testing showed that what a tap places while shaping a route is a route point, not
   a stop, and that the route is the primary thing a stop hangs on. The route is now
   geometry alone, as in Layer Slayer, and stops attach to it.
-- **A stop is bound to a route point or free.** A bound stop names a route point of one of
-  its day's routes and has the same position: dragging either moves both, and it is a
-  waypoint and a route point at once. A free stop has a position of its own; its place in
-  the day's sequence and its distance from the start are those of the nearest point of
-  the route, and the export includes it when it lies within a proximity setting of a
-  route. A route point is converted into a stop, a free stop is connected to the route
-  (a route point is inserted into the nearest leg at its position) and a bound stop is
-  disconnected (the route point goes, the stop stays free). On the map a free stop stands
-  at its own position, in a second colour, with a mark on the route where it is nearest.
-- **A free stop takes a place along the routes only within 500 m of them.** Farther away
-  it stands for itself: the riding sequence leaves it out, so it has no distance, no
-  time and no place in the timeline; the panel and the read-only page list it apart
-  (standingAlone), without a mark on the route and without the menu's connect. A first
-  version kept such stops in the sequence at the day's end and had every reader skip
-  them, which one reader forgot. A stop kilometres off the route has no
-  meaningful place along it, and an imported file can carry hundreds of waypoints about
-  a region. The reach also bounds the search: the legs' segments are kept in blocks of
-  32 with a bounding box, and a query looks only into the blocks that could hold a
-  nearer place, which took placing 212 waypoints beside 130,000 track points from about
-  five seconds to a fifth of one.
+- **A stop is of one route or track, on a point of it or beside it.** A stop on a point
+  names a route point of its route and has the same position: dragging either moves
+  both, and it is a waypoint and a route point at once. A stop beside its route has a
+  position of its own; its place in the day's sequence and its distance from the start
+  are those of the nearest point of its route, however far away it stands. A route point
+  is converted into a stop, a stop beside its route is connected to it (a route point is
+  inserted into the nearest leg at its position) and a stop on a point is disconnected
+  (the route point goes, the stop stays beside the route). A track has no points of its
+  own, so its stops stand beside it. On the map a stop beside its route stands at its
+  own position, in a second colour, with a mark on the route where it is nearest.
+- **Stops are their routes', not their day's.** Stops were the day's, and one that was
+  not on a route point was only listed under whichever route or track of the day passed
+  closest, within 500 m, worked out again with every change. The list then showed as a
+  route's own what the data said was the day's: a track's row counted stops it did not
+  take along when copied, a route and a track on the same road shared their stops by
+  which was a metre closer, a copy pasted onto a route pulled the originals into its
+  list, and the map showed every stop of the day whichever line was taken up. A stop
+  now names its route or track (`routeId`), and nothing is placed by distance between
+  lines. What follows from it:
+  - A GPX file's waypoints are of none of its routes and tracks, which is the format's
+    gap and not ours: an import gives each route and track of the file every waypoint as
+    a stop of its own, on a point of the route it stands on and beside the line
+    otherwise. A file of two routes, a track and five waypoints becomes three lines of
+    five stops each. The copies cost rows and show the same name three times while the
+    day is shown whole; in return a line can be copied, moved, exported and removed with
+    what belongs to it, and what is done to one line's stops leaves the others alone.
+  - A day of a trip has no stops of its own. Stops that reach a day without a line of
+    their own, pasted onto it, moved to it or read from a file of waypoints alone, go to
+    each route and track the day has, as an import's do; a day without one takes none,
+    and the paste is not offered. Such places belong in a list of places, whose places
+    are of no route. This ends making a route of a file that kept one as waypoints by
+    importing the file into an empty day: the stops selected beside a route can still be
+    made a route.
+  - A route or track takes its stops along when it is copied, duplicated, moved or
+    converted (the route or track made of it gets copies), and they go with it when it
+    is removed, which the question before says. Leaving them behind was right while they
+    were the day's; now it would leave stops of no route.
+  - Stops pasted or dragged onto a route become its own and stand beside it, on a point
+    only where they stand on one. Pasting used to insert each as a route point, which
+    routed the route through them and asked about its original path: taking a stop over
+    and bending the route are two things, and Connect to the route stays the second.
+  - While a route or track is taken up the map shows its stops alone, as it draws its
+    line alone.
+  - The export writes the stops of the routes it writes, however far beside them they
+    stand, and each waypoint once where routes share it, alike in name, position and
+    symbol: in the file the waypoints are of no route again. The setting for how far a
+    stop might stand from a route is gone; a preset that still names it is read past it.
+  - The server refuses a trip's document with a stop that names no route of its day, or
+    stands on a point of another route than its own; a list's place names none.
+  - Existing trips were brought over once by a script that did what the import does:
+    every stop that was on no route point was copied to each route and track of its day,
+    the stop itself staying with the first route the trip's page shows so that journal
+    entries on it keep it, and the stops of days without a line were removed.
+  Rejected: giving a stop to the nearest line once, at import. It keeps one copy, but
+  the choice between a route and a track on the same road is as arbitrary once as it
+  was each time.
+- **Stops beside their route are found block by block.** The legs' segments are kept in
+  blocks of 32 with a bounding box, and a query for the nearest place looks only into
+  the blocks that could hold a nearer one, which took placing 212 waypoints beside
+  130,000 track points from about five seconds to a fifth of one.
 - **A stop carries everything about the place; there is no shared place.** A first draft
   kept places apart from stops so that one hotel could serve several nights. That made
   dragging a stop on one day move route points on other days, and it fixed one hotel per
@@ -130,9 +170,9 @@ entries at the end of their section.
   else (a first draft had the map close it on its own camera moves, which took a row's
   menu away while the map was still flying to the day). The menu depends on nothing but
   Solid, so the read-only page uses it too. A duplicated day gets no date,
-  since the day's date would clash with the original's; a duplicated route keeps its
-  points but not the stops, which belong to the day; a route moved to another day takes
-  the stops bound to its points along, a stop copied to another day arrives free. A trip
+  since the day's date would clash with the original's; a duplicated route gets copies
+  of its stops, and a route moved to another day takes its stops along (see the stops'
+  own entry above). A trip
   is copied on the server with new ids for every part, so the copy's parts never name the
   original's.
 
@@ -702,7 +742,7 @@ entries at the end of their section.
   an entry and its variants a submenu of that, instead of entries of their own among
   what a part's menu always has.
 - **A list of places is a collection in a folder of its own, its kinds are sections,
-  a place is a free stop.** Places need what stops have already: a position, a symbol,
+  a place is a stop of no route.** Places need what stops have already: a position, a symbol,
   the fields, the dialog, a marker, copy and paste, undo, the save. A table and
   an editor of their own would have repeated all of it. They are kept apart from trips
   and planning material by the folder, not by a field on the stop: in a trip the order
@@ -1267,11 +1307,10 @@ entries at the end of their section.
   holds them, so that two lists cannot have rows selected at once.
 - **A selection is exported through the same dialog as the trip.** Export GPX… in the
   menu of days or routes opens the trip's export dialog with those parts as its scope,
-  rather than downloading at once: the options (tracks or routes, optional parts, the
-  reach of free stops, the presets) apply to a part as to the whole. The server's
+  rather than downloading at once: the options (tracks or routes, optional parts,
+  the presets) apply to a part as to the whole. The server's
   export takes lists of day and route ids instead of the one day it took; where routes
-  are named, their days are the ones exported, and a stop bound to a route left out is
-  kept only if it lies within reach of one that is in, like a free stop.
+  are named, their days are the ones exported, with the stops of those routes alone.
 - **A selection inside a trip is of one kind.** In the library folders and trips are
   selected together, since they share a list and nearly all their verbs. Days, routes
   or stops are selected together, never mixed: the verbs of a mixed selection would be those all kinds share, and what a
@@ -1399,7 +1438,7 @@ entries at the end of their section.
   planner's way kept as a track before the route is changed. Replacing meant an undo
   to get back and nothing to compare with. The result now stands right after its
   source, in the colour its place gives it, and removing either is the user's step.
-  Making a route of free stops still takes the stops: they become its points.
+  Making a route of stops still takes the stops: they become its points.
 - **A pin outlives the trip it was set in.** The pins were the open trip's and went
   when another was opened, so a route of one trip could not be held against a route of
   another, and a pinned route of a day that was neither shown nor next to it was not
@@ -2249,16 +2288,15 @@ entries at the end of their section.
   file of its own, named after its day, and after the route too where the day has
   others; there is no file of the day and none of the trip. The file is written by the
   export when it is asked for, from the trip's public form and with the export's
-  defaults (the full line as a track, the stops bound to it or within reach), so it is
+  defaults (the full line as a track, with its stops), so it is
   never older than the trip. Writing the files when the page is published was the
   alternative: stored copies to renew with every change of a route.
 - **Which routes the page has is picked route by route, and is not the trip's.** A day
   in the planner holds more than the ride: the way round for bad weather, a track
   taken from someone's file to plan against. Each route and track has a switch in what
   the page shows; one left out is not in the trip's public form at all, so it is on
-  neither the map nor the files, counts in no distance, and takes the stops bound to
-  its points with it, which would otherwise stand on the page without their route. A
-  free stop stays. The switch is a column on the route that the trip's document does
+  neither the map nor the files, counts in no distance, and takes its stops with it,
+  which would otherwise stand on the page without their route. The switch is a column on the route that the trip's document does
   not carry: a save writes the columns it names and leaves this one, a new route is on
   the page, and undo in the planner does not reach what the page shows. The route's
   own `optional` was not used for it: that says what is decided on the day of riding,
@@ -2436,14 +2474,14 @@ entries at the end of their section.
 - **Charts by uPlot.** It draws tens of thousands of points on a canvas at about 50 KB and
   has no dependencies; the user chose it. A chart is made again when its data or the
   page's light or dark changes, reading its colours from its box's styles.
-- **One track or route per route, one waypoint per stop.** A GPX file holds the stops in
-  scope as waypoints, bound ones at their route point and free ones at their own position
-  when within the chosen reach of a route, with the stop's Garmin symbol, and
+- **One track or route per route, one waypoint per stop.** A GPX file holds the stops of
+  the routes in scope as waypoints, those on a point at their route point and those
+  beside their route at their own position, with the stop's Garmin symbol, and
   each route named after its day and its own name: as a track with its full line, or as
   a GPX route of its points for a device that routes itself (a Garmin takes `rte` and
   calculates the way; a track is driven as drawn). A leg not routed yet is written as the
   straight line between its ends. Optional routes and stops are written or left out as
-  the export says; a stop bound to a route left out counts as a free stop.
+  the export says; the stops of a route left out are left out with it.
 - **Export options live in the query; presets on the server.** The download is a URL
   with its options, so a device's import can be bookmarked and the server needs no
   state per download. A preset is a named set of options kept with the account, since
@@ -2461,7 +2499,7 @@ entries at the end of their section.
 - **The HTTP layer is checked by a scripted browser run, not in CI.** PHPUnit covers the
   repositories, the validator and the export; Vitest the pure modules and the open trip's state. The
   pages and the editor are exercised with Playwright against `php -S` by hand: sign-up,
-  a route with the point, stop and delete tools, free stops connected and disconnected,
+  a route with the point, stop and delete tools, stops connected and disconnected,
   the stop dialog, neighbouring days, folders and the search, the GPX import and the
   export dialog, the journal with a photo placed by its EXIF data, the trip's state,
   sharing and the read-only page as a guest, and then

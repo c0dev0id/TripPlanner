@@ -11,8 +11,8 @@ Trip Planner is a web application at <https://planner.codevoid.de> that plans th
 trip. A trip is a sequence of days. A day has one or more routes, drawn on a map and
 routed along roads or imported as tracks, and stops along them: a hotel, a lunch, a
 pass, a fuel stop, each with a kind, an arrival time and a pause where they matter.
-A stop is bound to a point of a route, so that it is a waypoint and a route point at
-once, or stands free beside the route and is ordered by where the route passes closest.
+A stop is of one route or track: on a point of the route, so that it is a waypoint and
+a route point at once, or beside it, ordered by where its route passes closest.
 Photos, receipts, documents and comments attach to the trip, a day, a stop or a route.
 
 From the stop times and the routing durations the planner computes each day's timeline
@@ -40,7 +40,7 @@ phase 2 brought in. The later work describes intent and changes as it progresses
 |---|---|---|
 | 0 Foundation | PHP application, SQLite schema, accounts with waiting list and invitations, sign-in, password reset, landing page, frontend skeleton with an empty map, CI and deployment, these documents. | A user signs in at planner.codevoid.de and sees an empty trip list. |
 | 1 Plan on a map | Trips, days, stops and routes. The route editor from Layer Slayer: points, routed and straight legs, undo and redo, recalculation. Autosave. Export as one GPX per trip or per day with tracks and stop waypoints. | Done; its stop-sequence model is replaced in phase 2. |
-| 2 Routes and stops | Routes as geometry with stops bound to route points or free beside the route; several routes per day, each with its profile; editing as a mode of one route; the panel listing routes and stops in riding order with distances, panning the map; neighbouring days dimmed. Folders for trips and a search across them. | Built; a weekend planned on it and the GPX working on the device confirm it. |
+| 2 Routes and stops | Routes as geometry, each with its stops on route points or beside it; several routes per day, each with its profile; editing as a mode of one route; the panel listing routes and stops in riding order with distances, panning the map; neighbouring days dimmed. Folders for trips and a search across them. | Built; a weekend planned on it and the GPX working on the device confirm it. |
 | 3 Time | Dates on days. Arrival times and pauses on stops, the computed day timeline from the first timed stop, with waiting and late arrivals. Day summary: distance, riding time, departure and arrival, pauses, late stops. | Built; a day planned with a fixed lunch confirms it. |
 | 4 Library and export | GPX import into a day: routes, tracks, Garmin's calculated way, waypoints as stops. Move, duplicate and copy for days, routes, stops and trips. The export dialog with scope, packaging, tracks or routes, optional parts, reach of free stops, and saved presets. | Built; an export that works on the device and an import of a file from it confirm it. |
 | 5 After the trip | A journal of texts and files on the trip, a day, a stop or a route, read as a document of chapters by day. Photos placed on the day and the map by their EXIF time and position. Trip state planned or done. A page of the trip, shared under a link: the plan with its GPX files before the ride, the journal as a story with the map beside it once it is published; for printing too. | Built; a ridden trip with its photos and notes on the shared page confirms it. |

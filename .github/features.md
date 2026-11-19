@@ -146,7 +146,7 @@
   description and a day has notes, shown under the day's row and on the read-only page.
   A day is dragged into another place by its grip and duplicated (with new ids,
   undated); a route is dragged into another place within its day, duplicated, or
-  moved to another day with the stops bound to it, from its row's menu (right-click or
+  moved to another day with its stops, from its row's menu (right-click or
   long press), where Move… opens the other days.
 - Autoname, in the menu of a route or a track of a day: the selected ones are named
   after the places they begin and end in, as "Hockenheim - Walldorf", as rides are in
@@ -209,10 +209,17 @@
   motorcycle, bicycle or pedestrian
   costing, with a motorway dial per road route (avoid, allow, prefer), undo and redo, and
   a reroute of the route. Legs not routed yet are dashed, failed ones red with a retry.
-- Stops bound to a route point (a waypoint and a route point at once, dragged together)
-  or free beside the route. The stop tool makes a stop of a route point, inserts one on
-  the line, or places a free stop elsewhere; a free stop within 500 m of the route is
-  connected to it where it passes closest, a bound one disconnected. A stop has a Garmin
+- Every stop is of one route or track of its day: on a route point (a waypoint and a
+  route point at once, dragged together) or beside its route or track. The stop tool
+  makes a stop of a route point, inserts one on the line, or places one beside the route
+  elsewhere; a stop beside its route is connected to it where it passes closest, one on
+  a point disconnected. A route or track takes its stops along when it is copied,
+  duplicated, moved or converted, and they go with it when it is removed, which the
+  question before says. Stops copied, cut or dragged onto a route or track become its
+  own and stand beside it, on a point only where they stand on one: the route's path
+  stays as it is. A day has no stops of its own: stops pasted onto a day, or moved to
+  it, go to each of its routes and tracks as a copy, and a day without one takes none.
+  While a route or track is taken up the map shows its stops alone. A stop has a Garmin
   waypoint symbol, a name, address, contact, booking reference, website and notes in a dialog.
   Twelve symbols are drawn as our own icons (stop, start, end, meeting point, hotel,
   restaurant, café, fuel, sight, info, photo spot, break), each standing for one Garmin
@@ -253,12 +260,11 @@
   of stops on each, folded: a click on a route takes it up to be edited and unfolds
   its stops and route points in riding order with the distance from the day's start,
   and a click on the route being edited folds them away, and the next unfolds them again, while it stays taken up until its day is clicked, or the trip where the trip has one day; a route unfolded
-  stays so while another is taken up; free
-  stops within 500 m take the place where the route passes closest, and say how far
-  beside it they stand. A click pans the map to the entry. A route point's row has the
+  stays so while another is taken up; a stop
+  beside its route takes the place where the route passes closest, and says how far
+  beside it it stands. A click pans the map to the entry. A route point's row has the
   menu its marker has on the map: Convert to stop, the leg to it straight or routed,
-  Remove point. Free stops farther away, or
-  of a day without a route, are listed on their own. Nothing stands
+  Remove point. Nothing stands
   over the tabs: the account, with the way to sign out, is under the settings. The
   strip of a trip's folded pane keeps the
   days in reach: a numbered button each, in the colour its routes have
@@ -307,7 +313,7 @@
   that, the way DMD's planner calculated for the route as a whole, cut at the route's
   points, as long as the route still has the points it was calculated for, which its
   hash says; its tracks keep their line with every point;
-  its waypoints become stops, bound to a point of a GPX route they stand on, free otherwise, with
+  its waypoints become stops of each of its routes and tracks, every one of which gets its own copy of each, on a point of the route it stands on and beside the route or track otherwise (a file of waypoints alone gives them to each route and track the day has, and to a day without one none), with
   their Garmin symbol as the file names it, and with the
   address and phone numbers Garmin's waypoint extension gives as their address and
   contact. Where Garmin's trip planning marks a route's points, a via point becomes a
@@ -412,10 +418,11 @@
   file is offered only where it holds something for the place: routes or tracks for the
   trips, waypoints for the places. Copied routes and tracks go
   as an import would read them, a route with its points and the way Garmin gave
-  between them, a track with its line, each with the waypoints on its points, to be
+  between them, a track with its line, each with the waypoints on its points, and with
+  the file's waypoints, where those are copied too, all of them as its own stops, to be
   pasted into a day of any trip. A file's waypoints are one row under its routes and
-  tracks, selected and copied all together: pasted into a day they are free stops,
-  into a list of places or a category of it places. A file's media go where the file
+  tracks, selected and copied all together: pasted alone into a day they go to each of
+  its routes and tracks, into a list of places or a category of it they are places. A file's media go where the file
   goes: with a file pasted as a trip or as a day they are that day's additional media,
   and their row, copied, is pasted into a day of the open trip, where they are kept
   with the day, or into another file of the Stash; a trip's row takes no media by
@@ -501,8 +508,8 @@
   is asked about before it is made: the original is kept as a track beside the route
   and the edit made, or the edit made without, or left. A route is asked about once. Nothing else a file's route or track carries (times,
   elevation, lean angles, accelerations, what DMD or Rumo wrote) is kept in a trip, so
-  a trip's rows have no chips for it. The free stops of
-  a day or section, or those selected, become a route ("Waypoints to route", in a trip
+  a trip's rows have no chips for it. The stops selected that stand beside their
+  routes become a route ("Waypoints to route", in a trip
   "Stops to route"), for a file that kept a route as a string of waypoints, which a
   collection keeps in the file's order: "By order" takes them all, top down; "By
   number" takes those numbered in a series, named alike but for the number at the end
@@ -522,7 +529,7 @@
   waypoints of files of the Stash, and categories, which are pasted as their places;
   routes, days, media and recordings are not offered there. A copied place goes with
   its category: onto a list's row into the category of that name, made where the list
-  has none; onto a category into that one; onto a day of a trip as a free stop. A
+  has none; onto a category into that one; onto a route or track of a trip as its stop, onto a day as a stop of each of its routes and tracks. A
   category cut and pasted onto another of its list is merged into it. "Add place…" in the map's menu adds
   one to the kind shown. A waypoint's link becomes the place's website; where most
   waypoints of a file link to the same host, such as the directory the file was
@@ -531,8 +538,8 @@
   list, open or not, has the switch and the gear the standard kinds have (see Places on
   the map). A place is a dot in its kind's colour, or the badge picked for the kind; a
   tap says its name, list and kind, address, contact, notes and website, and with a
-  day of a trip shown offers "Add as stop", which adds a copy of the place to the day
-  as a free stop. The places of the open list's kind shown in its pane are its stops and
+  day of a trip shown that has a route or track offers "Add as stop", which adds a
+  copy of the place to the route being edited, else to each route and track of the day. The places of the open list's kind shown in its pane are its stops and
   drawn as those, wearing their kind's look, its badge picked or its list's dot, in the
   list as on the map;
   the list's other kinds follow their switches as any list's do. A
@@ -541,8 +548,9 @@
 - GPX export from a dialog: the whole trip, the day picked, or the days or routes
   selected, from Export GPX… in their menu; what is exported is saved first; one file
   or one file per day in a zip; routes as tracks with their full line, or as routes of their points for
-  the device to route between; with or without the optional routes and stops; free stops
-  within a chosen distance of a route. Stops become waypoints with their Garmin symbol;
+  the device to route between; with or without the optional routes and stops. The stops
+  of the routes written become waypoints with their Garmin symbol, each once where
+  routes share one, so a single route or track is exported with its waypoints;
   each route is named after its day and its own name. Named presets of these options are
   kept with the account.
 - Export of whole trips, to keep or to move: *Export* in a trip's menu, or in the menu of
@@ -830,7 +838,7 @@
   - The owner's own page has everything, a stop's contact and booking reference
     included. The shared page never has those two, and has only the routes and tracks
     the owner leaves on it: one that is left out is neither on its map, nor in its
-    distances, nor among its files, and the stops bound to it go with it. The journal
+    distances, nor among its files, and its stops go with it. The journal
     and its photos are on the shared page once the owner switches them on, and the GPX
     files unless the owner switches them off. A link to the shared page
     previews with the trip's name, description and card: the routes on the page on a

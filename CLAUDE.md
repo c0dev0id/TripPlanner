@@ -188,8 +188,13 @@ Trips, lists and folders moved among folders follow their trees instead (`takerO
 
 ### The trip document
 
-- A trip is days; a day has routes and stops. A stop is bound to a route point (same
-  position, moves with it) or free.
+- A trip is days; a day has routes and stops. Every stop of a trip is of one route or
+  track of its day (`routeId`): on a route point (`pointId`: same position, moves with
+  it) or beside the route. A day has no stops of its own: an import gives each route
+  and track of a file its own copy of every waypoint, stops that reach a day alone go
+  to each of its routes and tracks (`takenByDay` in `routing/dayEdit.ts`), and a route
+  takes its stops along and they go with it. Only a place of a list of places is of no
+  route.
 - The client holds the whole trip and saves it as one `PUT /api/trips/{id}` 1.5 s after
   the last change. The document carries the version it was loaded at; the server answers
   409 on a newer version. A day or a route that is the same object as in the trip last

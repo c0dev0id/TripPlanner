@@ -17,9 +17,9 @@ share work; sharing between users is on the way.
   points and stops, delete them; straight legs where the routing knows no way. Routed
   along the roads by Valhalla as a motorcycle, a bicycle or on foot, with a motorway dial
   for the transfer days; undo and redo.
-- **Stops bound or free** — a route point becomes a stop with one tap; a stop beside the
-  route is placed freely, listed where the rider passes closest within 500 m, connected
-  to the route when wanted. Each stop keeps its Garmin symbol: twelve are drawn as our
+- **Stops on or beside a route** — a route point becomes a stop with one tap; a stop
+  beside its route or track is listed where the rider passes closest, and connected to
+  the route when wanted. Every route and track has its own stops. Each stop keeps its Garmin symbol: twelve are drawn as our
   own icons, every other one as Garmin's picture. Address, contact, booking reference and
   notes go with it.
 - **Three panes, opened by hand** — the library, a trip's days and a day's contents
@@ -109,7 +109,7 @@ share work; sharing between users is on the way.
    header.
 3. Pick the *Point* tool and tap the map for the route's points; the road between them
    is routed. Pick the *Stop* tool and tap a point to make it a stop, or tap beside the
-   route for a free stop. *Done* or Esc leaves the route; a click on a route's row
+   route for a stop beside it. *Done* or Esc leaves the route; a click on a route's row
    selects it again, with its stops listed under it.
 4. Open a stop's details for its arrival time and pause; the first stop's time starts
    the day's timeline.
@@ -133,7 +133,7 @@ share work; sharing between users is on the way.
 | The pin on a route or a recording | Keeps it on the map while another is taken up |
 | Cmd/Ctrl-click two points on a ride opened in Recordings | Lists the rides over that section, figures for the section alone |
 | Right-click or long press on a stop or point on the map | Convert to stop, connect, disconnect, straight leg, remove |
-| Right-click or long press on the map | Add a point or a free stop here, a journal entry, or open the spot in Google Maps, OpenStreetMap or Street View |
+| Right-click or long press on the map | Add a point or a stop beside the route here, a journal entry, or open the spot in Google Maps, OpenStreetMap or Street View |
 | Right-click, long press or the three dots on a folder, trip, day, route or stop in the panel | Its menu: new, add, rename or edit, move, copy or paste, duplicate, delete |
 | Right-click the free space of a pane | What can be added there: folders, trips and files in the library, a day in a trip, routes, recordings and media in a day; and Paste |
 | Tap or click the pad or grip of a row; Cmd/Ctrl-click, Shift-click | Select several, in the library, the rides, a day and the duplicates report; their menu and the keys act on all of them |

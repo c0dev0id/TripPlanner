@@ -78,7 +78,7 @@ flowchart TB
 | API client (frontend) | `api.ts`: requests to the JSON API, the one place that knows its URLs; every request names the page's language. |
 | Language (both) | `frontend/i18n/`: the page's language, from the browser or the kept choice, `t()` with plurals, and the German dictionary `de.json` by English text, which the server's `t()` reads too (`src/I18n/`); a middleware sets the request's language from a `lang` query parameter or `Accept-Language`, `Json::error` translates the API's messages, the templates their texts. |
 | HTTP (backend) | Slim routes and middleware (sessions, CSRF, body parsing, authentication, the request's language, gzip for JSON answers, which then carry their unpacked length as `X-Uncompressed-Length`), Plates templates for the public pages and the two bundle pages, JSON encoding of API answers (`Http/`, `Pages/`, `Api/`). |
-| Domain (backend) | The Stash's files and what is read from them to list them (`Stash/`), accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, what a trip's public page shows and what a visitor gets of it (`Share/`), the user's tags and the trips they are on (`Tag/`), trip documents with their validator and copies, the outline kept with each day (`Trip/`), GPX writing with its options, the proximity of free stops, the export presets and the zip of whole trips (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the files and links kept with the days, which are entries of a kind of their own (`Media/`), the user's rides and the days they are on, what is read from a ride's file to be kept beside it, and the lookup of the days of riding that may be a day's (`Recording/`), the places of the map: the kinds, the question to the Overpass API and its answer, the fetch of an area and the store by tile, and the places of the user's own lists (`Poi/`), the account's preferences (`Account/`), the read-only API of a shared trip (`Share/`), fetching Garmin's symbol pictures for `make garmin-icons` (`Symbols/`), fetching the motorcycle closures and converting their KML to GeoJSON for `make closures` (`Closures/`). |
+| Domain (backend) | The Stash's files and what is read from them to list them (`Stash/`), accounts and password resets (`Account/`), waiting list and invitations (`Signup/`), the library's trips and folders with their state and share token, what a trip's public page shows and what a visitor gets of it (`Share/`), the user's tags and the trips they are on (`Tag/`), trip documents with their validator and copies, the outline kept with each day (`Trip/`), GPX writing with its options, the export presets and the zip of whole trips (`Export/`), the journal's entries, EXIF reading, files and previews (`Journal/`), the files and links kept with the days, which are entries of a kind of their own (`Media/`), the user's rides and the days they are on, what is read from a ride's file to be kept beside it, and the lookup of the days of riding that may be a day's (`Recording/`), the places of the map: the kinds, the question to the Overpass API and its answer, the fetch of an area and the store by tile, and the places of the user's own lists (`Poi/`), the account's preferences (`Account/`), the read-only API of a shared trip (`Share/`), fetching Garmin's symbol pictures for `make garmin-icons` (`Symbols/`), fetching the motorcycle closures and converting their KML to GeoJSON for `make closures` (`Closures/`). |
 | Storage (backend) | PDO repositories over SQLite, the file store on disk (`Journal/FileStore`), mail over SMTP (`Mail/`). |
 
 ## API
@@ -106,7 +106,7 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 | `POST /trips/{id}/merge` | Merges the trips `{tripIds}` of the same kind into the trip and deletes them: a day joins the trip's day of its date or goes in among its days by date, an undated day or a section goes at the end; parts, journal entries and files keep their ids. Answers `{version}`. |
 | `PATCH /trips/{id}` | Renames the trip to `{name}`, counted as a change to it; or puts it into the folder of `{folderId}`, or into none for null; 422 for a folder that does not hold its kind. |
 | `DELETE /trips/{id}` | Deletes the trip with everything in it; the rides on its days stay rides. |
-| `GET /trips/{id}/gpx` | The trip as GPX with the options `per=trip|day` (one file, or a zip with one per day), `form=tracks|routes`, `optional=0|1`, `reachM=<metres>`. `days=<ids>` takes those days alone and `routes=<ids>` those routes alone, ids separated by commas; what then lies in one day is that day's file. 404 when none of them is in the trip. |
+| `GET /trips/{id}/gpx` | The trip as GPX with the options `per=trip|day` (one file, or a zip with one per day), `form=tracks|routes`, `optional=0|1`. `days=<ids>` takes those days alone and `routes=<ids>` those routes alone, ids separated by commas; what then lies in one day is that day's file. 404 when none of them is in the trip. |
 | `GET /trips/archive` | The trips named by `ids=` (comma-separated) as a zip to keep or to import again: a folder per trip with `trip.json` (document, journal, recordings), the journal's files, the recordings as GPX and a GPX file per day. Trips of another user are left out; 404 when none is left. |
 | `GET /trips/outlines` | The outlines of the user's trips by trip id: its days in order, each with its id, name and date, how many routes, stops and recordings it holds, its routes that have a name (`namedRoutes`: id, name, kind), its length in metres (`distanceM`) and the lines of its routes, thinned to a few points each, as polyline6 with the colour a route has of its own. |
 | `POST /trips/{id}/share` | Makes the page public under the trip's token, a new one where it has none; answers `{token}`. |
@@ -170,8 +170,8 @@ All under `/api`, for a signed-in user; answers are JSON unless a download or a 
 A trip shared under a token is readable without sign-in, and without a session, under
 `/api/shared/{token}`. Everything a visitor gets is made in `Share/PublicTrip`:
 
-- the document without the routes and tracks the page leaves out and the stops bound
-  to them, its stops without their contact and booking reference, with what the page
+- the document without the routes and tracks the page leaves out and their stops,
+  its stops without their contact and booking reference, with what the page
   shows besides the plan under `public` (`{journal, gpx, coverEntryId}`);
 - `/card`, the picture the page's link is shown with, as the owner's browser made it;
 - `/gpx?routes=<id>`, one route or track as a GPX file of its own, written from that
@@ -208,7 +208,7 @@ erDiagram
   TRIP ||--o{ DAY : "days, in order"
   DAY ||--o{ ROUTE : "routes, in order"
   DAY ||--o{ STOP : "stops"
-  STOP }o--o| ROUTE : "bound to a point of"
+  STOP }o--o| ROUTE : "of, on a point or beside"
   TRIP ||--o{ ENTRY : "journal"
   TRIP ||--o| TRIP_CARD : "its link's picture"
   USER ||--o{ TAG : makes
@@ -306,7 +306,8 @@ erDiagram
     string symbol "the Garmin waypoint symbol as a GPX file names it, or null"
     float lng
     float lat
-    string point_id "a route point of the day, or null for a free stop"
+    string route_id "the route or track of its day the stop is of, or null for a place of a list"
+    string point_id "the point of its route it stands on, or null for a stop beside it"
     string address
     string contact
     string booking_reference
@@ -422,8 +423,9 @@ one document: rows are upserted by id and the ones the document no longer holds 
 deleted; the rows of a day or a route the document sends as unchanged are left as they
 are. A route's points and legs are stored as JSON in the route's row, in the shape
 the editor works with; each routed leg holds its polyline6 geometry, length and riding
-time as the routing answered. A bound stop's position equals its route point's, which the
-validator checks. A journal entry belongs to its trip and names at most one of a day, a
+time as the routing answered. A stop names the route or track of its day it is of, which a trip's
+document must and a list's place does not; one on a point stands where the point of its
+own route stands. The validator checks both. A journal entry belongs to its trip and names at most one of a day, a
 stop or a route by a nullable foreign key, which the schema checks; when a route or a
 stop goes, the entry is linked to their day, and when a day goes, the key is set to null
 and the entry stays with the trip. The journal reads as chapters, the trip's own entries
