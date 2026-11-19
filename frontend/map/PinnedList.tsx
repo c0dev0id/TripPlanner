@@ -1,6 +1,7 @@
-import { createSignal, For, Show } from 'solid-js';
+import { createSignal, Show } from 'solid-js';
 import { t } from '../i18n/t';
 import { pinnedRows } from '../state/pinnedLines';
+import { ForById } from '../ui/ForById';
 import { ChevronIcon, CloseIcon, TackedIcon } from '../ui/icons';
 
 /**
@@ -14,7 +15,7 @@ export function PinnedList() {
     <Show when={pinnedRows().length > 0}>
       <section class="map-card pinned-card">
         <h3>
-          <button class="row" aria-expanded={!folded()} onClick={() => setFolded(!folded())}>
+          <button class="row fold" aria-expanded={!folded()} onClick={() => setFolded(!folded())}>
             <TackedIcon />
             <span class="grow">{t('Pinned')}</span>
             <span class="muted">{pinnedRows().length}</span>
@@ -23,20 +24,20 @@ export function PinnedList() {
         </h3>
         <Show when={!folded()}>
           <ul>
-            <For each={pinnedRows()}>
+            <ForById each={pinnedRows()}>
               {(row) => (
                 <li class="row">
-                  <span class="swatch" style={{ background: row.color }} />
-                  <span class="grow">
-                    <span class="name">{row.name}</span>
-                    <small class="muted">{row.where.join(' › ')}</small>
+                  <span class="swatch" style={{ background: row().color }} />
+                  <span class="lines grow">
+                    <span class="name">{row().name}</span>
+                    <span class="muted detail name">{row().where.join(' › ')}</span>
                   </span>
-                  <button class="icon" title={t('Unpin {what} from the map', { what: row.name })} aria-label={t('Unpin {what} from the map', { what: row.name })} onClick={row.unpin}>
+                  <button class="icon" title={t('Unpin {what} from the map', { what: row().name })} aria-label={t('Unpin {what} from the map', { what: row().name })} onClick={() => row().unpin()}>
                     <CloseIcon />
                   </button>
                 </li>
               )}
-            </For>
+            </ForById>
           </ul>
         </Show>
       </section>

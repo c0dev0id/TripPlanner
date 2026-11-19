@@ -880,12 +880,12 @@ li.row.cut {
   letter-spacing: normal;
 }
 
-/* A year's chevron points down while its months are shown. */
-.rides .fold svg {
+/* A fold's chevron points down while what it folds is shown: a year's months, a route's points, the pins. */
+.fold svg {
   align-self: center;
 }
 
-.rides .fold[aria-expanded='true'] svg {
+.fold[aria-expanded='true'] > svg:last-of-type {
   transform: rotate(90deg);
 }
 
@@ -974,10 +974,6 @@ li.row.cut {
 .points-toggle svg {
   width: 14px;
   height: 14px;
-}
-
-.points-toggle [aria-expanded='true'] svg {
-  transform: rotate(90deg);
 }
 
 .sequence-item.point .lines {
@@ -1536,10 +1532,6 @@ fieldset.choices legend {
   text-align: left;
 }
 
-.pinned-card h3 button[aria-expanded='true'] > svg:last-child {
-  transform: rotate(90deg);
-}
-
 .pinned-card ul {
   margin: 0;
   padding: 0 6px 6px 10px;
@@ -1550,17 +1542,6 @@ fieldset.choices legend {
 .pinned-card li {
   gap: 8px;
   padding: 2px 0;
-}
-
-.pinned-card li .grow {
-  display: grid;
-  min-width: 0;
-}
-
-.pinned-card li .grow > * {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .recording-buttons {

@@ -5,7 +5,7 @@ import { closeTrip, loadTrip } from './trip';
 
 const empty = (id: number): Trip => ({ id, kind: 'trip', name: 'T', description: '', state: 'planned', version: 1, days: [] });
 const line = (color: string): PinnedLine => ({ points: [[8, 47]], color });
-const kept = (color: string): KeptPin => ({ line: line(color), name: color, where: ['T', 'Day 1'] });
+const kept = (color: string): KeptPin => ({ ...line(color), name: color, where: ['T', 'Day 1'] });
 const none = () => undefined;
 
 describe('the pins', () => {

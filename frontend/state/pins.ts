@@ -17,17 +17,18 @@ export interface PinnedLine {
   color: string;
 }
 
-/** What a pin is called: its own name and where it is found, from its trip down. */
+/** What a pin is called, its own name and where it is found from its trip down, and the colour of its line. */
 export interface PinName {
   name: string;
   where: readonly string[];
+  color: string;
 }
 
-/** What is kept of a pin for while its trip is not open. */
-export type KeptPin = PinName & { line: PinnedLine };
+/** What is kept of a pin for while its trip is not open: what it is called, and its line. */
+export type KeptPin = PinName & PinnedLine;
 
 /** A pin: the trip its route or recording is of, and what was kept of it when that trip was last left. */
-export interface Pin {
+interface Pin {
   tripId: number;
   kept?: KeptPin;
 }
@@ -81,7 +82,7 @@ export function keepPins(routeKept: (id: string) => KeptPin | undefined, recordi
 /** The copied lines of what is pinned of trips that are not open. */
 export function pinnedLinesAside(): PinnedLine[] {
   const tripId = openTripId();
-  return [...pinnedRoutes().values(), ...pinnedRecordings().values()].flatMap((pin) => (pin.tripId !== tripId && pin.kept ? [pin.kept.line] : []));
+  return [...pinnedRoutes().values(), ...pinnedRecordings().values()].flatMap((pin) => (pin.tripId !== tripId && pin.kept ? [{ points: pin.kept.points, color: pin.kept.color }] : []));
 }
 
 /** Lets go of what is pinned of trips that are no more. */

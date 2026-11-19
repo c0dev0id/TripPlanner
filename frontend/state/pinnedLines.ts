@@ -1,9 +1,9 @@
 import type { Recording } from '../api';
-import { t } from '../i18n/t';
+import { createMemo, createRoot } from 'solid-js';
 import type { Day } from '../model/trip';
 import { dayOfRoute } from '../routing/dayEdit';
 import { routeLine as lineOf } from '../routing/legs';
-import { routeLabel } from '../trip/labels';
+import { dayHeading, routeLabel } from '../trip/labels';
 import { mapTab } from './library';
 import { keepPins, isRecordingPinned, pinnedLinesAside, pinnedRecordings, pinnedRoutes, pinRecordings, pinRides, pinRoutes, type KeptPin, type PinName, type PinnedLine } from './pins';
 import { loadedTrack, recordingColor, recordingsOf, ridesPinned, shownRecordings } from './recordings';
@@ -17,27 +17,26 @@ import { openTrip, routeById } from './trip';
  * pinned.
  */
 
-/** A pin of the open trip as it is called and the colour of its line. */
-type OpenPin = PinName & { color: string };
-
-/** Where a day of the open trip is found: the trip, then the day by its name or its number. */
+/** Where a day of the open trip is found: the trip, then the day as its pane heads it. */
 function whereOf(day: Day): string[] {
   const trip = openTrip()!;
-  return [trip.name, day.name || t('Day {n}', { n: trip.days.indexOf(day) + 1 })];
+  return [trip.name, dayHeading('trip', trip.days.indexOf(day), day.name)];
 }
 
-/** A pinned route of the open trip; none of a route the trip no longer holds. */
-function openRoute(id: string): OpenPin | undefined {
+/** A pinned route of the open trip as it is called; none of a route the trip no longer holds. */
+function routePin(id: string): PinName | undefined {
   const route = routeById(id);
   const day = route && dayOfRoute(openTrip()!, id);
   return day && { name: routeLabel(route, day), where: whereOf(day), color: openRouteColors().get(id) ?? '#495057' };
 }
 
+const recordingPin = (recording: Recording, day: Day): PinName => ({ name: recording.name, where: whereOf(day), color: recordingColor(recording) });
+
 /** A route of the open trip as its pin keeps it; none of a route that has no line yet. */
 function keptRoute(id: string): KeptPin | undefined {
-  const pin = openRoute(id);
+  const pin = routePin(id);
   const points = pin ? lineOf(routeById(id)!) : [];
-  return pin && points.length > 1 ? { name: pin.name, where: pin.where, line: { points, color: pin.color } } : undefined;
+  return pin && points.length > 1 ? { ...pin, points } : undefined;
 }
 
 /** The open trip's pinned recordings, each once with the first of its days, by their id. */
@@ -54,7 +53,7 @@ function keptRecordings(): Map<number, KeptPin> {
   const kept = new Map<number, KeptPin>();
   for (const [id, { recording, day }] of openRecordings()) {
     const track = loadedTrack(recording);
-    if (track) kept.set(id, { name: recording.name, where: whereOf(day), line: { points: track.points, color: recordingColor(recording) } });
+    if (track) kept.set(id, { ...recordingPin(recording, day), points: track.points });
   }
   return kept;
 }
@@ -68,33 +67,34 @@ export function keepPinsOfOpenTrip(): void {
 /** The pinned lines the map draws beside the open trip's routes and the recordings shown. */
 export function pinnedLines(): PinnedLine[] {
   const shown = new Set(shownRecordings().map((recording) => recording.id));
-  return [...pinnedLinesAside(), ...[...keptRecordings()].flatMap(([id, kept]) => (shown.has(id) ? [] : [kept.line]))];
+  return [...pinnedLinesAside(), ...[...keptRecordings()].flatMap(([id, kept]) => (shown.has(id) ? [] : [{ points: kept.points, color: kept.color }]))];
 }
 
 /** A pinned thing as the list over the map has it: what it is called, the colour of its line and how it is let go of. */
-export type PinnedRow = OpenPin & { unpin: () => void };
+export type PinnedRow = PinName & { id: string; unpin: () => void };
 
 /**
  * All that is pinned to the map, in the order it was pinned: the routes, then the
  * recordings on days, then, while the map follows the rides' tab, the rides pinned there.
  */
-export function pinnedRows(): PinnedRow[] {
-  const tripId = openTrip()?.id;
-  const recordings = openRecordings();
-  const asRow = (pin: KeptPin | undefined): OpenPin | undefined => pin && { name: pin.name, where: pin.where, color: pin.line.color };
-  const openRecording = (id: number): OpenPin | undefined => {
-    const found = recordings.get(id);
-    return found && { name: found.recording.name, where: whereOf(found.day), color: recordingColor(found.recording) };
-  };
-  return [
-    ...[...pinnedRoutes()].flatMap(([id, pin]) => {
-      const row = pin.tripId === tripId ? openRoute(id) : asRow(pin.kept);
-      return row ? [{ ...row, unpin: () => pinRoutes([id], false) }] : [];
-    }),
-    ...[...pinnedRecordings()].flatMap(([id, pin]) => {
-      const row = pin.tripId === tripId ? openRecording(id) : asRow(pin.kept);
-      return row ? [{ ...row, unpin: () => pinRecordings([id], false) }] : [];
-    }),
-    ...(mapTab() === 'recordings' ? ridesPinned() : []).map((ride) => ({ name: ride.name, where: [], color: recordingColor(ride), unpin: () => pinRides([ride.id], false) })),
-  ];
-}
+export const pinnedRows = createRoot(() =>
+  createMemo((): PinnedRow[] => {
+    const tripId = openTrip()?.id;
+    const recordings = openRecordings();
+    const openRecording = (id: number) => {
+      const found = recordings.get(id);
+      return found && recordingPin(found.recording, found.day);
+    };
+    return [
+      ...[...pinnedRoutes()].flatMap(([id, pin]) => {
+        const row = pin.tripId === tripId ? routePin(id) : pin.kept;
+        return row ? [{ ...row, id: `route ${id}`, unpin: () => pinRoutes([id], false) }] : [];
+      }),
+      ...[...pinnedRecordings()].flatMap(([id, pin]) => {
+        const row = pin.tripId === tripId ? openRecording(id) : pin.kept;
+        return row ? [{ ...row, id: `recording ${id}`, unpin: () => pinRecordings([id], false) }] : [];
+      }),
+      ...(mapTab() === 'recordings' ? ridesPinned() : []).map((ride) => ({ name: ride.name, where: [], color: recordingColor(ride), id: `ride ${ride.id}`, unpin: () => pinRides([ride.id], false) })),
+    ];
+  }),
+);

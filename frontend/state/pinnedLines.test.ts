@@ -27,7 +27,7 @@ beforeEach(() => {
 it('lists what is pinned of the open trip by its name and where it is found, the unnamed by their number', () => {
   pinRoutes(['a', 'b'], true);
   expect(called()).toEqual([
-    ['Route 1', 'Alps', 'Arrival'],
+    ['Route 1', 'Alps', 'Day 1 · Arrival'],
     ['Pass', 'Alps', 'Day 2'],
   ]);
 });
@@ -36,7 +36,7 @@ it('keeps listing what has a line once its trip is left, and lets go of it from 
   pinRoutes(['a', 'b'], true);
   keepPinsOfOpenTrip();
   closeTrip();
-  expect(called()).toEqual([['Route 1', 'Alps', 'Arrival']]);
+  expect(called()).toEqual([['Route 1', 'Alps', 'Day 1 · Arrival']]);
   pinnedRows()[0]!.unpin();
   expect(pinnedRows()).toEqual([]);
 });
