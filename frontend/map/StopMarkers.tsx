@@ -2,26 +2,26 @@ import { t } from '../i18n/t';
 import type { Map as MapLibreMap } from 'maplibre-gl';
 import { createEffect, createMemo, onCleanup } from 'solid-js';
 import type { Stop } from '../model/trip';
-import { pointOfDay } from '../routing/dayEdit';
+import { distinctStops, pointOfDay } from '../routing/dayEdit';
 import { dragsMarkers, setEditTarget, straightLegItem, tapAction } from '../state/drawing';
 import type { MenuItem } from '../ui/menu';
 import { PlaceKindMark } from './PlaceKinds';
 import { isPlaceList, shownDay } from '../state/library';
-import { activeRouteId, canConnect, connectStop, disconnectStop, editingRouteId, moveStop, openTripId, removeStop, selectedDay, selectedDayId } from '../state/trip';
+import { activeRouteId, canConnect, showsStopsOf, connectStop, disconnectStop, editingRouteId, moveStop, openTripId, removeStop, selectedDay, selectedDayId } from '../state/trip';
 import { stopContent } from './markerContent';
 import { MarkerHandle, onMarkerMenu, toLngLat } from './markers';
 import { ForById } from '../ui/ForById';
 
 /**
  * The stops of the selected day, drawn by their kind and named: of the route or track
- * taken up alone while one is, as its line is drawn alone. They are draggable while a
- * route of the day is edited with a tool other than the hand; the other shown days'
- * stops are dots on the map (routeOverlay).
+ * taken up alone while one is (showsStopsOf), else each place once, where several routes
+ * have a copy of it. They are draggable while a route of the day is edited with a tool
+ * other than the hand; the other shown days' stops are dots on the map (routeOverlay).
  */
 export function StopMarkers(props: { map: MapLibreMap }) {
   const stops = createMemo(() => {
-    const [all, routeId] = [shownDay()?.stops ?? [], activeRouteId()];
-    return routeId === undefined ? all : all.filter((stop) => stop.routeId === routeId);
+    const shown = (shownDay()?.stops ?? []).filter((stop) => showsStopsOf(stop.routeId));
+    return activeRouteId() === undefined ? distinctStops(shown) : shown;
   });
   return <ForById each={stops()}>{(stop) => <StopMarker map={props.map} stop={stop()} />}</ForById>;
 }

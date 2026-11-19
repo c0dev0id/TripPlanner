@@ -56,7 +56,9 @@ entries at the end of their section.
     routed the route through them and asked about its original path: taking a stop over
     and bending the route are two things, and Connect to the route stays the second.
   - While a route or track is taken up the map shows its stops alone, as it draws its
-    line alone.
+    line alone. While none is, it shows each place once where several lines have a copy
+    of it, alike in name, position and symbol, as the export writes it once; so does the
+    trip's page on its map.
   - The export writes the stops of the routes it writes, however far beside them they
     stand, and each waypoint once where routes share it, alike in name, position and
     symbol: in the file the waypoints are of no route again. The setting for how far a

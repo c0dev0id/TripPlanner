@@ -1,7 +1,8 @@
 import { t } from '../i18n/t';
 import { lineLength } from '../geo/measure';
 import { asName, asNotes, asSymbol, asWebsite, newId, type LngLat, type Profile, type Route, type RoutedLeg, type RoutePoint, type Stop } from '../model/trip';
-import { asStopOf, newStop, routePoints } from '../routing/dayEdit';
+import { asStopsOf, newStop, routePoints } from '../routing/dayEdit';
+import type { StashPart } from '../model/stash';
 import { legKey, roundLngLat } from '../routing/legs';
 import { encodePolyline } from '../routing/polyline';
 import { parseGpx, type GpxContent, type GpxVia } from './gpx';
@@ -57,10 +58,12 @@ function calculatedLegs(points: readonly LngLat[], ways: readonly LngLat[][], pr
  * its Garmin symbol as the file names it and its address and phone numbers where Garmin
  * gave them. A point Garmin's trip planning marks a via point becomes a stop on that
  * point as well, unless a waypoint stands there already. A file without a route or a
- * track gives its waypoints as stops of no route.
+ * track gives its waypoints as stops of no route. With `waypoints` false, the waypoints
+ * that stand on no route point are left out.
  * Names and notes are fitted to what a trip holds: composed, blank runs closed up, overlong text cut.
  */
-export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string }): DayParts {
+export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; profile: Profile; newId: () => string; waypoints?: boolean }): DayParts {
+  const keep = (stop: Stop) => options.waypoints !== false || stop.pointId !== null;
   const lines = [
     ...gpx.routes.map((r) => ({ name: r.name, kind: 'routed' as const, points: r.points, ways: r.ways, vias: r.vias })),
     ...gpx.tracks.map((t) => ({ name: t.name, kind: 'track' as const, points: t.segments.flat() })),
@@ -71,10 +74,10 @@ export function gpxToDayParts(gpx: GpxContent, options: { fileName: string; prof
     const points = cleanPoints(line.points).map((lngLat) => ({ id: options.newId(), lngLat }));
     return { ...base, kind: 'routed', highways: 'allow', points, legs: calculatedLegs(line.points, line.ways, options.profile) };
   });
-  if (routes.length === 0) return { routes, stops: waypointStops(gpx, options.newId) };
   const waypoints = waypointStops(gpx, options.newId);
+  if (routes.length === 0) return { routes, stops: waypoints.filter(keep) };
   const stops = routes.flatMap((route, i) => {
-    const own = waypoints.map((stop) => asStopOf(route, stop, options.newId()));
+    const own = asStopsOf(route, waypoints, options.newId).filter(keep);
     const line = lines[i]!;
     return line.kind === 'routed' ? [...own, ...viaStops(route.id, routePoints(route), line.points, line.vias, own, options.newId)] : own;
   });
@@ -134,6 +137,12 @@ export function waypointStops(gpx: GpxContent, newId: () => string): Stop[] {
     const stop = newStop(newId(), asName(w.name ?? t('Waypoint {n}', { n: i + 1 })), lngLat, null, null);
     return { ...stop, symbol: asSymbol(w.symbol), address: asNotes(w.address ?? ''), contact: asNotes(w.phone ?? ''), website: asWebsite(websites[i]!), notes: asNotes(w.description ?? '') };
   });
+}
+
+/** What is taken of a file of the Stash, read as an import reads the file: the routes and tracks taken, and its waypoints where they are taken, else those on route points alone. */
+export function stashPartToDayParts(gpx: GpxContent, part: Pick<StashPart, 'file' | 'items' | 'waypoints'>, profile: Profile, newId: () => string): DayParts {
+  const taken = (kind: 'route' | 'track') => (_: unknown, position: number) => part.items.some((item) => item.kind === kind && item.position === position);
+  return gpxToDayParts({ ...gpx, routes: gpx.routes.filter(taken('route')), tracks: gpx.tracks.filter(taken('track')) }, { fileName: part.file.name, profile, newId, waypoints: part.waypoints });
 }
 
 /** How the files routes are read from end: GPX, KML, and KMZ, which is a KML in a zip. */

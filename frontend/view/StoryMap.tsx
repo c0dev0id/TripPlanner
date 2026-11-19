@@ -10,6 +10,7 @@ import { dayOfEntry, placeOfEntry, type Entry } from '../model/journal';
 import { DEFAULT_ROUTE_COLORING, routeColors } from '../model/routeLook';
 import { bestBearing } from '../model/shareCard';
 import type { Day, LngLat, Trip } from '../model/trip';
+import { distinctStops } from '../routing/dayEdit';
 import { routePositions, routesDistance } from '../routing/legs';
 import { distanceText } from '../ui/format';
 import { Callouts } from './Callouts';
@@ -130,8 +131,8 @@ export function StoryMap(props: { trip: Trip; entries: Entry[]; api: string; at:
 
   /** How much of the map's foot the card covers; nothing while the page is printed, which has no card. */
   const footOf = () => (card && !printing() ? container.clientHeight - card.offsetTop : 0);
-  /** The stops shown: of the day read, or of every day. */
-  const stops = createMemo(() => (day() ? [day()!] : props.trip.days).flatMap((d) => d.stops));
+  /** The stops shown: of the day read, or of every day, each place once where several routes have a copy of it. */
+  const stops = createMemo(() => (day() ? [day()!] : props.trip.days).flatMap((d) => distinctStops(d.stops)));
 
   /**
    * How the map shows a day, or an entry of it that stands somewhere, or without either the whole trip: a day at a

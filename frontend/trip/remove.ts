@@ -1,7 +1,7 @@
 import { locale } from '../i18n/language';
 import { t } from '../i18n/t';
 import type { Day, Route } from '../model/trip';
-import { stopsOf } from '../routing/dayEdit';
+import { dayOfRoute, stopsOf } from '../routing/dayEdit';
 import { pointCount } from '../routing/legs';
 import { mediaOf } from '../state/media';
 import { recordingsOf } from '../state/recordings';
@@ -23,7 +23,7 @@ export async function removeDayAsked(day: Day): Promise<boolean> {
 export async function removeRouteAsked(route: Route): Promise<boolean> {
   const label = routeLabelOf(openTrip()!, route);
   const points = pointCount(route);
-  const stops = openTrip()!.days.flatMap((day) => stopsOf(route, day.stops)).length;
+  const stops = stopsOf(route, dayOfRoute(openTrip()!, route.id)?.stops ?? []).length;
   const withStops = stops > 0 ? t('Remove {route} with its {n} points and {stops}?', { route: label, n: points.toLocaleString(locale), stops: counted(stops, 'stop') }) : t('Remove {route} with its {n} points?', { route: label, n: points.toLocaleString(locale) });
   if (points + stops > 0 && !(await askConfirmation(withStops, t('Remove')))) return false;
   removeRoute(route.id);

@@ -21,7 +21,7 @@ import { comparedCover, opened, openedLineColors, somethingTakenUp } from '../st
 import { loadedTrack, previewedLines, recordingColor, shownRecordings } from '../state/recordings';
 import { lookColors, openRouteColors } from '../state/routeColors';
 import { failedLegs } from '../state/routing';
-import { activeRouteId, looked, lookedTripId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
+import { activeRouteId, showsStopsOf, looked, lookedTripId, neighbourDays, openTrip, openTripId, selectedDay, selectedDayId, selectedSequence } from '../state/trip';
 import { LockIcon, LockOpenIcon, PhotoIcon, PinIcon, PinOffIcon, ReachIcon } from '../ui/icons';
 import { allPhotosShown, setAllPhotosShown } from '../state/journal';
 import { newBaseMap } from './baseMap';
@@ -304,8 +304,8 @@ function LookLines(props: { map: MapLibreMap }) {
 function RouteLines(props: { map: MapLibreMap }) {
   // The trip changes as a whole; its lines are drawn again only when the routes drawn or the marks on them change.
   const days = createMemo(shownDays, [], { equals: sameLines });
-  // The marks of the stops beside their routes: of the route taken up alone while one is, as the stops are.
-  const marks = createMemo(() => (tripShown() ? selectedSequence().flatMap((e) => (e.near && (activeRouteId() === undefined || e.near.routeId === activeRouteId()) ? [e.near.lngLat] : [])) : []), [], { equals: samePlaces });
+  // The marks of the stops beside their routes, of the routes whose stops the map shows.
+  const marks = createMemo(() => (tripShown() ? selectedSequence().flatMap((e) => (e.near && showsStopsOf(e.near.routeId) ? [e.near.lngLat] : [])) : []), [], { equals: samePlaces });
   const dims = createMemo(dimStops, [], { equals: samePlaces });
   // A pin set on a route that is drawn anyway changes no line.
   const drawn = createMemo(() => new Set(days().flatMap(({ day, role }) => day.routes.flatMap((route) => (routeDrawn(route, role) ? route.id : [])))), new Set<string>(), { equals: sameIds });

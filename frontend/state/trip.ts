@@ -475,8 +475,11 @@ export function insertStop(routeId: string, index: number, lngLat: LngLat): void
 /** Adds a stop beside the route being edited. */
 export function addStopBeside(lngLat: LngLat): void {
   const routeId = editingRouteId();
-  if (routeId) editDay((trip, dayId) => dayEdit.addStopBeside(trip, dayId, routeId, roundLngLat(lngLat), newId()), t('Add stop'));
+  if (routeId) editDay((trip, dayId) => dayEdit.addStop(trip, dayId, routeId, roundLngLat(lngLat), newId()), t('Add stop'));
 }
+
+/** Whether the map shows the stops of the route or track `routeId`: all while nothing is taken up, else those of what is taken up alone, as its line is drawn alone. */
+export const showsStopsOf = (routeId: string | null): boolean => activeRouteId() === undefined || routeId === activeRouteId();
 
 /** Where its route passes closest to a stop of the selected day that stands beside it; none for a stop on a point, or beside a route without a line. */
 const nearOf = (stopId: string): SequenceEntry['near'] => selectedSequence().find((e) => e.stop?.id === stopId)?.near;
@@ -531,7 +534,7 @@ export function addSection(name: string): void {
 /** Adds a place at a position to the section shown, for its dialog to name: the answer is its id. */
 export function addPlace(lngLat: LngLat): string {
   const id = newId();
-  editDay((trip, dayId) => dayEdit.updateStop(dayEdit.addStopBeside(trip, dayId, null, roundLngLat(lngLat), id), dayId, id, { name: t('New place') }), t('Add place'));
+  editDay((trip, dayId) => dayEdit.updateStop(dayEdit.addStop(trip, dayId, null, roundLngLat(lngLat), id), dayId, id, { name: t('New place') }), t('Add place'));
   return id;
 }
 
@@ -557,7 +560,7 @@ export function pasteStops(dayId: string, stops: readonly Stop[]): void {
 
 /** Adds copied stops to a route or track as its own, each on its point where it stands on one, else beside it. */
 export function pasteStopsIntoRoute(routeId: string, stops: readonly Stop[]): void {
-  edit((trip) => stops.reduce((next, stop) => dayEdit.pasteStopIntoRoute(next, routeId, stop, newId()), trip), t(stops.length > 1 ? 'Paste stops' : 'Paste stop'));
+  edit((trip) => dayEdit.pasteStopsIntoRoute(trip, routeId, stops, newId), t(stops.length > 1 ? 'Paste stops' : 'Paste stop'));
 }
 
 /** Adds copied days, with their routes and stops, after a day or at the trip's end; answers the ids of the days made, in the order of `days`. */

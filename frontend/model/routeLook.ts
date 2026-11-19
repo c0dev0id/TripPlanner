@@ -18,7 +18,7 @@ export const ROUTE_PALETTE: readonly { color: string; label: string }[] = [
 /** The palette's colour at a place in a list, which starts over where the palette ends. */
 export const paletteColor = (place: number): string => ROUTE_PALETTE[place % ROUTE_PALETTE.length]!.color;
 
-/** The colours of stops, on the map and in their rows: of those bound to a route point, and of the free ones with their marks on the route. */
+/** The colours of stops, on the map and in their rows: of those on a route point, and of those beside their route with their marks on it (FREE_COLOR). */
 export const BOUND_COLOR = '#d9480f';
 export const FREE_COLOR = '#1971c2';
 

@@ -5,6 +5,7 @@ import { webAddress } from '../poi/details';
 import { placeBadge } from '../state/preferences';
 import { addOwnPlaceAsStop, ownPlaceById, ownPlacesOnMap } from '../state/ownPlaces';
 import { shownDay } from '../state/library';
+import { takesStops } from '../routing/dayEdit';
 import { openTrip } from '../state/trip';
 import { OWN_PLACES_LAYERS, OWN_PLACES_SOURCE, ownPlaceFeatures } from './ownPlacesOverlay';
 import { popupOnTap } from './tapPopup';
@@ -49,7 +50,7 @@ export function OwnPlaceMarkers(props: { map: MapLibreMap }) {
               </p>
             )}
           </Show>
-          <Show when={openTrip()?.kind === 'trip' && shownDay()?.routes.length}>
+          <Show when={openTrip()?.kind === 'trip' && shownDay() && takesStops(openTrip()!, shownDay()!)}>
             <p>
               <button type="button" onClick={add}>
                 {t('Add as stop')}

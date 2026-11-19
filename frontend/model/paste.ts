@@ -25,23 +25,20 @@ const TAKES: Record<Place, readonly ClipKind[]> = {
   recordings: ['files', 'parts'],
 };
 
-/** What a file of the Stash holds, as the places tell it apart. */
-type Share = 'routes' | 'tracks' | 'waypoints' | 'media';
+/** What a file of the Stash holds, as the places tell it apart; `routeStops` are its waypoints as stops of its routes and tracks, of use only with them. */
+type Share = 'routes' | 'tracks' | 'waypoints' | 'routeStops' | 'media';
 
 /** What each place has a use for of files of the Stash and of their parts: a file or a part with none of it is not pasted there. */
 const SHARES: Partial<Record<Place, readonly Share[]>> = {
-  tripsFolder: ['routes', 'tracks', 'waypoints'],
+  tripsFolder: ['routes', 'tracks', 'routeStops'],
   placesFolder: ['waypoints'],
-  trip: ['routes', 'tracks', 'waypoints'],
+  trip: ['routes', 'tracks', 'routeStops'],
   list: ['waypoints'],
   day: ['routes', 'tracks', 'waypoints', 'media'],
   category: ['waypoints'],
   stashFile: ['routes', 'tracks', 'waypoints', 'media'],
   recordings: ['tracks'],
 };
-
-/** The places that take waypoints only with a route or a track: stops are their routes', and these places make the days, which have none yet. */
-const WAYPOINTS_WITH_ROUTES: readonly Place[] = ['tripsFolder', 'trip'];
 
 /** A file of the Stash as all of it. */
 export const wholeFile = (file: StashFile): StashPart => ({ file, items: file.items, waypoints: file.waypoints > 0, media: file.media.length > 0 });
@@ -53,13 +50,12 @@ export const filesIn = (folder: CopiedFolder): StashFile[] => [...folder.files, 
 export function sharesOf(place: Place, parts: readonly StashPart[]): StashPart[] {
   const shares = SHARES[place] ?? [];
   return parts
-    .map((part) => ({
-      file: part.file,
-      items: part.items.filter((item) => shares.includes(item.kind === 'track' ? 'tracks' : 'routes')),
-      waypoints: shares.includes('waypoints') && part.waypoints && part.file.waypoints > 0,
-      media: shares.includes('media') && part.media && part.file.media.length > 0,
-    }))
-    .filter((part) => part.items.length > 0 || (part.waypoints && !WAYPOINTS_WITH_ROUTES.includes(place)) || part.media);
+    .map((part) => {
+      const items = part.items.filter((item) => shares.includes(item.kind === 'track' ? 'tracks' : 'routes'));
+      const waypoints = (shares.includes('waypoints') || (shares.includes('routeStops') && items.length > 0)) && part.waypoints && part.file.waypoints > 0;
+      return { file: part.file, items, waypoints, media: shares.includes('media') && part.media && part.file.media.length > 0 };
+    })
+    .filter((part) => part.items.length > 0 || part.waypoints || part.media);
 }
 
 /** Whether a place takes a clipboard of the kind; `parts` is what it holds of the Stash, files as all of them. */

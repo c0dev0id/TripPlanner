@@ -80,7 +80,10 @@ export function daySequence(day: Day, decode = decodeCached): SequenceEntry[] {
   const beside = new Map<string, Stop[]>();
   for (const stop of day.stops) {
     const [of, key] = stop.pointId !== null ? [bound, stop.pointId] : [beside, stop.routeId];
-    if (key !== null) of.set(key, [...(of.get(key) ?? []), stop]);
+    if (key === null) continue;
+    const listed = of.get(key);
+    if (listed) listed.push(stop);
+    else of.set(key, [stop]);
   }
   const entries: SequenceEntry[] = [];
   let metres = 0;

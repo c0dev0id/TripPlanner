@@ -27,7 +27,7 @@ function FlagPole() {
 /** The squares of a chequered flag's cloth: four across, three down. */
 const CHEQUERS = [0, 1, 2].flatMap((row) => [0, 1, 2, 3].filter((col) => (row + col) % 2 === 0).map((col) => ({ x: 17 + col * 3.5, y: 3.5 + row * 4 })));
 
-/** A pin in the stop's colour: bound to the route or free beside it. */
+/** A pin in the stop's colour: on a point of its route or beside it. */
 function Pin(props: { color: string }) {
   return (
     <>

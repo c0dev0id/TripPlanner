@@ -219,7 +219,8 @@
   own and stand beside it, on a point only where they stand on one: the route's path
   stays as it is. A day has no stops of its own: stops pasted onto a day, or moved to
   it, go to each of its routes and tracks as a copy, and a day without one takes none.
-  While a route or track is taken up the map shows its stops alone. A stop has a Garmin
+  While a route or track is taken up the map shows its stops alone; with none taken up,
+  a place several lines have a copy of is shown once. A stop has a Garmin
   waypoint symbol, a name, address, contact, booking reference, website and notes in a dialog.
   Twelve symbols are drawn as our own icons (stop, start, end, meeting point, hotel,
   restaurant, café, fuel, sight, info, photo spot, break), each standing for one Garmin

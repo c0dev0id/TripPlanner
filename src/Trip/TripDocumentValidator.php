@@ -65,10 +65,11 @@ final class TripDocumentValidator
                 $points[$point['id']] = ['routeId' => $checked['id'], 'lngLat' => $point['lngLat']];
             }
         }
-        self::unique(array_column($routes, 'id'), "$at.routes");
+        $routeIds = array_column($routes, 'id');
+        self::unique($routeIds, "$at.routes");
         $stops = [];
         foreach (self::list($day, 'stops') as $i => $stop) {
-            $stops[] = self::stop($stop, array_column($routes, 'id'), $points, $ownedStops, "$at.stops[$i]");
+            $stops[] = self::stop($stop, $routeIds, $points, $ownedStops, "$at.stops[$i]");
         }
         self::unique(array_column($stops, 'id'), "$at.stops");
         return [

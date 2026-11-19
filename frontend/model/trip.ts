@@ -57,9 +57,9 @@ export const MAX_WEBSITE = 2000;
 export const asWebsite = (link: string): string => clipped(link, MAX_WEBSITE);
 
 /**
- * A point to stop at. Bound to a point of a routed route of its day (`pointId`), it stands
- * at that point and moves with it; free, it stands where it is and is ordered by where the
- * routes pass closest.
+ * A point to stop at, of one route or track of its day (`routeId`). On a point of its
+ * routed route (`pointId`), it stands at that point and moves with it; beside its route,
+ * it stands where it is and is ordered by where the route passes closest.
  */
 export interface Stop {
   id: string;

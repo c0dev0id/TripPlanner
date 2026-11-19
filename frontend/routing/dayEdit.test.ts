@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { withChanges, type Day, type RoutedLeg, type Trip } from '../model/trip';
-import { addDay, addParts, addStopBeside, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, duplicateParts, moveDay, moveDaysAfter, moveRoute, moveRouteToDay, moveStop, moveStopIntoRoute, moveStopToDay, numberedStops, pasteDays, pasteIntoTrip, pasteRoute, pasteStops, pasteStopIntoRoute, removeParts, removeRoute, removeStop, routedOnly, routeFromStops, updateDay, updateRoute, updateStop, withNewPartIds } from './dayEdit';
+import { addDay, addParts, addStop, addRoute, alignStops, connectStop, convertPoint, copiedRoute, disconnectStop, duplicateDay, duplicateRoute, insertStop, duplicateParts, moveDay, moveDaysAfter, moveRoute, moveRouteToDay, moveStop, moveStopIntoRoute, moveStopToDay, numberedStops, pasteDays, pasteIntoTrip, pasteRoute, pasteStops, pasteStopsIntoRoute, removeParts, removeRoute, removeStop, routedOnly, routeFromStops, updateDay, updateRoute, updateStop, withNewPartIds } from './dayEdit';
 import { changeSettings } from './routeEdit';
 import { pointCount, routedLegs } from './legs';
 import { encodePolyline } from './polyline';
@@ -32,7 +32,7 @@ function fixture(): Trip {
   const legs = Object.fromEntries(routedLegs(route).map((l) => [l.key, routed(l.key)]));
   trip = { ...trip, days: [{ ...day(trip), routes: [{ ...route, legs }] }] };
   trip = convertPoint(trip, 'd', 'b', 's1');
-  return addStopBeside(trip, 'd', 'r', [2.5, 2.4], 's2');
+  return addStop(trip, 'd', 'r', [2.5, 2.4], 's2');
 }
 
 describe('routes and points', () => {
@@ -58,7 +58,7 @@ describe('routes and points', () => {
   });
 
   it('removes a route with its stops, and leaves those of another', () => {
-    const other = addStopBeside(addRoute(fixture(), 'd', 'q'), 'd', 'q', [4, 4], 's3');
+    const other = addStop(addRoute(fixture(), 'd', 'q'), 'd', 'q', [4, 4], 's3');
     const trip = removeRoute(other, 'd', 'r');
     expect(day(trip).routes.map((r) => r.id)).toEqual(['q']);
     expect(day(trip).stops.map((s) => s.id)).toEqual(['s3']);
@@ -306,14 +306,16 @@ describe('reordering and copying', () => {
     expect(list.days[1]!.stops).toEqual([{ ...stops[0]!, id: 'c1', routeId: null, pointId: null }]);
   });
 
-  it('pastes a stop into a route as its own, on a point it stands on and else beside the route, which stays as it is', () => {
+  it('pastes stops into a route as its own, on a point they stand on and else beside the route, which stays as it is', () => {
     const trip = fixture();
     const stop = { ...day(trip).stops[1]!, name: 'Café', routeId: 'elsewhere', pointId: 'gone' };
-    const beside = pasteStopIntoRoute(trip, 'r', stop, 'new');
-    expect(day(beside).stops[2]).toEqual({ ...stop, id: 'new', routeId: 'r', pointId: null });
-    expect(day(beside).routes).toBe(day(trip).routes);
-    expect(day(pasteStopIntoRoute(trip, 'r', { ...stop, lngLat: [3, 3] }, 'new')).stops[2]).toMatchObject({ id: 'new', routeId: 'r', pointId: 'c' });
-    expect(pasteStopIntoRoute(trip, 'nowhere', stop, 'new')).toBe(trip);
+    const pasted = pasteStopsIntoRoute(trip, 'r', [stop, { ...stop, lngLat: [3, 3] }], ids('new'));
+    expect(day(pasted).stops.slice(2)).toEqual([
+      { ...stop, id: 'new1', routeId: 'r', pointId: null },
+      { ...stop, id: 'new2', lngLat: [3, 3], routeId: 'r', pointId: 'c' },
+    ]);
+    expect(day(pasted).routes).toBe(day(trip).routes);
+    expect(pasteStopsIntoRoute(trip, 'nowhere', [stop], ids('new'))).toBe(trip);
   });
 
   it('pastes a copied route with its stops under new ids, the stops on the new points or beside the new route', () => {
@@ -376,12 +378,7 @@ describe('addParts', () => {
 
 describe('a route kept as waypoints', () => {
   /** A day of stops on no point by these names, a degree apart, in this order. */
-  const waypoints = (...names: string[]): Trip => names.reduce((trip, name, i) => updateStop(addStopBeside(trip, 'd', null, [i, i], `s${i}`), 'd', `s${i}`, { name }), empty());
-  /** Ids n1, n2, … in the order asked for. */
-  const counter = () => {
-    let n = 0;
-    return () => `n${++n}`;
-  };
+  const waypoints = (...names: string[]): Trip => names.reduce((trip, name, i) => updateStop(addStop(trip, 'd', null, [i, i], `s${i}`), 'd', `s${i}`, { name }), empty());
   const names = (stops: readonly { name: string }[]) => stops.map((stop) => stop.name);
 
   it('finds the stops numbered in a series, by their number, and no waypoint that is one', () => {
@@ -397,7 +394,7 @@ describe('a route kept as waypoints', () => {
 
   it('makes a route of the stops in the order they are named in, which are stops no more', () => {
     const trip = waypoints('Alpenstraße', '2 Roßfeldstraße 76', 'Gasthof Adler', 'Ramsau');
-    const made = routeFromStops(trip, ['s3', 's0', 's1'], 'r', counter());
+    const made = routeFromStops(trip, ['s3', 's0', 's1'], 'r', ids('n'));
     const route = routedOf(day(made).routes[0]!);
     expect([route.id, route.kind, route.points.map((p) => p.lngLat), route.legs]).toEqual(['r', 'routed', [[3, 3], [0, 0], [1, 1]], {}]);
     expect(names(day(made).stops)).toEqual(['Gasthof Adler']);
@@ -405,6 +402,6 @@ describe('a route kept as waypoints', () => {
 
   it('leaves the trip as it is for fewer than two free stops', () => {
     const trip = fixture();
-    expect(routeFromStops(trip, ['s1', 's2'], 'r2', counter())).toBe(trip);
+    expect(routeFromStops(trip, ['s1', 's2'], 'r2', ids('n'))).toBe(trip);
   });
 });

@@ -2,11 +2,11 @@ import { t } from '../i18n/t';
 import { createSignal } from 'solid-js';
 import { changeTrip, copyMedia as copyMediaTo, errorMessage, fetchRideGpx, fetchStashGpx, fetchStashMedia, listMedia, listRecordings, moveMedia, type KeptRide, type Recording } from '../api';
 import { parseGpx } from '../gpx/gpx';
-import { gpxToDayParts } from '../gpx/import';
+import { gpxToDayParts, stashPartToDayParts } from '../gpx/import';
 import { filesIn, sharesOf, takes, wholeFile, type ClipKind, type Place } from '../model/paste';
 import type { CopiedFolder, StashFile, StashItem, StashPart } from '../model/stash';
 import { newId, type Day, type Route, type Stop } from '../model/trip';
-import { copiedRoute, defaultProfile, removeParts, type CopiedRoute, type PartKind } from '../routing/dayEdit';
+import { copiedRoute, defaultProfile, removeParts, takesStops, type CopiedRoute, type PartKind } from '../routing/dayEdit';
 import { counted, listText } from '../ui/format';
 import { askConfirmation } from '../ui/confirm';
 import { dropTarget, type Held } from '../ui/carry';
@@ -253,12 +253,10 @@ async function pastePartsIntoDay(dayId: string, parts: readonly StashPart[]): Pr
   if (!day) return;
   try {
     const added = { routes: [] as Route[], stops: [] as Stop[] };
-    for (const { file, items, waypoints } of parts) {
-      const gpx = await parseGpx(await fetchStashGpx(file.id));
-      const taken = (kind: StashItem['kind']) => (_: unknown, position: number) => items.some((item) => item.kind === kind && item.position === position);
-      const read = gpxToDayParts({ ...gpx, routes: gpx.routes.filter(taken('route')), tracks: gpx.tracks.filter(taken('track')) }, { fileName: file.name, profile: defaultProfile(day), newId });
+    for (const part of parts) {
+      const read = stashPartToDayParts(await parseGpx(await fetchStashGpx(part.file.id)), part, defaultProfile(day), newId);
       added.routes.push(...read.routes);
-      added.stops.push(...read.stops.filter((stop) => waypoints || stop.pointId !== null));
+      added.stops.push(...read.stops);
     }
     if (openTripId() !== tripId) return;
     selectDay(dayId);
@@ -398,8 +396,8 @@ function partPaste(copied: Clip, kind: PartKind, id: string): PasteItem[] {
           else void pasteDaysAfter(id, copied.days, copied.tripId, cut);
         } }];
   }
-  // A day of a trip has no stops but those of its routes and tracks: without one it takes none.
-  if (('categories' in copied || 'stops' in copied) && place === 'day' && !trip.days.some((day) => day.id === id && day.routes.length > 0)) return [];
+  const day = trip.days.find((d) => d.id === id);
+  if (('categories' in copied || 'stops' in copied) && place === 'day' && !(day && takesStops(trip, day))) return [];
   // The places of a category join the day or the category it is pasted onto; cut within its list, the category goes.
   if ('categories' in copied) return [{ label, run: shown(pasted(copied, (ids) => mergeDaysInto(ids, id), () => pasteStops(id, placesOf(copied.categories).stops))) }];
   if ('stops' in copied) return [{ label, run: shown(pasted(copied, (ids) => movePartsToDay('stop', ids, id), () => pasteStops(id, copied.stops))) }];

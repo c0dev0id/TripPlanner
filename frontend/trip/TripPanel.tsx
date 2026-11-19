@@ -92,10 +92,11 @@ async function importPicked(day: Day): Promise<void> {
   if (!file) return;
   try {
     const parts = await readDayParts(file, defaultProfile(day));
-    // Waypoints alone go to the day's routes and tracks, and a day without one takes none.
-    if (parts.routes.length + day.routes.length === 0) return void setImportNote({ dayId: day.id, text: t('{file}: no route or track to add the waypoints to.', { file: file.name }), error: true });
+    const stopsOfDay = () => openTrip()?.days.find((d) => d.id === day.id)?.stops.length ?? 0;
+    const before = stopsOfDay();
     addParts(day.id, parts);
-    const stops = parts.routes.length > 0 ? parts.stops.length : parts.stops.length * day.routes.length;
+    const stops = stopsOfDay() - before;
+    if (parts.routes.length === 0 && stops === 0 && parts.stops.length > 0) return void setImportNote({ dayId: day.id, text: t('{file}: no route or track to add the waypoints to.', { file: file.name }), error: true });
     setImportNote({ dayId: day.id, text: t('{file}: {routes}, {stops} added.', { file: file.name, routes: counted(parts.routes.length, 'route'), stops: counted(stops, 'stop') }), error: false });
   } catch (fault) {
     setImportNote({ dayId: day.id, text: `${file.name}: ${errorMessage(fault)}`, error: true });
@@ -313,7 +314,7 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
         <ol class="stops">
           <Show when={plainPoints() > 0}>
             <li class="points-toggle">
-              <button class="text" aria-expanded={pointsShown()} onClick={() => setPointsShown(!pointsShown())}>
+              <button class="text fold" aria-expanded={pointsShown()} onClick={() => setPointsShown(!pointsShown())}>
                 <ChevronIcon />
                 {plural(plainPoints(), pointsShown() ? 'Hide {n} route point|Hide {n} route points' : 'Show {n} route point|Show {n} route points')}
               </button>
