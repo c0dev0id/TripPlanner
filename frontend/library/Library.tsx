@@ -237,9 +237,17 @@ export function Library(props: {
   const showItem = (file: StashFile, item: StashItem) => showOfFile(file, { fileId: file.id, item });
   /** A click on a file's waypoints shows them alone on the map, until the file or another part of it is clicked. */
   const showWaypoints = (file: StashFile) => showOfFile(file, { fileId: file.id, waypoints: true });
+  /** The row the search opened last, until it is in the tree again and brought into view. */
+  const [revealed, setRevealed] = createSignal<string>();
+  /** Shows a folder, a trip or a file the search found where it is in the tree: the folders it lies in unfold, and its row is brought into view once the tree stands in the search's place. */
+  const revealFound = (item: Item) => {
+    fold(keysAround('folder' in item ? item.folder.parentId : 'trip' in item ? item.trip.folderId : item.file.folderId), true);
+    setRevealed(keyOf(item));
+  };
   /** Shows a file the search found where it is in the tree, unfolded, and on the map: whole, or the one route or track of it. */
   const revealFile = (file: StashFile, item?: StashItem) => {
-    fold([keyOf({ file }), ...keysAround(file.folderId)], true);
+    fold([keyOf({ file })], true);
+    revealFound({ file });
     showOfFile(file, { fileId: file.id, item });
   };
   /** Whether what is acted on holds the open trip, which the library must not change behind its back. */
@@ -342,6 +350,10 @@ export function Library(props: {
       return { kind: ITEMS, what: moved.length === 1 ? nameOf(item) : countText(moved), carried: moved };
     },
     place: (el) => {
+      if (revealed() === keyOf(item) && !searchedFor()) {
+        setRevealed(undefined);
+        requestAnimationFrame(() => el.scrollIntoView({ block: 'center' }));
+      }
       if ('folder' in item) dropTarget<Item[]>(el, ITEMS, (items) => dropInto(items, item.folder.id));
       else if ('trip' in item) dropsOnRow(el, () => item.trip.id, () => rowOf(item.trip));
     },
@@ -896,7 +908,10 @@ export function Library(props: {
               <FolderCard
                 folder={f}
                 note={[pathOf(f.parentId), heldText(heldOf(f.id), heldNoun(f.id))].filter(Boolean).join(' · ')}
-                onOpen={markFolderShown}
+                onOpen={(id) => {
+                  revealFound({ folder: f });
+                  markFolderShown(id);
+                }}
                 items={() => itemMenu({ folder: f })}
                 select={select(results.tree, { folder: f }, listedKeys)}
               />
@@ -906,7 +921,10 @@ export function Library(props: {
             {(trip) => (
               <TripCard
                 trip={trip}
-                onOpen={clickTrip}
+                onOpen={(of) => {
+                  revealFound({ trip: of });
+                  clickTrip(of);
+                }}
                 items={() => itemMenu({ trip })}
                 where={pathOf(trip.folderId) || t('No folder')}
                 select={select(results.tree, { trip }, listedKeys)}
@@ -919,7 +937,7 @@ export function Library(props: {
               <StashFileCard file={file} where={pathOf(file.folderId)} onOpen={revealFile} items={() => itemMenu({ file })} select={select(results.tree, { file }, listedKeys)} />
             )}
           </For>
-          <For each={listed().routes}>{(route) => <RouteCard found={route} onOpen={props.onOpenRoute} items={() => routeMenu(route)} select={selectRow(results.tree, routeKey(route), listedKeys)} />}</For>
+          <For each={listed().routes}>{(route) => <RouteCard found={route} onOpen={(found) => (revealFound({ trip: found.within }), props.onOpenRoute(found))} items={() => routeMenu(route)} select={selectRow(results.tree, routeKey(route), listedKeys)} />}</For>
           <For each={listed().items}>{(at) => <StashItemRow file={at.file} item={at.item} where={at.file.name} onShow={(item) => revealFile(at.file, item)} items={() => stashItemMenu(at)} select={selectRow(results.tree, itemKey(at), listedKeys)} />}</For>
         </ul>
         <Show when={total() > foundCount(listed())}>

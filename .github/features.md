@@ -33,7 +33,8 @@
   folders and trips whose names contain it, and the routes and tracks of those trips
   that are named so, each with its trip and day, at most twenty in all; a folder found
   is shown in the tree, a trip opens, and a route or a track opens its trip at its day
-  with the route taken up, each ending the search. What it lists is selected as the
+  with the route taken up, each ending the search: the tree is shown again with the
+  folders it lies in unfolded and its row marked and scrolled into view. What it lists is selected as the
   tree's rows are, by the pad, with Cmd or Ctrl and with Shift, and has its menu: a
   folder's and a trip's as in the tree, a route's to delete it, or the selected routes,
   from their trips, which the Delete key does too. Routes selected together with

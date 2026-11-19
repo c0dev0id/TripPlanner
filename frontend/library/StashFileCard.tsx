@@ -166,7 +166,7 @@ export function StashFileCard(props: {
   children?: JSX.Element;
 }) {
   return (
-    <li class="card" classList={{ selected: props.select.selected(), opened: isShownWhole(props.file.id) }}>
+    <li class="card" classList={{ selected: props.select.selected(), opened: isShownWhole(props.file.id) }} ref={(el) => props.select.place(el)}>
       <div class="row" ref={(el) => cardMenu(el, props.items)}>
         <Pad label={t('Select {name}, or drag it into a folder', { name: props.file.name })} selected={props.select.selected()} onToggle={props.select.onToggle} carries={props.select.carries} />
         <button class="text grow" aria-expanded={props.unfolded} onClick={(e) => props.select.onClick(e) || props.onOpen(props.file)}>
