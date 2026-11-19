@@ -168,7 +168,6 @@
   "Folder": "Ordner",
   "Folder…": "Ordner…",
   "Forgot password?": "Passwort vergessen?",
-  "Free stops within": "Freie Stopps bis",
   "Fuel stations": "Tankstellen",
   "Fuel": "Tanken",
   "Get an invitation": "Einladung erhalten",
@@ -456,7 +455,6 @@
   "Stash": "Fundus",
   "Stop": "Stopp",
   "Stop {n}": "Stopp {n}",
-  "Free stops": "Freie Stopps",
   "Stops to route": "Stopps in Route",
   "Straight leg": "Luftlinie",
   "Straight leg to here": "Luftlinie hierher",
@@ -466,7 +464,6 @@
   "Symbol": "Symbol",
   "Remove from this day": "Von diesem Tag entfernen",
   "Tap a point or a stop to delete it.": "Einen Punkt oder Stopp antippen, um ihn zu löschen.",
-  "Tap a route point or the route to add a stop there; tap elsewhere to add a free stop; drag points and stops to move them.": "Einen Routenpunkt oder die Route antippen für einen Stopp dort; woanders antippen für einen freien Stopp; Punkte und Stopps zum Verschieben ziehen.",
   "Tap the map to add a point at the end of the route, or tap the route to insert one there; drag points and stops to move them.": "Karte antippen für einen Punkt am Ende der Route, oder die Route antippen, um dort einen einzufügen; Punkte und Stopps zum Verschieben ziehen.",
   "Invalid e-mail address.": "Ungültige E-Mail-Adresse.",
   "The current password is incorrect.": "Das aktuelle Passwort ist falsch.",
@@ -567,7 +564,6 @@
   "into “{path}”": "in „{path}“",
   "late at {n} stop|late at {n} stops": "zu spät an {n} Stopp|zu spät an {n} Stopps",
   "level": "gleichauf",
-  "m of a route": "m von einer Route",
   "no route": "keine Route",
   "none": "keine",
   "optional": "optional",
@@ -791,5 +787,8 @@
   "Good roads": "Gute Straßen",
   "Bad roads": "Schlechte Straßen",
   "Roadblocks": "Straßensperren",
-  "Pinned": "Angeheftet"
+  "Pinned": "Angeheftet",
+  "Tap a route point or the route to add a stop there; tap elsewhere to add a stop beside the route; drag points and stops to move them.": "Einen Routenpunkt oder die Route antippen für einen Stopp dort; woanders antippen für einen Stopp neben der Route; Punkte und Stopps zum Verschieben ziehen.",
+  "{file}: no route or track to add the waypoints to.": "{file}: keine Route und kein Track für die Wegpunkte.",
+  "Remove {route} with its {n} points and {stops}?": "{route} mit seinen {n} Punkten und {stops} entfernen?"
 }
