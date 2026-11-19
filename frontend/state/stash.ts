@@ -13,7 +13,11 @@ export interface ShownStash {
   waypoints?: true;
 }
 
-const [shown, setShown] = createSignal<ShownStash>();
+/** Showing what is shown already changes nothing, so the map stays where it was moved to. */
+const sameShown = (a: ShownStash | undefined, b: ShownStash | undefined): boolean =>
+  a?.fileId === b?.fileId && a?.item?.kind === b?.item?.kind && a?.item?.position === b?.item?.position && a?.waypoints === b?.waypoints;
+
+const [shown, setShown] = createSignal<ShownStash | undefined>(undefined, { equals: sameShown });
 
 /** What of the Stash the map shows; nothing until a file or one of its routes or tracks is picked. */
 export const shownInStash = shown;

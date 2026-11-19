@@ -41,10 +41,10 @@ export function openRecording(id: number | undefined): void {
 /**
  * Opens the figures of a recording of a day or of a ride of the list of rides, which
  * shows it whole on the map, at once where its track is read and else when it arrives;
- * or closes them where it is the one opened.
+ * the one opened stays as it is.
  */
-export function toggleRecording(recording: KeptRide): void {
-  if (activeRecordingId() === recording.id) return openRecording(undefined);
+export function showRecording(recording: KeptRide): void {
+  if (activeRecordingId() === recording.id) return;
   // One thing is taken up at a time: the route taken up is let go. Opened first, so that it is shown whole beside its cards.
   takeUpRoute(undefined);
   openRecording(recording.id);

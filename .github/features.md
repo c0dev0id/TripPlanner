@@ -232,8 +232,9 @@
   looked at. While a save fails, the trip is neither closed nor left for another, and
   the failure is said over the map. The pane lists the days under each other, each
   by its number and name over its date and length, with the grip that reorders them,
-  its journal, its menu and a pad. A click on a day shows it on the map; a click on
-  the day shown shows the whole trip again. The pad on a day's row opens a third
+  its journal, its menu and a pad. A click on a day shows it whole on the map and
+  lets go of the route or recording taken up; the day shown stays so when it is clicked
+  again, and a click on the trip's row shows the whole trip. The pad on a day's row opens a third
   pane with what the day holds, and closes it; that pane keeps its day while another
   is shown on the map, and a click in it shows its own day again. The pane's heading
   has the trip's name over the count of its days and their length, the switch that
@@ -251,7 +252,7 @@
   A day's contents list its routes with profile, distance and the number
   of stops on each, folded: a click on a route takes it up to be edited and unfolds
   its stops and route points in riding order with the distance from the day's start,
-  and a click on the route being edited ends that and folds them away; a route unfolded
+  and a click on the route being edited folds them away, and the next unfolds them again, while it stays taken up until its day is clicked, or the trip where the trip has one day; a route unfolded
   stays so while another is taken up; free
   stops within 500 m take the place where the route passes closest, and say how far
   beside it they stand. A click pans the map to the entry. A route point's row has the
@@ -363,7 +364,7 @@
   trip": which points are stops and which only shape the route), and whether DMD or Rumo
   wrote data of their own into it. It shows the file whole on the map, each line in the colour its row
   has and the waypoints as dots; a click on a route or a track, or on the row of the
-  file's waypoints, shows that alone, another click the file again. What is shown
+  file's waypoints, shows that alone, until the file's row is clicked, which shows the file whole again; a click on the file shown whole folds its rows away, the next unfolds them, and it stays on the map. What is shown
   holds the Stash's mark: its row is tinted, one at a time, and the strip down the
   left runs from the top through its folders and its file to it; a folder clicked
   after takes the mark, and the strip alone still leads to what the map shows. A
@@ -579,7 +580,7 @@
   grows, and it is said above the rides how many were kept and how many were there already. A
   click or tap opens a ride as a recording on a day is opened: whole on the map, with
   its figures, its line coloured by a measure and its charts, without a day to be on;
-  a click on the opened one closes it. Cmd or Ctrl with a click selects a ride, and the
+  the opened one stays opened when it is clicked again, and is closed by its button over the map. Cmd or Ctrl with a click selects a ride, and the
   first such click also the ride opened by the click before it; Shift a
   run, its pad adds it or takes it away; a day's or a month's heading selects all its
   rides, for the menu to act on together. A ride's pin keeps it on the map as a

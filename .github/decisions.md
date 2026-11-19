@@ -999,9 +999,7 @@ entries at the end of their section.
   the listing of its own saves.
 - **The mark is in the open trip, on the trip looked at, or on a folder.** The tree has
   one mark. A look takes it. A click in the open trip's pane ends the look and gives
-  the map back, but not the mark, which a day takes when it is picked: a day's row
-  shows the whole trip again when it is clicked while marked, and a click that meant
-  "back to this trip" must not do that to the day it lands on. A folder clicked takes
+  the map back, but not the mark, which a day takes when it is picked. A folder clicked takes
   the mark and leaves on the map what is there.
 - **The pane of a day's contents has a day of its own.** The selected day is the one on
   the map, where it is edited; the day whose contents are shown (`detailDayId`) is
@@ -1201,7 +1199,17 @@ entries at the end of their section.
   trip, and tied marking to opening or to folding; each took a step away or showed two
   marks at once. A route's row follows the same rule with editing as its mark: a click
   takes the route up and lists what it holds, and a click on the route being edited
-  ends that and folds the list.
+  folds the list and unfolds it again.
+- **A click on a row never takes off the map what the row put there.** A second click
+  on a day showed the whole trip again, on a route ended its editing, on a recording
+  closed it, on a file of the Stash took it off the map: a row was a switch, and a
+  click meant to look again, or to fold, undid the first. A second click now folds
+  where the row has something to fold (a file, a route's points) and does nothing
+  else. The way back is the row above: the day's row shows the day whole, letting go
+  of the route or recording taken up, the trip's row the whole trip, the file's row
+  the file whole. A recording also keeps its close button over the map, the one way
+  to close a ride in Recordings, which has no row above it. The buttons of a folded
+  pane's strip stay switches: with the panes folded there is no row above to click.
 - **A day looks the same whether its trip is open or not.** An unopened trip listed its
   days as one bare line each, the open one as cards of two lines under a heading with
   two buttons, though both said the same. The outlines now carry what the second line

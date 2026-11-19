@@ -10,7 +10,7 @@ import { detailShown, heldOf, importNote, isPlaceList, paneShown, libraryFolders
 import { withImportedDay } from './folderImport';
 import { countsText, folderPath, heldInAll, heldText, moveTargets } from '../model/folders';
 import { flushSave } from '../state/autosave';
-import { isShownItem, isShownWaypoints, isShownWhole, relistStash, showInStash, shownInStash, stashFiles, stashProblem, type ShownStash } from '../state/stash';
+import { isShownWhole, relistStash, showInStash, shownInStash, stashFiles, stashProblem, type ShownStash } from '../state/stash';
 import { GroupDialog, type Grouping } from './GroupDialog';
 import { groupFiles } from './grouping';
 import { openTripItems } from '../trip/tripMenu';
@@ -227,18 +227,16 @@ export function Library(props: {
       },
     };
   };
-  /** A click on a file unfolds it and shows it whole on the map; shown whole already, it folds and leaves the map. */
+  /** A click on a file unfolds it and shows it whole on the map; shown whole already, it folds, and unfolds again at the next click, and stays on the map. */
   const clickFile = (file: StashFile) => {
     const key = keyOf({ file });
-    const folds = isShownWhole(file.id) && unfolded().has(key);
-    fold([key], !folds);
-    if (folds) showInStash(undefined);
-    else showOfFile(file, { fileId: file.id });
+    fold([key], !(isShownWhole(file.id) && unfolded().has(key)));
+    showOfFile(file, { fileId: file.id });
   };
-  /** A click on a route or a track of a file shows it alone on the map; shown alone already, it gives way to its file whole. */
-  const showItem = (file: StashFile, item: StashItem) => showOfFile(file, isShownItem(file.id, item) ? { fileId: file.id } : { fileId: file.id, item });
-  /** A click on a file's waypoints shows them alone on the map; shown alone already, they give way to the file whole. */
-  const showWaypoints = (file: StashFile) => showOfFile(file, isShownWaypoints(file.id) ? { fileId: file.id } : { fileId: file.id, waypoints: true });
+  /** A click on a route or a track of a file shows it alone on the map, until its file or another part of it is clicked. */
+  const showItem = (file: StashFile, item: StashItem) => showOfFile(file, { fileId: file.id, item });
+  /** A click on a file's waypoints shows them alone on the map, until the file or another part of it is clicked. */
+  const showWaypoints = (file: StashFile) => showOfFile(file, { fileId: file.id, waypoints: true });
   /** Shows a file the search found where it is in the tree, unfolded, and on the map: whole, or the one route or track of it. */
   const revealFile = (file: StashFile, item?: StashItem) => {
     fold([keyOf({ file }), ...keysAround(file.folderId)], true);

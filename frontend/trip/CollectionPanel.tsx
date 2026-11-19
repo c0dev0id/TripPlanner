@@ -169,8 +169,9 @@ function RouteItem(props: { route: Route; day: Day }) {
   const select = partSelect('route', props.route.id, () => props.day.routes.map((r) => r.id));
   const click = (e: MouseEvent) => {
     if (select.onClick(e)) return;
-    takeUpRoute(active() ? undefined : props.route.id);
-    if (active()) showWhole(routePositions(props.route));
+    if (active()) return;
+    takeUpRoute(props.route.id);
+    showWhole(routePositions(props.route));
   };
   return (
     <li class="route" classList={{ editing: active(), selected: select.selected(), cut: isCut(props.route.id) }}>

@@ -5,7 +5,7 @@ import { isTreeTab, type LibraryTab, type TreeTab } from '../model/library';
 import { libraryTrips, mapTab, openTree, setQuery, showTab } from './library';
 import { fold } from './panel';
 import { revealRide, RIDES } from './rides';
-import { openRecording, toggleRecording } from './recordingView';
+import { openRecording, showRecording } from './recordingView';
 import { activeRecordingId } from './recordings';
 import { activeRouteId, detailDayId, endLook, openTripId, selectedDayId, takeUpRoute, type OpenAt } from './trip';
 
@@ -45,7 +45,7 @@ export function showInRides(ride: KeptRide): void {
     selectIn(RIDES, new Set([String(ride.id)]));
     revealRide(ride.id);
   });
-  toggleRecording(ride);
+  showRecording(ride);
 }
 
 /**

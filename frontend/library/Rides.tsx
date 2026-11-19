@@ -13,7 +13,7 @@ import { activeRecordingId, putOnDay, recordingColor, shownRecordings } from '..
 import { isRidePinned, pinRides } from '../state/pins';
 import { COMPARED_RIDE_COLOR } from '../model/routeLook';
 import { Pin, pinItems } from '../ui/Pin';
-import { opened, toggleRecording } from '../state/recordingView';
+import { opened, showRecording } from '../state/recordingView';
 import { clearSection, ridesOnSection, section, sectionStart } from '../state/section';
 import { allRides, askOfRides, changeRides, compareWithDay, revealedRide, revealRide, RIDES, ridesCompared, ridesError, ridesLoading, ridesNote, ridesOnMap, runRidesJob } from '../state/rides';
 import { dayLabel, foundBecause } from '../trip/labels';
@@ -197,7 +197,7 @@ export function Rides(props: { onOpen: (tripId: number, dayId: string) => void; 
       if (shownSuggestion() === suggestion) compareWithDay([]);
     });
   const card = (heading: string, rides: Ride[], distanceM: number) => (
-    <RidingDayCard heading={heading} rides={rides} distanceM={distanceM} where={whereOf} select={(ride) => rowSelect(RIDES, String(ride.id), order)} onSelectDay={() => select(rides)} onOpen={toggleRecording} items={items} />
+    <RidingDayCard heading={heading} rides={rides} distanceM={distanceM} where={whereOf} select={(ride) => rowSelect(RIDES, String(ride.id), order)} onSelectDay={() => select(rides)} onOpen={showRecording} items={items} />
   );
   const addPicked = async () => {
     const files = await pickFiles({ accept: GPX_FILE_TYPES });

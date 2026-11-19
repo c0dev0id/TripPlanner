@@ -8,7 +8,7 @@ import { copyRecordings, heldRecordings, isCutRecording } from '../state/clipboa
 import { clearPartSelection, partSelect, partsOfMenu } from '../state/partSelection';
 import { showWhole } from '../state/drawing';
 import { isRecordingPinned, pinRecordings } from '../state/pins';
-import { toggleRecording } from '../state/recordingView';
+import { showRecording } from '../state/recordingView';
 import { showInRides } from '../state/tabs';
 import {
   activeRecordingId,
@@ -221,7 +221,7 @@ function RecordingItem(props: { recording: Recording; onRename: (recording: Reco
             return heldRecordings(chosen.length === 1 ? props.recording.name : counted(chosen.length, 'recording'), chosen, props.recording.dayId);
           }}
         />
-        <button class="text grow" aria-pressed={isOpened()} onClick={(e) => select.onClick(e) || toggleRecording(props.recording)}>
+        <button class="text grow" aria-pressed={isOpened()} onClick={(e) => select.onClick(e) || showRecording(props.recording)}>
           <span class="swatch" style={{ background: recordingColor(props.recording) }} />
           <span class="lines grow">
             <span class="name">{props.recording.name}</span>
