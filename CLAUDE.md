@@ -110,8 +110,9 @@ selected one. A list of places opens by a click and keeps its categories in the 
 the open list's from its document (`trip/CollectionPanel.tsx`), the others' from the
 outlines; a category's pad opens the pane of its places. `App.tsx` opens, looks at and
 leaves trips, and does neither while a save has failed. What is pinned stays on the
-map whatever trip is open (`state/pins.ts`): a pin keeps a copy of its line for while
-its trip is not.
+map whatever trip is open (`state/pins.ts`): a pin keeps a copy of its line and its
+names for while its trip is not, and a card over the map lists the pins and lets go of
+them (`map/PinnedList.tsx`, from `pinnedRows` in `state/pinnedLines.ts`).
 
 Every line on the map is drawn through `drawFeatures` (`map/drawnLines.ts`), which also
 keeps the lines by source: what measures across all that is shown, such as the distance

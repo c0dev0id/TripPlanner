@@ -13,6 +13,7 @@ import { mapTab, tripShown } from '../state/library';
 import { sectionEnds, shownTrack } from '../state/section';
 import { isRoutePinned } from '../state/pins';
 import { pinnedLines } from '../state/pinnedLines';
+import { PinnedList } from './PinnedList';
 import { keepsView } from '../state/place';
 import { placesHidden, setPlacesHidden } from '../state/places';
 import { ridesOpacity, routeWidth } from '../state/preferences';
@@ -129,6 +130,7 @@ export function MapView() {
             <PlaceMarkers map={m()} />
             <OwnPlaceMarkers map={m()} />
             <OverlayInfo map={m()} />
+            <PinnedList />
             <Show when={reachShown()}>
               <Reach map={m()} />
             </Show>

@@ -644,7 +644,11 @@
   shown and whatever trip is open, until it is let go of on its row. Several selected
   are pinned or let go from their menu. A pinned route of another day is drawn as the
   neighbouring days are, one of another trip as a plain line in its colour, as it
-  stood when its trip was left. The pins go when the page is loaded again, and with a
+  stood when its trip was left. While anything is pinned, a card in the map's top right
+  corner lists it: each with the colour of its line, its name and under it its trip and
+  day, and a cross that lets go of it, whatever trip is open; the rides pinned in
+  Recordings are listed while the map shows them. The card folds to its heading, which
+  counts the pins. The pins go when the page is loaded again, and with a
   trip that is deleted. A recording added to a day, or put on
   it by the lookup, is not pinned. Another day closes the recording opened, as it lets
   go of the route taken up.

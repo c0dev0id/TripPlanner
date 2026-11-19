@@ -1401,9 +1401,18 @@ entries at the end of their section.
   Keeping whole trips loaded for their pins was considered and dropped: it would need
   every loaded document kept in step with what the library does to it on the server,
   for the sake of one line. The copy is as old as the last time its trip was open;
-  what the library changes in a trip that is not open does not reach it until then. A
-  pin is let go of where it was set, on its row, which needs its trip open: a pinned
-  line on the map is not acted on. Pins of a deleted trip go with it.
+  what the library changes in a trip that is not open does not reach it until then.
+  Pins of a deleted trip go with it.
+- **What is pinned is listed over the map, and let go of there.** A pin was let go of
+  where it was set, on its row, which needs its trip open and its day found: with pins
+  of several trips, finding the row again cost more than the pin was worth. A card over
+  the map lists every pin by name, trip and day and lets go of each. The names of a
+  trip that is not open are a copy, taken with the line when the trip is left, for the
+  reason the line is one. The card stands beside the map's controls and moves under the
+  search's row where the map is too narrow for both, by a container query on the map's
+  frame: the map's width depends on the panes beside it, not on the window. A line on
+  the map is still not acted on: lines of several pins lie over each other, the rows of
+  a list do not.
 - **A recording is compared with what is pinned beside it.** A choice of "the planned
   route" in a list compared with all of the day's routes at once, which said nothing
   where a day has several routes or a route and a track. What is on the map says what

@@ -1492,6 +1492,64 @@ fieldset.choices legend {
   font-size: 14px;
 }
 
+/* What is pinned to the map, in its top right corner beside the map's controls; under the row of the search where the map is too narrow for both. */
+.map-wrap {
+  container: map / inline-size;
+}
+
+.pinned-card {
+  top: 10px;
+  right: 49px;
+  display: flex;
+  flex-direction: column;
+  width: 260px;
+  max-width: calc(100% - 59px);
+  max-height: calc(100% - var(--chart-room, 0px) - 60px);
+}
+
+@container map (max-width: 660px) {
+  .pinned-card {
+    top: 56px;
+  }
+}
+
+.pinned-card h3 button {
+  gap: 6px;
+  width: 100%;
+  padding: 6px 6px 6px 10px;
+  border: none;
+  background: none;
+  font-weight: inherit;
+  text-align: left;
+}
+
+.pinned-card h3 button[aria-expanded='true'] > svg:last-child {
+  transform: rotate(90deg);
+}
+
+.pinned-card ul {
+  margin: 0;
+  padding: 0 6px 6px 10px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.pinned-card li {
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.pinned-card li .grow {
+  display: grid;
+  min-width: 0;
+}
+
+.pinned-card li .grow > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .recording-buttons {
   position: absolute;
   top: 10px;
@@ -2373,6 +2431,13 @@ fieldset.symbols {
   .save-problem,
   .recording-cards {
     top: 62px;
+  }
+
+  /* Beside the search's button, which stands in the corner. */
+  .pinned-card {
+    top: 10px;
+    right: 64px;
+    max-width: calc(100% - 74px);
   }
 
   .panel-resizer {
