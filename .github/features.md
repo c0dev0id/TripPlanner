@@ -258,7 +258,7 @@
   which is kept per browser; a pad that opens a pane unfolds it.
   A day's contents list its routes with profile, distance and the number
   of stops on each, folded: a click on a route takes it up to be edited and unfolds
-  its stops and route points in riding order with the distance from the day's start,
+  its stops in riding order with the distance from the day's start; its route points that are no stops are listed among them by the switch over the list, which says how many there are, and by themselves while the Point tool is the route's tool,
   and a click on the route being edited folds them away, and the next unfolds them again, while it stays taken up until its day is clicked, or the trip where the trip has one day; a route unfolded
   stays so while another is taken up; a stop
   beside its route takes the place where the route passes closest, and says how far

@@ -70,6 +70,14 @@ entries at the end of their section.
   Rejected: giving a stop to the nearest line once, at import. It keeps one copy, but
   the choice between a route and a track on the same road is as arbitrary once as it
   was each time.
+- **A route's points are listed on request.** An unfolded route listed every point with
+  its stops, and a route read from a file has a hundred points for a handful of stops:
+  the stops, which are what the list is read for, were lost among rows that all say
+  "Route point". A track never listed its points. A route now lists its stops, with a
+  switch over them that lists the points too and says how many there are; the Point
+  tool, which works on them, lists them by itself, and they stay listed until the
+  switch hides them again. The choice is the row's and not kept: it is a way of looking
+  at one route for now.
 - **Stops beside their route are found block by block.** The legs' segments are kept in
   blocks of 32 with a bounding box, and a query for the nearest place looks only into
   the blocks that could hold a nearer one, which took placing 212 waypoints beside

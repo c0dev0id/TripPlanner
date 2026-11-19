@@ -963,6 +963,23 @@ li.row.cut {
   font-size: 12px;
 }
 
+/* The switch that lists a route's points that are no stops, over its stops. */
+.points-toggle .text {
+  gap: 4px;
+  padding: 2px 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.points-toggle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.points-toggle [aria-expanded='true'] svg {
+  transform: rotate(90deg);
+}
+
 .sequence-item.point .lines {
   flex-direction: row;
   justify-content: space-between;

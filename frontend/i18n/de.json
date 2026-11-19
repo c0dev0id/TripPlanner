@@ -790,5 +790,7 @@
   "Pinned": "Angeheftet",
   "Tap a route point or the route to add a stop there; tap elsewhere to add a stop beside the route; drag points and stops to move them.": "Einen Routenpunkt oder die Route antippen für einen Stopp dort; woanders antippen für einen Stopp neben der Route; Punkte und Stopps zum Verschieben ziehen.",
   "{file}: no route or track to add the waypoints to.": "{file}: keine Route und kein Track für die Wegpunkte.",
-  "Remove {route} with its {n} points and {stops}?": "{route} mit seinen {n} Punkten und {stops} entfernen?"
+  "Remove {route} with its {n} points and {stops}?": "{route} mit seinen {n} Punkten und {stops} entfernen?",
+  "Show {n} route point|Show {n} route points": "{n} Routenpunkt anzeigen|{n} Routenpunkte anzeigen",
+  "Hide {n} route point|Hide {n} route points": "{n} Routenpunkt ausblenden|{n} Routenpunkte ausblenden"
 }

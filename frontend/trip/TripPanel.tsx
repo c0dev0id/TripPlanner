@@ -8,7 +8,7 @@ import { defaultProfile } from '../routing/dayEdit';
 import { fileLegCount, pointCount, routedLegs, routeDistance, routesDistance } from '../routing/legs';
 import type { SequenceEntry } from '../routing/sequence';
 import type { DayTimeline, EntryTime } from '../routing/timeline';
-import { panTo, pointItems, setTrackAction } from '../state/drawing';
+import { currentTool, panTo, pointItems, setTrackAction } from '../state/drawing';
 import { isDetailed, toggleDetail } from '../state/panel';
 import { menuNote, type MenuItem } from '../ui/menu';
 import { pickFiles } from '../ui/pickFile';
@@ -242,6 +242,11 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
   /** How many of the route's legs still run along the way its file calculated, of how many. */
   const fileLegs = createMemo(() => ({ kept: fileLegCount(props.route), of: props.route.kind === 'routed' ? routedLegs(props.route).length : 0 }));
   const [unfolded, setUnfolded] = createSignal(false);
+  /** The route's points that are no stops are listed on request, and while the point tool works on them. */
+  const plainPoints = createMemo(() => entries().filter((e) => !e.stop).length);
+  const [pointsShown, setPointsShown] = createSignal(false);
+  createEffect(() => editing() && currentTool() === 'point' && setPointsShown(true));
+  const listed = createMemo(() => (pointsShown() ? entries() : entries().filter((e) => e.stop)));
   let row!: HTMLDivElement;
   // A route taken up on the map is unfolded and brought into view as one clicked here is.
   createEffect(
@@ -306,7 +311,15 @@ function RouteItem(props: { route: Route; index: number; day: Day; sequence: Seq
       </div>
       <Show when={unfolded()}>
         <ol class="stops">
-          <SequenceItems entries={entries()} routeId={props.route.id} />
+          <Show when={plainPoints() > 0}>
+            <li class="points-toggle">
+              <button class="text" aria-expanded={pointsShown()} onClick={() => setPointsShown(!pointsShown())}>
+                <ChevronIcon />
+                {plural(plainPoints(), pointsShown() ? 'Hide {n} route point|Hide {n} route points' : 'Show {n} route point|Show {n} route points')}
+              </button>
+            </li>
+          </Show>
+          <SequenceItems entries={listed()} routeId={props.route.id} />
         </ol>
       </Show>
     </li>
