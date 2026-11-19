@@ -43,8 +43,8 @@ final class TripGpxTest extends TestCase
         self::assertSame('2026-10-27T08:00:00Z', (string) $xml->xpath('/g:gpx/g:metadata/g:time')[0]);
         $waypoints = $xml->xpath('/g:gpx/g:wpt');
         // The hotel is a stop of both days' routes, alike in name, position and symbol, and written once.
-        self::assertSame(['Home', 'Hotel Post', 'Café & Bar'], array_map(fn ($w) => (string) $w->name, $waypoints));
-        self::assertSame(['', 'Hotel', 'Navaid, Black'], array_map(fn ($w) => (string) $w->sym, $waypoints));
+        self::assertSame(['Home', 'Hotel Post', 'Café & Bar', 'Far away'], array_map(fn ($w) => (string) $w->name, $waypoints));
+        self::assertSame(['', 'Hotel', 'Navaid, Black', ''], array_map(fn ($w) => (string) $w->sym, $waypoints));
         self::assertCount(0, $xml->xpath('/g:gpx/g:wpt/g:type'));
         self::assertSame('47.810000', (string) $waypoints[2]['lat']);
         $tracks = $xml->xpath('/g:gpx/g:trk');
@@ -62,15 +62,12 @@ final class TripGpxTest extends TestCase
         self::assertCount(3, $routes);
     }
 
-    public function testLeavesOutAStopFarBesideItsRoute(): void
+    public function testWritesAStopHoweverFarBesideItsRouteItStands(): void
     {
         $xml = $this->parse(TripGpx::day($this->document(), 1, new DateTimeImmutable()));
         self::assertSame('Alps – Day 2', (string) $xml->xpath('/g:gpx/g:metadata/g:name')[0]);
-        self::assertSame(['Hotel Post'], array_map(fn ($w) => (string) $w->name, $xml->xpath('/g:gpx/g:wpt')));
+        self::assertSame(['Hotel Post', 'Far away'], array_map(fn ($w) => (string) $w->name, $xml->xpath('/g:gpx/g:wpt')));
         self::assertCount(2, $xml->xpath('/g:gpx/g:trk'));
-        // With a wider reach the far stop is in.
-        $wide = $this->parse(TripGpx::day($this->document(), 1, new DateTimeImmutable(), new ExportOptions(reachM: 100_000)));
-        self::assertSame(['Hotel Post', 'Far away'], array_map(fn ($w) => (string) $w->name, $wide->xpath('/g:gpx/g:wpt')));
     }
 
     public function testWritesOnlyTheDaysAndRoutesAskedFor(): void
@@ -85,7 +82,7 @@ final class TripGpxTest extends TestCase
         self::assertSame(['Day 2'], array_map('strval', $hike->xpath('/g:gpx/g:trk/g:name')));
         self::assertSame([], array_map('strval', $hike->xpath('/g:gpx/g:wpt/g:name')));
         $first = $this->parse(TripGpx::days($this->document(), [1], $now, new ExportOptions(), ['r2']));
-        self::assertSame(['Hotel Post'], array_map('strval', $first->xpath('/g:gpx/g:wpt/g:name')));
+        self::assertSame(['Hotel Post', 'Far away'], array_map('strval', $first->xpath('/g:gpx/g:wpt/g:name')));
         self::assertSame($names(TripGpx::day($this->document(), 1, $now, new ExportOptions(), ['r3'])), ['Day 2']);
     }
 
@@ -108,7 +105,7 @@ final class TripGpxTest extends TestCase
         self::assertSame(['Day 1 South', 'Day 2 – Route 1', 'Day 2 – Hike'], array_map(fn ($r) => (string) $r->name, $routes));
         self::assertCount(3, $routes[0]->rtept);
         self::assertSame('48.100000', (string) $routes[0]->rtept[0]['lat']);
-        self::assertCount(3, $xml->xpath('/g:gpx/g:wpt'));
+        self::assertCount(4, $xml->xpath('/g:gpx/g:wpt'));
     }
 
     public function testLeavesOutOptionalPartsOnRequest(): void
@@ -122,21 +119,20 @@ final class TripGpxTest extends TestCase
         self::assertSame(['Home', 'Hotel Post'], array_map(fn ($w) => (string) $w->name, $xml->xpath('/g:gpx/g:wpt')));
         $all = $this->parse(TripGpx::trip($document, new DateTimeImmutable()));
         self::assertCount(3, $all->xpath('/g:gpx/g:trk'));
-        self::assertCount(3, $all->xpath('/g:gpx/g:wpt'));
+        self::assertCount(4, $all->xpath('/g:gpx/g:wpt'));
     }
 
     public function testReadsOptionsFromAQueryOrJson(): void
     {
         self::assertEquals(new ExportOptions(), ExportOptions::from([]));
-        self::assertEquals(new ExportOptions('day', 'routes', false, 500), ExportOptions::from(['per' => 'day', 'form' => 'routes', 'optional' => '0', 'reachM' => '500']));
-        self::assertEquals(new ExportOptions('day', 'routes', false, 500), ExportOptions::from(['per' => 'day', 'form' => 'routes', 'optional' => false, 'reachM' => 500]));
+        self::assertEquals(new ExportOptions('day', 'routes', false), ExportOptions::from(['per' => 'day', 'form' => 'routes', 'optional' => '0']));
+        // A preset kept before stops were their routes' still names how far a stop might stand, which is read past.
+        self::assertEquals(new ExportOptions('day', 'routes', false), ExportOptions::from(['per' => 'day', 'form' => 'routes', 'optional' => false, 'reachM' => 500]));
         self::assertNull(ExportOptions::from(['per' => 'week']));
         self::assertNull(ExportOptions::from(['form' => 'lines']));
         self::assertNull(ExportOptions::from(['optional' => 'yes']));
-        self::assertNull(ExportOptions::from(['reachM' => '-1']));
-        self::assertNull(ExportOptions::from(['reachM' => 1_000_000]));
         self::assertNull(ExportOptions::from('tracks'));
-        self::assertSame('{"per":"trip","form":"tracks","optional":true,"reachM":2000}', json_encode(new ExportOptions()));
+        self::assertSame('{"per":"trip","form":"tracks","optional":true}', json_encode(new ExportOptions()));
     }
 
     public function testMeasuresTheDistanceToALine(): void

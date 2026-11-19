@@ -12,7 +12,7 @@ import { createRequest } from '../ui/request';
 import { dayTitleOf, routeLabelOf } from './labels';
 import { NOUNS } from './partMenu';
 
-const sameOptions = (a: ExportOptions, b: ExportOptions) => a.per === b.per && a.form === b.form && a.optional === b.optional && a.reachM === b.reachM;
+const sameOptions = (a: ExportOptions, b: ExportOptions) => a.per === b.per && a.form === b.form && a.optional === b.optional;
 
 /**
  * The GPX export: the whole trip, or a part of it (the days or routes its menu was opened
@@ -107,9 +107,6 @@ export function ExportDialog() {
           </fieldset>
           <label class="toggle">
             <input type="checkbox" checked={options().optional} onChange={(e) => set('optional', e.currentTarget.checked)} /> {t('Include optional routes and stops')}
-          </label>
-          <label class="field reach">
-            {t('Free stops within')} <input type="number" min={0} max={100000} step={100} value={options().reachM} onChange={(e) => set('reachM', Math.max(0, Math.min(100000, Number(e.currentTarget.value) || 0)))} /> {t('m of a route')}
           </label>
           <div class="row">
             <label class="field grow">

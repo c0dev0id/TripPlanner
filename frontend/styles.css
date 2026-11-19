@@ -1072,10 +1072,6 @@ li.row.cut {
   color: var(--fg);
 }
 
-.export-dialog .reach input {
-  width: 6em;
-}
-
 /* A choice of one among a few, each with a line that says what it means. */
 fieldset.choices {
   display: flex;

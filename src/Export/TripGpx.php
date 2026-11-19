@@ -8,10 +8,9 @@ use DateTimeImmutable;
 
 /**
  * A trip document as GPX: every route as a track, or as a route of its points, named
- * after its day, and the stops of those routes as waypoints. A stop beside its route is
- * included where the route passes within reach; optional routes and stops are included
- * or left out as the options say. Where only some routes are asked for, the stops of the
- * others are left out. Stops that routes share, alike in name, position and symbol, are
+ * after its day, and the stops of those routes as waypoints, however far beside their
+ * route they stand; optional routes and stops are included or left out as the options
+ * say. Where only some routes are asked for, the stops of the others are left out. Stops that routes share, alike in name, position and symbol, are
  * written once: a GPX file's waypoints are of none of its routes.
  */
 final class TripGpx
@@ -69,29 +68,16 @@ final class TripGpx
         foreach ($indices as $index) {
             $day = $document['days'][$index];
             $routes = array_values(array_filter($day['routes'], fn (array $route): bool => $included($route) && ($routeIds === null || in_array($route['id'], $routeIds, true))));
-            // The routes' full lines, decoded once and only where they are needed: the tracks form, a track's points, and stops beside their routes.
-            $dayLines = null;
-            $linesOf = function () use (&$dayLines, $routes): array {
-                return $dayLines ??= array_map(RouteGeometry::line(...), $routes);
-            };
-            $dayBounds = null;
-            $boundsOf = function () use (&$dayBounds, $linesOf): array {
-                return $dayBounds ??= array_map(Proximity::bounds(...), $linesOf());
-            };
             $dayLabel = self::dayLabel($day, $index);
             $several = count($routes) > 1;
             foreach ($routes as $i => $route) {
                 $label = $several ? $dayLabel . ' – ' . ($route['name'] === '' ? t('Route {n}', ['n' => $i + 1]) : $route['name']) : $dayLabel;
-                $points = $options->form === 'routes' && $route['kind'] === 'routed' ? array_column($route['points'], 'lngLat') : $linesOf()[$i];
+                $points = $options->form === 'routes' && $route['kind'] === 'routed' ? array_column($route['points'], 'lngLat') : RouteGeometry::line($route);
                 $lines[] = ['name' => $label, 'points' => $points];
             }
-            $routeAt = array_flip(array_column($routes, 'id'));
+            $routeIdsWritten = array_column($routes, 'id');
             foreach ($day['stops'] as $stop) {
-                $i = $stop['routeId'] === null ? null : $routeAt[$stop['routeId']] ?? null;
-                if ($i === null || !$included($stop)) {
-                    continue;
-                }
-                if ($stop['pointId'] !== null || Proximity::reaches($stop['lngLat'], $linesOf()[$i], $boundsOf()[$i], $options->reachM)) {
+                if ($included($stop) && in_array($stop['routeId'], $routeIdsWritten, true)) {
                     $waypoint = ['name' => $stop['name'], 'lngLat' => $stop['lngLat'], 'symbol' => $stop['symbol']];
                     $waypoints[json_encode($waypoint)] = $waypoint;
                 }

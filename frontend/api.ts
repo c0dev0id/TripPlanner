@@ -531,15 +531,13 @@ export interface ExportOptions {
   form: 'tracks' | 'routes';
   /** Whether optional routes and stops are written. */
   optional: boolean;
-  /** How far from a route a free stop may stand to be written, in metres. */
-  reachM: number;
 }
 
-export const DEFAULT_EXPORT: ExportOptions = { per: 'trip', form: 'tracks', optional: true, reachM: 2000 };
+export const DEFAULT_EXPORT: ExportOptions = { per: 'trip', form: 'tracks', optional: true };
 
 /** The GPX download of a trip as the options say, or of the days or routes of it named in `of`. */
 export function gpxUrl(tripId: number, options: ExportOptions, of?: { kind: 'day' | 'route'; ids: readonly string[] }): string {
-  const query = new URLSearchParams({ per: options.per, form: options.form, optional: options.optional ? '1' : '0', reachM: String(options.reachM), lang: language });
+  const query = new URLSearchParams({ per: options.per, form: options.form, optional: options.optional ? '1' : '0', lang: language });
   if (of) query.set(of.kind === 'day' ? 'days' : 'routes', of.ids.join(','));
   return `/api/trips/${tripId}/gpx?${query}`;
 }

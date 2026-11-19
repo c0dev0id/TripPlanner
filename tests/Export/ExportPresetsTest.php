@@ -28,22 +28,22 @@ final class ExportPresetsTest extends TestCase
         $this->presets = new ExportPresets($db);
     }
 
-    private function garmin(int $reachM = 500): ExportOptions
+    private function garmin(bool $optional = false): ExportOptions
     {
-        return new ExportOptions('day', 'routes', false, $reachM);
+        return new ExportOptions('day', 'routes', $optional);
     }
 
     public function testKeepsAPresetByNameAndReplacesItsOptions(): void
     {
         $first = $this->presets->save($this->userId, 'Garmin', $this->garmin(), $this->now);
         $this->presets->save($this->otherUserId, 'Garmin', $this->garmin(), $this->now);
-        $again = $this->presets->save($this->userId, 'Garmin', $this->garmin(1000), $this->now);
+        $again = $this->presets->save($this->userId, 'Garmin', $this->garmin(true), $this->now);
         self::assertSame($first->id, $again->id);
-        self::assertSame(1000, $again->options->reachM);
+        self::assertTrue($again->options->optional);
         $listed = $this->presets->listFor($this->userId);
         self::assertCount(1, $listed);
-        self::assertEquals($this->garmin(1000), $listed[0]->options);
-        self::assertSame('{"id":' . $first->id . ',"name":"Garmin","options":{"per":"day","form":"routes","optional":false,"reachM":1000}}', json_encode($listed[0]));
+        self::assertEquals($this->garmin(true), $listed[0]->options);
+        self::assertSame('{"id":' . $first->id . ',"name":"Garmin","options":{"per":"day","form":"routes","optional":true}}', json_encode($listed[0]));
     }
 
     public function testDeletesOnlyOwnPresets(): void
