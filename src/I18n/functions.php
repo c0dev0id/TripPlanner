@@ -16,8 +16,9 @@ function t(string $text, array $params = []): string
         $german ??= json_decode(file_get_contents(dirname(__DIR__, 2) . '/frontend/i18n/de.json'), true, 512, JSON_THROW_ON_ERROR);
         $text = $german[$text] ?? $text;
     }
+    $pairs = [];
     foreach ($params as $name => $value) {
-        $text = str_replace('{' . $name . '}', (string) $value, $text);
+        $pairs['{' . $name . '}'] = (string) $value;
     }
-    return $text;
+    return strtr($text, $pairs);
 }

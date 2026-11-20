@@ -41,6 +41,7 @@ final class LanguageTest extends TestCase
     public function testTextsAreGermanOnlyWhileGermanIsSet(): void
     {
         self::assertSame('Day 3', t('Day {n}', ['n' => 3]));
+        self::assertSame('{n} club: 3 days', t('{name}: {n} days', ['name' => '{n} club', 'n' => 3]));
         Language::set('de');
         self::assertSame('Tag 3', t('Day {n}', ['n' => 3]));
         self::assertSame('Not in the dictionary', t('Not in the dictionary'));
