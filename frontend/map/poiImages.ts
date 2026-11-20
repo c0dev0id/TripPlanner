@@ -39,13 +39,16 @@ const ICONS: Record<BadgeId, string> = {
   roadblock,
 };
 
+/** How much larger places are drawn on a screen that is touched, where a CSS pixel can be smaller to the eye than at a desk and a place is tapped with a finger. */
+export const PLACE_SCALE = matchMedia('(pointer: coarse)').matches ? 4 / 3 : 1;
+
 /** Diameter of a badge in CSS pixels. */
-const SIZE = 24;
-/** The badges are drawn at twice their size, for sharp edges on dense screens. */
-const PIXEL_RATIO = 2;
+const SIZE = 24 * PLACE_SCALE;
+/** The badges are drawn at the screen's pixel ratio, at least twice their size, for sharp edges on dense screens. */
+const PIXEL_RATIO = Math.max(2, Math.ceil(devicePixelRatio));
 
 const picture = (badge: Badge): MapImage =>
-  svgImage(SIZE, PIXEL_RATIO, `<circle cx="12" cy="12" r="10.75" fill="${badge.color}" stroke="#fff" stroke-width="1.5"/>${svgInlay(ICONS[badge.id], 5.25, 5.25, 0.9, '#fff')}`);
+  svgImage(SIZE, PIXEL_RATIO, `<g transform="scale(${PLACE_SCALE})"><circle cx="12" cy="12" r="10.75" fill="${badge.color}" stroke="#fff" stroke-width="1.5"/>${svgInlay(ICONS[badge.id], 5.25, 5.25, 0.9, '#fff')}</g>`);
 
 const PICTURES = new Map(BADGES.map((badge) => [badge.id, picture(badge)]));
 

@@ -2,7 +2,7 @@ import type { Feature, FeatureCollection, Point } from 'geojson';
 import type { LayerSpecification } from 'maplibre-gl';
 import type { BadgeId } from '../poi/categories';
 import type { OwnPlace } from '../poi/ownPlaces';
-import { poiImageId } from './poiImages';
+import { PLACE_SCALE, poiImageId } from './poiImages';
 
 /** The source and layers of the user's own places on the map: a dot each in the colour of its kind, or the badge picked for the kind. */
 
@@ -14,7 +14,7 @@ export const OWN_PLACES_LAYERS: LayerSpecification[] = [
     type: 'circle',
     source: OWN_PLACES_SOURCE,
     filter: ['!', ['has', 'image']],
-    paint: { 'circle-radius': 6, 'circle-color': ['get', 'color'], 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 },
+    paint: { 'circle-radius': 6 * PLACE_SCALE, 'circle-color': ['get', 'color'], 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2 * PLACE_SCALE },
   },
   {
     id: `${OWN_PLACES_SOURCE}-badges`,

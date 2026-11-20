@@ -1689,7 +1689,11 @@ entries at the end of their section.
   drawn into map images in the browser when a style first needs one, which every change
   of base map does again: through MapLibre's resolver for missing images, which it waits
   for. Its `styleimagemissing` event comes after the request is answered, too late for
-  the first drawing. The same picture stands in the preferences.
+  the first drawing. The same picture stands in the preferences. On a screen that is
+  touched the discs, and the dots of the user's own places, are drawn a third larger
+  (`(pointer: coarse)`): a small tablet can show as many CSS pixels as a desk's screen,
+  so 24 of them are smaller to the eye there, and a place is tapped with a finger. They
+  are drawn at the screen's pixel ratio, at least twice, so that they stay sharp.
 - **Badges beyond the store's kinds are a fixed list, not the user's drawings.** The
   categories of a list of one's own are the user's words, and six badges named after
   OpenStreetMap's amenities do not cover what riders collect: ruins, meetups, bunkers,
