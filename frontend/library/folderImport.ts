@@ -146,22 +146,13 @@ export function mediaBeside(paths: readonly string[]): { of: Map<number, number[
  * each they are left out. The names are fitted to what the library holds.
  */
 export function planFolderImport(paths: readonly string[], mode: ImportMode): PlannedTrip[] {
-  const byFolder = new Map<string, number[]>();
-  const mediaIn = new Map<string, number[]>();
   const beside = mediaBeside(paths);
-  /** The file names without their extension, by path. */
-  const stems: string[] = [];
-  paths.forEach((path, i) => {
-    const cut = path.lastIndexOf('/');
-    const file = path.slice(cut + 1);
-    const folder = path.slice(0, Math.max(0, cut));
-    if (isMediaPath(path) && !beside.taken.has(i)) mediaIn.set(folder, [...(mediaIn.get(folder) ?? []), i]);
-    if (!isRoutePath(path)) return;
-    stems[i] = file.replace(ROUTE_FILE, '');
-    if (byFolder.has(folder)) byFolder.get(folder)!.push(i);
-    else byFolder.set(folder, [i]);
-  });
-  const stem = (i: number) => stems[i]!;
+  const indices = paths.map((_, i) => i);
+  const folderOf = (i: number) => paths[i]!.slice(0, Math.max(0, paths[i]!.lastIndexOf('/')));
+  const byFolder = Map.groupBy(indices.filter((i) => isRoutePath(paths[i]!)), folderOf);
+  const mediaIn = Map.groupBy(indices.filter((i) => isMediaPath(paths[i]!) && !beside.taken.has(i)), folderOf);
+  /** A file's name without its extension. */
+  const stem = (i: number) => paths[i]!.slice(paths[i]!.lastIndexOf('/') + 1).replace(ROUTE_FILE, '');
   const folders = [...byFolder.keys()].sort(byName);
   /** Whether the folder also holds folders of GPX files, at any depth: it is then no trip itself, but a folder of trips. */
   const holdsFolders = (folder: string) => folders.some((other) => other !== folder && other.startsWith(folder === '' ? '' : `${folder}/`));

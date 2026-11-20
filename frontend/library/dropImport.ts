@@ -80,12 +80,8 @@ function newPlaces(list: Trip, places: readonly KindedPlace[]): KindedPlace[] {
 
 /** The list with the places added, those of a kind to its section, made where the list has none of that name. */
 function withPlaces(list: Trip, places: readonly KindedPlace[]): Trip {
-  const byKind = new Map<string, Stop[]>();
-  for (const { kind, stop } of places) {
-    if (!byKind.has(kind)) byKind.set(kind, []);
-    byKind.get(kind)!.push(stop);
-  }
-  return [...byKind].reduce((to, [kind, stops]) => {
+  return [...Map.groupBy(places, (place) => place.kind)].reduce((to, [kind, ofKind]) => {
+    const stops = ofKind.map((place) => place.stop);
     const section = to.days.find((day) => day.name === kind);
     return section ? addParts(to, section.id, { routes: [], stops }, newId) : withImportedDay(to, { name: kind, date: null }, [{ routes: [], stops }]);
   }, list);

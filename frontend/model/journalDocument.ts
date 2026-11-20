@@ -17,11 +17,7 @@ const inOrder = (a: Entry, b: Entry): number => a.position - b.position || a.id 
 
 /** The chapters of the trip's journal: the trip's own, then one for every day, also where it has no entry yet. An entry on a part the trip no longer holds is the trip's own. */
 export function chaptersOf(trip: Trip, entries: readonly Entry[]): Chapter[] {
-  const byDay = new Map<Day | undefined, Entry[]>();
-  for (const entry of entries) {
-    const day = dayOfEntry(trip.days, entry);
-    byDay.set(day, [...(byDay.get(day) ?? []), entry]);
-  }
+  const byDay = Map.groupBy(entries, (entry) => dayOfEntry(trip.days, entry));
   return [undefined, ...trip.days].map((day) => ({ day, entries: (byDay.get(day) ?? []).sort(inOrder) }));
 }
 

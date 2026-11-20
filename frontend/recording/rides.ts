@@ -83,13 +83,7 @@ function runs(days: readonly RidingDay[], chars: number): RidingDay[][] {
 
 /** The rides that tell when they began, by year, month and day of riding, the latest first; `dateOf` says which date a moment falls on. */
 export function ridingYears(rides: readonly Ride[], dateOf: (iso: string) => string = localDate): RidingYear[] {
-  const byDate = new Map<string, Ride[]>();
-  for (const ride of rides) {
-    if (ride.startedAt === null) continue;
-    const date = dateOf(ride.startedAt);
-    if (byDate.has(date)) byDate.get(date)!.push(ride);
-    else byDate.set(date, [ride]);
-  }
+  const byDate = Map.groupBy(rides.filter((ride) => ride.startedAt !== null), (ride) => dateOf(ride.startedAt!));
   const days = [...byDate]
     .sort(([a], [b]) => b.localeCompare(a))
     .map(([date, of]): RidingDay => ({ date, rides: of.sort((a, b) => a.startedAt!.localeCompare(b.startedAt!)), distanceM: totalDistance(of) }));
