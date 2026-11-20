@@ -1,4 +1,4 @@
-import { locale } from '../i18n/language';
+import { language, locale } from '../i18n/language';
 import { plural, t } from '../i18n/t';
 
 const ONE_DECIMAL = new Intl.NumberFormat(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
@@ -18,11 +18,18 @@ export function openingText(progress: { received: number; total?: number } | 'ar
   return progress.total ? t('Loading {received} of {total} MB', { received: megabytes(progress.received), total: megabytes(progress.total) }) : t('Loading {received} MB', { received: megabytes(progress.received) });
 }
 
+/** A number in a unit as the locale writes it, with exactly `digits` decimals. */
+export const unitFormat = (unit: string, digits = 0): Intl.NumberFormat => new Intl.NumberFormat(locale, { style: 'unit', unit, minimumFractionDigits: digits, maximumFractionDigits: digits });
+
+const METRES = unitFormat('meter');
+const KILOMETRES = unitFormat('kilometer');
+const KILOMETRES_ONE_DECIMAL = unitFormat('kilometer', 1);
+
 /** A distance in metres as text: metres below a kilometre, a decimal below 100 km, whole kilometres above. */
 export function distanceText(metres: number): string {
-  if (metres < 1000) return `${Math.round(metres)} m`;
+  if (metres < 1000) return METRES.format(Math.round(metres));
   const km = metres / 1000;
-  return km < 100 ? `${decimalText(km)} km` : `${Math.round(km)} km`;
+  return km < 100 ? KILOMETRES_ONE_DECIMAL.format(km) : KILOMETRES.format(Math.round(km));
 }
 
 /** The English plural of a noun as counted() writes it. */
@@ -31,11 +38,10 @@ const englishPlural = (noun: string): string => (/[^aeiou]y$/.test(noun) ? `${no
 /** A count with its noun in the right number: "1 trip", "1,234 trips"; the noun in English, as "trip|trips" in de.json. */
 export const counted = (n: number, noun: string): string => `${n.toLocaleString(locale)} ${plural(n, `${noun}|${englishPlural(noun)}`)}`;
 
-/** The parts there are, as a sentence lists them: "3 days, 2 routes and 1 attachment"; empty for none. */
-export function listText(parts: readonly (string | false)[]): string {
-  const said = parts.filter((part) => part !== false);
-  return said.length > 1 ? t('{a} and {b}', { a: said.slice(0, -1).join(', '), b: said.at(-1)! }) : (said[0] ?? '');
-}
+const LIST = new Intl.ListFormat(language, { type: 'conjunction' });
+
+/** The parts there are, as a sentence in the page's language lists them: "3 days, 2 routes, and 1 attachment"; empty for none. */
+export const listText = (parts: readonly (string | false)[]): string => LIST.format(parts.filter((part) => part !== false));
 
 const LONG_DATE = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
 const SHORT_DATE = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' });

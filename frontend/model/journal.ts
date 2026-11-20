@@ -1,3 +1,4 @@
+import { unitFormat } from '../ui/format';
 import type { Day, LngLat } from './trip';
 
 /** The journal: notes and files on a trip, a day, a stop or a route, as the server keeps them. */
@@ -81,9 +82,13 @@ export function entryTitle(entry: Entry): string {
   return title.length > 80 ? `${title.slice(0, 79)}…` : title;
 }
 
+const BYTES = unitFormat('byte');
+const KILOBYTES = unitFormat('kilobyte');
+const MEGABYTES = unitFormat('megabyte', 1);
+
 /** A file's size as text: bytes, kB or MB. */
 export function sizeText(bytes: number): string {
-  if (bytes < 1000) return `${bytes} B`;
-  if (bytes < 1_000_000) return `${Math.round(bytes / 1000)} kB`;
-  return `${(bytes / 1_000_000).toFixed(1)} MB`;
+  if (bytes < 1000) return BYTES.format(bytes);
+  if (bytes < 1_000_000) return KILOBYTES.format(Math.round(bytes / 1000));
+  return MEGABYTES.format(bytes / 1_000_000);
 }

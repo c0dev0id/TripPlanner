@@ -44,6 +44,6 @@ describe('the journal', () => {
   });
 
   it('writes sizes', () => {
-    expect([sizeText(12), sizeText(12_345), sizeText(2_345_678)]).toEqual(['12 B', '12 kB', '2.3 MB']);
+    expect([sizeText(12), sizeText(12_345), sizeText(2_345_678)]).toEqual(['12 byte', '12 kB', '2.3 MB']);
   });
 });
