@@ -1,6 +1,6 @@
 import { t } from '../i18n/t';
 import type { Held } from './library';
-import type { Folder, FolderKind } from './trip';
+import { byName, type Folder, type FolderKind } from './trip';
 import { counted } from '../ui/format';
 
 /** The names of the folders from the top of the library down to the folder `id`; none for the top. */
@@ -66,7 +66,7 @@ export function moveTargets(
   moved: ReadonlySet<number>,
   takes: (into: number | null) => boolean,
 ): { label: string; into: number | null }[] {
-  const foldersIn = (parent: number | null) => folders.filter((f) => f.parentId === parent && f.kind === 'folder' && f.id !== from && !moved.has(f.id)).sort((x, y) => x.name.localeCompare(y.name));
+  const foldersIn = (parent: number | null) => folders.filter((f) => f.parentId === parent && f.kind === 'folder' && f.id !== from && !moved.has(f.id)).sort((x, y) => byName(x.name, y.name));
   const above = folders.find((f) => f.id === from)?.parentId ?? null;
   const outside = from === root ? [] : [
     { label: '/', into: root },

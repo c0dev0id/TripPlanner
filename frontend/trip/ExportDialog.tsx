@@ -2,6 +2,7 @@ import { t } from '../i18n/t';
 import { createEffect, createResource, createSignal, For, on, Show } from 'solid-js';
 import { DEFAULT_EXPORT, deleteExportPreset, gpxUrl, listExportPresets, saveExportPreset, type ExportOptions } from '../api';
 import { flushSave } from '../state/autosave';
+import { byName } from '../model/trip';
 import { dayOfRoute } from '../routing/dayEdit';
 import { exportScope, setExportScope } from '../state/drawing';
 import { openTrip, openTripId, routeById, selectedDay } from '../state/trip';
@@ -62,7 +63,7 @@ export function ExportDialog() {
   const savePreset = (name: string) =>
     run(async () => {
       const preset = await saveExportPreset(name, options());
-      mutate((list = []) => [...list.filter((p) => p.name !== preset.name), preset].sort((a, b) => a.name.localeCompare(b.name)));
+      mutate((list = []) => [...list.filter((p) => p.name !== preset.name), preset].sort((a, b) => byName(a.name, b.name)));
       setNaming(false);
     });
   const removePreset = (id: number) =>
