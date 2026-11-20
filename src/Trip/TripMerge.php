@@ -41,12 +41,7 @@ final class TripMerge
     /** Where a day of the date goes among the days: before the first of a later date, at the end where none is later. */
     private static function placeFor(array $days, string $date): int
     {
-        foreach ($days as $i => $day) {
-            if ($day['date'] !== null && $day['date'] > $date) {
-                return $i;
-            }
-        }
-        return count($days);
+        return array_find_key($days, fn (array $day) => $day['date'] !== null && $day['date'] > $date) ?? count($days);
     }
 
     /** The day with the other day's routes and stops after its own, its name where it has none, and both notes, cut to what a document may hold. */

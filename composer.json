@@ -3,7 +3,7 @@
     "description": "Plans whole motorcycle trips: days of stops with times, hotels, alternative routes and GPX export.",
     "type": "project",
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "ext-curl": "*",
         "ext-pdo_sqlite": "*",
         "ext-simplexml": "*",

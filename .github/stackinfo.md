@@ -4,11 +4,12 @@
 
 - OpenBSD with httpd and php-fpm. php-fpm runs chrooted to `/var/www`, so the application,
   its data and the SQLite file live below that directory.
-- PHP 8.5 with pdo_sqlite, sqlite3, zip, simplexml, gd, intl, curl, xsl, and the core exif,
+- PHP 8.5 (8.4 at least, as composer.json requires) with pdo_sqlite, sqlite3, zip, simplexml, gd, intl, curl, xsl, and the core exif,
   fileinfo, zlib, xmlreader and xmlwriter extensions: gd makes the pictures the
   journal's images are shown as, at three sizes, fileinfo tells uploaded files' types, exif reads when and where a photo was
   taken (without exif, photos are kept but not placed), zlib checks that an uploaded
-  recording is a compressed GPX file, xmlreader reads its line and start from it, and
+  recording is a compressed GPX file, xmlreader reads its line and start from it and the
+  segments of rides that are merged, and
   xmlwriter writes the GPX exports.
 - The journal's files and the days' media are uploads: httpd's `connection max request body` (1 MB by
   default, answered with 413 above it) and php-fpm's `upload_max_filesize` and
@@ -74,7 +75,7 @@
 ## Targets
 
 - Desktop and phone browsers with WebGL 2, which MapLibre GL JS 6 requires; the build
-  targets ES2022. Screens down to 360 px wide.
+  targets ES2022 and uses the ES2024 library (`Map.groupBy`). Screens down to 360 px wide.
 - The public pages work without JavaScript.
 - English and German, by the browser's language or a choice in the planner's header. The
   texts are English in the code; `frontend/i18n/de.json` holds the German for the planner
