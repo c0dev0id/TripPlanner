@@ -21,9 +21,19 @@ final class GpxJoinTest extends TestCase
         self::assertNotFalse($xml);
         self::assertCount(1, $xml->trk);
         self::assertSame(['48.1', '48.2', '48.3'], array_map(fn ($point) => (string) $point['lat'], $xml->xpath('//*[local-name()="trkpt"]')));
-        self::assertSame(1, substr_count($joined, 'xmlns:rl='));
+        self::assertSame(1, substr_count(substr($joined, 0, strpos($joined, '<trk>')), 'xmlns:rl='));
         self::assertSame('2027-06-12T08:00:00Z', TrackSummary::of($joined)->startedAt);
         self::assertSame($first, GpxJoin::of([$first]));
+    }
+
+    public function testJoinsFilesWhoseElementsCarryAPrefix(): void
+    {
+        $prefixed = fn (string $lat) => "<?xml version=\"1.0\"?>\n<g:gpx xmlns:g=\"http://www.topografix.com/GPX/1/1\"><g:trk><!-- <trkseg> --><g:trkseg><g:trkpt lat=\"$lat\" lon=\"11.5\"/></g:trkseg></g:trk></g:gpx>";
+        $joined = GpxJoin::of([$prefixed('48.1'), str_replace('xmlns:g=', 'xmlns:sc="https://scenic.example/1" xmlns:g=', $prefixed('48.2'))]);
+        $xml = simplexml_load_string($joined);
+        self::assertNotFalse($xml);
+        self::assertSame(['48.1', '48.2'], array_map(fn ($point) => (string) $point['lat'], $xml->xpath('//*[local-name()="trkpt"]')));
+        self::assertStringContainsString('<g:gpx xmlns:g="http://www.topografix.com/GPX/1/1" xmlns:sc="https://scenic.example/1">', $joined);
     }
 
     public function testCarriesOverThePrefixesTheOthersPointsNeed(): void

@@ -666,9 +666,10 @@ entries at the end of their section.
   everything it measured, so a break is still a segment's end. The files are megabytes
   and are on the server, so they are joined there, as text: reading them into a tree
   would take many times their size, and sending them to the browser and back would be
-  megabytes travelling for nothing. Namespace prefixes the later files declare on
-  their root are added to the first one's; a prefix two files declare differently is
-  refused. What the first file says of itself above its points (Ridelink's summary of
+  megabytes travelling for nothing; XMLReader finds the segments as a stream, whatever
+  prefix, comment or CDATA surrounds them, and copies each with the namespaces it uses
+  declared on it. Namespace prefixes the later files declare on their root are added to
+  the first one's; a prefix two files declare differently is refused. What the first file says of itself above its points (Ridelink's summary of
   distance and speeds) is left as written and is then that of the first piece only.
   The merged ride takes the pieces' days, and the pieces are deleted, since kept
   beside it they would be counted and drawn twice. Their digests are kept in
