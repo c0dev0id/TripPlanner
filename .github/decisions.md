@@ -2534,7 +2534,13 @@ entries at the end of their section.
   middleware gzips JSON answers of a kilobyte and more for clients that take gzip; files
   (pictures, GPX, zip) are compressed already and go out as they are. Track lines are
   dense text, so this takes about 40 % off a large trip, not more. Saves are not
-  compressed; they leave out what is unchanged instead.
+  compressed; they leave out what is unchanged instead. The front controller turns
+  `zlib.output_compression` off for the planner: other sites on the same php-fpm may
+  want it on, and PHP's handler gzips every answer again whatever `Content-Encoding` it
+  already has, which wraps the gzipped JSON and the stored GPX files twice. Letting
+  PHP's handler do all of it instead was rejected: the GPX files are kept gzipped and
+  would have to be unpacked for every download, and how large the JSON goes out would
+  depend on the server's php.ini.
 - **Slim 4, PHP-DI, Plates, PHPMailer.** Each does one job and is small: routing with
   middleware and PSR-7, a container with autowiring, templates with layouts and escaping,
   SMTP without a dependency tree. Laravel and Symfony were rejected for their weight;
